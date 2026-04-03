@@ -1,0 +1,22 @@
+# Azoth runtime state (session-specific, not version-controlled)
+.azoth/memory/
+.azoth/telemetry/
+.azoth/sync-log.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
