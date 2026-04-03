@@ -74,8 +74,8 @@ class TestAzothYaml:
             assert layer_name in layers, f"Missing layer: {layer_name}"
             assert "status" in layers[layer_name], f"Layer {layer_name} missing status"
 
-    def test_molecule_is_building(self) -> None:
-        assert self.data["layers"]["molecule"]["status"] == "building"
+    def test_molecule_is_complete(self) -> None:
+        assert self.data["layers"]["molecule"]["status"] == "complete"
 
     def test_has_platforms(self) -> None:
         platforms = self.data.get("platforms", {})
@@ -357,10 +357,10 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md
 
     def test_phase_consistent(self) -> None:
-        """All files should agree on current phase = 1."""
-        assert self.azoth_yaml["phase"] == 1
-        assert "Phase 1" in self.claude_md
-        assert "PHASE 1" in self.bootloader.upper() or "Phase 1" in self.bootloader
+        """All files should agree on current phase = 2."""
+        assert self.azoth_yaml["phase"] == 2
+        assert "Phase 2" in self.claude_md
+        assert "Phase 1" in self.claude_md  # Phase 1 still referenced (as complete)
 
     def test_four_layers_consistent(self) -> None:
         """Water Molecule Model should be consistent across docs."""

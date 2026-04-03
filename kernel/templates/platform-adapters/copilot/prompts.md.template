@@ -1,0 +1,7 @@
+---
+description: "{{PROMPT_DESCRIPTION}}"
+---
+
+# {{PROMPT_NAME}}
+
+{{PROMPT_BODY}}

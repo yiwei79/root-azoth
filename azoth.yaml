@@ -6,7 +6,7 @@ version: 0.1.0-dev
 description: The Universal Agentic Toolkit
 
 # Current development phase
-phase: 1  # Kernel Extraction
+phase: 2  # Core Skills (Phase 1 + 1.5 complete)
 
 # Architecture decisions count
 decisions: 28
@@ -14,8 +14,8 @@ decisions: 28
 # Layer status
 layers:
   molecule:  # Layer 0: Kernel
-    status: building
-    files: 0  # Target: ~10
+    status: complete
+    files: 14  # 4 kernel + 4 templates + 6 adapters
   mineral:   # Layer 1: Skills
     status: planned
     skills: 0  # Target: 8

@@ -1,0 +1,7 @@
+---
+description: "{{COMMAND_DESCRIPTION}}"
+---
+
+# /{{COMMAND_NAME}}
+
+{{COMMAND_BODY}}

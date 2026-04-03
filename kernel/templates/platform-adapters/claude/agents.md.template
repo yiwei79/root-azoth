@@ -1,0 +1,19 @@
+---
+name: "{{AGENT_NAME}}"
+description: "{{AGENT_DESCRIPTION}}"
+model: "{{MODEL}}"
+---
+
+# {{AGENT_NAME}}
+
+## Role
+{{AGENT_ROLE}}
+
+## Posture Tier
+{{POSTURE_TIER}}
+
+## Instructions
+{{AGENT_INSTRUCTIONS}}
+
+## Tools
+{{AGENT_TOOLS}}

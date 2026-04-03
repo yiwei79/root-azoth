@@ -1,0 +1,22 @@
+# Azoth Bootloader State
+
+> Runtime state for cross-session continuity.
+> This file is gitignored — it is NOT part of the kernel.
+
+## State
+
+```yaml
+session_count: 0
+last_session:
+  date: null
+  goal: null
+  pipeline: null
+  outcome: null
+active_phase: operate
+pending_promotions: []
+kernel_checksum: null
+```
+
+## Recent Sessions
+
+<!-- Appended automatically by HARDEN phase -->

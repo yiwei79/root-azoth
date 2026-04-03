@@ -1,0 +1,57 @@
+# {{PROJECT_NAME}}
+
+> Powered by [Azoth](https://github.com/{{GITHUB_USER}}/azoth) — The Universal Agentic Toolkit
+
+---
+
+## Project Overview
+
+- **Name**: {{PROJECT_NAME}}
+- **Language**: {{LANGUAGE}}
+- **Description**: {{DESCRIPTION}}
+
+## Boot Sequence
+
+This project uses the Azoth bootloader. Every session:
+
+1. **ACTIVATE** — Load this file, trust contract, governance rules
+2. **SURVEY** — Map project state, load memory, check git status
+3. **OPERATE** — Execute goal within trust boundaries
+4. **HARDEN** — Capture learnings, verify integrity, close session
+
+## Project Routing
+
+| Area | Path | Purpose |
+|------|------|---------|
+| Source | `{{SOURCE_DIR}}/` | Main source code |
+| Tests | `{{TEST_DIR}}/` | Test suite |
+| Docs | `docs/` | Documentation |
+| Azoth | `.azoth/` | Runtime state (memory, telemetry) |
+
+## Development Rules
+
+1. **Quality > speed** — every output passes evaluation before delivery
+2. **Test before deliver** — no merge without passing tests
+3. **Bounded entropy** — max 10 files per turn, checkpoint in yellow zone
+4. **Kernel immutability** — `.azoth/kernel/` changes only via human approval
+
+## Coding Standards
+
+- **Language**: {{LANGUAGE}}
+- **Formatting**: {{FORMATTER}}
+- **Tests**: {{TEST_FRAMEWORK}}
+- **Types**: Type hints on public functions
+- **Comments**: Only for "why", never for "what"
+
+## Installed Azoth Components
+
+- Kernel: v{{AZOTH_VERSION}}
+- Skills: {{INSTALLED_SKILLS}}
+- Agents: {{INSTALLED_AGENTS}}
+- Pipeline presets: {{INSTALLED_PIPELINES}}
+
+## Memory
+
+- Episodes: `.azoth/memory/episodes.jsonl`
+- Patterns: `.azoth/memory/patterns.yaml`
+- Telemetry: `.azoth/telemetry/session-log.jsonl`

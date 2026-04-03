@@ -1,0 +1,37 @@
+# Azoth Sync Configuration
+# Sanitization rules for pattern extraction from source frameworks.
+
+sanitize:
+  # String patterns to replace with {{REDACTED}} in synced files.
+  # Add your org-specific names, URLs, and identifiers here.
+  strip_patterns:
+    - "OrgName"
+    - "InternalProject"
+    - "internal-url.com"
+
+  # Path prefixes to exclude from sync entirely.
+  # Files under these paths will never be proposed for sync.
+  strip_paths:
+    - "Projects/"
+    - "workspace/SESSION_MEMORY.md"
+    - ".env"
+    - "credentials"
+    - "secrets"
+
+# Directories to scan in the source framework.
+# Only files under these directories (with syncable extensions) are considered.
+scan_dirs:
+  - skills
+  - agents
+  - instructions
+  - commands
+  - pipelines
+
+# File extensions that are eligible for sync.
+scan_extensions:
+  - .md
+  - .yaml
+  - .yml
+  - .json
+  - .py
+  - .txt

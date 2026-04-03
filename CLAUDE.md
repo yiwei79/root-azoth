@@ -83,22 +83,22 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 
 ## v0.1.0 Phase Roadmap
 
-### Phase 1: Kernel Extraction 🎯 CURRENT
-- [ ] kernel/BOOTLOADER.md
-- [ ] kernel/TRUST_CONTRACT.md
-- [ ] kernel/GOVERNANCE.md
-- [ ] kernel/PROMOTION_RUBRIC.md
-- [ ] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
-- [ ] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
-- [ ] azoth.yaml manifest
-- [ ] install.sh + install.ps1
+### Phase 1: Kernel Extraction ✅ COMPLETE
+- [x] kernel/BOOTLOADER.md
+- [x] kernel/TRUST_CONTRACT.md
+- [x] kernel/GOVERNANCE.md
+- [x] kernel/PROMOTION_RUBRIC.md
+- [x] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
+- [x] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
+- [x] azoth.yaml manifest
+- [x] install.sh + install.ps1
 
-### Phase 1.5: Sync Infrastructure
-- [ ] scripts/azoth-sync.py
-- [ ] sync-config.yaml
-- [ ] .claude/commands/sync.md
+### Phase 1.5: Sync Infrastructure ✅ COMPLETE
+- [x] scripts/azoth-sync.py
+- [x] sync-config.yaml
+- [x] .claude/commands/sync.md
 
-### Phase 2: Core Skills
+### Phase 2: Core Skills 🎯 CURRENT
 - [ ] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
 - [ ] 3 new skills (entropy-guard, alignment-sync, self-improve)
 - [ ] Skill drift detection tests
