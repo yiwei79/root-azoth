@@ -46,7 +46,16 @@ for AI agents that is mutatable to do anything, with governance, memory, and tru
 | Command | Purpose |
 |---------|---------|
 | `/bootstrap` | Day 0 guided kernel creation |
+| `/auto` | Auto-compose and execute pipeline (default) |
+| `/deliver` | Lean pipeline for pre-approved work |
+| `/deliver-full` | Full pipeline with governance gates |
+| `/plan` | Structured planning without execution |
+| `/eval` | Governance quality gate |
+| `/remember` | Capture cross-session learning |
+| `/promote` | Review M2→M1 promotion candidates |
 | `/sync` | Sync patterns from source framework (Phase 1.5) |
+| `/worktree-sync` | Git checkpoint and sync |
+| `/session-closeout` | Unified eval + close + sync |
 
 ### Missing Overlays (to be created during Phase 1)
 
@@ -58,6 +67,6 @@ for AI agents that is mutatable to do anything, with governance, memory, and tru
 ## Origin
 
 This project was architected in a SupplyGrowth SE: Architect session on 2026-04-03.
-5 rounds of refinement produced 20 architecture decisions and a complete v0.1.0 plan.
+5 rounds of refinement produced 28 architecture decisions and a complete v0.1.0 plan.
 The handoff artifacts were created at session close to enable seamless Day 0 bootstrap
 via Claude Code on macOS.

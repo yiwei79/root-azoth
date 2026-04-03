@@ -218,6 +218,57 @@ Meta-level: Agent Crafter improves itself (with human approval)
 Entropy guard prevents unbounded self-modification
 ```
 
+### Proactive Agent Posture (D26)
+
+Azoth agents default to proactive-within-boundaries: take initiative on low-risk
+actions, escalate high-risk ones.
+
+**Always-do (no permission needed):**
+- Pre-action context mapping (explore before changing)
+- Dependency pre-staging (fetch related files autonomously)
+- Test discovery (find existing tests before writing new ones)
+- Memory pattern surfacing ("This matches episode X — relevant?")
+- Checkpoint suggestions ("Approaching entropy ceiling — checkpoint?")
+- Adjacent bug identification ("Found 2 related issues nearby")
+
+**Ask-first (identify but get approval):**
+- Scope expansion ("Evidence suggests new sub-question")
+- Agent capability routing ("This needs Context Architect, not just SWE")
+- Refactoring opportunities ("This could be cleaner — want me to?")
+- Cross-agent escalation ("Governance issue found — invoke reviewer?")
+
+**Never-auto (always require human signal):**
+- Kernel modifications
+- Governance changes
+- Dependency additions
+- Pipeline self-modification
+- Memory M2→M1 promotion
+
+Each agent's `.agent.md` defines which posture tier applies to its specific actions.
+The Trust Contract defines the overall ceiling.
+
+### Seed Commands (D25)
+
+12 built-in slash commands ship with every Azoth installation:
+
+| Command | Category | Purpose |
+|---------|----------|---------|
+| `/bootstrap` | Lifecycle | Day 0 guided kernel creation |
+| `/session-closeout` | Lifecycle | Unified eval + close + sync |
+| `/remember` | Lifecycle | Capture cross-session learning |
+| `/auto` | Pipeline | Auto-compose and execute pipeline (default) |
+| `/deliver` | Pipeline | Lean pipeline (pre-approved work) |
+| `/deliver-full` | Pipeline | Full pipeline with governance gates |
+| `/plan` | Pipeline | Structured planning without execution |
+| `/eval` | Quality | Governance quality gate |
+| `/test` | Quality | Unit test generation |
+| `/promote` | Governance | Review promotion candidates |
+| `/sync` | Infrastructure | Pattern extraction from source framework |
+| `/worktree-sync` | Infrastructure | Git checkpoint and sync |
+
+Project-specific commands (session-close, classify-learning, fill-bootloader)
+are NOT seeded — they emerge naturally in each consumer project via the memory system.
+
 ### Coded Agent Scaffold
 
 ```
@@ -233,24 +284,167 @@ scaffold/
 
 ## 7. Layer 3: Currents (Orchestration)
 
-### Pipeline Format: YAML-Declarative
+### Pipeline Architecture (D21)
+
+Azoth pipelines are YAML-declarative with typed gates. The full pipeline has 7 stages:
+
+```
+Stage 0: GOAL CLARIFICATION
+  Parse intent → classify complexity → compose pipeline → human approves
+
+Stage 1: ARCHITECT (with embedded investigation)
+  Invoke explore/research agents → synthesize design → human approves
+
+Stage 2: GOVERNANCE REVIEW
+  Invoke governance-reviewer → architect disposition → human if needed
+
+Stage 3: PLANNING
+  Invoke planner → task plan + test strategy (mandatory) → architect reviews
+
+Stage 4: TEST DESIGN (Test Builder)
+  Invoke test-builder → test specs + acceptance criteria → architect reviews
+
+Stage 5: IMPLEMENTATION
+  Invoke SWE → implement against plan, run tests → auto-test gate
+
+Stage 6: ARCHITECT REVIEW (Architect Review)
+  Compare implementation vs design → final alignment summary → human approves
+```
+
+### Pipeline Format: YAML-Declarative (D6, D24)
 
 YAML defines deterministic structure. Markdown defines flexible content.
+Every gate is typed as `human` or `agent`.
 
 ```yaml
-# Example: delivery pipeline
-name: standard-delivery
+name: full-delivery
 stages:
-  - agent: architect
-    gate: human-alignment
-  - agent: planner
-    gate: architect-review
-  - agent: builder
-    gate: auto-test
-  - agent: reviewer
-    gate: architect-synthesis
+  - name: goal-clarification
+    agent: architect
+    gate: { type: human, action: approve-pipeline }
+  - name: architect-design
+    agent: architect
+    tools: [explore, research]
+    gate: { type: human, action: approve-design }
+  - name: governance-review
+    agent: governance-reviewer
+    gate: { type: agent, action: architect-disposition }
+  - name: planning
+    agent: planner
+    outputs: [task_plan, test_strategy]
+    gate: { type: agent, action: architect-review }
+  - name: test-design
+    agent: test-builder
+    outputs: [test_specs, acceptance_criteria]
+    gate: { type: agent, action: architect-review }
+  - name: implementation
+    agent: builder
+    gate: { type: agent, action: auto-test }
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review
+    gate: { type: human, action: final-approval }
 output: alignment-summary
 ```
+
+### Explore/Research as Architect Tools (D27)
+
+Investigation agents (explore, research, research-orchestrator) are invoked BY the
+Architect within its stage — they are tools, not separate pipeline stages. This matches
+Claude Code's internal pattern: `queryLoop()` invokes tools within a single agent loop.
+
+```
+Architect receives goal
+  ├── needs codebase context? → invoke explore agent
+  ├── needs external research? → invoke research agent
+  ├── needs deep investigation? → invoke research-orchestrator
+  └── synthesize findings → produce architecture brief
+```
+
+### Goal Clarification Protocol (D22)
+
+Stage 0 runs before pipeline selection. Adaptive questioning with no hard cap:
+
+```yaml
+goal_clarification:
+  max_cycles: 3
+  max_questions_per_cycle: 5
+  total_cap: null  # Quality > speed
+
+  protocol:
+    - Show understanding FIRST, then ask for corrections
+    - "Based on [context], I believe [X]. Is that right?"
+    - Only ask what cannot be inferred from context
+    - Predict answers from memory/patterns before asking
+
+  adaptive_rules:
+    cycle_1: Broad scope (what, why, constraints)
+    cycle_2: Code-aware (after initial exploration)
+    cycle_3: Edge cases and confirmation
+    skip_when: User provides comprehensive spec or says "just do it"
+
+  completeness_check:
+    after_each_cycle: Assess if enough to proceed
+    present: Pipeline selection with visual rationale
+```
+
+### Auto-Pipeline (D23)
+
+Default behavior when user doesn't specify a pipeline. The Architect classifies the
+goal and composes a pipeline from presets.
+
+```yaml
+auto_pipeline:
+  trigger: Any goal without explicit pipeline selection
+
+  classification:
+    scope: kernel | skills | agents | pipelines | docs | mixed
+    risk: governance-change | breaking-change | additive | cosmetic
+    complexity: simple | medium | complex
+    knowledge: known-pattern | needs-research | novel
+
+  composition_rules:
+    - if risk == governance-change: ALWAYS full pipeline
+    - if scope == kernel: ALWAYS full pipeline
+    - if complexity == simple AND risk == cosmetic:
+        pipeline: [planner, builder, architect-review]
+    - if complexity == simple AND risk == additive:
+        pipeline: [planner, test-builder, builder, architect-review]
+    - if knowledge == needs-research:
+        inject: research-phase into architect stage
+    - if scope == docs:
+        pipeline: [architect, builder, architect-review]
+    - default: full pipeline
+
+  declaration:
+    format: visual-ui
+    shows: [goal, classification, composed-stages, rationale]
+    gate: human-approve  # Human can override composition
+```
+
+### Pipeline Presets (D28)
+
+| Preset | Stages | When |
+|--------|--------|------|
+| `full` | Goal→Architect(+explore/research)→Governance→Planner→TestBuilder→SWE→ArchReview | Governance/kernel changes |
+| `deliver` | Planner→TestBuilder→SWE→ArchReview | Pre-approved, additive work |
+| `hotfix` | Planner→SWE→ArchReview | Urgent bug fixes |
+| `docs` | Architect→Builder→ArchReview | Documentation only |
+| `research` | Architect(+research-swarm)→ArchReview | Investigation/analysis |
+| `review` | Architect→Governance→ArchReview | Code/governance review only |
+| `refactor` | Architect(+explore)→Planner→TestBuilder→SWE→ArchReview | Structural changes, TDD |
+| `auto` | *Composed dynamically via D23* | **Default — always** |
+
+### Gate Typing (D24)
+
+Every pipeline gate must declare its type:
+
+| Type | Meaning | Required For |
+|------|---------|-------------|
+| `human` | Requires explicit human signal to proceed | Kernel changes, governance, design approval, final delivery |
+| `agent` | Another agent validates (architect, evaluator) | Plan quality, test coverage, auto-test pass |
+
+**Rule**: Gates involving `kernel/`, governance files, or M2→M1 promotion MUST be `type: human`.
 
 ### Swarm Patterns
 
@@ -505,10 +699,18 @@ azoth/
 | D18 | OpenCode: compatible via CLAUDE.md | Reads it natively, free |
 | D19 | Platform adapter pattern | Complexity in installer, not kernel |
 | D20 | No multi-platform layers in kernel | Kernel stays agnostic |
+| D21 | Full pipeline: 7 stages with typed gates | Research-validated canonical pattern |
+| D22 | Goal Clarification Protocol (Stage 0) | Adaptive questioning, no hard cap |
+| D23 | Auto-pipeline: LLM-as-router composition | Default behavior, 8 presets |
+| D24 | Gate typing: human vs agent | Kernel/governance gates must be human |
+| D25 | 12 seed slash commands | Essential lifecycle + pipeline + quality |
+| D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |
+| D27 | Explore/Research as Architect tools | Not separate pipeline stages |
+| D28 | 8 pipeline presets | full, deliver, hotfix, docs, research, review, refactor, auto |
 
 ---
 
-## 15. v0.1.0 Release Criteria
+## 16. v0.1.0 Release Criteria
 
 - [ ] Kernel passes integrity tests
 - [ ] `azoth init` works on macOS + Windows
@@ -520,7 +722,7 @@ azoth/
 
 ---
 
-## 16. Development Phases
+## 17. Development Phases
 
 | Phase | Scope | Deliverables |
 |-------|-------|-------------|

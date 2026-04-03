@@ -31,7 +31,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (20 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (28 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -67,7 +67,7 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 2. Read `docs/AZOTH_ARCHITECTURE.md` for full context
 3. Check current phase status below
 4. Work within the current phase scope
-5. Validate changes against architecture decisions (D1–D20)
+5. Validate changes against architecture decisions (D1–D28)
 6. Capture lessons in `.azoth/memory/episodes.jsonl`
 
 ### Coding Standards

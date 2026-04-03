@@ -11,13 +11,16 @@ This is a guided process — you implement, the human reviews each phase.
 
 Before starting, read these files completely:
 1. `CLAUDE.md` — project instructions and current phase status
-2. `docs/AZOTH_ARCHITECTURE.md` — the full architecture plan (20 decisions)
+2. `docs/AZOTH_ARCHITECTURE.md` — the full architecture plan (28 decisions)
 
 Confirm you understand:
 - The four-layer Water Molecule Model
 - The 3-layer memory system (M1/M2/M3)
 - The Trust Contract concept
 - The platform adapter pattern
+- The 7-stage pipeline architecture (D21)
+- The auto-pipeline composition (D23)
+- The Proactive Agent Posture tiers (D26)
 - The v0.1.0 phase roadmap
 
 ## Bootstrap Sequence

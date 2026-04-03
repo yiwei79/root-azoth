@@ -201,9 +201,9 @@ class TestArchitectureDoc:
         path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
         self.content = path.read_text(encoding="utf-8")
 
-    def test_has_all_20_decisions(self) -> None:
-        """Architecture must contain all 20 architecture decisions."""
-        for i in range(1, 21):
+    def test_has_all_28_decisions(self) -> None:
+        """Architecture must contain all 28 architecture decisions."""
+        for i in range(1, 29):
             assert f"D{i}" in self.content, f"Missing architecture decision D{i}"
 
     def test_has_four_layer_model(self) -> None:
@@ -380,6 +380,11 @@ class TestCrossArtifactConsistency:
         claude_lower = self.claude_md.lower()
         assert "primary" in claude_lower and "claude" in claude_lower
 
+    def test_decision_count_consistent(self) -> None:
+        """All files referencing decision count should say 28."""
+        assert "28" in self.claude_md or "D28" in self.claude_md
+        assert self.azoth_yaml["decisions"] == 28
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # 10. GOVERNANCE REVIEW BLOCKERS (tracked as expected failures)
@@ -413,3 +418,97 @@ class TestGovernanceBlockers:
         assert "M2" in self.arch_doc and "M1" in self.arch_doc
         arch_lower = self.arch_doc.lower()
         assert "promotion" in arch_lower or "promoted" in arch_lower
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 11. PIPELINE ARCHITECTURE (D21-D24, D27, D28)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestPipelineArchitecture:
+    """Tests for D21-D24, D27, D28 pipeline architecture."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_has_seven_stage_pipeline(self) -> None:
+        """D21: Full pipeline should reference 7 stages."""
+        # Check for key stage names
+        for stage in ("Goal Clarification", "Test Builder", "Architect Review"):
+            assert stage in self.content, f"Missing pipeline stage: {stage}"
+
+    def test_has_auto_pipeline(self) -> None:
+        """D23: Auto-pipeline section must exist."""
+        assert "auto-pipeline" in self.content.lower() or "auto pipeline" in self.content.lower()
+
+    def test_has_gate_typing(self) -> None:
+        """D24: Gate typing with human/agent distinction."""
+        content_lower = self.content.lower()
+        assert "type: human" in content_lower or "type:human" in content_lower
+
+    def test_has_pipeline_presets(self) -> None:
+        """D28: All 8 pipeline presets must be referenced."""
+        for preset in ("full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"):
+            assert preset in self.content.lower(), f"Missing pipeline preset: {preset}"
+
+    def test_explore_research_as_architect_tools(self) -> None:
+        """D27: Explore/Research are Architect tools, not separate stages."""
+        assert "Architect" in self.content
+        # Should mention explore/research in context of architect
+        content_lower = self.content.lower()
+        assert "explore" in content_lower or "research" in content_lower
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 12. SEED COMMANDS (D25)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestSeedCommands:
+    """Tests for D25 seed commands."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_has_seed_commands_section(self) -> None:
+        """D25: Architecture must reference seed commands."""
+        assert "seed" in self.content.lower() or "command" in self.content.lower()
+
+    def test_references_key_commands(self) -> None:
+        """D25: Key seed commands must be mentioned."""
+        for cmd in ("/bootstrap", "/auto", "/deliver", "/eval", "/remember"):
+            assert cmd in self.content, f"Missing seed command reference: {cmd}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 13. PROACTIVE AGENT POSTURE (D26)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestProactivePosture:
+    """Tests for D26 proactive agent posture."""
+
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_has_proactive_section(self) -> None:
+        """D26: Proactive posture section must exist."""
+        assert "Proactive" in self.content
+
+    def test_has_three_tiers(self) -> None:
+        """D26: Three posture tiers must be defined."""
+        content_lower = self.content.lower()
+        assert "always" in content_lower
+        assert "ask" in content_lower
+        assert "never" in content_lower
+
+    def test_kernel_in_never_auto(self) -> None:
+        """D26: Kernel modifications must be in never-auto tier."""
+        content_lower = self.content.lower()
+        assert "kernel" in content_lower

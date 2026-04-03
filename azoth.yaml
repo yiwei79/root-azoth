@@ -9,7 +9,7 @@ description: The Universal Agentic Toolkit
 phase: 1  # Kernel Extraction
 
 # Architecture decisions count
-decisions: 20
+decisions: 28
 
 # Layer status
 layers:
@@ -43,3 +43,14 @@ sync:
   source: null
   last_sync: null
   sanitize_config: sync-config.yaml
+
+# Pipeline presets
+pipeline_presets:
+  - full
+  - deliver
+  - hotfix
+  - docs
+  - research
+  - review
+  - refactor
+  - auto  # default
