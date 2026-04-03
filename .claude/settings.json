@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "List",
+      "WebFetch",
+      "WebSearch",
+      "Task"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force)",
+      "Bash(git reset --hard HEAD~)",
+      "Bash(pip install)*without*requirements"
+    ]
+  },
+  "env": {
+    "AZOTH_VERSION": "0.1.0-dev",
+    "AZOTH_PHASE": "1"
+  }
+}

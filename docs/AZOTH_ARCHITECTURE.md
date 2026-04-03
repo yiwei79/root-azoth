@@ -1,0 +1,518 @@
+# AZOTH Architecture Plan v0.1.0
+
+> Finalized: 2026-04-03 | Session: SupplyGrowth Architect Session
+> Status: APPROVED — ready for Phase 1 implementation
+
+---
+
+## 1. Problem Statement
+
+Extract proven governance patterns, bootloader philosophy, and self-improvement
+loops from a production agentic framework into a standalone, portable,
+"drop-and-start" personal toolkit that:
+
+- Works natively with Claude Code (primary) and is compatible with OpenCode + GitHub Copilot
+- Embodies "be water" philosophy: minimal invariant kernel → emergent structure
+- Enables trusted autonomous agent swarms with single human alignment point
+- Self-improves from experience (L1 → L2 → L3 maturity ladder)
+- Installs in under 2 minutes into any repo
+- Meta-recursive: can build, improve, and compose coded agent swarms
+- Sync-extractable: ongoing pattern absorption from source framework
+
+## 2. Name: Azoth
+
+In alchemy, Azoth is the universal solvent — it dissolves into anything and
+transforms what it touches. The word encodes A-to-Z (beginning and end, the
+complete essence). Paracelsus called it the "animating spirit."
+
+| Philosophy | Metaphor |
+|---|---|
+| Be water | Universal solvent — takes shape of any container |
+| Drop and start | Dissolves into any repo, catalyzes transformation |
+| Secret sauce | The alchemist's personal formula |
+| Mutatable | Transforms everything it touches |
+| Signature | An alchemist's mark — personal, recognizable |
+
+---
+
+## 3. Architecture: The Water Molecule Model
+
+### Design Principle
+
+"Be water" requires TWO things: shapelessness (no rigid structure) AND cohesion
+(water molecules hold together). The toolkit needs:
+1. A **kernel** so small it cannot drift (the molecule)
+2. **Emergence protocols** that grow structure from goals (the flow)
+3. **Entropy bounds** that prevent structure from calcifying (the cycle)
+
+### Four-Layer Model
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Layer 3: CURRENT (Orchestration & Delivery)             │
+│ Pipeline definitions, swarm coordination, delivery      │
+│ flows. Fully emergent — created per-goal, dissolved     │
+│ after delivery.                                         │
+├─────────────────────────────────────────────────────────┤
+│ Layer 2: WAVE (Agents & Capabilities)                   │
+│ Agent archetypes, skills, domain-specific agents.       │
+│ Semi-stable — emerge from goals, persist if proven,     │
+│ dissolve if unused.                                     │
+├─────────────────────────────────────────────────────────┤
+│ Layer 1: MINERAL (Portable Knowledge & Tools)           │
+│ Core skills, episodic memory, prompt library,           │
+│ evaluation rubrics. Stable but refinable —              │
+│ improved via L1-L2 self-improvement loops.              │
+├─────────────────────────────────────────────────────────┤
+│ Layer 0: MOLECULE (Invariant Kernel)                    │
+│ CLAUDE.md template, bootloader, governance kernel,      │
+│ trust contract, promotion rubric. IMMUTABLE —           │
+│ changes only via human-approved promotion.              │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Layer 0: The Molecule (Invariant Kernel)
+
+The absolute minimum that makes Azoth Azoth. ~10 files, ~2000 lines total.
+
+| File | Purpose | Size Target |
+|------|---------|-------------|
+| `CLAUDE.md` (template) | Single source of truth for consumer projects | ~100 lines |
+| `azoth.yaml` | Toolkit manifest: version, state, installed layers | ~30 lines |
+| `kernel/BOOTLOADER.md` | Boot sequence: Activate → Survey → Operate → Harden | ~100 lines |
+| `kernel/PROMOTION_RUBRIC.md` | 4-question decision tree for pattern placement | ~120 lines |
+| `kernel/TRUST_CONTRACT.md` | Entropy bounds, alignment protocol, HITL gates | ~200 lines |
+| `kernel/GOVERNANCE.md` | Append-only memory rules, drift detection contract | ~100 lines |
+
+### Trust Contract
+
+The formal contract that enables "walk away without anxiety":
+
+1. **Entropy Ceiling**: Every agent action has a bounded blast radius
+   - File changes: max N files per turn without human approval
+   - Governance files: NEVER without human approval
+   - New dependencies: NEVER without human approval
+
+2. **Alignment Protocol**: PULL-based (human checks when ready)
+   - Agent completes turn → produces alignment summary
+   - Human reviews summary (phone-friendly: <500 words)
+   - Human sends alignment signal: ✅ continue / 🔄 adjust / ⛔ stop
+
+3. **Drift Detection**: Automatic entropy measurement
+   - Session start: validate kernel integrity (checksums)
+   - Session end: measure delta from approved state
+   - If drift > threshold: block next action, require alignment
+
+4. **Recovery Protocol**: Git-based checkpoints
+   - Auto-snapshot before risky operations
+   - Rollback to last approved state on failure
+
+5. **Sustainable Velocity Principle**
+   - Optimizes for SUSTAINED quality delivery over time, not sprint speed
+   - "Fast but wrong" creates negative compounding
+
+---
+
+## 5. Layer 1: Minerals (Portable Knowledge)
+
+### Core Skills (8 total)
+
+**Extracted from source framework (5):**
+
+| Skill | Purpose |
+|-------|---------|
+| `context-map` | Map blast radius before action |
+| `structured-autonomy-plan` | Convert goals to actionable plans |
+| `agentic-eval` | Quality gate (coverage, correctness, risk) |
+| `remember` | Capture durable lessons |
+| `prompt-engineer` | Shape prompts and instructions |
+
+**New for Azoth (3):**
+
+| Skill | Purpose |
+|-------|---------|
+| `entropy-guard` | Monitor and bound session entropy |
+| `alignment-sync` | Generate phone-friendly alignment summaries |
+| `self-improve` | L1-L2 reflexion and prompt refinement loop |
+
+### Memory System (3-Layer, Auto-Improving)
+
+```
+M3: EPISODIC ── .azoth/memory/episodes.jsonl
+    What happened, when, what worked/failed
+    Append-only, auto-classified, decays unless reinforced
+
+M2: SEMANTIC ── .azoth/memory/patterns.yaml
+    Proven patterns, preferences, project facts
+    Promoted from M3 via rubric, human-approved
+
+M1: PROCEDURAL ── kernel/ + skills/ + agents/
+    How to do things — encoded in instructions, agents, skills
+    Promoted from M2 via governance
+```
+
+**Auto-improvement loop:**
+
+```
+Work → Episode (M3) → Auto-classify → Propose promotion → Human approves
+→ Pattern (M2) → Prove durability → Promote → Instruction/Skill (M1)
+→ Prompt Engineer auto-refines M1 content (L2 improvement)
+```
+
+### Instruction Library
+
+| Instruction | Scope |
+|-------------|-------|
+| `agent-safety` | Governance guardrails |
+| `bootloader-workflow` | Boot sequence |
+| `context-engineering` | Copilot optimization |
+| `spec-driven-workflow` | 6-phase ANALYZE→HANDOFF loop |
+| `memory-bank` | 7-file memory architecture |
+
+---
+
+## 6. Layer 2: Waves (Emergent Agents)
+
+### Agent Catalog (10 archetypes, 4 tiers)
+
+**Tier 1: Core Pipeline**
+
+| Archetype | Role |
+|-----------|------|
+| `Architect` | Design, constraints, alignment, pipeline orchestration |
+| `Planner` | Task decomposition, sequencing, test strategy |
+| `Builder` | Implementation, testing, code changes |
+| `Reviewer` | Quality, governance, safety critique |
+
+**Tier 2: Research**
+
+| Archetype | Role |
+|-----------|------|
+| `Researcher` | Multi-source research with citations |
+| `Research Orchestrator` | Coordinates research swarm |
+
+**Tier 3: Self-Improvement (Meta-Recursive)**
+
+| Archetype | Role |
+|-----------|------|
+| `Prompt Engineer` | Auto-refine prompts, instructions, rubrics |
+| `Evaluator` | Quality gates, scoring |
+| `Agent Crafter` | META: Builds/improves other agents (L3) |
+
+**Tier 4: Utility**
+
+| Archetype | Role |
+|-----------|------|
+| `Context Architect` | Maps dependencies, blast radius |
+
+### The Meta-Recursive Pattern (Agent Crafter)
+
+```
+Goal → Architect decides agent needed → Agent Crafter designs agent
+→ Evaluator scores → Prompt Engineer refines → Agent Crafter updates
+→ Human approves → Agent becomes permanent
+
+Meta-level: Agent Crafter improves itself (with human approval)
+Entropy guard prevents unbounded self-modification
+```
+
+### Coded Agent Scaffold
+
+```
+scaffold/
+  coded-agent/          # Single agent template
+    __init__.py, config.py, llm_client.py, models.py,
+    pipeline.py, prompts.py, cli.py, requirements.txt
+  coded-swarm/          # Multi-agent swarm template
+    orchestrator.py, worker.py, aggregator.py
+```
+
+---
+
+## 7. Layer 3: Currents (Orchestration)
+
+### Pipeline Format: YAML-Declarative
+
+YAML defines deterministic structure. Markdown defines flexible content.
+
+```yaml
+# Example: delivery pipeline
+name: standard-delivery
+stages:
+  - agent: architect
+    gate: human-alignment
+  - agent: planner
+    gate: architect-review
+  - agent: builder
+    gate: auto-test
+  - agent: reviewer
+    gate: architect-synthesis
+output: alignment-summary
+```
+
+### Swarm Patterns
+
+| Pattern | When | Trust Level |
+|---------|------|-------------|
+| Sequential pipeline | Default — most predictable | High |
+| Parallel exploration | Research, codebase analysis | Medium |
+| Evaluator-optimizer | Quality-critical generation | High |
+| Orchestrator-workers | Complex multi-file changes | Medium |
+
+---
+
+## 8. Platform Compatibility
+
+### Universal Instruction File
+
+```
+CLAUDE.md (universal)
+    ├── Claude Code ──── primary, full features
+    ├── OpenCode ─────── reads CLAUDE.md natively (free compatibility)
+    └── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+```
+
+### Platform Adapter Pattern
+
+The installer generates platform-specific files at init time.
+Azoth's kernel stays platform-agnostic.
+
+```
+azoth init
+  ├─ ALWAYS: CLAUDE.md, kernel/, skills/, .azoth/
+  ├─ Claude Code detected? → .claude/ (commands, agents, settings)
+  ├─ OpenCode detected?    → .opencode/ (agent, command, config)
+  └─ Copilot detected?     → .github/ (agents, prompts, instructions)
+```
+
+### Compatibility Matrix
+
+| Component | Claude Code | OpenCode | Copilot |
+|-----------|-------------|----------|---------|
+| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .claude/skills/ | ✅ .github/skills/ |
+| Agents | .claude/agents/ | .opencode/agent/ | .github/agents/ |
+| Commands | .claude/commands/ | .opencode/command/ | .github/prompts/ |
+| Config | .claude/settings.json | opencode.jsonc | VS Code settings |
+| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited |
+| MCP | .mcp.json | opencode.jsonc mcp key | VS Code MCP |
+
+---
+
+## 9. Observability & Trust Enforcement
+
+### Session Telemetry
+
+```jsonl
+{"session_id":"uuid","turn":3,"agent":"builder","tool":"edit","target":"src/main.py","outcome":"success","files_changed":1,"entropy_delta":0.1,"timestamp":"2026-04-03T19:00:00Z"}
+```
+
+Stored in `.azoth/telemetry/session-log.jsonl` (gitignored).
+
+### Error Recovery: Git-Based Checkpoints
+
+```bash
+# Before risky operations:
+git stash push -m "azoth-checkpoint-$(date +%s)"
+# OR
+git tag azoth/checkpoint/$(date +%s)
+
+# On failure:
+git stash pop  # Restore to checkpoint
+```
+
+---
+
+## 10. Distribution & Installation
+
+### Primary: Git Clone + Installer
+
+```bash
+git clone https://github.com/[user]/azoth.git ~/.azoth
+cd my-project && ~/.azoth/install.sh
+```
+
+### What `azoth init` Does
+
+1. Detect platform (Claude Code / OpenCode / Copilot / multiple)
+2. Detect existing project structure
+3. Generate CLAUDE.md (adapted to project)
+4. Deploy kernel files
+5. Install skills to platform-appropriate directory
+6. Deploy agent archetypes (T1 always, T2-4 on demand)
+7. Generate platform-specific commands/agents
+8. Set up permissions (settings.json / opencode.jsonc)
+9. Initialize memory store (.azoth/memory/)
+10. Run first boot sequence (Survey phase)
+11. Print alignment summary
+
+### Interactive Onboarding (Consumer Projects)
+
+```
+╔══════════════════════════════════════════════════╗
+║           🧪 AZOTH — Project Setup              ║
+╠══════════════════════════════════════════════════╣
+║  Detected:                                       ║
+║  • Platform: Claude Code + GitHub Copilot        ║
+║  • Language: Python                              ║
+║                                                  ║
+║  Choose your setup:                              ║
+║  [1] Minimal — Kernel only (bootloader + trust)  ║
+║  [2] Standard — Kernel + core skills + agents    ║
+║  [3] Full — Everything + research + meta agents  ║
+╚══════════════════════════════════════════════════╝
+```
+
+---
+
+## 11. Sync Extraction Mechanism
+
+### `azoth sync --source <path>`
+
+```
+Phase 1: SCAN    → Read source framework, build inventory with hashes
+Phase 2: DIFF    → Compare against Azoth's current state
+Phase 3: PROPOSE → Apply Promotion Rubric to each delta
+Phase 4: ALIGN   → Human approves/rejects each pattern
+Phase 5: SANITIZE → Strip org-specific references
+```
+
+### Sanitization Rules (sync-config.yaml)
+
+```yaml
+sanitize:
+  strip_patterns: ["OrgName", "InternalProject", "internal-url.com"]
+  strip_paths: ["Projects/", "workspace/SESSION_MEMORY.md"]
+```
+
+---
+
+## 12. Self-Improvement Roadmap
+
+| Level | Mechanism | Timeline | Human Gate |
+|-------|-----------|----------|------------|
+| L1 | In-context learning (reflexion, eval, remember) | Day 1 | Per-session |
+| L2 | Prompt optimization (auto-refine from evidence) | Month 1-2 | Per-batch |
+| L3 | Human-gated architecture search (Agent Crafter) | Month 3+ | Per-proposal |
+
+---
+
+## 13. Repository Structure
+
+```
+azoth/
+├── CLAUDE.md                     # Azoth development instructions
+├── LICENSE                       # MIT
+├── azoth.yaml                    # Toolkit manifest
+├── install.sh                    # macOS/Linux installer
+├── install.ps1                   # Windows installer
+│
+├── kernel/                       # Layer 0: MOLECULE
+│   ├── BOOTLOADER.md
+│   ├── TRUST_CONTRACT.md
+│   ├── GOVERNANCE.md
+│   ├── PROMOTION_RUBRIC.md
+│   └── templates/
+│       ├── CLAUDE.md.template
+│       ├── settings.json.template
+│       ├── copilot-instructions.md.template
+│       ├── bootloader-state.md.template
+│       └── platform-adapters/
+│           ├── claude/
+│           ├── opencode/
+│           └── copilot/
+│
+├── skills/                       # Layer 1: MINERAL
+│   ├── context-map/SKILL.md
+│   ├── structured-autonomy-plan/SKILL.md
+│   ├── agentic-eval/SKILL.md
+│   ├── remember/SKILL.md
+│   ├── prompt-engineer/SKILL.md
+│   ├── entropy-guard/SKILL.md
+│   ├── alignment-sync/SKILL.md
+│   └── self-improve/SKILL.md
+│
+├── agents/                       # Layer 2: WAVE
+│   ├── tier1-core/
+│   ├── tier2-research/
+│   ├── tier3-meta/
+│   └── tier4-utility/
+│
+├── instructions/                 # Portable instruction library
+├── commands/                     # Dual-write command templates
+│   ├── claude/
+│   └── copilot/
+├── pipelines/                    # Layer 3: CURRENT
+├── scaffold/                     # Coded agent templates
+│   ├── coded-agent/
+│   └── coded-swarm/
+├── hooks/                        # Claude Code hooks
+├── scripts/                      # Automation (sync, validate)
+├── tests/                        # Drift detection, integrity
+├── docs/                         # Architecture, ADRs
+│
+├── .claude/                      # Meta-dev: Claude Code config
+│   ├── commands/
+│   └── settings.json
+├── .github/                      # Meta-dev: Copilot config
+│   └── AGENTIC_BOOTLOADER.md
+└── .azoth/                       # Runtime state (gitignored)
+    ├── memory/
+    ├── telemetry/
+    └── sync-log.jsonl
+```
+
+---
+
+## 14. Architecture Decisions Log
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| D1 | Name: Azoth | Universal solvent metaphor, CLI ergonomics |
+| D2 | Kernel: 10 files / 2000 LOC cap | Small enough to never drift |
+| D3 | Trust Contract: entropy ceiling | Enables anxiety-free autonomy |
+| D4 | Repo: isolated from org repos | No org contamination |
+| D5 | Distribution: git clone + installer | Simple, v1 appropriate |
+| D6 | Pipelines: YAML-declarative | Deterministic structure + flexible content |
+| D7 | Agents: 10 archetypes, 4 tiers | Core + Research + Meta + Utility |
+| D8 | Coded scaffold: included | Meta-recursive requires it |
+| D9 | Sync extraction: Python script | Ongoing pattern absorption |
+| D10 | Session scope: Phase 1 + Sync per session | Quality over quantity |
+| D11 | Memory: 3-layer auto-improving | M3 episodic → M2 semantic → M1 procedural |
+| D12 | Claude Code Extension: full compat | Dual-path deployment |
+| D13 | Skills: shared between platforms | SKILL.md is universal format |
+| D14 | Observability: session telemetry | Trust Contract enforcement |
+| D15 | Rollback: git-based checkpoints | Simple, portable, understood |
+| D16 | README: Phase 4 deliverable | Not Day 0 |
+| D17 | Pipeline schema: Phase 3 deliverable | Not Day 0 |
+| D18 | OpenCode: compatible via CLAUDE.md | Reads it natively, free |
+| D19 | Platform adapter pattern | Complexity in installer, not kernel |
+| D20 | No multi-platform layers in kernel | Kernel stays agnostic |
+
+---
+
+## 15. v0.1.0 Release Criteria
+
+- [ ] Kernel passes integrity tests
+- [ ] `azoth init` works on macOS + Windows
+- [ ] All 8 skills functional
+- [ ] 4 core pipeline agents (T1) working end-to-end
+- [ ] Memory system captures and promotes episodes
+- [ ] Trust Contract enforceable (telemetry + checkpoints)
+- [ ] At least 1 consumer project successfully deployed
+
+---
+
+## 16. Development Phases
+
+| Phase | Scope | Deliverables |
+|-------|-------|-------------|
+| **1** | Kernel Extraction | 4 kernel docs, templates, platform adapters, installer |
+| **1.5** | Sync Infrastructure | azoth-sync.py, sync-config.yaml, /sync command |
+| **2** | Core Skills | 5 extracted + 3 new skills, drift tests |
+| **3** | Agent Archetypes | 10 agents, pipeline schema, dual-format |
+| **4** | Distribution | README, `azoth init` onboarding, CI, publish |
+| **5** | Trust Layer | Hooks, telemetry, checkpoints, phone-friendly output |
+| **6** | Meta-Recursive | Agent Crafter, L2 optimization, L3 proposals |

@@ -1,0 +1,45 @@
+# Azoth Toolkit Manifest
+# This file tracks the toolkit's state and installed components.
+
+name: azoth
+version: 0.1.0-dev
+description: The Universal Agentic Toolkit
+
+# Current development phase
+phase: 1  # Kernel Extraction
+
+# Architecture decisions count
+decisions: 20
+
+# Layer status
+layers:
+  molecule:  # Layer 0: Kernel
+    status: building
+    files: 0  # Target: ~10
+  mineral:   # Layer 1: Skills
+    status: planned
+    skills: 0  # Target: 8
+  wave:      # Layer 2: Agents
+    status: planned
+    agents: 0  # Target: 10
+  current:   # Layer 3: Pipelines
+    status: planned
+    pipelines: 0  # Target: 3
+
+# Memory system
+memory:
+  episodes: 0
+  patterns: 0
+  last_sync: null
+
+# Platform compatibility
+platforms:
+  claude_code: primary
+  opencode: compatible  # Reads CLAUDE.md natively
+  copilot: adapter      # Via .github/ files
+
+# Sync source (set when configured)
+sync:
+  source: null
+  last_sync: null
+  sanitize_config: sync-config.yaml
