@@ -466,7 +466,22 @@ azoth/
 
 ---
 
-## 14. Architecture Decisions Log
+## 14. Risks & Mitigations
+
+| Risk | Impact | Severity | Mitigation |
+|------|--------|----------|------------|
+| Kernel bloat beyond 2K LOC | Loses "be water" cohesion | High | Hard cap: 10 kernel files, 2000 LOC (D2) |
+| Platform drift (Claude Code ↔ Copilot ↔ OpenCode) | Inconsistent behavior | Medium | Dual-write pattern, adapter templates (D19) |
+| Sync leaks org-specific content | Privacy / IP violation | High | Sanitization script with explicit strip patterns (D9) |
+| Meta-recursive loop diverges | Unbounded self-modification | Medium | Evaluator scoring + human gate + recursion depth=1 |
+| Trust enforcement deferred to Phase 5 | Phases 1-4 built without enforcement | High | Move minimum viable trust (kernel checksums) to Phase 1 |
+| Premature L3 self-modification | Architecture drift without guardrails | Medium | Human gate on ALL kernel changes, no agent self-approval |
+| Installation complexity | Adoption barrier | Low | Single-command installer, sensible defaults |
+| Platform adapter drift after init | Generated files diverge from templates | Medium | Manifest-based reconciliation (`azoth doctor`, Phase 4) |
+
+---
+
+## 15. Architecture Decisions Log
 
 | # | Decision | Rationale |
 |---|----------|-----------|

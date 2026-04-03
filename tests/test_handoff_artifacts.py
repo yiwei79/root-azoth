@@ -1,0 +1,415 @@
+"""Azoth v0.1.0 Handoff Artifact Validation Tests.
+
+Post-build TDD: validates the 7 handoff artifacts against
+the architecture spec (docs/AZOTH_ARCHITECTURE.md).
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+import yaml
+
+AZOTH_ROOT = Path(__file__).resolve().parent.parent
+
+
+# ── Fixture: load architecture doc once ──────────────────────────────
+
+
+@pytest.fixture(scope="session")
+def arch_doc() -> str:
+    path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
+    return path.read_text(encoding="utf-8")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 1. FILE EXISTENCE — all 7 handoff artifacts must exist
+# ═══════════════════════════════════════════════════════════════════════
+
+
+REQUIRED_FILES = [
+    "CLAUDE.md",
+    "docs/AZOTH_ARCHITECTURE.md",
+    ".claude/settings.json",
+    ".claude/commands/bootstrap.md",
+    ".github/AGENTIC_BOOTLOADER.md",
+    "azoth.yaml",
+    ".gitignore",
+]
+
+
+@pytest.mark.parametrize("relpath", REQUIRED_FILES)
+def test_handoff_file_exists(relpath: str) -> None:
+    path = AZOTH_ROOT / relpath
+    assert path.exists(), f"Missing handoff artifact: {relpath}"
+    assert path.stat().st_size > 0, f"Empty handoff artifact: {relpath}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2. YAML VALIDITY — azoth.yaml must parse and contain required keys
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestAzothYaml:
+    @pytest.fixture(autouse=True)
+    def load_yaml(self) -> None:
+        path = AZOTH_ROOT / "azoth.yaml"
+        self.data = yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    def test_parses_as_dict(self) -> None:
+        assert isinstance(self.data, dict)
+
+    def test_has_name(self) -> None:
+        assert self.data.get("name") == "azoth"
+
+    def test_has_version(self) -> None:
+        assert "version" in self.data
+        assert "0.1.0" in str(self.data["version"])
+
+    def test_has_layers(self) -> None:
+        layers = self.data.get("layers", {})
+        for layer_name in ("molecule", "mineral", "wave", "current"):
+            assert layer_name in layers, f"Missing layer: {layer_name}"
+            assert "status" in layers[layer_name], f"Layer {layer_name} missing status"
+
+    def test_molecule_is_building(self) -> None:
+        assert self.data["layers"]["molecule"]["status"] == "building"
+
+    def test_has_platforms(self) -> None:
+        platforms = self.data.get("platforms", {})
+        assert platforms.get("claude_code") == "primary"
+
+    def test_has_memory_section(self) -> None:
+        assert "memory" in self.data
+
+    def test_has_sync_section(self) -> None:
+        assert "sync" in self.data
+        assert "sanitize_config" in self.data["sync"]
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 3. JSON VALIDITY — settings.json must parse and have permissions
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestSettingsJson:
+    @pytest.fixture(autouse=True)
+    def load_json(self) -> None:
+        path = AZOTH_ROOT / ".claude" / "settings.json"
+        self.data = json.loads(path.read_text(encoding="utf-8"))
+
+    def test_parses_as_dict(self) -> None:
+        assert isinstance(self.data, dict)
+
+    def test_has_permissions(self) -> None:
+        assert "permissions" in self.data
+        perms = self.data["permissions"]
+        assert "allow" in perms
+        assert "deny" in perms
+
+    def test_allow_list_nonempty(self) -> None:
+        assert len(self.data["permissions"]["allow"]) >= 3
+
+    def test_deny_list_nonempty(self) -> None:
+        assert len(self.data["permissions"]["deny"]) >= 1
+
+    def test_read_in_allow(self) -> None:
+        assert "Read" in self.data["permissions"]["allow"]
+
+    def test_destructive_in_deny(self) -> None:
+        deny = self.data["permissions"]["deny"]
+        deny_str = " ".join(deny)
+        assert "rm -rf" in deny_str or "force" in deny_str
+
+    # ── Governance Review B1: kernel protection ──
+    def test_kernel_protection_in_deny(self) -> None:
+        """B1 RESOLVED: settings.json must deny writes to kernel/."""
+        deny = self.data["permissions"]["deny"]
+        deny_str = " ".join(deny).lower()
+        assert "kernel" in deny_str, (
+            "GOVERNANCE B1: settings.json has NO deny rules for kernel/ files. "
+            "Agent can freely modify the immutable kernel."
+        )
+
+    def test_self_protection_in_deny(self) -> None:
+        """B1 RESOLVED: settings.json must deny edits to itself."""
+        deny = self.data["permissions"]["deny"]
+        deny_str = " ".join(deny).lower()
+        assert "settings.json" in deny_str, (
+            "GOVERNANCE B1: settings.json has no self-protection rule. "
+            "Agent could relax permissions by editing this file."
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 4. CLAUDE.md CONTENT — must contain required sections
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestClaudeMd:
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        self.content = (AZOTH_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+
+    def test_has_title(self) -> None:
+        assert "AZOTH" in self.content.upper()
+
+    def test_has_project_routing(self) -> None:
+        assert "Project Routing" in self.content or "Routing" in self.content
+
+    def test_has_architecture_reference(self) -> None:
+        assert "AZOTH_ARCHITECTURE.md" in self.content
+
+    def test_has_water_molecule_model(self) -> None:
+        assert "MOLECULE" in self.content.upper()
+        assert "MINERAL" in self.content.upper()
+        assert "WAVE" in self.content.upper()
+        assert "CURRENT" in self.content.upper()
+
+    def test_has_memory_system(self) -> None:
+        assert "M3" in self.content or "EPISODIC" in self.content.upper()
+        assert "M2" in self.content or "SEMANTIC" in self.content.upper()
+        assert "M1" in self.content or "PROCEDURAL" in self.content.upper()
+
+    def test_has_kernel_immutability_rule(self) -> None:
+        content_lower = self.content.lower()
+        assert "kernel" in content_lower and (
+            "immutab" in content_lower or "human-approved" in content_lower
+        ), "CLAUDE.md must state kernel immutability rule"
+
+    def test_has_phase_roadmap(self) -> None:
+        assert "Phase 1" in self.content
+        assert "Phase 2" in self.content
+
+    def test_has_coding_standards(self) -> None:
+        assert "pytest" in self.content.lower() or "ruff" in self.content.lower()
+
+    def test_cross_platform_requirement(self) -> None:
+        assert "pathlib" in self.content.lower()
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 5. ARCHITECTURE DOC — all 20 decisions present
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestArchitectureDoc:
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_has_all_20_decisions(self) -> None:
+        """Architecture must contain all 20 architecture decisions."""
+        for i in range(1, 21):
+            assert f"D{i}" in self.content, f"Missing architecture decision D{i}"
+
+    def test_has_four_layer_model(self) -> None:
+        for layer in ("Layer 0", "Layer 1", "Layer 2", "Layer 3"):
+            assert layer in self.content, f"Missing {layer} in architecture doc"
+
+    def test_has_trust_contract_section(self) -> None:
+        assert "Trust Contract" in self.content
+
+    def test_has_memory_system_section(self) -> None:
+        assert "Memory" in self.content
+        assert "M3" in self.content or "Episodic" in self.content
+        assert "M2" in self.content or "Semantic" in self.content
+        assert "M1" in self.content or "Procedural" in self.content
+
+    def test_has_agent_catalog(self) -> None:
+        for agent in ("Architect", "Planner", "Builder", "Reviewer"):
+            assert agent in self.content, f"Missing core agent: {agent}"
+
+    def test_has_sync_section(self) -> None:
+        assert "Sync" in self.content
+        assert "SANITIZE" in self.content.upper() or "sanitize" in self.content
+
+    def test_has_platform_section(self) -> None:
+        assert "Claude Code" in self.content
+        assert "OpenCode" in self.content or "Copilot" in self.content
+
+    def test_has_risk_table(self) -> None:
+        assert "Risk" in self.content
+        assert "Mitigation" in self.content
+
+    def test_has_repo_structure(self) -> None:
+        assert "kernel/" in self.content
+        assert "skills/" in self.content
+        assert "agents/" in self.content
+        assert "pipelines/" in self.content
+
+    def test_no_org_specific_content(self) -> None:
+        """Architecture doc must not contain org-specific references."""
+        for org_ref in ("Glovo", "SupplyOps", "dhub-glovo", "fulfillment-dwh"):
+            assert org_ref not in self.content, (
+                f"Architecture doc contains org-specific reference: '{org_ref}'"
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 6. BOOTSTRAP COMMAND — proper frontmatter and structure
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestBootstrapCommand:
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / ".claude" / "commands" / "bootstrap.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_has_yaml_frontmatter(self) -> None:
+        assert self.content.startswith("---"), "Bootstrap must have YAML frontmatter"
+        end = self.content.index("---", 3)
+        assert end > 3, "Frontmatter must have closing ---"
+
+    def test_frontmatter_has_description(self) -> None:
+        end = self.content.index("---", 3)
+        frontmatter = yaml.safe_load(self.content[3:end])
+        assert "description" in frontmatter
+
+    def test_has_pre_flight(self) -> None:
+        assert "Pre-Flight" in self.content or "pre-flight" in self.content.lower()
+
+    def test_references_architecture_doc(self) -> None:
+        assert "AZOTH_ARCHITECTURE.md" in self.content
+
+    def test_has_phase_1_steps(self) -> None:
+        assert "Step 1" in self.content or "1.1" in self.content
+
+    def test_has_human_alignment_checks(self) -> None:
+        content_lower = self.content.lower()
+        assert "alignment" in content_lower or "human" in content_lower
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 7. BOOTLOADER STATE — tracks artifacts correctly
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestBootloaderState:
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        path = AZOTH_ROOT / ".github" / "AGENTIC_BOOTLOADER.md"
+        self.content = path.read_text(encoding="utf-8")
+
+    def test_tracks_created_artifacts(self) -> None:
+        assert "✅" in self.content, "Should track completed artifacts with ✅"
+
+    def test_tracks_pending_artifacts(self) -> None:
+        assert "⬜" in self.content, "Should track pending artifacts with ⬜"
+
+    def test_has_risk_section(self) -> None:
+        assert "Risk" in self.content
+
+    def test_references_kernel_files(self) -> None:
+        for kernel_file in ("BOOTLOADER.md", "TRUST_CONTRACT.md", "GOVERNANCE.md"):
+            assert kernel_file in self.content, (
+                f"Missing kernel file reference: {kernel_file}"
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 8. GITIGNORE — excludes runtime state
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestGitignore:
+    @pytest.fixture(autouse=True)
+    def load_content(self) -> None:
+        self.content = (AZOTH_ROOT / ".gitignore").read_text(encoding="utf-8")
+
+    def test_excludes_memory(self) -> None:
+        assert "memory" in self.content.lower() or ".azoth" in self.content
+
+    def test_excludes_telemetry(self) -> None:
+        assert "telemetry" in self.content.lower()
+
+    def test_excludes_python_artifacts(self) -> None:
+        assert "__pycache__" in self.content or ".pyc" in self.content
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 9. CROSS-ARTIFACT CONSISTENCY
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestCrossArtifactConsistency:
+    @pytest.fixture(autouse=True)
+    def load_all(self) -> None:
+        self.claude_md = (AZOTH_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(
+            encoding="utf-8"
+        )
+        self.azoth_yaml = yaml.safe_load(
+            (AZOTH_ROOT / "azoth.yaml").read_text(encoding="utf-8")
+        )
+        self.bootloader = (
+            AZOTH_ROOT / ".github" / "AGENTIC_BOOTLOADER.md"
+        ).read_text(encoding="utf-8")
+
+    def test_version_consistent(self) -> None:
+        """All files referencing version should agree."""
+        version_str = str(self.azoth_yaml["version"])
+        assert "0.1.0" in version_str
+        assert "0.1.0" in self.claude_md
+
+    def test_phase_consistent(self) -> None:
+        """All files should agree on current phase = 1."""
+        assert self.azoth_yaml["phase"] == 1
+        assert "Phase 1" in self.claude_md
+        assert "PHASE 1" in self.bootloader.upper() or "Phase 1" in self.bootloader
+
+    def test_four_layers_consistent(self) -> None:
+        """Water Molecule Model should be consistent across docs."""
+        for layer in ("MOLECULE", "MINERAL", "WAVE", "CURRENT"):
+            assert layer in self.claude_md.upper(), (
+                f"CLAUDE.md missing layer: {layer}"
+            )
+            assert layer in self.arch_doc.upper(), (
+                f"Architecture missing layer: {layer}"
+            )
+            assert layer.lower() in str(self.azoth_yaml.get("layers", {}))
+
+    def test_platform_targets_consistent(self) -> None:
+        """Platform targets should match between azoth.yaml and CLAUDE.md."""
+        assert self.azoth_yaml["platforms"]["claude_code"] == "primary"
+        assert "Claude Code" in self.claude_md
+        claude_lower = self.claude_md.lower()
+        assert "primary" in claude_lower and "claude" in claude_lower
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 10. GOVERNANCE REVIEW BLOCKERS (tracked as expected failures)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestGovernanceBlockers:
+    """Tests for issues flagged by the Governance Reviewer.
+
+    Marked xfail to document known gaps. They will PASS once
+    the blockers are addressed in Phase 1 implementation.
+    """
+
+    @pytest.fixture(autouse=True)
+    def load_all(self) -> None:
+        self.settings = json.loads(
+            (AZOTH_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
+        )
+        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(
+            encoding="utf-8"
+        )
+
+    @pytest.mark.xfail(reason="B2: kernel-integrity.py not yet created (Phase 1)")
+    def test_b2_kernel_integrity_script(self) -> None:
+        """B2: A kernel integrity validation script should exist in Phase 1."""
+        path = AZOTH_ROOT / "scripts" / "kernel-integrity.py"
+        assert path.exists(), "scripts/kernel-integrity.py not yet created"
+
+    def test_b3_m2_m1_promotion_mentioned(self) -> None:
+        """B3: Architecture must mention M2→M1 promotion gate."""
+        assert "M2" in self.arch_doc and "M1" in self.arch_doc
+        arch_lower = self.arch_doc.lower()
+        assert "promotion" in arch_lower or "promoted" in arch_lower
