@@ -98,12 +98,12 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - [x] sync-config.yaml
 - [x] .claude/commands/sync.md
 
-### Phase 2: Core Skills 🎯 CURRENT
-- [ ] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
-- [ ] 3 new skills (entropy-guard, alignment-sync, self-improve)
-- [ ] Skill drift detection tests
+### Phase 2: Core Skills ✅ COMPLETE
+- [x] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
+- [x] 3 new skills (entropy-guard, alignment-sync, self-improve)
+- [x] Skill drift detection tests
 
-### Phase 3: Agent Archetypes
+### Phase 3: Agent Archetypes 🎯 CURRENT
 - [ ] T1: architect, planner, builder, reviewer
 - [ ] T2: researcher, research-orchestrator
 - [ ] T3: prompt-engineer, evaluator, agent-crafter

@@ -4,10 +4,8 @@
 sanitize:
   # String patterns to replace with {{REDACTED}} in synced files.
   # Add your org-specific names, URLs, and identifiers here.
-  strip_patterns:
-    - "OrgName"
-    - "InternalProject"
-    - "internal-url.com"
+  strip_patterns: []
+    # Example: ["OrgName", "InternalProject", "internal-url.com"]
 
   # Path prefixes to exclude from sync entirely.
   # Files under these paths will never be proposed for sync.

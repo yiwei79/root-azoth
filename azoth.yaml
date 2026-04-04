@@ -6,7 +6,7 @@ version: 0.1.0-dev
 description: The Universal Agentic Toolkit
 
 # Current development phase
-phase: 2  # Core Skills (Phase 1 + 1.5 complete)
+phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
 decisions: 28
@@ -17,8 +17,8 @@ layers:
     status: complete
     files: 14  # 4 kernel + 4 templates + 6 adapters
   mineral:   # Layer 1: Skills
-    status: planned
-    skills: 0  # Target: 8
+    status: complete
+    skills: 8  # 5 extracted + 3 new
   wave:      # Layer 2: Agents
     status: planned
     agents: 0  # Target: 10
