@@ -35,13 +35,25 @@ SYNC_LOG = AZOTH_ROOT / ".azoth" / "sync-log.jsonl"
 
 SYNCABLE_EXTENSIONS = {".md", ".yaml", ".yml", ".json", ".py", ".txt"}
 SYNCABLE_DIRS = {"skills", "agents", "instructions", "commands", "pipelines"}
+# Directories within the source that contain agent/skill content (may be nested)
+SYNCABLE_PARENT_DIRS = {".agents", ".claude", "skills", "agents", "instructions", "commands", "pipelines"}
 
 
 # ── Phase 1: SCAN ──────────────────────────────────────────────
 
-def scan_source(source_path: Path) -> dict[str, dict[str, Any]]:
+def _is_excluded(rel_path: Path, strip_paths: list[str]) -> bool:
+    """Check if a path should be excluded based on strip_paths config."""
+    rel_str = str(rel_path)
+    return any(rel_str.startswith(excluded) for excluded in strip_paths)
+
+
+def scan_source(
+    source_path: Path,
+    strip_paths: list[str] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Build inventory of syncable files in the source framework."""
     inventory: dict[str, dict[str, Any]] = {}
+    strip_paths = strip_paths or []
 
     if not source_path.is_dir():
         print(f"[scan] ERROR: Source path does not exist: {source_path}", file=sys.stderr)
@@ -55,9 +67,13 @@ def scan_source(source_path: Path) -> dict[str, dict[str, Any]]:
 
         rel_path = filepath.relative_to(source_path)
 
-        # Only sync from known directories
+        # Exclude paths from strip_paths early (before proposing)
+        if _is_excluded(rel_path, strip_paths):
+            continue
+
+        # Only sync from known agent/skill directories
         top_dir = rel_path.parts[0] if rel_path.parts else ""
-        if top_dir not in SYNCABLE_DIRS and filepath.suffix != ".md":
+        if top_dir not in SYNCABLE_PARENT_DIRS:
             continue
 
         content = filepath.read_text(encoding="utf-8", errors="replace")
@@ -350,7 +366,7 @@ def main() -> None:
     print(f"{'=' * 60}\n")
 
     # Phase 1: SCAN
-    inventory = scan_source(source_path)
+    inventory = scan_source(source_path, strip_paths=config.get("strip_paths", []))
     if not inventory:
         print("[sync] No syncable files found. Done.")
         return
