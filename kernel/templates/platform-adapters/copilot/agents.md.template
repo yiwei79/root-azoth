@@ -1,0 +1,15 @@
+---
+name: "{{AGENT_NAME}}"
+description: "{{AGENT_DESCRIPTION}}"
+---
+
+# {{AGENT_NAME}}
+
+## Role
+{{AGENT_ROLE}}
+
+## Instructions
+
+Read and follow `CLAUDE.md` in the project root for full governance rules.
+
+{{AGENT_INSTRUCTIONS}}

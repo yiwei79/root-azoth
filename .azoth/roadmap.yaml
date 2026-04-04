@@ -1,0 +1,113 @@
+# Azoth Development Roadmap
+# Machine-readable task tracking for the self-improving bootstrap loop.
+# Agents read this during SURVEY to know what to work on next.
+
+current_phase: 3
+current_phase_title: "Agent Archetypes"
+
+# Phase summary — what's done, what's active, what's next
+phases:
+  1:
+    title: "Kernel Extraction"
+    status: complete
+    summary: "4 kernel files, 6 platform adapters, 4 templates"
+  1.5:
+    title: "Sync Infrastructure + Insight Inbox"
+    status: complete
+    summary: "azoth-sync.py, sync-config.yaml, inbox protocol (D29-D33)"
+  2:
+    title: "Skills Library"
+    status: complete
+    summary: "8 skills (5 extracted + 3 Azoth-native)"
+  3:
+    title: "Agent Archetypes"
+    status: active
+    summary: "10 agent archetypes across 4 tiers (D7)"
+    goal: "Create agent definitions for core, research, meta, and utility tiers"
+  4:
+    title: "Distribution & Product Extraction"
+    status: planned
+    summary: "Public azoth repo, installer modes, README"
+  5:
+    title: "Trust Layer Tooling"
+    status: planned
+    summary: "M3→M2 promotion automation, cross-repo memory"
+  6:
+    title: "Advanced Self-Improvement"
+    status: planned
+    summary: "L3 architecture search, Agent Crafter"
+
+# Active task backlog — ordered by priority
+# Status: pending | in_progress | blocked | complete
+tasks:
+  - id: P3-001
+    title: "Define 10 agent archetypes in agents/ directory"
+    priority: 1
+    status: pending
+    decision_ref: D7
+    description: "Create .md definitions for 10 agents across 4 tiers: Core (architect, planner, implementer, reviewer), Research (explorer, analyst), Meta (self-improver, evaluator), Utility (documenter, tester)"
+    blocked_by: null
+
+  - id: P3-002
+    title: "Create pipeline YAML schema"
+    priority: 2
+    status: pending
+    decision_ref: D6
+    description: "Define the declarative pipeline schema for Layer 3 orchestration"
+    blocked_by: null
+
+  - id: P3-003
+    title: "Implement pipeline presets as YAML files"
+    priority: 3
+    status: pending
+    decision_ref: [D28, D23]
+    description: "Create 8 pipeline preset files: full, deliver, hotfix, docs, research, review, refactor, auto"
+    blocked_by: [P3-002]
+
+  - id: P3-004
+    title: "Auto-pipeline router (LLM-as-router)"
+    priority: 4
+    status: pending
+    decision_ref: D23
+    description: "Implement the auto-detection logic that selects pipeline preset based on goal"
+    blocked_by: [P3-003]
+
+  - id: P1.5-CLEANUP
+    title: "M3 episode count sync in azoth.yaml"
+    priority: 5
+    status: pending
+    decision_ref: D11
+    description: "azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has entries. Session closeout should update the count."
+    blocked_by: null
+
+# Completed tasks (recent)
+completed:
+  - id: P1-001
+    title: "Kernel extraction from SupplyGrowth"
+    completed_date: "2026-04-04"
+    decision_ref: [D1, D2, D3, D4]
+
+  - id: P1.5-001
+    title: "Sync pipeline implementation"
+    completed_date: "2026-04-04"
+    decision_ref: D9
+
+  - id: P1.5-002
+    title: "Insight Inbox Protocol"
+    completed_date: "2026-04-04"
+    decision_ref: [D29, D30, D31, D32, D33]
+
+  - id: P1.5-003
+    title: "Root scaffold identity + product split"
+    completed_date: "2026-04-04"
+    decision_ref: [D34, D35, D36, D37, D38]
+
+  - id: P2-001
+    title: "8 kernel skills"
+    completed_date: "2026-04-04"
+    decision_ref: D13
+
+  - id: P1.5-004
+    title: "Bootstrap loop infrastructure"
+    completed_date: "2026-04-04"
+    decision_ref: [D39, D40, D41]

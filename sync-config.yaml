@@ -1,0 +1,79 @@
+# Azoth Sync Configuration
+# Sanitization rules for pattern extraction from source frameworks.
+
+sanitize:
+  # String patterns to replace with {{REDACTED}} in synced files.
+  # Add your org-specific names, URLs, and identifiers here.
+  strip_patterns:
+    - "Glovo"
+    - "SupplyGrowth"
+    - "SupplyOps"
+    - "supply-growth"
+    - "supply-ops"
+    - "dhub-glovo"
+    - "fulfillment-dwh"
+    - "glovo.com"
+    - "glovoapp"
+
+  # Path prefixes to exclude from sync entirely.
+  # Files under these paths will never be proposed for sync.
+  strip_paths:
+    - "Projects/"
+    - "workspace/SESSION_MEMORY.md"
+    - ".env"
+    - "credentials"
+    - "secrets"
+    - ".claude/commands/"
+    - ".claude/settings.json"
+
+# Directories to scan in the source framework.
+# Only files under these directories (with syncable extensions) are considered.
+scan_dirs:
+  - skills
+  - agents
+  - instructions
+  - commands
+  - pipelines
+
+# File extensions that are eligible for sync.
+scan_extensions:
+  - .md
+  - .yaml
+  - .yml
+  - .json
+  - .py
+  - .txt
+
+# ── Product Extraction Profile (D38) ──────────────────────
+# Used when extracting the public `azoth` product from this scaffold.
+# This is scaffold infrastructure — actual extraction is Phase 4.
+product_extraction:
+  target_repo: azoth
+  mode: scaffold-to-product
+
+  # Paths to EXCLUDE from the public product
+  # (scaffold-only artifacts that don't ship to consumers)
+  exclude_paths:
+    - ".azoth/inbox/"
+    - ".azoth/memory/"
+    - ".azoth/telemetry/"
+    - ".azoth/sync-log.jsonl"
+    - ".azoth/trusted-sources.yaml"
+    - ".claude/commands/"          # Scaffold dev commands, not consumer commands
+    - ".claude/settings.json"      # Scaffold dev settings
+    - ".claude/settings.local.json"
+    - ".github/"                   # Scaffold CI/CD, not consumer
+    - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
+    - "tests/"                     # Scaffold tests (product gets its own)
+    - "workspace/"
+    - "root-azoth.code-workspace"
+
+  # Files to TRANSFORM during extraction
+  # (content changes needed for consumer context)
+  transform:
+    - source: "CLAUDE.md"
+      action: "regenerate-from-template"
+      template: "kernel/templates/CLAUDE.md.template"
+    - source: "azoth.yaml"
+      action: "set-scope-mode"
+      value: "project"

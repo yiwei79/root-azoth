@@ -1,0 +1,25 @@
+# GOVERNANCE: This file is part of the Azoth trust boundary.
+# Changes require human approval. Added to drift monitoring (Section 4).
+# See kernel/GOVERNANCE.md Section 7 for intake protocol.
+
+# Trusted Source Registry
+# Each source authorized to submit insights to .azoth/inbox/
+# All sources enter through inbox only (F2b) — direct M3 writes are a governance violation.
+
+version: 1
+sources:
+  - id: supplygrowth-architect
+    name: "SupplyGrowth Agentic Framework — Architect Agent"
+    description: "Cross-project audit findings from the SupplyGrowth workspace"
+    trust_level: verified
+    require_approval: human
+    added_date: "2025-01-01"
+    added_by: human
+
+  - id: pr-code-review
+    name: "PR Code Review — Copilot Pull Request Reviewer"
+    description: "Automated code review findings from GitHub Copilot PR review"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-04"
+    added_by: human

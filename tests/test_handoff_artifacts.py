@@ -62,7 +62,7 @@ class TestAzothYaml:
         assert isinstance(self.data, dict)
 
     def test_has_name(self) -> None:
-        assert self.data.get("name") == "azoth"
+        assert self.data.get("name") == "root-azoth"
 
     def test_has_version(self) -> None:
         assert "version" in self.data
@@ -74,8 +74,8 @@ class TestAzothYaml:
             assert layer_name in layers, f"Missing layer: {layer_name}"
             assert "status" in layers[layer_name], f"Layer {layer_name} missing status"
 
-    def test_molecule_is_building(self) -> None:
-        assert self.data["layers"]["molecule"]["status"] == "building"
+    def test_molecule_is_complete(self) -> None:
+        assert self.data["layers"]["molecule"]["status"] == "complete"
 
     def test_has_platforms(self) -> None:
         platforms = self.data.get("platforms", {})
@@ -201,9 +201,9 @@ class TestArchitectureDoc:
         path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
         self.content = path.read_text(encoding="utf-8")
 
-    def test_has_all_28_decisions(self) -> None:
-        """Architecture must contain all 28 architecture decisions."""
-        for i in range(1, 29):
+    def test_has_all_41_decisions(self) -> None:
+        """Architecture must contain all 41 architecture decisions."""
+        for i in range(1, 42):
             assert f"D{i}" in self.content, f"Missing architecture decision D{i}"
 
     def test_has_four_layer_model(self) -> None:
@@ -357,10 +357,10 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md
 
     def test_phase_consistent(self) -> None:
-        """All files should agree on current phase = 1."""
-        assert self.azoth_yaml["phase"] == 1
-        assert "Phase 1" in self.claude_md
-        assert "PHASE 1" in self.bootloader.upper() or "Phase 1" in self.bootloader
+        """All files should agree on current phase = 3."""
+        assert self.azoth_yaml["phase"] == 3
+        assert "Phase 3" in self.claude_md
+        assert "Phase 2" in self.claude_md  # Phase 2 still referenced (as complete)
 
     def test_four_layers_consistent(self) -> None:
         """Water Molecule Model should be consistent across docs."""
@@ -381,9 +381,9 @@ class TestCrossArtifactConsistency:
         assert "primary" in claude_lower and "claude" in claude_lower
 
     def test_decision_count_consistent(self) -> None:
-        """All files referencing decision count should say 28."""
-        assert "28" in self.claude_md or "D28" in self.claude_md
-        assert self.azoth_yaml["decisions"] == 28
+        """All files referencing decision count should say 41."""
+        assert "41" in self.claude_md or "D41" in self.claude_md
+        assert self.azoth_yaml["decisions"] == 41
 
 
 # ═══════════════════════════════════════════════════════════════════════

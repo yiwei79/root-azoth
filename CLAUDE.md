@@ -5,9 +5,17 @@
 
 ## What Is Azoth
 
-A personal "drop-and-start" agentic toolkit for AI-assisted development.
-You clone it, run the installer, and any project gets: disciplined agents,
-auto-improving memory, trusted autonomous pipelines, and a single human
+**root-azoth** (private) is the personal root scaffold and development
+workshop for the Azoth toolkit. This repo is where the toolkit is designed,
+built, tested, and evolved. It is NOT a consumer project — it IS the source.
+
+The public deployable product **azoth** (lowercase) will be mechanically
+extracted from this scaffold via `sync-config.yaml` product extraction profiles.
+See `docs/AZOTH_ARCHITECTURE.md` Section 18 for the 3-tier model.
+
+**As a toolkit**: A personal "drop-and-start" agentic toolkit for AI-assisted
+development. You clone it, run the installer, and any project gets: disciplined
+agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
 **Version**: v0.1.0-dev (pre-release)
@@ -31,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (28 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (41 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -83,27 +91,27 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 
 ## v0.1.0 Phase Roadmap
 
-### Phase 1: Kernel Extraction 🎯 CURRENT
-- [ ] kernel/BOOTLOADER.md
-- [ ] kernel/TRUST_CONTRACT.md
-- [ ] kernel/GOVERNANCE.md
-- [ ] kernel/PROMOTION_RUBRIC.md
-- [ ] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
-- [ ] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
-- [ ] azoth.yaml manifest
-- [ ] install.sh + install.ps1
+### Phase 1: Kernel Extraction ✅ COMPLETE
+- [x] kernel/BOOTLOADER.md
+- [x] kernel/TRUST_CONTRACT.md
+- [x] kernel/GOVERNANCE.md
+- [x] kernel/PROMOTION_RUBRIC.md
+- [x] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
+- [x] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
+- [x] azoth.yaml manifest
+- [x] install.sh + install.ps1
 
-### Phase 1.5: Sync Infrastructure
-- [ ] scripts/azoth-sync.py
-- [ ] sync-config.yaml
-- [ ] .claude/commands/sync.md
+### Phase 1.5: Sync Infrastructure ✅ COMPLETE
+- [x] scripts/azoth-sync.py
+- [x] sync-config.yaml
+- [x] .claude/commands/sync.md
 
-### Phase 2: Core Skills
-- [ ] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
-- [ ] 3 new skills (entropy-guard, alignment-sync, self-improve)
-- [ ] Skill drift detection tests
+### Phase 2: Core Skills ✅ COMPLETE
+- [x] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
+- [x] 3 new skills (entropy-guard, alignment-sync, self-improve)
+- [x] Skill drift detection tests
 
-### Phase 3: Agent Archetypes
+### Phase 3: Agent Archetypes 🎯 CURRENT
 - [ ] T1: architect, planner, builder, reviewer
 - [ ] T2: researcher, research-orchestrator
 - [ ] T3: prompt-engineer, evaluator, agent-crafter

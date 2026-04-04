@@ -1,24 +1,30 @@
 # Azoth Toolkit Manifest
 # This file tracks the toolkit's state and installed components.
 
-name: azoth
+name: root-azoth
 version: 0.1.0-dev
 description: The Universal Agentic Toolkit
 
+# Root scaffold identity (D34-D38)
+scope:
+  mode: scaffold
+  product_target: azoth
+  is_development_workshop: true
+
 # Current development phase
-phase: 1  # Kernel Extraction
+phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
-decisions: 28
+decisions: 41
 
 # Layer status
 layers:
   molecule:  # Layer 0: Kernel
-    status: building
-    files: 0  # Target: ~10
+    status: complete
+    files: 14  # 4 kernel + 4 templates + 6 adapters
   mineral:   # Layer 1: Skills
-    status: planned
-    skills: 0  # Target: 8
+    status: complete
+    skills: 8  # 5 extracted + 3 new
   wave:      # Layer 2: Agents
     status: planned
     agents: 0  # Target: 10
