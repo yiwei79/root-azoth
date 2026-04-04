@@ -26,15 +26,15 @@ layers:
     status: complete
     skills: 8  # 5 extracted + 3 new
   wave:      # Layer 2: Agents
-    status: planned
-    agents: 0  # Target: 10
+    status: active
+    agents: 10  # 4 core + 2 research + 3 meta + 1 utility
   current:   # Layer 3: Pipelines
     status: planned
     pipelines: 0  # Target: 3
 
 # Memory system
 memory:
-  episodes: 0
+  episodes: 18
   patterns: 0
   last_sync: null
 

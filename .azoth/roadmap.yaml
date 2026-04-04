@@ -43,10 +43,11 @@ tasks:
   - id: P3-001
     title: "Define 10 agent archetypes in agents/ directory"
     priority: 1
-    status: pending
+    status: complete
     decision_ref: D7
     description: "Create .md definitions for 10 agents across 4 tiers: Core (architect, planner, implementer, reviewer), Research (explorer, analyst), Meta (self-improver, evaluator), Utility (documenter, tester)"
     blocked_by: null
+    completed_date: "2026-04-05"
 
   - id: P3-002
     title: "Create pipeline YAML schema"
