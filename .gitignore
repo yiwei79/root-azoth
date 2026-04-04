@@ -1,7 +1,8 @@
 # Azoth runtime state (session-specific, not version-controlled)
-.azoth/memory/
 .azoth/telemetry/
 .azoth/sync-log.jsonl
+.azoth/bootloader-state.md
+.azoth/kernel-checksums.sha256
 
 # Python
 __pycache__/

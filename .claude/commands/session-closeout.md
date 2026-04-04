@@ -66,6 +66,16 @@ Compress session into actionable signals.
 
 6. Update `.azoth/bootloader-state.md` with session outcome.
 
+7. **Update Claude Code memory** (for cross-session continuity):
+   - Update the project status memory in `~/.claude/projects/.../memory/` with:
+     - What phase is current and what's next
+     - What was built/changed this session
+     - Known gaps and open decisions
+     - Any new context a future session needs
+   - Add new memories if the session revealed user preferences, feedback, or reference info
+   - This ensures the next Claude Code session has full context even before Azoth's
+     own memory system (M3 episodes) is surfaced during SURVEY phase
+
 ## Part C: Sync Changes
 
 1. Stage relevant files: `git add` (specific files, not `-A`)
