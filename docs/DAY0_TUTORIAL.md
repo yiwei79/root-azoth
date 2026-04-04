@@ -20,18 +20,24 @@
 
 ## Pre-Flight
 
-**Your repo is ready.** 4 commits on `main`, pushed to GitHub.
-Everything needed for Day 0 is already in place.
+**Your repo is ready.** This is root-azoth — your private development scaffold.
+Phases 1, 1.5, and 2 are complete. Phase 3 (Agent Archetypes) is next.
 
 ```
-AZOTH repo state:
+root-azoth repo state:
 ├── CLAUDE.md                      ← Agent reads this first (auto)
-├── docs/AZOTH_ARCHITECTURE.md     ← 28 decisions, full blueprint
-├── .claude/commands/bootstrap.md  ← The Day 0 command
+├── docs/AZOTH_ARCHITECTURE.md     ← 41 decisions, full blueprint
+├── docs/DECISIONS_INDEX.md        ← D1-D41 status tracking
+├── .claude/commands/              ← 14 commands (bootstrap, next, intake, etc.)
 ├── .claude/settings.json          ← Kernel write-protection active
-├── .github/AGENTIC_BOOTLOADER.md  ← Tracks artifact progress
-├── azoth.yaml                     ← Manifest with pipeline presets
-├── tests/                         ← 71 tests already passing
+├── .azoth/roadmap.yaml            ← Phase goals + task backlog
+├── .azoth/inbox/                  ← Governed insight intake channel
+├── .azoth/memory/                 ← M3 episodes + M2 patterns
+├── .azoth/trusted-sources.yaml    ← External source registry
+├── azoth.yaml                     ← Manifest (name: root-azoth)
+├── kernel/                        ← 4 governance files (immutable)
+├── skills/                        ← 8 kernel skills
+├── tests/                         ← 219 tests passing
 └── .gitignore                     ← Runtime state excluded
 ```
 
@@ -40,7 +46,7 @@ AZOTH repo state:
 > **This repo (root-azoth) is the root scaffold** — your private development workshop.
 > It's where you design, build, and test the toolkit. The public product (`azoth`,
 > lowercase) will be extracted from here via `sync-config.yaml` when ready.
-> Think of it as: AZOTH is the lab, azoth is the medicine.
+> Think of it as: root-azoth is the lab, azoth is the medicine.
 >
 > See `docs/AZOTH_ARCHITECTURE.md` Section 18 for the full 3-tier model.
 
@@ -48,14 +54,16 @@ AZOTH repo state:
 
 | Artifact | Status | Purpose |
 |----------|--------|---------|
-| Architecture plan (28 decisions) | ✅ Complete | Blueprint for all 6 phases |
-| 7-stage pipeline design | ✅ Designed | Full / lean / auto composition |
-| Auto-pipeline with 8 presets | ✅ Designed | Dynamic pipeline selection |
-| Proactive Agent Posture (3 tiers) | ✅ Designed | always-do / ask-first / never-auto |
-| 12 seed slash commands | ✅ Designed | Lifecycle + pipeline + quality |
+| Architecture plan (41 decisions) | ✅ Complete | Blueprint for all 6 phases |
+| Kernel (4 files, immutable) | ✅ Active | BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC |
+| 8 kernel skills | ✅ Active | context-map, agentic-eval, remember, entropy-guard, etc. |
+| 14 slash commands | ✅ Active | bootstrap, next, intake, eval, plan, session-closeout, etc. |
+| Insight Inbox Protocol (D29-D33) | ✅ Active | Governed channel for external insights |
+| Root scaffold identity (D34-D38) | ✅ Active | Private root-azoth → public azoth split |
+| Bootstrap loop (D39-D41) | ✅ Active | Roadmap + /next + preflight + decisions index |
 | Kernel write protection | ✅ Active | `settings.json` denies `Edit(kernel/**)` |
-| 71 validation tests | ✅ Passing | Architecture + governance + consistency |
-| Governance review findings | ✅ Documented | B1 fixed, B2-B3 tracked |
+| 219 validation tests | ✅ Passing | Architecture + governance + inbox + identity |
+| Development roadmap | ✅ Active | `.azoth/roadmap.yaml` — machine-readable task queue |
 
 ---
 
@@ -63,8 +71,8 @@ AZOTH repo state:
 
 ```bash
 # ── Clone ──────────────────────────────────────────────
-git clone https://github.com/yiwei79/AZOTH.git
-cd AZOTH
+git clone https://github.com/yiwei79/root-azoth.git
+cd root-azoth
 
 # ── Python environment ─────────────────────────────────
 python3 -m venv .venv
@@ -73,7 +81,7 @@ pip install pytest pyyaml ruff
 
 # ── Verify everything works ────────────────────────────
 python -m pytest tests/ -v
-# Expected: 71 passed, 1 xfail ✅
+# Expected: 219 passed, 1 xfail ✅
 
 # ── Install Claude Code (if not already) ───────────────
 npm install -g @anthropic-ai/claude-code
@@ -85,7 +93,7 @@ npm install -g @anthropic-ai/claude-code
   During Day 0 bootstrap, this won't block creation since `kernel/` doesn't exist
   yet. After bootstrap completes, the directory becomes protected automatically.
 
-- **Python version**: 3.11+ required. Verify with `python3 --version`.
+- **Python version**: 3.9+ required. Verify with `python3 --version`.
 
 - **Windows validation** (later): The `install.ps1` script should be tested on
   Windows after macOS is confirmed working. Cross-platform is a Phase 1 goal.
@@ -95,7 +103,7 @@ npm install -g @anthropic-ai/claude-code
 ## Step 2: Launch Day 0 Bootstrap
 
 ```bash
-# Start Claude Code in the AZOTH directory
+# Start Claude Code in the root-azoth directory
 claude
 
 # Claude Code reads CLAUDE.md automatically
@@ -160,7 +168,7 @@ This is the Trust Contract in action — PULL-based alignment.
 > **Test the installer immediately** (Step 1.7):
 > ```bash
 > mkdir /tmp/test-azoth && cd /tmp/test-azoth
-> bash ~/AZOTH/install.sh
+> bash ~/root-azoth/install.sh
 > # Verify: CLAUDE.md created, kernel/ copied, memory dir initialized
 > rm -rf /tmp/test-azoth  # cleanup
 > ```
@@ -214,7 +222,7 @@ After Day 0, sessions follow a natural rhythm:
 ┌──────────────────────────────────────────┐
 │  Session Lifecycle                       │
 │                                          │
-│  1. Open Claude Code in AZOTH/           │
+│  1. Open Claude Code in root-azoth/      │
 │  2. Claude reads CLAUDE.md → sees phase  │
 │  3. State your goal                      │
 │  4. Auto-pipeline composes stages        │
@@ -375,8 +383,8 @@ Or specify directly: `/deliver`, `/deliver-full`, etc.
 ### 📊 Version Milestones
 
 ```
-v0.1.0-dev    ← You are here (architecture + handoff artifacts)
-v0.1.0-alpha  ← After Phase 2 (kernel + skills working)
+v0.1.0-dev    ← You are here (kernel + skills + infrastructure complete)
+v0.1.0-alpha  ← After Phase 3 (agents + pipelines working)
 v0.1.0-beta   ← After Phase 4 (installable, documented)
 v0.1.0        ← After Phase 5 (trust enforcement active)
 v0.2.0        ← After Phase 6 (meta-recursive, self-improving)
@@ -388,29 +396,36 @@ v0.2.0        ← After Phase 6 (meta-recursive, self-improving)
 
 ```
 Pre-Flight
-  □  Clone AZOTH on MacBook
-  □  Set up Python venv + dependencies (pytest, pyyaml, ruff)
-  □  Run existing 71 tests — verify all green
+  ☑  Clone root-azoth on MacBook
+  ☑  Set up Python venv + dependencies (pytest, pyyaml, ruff)
+  ☑  Run 219 tests — verify all green
 
-Bootstrap
-  □  Launch Claude Code: claude
-  □  Run /bootstrap
-  □  Complete Phase 1 steps 1.1–1.7 (kernel + installer)
-  □  Step 1.8: Run validation — all tests pass
+Phase 1: Kernel ✅ COMPLETE
+  ☑  4 kernel files created (BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC)
+  ☑  Platform adapters + templates
+  ☑  Installer (install.sh + install.ps1)
+  ☑  Kernel write protection active
 
-Sync Setup
-  □  Complete Phase 1.5 steps 1.5.1–1.5.3
-  □  Configure sync-config.yaml with real sanitization patterns
-  □  Test sync against source framework: --dry-run
-  □  Run first real sync (if satisfied with dry-run)
+Phase 1.5: Infrastructure ✅ COMPLETE
+  ☑  Sync pipeline (azoth-sync.py + sync-config.yaml)
+  ☑  Insight Inbox Protocol (D29-D33)
+  ☑  Root scaffold identity (D34-D38)
+  ☑  Bootstrap loop: roadmap + /next + preflight + decisions index (D39-D41)
 
-Session Close
-  □  /session-closeout — first episode captured in M3
-  □  Push to GitHub
-  □  Verify: python -m pytest tests/ → 100+ tests passing
+Phase 2: Skills ✅ COMPLETE
+  ☑  8 kernel skills (5 extracted + 3 Azoth-native)
+  ☑  Skill drift tests
 
-Done
-  □  🍵 Azoth is alive.
+Phase 3: Agent Archetypes 🎯 CURRENT
+  □  Run /next to see current priority task
+  □  Define 10 agent archetypes (D7)
+  □  Create pipeline YAML schema (D6)
+  □  Implement 8 pipeline presets (D28)
+
+Session Workflow
+  □  Start: claude → agent reads CLAUDE.md → runs BOOTLOADER → loads roadmap
+  □  Work: /next → goal → auto-pipeline → execute
+  □  Close: /session-closeout → episode captured → push
 ```
 
 ---
@@ -448,5 +463,7 @@ never-auto:  Kernel changes, governance, dependencies, M2→M1
 
 ---
 
-*This tutorial was generated during the Azoth architecture session on 2026-04-03.
-For the source of truth on all design decisions, see `docs/AZOTH_ARCHITECTURE.md`.*
+*This tutorial was last updated during the Day 0 audit session on 2026-04-04.
+Phase 1, 1.5, and 2 complete. 41 architecture decisions. 219 tests passing.
+For the source of truth on all design decisions, see `docs/AZOTH_ARCHITECTURE.md`
+and `docs/DECISIONS_INDEX.md`.*
