@@ -357,10 +357,10 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md
 
     def test_phase_consistent(self) -> None:
-        """All files should agree on current phase = 2."""
-        assert self.azoth_yaml["phase"] == 2
-        assert "Phase 2" in self.claude_md
-        assert "Phase 1" in self.claude_md  # Phase 1 still referenced (as complete)
+        """All files should agree on current phase = 3."""
+        assert self.azoth_yaml["phase"] == 3
+        assert "Phase 3" in self.claude_md
+        assert "Phase 2" in self.claude_md  # Phase 2 still referenced (as complete)
 
     def test_four_layers_consistent(self) -> None:
         """Water Molecule Model should be consistent across docs."""
