@@ -4,8 +4,16 @@
 sanitize:
   # String patterns to replace with {{REDACTED}} in synced files.
   # Add your org-specific names, URLs, and identifiers here.
-  strip_patterns: []
-    # Example: ["OrgName", "InternalProject", "internal-url.com"]
+  strip_patterns:
+    - "Glovo"
+    - "SupplyGrowth"
+    - "SupplyOps"
+    - "supply-growth"
+    - "supply-ops"
+    - "dhub-glovo"
+    - "fulfillment-dwh"
+    - "glovo.com"
+    - "glovoapp"
 
   # Path prefixes to exclude from sync entirely.
   # Files under these paths will never be proposed for sync.
@@ -35,3 +43,37 @@ scan_extensions:
   - .json
   - .py
   - .txt
+
+# ── Product Extraction Profile (D38) ──────────────────────
+# Used when extracting the public `azoth` product from this scaffold.
+# This is scaffold infrastructure — actual extraction is Phase 4.
+product_extraction:
+  target_repo: azoth
+  mode: scaffold-to-product
+
+  # Paths to EXCLUDE from the public product
+  # (scaffold-only artifacts that don't ship to consumers)
+  exclude_paths:
+    - ".azoth/inbox/"
+    - ".azoth/memory/"
+    - ".azoth/telemetry/"
+    - ".azoth/sync-log.jsonl"
+    - ".azoth/trusted-sources.yaml"
+    - ".claude/commands/"          # Scaffold dev commands, not consumer commands
+    - ".claude/settings.json"      # Scaffold dev settings
+    - ".claude/settings.local.json"
+    - ".github/"                   # Scaffold CI/CD, not consumer
+    - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
+    - "tests/"                     # Scaffold tests (product gets its own)
+    - "workspace/"
+    - "AZOTH.code-workspace"
+
+  # Files to TRANSFORM during extraction
+  # (content changes needed for consumer context)
+  transform:
+    - source: "CLAUDE.md"
+      action: "regenerate-from-template"
+      template: "kernel/templates/CLAUDE.md.template"
+    - source: "azoth.yaml"
+      action: "set-scope-mode"
+      value: "project"

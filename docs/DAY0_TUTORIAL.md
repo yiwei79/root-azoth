@@ -35,6 +35,15 @@ AZOTH repo state:
 └── .gitignore                     ← Runtime state excluded
 ```
 
+### Scaffold vs Product (D34–D38)
+
+> **This repo (AZOTH) is the root scaffold** — your private development workshop.
+> It's where you design, build, and test the toolkit. The public product (`azoth`,
+> lowercase) will be extracted from here via `sync-config.yaml` when ready.
+> Think of it as: AZOTH is the lab, azoth is the medicine.
+>
+> See `docs/AZOTH_ARCHITECTURE.md` Section 18 for the full 3-tier model.
+
 ### What You Already Have
 
 | Artifact | Status | Purpose |

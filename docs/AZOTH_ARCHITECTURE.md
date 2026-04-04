@@ -707,6 +707,16 @@ azoth/
 | D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |
 | D27 | Explore/Research as Architect tools | Not separate pipeline stages |
 | D28 | 8 pipeline presets | full, deliver, hotfix, docs, research, review, refactor, auto |
+| D29 | Inbox format: `.azoth/inbox/*.jsonl` | Append-only, machine-parseable, git-friendly |
+| D30 | Trusted source registry | Governance boundary for external data |
+| D31 | SURVEY auto-detect + `/intake` | Passive awareness + explicit processing |
+| D32 | 12-field insight schema | Structured enough to triage, flexible enough to extend |
+| D33 | 4-step intake protocol | Validate → Classify → Triage → Integrate/Archive |
+| D34 | AZOTH = personal root scaffold | Private workshop, not consumer product |
+| D35 | azoth = public deployable product | Extracted via sync, consumer-ready |
+| D36 | `--scaffold` vs `--project` modes | Phase 4 product differentiation |
+| D37 | AZOTH (private) / azoth (public) | Naming convention for clarity |
+| D38 | Scaffold infra now, extraction later | Build the workshop, extract the product when ready |
 
 ---
 
@@ -733,3 +743,74 @@ azoth/
 | **4** | Distribution | README, `azoth init` onboarding, CI, publish |
 | **5** | Trust Layer | Hooks, telemetry, checkpoints, phone-friendly output |
 | **6** | Meta-Recursive | Agent Crafter, L2 optimization, L3 proposals |
+
+---
+
+## 18. Root Scaffold Architecture (D29–D38)
+
+### Scaffold vs Product Identity (D34–D37)
+
+| Attribute | Root Scaffold (this repo) | Deployable Product |
+|-----------|---------------------------|-------------------|
+| Repo name | **AZOTH** (private, uppercase) | **azoth** (public, lowercase) |
+| Purpose | Development workshop, design lab | Consumer-ready toolkit |
+| Contains | All experiments, audit trails, session history | Clean extracted artifacts |
+| Audience | The alchemist (you) | Any developer |
+| Mode | `scaffold` | `project` (Phase 4) |
+
+### 3-Tier Model
+
+```
+Tier 1: Source Framework (SupplyGrowth Agentic Framework)
+  │ patterns extracted via azoth-sync.py
+  ▼
+Tier 2: Root Scaffold (AZOTH — this repo)
+  │ product extracted via sync-config.yaml profiles
+  ▼
+Tier 3: Deployable Product (azoth — public repo)
+  │ installed into consumer projects
+  ▼
+Consumer Projects
+```
+
+- **Tier 1 → Tier 2**: `azoth-sync.py` extracts proven patterns, sanitizes org content
+- **Tier 2 → Tier 3**: Product extraction profiles strip scaffold-only artifacts
+- **Tier 3 → Consumer**: `install.sh` deploys kernel + skills + agents
+
+### Insight Inbox Protocol (D29–D33)
+
+External insights (from Tier 1 audits, cross-project analysis, or other sources)
+enter the scaffold through a governed channel:
+
+- **D29**: `.azoth/inbox/*.jsonl` format with summary.md companion
+- **D30**: Trusted source registry at `.azoth/trusted-sources.yaml`
+- **D31**: SURVEY auto-detect + `/intake` command
+- **D32**: Standardized insight schema (12 fields)
+- **D33**: Validate → Classify → Human Triage → Integrate to M3 or Archive
+
+See `kernel/GOVERNANCE.md` Section 7 for the full intake protocol.
+
+### Product Extraction (D38)
+
+Scaffold infrastructure is implemented NOW. Public repo extraction is a
+mechanical step deferred to Phase 4:
+
+1. Define extraction profiles in `sync-config.yaml`
+2. Strip scaffold-only artifacts (session history, inbox, audit trails)
+3. Generate clean product repo with consumer-facing README
+4. Validate: fresh clone → install → tests pass
+
+### Architecture Decisions (D29–D38)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| D29 | Inbox format: `.azoth/inbox/*.jsonl` | Append-only, machine-parseable, git-friendly |
+| D30 | Trusted source registry | Governance boundary for external data |
+| D31 | SURVEY auto-detect + `/intake` | Passive awareness + explicit processing |
+| D32 | 12-field insight schema | Structured enough to triage, flexible enough to extend |
+| D33 | 4-step intake protocol | Validate → Classify → Human Triage → Integrate/Archive |
+| D34 | AZOTH = personal root scaffold | Private workshop, not consumer product |
+| D35 | azoth = public deployable product | Extracted via sync, consumer-ready |
+| D36 | `--scaffold` vs `--project` modes | Phase 4 product differentiation |
+| D37 | AZOTH (private) / azoth (public) | Naming convention for clarity |
+| D38 | Scaffold infra now, extraction later | Build the workshop, extract the product when ready |

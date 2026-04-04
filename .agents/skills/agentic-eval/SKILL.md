@@ -16,7 +16,8 @@ Patterns for self-improvement through iterative evaluation and refinement.
 
 ## Overview
 
-Evaluation patterns enable agents to assess and improve their own outputs, moving beyond single-shot generation to iterative refinement loops.
+Evaluation patterns enable agents to assess and improve their own outputs,
+moving beyond single-shot generation to iterative refinement loops.
 
 ```
 Generate → Evaluate → Critique → Refine → Output
@@ -29,6 +30,7 @@ Generate → Evaluate → Critique → Refine → Output
 - **Quality-critical generation**: Code, reports, analysis requiring high accuracy
 - **Tasks with clear evaluation criteria**: Defined success metrics exist
 - **Content requiring specific standards**: Style guides, compliance, formatting
+- **Pipeline gate enforcement**: Validating stage outputs before proceeding
 
 ---
 
@@ -42,7 +44,6 @@ def reflect_and_refine(task: str, criteria: list[str], max_iterations: int = 3) 
     output = llm(f"Complete this task:\n{task}")
     
     for i in range(max_iterations):
-        # Self-critique
         critique = llm(f"""
         Evaluate this output against criteria: {criteria}
         Output: {output}
@@ -54,7 +55,6 @@ def reflect_and_refine(task: str, criteria: list[str], max_iterations: int = 3) 
         if all_pass:
             return output
         
-        # Refine based on critique
         failed = {k: v["feedback"] for k, v in critique_data.items() if v["status"] == "FAIL"}
         output = llm(f"Improve to address: {failed}\nOriginal: {output}")
     
@@ -67,7 +67,7 @@ def reflect_and_refine(task: str, criteria: list[str], max_iterations: int = 3) 
 
 ## Pattern 2: Evaluator-Optimizer
 
-Separate generation and evaluation into distinct components for clearer responsibilities.
+Separate generation and evaluation into distinct components.
 
 ```python
 class EvaluatorOptimizer:
@@ -122,6 +122,7 @@ class CodeReflector:
 ## Evaluation Strategies
 
 ### Outcome-Based
+
 Evaluate whether output achieves the expected result.
 
 ```python
@@ -130,6 +131,7 @@ def evaluate_outcome(task: str, output: str, expected: str) -> str:
 ```
 
 ### LLM-as-Judge
+
 Use LLM to compare and rank outputs.
 
 ```python
@@ -138,6 +140,7 @@ def llm_judge(output_a: str, output_b: str, criteria: str) -> str:
 ```
 
 ### Rubric-Based
+
 Score outputs against weighted dimensions.
 
 ```python
@@ -151,6 +154,35 @@ def evaluate_with_rubric(output: str, rubric: dict) -> float:
     scores = json.loads(llm(f"Rate 1-5 for each dimension: {list(rubric.keys())}\nOutput: {output}"))
     return sum(scores[d] * rubric[d]["weight"] for d in rubric) / 5
 ```
+
+---
+
+## Integration
+
+### Pipeline Gate Evaluation
+
+Use agentic-eval at pipeline gates to validate stage outputs:
+
+```yaml
+gate:
+  type: agent
+  action: agentic-eval
+  criteria:
+    - Output matches design brief
+    - Tests pass
+    - No governance violations
+    - Entropy within bounds
+  threshold: 0.8
+```
+
+### Session Closeout Evaluation
+
+Apply eval before closing a session:
+
+1. Review artifacts produced this session
+2. Score against session goals
+3. Identify gaps or risks
+4. Record evaluation in M3 episode
 
 ---
 
@@ -169,8 +201,6 @@ def evaluate_with_rubric(output: str, rubric: dict) -> float:
 ## Quick Start Checklist
 
 ```markdown
-## Evaluation Implementation Checklist
-
 ### Setup
 - [ ] Define evaluation criteria/rubric
 - [ ] Set score threshold for "good enough"

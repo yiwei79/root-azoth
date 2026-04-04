@@ -201,9 +201,9 @@ class TestArchitectureDoc:
         path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
         self.content = path.read_text(encoding="utf-8")
 
-    def test_has_all_28_decisions(self) -> None:
-        """Architecture must contain all 28 architecture decisions."""
-        for i in range(1, 29):
+    def test_has_all_38_decisions(self) -> None:
+        """Architecture must contain all 38 architecture decisions."""
+        for i in range(1, 39):
             assert f"D{i}" in self.content, f"Missing architecture decision D{i}"
 
     def test_has_four_layer_model(self) -> None:
@@ -381,9 +381,9 @@ class TestCrossArtifactConsistency:
         assert "primary" in claude_lower and "claude" in claude_lower
 
     def test_decision_count_consistent(self) -> None:
-        """All files referencing decision count should say 28."""
-        assert "28" in self.claude_md or "D28" in self.claude_md
-        assert self.azoth_yaml["decisions"] == 28
+        """All files referencing decision count should say 38."""
+        assert "38" in self.claude_md or "D38" in self.claude_md
+        assert self.azoth_yaml["decisions"] == 38
 
 
 # ═══════════════════════════════════════════════════════════════════════

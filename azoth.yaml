@@ -5,11 +5,17 @@ name: azoth
 version: 0.1.0-dev
 description: The Universal Agentic Toolkit
 
+# Root scaffold identity (D34-D38)
+scope:
+  mode: scaffold
+  product_target: azoth
+  is_development_workshop: true
+
 # Current development phase
 phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
-decisions: 28
+decisions: 38
 
 # Layer status
 layers:

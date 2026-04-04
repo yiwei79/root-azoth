@@ -49,6 +49,9 @@ Do not proceed with degraded governance.
    - "Last session worked on X"
    - "Known issue: Y"
    - "Pattern Z applies here"
+6. Check insight inbox (`.azoth/inbox/*.jsonl`):
+   - If files present → report count to human
+   - Suggest running `/intake` to process queued insights
 
 **Output**: Context map — what exists, what's in progress, what matters.
 
@@ -140,7 +143,7 @@ This file is runtime state (gitignored) — it is NOT part of the kernel.
 | Phase | Reads | Writes |
 |-------|-------|--------|
 | ACTIVATE | CLAUDE.md, kernel/*, .azoth/bootloader-state.md | — |
-| SURVEY | Project files, .azoth/memory/*, azoth.yaml | — |
+| SURVEY | Project files, .azoth/memory/*, azoth.yaml, .azoth/inbox/*.jsonl | — |
 | OPERATE | Pipeline definitions, agent configs | Source files, tests |
 | HARDEN | Kernel checksums | .azoth/memory/*, .azoth/bootloader-state.md |
 

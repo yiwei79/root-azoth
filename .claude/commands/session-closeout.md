@@ -83,6 +83,25 @@ Compress session into actionable signals.
 3. Commit
 4. Report: commit SHA, files changed, test status
 
+## Part D: Surface Queued Insights
+
+Check the insight inbox and inform the human. Do NOT process insights during closeout.
+
+### Steps
+
+1. Check `.azoth/inbox/` for `.jsonl` files (exclude `.gitkeep` and `processed/`)
+2. If files exist:
+   - Report count: "📥 {N} insight file(s) queued in inbox"
+   - List filenames and source attribution (from first line of each file)
+   - Remind: "Run `/intake` next session to process these through the governed protocol"
+3. If no files: report "📭 Inbox empty — no pending insights"
+
+### Rules
+
+- **Closeout surfaces; it does not process** (F4). Run `/intake` explicitly to triage insights.
+- **Do NOT read insight content beyond source attribution**. Full triage happens in `/intake`.
+- This step is informational — it never modifies inbox files or M3.
+
 ## Output
 
 Present a close summary:
