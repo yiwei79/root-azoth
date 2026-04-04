@@ -20,6 +20,6 @@
   },
   "env": {
     "AZOTH_VERSION": "0.1.0-dev",
-    "AZOTH_PHASE": "1.5-complete"
+    "AZOTH_PHASE": "3"
   }
 }

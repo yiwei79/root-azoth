@@ -130,28 +130,28 @@ class TestSkillContent:
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_has_overview_section(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text()
+        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         assert "## Overview" in content or "## overview" in content.lower(), (
             f"{skill_name} SKILL.md should have an Overview section"
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_has_when_to_use_section(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text()
+        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         assert "## When to Use" in content or "## when to use" in content.lower(), (
             f"{skill_name} SKILL.md should have a When to Use section"
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_has_integration_section(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text()
+        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         assert "## Integration" in content or "## integration" in content.lower(), (
             f"{skill_name} SKILL.md should have an Integration section"
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_minimum_content_length(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text()
+        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         lines = content.strip().split("\n")
         assert len(lines) >= 50, (
             f"{skill_name} SKILL.md has {len(lines)} lines — minimum 50 expected"

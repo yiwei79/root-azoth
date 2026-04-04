@@ -120,6 +120,9 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - [ ] Dual-format agent templates
 
 ### Phase 4: Distribution & Polish
+- [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)
+- [ ] Update kernel docs for dual-path awareness (BOOTLOADER.md, GOVERNANCE.md, TRUST_CONTRACT.md)
+- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list
 - [ ] README (philosophy + quickstart)
 - [ ] `azoth init` interactive onboarding
 - [ ] CI for drift detection
