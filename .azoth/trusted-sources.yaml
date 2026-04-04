@@ -15,3 +15,11 @@ sources:
     require_approval: human
     added_date: "2025-01-01"
     added_by: human
+
+  - id: pr-code-review
+    name: "PR Code Review — Copilot Pull Request Reviewer"
+    description: "Automated code review findings from GitHub Copilot PR review"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-04"
+    added_by: human
