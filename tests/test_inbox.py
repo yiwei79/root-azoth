@@ -397,3 +397,124 @@ class TestHandoffInboxFile:
                 assert not missing, (
                     f"{jf.name} line {i} missing required fields: {missing}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap loop artifact tests (D39-D41)
+# ---------------------------------------------------------------------------
+
+class TestRoadmap:
+    """Validate .azoth/roadmap.yaml structure."""
+
+    @classmethod
+    def setup_class(cls):
+        roadmap_path = AZOTH_ROOT / ".azoth" / "roadmap.yaml"
+        assert roadmap_path.exists(), ".azoth/roadmap.yaml must exist"
+        with open(roadmap_path) as f:
+            cls.roadmap = yaml.safe_load(f)
+
+    def test_has_current_phase(self):
+        assert "current_phase" in self.roadmap
+
+    def test_has_phases(self):
+        assert "phases" in self.roadmap
+        assert len(self.roadmap["phases"]) >= 3
+
+    def test_has_tasks(self):
+        assert "tasks" in self.roadmap
+        assert len(self.roadmap["tasks"]) >= 1
+
+    def test_tasks_have_required_fields(self):
+        required = {"id", "title", "priority", "status", "decision_ref"}
+        for task in self.roadmap["tasks"]:
+            missing = required - set(task.keys())
+            assert not missing, f"Task {task.get('id', '?')} missing: {missing}"
+
+    def test_first_task_is_highest_priority(self):
+        tasks = self.roadmap["tasks"]
+        if len(tasks) > 1:
+            assert tasks[0]["priority"] <= tasks[1]["priority"]
+
+    def test_has_completed_section(self):
+        assert "completed" in self.roadmap
+        assert len(self.roadmap["completed"]) >= 1
+
+
+class TestNextCommand:
+    """Validate /next command exists and references roadmap."""
+
+    @classmethod
+    def setup_class(cls):
+        path = AZOTH_ROOT / ".claude" / "commands" / "next.md"
+        assert path.exists(), "/next command must exist"
+        cls.content = path.read_text()
+
+    def test_has_frontmatter(self):
+        assert self.content.startswith("---")
+
+    def test_references_roadmap(self):
+        assert "roadmap.yaml" in self.content
+
+    def test_references_decisions_index(self):
+        assert "DECISIONS_INDEX" in self.content
+
+
+class TestDecisionsIndex:
+    """Validate docs/DECISIONS_INDEX.md covers all decisions."""
+
+    @classmethod
+    def setup_class(cls):
+        path = AZOTH_ROOT / "docs" / "DECISIONS_INDEX.md"
+        assert path.exists(), "docs/DECISIONS_INDEX.md must exist"
+        cls.content = path.read_text()
+
+    def test_has_all_41_decisions(self):
+        for i in range(1, 42):
+            assert f"D{i}" in self.content, f"Missing decision D{i}"
+
+    def test_has_status_column(self):
+        assert "implemented" in self.content
+        assert "planned" in self.content
+
+    def test_has_summary_table(self):
+        assert "Summary" in self.content
+
+
+class TestBootloaderRoadmap:
+    """Validate BOOTLOADER references roadmap and has preflight gate."""
+
+    @classmethod
+    def setup_class(cls):
+        path = AZOTH_ROOT / "kernel" / "BOOTLOADER.md"
+        cls.content = path.read_text()
+
+    def test_survey_references_roadmap(self):
+        assert "roadmap" in self.content.lower()
+
+    def test_has_preflight_gate(self):
+        assert "preflight" in self.content.lower() or "Preflight" in self.content
+
+    def test_integration_table_has_roadmap(self):
+        assert "roadmap.yaml" in self.content
+
+
+class TestRepoIdentity:
+    """Validate repo identity is root-azoth after rename."""
+
+    def test_azoth_yaml_name(self):
+        with open(AZOTH_ROOT / "azoth.yaml") as f:
+            data = yaml.safe_load(f)
+        assert data["name"] == "root-azoth"
+
+    def test_decisions_count_41(self):
+        with open(AZOTH_ROOT / "azoth.yaml") as f:
+            data = yaml.safe_load(f)
+        assert data["decisions"] == 41
+
+    def test_claude_md_references_root_azoth(self):
+        content = (AZOTH_ROOT / "CLAUDE.md").read_text()
+        assert "root-azoth" in content
+
+    def test_architecture_d37_updated(self):
+        content = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text()
+        assert "root-azoth (private)" in content

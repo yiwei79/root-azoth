@@ -45,13 +45,24 @@ Do not proceed with degraded governance.
    - M2: `.azoth/memory/patterns.yaml` — proven patterns
 3. Check git state: branch, recent commits, uncommitted changes
 4. Identify current phase from `azoth.yaml` manifest
-5. Surface relevant patterns from memory:
+5. Load development roadmap (`.azoth/roadmap.yaml`):
+   - Current phase and phase title
+   - Next priority task (first unblocked `pending` task)
+   - Report: "Phase {N}: {title} — Next: [{task_id}] {task_title}"
+6. Surface relevant patterns from memory:
    - "Last session worked on X"
    - "Known issue: Y"
    - "Pattern Z applies here"
-6. Check insight inbox (`.azoth/inbox/*.jsonl`):
+7. Check insight inbox (`.azoth/inbox/*.jsonl`):
    - If files present → report count to human
    - Suggest running `/intake` to process queued insights
+
+**Preflight gate**: Before proceeding to OPERATE, confirm readiness:
+- ✅ Kernel integrity verified (ACTIVATE passed)
+- ✅ Memory files loaded (or bootstrapping from zero)
+- ✅ Git state understood
+- ✅ Current phase and next task identified
+- If any check FAILED → report to human, await signal before OPERATE
 
 **Output**: Context map — what exists, what's in progress, what matters.
 
@@ -143,7 +154,7 @@ This file is runtime state (gitignored) — it is NOT part of the kernel.
 | Phase | Reads | Writes |
 |-------|-------|--------|
 | ACTIVATE | CLAUDE.md, kernel/*, .azoth/bootloader-state.md | — |
-| SURVEY | Project files, .azoth/memory/*, azoth.yaml, .azoth/inbox/*.jsonl | — |
+| SURVEY | Project files, .azoth/memory/*, azoth.yaml, .azoth/roadmap.yaml, .azoth/inbox/*.jsonl | — |
 | OPERATE | Pipeline definitions, agent configs | Source files, tests |
 | HARDEN | Kernel checksums | .azoth/memory/*, .azoth/bootloader-state.md |
 

@@ -1,7 +1,7 @@
 # Azoth Toolkit Manifest
 # This file tracks the toolkit's state and installed components.
 
-name: azoth
+name: root-azoth
 version: 0.1.0-dev
 description: The Universal Agentic Toolkit
 
@@ -15,7 +15,7 @@ scope:
 phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
-decisions: 38
+decisions: 41
 
 # Layer status
 layers:

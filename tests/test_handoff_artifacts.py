@@ -62,7 +62,7 @@ class TestAzothYaml:
         assert isinstance(self.data, dict)
 
     def test_has_name(self) -> None:
-        assert self.data.get("name") == "azoth"
+        assert self.data.get("name") == "root-azoth"
 
     def test_has_version(self) -> None:
         assert "version" in self.data
@@ -201,9 +201,9 @@ class TestArchitectureDoc:
         path = AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md"
         self.content = path.read_text(encoding="utf-8")
 
-    def test_has_all_38_decisions(self) -> None:
-        """Architecture must contain all 38 architecture decisions."""
-        for i in range(1, 39):
+    def test_has_all_41_decisions(self) -> None:
+        """Architecture must contain all 41 architecture decisions."""
+        for i in range(1, 42):
             assert f"D{i}" in self.content, f"Missing architecture decision D{i}"
 
     def test_has_four_layer_model(self) -> None:
@@ -381,9 +381,9 @@ class TestCrossArtifactConsistency:
         assert "primary" in claude_lower and "claude" in claude_lower
 
     def test_decision_count_consistent(self) -> None:
-        """All files referencing decision count should say 38."""
-        assert "38" in self.claude_md or "D38" in self.claude_md
-        assert self.azoth_yaml["decisions"] == 38
+        """All files referencing decision count should say 41."""
+        assert "41" in self.claude_md or "D41" in self.claude_md
+        assert self.azoth_yaml["decisions"] == 41
 
 
 # ═══════════════════════════════════════════════════════════════════════

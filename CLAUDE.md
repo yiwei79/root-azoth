@@ -5,7 +5,7 @@
 
 ## What Is Azoth
 
-**AZOTH** (private, uppercase) is the personal root scaffold and development
+**root-azoth** (private) is the personal root scaffold and development
 workshop for the Azoth toolkit. This repo is where the toolkit is designed,
 built, tested, and evolved. It is NOT a consumer project — it IS the source.
 
@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (38 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (41 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 

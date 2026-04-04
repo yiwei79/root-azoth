@@ -712,11 +712,14 @@ azoth/
 | D31 | SURVEY auto-detect + `/intake` | Passive awareness + explicit processing |
 | D32 | 12-field insight schema | Structured enough to triage, flexible enough to extend |
 | D33 | 4-step intake protocol | Validate → Classify → Triage → Integrate/Archive |
-| D34 | AZOTH = personal root scaffold | Private workshop, not consumer product |
+| D34 | root-azoth = personal root scaffold | Private workshop, not consumer product |
 | D35 | azoth = public deployable product | Extracted via sync, consumer-ready |
 | D36 | `--scaffold` vs `--project` modes | Phase 4 product differentiation |
-| D37 | AZOTH (private) / azoth (public) | Naming convention for clarity |
+| D37 | root-azoth (private) / azoth (public) | Naming convention for clarity |
 | D38 | Scaffold infra now, extraction later | Build the workshop, extract the product when ready |
+| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
+| D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
+| D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
 
 ---
 
@@ -752,7 +755,7 @@ azoth/
 
 | Attribute | Root Scaffold (this repo) | Deployable Product |
 |-----------|---------------------------|-------------------|
-| Repo name | **AZOTH** (private, uppercase) | **azoth** (public, lowercase) |
+| Repo name | **root-azoth** (private) | **azoth** (public) |
 | Purpose | Development workshop, design lab | Consumer-ready toolkit |
 | Contains | All experiments, audit trails, session history | Clean extracted artifacts |
 | Audience | The alchemist (you) | Any developer |
@@ -764,7 +767,7 @@ azoth/
 Tier 1: Source Framework (SupplyGrowth Agentic Framework)
   │ patterns extracted via azoth-sync.py
   ▼
-Tier 2: Root Scaffold (AZOTH — this repo)
+Tier 2: Root Scaffold (root-azoth — this repo)
   │ product extracted via sync-config.yaml profiles
   ▼
 Tier 3: Deployable Product (azoth — public repo)
@@ -809,8 +812,11 @@ mechanical step deferred to Phase 4:
 | D31 | SURVEY auto-detect + `/intake` | Passive awareness + explicit processing |
 | D32 | 12-field insight schema | Structured enough to triage, flexible enough to extend |
 | D33 | 4-step intake protocol | Validate → Classify → Human Triage → Integrate/Archive |
-| D34 | AZOTH = personal root scaffold | Private workshop, not consumer product |
+| D34 | root-azoth = personal root scaffold | Private workshop, not consumer product |
 | D35 | azoth = public deployable product | Extracted via sync, consumer-ready |
 | D36 | `--scaffold` vs `--project` modes | Phase 4 product differentiation |
-| D37 | AZOTH (private) / azoth (public) | Naming convention for clarity |
+| D37 | root-azoth (private) / azoth (public) | Naming convention for clarity |
 | D38 | Scaffold infra now, extraction later | Build the workshop, extract the product when ready |
+| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
+| D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
+| D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |

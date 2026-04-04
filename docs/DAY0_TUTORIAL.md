@@ -37,7 +37,7 @@ AZOTH repo state:
 
 ### Scaffold vs Product (D34–D38)
 
-> **This repo (AZOTH) is the root scaffold** — your private development workshop.
+> **This repo (root-azoth) is the root scaffold** — your private development workshop.
 > It's where you design, build, and test the toolkit. The public product (`azoth`,
 > lowercase) will be extracted from here via `sync-config.yaml` when ready.
 > Think of it as: AZOTH is the lab, azoth is the medicine.
