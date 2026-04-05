@@ -4,7 +4,7 @@ patterns:
   - id: docs-first-implementation-deferred
     approved: true
     approved_date: "2026-04-05"
-    reinforced_by: [ep-025, ep-026]
+    reinforced_by: [ep-025, ep-026, ep-032]
     trigger: any session that surfaces a new architectural gap or capability need
     summary: >
       When a session reveals an architectural gap or insight, the correct response
@@ -20,3 +20,30 @@ patterns:
       At the moment a session tempts implementation of a newly discovered gap,
       stop. Write the decision. Add the roadmap task. Close the session. The
       next session starts fresh with full scope defined.
+
+  - id: mechanical-enforcement-over-memory
+    approved: true
+    approved_date: "2026-04-05"
+    reinforced_by: [ep-022, ep-028, ep-029, ep-031]
+    trigger: any behavioral rule that must hold under forward momentum or time pressure
+    summary: >
+      Memory-only encoding is insufficient for high-frequency, high-momentum
+      behavioral rules. A rule encoded only in agent memory (M3 episodes,
+      feedback files) will be bypassed when the agent is in a forward-moving
+      state. The fix class is mechanical enforcement: move the rule from
+      agent memory (driftable) to tool execution (deterministic) via hooks,
+      gates, or preflight checks.
+    why_it_matters: >
+      The "confirm before building" rule was violated three times in sequence
+      (ep-022, ep-028, ep-029) despite being encoded and re-encoded in memory
+      after each violation. The fourth episode (ep-031) established that the
+      pattern is systemic, not accidental. The lesson generalizes: any rule
+      that must survive context drift and forward momentum pressure needs a
+      mechanical layer, not just a remembered one.
+    how_to_apply: >
+      When a behavioral rule has been violated 2+ times despite memory
+      encoding, do not update the memory again. Instead, design a mechanical
+      enforcement layer: a PreToolUse hook, a preflight gate, a scope-gate
+      file, or a required /plan step. The memory can still exist as context,
+      but the gate must be deterministic. Target layer for the gate: M1
+      (kernel/settings/hooks), delivered via /deliver-full.
