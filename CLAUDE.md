@@ -123,13 +123,14 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - [x] Skill drift detection tests
 
 ### Phase 3: Agent Archetypes 🎯 CURRENT
-- [ ] T1: architect, planner, builder, reviewer
-- [ ] T2: researcher, research-orchestrator
-- [ ] T3: prompt-engineer, evaluator, agent-crafter
-- [ ] T4: context-architect
+- [~] T1: architect, planner, builder, reviewer (initial draft + External Analysis refinements done; online research refinement pending)
+- [~] T2: researcher, research-orchestrator (same)
+- [~] T3: prompt-engineer, evaluator, agent-crafter (same)
+- [~] T4: context-architect (same)
 - [ ] Pipeline YAML schema
 - [ ] Dual-format agent templates
 - [ ] D44: Stage 6 quality rubric for structured content in delivery pipelines
+- [ ] D45: Context-recall skill (memory read interface)
 
 ### Phase 4: Distribution & Polish
 - [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)

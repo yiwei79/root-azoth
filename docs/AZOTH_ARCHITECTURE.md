@@ -161,6 +161,26 @@ Work → Episode (M3) → Auto-classify → Propose promotion → Human approves
 → Prompt Engineer auto-refines M1 content (L2 improvement)
 ```
 
+**Context-sensitive retrieval (D45):**
+
+Memory is write-AND-read. The auto-improvement loop above describes the write
+path. The read path surfaces relevant episodes and patterns into the active
+context window based on the current goal:
+
+```
+Goal → Extract tags (task_type, keywords, error_signature)
+     → Grep M3/M2 by tags → Rank by promotion status, recency, relevance
+     → Surface top 1-3 matches before planning begins
+```
+
+Retrieval is triggered at two points:
+
+1. **BOOTLOADER SURVEY** (step 6): surface patterns relevant to the session goal
+2. **Pipeline Stage 0** (Goal Clarification): surface episodes relevant to the specific task
+
+Implementation: `skills/context-recall/` (Layer 1 skill, NOT a kernel component).
+The `remember` skill handles writes to M3; `context-recall` handles reads from M3/M2.
+
 ### Instruction Library
 
 | Instruction | Scope |
@@ -236,6 +256,7 @@ actions, escalate high-risk ones.
 - Agent capability routing ("This needs Context Architect, not just SWE")
 - Refactoring opportunities ("This could be cleaner — want me to?")
 - Cross-agent escalation ("Governance issue found — invoke reviewer?")
+- Command intent resolution ("Compound instruction detected — which part first?")
 
 **Never-auto (always require human signal):**
 - Kernel modifications
@@ -723,6 +744,7 @@ azoth/
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | Dual-path awareness for scaffold vs consumer context |
 | D43 | Commit-time governance enforcement hooks | Pre-commit hooks that mechanically enforce CLAUDE.md git rules (no Co-Authored-By, format validation) — moves governance from agent memory (driftable) to tool execution (deterministic) |
 | D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
+| D45 | Context-sensitive memory retrieval | Grep-by-tags read interface for M3/M2; dual trigger at SURVEY + Stage 0; implemented as Layer 1 skill (`context-recall`), not kernel |
 
 ---
 
