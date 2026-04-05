@@ -11,7 +11,8 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
    active version entry under `versions:`. Use `goal` and `phase_scope` for phase context.
-   (The legacy `current_phase` / `tasks:` fields are deprecated — do not read them.)
+   Also read `current_phase` and `current_phase_title` for display in the scope card header.
+   (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
 3. **Find candidate tasks**: From backlog `items`, collect all where:
    - `status` is not `complete`
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
@@ -49,7 +50,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 ```markdown
 ## Scope Card — {YYYY-MM-DD}
 
-**Phase:** v{active_version} — {version goal}
+**Phase:** P{current_phase:02d} — {current_phase_title}  ·  v{active_version}
 
 **Primary:** [{id}] {title} ({target_layer}, {delivery_pipeline})
 **Secondary:** [{id}] {title} ({target_layer})        ← omit if none

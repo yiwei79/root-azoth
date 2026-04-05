@@ -1,7 +1,7 @@
 {
-  "approved": false,
-  "expires_at": "2000-01-01T00:00:00+00:00",
-  "goal": "",
-  "session_id": "",
-  "approved_by": ""
+  "approved": true,
+  "expires_at": "2026-04-05T23:12:17+00:00",
+  "goal": "BL-003: Update /intake for 3-axis triage (D49)",
+  "session_id": "2026-04-05-bl-003",
+  "approved_by": "human"
 }

@@ -48,7 +48,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D30 | Trusted source registry | ✅ implemented | .azoth/trusted-sources.yaml | 1.5 |
 | D31 | SURVEY auto-detect + `/intake` | ✅ implemented | kernel/BOOTLOADER.md, .claude/commands/intake.md | 1.5 |
 | D32 | 12-field insight schema | ✅ implemented | kernel/GOVERNANCE.md Section 7 | 1.5 |
-| D33 | 4-step intake protocol | 🔧 partial | .claude/commands/intake.md (step 3 extended to 3-axis by D49 — BL-003 pending) | 1.5 |
+| D33 | 4-step intake protocol | ✅ implemented | .claude/commands/intake.md (step 3 extended to 3-axis by D49) | 1.5 |
 | D34 | root-azoth = personal root scaffold | ✅ implemented | azoth.yaml, CLAUDE.md | 1.5 |
 | D35 | azoth = public deployable product | 📋 planned | Phase 4 extraction | 4 |
 | D36 | `--scaffold` vs `--project` modes | 📋 planned | Phase 4 installer | 4 |
@@ -64,7 +64,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
 | D48 | Versioned roadmap: `.azoth/roadmap.yaml` | 🔧 partial | .azoth/roadmap.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
-| D49 | Intake 3-axis triage (extends D33) | 📋 planned | .claude/commands/intake.md (BL-003) | 3 |
+| D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
 | D51 | Formalized M2→M1 promotion path | 📋 planned | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md (BL-005) | 3 |
 

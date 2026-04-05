@@ -61,7 +61,7 @@ items:
     source: ep-032
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.1.0
     priority: 2
     created_date: "2026-04-05"
@@ -81,7 +81,7 @@ items:
     source_insight: SCO-2026-04-05-001
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.1.0
     priority: 3
     created_date: "2026-04-05"
