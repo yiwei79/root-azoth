@@ -43,7 +43,7 @@ tasks:
   - id: P3-001
     title: "Define 10 agent archetypes in agents/ directory"
     priority: 1
-    status: in_progress
+    status: complete
     decision_ref: D7
     description: "Create .md definitions for 10 agents across 4 tiers: Core (architect, planner, implementer, reviewer), Research (explorer, analyst), Meta (self-improver, evaluator), Utility (documenter, tester). Initial draft complete with External Analysis refinements. Remaining: targeted online research for behavioral depth."
     blocked_by: null
@@ -51,7 +51,7 @@ tasks:
   - id: P3-007
     title: "Implement azoth-deploy.py dev-sync script"
     priority: 2
-    status: pending
+    status: complete
     decision_ref: D46
     description: "Script that translates canonical agent/command/skill sources into platform-specific deployed files: Claude Code (.claude/agents/), GitHub Copilot (.github/agents/, .github/prompts/), OpenCode (.opencode/agents/, .opencode/commands/). Key transformation: posture→permission mapping (never_auto→deny, ask_first→ask, allowed→allow). Also generates AGENTS.md at project root as AAIF cross-platform broadcast layer. Enables this workspace to be cross-platform compatible without waiting for Phase 4 installer."
     blocked_by: null
