@@ -57,6 +57,9 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml | 1.5 |
 | D40 | Repo rename: root-azoth | ✅ implemented | Repository naming | 1.5 |
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
+| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
+| D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) | 5 |
+| D44 | Pipeline Stage 6 quality rubric for structured content | 📋 planned | pipelines/ (Phase 3) | 3 |
 
 ## Summary
 
@@ -64,6 +67,6 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 |--------|-------|
 | ✅ implemented | 27 |
 | 🔧 partial | 2 |
-| 📋 planned | 12 |
+| 📋 planned | 15 |
 | 🔄 superseded | 0 |
-| **Total** | **41** |
+| **Total** | **44** |

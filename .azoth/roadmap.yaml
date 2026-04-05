@@ -73,9 +73,26 @@ tasks:
     description: "Implement the auto-detection logic that selects pipeline preset based on goal"
     blocked_by: [P3-003]
 
+  - id: P3-005
+    title: "Define Stage 6 quality rubric for structured content in delivery pipelines"
+    priority: 5
+    status: pending
+    decision_ref: [D21, D44]
+    description: "The full pipeline's Stage 6 (Architect Review) needs explicit quality criteria for structured content outputs — minimum capability depth, governance constraint coverage, interaction pattern completeness. Prevents shallow first-pass output from passing the delivery gate. Implement as a scored rubric embedded in the pipeline YAML schema."
+    blocked_by: [P3-002]
+
+  - id: P5-001
+    title: "Commit-time governance enforcement hooks"
+    priority: 1
+    status: pending
+    phase: 5
+    decision_ref: D43
+    description: "Pre-commit hooks that mechanically enforce CLAUDE.md git conventions: strip Co-Authored-By trailers, validate commit message format. Moves governance rules from agent memory (driftable) to tool execution (deterministic). Directly addresses the trust enforcement gap noted in the Phase 5 risk register — rules that currently live only in CLAUDE.md and memory files cannot survive context window drift."
+    blocked_by: null
+
   - id: P1.5-CLEANUP
     title: "M3 episode count sync in azoth.yaml"
-    priority: 5
+    priority: 6
     status: pending
     decision_ref: D11
     description: "azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has entries. Session closeout should update the count."

@@ -720,6 +720,9 @@ azoth/
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
+| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | Dual-path awareness for scaffold vs consumer context |
+| D43 | Commit-time governance enforcement hooks | Pre-commit hooks that mechanically enforce CLAUDE.md git rules (no Co-Authored-By, format validation) — moves governance from agent memory (driftable) to tool execution (deterministic) |
+| D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
 
 ---
 
