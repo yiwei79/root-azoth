@@ -1,3 +1,22 @@
 # Azoth Semantic Memory (M2)
 # Promoted from M3 episodes via Promotion Rubric
-patterns: []
+patterns:
+  - id: docs-first-implementation-deferred
+    approved: true
+    approved_date: "2026-04-05"
+    reinforced_by: [ep-025, ep-026]
+    trigger: any session that surfaces a new architectural gap or capability need
+    summary: >
+      When a session reveals an architectural gap or insight, the correct response
+      is to fix the architecture doc and add a roadmap task. Do NOT implement in
+      the same session. Implementation belongs in a dedicated dev session with full
+      scope and clean context.
+    why_it_matters: >
+      The pressure to "implement while the context is hot" is real but leads to
+      scope creep, half-finished features, and governance bypasses. Both ep-025
+      and ep-026 showed that restraint — docs-only sessions followed by dedicated
+      implementation sessions — produces cleaner, more reviewable work.
+    how_to_apply: >
+      At the moment a session tempts implementation of a newly discovered gap,
+      stop. Write the decision. Add the roadmap task. Close the session. The
+      next session starts fresh with full scope defined.
