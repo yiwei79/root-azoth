@@ -1,0 +1,59 @@
+# Auto Pipeline — Azoth Layer 3 (D23, D28)
+# Dynamically composed by the Architect based on goal classification.
+# The Architect evaluates classification at runtime and selects a stage sequence.
+# composition_rules are evaluated top-to-bottom; first matching condition wins.
+
+name: auto
+description: >
+  Dynamic pipeline composed by the Architect after goal clarification (D23).
+  Stage 0 always runs; remaining stages are selected by evaluating composition_rules
+  against the classified goal. Human approves the composed pipeline before execution.
+  Default behavior when no explicit pipeline is chosen.
+preset: auto
+
+# Stage 0 always executes — goal clarification and pipeline composition.
+stages:
+  - name: goal-clarification
+    agent: architect
+    outputs:
+      - pipeline-composition
+      - goal-classification
+    gate:
+      type: human
+      action: approve-pipeline
+
+# composition_rules: evaluated at runtime after goal-clarification (D23).
+# classification fields are filled in by the Architect from the current goal.
+# Values below are representative defaults — overridden at runtime.
+composition_rules:
+  classification:
+    scope: mixed           # kernel | skills | agents | pipelines | docs | mixed
+    risk: additive         # governance-change | breaking-change | additive | cosmetic
+    complexity: medium     # simple | medium | complex
+    knowledge: known-pattern  # known-pattern | needs-research | novel
+
+  # Rules are evaluated top-to-bottom. First match wins.
+  rules:
+    - condition: "risk == governance-change"
+      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+
+    - condition: "scope == kernel"
+      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+
+    - condition: "knowledge == needs-research"
+      pipeline: [architect, planner, evaluator, builder, architect]
+      inject: "research-phase into architect"
+
+    - condition: "scope == docs"
+      pipeline: [architect, builder, architect]
+
+    - condition: "complexity == simple AND risk == cosmetic"
+      pipeline: [planner, builder, architect]
+
+    - condition: "complexity == simple AND risk == additive"
+      pipeline: [planner, evaluator, builder, architect]
+
+    - condition: "default"
+      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+
+output: alignment-summary

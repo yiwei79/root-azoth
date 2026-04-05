@@ -15,7 +15,7 @@ scope:
 phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
-decisions: 41
+decisions: 46
 
 # Layer status
 layers:

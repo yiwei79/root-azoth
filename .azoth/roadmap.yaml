@@ -59,7 +59,7 @@ tasks:
   - id: P3-002
     title: "Create pipeline YAML schema"
     priority: 3
-    status: pending
+    status: complete
     decision_ref: D6
     description: "Define the declarative pipeline schema for Layer 3 orchestration"
     blocked_by: null
@@ -67,7 +67,7 @@ tasks:
   - id: P3-003
     title: "Implement pipeline presets as YAML files"
     priority: 3
-    status: pending
+    status: complete
     decision_ref: [D28, D23]
     description: "Create 8 pipeline preset files: full, deliver, hotfix, docs, research, review, refactor, auto"
     blocked_by: [P3-002]

@@ -21,7 +21,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D3 | Trust Contract: entropy ceiling | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D4 | Repo: isolated from org repos | ✅ implemented | Repository setup | 1 |
 | D5 | Distribution: git clone + installer | ✅ implemented | install.sh | 1 |
-| D6 | Pipelines: YAML-declarative | 📋 planned | pipelines/ (Phase 3) | 3 |
+| D6 | Pipelines: YAML-declarative | 🔧 partial | pipelines/pipeline.schema.yaml (preset files pending P3-003) | 3 |
 | D7 | Agents: 10 archetypes, 4 tiers | 📋 planned | agents/ (Phase 3) | 3 |
 | D8 | Coded scaffold: included | ✅ implemented | scaffold/ | 1 |
 | D9 | Sync extraction: Python script | ✅ implemented | scripts/azoth-sync.py | 1.5 |
@@ -32,13 +32,13 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D14 | Observability: session telemetry | 🔧 partial | kernel/GOVERNANCE.md Section 6 | 1 |
 | D15 | Rollback: git-based checkpoints | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D16 | README: Phase 4 deliverable | 📋 planned | — | 4 |
-| D17 | Pipeline schema: Phase 3 deliverable | 📋 planned | pipelines/ | 3 |
+| D17 | Pipeline schema: Phase 3 deliverable | 🔧 partial | pipelines/pipeline.schema.yaml + pipeline.template.yaml | 3 |
 | D18 | OpenCode: compatible via CLAUDE.md | ✅ implemented | CLAUDE.md | 1 |
 | D19 | Platform adapter pattern | ✅ implemented | kernel/templates/platform-adapters/ | 1 |
 | D20 | No multi-platform layers in kernel | ✅ implemented | kernel/ | 1 |
-| D21 | Full pipeline: 7 stages with typed gates | 📋 planned | pipelines/ (Phase 3) | 3 |
-| D22 | Goal Clarification Protocol (Stage 0) | 📋 planned | pipelines/ (Phase 3) | 3 |
-| D23 | Auto-pipeline: LLM-as-router | 📋 planned | pipelines/ (Phase 3) | 3 |
+| D21 | Full pipeline: 7 stages with typed gates | 🔧 partial | pipelines/full.pipeline.yaml (router pending P3-004) | 3 |
+| D22 | Goal Clarification Protocol (Stage 0) | 🔧 partial | pipelines/full.pipeline.yaml goal-clarification stage | 3 |
+| D23 | Auto-pipeline: LLM-as-router | 🔧 partial | pipelines/auto.pipeline.yaml composition_rules (router pending P3-004) | 3 |
 | D24 | Gate typing: human vs agent | ✅ implemented | kernel/GOVERNANCE.md | 1 |
 | D25 | 12 seed slash commands | ✅ implemented | .claude/commands/ | 1 |
 | D26 | Proactive Agent Posture: 3 tiers | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
@@ -68,7 +68,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | Status | Count |
 |--------|-------|
 | ✅ implemented | 27 |
-| 🔧 partial | 2 |
-| 📋 planned | 17 |
+| 🔧 partial | 7 |
+| 📋 planned | 12 |
 | 🔄 superseded | 0 |
 | **Total** | **46** |

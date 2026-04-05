@@ -1,0 +1,48 @@
+# Review Pipeline — Azoth Layer 3 (D28)
+# Code and governance review pipeline.
+# Use for: PR review, governance audit, policy compliance check, architecture review.
+
+name: review
+description: >
+  3-stage pipeline for code and governance review.
+  Architect explores the artifact, governance reviewer checks compliance,
+  architect synthesizes findings into a review report.
+  Human gate at design (scope alignment) and final approval.
+preset: review
+
+stages:
+  - name: architect-design
+    agent: architect
+    tools:
+      - explore
+    outputs:
+      - review-scope
+      - review-criteria
+    gate:
+      type: human
+      action: approve-design
+
+  - name: governance-review
+    agent: reviewer
+    inputs:
+      - review-scope
+      - review-criteria
+    outputs:
+      - review-findings
+      - governance-disposition
+    gate:
+      type: agent
+      agent: architect
+      action: architect-disposition
+
+  - name: architect-review
+    agent: architect
+    role: post-review-synthesis
+    inputs:
+      - review-findings
+      - governance-disposition
+    gate:
+      type: human
+      action: final-approval
+
+output: review-report

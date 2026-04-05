@@ -1,0 +1,38 @@
+# Hotfix Pipeline — Azoth Layer 3 (D28)
+# Minimal pipeline for urgent bug fixes.
+# Use for: targeted fixes where cause is known, scope is narrow, no design change needed.
+
+name: hotfix
+description: >
+  Minimal 3-stage pipeline for urgent, scope-contained bug fixes.
+  Skips test-design stage — fix is narrow enough that existing tests cover acceptance.
+  Human gate only at final delivery.
+preset: hotfix
+
+stages:
+  - name: planning
+    agent: planner
+    outputs:
+      - task-plan
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: implementation
+    agent: builder
+    inputs:
+      - task-plan
+    gate:
+      type: agent
+      agent: evaluator
+      action: auto-test
+
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review
+    gate:
+      type: human
+      action: final-approval
+
+output: fix-summary

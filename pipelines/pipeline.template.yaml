@@ -1,0 +1,138 @@
+# Azoth Pipeline Template — Layer 3 (D6, D21, D28)
+# ────────────────────────────────────────────────────────────────────────────
+# Copy to pipelines/{preset}.pipeline.yaml and fill in fields.
+# Remove comment lines and unused optional fields before committing.
+# Validate: pytest tests/test_pipeline_schema.py
+# Schema:   pipelines/pipeline.schema.yaml
+# ────────────────────────────────────────────────────────────────────────────
+
+# Required. kebab-case. Must match filename stem.
+name: pipeline-name
+
+# Required. One paragraph: purpose + trigger conditions.
+description: >
+  Describe when this pipeline is used and what it produces.
+  Be specific about the scope of work it covers.
+
+# Required. One of: full | deliver | hotfix | docs | research | review | refactor | auto
+preset: deliver
+
+# Required. At least one stage. Executed top-to-bottom.
+stages:
+
+  # ── Example Stage 1: Architect Design (with embedded investigation) ───────
+  # D27: exploration/research agents are tools invoked BY architect, not stages.
+  - name: architect-design
+    agent: architect              # one of 10 archetypes — see agents/
+
+    # Optional. Sub-agents architect may invoke within this stage (D27).
+    tools:
+      - explore                   # codebase traversal
+      - research                  # external knowledge
+      # - research-orchestrator   # deep multi-source investigation
+
+    # Optional. Artifacts consumed from prior stages.
+    # inputs:
+    #   - prior-artifact
+
+    # Optional. Artifacts this stage produces for downstream stages.
+    outputs:
+      - architecture-brief
+
+    # Required. Typed exit gate (D24).
+    # Rule: kernel/, governance, design approval → type: human (mandatory)
+    gate:
+      type: human
+      action: approve-design      # conventional label
+
+  # ── Example Stage 2: Planning (agent-validated gate) ──────────────────────
+  - name: planning
+    agent: planner
+
+    inputs:
+      - architecture-brief
+
+    outputs:
+      - task-plan
+      - test-strategy
+
+    gate:
+      type: agent                 # automated validation
+      agent: architect            # which agent validates — required when type: agent
+      action: architect-review
+
+  # ── Example Stage 3: Test Design ─────────────────────────────────────────
+  - name: test-design
+    agent: evaluator
+
+    inputs:
+      - task-plan
+      - test-strategy
+
+    outputs:
+      - test-specs
+      - acceptance-criteria
+
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  # ── Example Stage 4: Implementation ──────────────────────────────────────
+  - name: implementation
+    agent: builder
+
+    inputs:
+      - task-plan
+      - test-specs
+
+    gate:
+      type: agent
+      agent: evaluator
+      action: auto-test
+
+  # ── Example Stage 5: Architect Review (final, with D44 rubric hook) ───────
+  # 'role' distinguishes this architect appearance from Stage 1.
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review    # override label when agent appears multiple times
+
+    inputs:
+      - architecture-brief        # compare implementation back to design
+      - acceptance-criteria
+
+    gate:
+      type: human                 # final delivery gate — always human
+      action: final-approval
+      # rubric: (D44 quality rubric — structure defined in P3-005, optional until then)
+      #   min_capability_depth: 3
+      #   required_sections: [constraints, interaction-patterns, governance]
+      #   scoring_threshold: 0.8
+
+# Optional. Label for the final artifact this pipeline produces.
+output: alignment-summary
+
+
+# ── Auto-Pipeline Composition Rules (preset: auto only) ───────────────────
+# composition_rules is only valid when preset: auto (D23).
+# The Architect classifies the goal and evaluates rules top-to-bottom.
+# First matching condition wins. Include a catch-all default as the last rule.
+#
+# composition_rules:
+#   classification:
+#     scope: kernel | skills | agents | pipelines | docs | mixed
+#     risk: governance-change | breaking-change | additive | cosmetic
+#     complexity: simple | medium | complex
+#     knowledge: known-pattern | needs-research | novel
+#   rules:
+#     - condition: "risk == governance-change"
+#       pipeline: [architect, planner, builder, evaluator, architect]
+#     - condition: "scope == kernel"
+#       pipeline: [architect, planner, builder, evaluator, architect]
+#     - condition: "knowledge == needs-research"
+#       pipeline: [architect, planner, builder, architect]
+#       inject: "research-phase into architect"
+#     - condition: "complexity == simple AND risk == cosmetic"
+#       pipeline: [planner, builder, architect]
+#     - condition: "default"
+#       pipeline: [architect, planner, builder, evaluator, architect]

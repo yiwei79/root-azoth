@@ -1,0 +1,230 @@
+# Azoth Pipeline Schema — D6, D17, D21, D24, D28
+# JSON Schema (draft 2020-12) expressed in YAML for readability.
+# Validates pipeline preset files in pipelines/*.pipeline.yaml
+#
+# Decisions:
+#   D6  — Pipelines: YAML-declarative
+#   D17 — Pipeline schema: Phase 3 deliverable
+#   D21 — Full pipeline: 7 stages with typed gates
+#   D23 — Auto-pipeline: LLM-as-router (composition_rules)
+#   D24 — Gate typing: human vs agent
+#   D28 — 8 pipeline presets
+#   D44 — Stage 6 quality rubric hook (gate.rubric, structure deferred to P3-005)
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:pipeline:v1"
+title: "Azoth Pipeline"
+description: >
+  Layer 3 declarative pipeline definition.
+  See docs/AZOTH_ARCHITECTURE.md §D6, D21, D24, D28.
+type: object
+required: [name, description, preset, stages]
+additionalProperties: false
+
+properties:
+
+  name:
+    type: string
+    pattern: "^[a-z][a-z0-9-]*$"
+    description: >
+      Pipeline identifier in kebab-case. Must match the filename stem
+      (e.g. file deliver.pipeline.yaml → name: deliver).
+
+  description:
+    type: string
+    minLength: 1
+    description: "Human-readable purpose — when to use this pipeline and what it produces."
+
+  preset:
+    type: string
+    enum: [full, deliver, hotfix, docs, research, review, refactor, auto]
+    description: >
+      One of the 8 pipeline presets (D28).
+        full     — governance/kernel changes (all 7 stages)
+        deliver  — pre-approved additive work
+        hotfix   — urgent bug fixes (minimal stages)
+        docs     — documentation only
+        research — investigation/analysis
+        review   — code/governance review
+        refactor — structural changes, TDD
+        auto     — composed dynamically by the Architect (D23)
+
+  stages:
+    type: array
+    minItems: 1
+    description: >
+      Ordered list of pipeline stages executed sequentially.
+      Each stage invokes one primary agent and exits through a typed gate.
+    items:
+      $ref: "#/$defs/stage"
+
+  output:
+    type: string
+    description: "Label for the final artifact this pipeline produces (e.g. alignment-summary)."
+
+  composition_rules:
+    $ref: "#/$defs/composition_rules"
+    description: "Auto-pipeline router rules (D23). Only present when preset=auto."
+
+$defs:
+
+  # ── Agent enum ────────────────────────────────────────────────────────────
+  agent_name:
+    type: string
+    enum:
+      - architect
+      - planner
+      - builder
+      - reviewer
+      - researcher
+      - research-orchestrator
+      - evaluator
+      - prompt-engineer
+      - agent-crafter
+      - context-architect
+    description: "One of the 10 canonical agent archetypes (D7). See agents/ for definitions."
+
+  # ── Gate ─────────────────────────────────────────────────────────────────
+  # Every stage exits through a typed gate (D24).
+  # human — blocks until explicit human signal; required for kernel/governance/final-delivery
+  # agent — another agent validates automatically; requires gate.agent
+  gate:
+    type: object
+    required: [type, action]
+    additionalProperties: false
+    description: >
+      Typed exit gate for a pipeline stage (D24).
+      Rule: stages touching kernel/, governance files, or M2→M1 promotion MUST use type: human.
+    properties:
+      type:
+        type: string
+        enum: [human, agent]
+        description: "human = explicit human signal required. agent = automated validation."
+      action:
+        type: string
+        description: >
+          Gate action label. Conventional values:
+            approve-pipeline    — Stage 0 human gate
+            approve-design      — Stage 1 human gate
+            architect-disposition — governance agent gate
+            architect-review    — plan/test quality agent gate
+            auto-test           — implementation agent gate
+            final-approval      — Stage 6 human gate
+      agent:
+        $ref: "#/$defs/agent_name"
+        description: >
+          Validating agent for agent-type gates.
+          Required when type=agent. Must be absent when type=human.
+      rubric:
+        type: object
+        additionalProperties: true
+        description: >
+          D44 quality rubric for Stage 6 architect-review gates.
+          Enforces minimum depth thresholds on structured content before gate passes.
+          Full rubric structure defined in P3-005.
+    # Constraint: agent field required when type=agent
+    if:
+      properties:
+        type:
+          const: agent
+    then:
+      required: [agent]
+
+  # ── Stage ─────────────────────────────────────────────────────────────────
+  stage:
+    type: object
+    required: [name, agent, gate]
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        description: "Stage identifier in kebab-case."
+      agent:
+        $ref: "#/$defs/agent_name"
+        description: "Primary agent executing this stage."
+      role:
+        type: string
+        description: >
+          Override role label used when the same agent archetype appears in multiple
+          stages (e.g. architect appears in stage 1 as designer and stage 6 as reviewer).
+          Example: post-delivery-review
+      tools:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum: [explore, research, research-orchestrator]
+        description: >
+          Sub-agents the primary agent may invoke within its stage (D27).
+          Exploration/research agents are tools, not separate stages.
+          Meaningful only for architect stages.
+      inputs:
+        type: array
+        items:
+          type: string
+        description: "Artifact names this stage expects from prior stages."
+      outputs:
+        type: array
+        items:
+          type: string
+        description: "Artifact names this stage produces for downstream stages."
+      gate:
+        $ref: "#/$defs/gate"
+
+  # ── Composition Rules (auto preset only) ─────────────────────────────────
+  composition_rules:
+    type: object
+    additionalProperties: false
+    description: >
+      D23 auto-pipeline composition config.
+      The Architect classifies the goal, evaluates rules top-to-bottom,
+      and composes a stage list. First matching rule wins.
+      Only valid when preset=auto.
+    required: [classification, rules]
+    properties:
+      classification:
+        type: object
+        additionalProperties: false
+        required: [scope, risk, complexity, knowledge]
+        description: "Goal classification dimensions used to select composition rule."
+        properties:
+          scope:
+            type: string
+            enum: [kernel, skills, agents, pipelines, docs, mixed]
+          risk:
+            type: string
+            enum: [governance-change, breaking-change, additive, cosmetic]
+          complexity:
+            type: string
+            enum: [simple, medium, complex]
+          knowledge:
+            type: string
+            enum: [known-pattern, needs-research, novel]
+      rules:
+        type: array
+        minItems: 1
+        description: >
+          Ordered composition rules. First matching condition wins.
+          Include a catch-all default as the last entry.
+        items:
+          type: object
+          required: [condition, pipeline]
+          additionalProperties: false
+          properties:
+            condition:
+              type: string
+              description: >
+                Boolean expression over classification fields.
+                Examples: "risk == governance-change", "complexity == simple AND risk == cosmetic"
+            pipeline:
+              type: array
+              minItems: 1
+              items:
+                type: string
+              description: "Ordered agent names forming the composed stage sequence."
+            inject:
+              type: string
+              description: >
+                Optional stage injection directive.
+                Example: "research-phase into architect"

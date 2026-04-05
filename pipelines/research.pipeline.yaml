@@ -1,0 +1,36 @@
+# Research Pipeline — Azoth Layer 3 (D28)
+# Investigation and analysis pipeline.
+# Use for: technology research, codebase archaeology, design exploration, feasibility analysis.
+
+name: research
+description: >
+  2-stage pipeline for investigation and analysis work.
+  Architect runs a full research swarm (researcher + research-orchestrator)
+  to synthesize findings into a research brief, then human reviews conclusions.
+  No implementation stages — output is knowledge, not code.
+preset: research
+
+stages:
+  - name: architect-design
+    agent: architect
+    tools:
+      - research
+      - research-orchestrator
+    outputs:
+      - research-brief
+      - findings-summary
+    gate:
+      type: human
+      action: approve-design
+
+  - name: architect-review
+    agent: architect
+    role: post-research-review
+    inputs:
+      - research-brief
+      - findings-summary
+    gate:
+      type: human
+      action: final-approval
+
+output: research-brief

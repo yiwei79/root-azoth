@@ -1,0 +1,55 @@
+# Deliver Pipeline — Azoth Layer 3 (D28)
+# Lean pipeline for pre-approved, additive work.
+# Use for: features/fixes where design is already approved, no governance risk.
+
+name: deliver
+description: >
+  Lean 4-stage pipeline for pre-approved additive work.
+  Skips goal-clarification and governance review — design is already agreed.
+  Human gate only at final delivery.
+preset: deliver
+
+stages:
+  - name: planning
+    agent: planner
+    outputs:
+      - task-plan
+      - test-strategy
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: test-design
+    agent: evaluator
+    inputs:
+      - task-plan
+      - test-strategy
+    outputs:
+      - test-specs
+      - acceptance-criteria
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: implementation
+    agent: builder
+    inputs:
+      - task-plan
+      - test-specs
+    gate:
+      type: agent
+      agent: evaluator
+      action: auto-test
+
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review
+    inputs:
+      - acceptance-criteria
+    gate:
+      type: human
+      action: final-approval
+
+output: alignment-summary
