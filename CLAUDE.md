@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (44 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (51 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 

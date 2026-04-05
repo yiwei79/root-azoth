@@ -30,7 +30,7 @@ layers:
     agents: 10  # 4 core + 2 research + 3 meta + 1 utility
   current:   # Layer 3: Pipelines
     status: active
-    pipelines: 8  # schema + 8 presets (P3-002, P3-003 complete)
+    pipelines: 8  # 8 presets (P3-003 complete)
 
 # Memory system
 memory:

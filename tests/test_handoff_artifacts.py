@@ -381,9 +381,9 @@ class TestCrossArtifactConsistency:
         assert "primary" in claude_lower and "claude" in claude_lower
 
     def test_decision_count_consistent(self) -> None:
-        """All files referencing decision count should say 41."""
-        assert "41" in self.claude_md or "D41" in self.claude_md
-        assert self.azoth_yaml["decisions"] == 41
+        """All files referencing decision count should say 51."""
+        assert "51" in self.claude_md
+        assert self.azoth_yaml["decisions"] == 51
 
 
 # ═══════════════════════════════════════════════════════════════════════

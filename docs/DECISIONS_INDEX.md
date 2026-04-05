@@ -21,7 +21,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D3 | Trust Contract: entropy ceiling | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D4 | Repo: isolated from org repos | ✅ implemented | Repository setup | 1 |
 | D5 | Distribution: git clone + installer | ✅ implemented | install.sh | 1 |
-| D6 | Pipelines: YAML-declarative | 🔧 partial | pipelines/pipeline.schema.yaml (preset files pending P3-003) | 3 |
+| D6 | Pipelines: YAML-declarative | 🔧 partial | pipelines/pipeline.schema.yaml + preset files in pipelines/ | 3 |
 | D7 | Agents: 10 archetypes, 4 tiers | 📋 planned | agents/ (Phase 3) | 3 |
 | D8 | Coded scaffold: included | ✅ implemented | scaffold/ | 1 |
 | D9 | Sync extraction: Python script | ✅ implemented | scripts/azoth-sync.py | 1.5 |
@@ -54,7 +54,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D36 | `--scaffold` vs `--project` modes | 📋 planned | Phase 4 installer | 4 |
 | D37 | root-azoth (private) / azoth (public) | ✅ implemented | Naming convention | 1.5 |
 | D38 | Scaffold infra now, extraction later | ✅ implemented | sync-config.yaml | 1.5 |
-| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | 🔄 superseded | Superseded by D48 (ROADMAP.yaml versioned) | 1.5 |
+| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | 🔄 superseded | Superseded by D48 (roadmap.yaml versioned) | 1.5 |
 | D40 | Repo rename: root-azoth | ✅ implemented | Repository naming | 1.5 |
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
@@ -63,7 +63,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D45 | Context-sensitive memory retrieval | 📋 planned | skills/context-recall/ (Phase 3) | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
-| D48 | Versioned roadmap: `.azoth/ROADMAP.yaml` | 🔧 partial | .azoth/ROADMAP.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
+| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | 🔧 partial | .azoth/roadmap.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | 📋 planned | .claude/commands/intake.md (BL-003) | 3 |
 | D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
 | D51 | Formalized M2→M1 promotion path | 📋 planned | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md (BL-005) | 3 |
@@ -73,7 +73,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | Status | Count |
 |--------|-------|
 | ✅ implemented | 29 |
-| 🔧 partial | 7 |
-| 📋 planned | 13 |
+| 🔧 partial | 9 |
+| 📋 planned | 12 |
 | 🔄 superseded | 1 |
-| **Total** | **50** |
+| **Total** | **51** |
