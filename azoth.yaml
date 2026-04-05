@@ -15,7 +15,7 @@ scope:
 phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
 
 # Architecture decisions count
-decisions: 46
+decisions: 51
 
 # Layer status
 layers:
@@ -34,7 +34,7 @@ layers:
 
 # Memory system
 memory:
-  episodes: 29
+  episodes: 32
   patterns: 1
   last_sync: null
 

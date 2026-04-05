@@ -1,6 +1,6 @@
 # Architecture Decisions Index
 
-Machine-readable index of all architecture decisions (D1–D41).
+Machine-readable index of all architecture decisions (D1–D51).
 Agents use this to check compliance and track implementation status.
 
 See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
@@ -48,27 +48,32 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D30 | Trusted source registry | ✅ implemented | .azoth/trusted-sources.yaml | 1.5 |
 | D31 | SURVEY auto-detect + `/intake` | ✅ implemented | kernel/BOOTLOADER.md, .claude/commands/intake.md | 1.5 |
 | D32 | 12-field insight schema | ✅ implemented | kernel/GOVERNANCE.md Section 7 | 1.5 |
-| D33 | 4-step intake protocol | ✅ implemented | .claude/commands/intake.md | 1.5 |
+| D33 | 4-step intake protocol | 🔧 partial | .claude/commands/intake.md (step 3 extended to 3-axis by D49 — BL-003 pending) | 1.5 |
 | D34 | root-azoth = personal root scaffold | ✅ implemented | azoth.yaml, CLAUDE.md | 1.5 |
 | D35 | azoth = public deployable product | 📋 planned | Phase 4 extraction | 4 |
 | D36 | `--scaffold` vs `--project` modes | 📋 planned | Phase 4 installer | 4 |
 | D37 | root-azoth (private) / azoth (public) | ✅ implemented | Naming convention | 1.5 |
 | D38 | Scaffold infra now, extraction later | ✅ implemented | sync-config.yaml | 1.5 |
-| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml | 1.5 |
+| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | 🔄 superseded | Superseded by D48 (ROADMAP.yaml versioned) | 1.5 |
 | D40 | Repo rename: root-azoth | ✅ implemented | Repository naming | 1.5 |
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
-| D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) | 5 |
+| D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) — P3-008/BL-002 is a subset pulled to Phase 3 | 5 |
 | D44 | Pipeline Stage 6 quality rubric for structured content | 📋 planned | pipelines/ (Phase 3) | 3 |
 | D45 | Context-sensitive memory retrieval | 📋 planned | skills/context-recall/ (Phase 3) | 3 |
-| D46 | Dev-sync script: workspace self-installation to platform directories | 📋 planned | scripts/azoth-deploy.py (Phase 3) | 3 |
+| D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
+| D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
+| D48 | Versioned roadmap: `.azoth/ROADMAP.yaml` | 🔧 partial | .azoth/ROADMAP.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
+| D49 | Intake 3-axis triage (extends D33) | 📋 planned | .claude/commands/intake.md (BL-003) | 3 |
+| D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
+| D51 | Formalized M2→M1 promotion path | 📋 planned | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md (BL-005) | 3 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 27 |
+| ✅ implemented | 29 |
 | 🔧 partial | 7 |
-| 📋 planned | 12 |
-| 🔄 superseded | 0 |
-| **Total** | **46** |
+| 📋 planned | 13 |
+| 🔄 superseded | 1 |
+| **Total** | **50** |
