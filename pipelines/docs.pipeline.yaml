@@ -1,0 +1,46 @@
+# Docs Pipeline — Azoth Layer 3 (D28)
+# Documentation-only pipeline.
+# Use for: architecture docs, ADRs, READMEs, decision indexes, anything purely written.
+
+name: docs
+description: >
+  3-stage pipeline for documentation work.
+  Architect designs structure with codebase exploration, builder drafts content,
+  architect reviews for accuracy and completeness.
+  Human gate at design (to align on structure) and final delivery.
+preset: docs
+
+stages:
+  - name: architect-design
+    agent: architect
+    tools:
+      - explore
+    outputs:
+      - doc-structure
+      - content-outline
+    gate:
+      type: human
+      action: approve-design
+
+  - name: implementation
+    agent: builder
+    inputs:
+      - doc-structure
+      - content-outline
+    outputs:
+      - draft-document
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review
+    inputs:
+      - draft-document
+    gate:
+      type: human
+      action: final-approval
+
+output: document

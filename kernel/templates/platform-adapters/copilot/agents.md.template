@@ -1,6 +1,8 @@
 ---
 name: "{{AGENT_NAME}}"
 description: "{{AGENT_DESCRIPTION}}"
+tools: {{AGENT_TOOLS}}
+model: "{{MODEL}}"
 ---
 
 # {{AGENT_NAME}}

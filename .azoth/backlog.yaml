@@ -1,0 +1,108 @@
+# Azoth Persistent Backlog (D47)
+# Operational work queue. Source of truth for all pending tasks.
+# /next reads this file alongside ROADMAP.yaml after BL-004 is delivered.
+#
+# RULES:
+# - Active items cannot be silently dropped.
+# - Deferral requires explicit target_version.
+# - target_layer routes delivery: M1 → /deliver-full (governed), others → /deliver (standard)
+# - M1 items require a dedicated session (D51) — scope card validator rejects mixed M1+runtime
+
+schema_version: 1
+
+items:
+
+  # ── Priority 1: Scope enforcement (blocks BL-003, BL-004) ────────────────
+  - id: BL-002
+    title: "Scope-gate: PreToolUse hook for builder-mode enforcement"
+    source: ep-031
+    source_insight: SCO-2026-04-05-002
+    roadmap_ref: P3-008
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.1.0
+    priority: 1
+    created_date: "2026-04-05"
+    decision_ref: [D43, D50]
+    description: >
+      PreToolUse hook on Write/Edit tools that reads .azoth/scope-gate.json.
+      If flag is absent or expired, hook exits non-zero and prints the
+      intent-declaration reminder. Moves the confirm-before-building rule
+      from agent memory (driftable — violated ep-022, ep-028, ep-029) to
+      tool execution (deterministic). Part of the D50 scope card system.
+
+  # ── Priority 2: Workflow loop M1 updates (require dedicated sessions) ────
+  - id: BL-003
+    title: "Update /intake for 3-axis triage (D49)"
+    source: ep-032
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.1.0
+    priority: 2
+    created_date: "2026-04-05"
+    decision_ref: [D33, D49]
+    blocked_by: [BL-002]
+    description: >
+      Extend D33 step 3 (Human Triage) to 3-axis: simultaneously decide
+      (1) M3 action (integrate/archive/defer), (2) M2 candidate flag (yes/no),
+      (3) backlog item needed (yes/no/draft). All axes are independent.
+      M2 flag consumed by /promote. Backlog draft appended to backlog.yaml
+      on human approval. Update .claude/commands/intake.md.
+
+  - id: BL-004
+    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
+    source: ep-032
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.1.0
+    priority: 2
+    created_date: "2026-04-05"
+    decision_ref: [D47, D48, D50]
+    blocked_by: [BL-002]
+    description: >
+      Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version,
+      (2) read backlog.yaml for operational priorities, (3) output a scope card
+      (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on
+      human approval. Scope card validator: reject any card mixing M1-targeted
+      items with runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
+
+  # ── Priority 3: Session-closeout quality ─────────────────────────────────
+  - id: BL-001
+    title: "Fix session-closeout write batching"
+    source: ep-030
+    source_insight: SCO-2026-04-05-001
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.1.0
+    priority: 3
+    created_date: "2026-04-05"
+    description: >
+      Refactor .claude/commands/session-closeout.md to sequence Write/Edit calls
+      with explicit checkpoints between each one (or batch state updates into a
+      single file where possible). Also document adding Write/Edit to
+      settings.local.json allow list as a workaround for restrictive permission
+      models that require per-call authorization.
+
+  # ── Priority 4: Governance documentation ─────────────────────────────────
+  - id: BL-005
+    title: "Formalize M2→M1 promotion path in governance doc (D51)"
+    source: ep-032
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.1.0
+    priority: 4
+    created_date: "2026-04-05"
+    decision_ref: D51
+    description: >
+      Add the M2→M1 promotion path to kernel/GOVERNANCE.md and
+      kernel/PROMOTION_RUBRIC.md. Trigger: target_layer M1 backlog item +
+      /deliver-full pipeline. Document the between-sessions-only rule.
+      Update PROMOTION_RUBRIC.md to include M2→M1 criteria alongside M3→M2.
+
+# Completed items
+completed: []

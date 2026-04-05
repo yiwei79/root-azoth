@@ -1,6 +1,12 @@
 ---
-name: "{{AGENT_NAME}}"
 description: "{{AGENT_DESCRIPTION}}"
+mode: "{{AGENT_MODE}}"
+model: "{{MODEL}}"
+permission:
+  edit: "{{PERM_EDIT}}"
+  bash: "{{PERM_BASH}}"
+  webfetch: "{{PERM_WEBFETCH}}"
+  task: "{{PERM_TASK}}"
 ---
 
 # {{AGENT_NAME}}

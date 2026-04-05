@@ -23,3 +23,11 @@ sources:
     require_approval: human
     added_date: "2026-04-04"
     added_by: human
+
+  - id: session-reflection
+    name: "Session Self-Reflection — Azoth Agent"
+    description: "Meta-observations generated during sessions from behavioral misalignments, command misinterpretations, or governance gaps observed in the current session"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-05"
+    added_by: human

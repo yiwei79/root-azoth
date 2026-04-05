@@ -17,7 +17,7 @@ Apply `agentic-eval` style review to work produced this session.
 2. Tests pass and cover new functionality
 3. Kernel integrity preserved (no unauthorized changes)
 4. Entropy stayed within bounds
-5. Architecture decisions (D1-D28) respected
+5. Architecture decisions (D1-D41) respected
 
 ### Output Format
 

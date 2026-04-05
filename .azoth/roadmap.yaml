@@ -1,113 +1,207 @@
-# Azoth Development Roadmap
-# Machine-readable task tracking for the self-improving bootstrap loop.
-# Agents read this during SURVEY to know what to work on next.
+# Azoth Versioned Roadmap (D48)
+# Supersedes the flat-task format of roadmap.yaml (D39).
+# On macOS (case-insensitive FS), ROADMAP.yaml and roadmap.yaml are the same file.
+#
+# COMPATIBILITY: The top-level `current_phase` and `tasks:` fields are preserved
+# for /next until BL-004 (skill update) is delivered. After BL-004, /next reads
+# `active_version` + `versions[active].tasks` + `.azoth/backlog.yaml` instead.
 
+# ── Legacy compat fields (/next reads these until BL-004) ─────────────────
 current_phase: 3
-current_phase_title: "Agent Archetypes"
+current_phase_title: "Agent Archetypes + Workflow Loop"
 
-# Phase summary — what's done, what's active, what's next
-phases:
-  1:
-    title: "Kernel Extraction"
-    status: complete
-    summary: "4 kernel files, 6 platform adapters, 4 templates"
-  1.5:
-    title: "Sync Infrastructure + Insight Inbox"
-    status: complete
-    summary: "azoth-sync.py, sync-config.yaml, inbox protocol (D29-D33)"
-  2:
-    title: "Skills Library"
-    status: complete
-    summary: "8 skills (5 extracted + 3 Azoth-native)"
-  3:
-    title: "Agent Archetypes"
-    status: active
-    summary: "10 agent archetypes across 4 tiers (D7)"
-    goal: "Create agent definitions for core, research, meta, and utility tiers"
-  4:
-    title: "Distribution & Product Extraction"
-    status: planned
-    summary: "Public azoth repo, installer modes, README"
-  5:
-    title: "Trust Layer Tooling"
-    status: planned
-    summary: "M3→M2 promotion automation, cross-repo memory"
-  6:
-    title: "Advanced Self-Improvement"
-    status: planned
-    summary: "L3 architecture search, Agent Crafter"
-
-# Active task backlog — ordered by priority
-# Status: pending | in_progress | blocked | complete
 tasks:
-  - id: P3-001
-    title: "Define 10 agent archetypes in agents/ directory"
+  # Workflow loop — highest priority (new, D47-D51)
+  - id: BL-002
+    title: "Scope-gate: PreToolUse hook for builder-mode enforcement (P3-008)"
     priority: 1
     status: pending
-    decision_ref: D7
-    description: "Create .md definitions for 10 agents across 4 tiers: Core (architect, planner, implementer, reviewer), Research (explorer, analyst), Meta (self-improver, evaluator), Utility (documenter, tester)"
+    decision_ref: [D43, D50]
+    target_layer: M1
+    delivery_pipeline: governed
+    description: >
+      PreToolUse hook on Write/Edit that reads .azoth/scope-gate.json.
+      If flag absent or expired, hook exits non-zero and prints the
+      intent-declaration reminder. Moves confirm-before-building rule
+      from agent memory (3 violations: ep-022, ep-028, ep-029) to
+      tool execution (deterministic). Part of closed workflow loop (D50).
     blocked_by: null
 
-  - id: P3-002
-    title: "Create pipeline YAML schema"
+  - id: BL-003
+    title: "Update /intake for 3-axis triage (D49)"
     priority: 2
     status: pending
-    decision_ref: D6
-    description: "Define the declarative pipeline schema for Layer 3 orchestration"
-    blocked_by: null
+    decision_ref: [D33, D49]
+    target_layer: M1
+    delivery_pipeline: governed
+    description: >
+      Extend D33 step 3: human simultaneously decides M3 action +
+      M2 candidate flag + backlog item needed. Update intake.md to
+      present 3-axis card format and append to backlog.yaml on
+      human approval of a backlog item draft.
+    blocked_by: [BL-002]
 
-  - id: P3-003
-    title: "Implement pipeline presets as YAML files"
+  - id: BL-004
+    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
+    priority: 2
+    status: pending
+    decision_ref: [D47, D48, D50]
+    target_layer: M1
+    delivery_pipeline: governed
+    description: >
+      Rewrite /next to: (1) read ROADMAP.yaml active version tasks,
+      (2) read backlog.yaml for operational priorities, (3) output a
+      scope card (1 primary + max 2 secondary goals), (4) write
+      scope-gate.json on human approval. Validator: reject scope cards
+      mixing M1-targeted items with runtime tasks. Deprecates flat tasks:.
+    blocked_by: [BL-002]
+
+  - id: BL-001
+    title: "Fix session-closeout write batching"
     priority: 3
     status: pending
-    decision_ref: [D28, D23]
-    description: "Create 8 pipeline preset files: full, deliver, hotfix, docs, research, review, refactor, auto"
-    blocked_by: [P3-002]
+    target_layer: M1
+    delivery_pipeline: governed
+    description: >
+      Refactor session-closeout to sequence Write/Edit calls with
+      explicit checkpoints, or batch state updates into a single file.
+      Document adding Write/Edit to settings.local.json allow list for
+      restrictive permission models.
+    blocked_by: null
 
+  - id: BL-005
+    title: "Formalize M2→M1 promotion path in governance doc (D51)"
+    priority: 4
+    status: pending
+    decision_ref: D51
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    description: >
+      Add M2→M1 promotion path to kernel/GOVERNANCE.md and
+      PROMOTION_RUBRIC.md: trigger = target_layer M1 backlog item +
+      /deliver-full pipeline. Document the between-sessions-only rule.
+    blocked_by: null
+
+  # Phase 3 — original tasks
   - id: P3-004
     title: "Auto-pipeline router (LLM-as-router)"
-    priority: 4
+    priority: 5
     status: pending
     decision_ref: D23
     description: "Implement the auto-detection logic that selects pipeline preset based on goal"
     blocked_by: [P3-003]
 
-  - id: P1.5-CLEANUP
-    title: "M3 episode count sync in azoth.yaml"
-    priority: 5
+  - id: P3-005
+    title: "Define Stage 6 quality rubric for structured content in delivery pipelines"
+    priority: 6
     status: pending
-    decision_ref: D11
-    description: "azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has entries. Session closeout should update the count."
+    decision_ref: [D21, D44]
+    description: >
+      The full pipeline Stage 6 (Architect Review) needs explicit quality criteria
+      for structured content: minimum depth thresholds, governance constraint
+      coverage, interaction pattern completeness.
+    blocked_by: [P3-002]
+
+  - id: P3-006
+    title: "Build context-recall skill (memory read interface)"
+    priority: 6
+    status: pending
+    decision_ref: [D11, D45]
+    description: >
+      Layer 1 skill implementing the D45 read path: extract tags from current goal,
+      grep M3/M2, rank matches, surface top 1-3 episodes before planning.
     blocked_by: null
 
-# Completed tasks (recent)
-completed:
-  - id: P1-001
-    title: "Kernel extraction from SupplyGrowth"
-    completed_date: "2026-04-04"
-    decision_ref: [D1, D2, D3, D4]
+  - id: P1.5-CLEANUP
+    title: "M3 episode count sync in azoth.yaml"
+    priority: 7
+    status: pending
+    decision_ref: D11
+    description: "azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has entries."
+    blocked_by: null
 
-  - id: P1.5-001
-    title: "Sync pipeline implementation"
-    completed_date: "2026-04-04"
-    decision_ref: D9
+# ── Versioned structure (D48) — active after BL-004 ──────────────────────
+schema_version: 1
+active_version: v0.1.0
 
-  - id: P1.5-002
-    title: "Insight Inbox Protocol"
-    completed_date: "2026-04-04"
-    decision_ref: [D29, D30, D31, D32, D33]
+versions:
 
-  - id: P1.5-003
-    title: "Root scaffold identity + product split"
-    completed_date: "2026-04-04"
-    decision_ref: [D34, D35, D36, D37, D38]
+  - id: v0.1.0
+    status: active
+    goal: "Kernel + skills + agent archetypes + deploy infrastructure + closed workflow loop"
+    phase_scope: [1, 1.5, 2, 3]
+    completed_tasks:
+      - {id: P1-001, title: "Kernel extraction", decision_ref: [D1, D2, D3, D4]}
+      - {id: P1.5-001, title: "Sync pipeline", decision_ref: D9}
+      - {id: P1.5-002, title: "Insight Inbox Protocol", decision_ref: [D29, D30, D31, D32, D33]}
+      - {id: P1.5-003, title: "Root scaffold identity", decision_ref: [D34, D35, D36, D37, D38]}
+      - {id: P1.5-004, title: "Bootstrap loop infrastructure", decision_ref: [D39, D40, D41]}
+      - {id: P2-001, title: "8 kernel skills", decision_ref: D13}
+      - {id: P3-001, title: "10 agent archetypes", decision_ref: D7}
+      - {id: P3-002, title: "Pipeline YAML schema", decision_ref: D6}
+      - {id: P3-003, title: "Pipeline preset files", decision_ref: [D28, D23]}
+      - {id: P3-007, title: "azoth-deploy.py dev-sync script", decision_ref: D46}
+      - {id: BL-ARC, title: "Closed workflow loop architecture (D47-D51)", decision_ref: [D47, D48, D49, D50, D51]}
+    pending_task_refs: [BL-002, BL-003, BL-004, BL-001, BL-005, P3-004, P3-005, P3-006, P1.5-CLEANUP]
 
-  - id: P2-001
-    title: "8 kernel skills"
-    completed_date: "2026-04-04"
-    decision_ref: D13
+  - id: v0.2.0
+    status: planned
+    goal: "Distribution, CI, public launch (Phase 4)"
+    phase_scope: [4]
+    tasks:
+      - id: P4-001
+        title: "README (philosophy + quickstart)"
+        decision_ref: D16
+        deferred_reason: "Distribution blocked until v0.1.0 workflow loop is stable"
+      - id: P4-002
+        title: "azoth init interactive onboarding"
+        decision_ref: [D5, D36]
+        deferred_reason: "Premature before v0.1.0 kernel + skills are stable"
+      - id: P4-003
+        title: "CI for drift detection"
+        deferred_reason: "CI adds infra overhead; defer until public repo exists"
+      - id: P4-004
+        title: "Publish to GitHub (public azoth repo)"
+        decision_ref: [D35, D37]
+        deferred_reason: "Requires README + installer + CI first"
+      - id: P4-005
+        title: "Path duality convention (kernel/ vs .azoth/kernel/)"
+        decision_ref: D42
+        deferred_reason: "Not load-bearing until distribution mode exists"
+      - id: P4-006
+        title: "Update kernel docs for dual-path awareness"
+        deferred_reason: "Depends on D42 design"
 
-  - id: P1.5-004
-    title: "Bootstrap loop infrastructure"
-    completed_date: "2026-04-04"
-    decision_ref: [D39, D40, D41]
+  - id: v0.3.0
+    status: planned
+    goal: "Trust layer tooling (Phase 5)"
+    phase_scope: [5]
+    tasks:
+      - id: P5-001
+        title: "Commit-time governance enforcement hooks"
+        decision_ref: D43
+        note: "P3-008/BL-002 (scope-gate) is a subset pulled forward to v0.1.0"
+      - id: P5-002
+        title: "entropy-check hook"
+      - id: P5-003
+        title: "alignment-summary hook"
+      - id: P5-004
+        title: "Session telemetry"
+        decision_ref: D14
+      - id: P5-005
+        title: "Git-based checkpoints"
+        decision_ref: D15
+      - id: P5-006
+        title: "Phone-friendly output"
+
+  - id: v0.4.0
+    status: backlog
+    goal: "Meta-recursive (Phase 6)"
+    phase_scope: [6]
+    tasks:
+      - id: P6-001
+        title: "Agent Crafter"
+      - id: P6-002
+        title: "L2 prompt optimization"
+      - id: P6-003
+        title: "L3 human-gated architecture proposals"

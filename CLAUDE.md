@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (41 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (44 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -89,6 +89,17 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - **Errors**: Explicit error messages, fail loudly
 - **Comments**: Only for "why", never for "what"
 
+### Git Conventions
+
+- **No Co-Authored-By**: NEVER add Co-Authored-By tags or trailers to any commit, PR
+  description, or output. No exceptions. This is a governance rule, not a preference.
+- **Scope-limited fixes**: When asked to fix a specific artifact (e.g. a PR description or
+  a commit message), operate only on that artifact. Do NOT rebase, amend, or rewrite other
+  commits unless explicitly asked. Expansion of scope to git history is always ask-first (D26).
+- **First-pass quality**: When generating structured content from a source framework (agent
+  archetypes, skills, pipeline schemas), match the depth and richness of the source on the
+  first pass. Simplified stubs that require a second enrichment pass are a quality failure.
+
 ## v0.1.0 Phase Roadmap
 
 ### Phase 1: Kernel Extraction ✅ COMPLETE
@@ -112,20 +123,26 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - [x] Skill drift detection tests
 
 ### Phase 3: Agent Archetypes 🎯 CURRENT
-- [ ] T1: architect, planner, builder, reviewer
-- [ ] T2: researcher, research-orchestrator
-- [ ] T3: prompt-engineer, evaluator, agent-crafter
-- [ ] T4: context-architect
+- [~] T1: architect, planner, builder, reviewer (initial draft + External Analysis refinements done; online research refinement pending)
+- [~] T2: researcher, research-orchestrator (same)
+- [~] T3: prompt-engineer, evaluator, agent-crafter (same)
+- [~] T4: context-architect (same)
 - [ ] Pipeline YAML schema
 - [ ] Dual-format agent templates
+- [ ] D44: Stage 6 quality rubric for structured content in delivery pipelines
+- [ ] D45: Context-recall skill (memory read interface)
 
 ### Phase 4: Distribution & Polish
+- [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)
+- [ ] Update kernel docs for dual-path awareness (BOOTLOADER.md, GOVERNANCE.md, TRUST_CONTRACT.md)
+- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list
 - [ ] README (philosophy + quickstart)
 - [ ] `azoth init` interactive onboarding
 - [ ] CI for drift detection
 - [ ] Publish to GitHub
 
 ### Phase 5: Trust Layer
+- [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
 - [ ] entropy-check hook
 - [ ] alignment-summary hook
 - [ ] Session telemetry

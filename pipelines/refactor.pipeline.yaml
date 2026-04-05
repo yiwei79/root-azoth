@@ -1,0 +1,71 @@
+# Refactor Pipeline — Azoth Layer 3 (D28)
+# Structural changes with TDD discipline.
+# Use for: module restructuring, interface redesign, dependency cleanup, performance refactors.
+
+name: refactor
+description: >
+  5-stage pipeline for structural changes using test-driven discipline.
+  Architect explores the existing structure before designing the refactor target,
+  ensuring tests are written before implementation begins.
+  Human gate at design (to confirm structural intent) and final delivery.
+preset: refactor
+
+stages:
+  - name: architect-design
+    agent: architect
+    tools:
+      - explore
+    outputs:
+      - architecture-brief
+      - refactor-target
+    gate:
+      type: human
+      action: approve-design
+
+  - name: planning
+    agent: planner
+    inputs:
+      - architecture-brief
+      - refactor-target
+    outputs:
+      - task-plan
+      - test-strategy
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: test-design
+    agent: evaluator
+    inputs:
+      - task-plan
+      - test-strategy
+    outputs:
+      - test-specs
+      - acceptance-criteria
+    gate:
+      type: agent
+      agent: architect
+      action: architect-review
+
+  - name: implementation
+    agent: builder
+    inputs:
+      - task-plan
+      - test-specs
+    gate:
+      type: agent
+      agent: evaluator
+      action: auto-test
+
+  - name: architect-review
+    agent: architect
+    role: post-delivery-review
+    inputs:
+      - architecture-brief
+      - acceptance-criteria
+    gate:
+      type: human
+      action: final-approval
+
+output: alignment-summary

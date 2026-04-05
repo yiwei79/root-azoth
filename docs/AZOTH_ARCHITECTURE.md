@@ -161,6 +161,26 @@ Work → Episode (M3) → Auto-classify → Propose promotion → Human approves
 → Prompt Engineer auto-refines M1 content (L2 improvement)
 ```
 
+**Context-sensitive retrieval (D45):**
+
+Memory is write-AND-read. The auto-improvement loop above describes the write
+path. The read path surfaces relevant episodes and patterns into the active
+context window based on the current goal:
+
+```
+Goal → Extract tags (task_type, keywords, error_signature)
+     → Grep M3/M2 by tags → Rank by promotion status, recency, relevance
+     → Surface top 1-3 matches before planning begins
+```
+
+Retrieval is triggered at two points:
+
+1. **BOOTLOADER SURVEY** (step 6): surface patterns relevant to the session goal
+2. **Pipeline Stage 0** (Goal Clarification): surface episodes relevant to the specific task
+
+Implementation: `skills/context-recall/` (Layer 1 skill, NOT a kernel component).
+The `remember` skill handles writes to M3; `context-recall` handles reads from M3/M2.
+
 ### Instruction Library
 
 | Instruction | Scope |
@@ -236,6 +256,7 @@ actions, escalate high-risk ones.
 - Agent capability routing ("This needs Context Architect, not just SWE")
 - Refactoring opportunities ("This could be cleaner — want me to?")
 - Cross-agent escalation ("Governance issue found — invoke reviewer?")
+- Command intent resolution ("Compound instruction detected — which part first?")
 
 **Never-auto (always require human signal):**
 - Kernel modifications
@@ -465,8 +486,13 @@ Every pipeline gate must declare its type:
 CLAUDE.md (universal)
     ├── Claude Code ──── primary, full features
     ├── OpenCode ─────── reads CLAUDE.md natively (free compatibility)
-    └── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+    ├── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+    └── AGENTS.md ──────── AAIF standard (Copilot, OpenCode, Codex, Cursor, Gemini)
 ```
+
+`AGENTS.md` at the project root is co-governed by the Linux Foundation Agentic AI Foundation
+(AAIF, formed Dec 2025 with Anthropic, Microsoft, Google, OpenAI). Every major AI coding tool
+reads it natively. Azoth generates it as a cross-platform broadcast layer (D46).
 
 ### Platform Adapter Pattern
 
@@ -474,11 +500,11 @@ The installer generates platform-specific files at init time.
 Azoth's kernel stays platform-agnostic.
 
 ```
-azoth init
-  ├─ ALWAYS: CLAUDE.md, kernel/, skills/, .azoth/
+azoth init / azoth-deploy.py
+  ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
-  ├─ OpenCode detected?    → .opencode/ (agent, command, config)
-  └─ Copilot detected?     → .github/ (agents, prompts, instructions)
+  ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
+  └─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
 ```
 
 ### Compatibility Matrix
@@ -486,12 +512,56 @@ azoth init
 | Component | Claude Code | OpenCode | Copilot |
 |-----------|-------------|----------|---------|
 | CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads |
-| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .claude/skills/ | ✅ .github/skills/ |
-| Agents | .claude/agents/ | .opencode/agent/ | .github/agents/ |
-| Commands | .claude/commands/ | .opencode/command/ | .github/prompts/ |
-| Config | .claude/settings.json | opencode.jsonc | VS Code settings |
+| AGENTS.md | ✅ Native | ✅ Native | ✅ Native |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ |
+| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ |
+| Config | .claude/settings.json | opencode.json | VS Code settings |
 | Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited |
-| MCP | .mcp.json | opencode.jsonc mcp key | VS Code MCP |
+| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP |
+
+### Platform File Format Differences
+
+Key structural differences the dev-sync script (D46) must handle:
+
+| Azoth canonical field | Claude Code | Copilot `.agent.md` | OpenCode `.md` |
+| --------------------- | ----------- | ------------------- | -------------- |
+| `name` | `name` | `name` | filename (no frontmatter field) |
+| `description` | `description` | `description` (required) | `description` (required) |
+| `tier` | no equivalent | no equivalent | `mode: primary/subagent/all` (partial) |
+| `tools` list | `tools` list | `tools` list | `permission` object (richer) |
+| `posture.never_auto` | body text | body text | `permission: deny` (structural) |
+| `posture.ask_first` | body text | body text | `permission: ask` (structural) |
+| `model` | `model` | `model` (VS Code only) | `model` |
+| `skills` | body reference | no equivalent | `.opencode/skills/` (separate) |
+
+**posture → permission mapping** (OpenCode-specific, automatable):
+
+```
+posture.never_auto items  → permission: deny
+posture.ask_first items   → permission: ask
+implicitly allowed tools  → permission: allow
+```
+
+### Dev-Sync Script (D46)
+
+`scripts/azoth-deploy.py` translates canonical sources into platform-specific deployed files.
+This enables cross-platform workspace compatibility without waiting for the Phase 4 installer.
+
+```
+agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-specific fields)
+                       ├→ .github/agents/<name>.agent.md   (remap tools, drop tier/skills)
+                       └→ .opencode/agents/<name>.md       (posture→permission, infer mode)
+
+.claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)
+                       └→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
+
+skills/**/ ────────────→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+                         AGENTS.md                          (generated broadcast layer)
+```
+
+Prior art: Caliber (`caliber-ai-org/ai-setup`) uses a similar canonical→many approach
+with a git pre-commit hook triggering regeneration.
 
 ---
 
@@ -720,6 +790,16 @@ azoth/
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
+| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | Dual-path awareness for scaffold vs consumer context |
+| D43 | Commit-time governance enforcement hooks | Pre-commit hooks that mechanically enforce CLAUDE.md git rules (no Co-Authored-By, format validation) — moves governance from agent memory (driftable) to tool execution (deterministic) |
+| D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
+| D45 | Context-sensitive memory retrieval | Grep-by-tags read interface for M3/M2; dual trigger at SURVEY + Stage 0; implemented as Layer 1 skill (`context-recall`), not kernel |
+| D46 | Dev-sync script: workspace self-installation to platform directories | `scripts/azoth-deploy.py` translates canonical agents/skills/commands into Claude Code, Copilot, OpenCode platform-specific files + AGENTS.md broadcast layer |
+| D47 | Persistent backlog system: `.azoth/backlog.yaml` | Operational work queue; items carry `target_layer` (M1/M2/M3/infrastructure) and `delivery_pipeline` (governed/standard); active items cannot be silently dropped — deferral requires `target_version` |
+| D48 | Versioned roadmap: `.azoth/ROADMAP.yaml` | Supersedes D39; multi-version structure (active/planned/backlog/complete); tasks reference backlog items; CLAUDE.md becomes rendered summary; explicit deferral with reason |
+| D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |
+| D50 | Session scope card | `/next` outputs a scope card (1 primary + max 2 secondary goals); human approves → writes `.azoth/scope-gate.json`; validator rejects mixed M1+runtime sessions |
+| D51 | Formalized M2→M1 promotion path | M1 changes are a governed event: `target_layer: M1` backlog item + `/deliver-full` pipeline; M1 changes happen between sessions only; scope card validator enforces isolation |
 
 ---
 
@@ -811,12 +891,151 @@ mechanical step deferred to Phase 4:
 | D30 | Trusted source registry | Governance boundary for external data |
 | D31 | SURVEY auto-detect + `/intake` | Passive awareness + explicit processing |
 | D32 | 12-field insight schema | Structured enough to triage, flexible enough to extend |
-| D33 | 4-step intake protocol | Validate → Classify → Human Triage → Integrate/Archive |
+| D33 | 4-step intake protocol | Validate → Classify → Human Triage → Integrate/Archive *(step 3 extended by D49)* |
 | D34 | root-azoth = personal root scaffold | Private workshop, not consumer product |
 | D35 | azoth = public deployable product | Extracted via sync, consumer-ready |
 | D36 | `--scaffold` vs `--project` modes | Phase 4 product differentiation |
 | D37 | root-azoth (private) / azoth (public) | Naming convention for clarity |
 | D38 | Scaffold infra now, extraction later | Build the workshop, extract the product when ready |
-| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
+| D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction *(superseded by D48)* |
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
+
+---
+
+## 19. Closed Workflow Loop (D47–D51)
+
+### Why This Section Exists
+
+The intake → M3 → M2 pipeline (D29–D33, D11) was a one-way funnel: insights
+went *in* through the inbox, accumulated in episodes and patterns, but had no
+governed path *back out* into session planning. The result was ad-hoc scope
+creep, ignored backlog items, and a monolithic roadmap that couldn't express
+"valuable but not now."
+
+This section formalizes the full closed loop:
+
+```
+session → closeout → inbox
+          /intake (3-axis, D49) → M3 + M2-candidate flag + backlog draft
+          /promote → M2 (for M2-candidate items)
+          backlog.yaml (D47) ← operational source of truth
+          ROADMAP.yaml (D48) ← versioned strategic plan
+          /next → scope card (D50) → human approves
+          scope-gate.json → PreToolUse hook (P3-008)
+          session (scope-enforced)
+          → M1 if governed (/deliver-full), infrastructure/M2/M3 if standard
+          → loop
+```
+
+### D47: Persistent Backlog (`.azoth/backlog.yaml`)
+
+The backlog is the operational work queue. Every insight-derived task, every
+architecture decision that implies implementation, every deferred roadmap item
+lands here.
+
+**Schema fields:**
+
+| Field | Values | Purpose |
+|-------|--------|---------|
+| `id` | BL-NNN | Stable identifier |
+| `title` | string | Short description |
+| `source` | episode id / decision | Origin traceability |
+| `target_layer` | M1 / M2 / M3 / infrastructure | Routes delivery pipeline |
+| `delivery_pipeline` | governed / standard | governed → /deliver-full |
+| `status` | active / deferred / done | Active items cannot be silently dropped |
+| `target_version` | v0.1.0 / v0.2.0 / ... | Required for deferral |
+| `priority` | integer | Lower = higher priority |
+
+**Enforcement:** `/next` reads `backlog.yaml` as primary input. Active items
+persist until explicitly deferred (requires `target_version`) or done. There
+is no silent drop path.
+
+### D48: Versioned Roadmap (`.azoth/ROADMAP.yaml`)
+
+Supersedes D39. The roadmap is now multi-version:
+
+```yaml
+versions:
+  - id: v0.1.0
+    status: active       # current release scope
+  - id: v0.2.0
+    status: planned      # deferred items + next phase
+  - id: v0.3.0
+    status: planned      # future phases
+  - id: v0.4.0
+    status: backlog      # long-horizon
+```
+
+Items deferred from the active version carry an explicit `deferred_reason`.
+CLAUDE.md roadmap section becomes a rendered summary of `ROADMAP.yaml active`
+— the machine-readable file is the source of truth.
+
+`.azoth/roadmap.yaml` (D39) remains active until `/next` is updated to read
+`ROADMAP.yaml + backlog.yaml` (BL-004).
+
+### D49: Intake 3-Axis Triage (extends D33)
+
+D33's step 3 (Human Triage) is extended from a single decision to three
+independent axes presented simultaneously:
+
+```
+M3 action:      [ integrate | archive | defer ]
+M2 candidate?   [ yes | no ]
+Backlog item?   [ yes | no | draft ]
+```
+
+Any combination is valid. A single insight can be integrated into M3, flagged
+as an M2 promotion candidate, AND generate a backlog item — or any subset.
+
+**M2 candidate flag** is consumed by `/promote` (avoids re-scanning all M3).
+**Backlog item draft** is proposed by the agent and written to `backlog.yaml`
+on human approval.
+
+### D50: Session Scope Card
+
+`/next` outputs a scope card before the session begins:
+
+```
+Primary goal:    [exactly 1 task from active backlog/ROADMAP]
+Secondary goals: [0-2 supporting tasks]
+target_layer:    [M1 | infrastructure | mixed — mixed is REJECTED]
+```
+
+Human explicitly approves the scope card. Approval writes
+`.azoth/scope-gate.json` with the approved goals and expiry. The PreToolUse
+hook (P3-008) reads this file before allowing Write/Edit.
+
+**Validator rule:** A scope card mixing M1-targeted items with runtime tasks
+is rejected. M1 changes require a dedicated session.
+
+### D51: Formalized M2→M1 Promotion Path
+
+D11 noted "M2→M1 pending" as a partial status. D51 formalizes it.
+
+**Trigger:** A backlog item with `target_layer: M1` + `/deliver-full` pipeline.
+
+**Rules:**
+- M1 changes happen *between* sessions, never during an active session
+- The scope card validator (D50) enforces this: M1 items cannot be mixed with runtime tasks
+- `/deliver-full` is the required pipeline for all M1-targeted backlog items
+- This applies to kernel/, skills/ (.claude/commands/), and agents/ equally
+
+**Promotion chain:**
+
+```
+Observation (M3) --/promote--> Pattern (M2) --BL item + /deliver-full--> Procedure (M1)
+    ^                              ^                                           ^
+any insight                 reinforced >=2x                         governance-gated
+m2_candidate=true flag      set at intake                           target_layer: M1
+```
+
+### Architecture Decisions (D47–D51)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| D47 | Persistent backlog: `.azoth/backlog.yaml` | Enforced operational queue — active items cannot be silently dropped |
+| D48 | Versioned roadmap: `.azoth/ROADMAP.yaml` | Explicit deferral across versions eliminates squeeze-in scope creep |
+| D49 | Intake 3-axis triage | M3/M2/backlog routing is simultaneous and independent, not sequential |
+| D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
+| D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |

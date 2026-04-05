@@ -1,0 +1,46 @@
+---
+description: Generate unit tests for specified code
+---
+
+# /test $ARGUMENTS
+
+Generate concise, effective unit tests for the specified target.
+
+## Before Generating Tests
+
+1. Discover existing conventions: test location, naming, frameworks, patterns
+2. Analyze the target code line by line — parameters, constraints, edge cases
+3. Identify dependencies needing mocks, concurrency concerns
+4. Follow discovered patterns unless told otherwise
+
+## Test Generation Rules
+
+- Use the project's existing test framework (check `azoth.yaml` or project structure)
+- Prefer pytest for Python, jest for JS/TS, go test for Go
+- Use Arrange-Act-Assert pattern
+- Prefer parameterized tests over duplicated test methods
+- Tests must compile, run, and verify real behavior
+- Aim for 80% coverage of the target
+- Every test must be able to fail meaningfully (no test theater)
+
+## Process
+
+1. Read the target file(s) specified in `$ARGUMENTS`
+2. Identify existing tests (if any) — extend, don't duplicate
+3. Map test cases:
+   - Happy path
+   - Edge cases (empty, null, boundary values)
+   - Error cases (invalid input, failure modes)
+4. Generate tests
+5. Run tests to verify they pass
+6. Report coverage
+
+## Output
+
+- Test file(s) created or updated
+- Test count and pass/fail status
+- Coverage estimate for the target
+
+## Arguments
+
+Target: $ARGUMENTS

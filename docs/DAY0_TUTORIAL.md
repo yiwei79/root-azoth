@@ -260,8 +260,9 @@ After Day 0, sessions follow a natural rhythm:
 | Pipeline YAML schema | `/deliver-full` | Implements D21-D28 design |
 | T2-T4 agents (6) | `/deliver` | Lower risk, follow T1 pattern |
 | Dual-format templates | `/deliver` | `.agent.md` + `.prompt.md` |
+| Stage 6 quality rubric (D44) | `/deliver-full` | Minimum depth thresholds for structured content; embedded in pipeline YAML schema |
 
-**Done when:** Each agent has `.agent.md` with posture tier assignment (D26)
+**Done when:** Each agent has `.agent.md` with posture tier assignment (D26), and Stage 6 has a scored quality rubric that gates delivery
 
 ---
 
@@ -282,13 +283,14 @@ After Day 0, sessions follow a natural rhythm:
 
 | Task | Pipeline | Notes |
 |------|----------|-------|
+| Commit governance hooks (D43) | `/deliver-full` | Pre-commit strips Co-Authored-By, validates commit format — moves CLAUDE.md git rules from memory to mechanical enforcement |
 | entropy-check hook | `/deliver-full` | Core governance |
 | alignment-summary hook | `/deliver-full` | Core governance |
 | Session telemetry | `/deliver` | `.azoth/telemetry/session-log.jsonl` |
 | Git-based checkpoints | `/deliver` | Auto-snapshot before risky ops |
 | Phone-friendly output | `/deliver` | <500 word summaries |
 
-**Validation:** Trigger entropy ceiling → verify agent stops and requests alignment
+**Validation:** Trigger entropy ceiling → verify agent stops and requests alignment; attempt a Co-Authored-By commit → verify hook blocks it
 
 ---
 
@@ -421,6 +423,7 @@ Phase 3: Agent Archetypes 🎯 CURRENT
   □  Define 10 agent archetypes (D7)
   □  Create pipeline YAML schema (D6)
   □  Implement 8 pipeline presets (D28)
+  □  Define Stage 6 quality rubric for structured content (D44)
 
 Session Workflow
   □  Start: claude → agent reads CLAUDE.md → runs BOOTLOADER → loads roadmap
@@ -463,7 +466,7 @@ never-auto:  Kernel changes, governance, dependencies, M2→M1
 
 ---
 
-*This tutorial was last updated during the Day 0 audit session on 2026-04-04.
-Phase 1, 1.5, and 2 complete. 41 architecture decisions. 219 tests passing.
+*This tutorial was last updated 2026-04-05.
+Phase 1, 1.5, and 2 complete. 44 architecture decisions. 219 tests passing.
 For the source of truth on all design decisions, see `docs/AZOTH_ARCHITECTURE.md`
 and `docs/DECISIONS_INDEX.md`.*
