@@ -486,8 +486,13 @@ Every pipeline gate must declare its type:
 CLAUDE.md (universal)
     ├── Claude Code ──── primary, full features
     ├── OpenCode ─────── reads CLAUDE.md natively (free compatibility)
-    └── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+    ├── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+    └── AGENTS.md ──────── AAIF standard (Copilot, OpenCode, Codex, Cursor, Gemini)
 ```
+
+`AGENTS.md` at the project root is co-governed by the Linux Foundation Agentic AI Foundation
+(AAIF, formed Dec 2025 with Anthropic, Microsoft, Google, OpenAI). Every major AI coding tool
+reads it natively. Azoth generates it as a cross-platform broadcast layer (D46).
 
 ### Platform Adapter Pattern
 
@@ -495,11 +500,11 @@ The installer generates platform-specific files at init time.
 Azoth's kernel stays platform-agnostic.
 
 ```
-azoth init
-  ├─ ALWAYS: CLAUDE.md, kernel/, skills/, .azoth/
+azoth init / azoth-deploy.py
+  ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
-  ├─ OpenCode detected?    → .opencode/ (agent, command, config)
-  └─ Copilot detected?     → .github/ (agents, prompts, instructions)
+  ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
+  └─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
 ```
 
 ### Compatibility Matrix
@@ -507,12 +512,56 @@ azoth init
 | Component | Claude Code | OpenCode | Copilot |
 |-----------|-------------|----------|---------|
 | CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads |
-| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .claude/skills/ | ✅ .github/skills/ |
-| Agents | .claude/agents/ | .opencode/agent/ | .github/agents/ |
-| Commands | .claude/commands/ | .opencode/command/ | .github/prompts/ |
-| Config | .claude/settings.json | opencode.jsonc | VS Code settings |
+| AGENTS.md | ✅ Native | ✅ Native | ✅ Native |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ |
+| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ |
+| Config | .claude/settings.json | opencode.json | VS Code settings |
 | Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited |
-| MCP | .mcp.json | opencode.jsonc mcp key | VS Code MCP |
+| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP |
+
+### Platform File Format Differences
+
+Key structural differences the dev-sync script (D46) must handle:
+
+| Azoth canonical field | Claude Code | Copilot `.agent.md` | OpenCode `.md` |
+| --------------------- | ----------- | ------------------- | -------------- |
+| `name` | `name` | `name` | filename (no frontmatter field) |
+| `description` | `description` | `description` (required) | `description` (required) |
+| `tier` | no equivalent | no equivalent | `mode: primary/subagent/all` (partial) |
+| `tools` list | `tools` list | `tools` list | `permission` object (richer) |
+| `posture.never_auto` | body text | body text | `permission: deny` (structural) |
+| `posture.ask_first` | body text | body text | `permission: ask` (structural) |
+| `model` | `model` | `model` (VS Code only) | `model` |
+| `skills` | body reference | no equivalent | `.opencode/skills/` (separate) |
+
+**posture → permission mapping** (OpenCode-specific, automatable):
+
+```
+posture.never_auto items  → permission: deny
+posture.ask_first items   → permission: ask
+implicitly allowed tools  → permission: allow
+```
+
+### Dev-Sync Script (D46)
+
+`scripts/azoth-deploy.py` translates canonical sources into platform-specific deployed files.
+This enables cross-platform workspace compatibility without waiting for the Phase 4 installer.
+
+```
+agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-specific fields)
+                       ├→ .github/agents/<name>.agent.md   (remap tools, drop tier/skills)
+                       └→ .opencode/agents/<name>.md       (posture→permission, infer mode)
+
+.claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)
+                       └→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
+
+skills/**/ ────────────→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+                         AGENTS.md                          (generated broadcast layer)
+```
+
+Prior art: Caliber (`caliber-ai-org/ai-setup`) uses a similar canonical→many approach
+with a git pre-commit hook triggering regeneration.
 
 ---
 

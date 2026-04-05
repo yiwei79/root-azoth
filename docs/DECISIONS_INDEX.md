@@ -60,6 +60,8 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
 | D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) | 5 |
 | D44 | Pipeline Stage 6 quality rubric for structured content | 📋 planned | pipelines/ (Phase 3) | 3 |
+| D45 | Context-sensitive memory retrieval | 📋 planned | skills/context-recall/ (Phase 3) | 3 |
+| D46 | Dev-sync script: workspace self-installation to platform directories | 📋 planned | scripts/azoth-deploy.py (Phase 3) | 3 |
 
 ## Summary
 
@@ -67,6 +69,6 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 |--------|-------|
 | ✅ implemented | 27 |
 | 🔧 partial | 2 |
-| 📋 planned | 15 |
+| 📋 planned | 17 |
 | 🔄 superseded | 0 |
-| **Total** | **44** |
+| **Total** | **46** |

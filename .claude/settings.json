@@ -10,11 +10,11 @@
       "Task"
     ],
     "deny": [
+      "Edit(kernel/**)",
       "Bash(rm -rf *)",
       "Bash(git push --force)",
       "Bash(git reset --hard HEAD~)",
       "Bash(pip install)*without*requirements",
-      "Edit(kernel/**)",
       "Edit(.claude/settings.json)"
     ]
   },
