@@ -96,6 +96,15 @@ tasks:
     description: "Layer 1 skill implementing the D45 read path: extract tags from current goal, grep M3/M2, rank matches, surface top 1-3 episodes before planning. Complements the remember skill (write interface). Adapted from SupplyGrowth episodic-memory-retrieval pattern."
     blocked_by: null
 
+  - id: P3-008
+    title: "Scope-gate: PreToolUse hook for builder-mode enforcement"
+    priority: 2
+    status: pending
+    phase: 3
+    decision_ref: D43
+    description: "PreToolUse hook on Write/Edit that enforces the 'confirm before building' rule mechanically. Hook reads .azoth/scope-gate.json (set by /plan completion). If flag absent or expired, hook exits non-zero and prints the intent-declaration reminder. Moves the rule from agent memory (driftable — 3 violations: ep-022, ep-028, ep-029) to tool execution (deterministic). Subset of P5-001 pulled forward due to repeated governance failure."
+    blocked_by: null
+
   - id: P5-001
     title: "Commit-time governance enforcement hooks"
     priority: 1
