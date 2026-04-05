@@ -27,6 +27,23 @@ tasks:
       tool execution (deterministic). Part of closed workflow loop (D50).
     blocked_by: null
 
+  - id: BL-004
+    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
+    priority: 1
+    status: complete
+    decision_ref: [D47, D48, D50]
+    target_layer: M1
+    delivery_pipeline: governed
+    description: >
+      Rewrite /next to: (1) read ROADMAP.yaml active version tasks,
+      (2) read backlog.yaml for operational priorities, (3) output a
+      scope card (1 primary + max 2 secondary goals), (4) write
+      scope-gate.json on human approval. Validator: reject scope cards
+      mixing M1-targeted items with runtime tasks. Deprecates flat tasks:.
+      Priority 1 (bootstrap gap): scope-gate hook is live but scope-gate.json
+      requires manual edits until BL-004 delivers the /next scope card writer.
+    blocked_by: [BL-002]
+
   - id: BL-003
     title: "Update /intake for 3-axis triage (D49)"
     priority: 2
@@ -41,26 +58,12 @@ tasks:
       human approval of a backlog item draft.
     blocked_by: [BL-002]
 
-  - id: BL-004
-    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
-    priority: 2
-    status: pending
-    decision_ref: [D47, D48, D50]
-    target_layer: M1
-    delivery_pipeline: governed
-    description: >
-      Rewrite /next to: (1) read ROADMAP.yaml active version tasks,
-      (2) read backlog.yaml for operational priorities, (3) output a
-      scope card (1 primary + max 2 secondary goals), (4) write
-      scope-gate.json on human approval. Validator: reject scope cards
-      mixing M1-targeted items with runtime tasks. Deprecates flat tasks:.
-    blocked_by: [BL-002]
-
   - id: BL-001
     title: "Fix session-closeout write batching"
     priority: 3
     status: pending
     target_layer: M1
+    decision_ref: null
     delivery_pipeline: governed
     description: >
       Refactor session-closeout to sequence Write/Edit calls with

@@ -11,12 +11,15 @@ import pytest
 HOOK_PATH = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
 
 
-def _run(tool_name: str, gate_path: Path) -> dict:
+def _run(tool_name: str, gate_path: Path, file_path: str | None = None) -> dict:
+    tool_input: dict = {}
+    if file_path is not None:
+        tool_input["file_path"] = file_path
     stdin_payload = json.dumps(
         {
             "tool_name": tool_name,
             "hook_event_name": "PreToolUse",
-            "tool_input": {},
+            "tool_input": tool_input,
         }
     )
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
@@ -145,4 +148,18 @@ def test_t10_write_z_suffix_future_expires_at(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
+    assert _decision(output) == "allow"
+
+
+# T11: Write with file_path == gate_path, gate absent — must allow (bootstrap exception)
+def test_t11_write_to_gate_path_gate_absent(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    output = _run("Write", gate_path, file_path=str(gate_path))
+    assert _decision(output) == "allow"
+
+
+# T12: Edit with file_path == gate_path, gate absent — must allow (bootstrap exception)
+def test_t12_edit_to_gate_path_gate_absent(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    output = _run("Edit", gate_path, file_path=str(gate_path))
     assert _decision(output) == "allow"

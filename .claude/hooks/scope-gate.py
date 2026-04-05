@@ -64,6 +64,17 @@ def main() -> None:
     else:
         gate_path = REPO_ROOT / ".azoth" / "scope-gate.json"
 
+    # Exception: always allow writes to scope-gate.json itself.
+    # /next writes this file after human approval — blocking it would be circular.
+    file_path_str = payload.get("tool_input", {}).get("file_path", "")
+    if file_path_str:
+        try:
+            if Path(file_path_str).resolve() == gate_path.resolve():
+                _allow()
+                return
+        except (OSError, ValueError):
+            pass
+
     if not gate_path.exists():
         _deny(_REMINDER)
         return

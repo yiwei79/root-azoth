@@ -12,7 +12,7 @@ schema_version: 1
 
 items:
 
-  # ── Priority 1: Scope enforcement (blocks BL-003, BL-004) ────────────────
+  # ── Priority 1 (complete): Scope enforcement ─────────────────────────────
   - id: BL-002
     title: "Scope-gate: PreToolUse hook for builder-mode enforcement"
     source: ep-031
@@ -20,7 +20,7 @@ items:
     roadmap_ref: P3-008
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.1.0
     priority: 1
     created_date: "2026-04-05"
@@ -31,6 +31,29 @@ items:
       intent-declaration reminder. Moves the confirm-before-building rule
       from agent memory (driftable — violated ep-022, ep-028, ep-029) to
       tool execution (deterministic). Part of the D50 scope card system.
+
+  # ── Priority 1 (complete): Make scope-gate usable (bootstrap gap) ─────────
+  - id: BL-004
+    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
+    source: ep-032
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.1.0
+    priority: 1
+    created_date: "2026-04-05"
+    decision_ref: [D47, D48, D50]
+    blocked_by: [BL-002]
+    priority_note: >
+      Elevated to priority 1 (bootstrap exception, 2026-04-05): scope-gate hook
+      is live but scope-gate.json must be written manually until BL-004 delivers
+      the /next scope card writer. BL-004 closes the bootstrap gap.
+    description: >
+      Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version,
+      (2) read backlog.yaml for operational priorities, (3) output a scope card
+      (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on
+      human approval. Scope card validator: reject any card mixing M1-targeted
+      items with runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
 
   # ── Priority 2: Workflow loop M1 updates (require dedicated sessions) ────
   - id: BL-003
@@ -50,24 +73,6 @@ items:
       (3) backlog item needed (yes/no/draft). All axes are independent.
       M2 flag consumed by /promote. Backlog draft appended to backlog.yaml
       on human approval. Update .claude/commands/intake.md.
-
-  - id: BL-004
-    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
-    source: ep-032
-    target_layer: M1
-    delivery_pipeline: governed
-    status: active
-    target_version: v0.1.0
-    priority: 2
-    created_date: "2026-04-05"
-    decision_ref: [D47, D48, D50]
-    blocked_by: [BL-002]
-    description: >
-      Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version,
-      (2) read backlog.yaml for operational priorities, (3) output a scope card
-      (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on
-      human approval. Scope card validator: reject any card mixing M1-targeted
-      items with runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
 
   # ── Priority 3: Session-closeout quality ─────────────────────────────────
   - id: BL-001
