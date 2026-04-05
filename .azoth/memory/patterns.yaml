@@ -47,3 +47,30 @@ patterns:
       file, or a required /plan step. The memory can still exist as context,
       but the gate must be deterministic. Target layer for the gate: M1
       (kernel/settings/hooks), delivered via /deliver-full.
+
+  - id: auto-pipeline-reviewer-as-safety-net
+    approved: true
+    approved_date: "2026-04-05"
+    reinforced_by: [ep-034, ep-036]
+    trigger: any auto-pipeline run where evaluator passes but output touches logic, governance, or multi-file changes
+    summary: >
+      In the auto-pipeline, the reviewer stage consistently catches failures
+      that the evaluator misses. The evaluator checks criteria coverage and
+      scoring; the reviewer applies adversarial scrutiny to edge cases,
+      pre-existing failures, and unintended scope changes. Both stages are
+      load-bearing — removing either degrades the quality gate.
+    why_it_matters: >
+      ep-034: evaluator passed, reviewer caught 2 CRITICAL bugs (naive datetime
+      comparison, Z-suffix rejection on Python <3.11). ep-036: evaluator passed,
+      reviewer caught 3 stale DAY0_TUTORIAL references and fixed the
+      TestHandoffInboxFile skip-when-empty issue. In both cases the evaluator
+      assessed correctness at the criteria level; the reviewer found concrete
+      failures the criteria didn't surface. The pattern held across two
+      independent pipelines and different bug classes.
+    how_to_apply: >
+      Always include both evaluator and reviewer stages when the pipeline
+      touches logic, governance files, or more than ~5 files. Never collapse
+      them into a single "review" stage — they operate at different levels of
+      abstraction. If a reviewer finds issues, loop the builder back before
+      architect review. The reviewer stage is not redundant with the evaluator;
+      it is its complement.
