@@ -15,7 +15,7 @@ tasks:
   - id: BL-002
     title: "Scope-gate: PreToolUse hook for builder-mode enforcement (P3-008)"
     priority: 1
-    status: pending
+    status: complete
     decision_ref: [D43, D50]
     target_layer: M1
     delivery_pipeline: governed
