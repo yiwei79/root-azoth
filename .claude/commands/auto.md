@@ -20,21 +20,7 @@ classification:
 
 ## Pipeline Composition (D23)
 
-Apply these rules to select stages:
-
-```
-if risk == governance-change:       → full pipeline
-if scope == kernel:                 → full pipeline
-if complexity == simple AND risk == cosmetic:
-    → [planner, builder, architect-review]
-if complexity == simple AND risk == additive:
-    → [planner, test-builder, builder, architect-review]
-if knowledge == needs-research:
-    → inject research phase into architect stage
-if scope == docs:
-    → [architect, builder, architect-review]
-default:                            → full pipeline
-```
+Invoke the `auto-router` skill.
 
 ## Subagent Assignment
 

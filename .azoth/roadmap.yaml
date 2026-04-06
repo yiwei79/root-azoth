@@ -157,7 +157,7 @@ versions:
 
   - id: v0.0.3
     status: active
-    current_patch: 16
+    current_patch: 18
     goal: "Phase 3: agent archetypes + workflow loop (D47–D53)"
     phase_scope: [3]
     completed_tasks:
@@ -174,7 +174,8 @@ versions:
       - {id: BL-006, title: "Subagent invocation mandate in /deliver-full", decision_ref: D21}
       - {id: BL-007, title: "Session Welcome UX /start + scripts/welcome.py", decision_ref: D52}
       - {id: BL-008, title: "Subagent auto-routing policy (subagent-router skill)", decision_ref: D21}
-    pending_task_refs: [BL-010, P3-004, P3-005, P3-006, P1.5-CLEANUP]
+      - {id: P3-004, title: "Auto-pipeline router (LLM-as-router)", decision_ref: D23}
+    pending_task_refs: [P3-005, P3-006, P1.5-CLEANUP]
 
   - id: v0.0.4
     status: planned

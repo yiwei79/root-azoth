@@ -36,9 +36,9 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D18 | OpenCode: compatible via CLAUDE.md | ✅ implemented | CLAUDE.md | 1 |
 | D19 | Platform adapter pattern | ✅ implemented | kernel/templates/platform-adapters/ | 1 |
 | D20 | No multi-platform layers in kernel | ✅ implemented | kernel/ | 1 |
-| D21 | Full pipeline: 7 stages with typed gates | 🔧 partial | pipelines/full.pipeline.yaml (router pending P3-004) | 3 |
+| D21 | Full pipeline: 7 stages with typed gates | 🔧 partial | pipelines/full.pipeline.yaml | 3 |
 | D22 | Goal Clarification Protocol (Stage 0) | 🔧 partial | pipelines/full.pipeline.yaml goal-clarification stage | 3 |
-| D23 | Auto-pipeline: LLM-as-router | 🔧 partial | pipelines/auto.pipeline.yaml composition_rules (router pending P3-004) | 3 |
+| D23 | Auto-pipeline: LLM-as-router | ✅ implemented | skills/auto-router/SKILL.md + pipelines/auto.pipeline.yaml | 3 |
 | D24 | Gate typing: human vs agent | ✅ implemented | kernel/GOVERNANCE.md | 1 |
 | D25 | 12 seed slash commands | ✅ implemented | .claude/commands/ | 1 |
 | D26 | Proactive Agent Posture: 3 tiers | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
