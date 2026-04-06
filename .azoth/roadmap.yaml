@@ -157,7 +157,7 @@ versions:
 
   - id: v0.0.3
     status: active
-    current_patch: 21
+    current_patch: 23
     goal: "Phase 3: agent archetypes + workflow loop (D47–D53)"
     phase_scope: [3]
     completed_tasks:
