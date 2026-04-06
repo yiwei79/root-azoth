@@ -24,6 +24,13 @@ for quick comprehension — often on a phone screen.
 Work Complete → Generate Summary → Human Pulls When Ready → Signal Received → Continue
 ```
 
+### Machine-readable handoff (BL-012)
+
+For `/auto`, `/deliver`, and `/deliver-full`, the **canonical** inter-stage artifact is a YAML
+document validated by `pipelines/stage-summary.schema.yaml`. Markdown summaries in this skill
+remain valuable for **human** pull review (phone-friendly, narrative context); they do
+**not** replace the typed stage summary for orchestrator forwarding.
+
 ## When to Use
 
 - **Pipeline stage completion** — every stage produces a summary

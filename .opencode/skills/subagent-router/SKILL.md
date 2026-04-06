@@ -133,6 +133,18 @@ Optional: one line `role_hint:` repeating the canonical D21 audit string for tha
 
 **After** is the only approved pattern for `/auto`, `/deliver`, and `/deliver-full` execution.
 
+## Stage summary output (BL-012)
+
+When the stage finishes (before returning control to the orchestrator), emit a **YAML**
+document that validates against `pipelines/stage-summary.schema.yaml`:
+
+- Set `pipeline` to `auto`, `deliver`, or `deliver-full` to match the active command.
+- Set `stage_id` to the same value used in the spawn template for this stage.
+- Set `stage_kind` to one of `research` | `build` | `eval` | `audit` (semantic bucket for the handoff).
+- Keep `done`, `decisions`, and `open` within schema array limits (max 5 bullets each).
+
+The orchestrator passes this file forward; do not rely on long prose alone at stage boundaries.
+
 ## Stage briefs: deliver-full
 
 Use `stage_id` with `pipeline: deliver-full`.
@@ -195,6 +207,14 @@ Gates 1–3 carry Agent() invocations with trigger citations derived from this r
 ### With /auto
 The Subagent Assignment step applies this routing table to every composed stage
 before presenting the pipeline for human approval.
+
+### With Cursor (Task tool)
+Cursor does not run Claude Code’s `Agent()` API. Use the **`Task`** tool with
+`subagent_type` set to the same archetype this table assigns (e.g. `reviewer`,
+`planner`, `builder`). The **main chat** is the orchestrator; each isolated stage is a
+**separate `Task`** with the §Spawn Prompt Contract body only. See
+`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc` (deployed to
+`.cursor/rules/`).
 
 ### With Architecture Decisions
 - D21: Subagent isolation for review gates — this skill is the operational

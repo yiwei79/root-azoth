@@ -68,6 +68,12 @@ After human approval of the Declaration:
    (same `session_id`, `approved`, `expires_at`, `opened_at` shape as `/deliver-full` Stage 0).
 2. Execute each stage in sequence — respect gate types (human gates stop and wait),
    monitor entropy, produce alignment summary at each stage boundary.
+3. **Typed stage summary (BL-012):** When a stage completes (before the next stage consumes
+   context), the subagent MUST emit a YAML document that conforms to
+   `pipelines/stage-summary.schema.yaml` (`stage_id` must match the spawn for that stage).
+   The orchestrator passes that document forward as the machine-readable handoff. Optional
+   markdown alignment (`alignment-sync` skill) is for human pull-review only — it does not
+   replace the typed summary for inter-stage context.
 
 ## Arguments
 

@@ -1,8 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T01:03:43+00:00",
-  "goal": "BL-011: Spawn prompt minimization — pipeline Agent() calls to minimal goal+params pattern",
-  "session_id": "2026-04-07-bl-011",
+  "expires_at": "2026-04-07T01:34:39+00:00",
+  "goal": "BL-012: Typed pipeline stage summary schema — structured handoffs between stages",
+  "session_id": "2026-04-07-bl-012",
   "approved_by": "human",
-  "closed_at": "2026-04-07T18:00:00+00:00"
+  "backlog_id": "BL-012",
+  "delivery_pipeline": "governed",
+  "target_layer": "M1",
+  "closed_at": "2026-04-07T15:00:00Z"
 }

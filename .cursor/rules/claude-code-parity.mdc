@@ -29,19 +29,36 @@ Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit`
 
 6. **If slash commands or skills seem unloaded**: Instruct the human to enable the third-party configs toggle and restart the chat.
 
+## MUST — Cursor subagents (`Task` tool, D21)
+
+Claude Code uses `Agent(subagent_type=...)`. Cursor exposes a **`Task`** tool that launches a **separate** subagent with a `subagent_type` parameter. Names align with Azoth archetypes: **architect**, **builder**, **planner**, **reviewer**, **researcher**, **research-orchestrator**, **evaluator**, **prompt-engineer**, **agent-crafter**, **context-architect**, plus utility types (e.g. **generalPurpose**, **explore**, **code-reviewer**). Use the archetype that matches the pipeline stage from `skills/subagent-router/SKILL.md`.
+
+When executing **`/auto`**, **`/deliver`**, or **`/deliver-full`** (after Declaration / pipeline gate as required):
+
+1. **Orchestrator only in main chat** — Compose stages, run human gates, aggregate results. **Do not** role-play every stage in one thread when **`Task` is available**.
+2. **One `Task` per isolated stage** — For each row in the composed pipeline table, invoke **`Task`** with `subagent_type` set to that stage’s archetype (review-independence and context-isolation require a **fresh** subagent, not the orchestrator’s context).
+3. **BL-011 spawn** — Each `Task` prompt body is **only** the YAML block from `skills/subagent-router/SKILL.md` §Spawn Prompt Contract (≤ ~20 lines) plus `Read` targets — never paste the full command markdown or pipeline table into `Task`.
+4. **BL-012 handoff** — Each subagent emits a typed stage summary (`pipelines/stage-summary.schema.yaml`) before return; the orchestrator forwards it to the next stage.
+5. **Parallel `Task`** — Allowed when stages are independent; **never** inline a review stage with the stage it critiques.
+
+If **`Task` is unavailable** in the current Cursor session (UI/model limitation), state that explicitly and approximate isolation by **sequential** single-threaded stages — still **not** equivalent to mechanical hooks.
+
 ## MUST NOT
 
 - Rely on hooks to block writes — they are inactive here.
 - Edit `kernel/**` without an explicit human-approved promotion / scope that allows kernel work.
 - Mix M1 and non-M1 goals in one scope card (D51) — reject and split.
+- **When `Task` is available:** Collapse full delivery pipelines into one long inline reply — that **violates** D21 / subagent-router isolation.
 
 ## When to prefer Claude Code
 
-For **native** parallel `Agent()` subagents, **full** PreToolUse enforcement, and **identical** runtime to production Azoth harness — use **Claude Code**. In Cursor, mirror the **same stages and gates** in order, single-threaded if needed.
+- **PreToolUse hooks** (mechanical deny on `Write`/`Edit`) — **Claude Code only**; Cursor relies on behavioral parity above.
+- **Subagent isolation** — **Achievable in Cursor** when **`Task`** is used per stage with the correct `subagent_type` (same architecture as `Agent()`). Prefer Claude Code only when you need **binary** hook enforcement or a **non-Cursor** runtime.
 
 ## Quick parity checklist
 
 - Scope gate valid for writes?
 - Pipeline gate valid if governed?
 - Invoked the right `.claude/commands/*` semantics?
+- Delivery stages run via **`Task`** with matching `subagent_type` (not inline role-play)?
 - `azoth-deploy` after canonical source edits?

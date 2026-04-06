@@ -61,8 +61,8 @@ To hand off a session from Claude Code to Cursor (or vice versa):
 | Slash commands, skills | ✓ | ✓ via toggle |
 | `CLAUDE.md` + repo layout parity | ✓ | ✓ with toggle + `.cursor/rules` |
 | PreToolUse hooks (scope / pipeline gate) | ✓ mechanical | ✗ — **simulate** via `claude-code-parity.mdc` |
-| `/deliver`, `/plan`, `/eval` | ✓ | ✓ follow command docs (single-agent) |
-| `/deliver-full` (parallel `Agent()` subagents) | ✓ | Degraded — mirror stages; prefer Claude Code for native isolation |
-| Governed pipelines with stage isolation | ✓ hooks + commands | ✓ **if** agent obeys parity rule; else risky |
+| `/deliver`, `/plan`, `/eval` | ✓ | ✓ follow command docs; use **`Task`** per stage when the command assigns subagents |
+| `/deliver-full` / `/auto` (subagent isolation) | ✓ `Agent(subagent_type=...)` | ✓ **`Task(subagent_type=...)`** per `subagent-router` — same D21 contract when parity rule is followed |
+| Governed pipelines with stage isolation | ✓ hooks + commands | ✓ hooks simulated + **`Task`** for workers — risky only if orchestrator inlines stages |
 
-**Rule of thumb:** Cursor for exploration and command-following single-agent work **with both `.mdc` rules installed**. Claude Code for full hook enforcement and parallel subagent delivery.
+**Rule of thumb:** Install both `.mdc` rules. Use **`Task`** with Azoth archetype names for each pipeline stage that requires isolation (see `claude-code-parity.mdc`). Prefer **Claude Code** when you need **mechanical** PreToolUse enforcement (not behavioral).

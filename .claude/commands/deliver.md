@@ -48,6 +48,14 @@ lines and triggers live in **§Stage briefs: deliver** — load via `Read` after
    - Compare implementation against plan; verify entropy stayed bounded; produce final alignment summary
    - Gate: human (final approval)
 
+## Typed stage summary (BL-012)
+
+After each numbered stage completes, the subagent MUST emit a YAML document conforming to
+`pipelines/stage-summary.schema.yaml` with `pipeline: deliver` before the next stage runs.
+Use `stage_kind`: research | build | eval | audit per the schema. Markdown alignment
+(skill `alignment-sync`) remains optional for humans; the typed YAML is the orchestrator
+handoff.
+
 ## Orchestration Constraints
 
 Policy source: `subagent-router` skill (trigger definitions and routing table).

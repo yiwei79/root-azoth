@@ -31,6 +31,14 @@ the same `session_id`, update `opened_at` only.
 This stage wires **Claude Code’s delivery pipeline** to mechanical enforcement: governed
 work cannot bypass `/deliver-full` (or `/auto` / `/deliver`) and inline-only implementation.
 
+## Typed stage summary (BL-012)
+
+After each pipeline step completes (architect through builder), the subagent MUST emit a YAML
+document conforming to `pipelines/stage-summary.schema.yaml` with `pipeline: deliver-full`
+and a stable `stage_id` (see `subagent-router` §Stage briefs: deliver-full). The
+orchestrator forwards this summary to the next stage. Optional markdown alignment
+(`alignment-sync`) is for human pull-review only.
+
 ## Pipeline (D21)
 
 ```
