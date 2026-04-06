@@ -56,6 +56,8 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
    - Compare implementation vs approved design
    - Final alignment summary
    - Gate: human (final approval)
+   - After human final approval passes: run `python scripts/version-bump.py --patch`
+   - Log: `Stage 7 ✓ version bumped X → Y`
 
 ## Rules
 

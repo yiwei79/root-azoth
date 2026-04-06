@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.0-dev (pre-release)
+**Version**: v0.0.3.13
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (52 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (53 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -75,7 +75,7 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 2. Read `docs/AZOTH_ARCHITECTURE.md` for full context
 3. Check current phase status below
 4. Work within the current phase scope
-5. Validate changes against architecture decisions (D1–D52)
+5. Validate changes against architecture decisions (D1–D53)
 6. Capture lessons in `.azoth/memory/episodes.jsonl`
 
 ### Coding Standards

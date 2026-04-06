@@ -1031,7 +1031,7 @@ any insight                 reinforced >=2x                         governance-g
 m2_candidate=true flag      set at intake                           target_layer: M1
 ```
 
-### Architecture Decisions (D47–D51)
+### Architecture Decisions (D47–D53)
 
 | # | Decision | Rationale |
 |---|----------|-----------|
@@ -1040,3 +1040,82 @@ m2_candidate=true flag      set at intake                           target_layer
 | D49 | Intake 3-axis triage | M3/M2/backlog routing is simultaneous and independent, not sequential |
 | D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal |
+| D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH scheme; PATCH per delivery, PHASE per phase completion |
+
+---
+
+## 20. Auto-Versioning Policy (D53)
+
+### Problem
+
+Version numbers in `azoth.yaml` and `roadmap.yaml` require manual updates and drift from
+actual delivery state. There is no signal connecting completed backlog items to version
+progression, so the version number becomes decorative rather than informative.
+
+### Decision
+
+Version increments are **delivery-triggered**, governed by two bump classes:
+
+```
+M1 delivery complete (via /deliver-full)     → patch bump:  0.x.y → 0.x.y+1
+Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
+                                              + git tag proposed (user-confirmed)
+```
+
+### Version Format: `0.0.PHASE.PATCH`
+
+```
+0.0.PHASE.PATCH
+│ │  │      └── delivery counter — increments every session, resets to 1 on phase bump
+│ │  └───────── phase number — equals the current development phase (1–6)
+│ └──────────── reserved: 0 during development
+└────────────── reserved: 0 until public release
+```
+
+### Version Map
+
+| Version | Scope | Phase |
+|---------|-------|-------|
+| v0.0.1 | Phases 1 + 1.5: kernel + sync + inbox | 1, 1.5 |
+| v0.0.2 | Phase 2: core skills | 2 |
+| v0.0.3 | Phase 3: agent archetypes + workflow loop | 3 |
+| v0.0.4 | Phase 4: Distribution & Polish | 4 |
+| v0.0.5 | Phase 5: Trust Layer | 5 |
+| v0.0.6 | Phase 6: Meta-recursive | 6 |
+| **v0.1.0** | **Public azoth release — full roadmap complete** | — |
+
+### Bump Rules
+
+- **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
+  session that produces artifacts. Counter resets to `.1` on each phase bump.
+- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6).
+  PATCH counter resets to `.1`.
+- **Release** (`0.1.0`): full roadmap complete (Phase 6 done). Only non-sequential jump.
+  Git tag proposed — user-confirmed, never auto-pushed.
+
+The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later
+in the phase. PHASE provides coarser orientation. Together they encode "where in development
+are we" without requiring agents to read git history.
+
+### Implementation (BL-009)
+
+- `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
+  writes `azoth.yaml` and updates `roadmap.yaml` `active_version` + `current_patch` fields.
+  `--release` flag triggers the `0.1.0` jump and proposes a git tag.
+- `/session-closeout` integration — final step calls `version-bump.py --patch` after
+  confirming at least one artifact was written this session.
+- `/deliver-full` integration — calls `version-bump.py --patch` after builder stage
+  completes successfully.
+
+### Rules
+
+- Version bumps are never silent — `version-bump.py` prints the old → new transition
+- Git tags are proposed at `--release` only; patch/phase bumps update files only
+- `azoth.yaml` `version` is the authoritative time-series field for agents
+- `roadmap.yaml` `active_version` + `current_patch` mirror it for roadmap context
+- On `--phase` bump: `version-bump.py` writes `final_patch: N` to the completing version
+  entry in `roadmap.yaml` before advancing `active_version` — preserves the full time-series
+  history for completed phases
+- `target_version` in `backlog.yaml` uses the delivery-phase version (e.g. `v0.0.3`),
+  not a future release target — completed items record where they actually landed

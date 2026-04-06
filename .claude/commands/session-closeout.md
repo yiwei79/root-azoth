@@ -63,7 +63,7 @@ Compress session into actionable signals.
    - Any pattern reinforced across 2+ episodes? → Propose M3 → M2 promotion
    - Present proposals to human (never auto-promote)
 
-### Write Checkpoints (W1 → W2 → W3)
+### Write Checkpoints (W1 → W2 → W3 → W4)
 
 Execute in order. After each write, log its status before proceeding to the next.
 If any write is denied or fails, stop and follow the **On Failure** guidance below.
@@ -91,6 +91,12 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 - This ensures the next Claude Code session has full context even before Azoth's
   own memory system (M3 episodes) is surfaced during SURVEY phase
 - Log: `W3 ✓ memory updated — all checkpoints complete`
+
+**W4 — Bump patch version** → `python scripts/version-bump.py --patch`
+
+- Run `python scripts/version-bump.py --patch` from the repo root
+- This always fires — every closeout increments the patch version
+- Log: `W4 ✓ version bumped X → Y`
 
 ### On Failure
 

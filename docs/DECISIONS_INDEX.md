@@ -63,18 +63,19 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D45 | Context-sensitive memory retrieval | 📋 planned | skills/context-recall/ (Phase 3) | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
-| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | 🔧 partial | .azoth/roadmap.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
+| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.6 + v0.1.0 target; /next reads versioned structure) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | 📋 planned | scripts/welcome.py + .claude/commands/start.md (BL-007) | 4 |
+| D53 | Auto-versioning policy: delivery-triggered version increments | 📋 planned | scripts/version-bump.py + /session-closeout integration (BL-009) | 4 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 29 |
-| 🔧 partial | 9 |
-| 📋 planned | 13 |
+| ✅ implemented | 30 |
+| 🔧 partial | 8 |
+| 📋 planned | 14 |
 | 🔄 superseded | 1 |
-| **Total** | **52** |
+| **Total** | **53** |

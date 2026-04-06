@@ -7,6 +7,8 @@
 # - Deferral requires explicit target_version.
 # - target_layer routes delivery: M1 → /deliver-full (governed), others → /deliver (standard)
 # - M1 items require a dedicated session (D51) — scope card validator rejects mixed M1+runtime
+# - target_version uses the D53 scheme: v0.0.PHASE (e.g. v0.0.3 for Phase 3 deliveries)
+# - Completed items carry their actual delivery version, not a future release target
 
 schema_version: 1
 
@@ -21,7 +23,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 1
     created_date: "2026-04-05"
     decision_ref: [D43, D50]
@@ -39,7 +41,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 1
     created_date: "2026-04-05"
     decision_ref: [D47, D48, D50]
@@ -62,7 +64,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 2
     created_date: "2026-04-05"
     decision_ref: [D33, D49]
@@ -82,7 +84,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 3
     created_date: "2026-04-05"
     description: >
@@ -99,7 +101,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 4
     created_date: "2026-04-05"
     decision_ref: D51
@@ -116,7 +118,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 4
     created_date: "2026-04-06"
     decision_ref: [D52, D41]
@@ -143,7 +145,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 5
     created_date: "2026-04-06"
     decision_ref: D21
@@ -170,7 +172,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.1.0
+    target_version: v0.0.3
     priority: 5
     created_date: "2026-04-06"
     decision_ref: D21
@@ -183,6 +185,55 @@ items:
       Update .claude/commands/deliver-full.md to explicitly require subagent
       invocation for each stage (architect, reviewer, planner, evaluator, builder)
       and specify which subagent_type maps to which stage.
+
+  # ── Priority 6: Auto-versioning implementation ──────────────────────────
+  - id: BL-009
+    title: "Auto-versioning: scripts/version-bump.py + session-closeout + deliver-full integration (D53)"
+    source: session-2026-04-06-d53
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 6
+    created_date: "2026-04-06"
+    decision_ref: [D53, D48]
+    description: >
+      Implement delivery-triggered version increments per D53.
+      Version format: 0.0.PHASE.PATCH where PHASE = current phase number
+      (3–6) and PATCH increments every delivery session, resetting to 1 on
+      phase bump. Final release bump: 0.1.0 (full roadmap complete, git tag).
+      Deliverables: (1) scripts/version-bump.py — reads azoth.yaml, applies
+      --patch (PATCH+1), --phase (PHASE+1, PATCH reset to 1), or --release
+      (0.1.0 + git tag proposal); writes azoth.yaml + updates roadmap.yaml
+      active_version and current_patch fields. Prints old→new transition.
+      (2) /session-closeout integration — final step calls version-bump.py
+      --patch after confirming at least one artifact was written this session.
+      (3) /deliver-full integration — calls version-bump.py --patch after
+      builder stage completes successfully.
+
+  # ── Priority 7: Test suite hygiene ─────────────────────────────────────────
+  - id: BL-010
+    title: "Fix 6 pre-existing stale/fragile test failures"
+    source: ep-bl009-delivery
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.3
+    priority: 7
+    created_date: "2026-04-06"
+    description: >
+      Six pre-existing test failures surfaced during BL-009 delivery.
+      Category A (4 stale hardcoded values):
+        - test_handoff_artifacts.py::TestAzothYaml::test_has_version (expects 0.1.0)
+        - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_version_consistent (expects 0.1.0)
+        - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_decision_count_consistent (expects 52)
+        - test_inbox.py::TestRepoIdentity::test_decisions_count_52 (expects 52)
+      Fix: update to dynamic reads from azoth.yaml/DECISIONS_INDEX.md, or update
+      hardcoded values to current (version: 0.0.3.14, decisions: 53).
+      Category B (2 environment-sensitive git-diff state checks):
+        - test_deliver_subagent_gates.py::test_only_deliver_md_modified
+        - test_subagent_router.py::test_only_subagent_router_skill_modified
+      Fix: mark xfail with reason, or refactor to not depend on working tree state.
 
 # Completed items
 completed: []
