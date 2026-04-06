@@ -1,8 +1,8 @@
 {
   "approved": false,
-  "expires_at": "2026-04-06T21:09:10+00:00",
-  "goal": "session-closeout: W3/W4 writes for ep-049",
-  "session_id": "2026-04-06-mega-closeout",
+  "expires_at": "2026-04-06T21:16:35+00:00",
+  "goal": "BL-010: Fix 6 pre-existing stale/fragile test failures",
+  "session_id": "2026-04-06-bl-010",
   "approved_by": "human",
-  "closed_at": "2026-04-06T19:09:35+00:00"
+  "closed_at": "2026-04-06T19:35:00+00:00"
 }
