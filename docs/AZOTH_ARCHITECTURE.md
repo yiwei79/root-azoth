@@ -800,6 +800,7 @@ azoth/
 | D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |
 | D50 | Session scope card | `/next` outputs a scope card (1 primary + max 2 secondary goals); human approves → writes `.azoth/scope-gate.json`; validator rejects mixed M1+runtime sessions |
 | D51 | Formalized M2→M1 promotion path | M1 changes are a governed event: `target_layer: M1` backlog item + `/deliver-full` pipeline; M1 changes happen between sessions only; scope card validator enforces isolation |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); `.claude/commands/start.md` runs the script via Bash then routes user option; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 adds hook-based auto-trigger |
 
 ---
 
@@ -823,7 +824,7 @@ azoth/
 | **1.5** | Sync Infrastructure | azoth-sync.py, sync-config.yaml, /sync command |
 | **2** | Core Skills | 5 extracted + 3 new skills, drift tests |
 | **3** | Agent Archetypes | 10 agents, pipeline schema, dual-format |
-| **4** | Distribution | README, `azoth init` onboarding, CI, publish |
+| **4** | Distribution | Session Welcome UX (`/start` + `scripts/welcome.py`), README, `azoth init` onboarding, CI, publish |
 | **5** | Trust Layer | Hooks, telemetry, checkpoints, phone-friendly output |
 | **6** | Meta-Recursive | Agent Crafter, L2 optimization, L3 proposals |
 

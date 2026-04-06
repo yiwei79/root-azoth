@@ -145,7 +145,7 @@ versions:
       - {id: P3-003, title: "Pipeline preset files", decision_ref: [D28, D23]}
       - {id: P3-007, title: "azoth-deploy.py dev-sync script", decision_ref: D46}
       - {id: BL-ARC, title: "Closed workflow loop architecture (D47-D51)", decision_ref: [D47, D48, D49, D50, D51]}
-    pending_task_refs: [BL-002, BL-003, BL-004, BL-001, BL-005, P3-004, P3-005, P3-006, P1.5-CLEANUP]
+    pending_task_refs: [BL-002, BL-003, BL-004, BL-001, BL-005, BL-006, BL-007, P3-004, P3-005, P3-006, P1.5-CLEANUP]
 
   - id: v0.2.0
     status: planned
@@ -196,6 +196,10 @@ versions:
         decision_ref: D15
       - id: P5-006
         title: "Phone-friendly output"
+      - id: P5-007
+        title: "Session start hook: auto-trigger /start on session open"
+        decision_ref: D52
+        note: "Phase 5 component of D52; BL-007 delivers the /start skill in v0.1.0"
 
   - id: v0.4.0
     status: backlog

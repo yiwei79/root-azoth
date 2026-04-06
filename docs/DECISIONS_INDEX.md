@@ -1,6 +1,6 @@
 # Architecture Decisions Index
 
-Machine-readable index of all architecture decisions (D1–D51).
+Machine-readable index of all architecture decisions (D1–D52).
 Agents use this to check compliance and track implementation status.
 
 See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
@@ -67,6 +67,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | 📋 planned | scripts/welcome.py + .claude/commands/start.md (BL-007) | 4 |
 
 ## Summary
 
@@ -74,6 +75,6 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 |--------|-------|
 | ✅ implemented | 29 |
 | 🔧 partial | 9 |
-| 📋 planned | 12 |
+| 📋 planned | 13 |
 | 🔄 superseded | 1 |
-| **Total** | **51** |
+| **Total** | **52** |

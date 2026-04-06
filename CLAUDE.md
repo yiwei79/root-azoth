@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (51 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (52 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -75,7 +75,7 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 2. Read `docs/AZOTH_ARCHITECTURE.md` for full context
 3. Check current phase status below
 4. Work within the current phase scope
-5. Validate changes against architecture decisions (D1–D28)
+5. Validate changes against architecture decisions (D1–D52)
 6. Capture lessons in `.azoth/memory/episodes.jsonl`
 
 ### Coding Standards
@@ -133,6 +133,8 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 - [ ] D45: Context-recall skill (memory read interface)
 
 ### Phase 4: Distribution & Polish
+- [ ] D52: Session Welcome UX — `skills/session-start/` + `.claude/commands/start.md`
+- [ ] D52: Add `/start` instruction to `kernel/templates/CLAUDE.md.template`
 - [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)
 - [ ] Update kernel docs for dual-path awareness (BOOTLOADER.md, GOVERNANCE.md, TRUST_CONTRACT.md)
 - [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list

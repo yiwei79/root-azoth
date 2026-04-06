@@ -109,6 +109,33 @@ items:
       /deliver-full pipeline. Document the between-sessions-only rule.
       Update PROMOTION_RUBRIC.md to include M2→M1 criteria alongside M3→M2.
 
+  # ── Priority 4: Session Welcome UX ──────────────────────────────────────
+  - id: BL-007
+    title: "Session Welcome UX — /start command and skill (D52)"
+    source: session-2026-04-06
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.1.0
+    priority: 4
+    created_date: "2026-04-06"
+    decision_ref: [D52, D41]
+    description: >
+      Implement session welcome dashboard as a Rich-based Python script.
+      Deliverables: (1) scripts/welcome.py — reads azoth.yaml, backlog.yaml,
+      scope-gate.json, .azoth/memory/episodes.jsonl; renders 5-panel dashboard
+      using the Rich library (pip install rich). Panel structure: box.HEAVY header
+      (identity: repo/branch/date/version), box.MINIMAL phases strip ([1]✓ ...[6]○),
+      Columns([health, backlog], equal=True, expand=True) with box.ROUNDED panels —
+      left: L0-L3 layer status + M1-M3 memory + scope/kernel; right: top-3 unblocked
+      backlog items with id/title/layer/pipeline. box.ROUNDED last-session strip.
+      box.ROUNDED START options panel with context-sensitive [next]/[resume].
+      (2) .claude/commands/start.md — runs `python scripts/welcome.py` via Bash
+      then routes user option selection to /next, /intake, /promote, /eval, or
+      custom goal → auto-pipeline. (3) kernel/templates/CLAUDE.md.template — add
+      /start usage note. Rich handles all Unicode/emoji width via wcwidth internally;
+      use Rich named markup (:check_mark:, :right_arrow:) for reliable rendering.
+
   # ── Priority 5: Pipeline integrity ──────────────────────────────────────
   - id: BL-006
     title: "Enforce subagent invocation per stage in /deliver-full (D21)"
