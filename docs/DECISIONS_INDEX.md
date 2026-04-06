@@ -66,7 +66,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D48 | Versioned roadmap: `.azoth/roadmap.yaml` | 🔧 partial | .azoth/roadmap.yaml (versioned structure present; /next reads legacy fields until BL-004) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
-| D51 | Formalized M2→M1 promotion path | 📋 planned | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md (BL-005) | 3 |
+| D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
 
 ## Summary
 

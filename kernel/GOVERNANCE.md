@@ -135,15 +135,26 @@ M3 (Episodic) → M2 (Semantic) → M1 (Procedural)
 
 ### M2 → M1 Promotion
 
-**Trigger**: Pattern proven durable across 3+ sessions.
+**Trigger (D51)**: A `target_layer: M1` item in `.azoth/backlog.yaml` routed through
+the `/deliver-full` pipeline. Durability across 3+ sessions is the prerequisite for
+creating the backlog item — it is not the trigger itself.
+
+**Between-sessions-only rule**: M1 changes happen *between* sessions, never during an
+active runtime session. The scope card validator (D50) enforces this at card creation time in /next (in deployments where /next is not used, this rule is agent-enforced): a scope card
+containing M1-targeted items cannot be mixed with runtime tasks. M1 sessions are
+dedicated M1 sessions.
+
+**Scope**: Applies to all M1 locations — `kernel/`, `skills/` (`.claude/commands/`),
+and `agents/` — equally.
 
 **Process**:
-1. Agent identifies M2 pattern ready for procedural encoding
-2. Agent proposes specific implementation (skill, agent instruction, or kernel change)
-3. Promotion Rubric applied (kernel/PROMOTION_RUBRIC.md)
-4. Governance review (if scope includes kernel or agents)
-5. Human approves → implemented in appropriate location
-6. Drift detection validates the change
+1. `/intake` sets `m2_candidate: true` incrementally on each qualifying event; the pattern becomes eligible for M1 promotion when `m2_candidate: true` set on 2+ intake events AND validated across 3+ distinct sessions
+2. Human approves promotion → `/promote` writes the pattern to M2
+3. Human creates `target_layer: M1` item in `.azoth/backlog.yaml`
+4. `/next` surfaces the item; human approves scope card → `.azoth/scope-gate.json` written
+5. `/deliver-full` pipeline runs: Architect → Governance Review → Planner → Builder
+6. Human gate: final approval before implementation lands
+7. Drift detection validates the change at session boundary
 
 ### Promotion Anti-Patterns
 
@@ -307,3 +318,4 @@ The file `.azoth/trusted-sources.yaml` governs which sources may submit insights
 5. **Drift is detected** — kernel integrity checked at every session boundary
 6. **Violations are logged** — no silent failures, all governance events recorded
 7. **External insights are governed** — all external data enters through `.azoth/inbox/` and the `/intake` protocol only
+8. **M1 changes are session-isolated** — a scope card mixing M1-targeted items with runtime tasks is rejected by the scope card validator (D50)
