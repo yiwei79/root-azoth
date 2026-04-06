@@ -19,6 +19,9 @@ This project uses the Azoth bootloader. Every session:
 3. **OPERATE** — Execute goal within trust boundaries
 4. **HARDEN** — Capture learnings, verify integrity, close session
 
+Run `/start` at the beginning of each session for a visual project snapshot
+and routing options (next task, intake, promote, eval, or custom goal).
+
 ## Project Routing
 
 | Area | Path | Purpose |

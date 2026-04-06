@@ -509,10 +509,10 @@ class TestRepoIdentity:
             data = yaml.safe_load(f)
         assert data["name"] == "root-azoth"
 
-    def test_decisions_count_51(self):
+    def test_decisions_count_52(self):
         with open(AZOTH_ROOT / "azoth.yaml") as f:
             data = yaml.safe_load(f)
-        assert data["decisions"] == 51
+        assert data["decisions"] == 52
 
     def test_claude_md_references_root_azoth(self):
         content = (AZOTH_ROOT / "CLAUDE.md").read_text()

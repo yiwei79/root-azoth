@@ -1,7 +1,7 @@
 {
   "approved": true,
-  "expires_at": "2026-04-06T13:31:02+00:00",
-  "goal": "BL-005: Formalize M2→M1 promotion path in governance doc (D51)",
-  "session_id": "2026-04-06-bl-005",
+  "expires_at": "2026-04-06T15:05:04+00:00",
+  "goal": "BL-007: Session Welcome UX — /start command and skill (D52)",
+  "session_id": "2026-04-06-bl-007",
   "approved_by": "human"
 }
