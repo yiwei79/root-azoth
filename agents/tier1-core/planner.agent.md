@@ -1,5 +1,6 @@
 ---
 name: planner
+maxTurns: 30
 tier: 1
 tier_name: core
 role: "Task decomposition, sequencing, test strategy"

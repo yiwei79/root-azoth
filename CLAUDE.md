@@ -166,3 +166,8 @@ extracted, sanitized, and crystallized into this toolkit.
 The name comes from alchemy: Azoth is the universal solvent — it encodes
 A-to-Z (completeness), dissolves into anything (be water), and transforms
 what it touches (the animating spirit).
+
+## Context Management
+Compact at natural task boundaries — end of pipeline stage, after receiving subagent results, between unrelated tasks.
+Preserve on compact: active file list, current task state, pending decisions, approved scope.
+Discard on compact: exploration file reads, intermediate reasoning steps, subagent raw outputs.

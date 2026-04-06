@@ -1,5 +1,6 @@
 ---
 name: evaluator
+maxTurns: 25
 tier: 3
 tier_name: meta
 role: "Quality gates, scoring"

@@ -1,5 +1,6 @@
 ---
 name: researcher
+maxTurns: 40
 tier: 2
 tier_name: research
 role: "Multi-source research with citations"

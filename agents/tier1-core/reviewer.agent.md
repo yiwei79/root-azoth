@@ -1,5 +1,6 @@
 ---
 name: reviewer
+maxTurns: 25
 tier: 1
 tier_name: core
 role: "Quality, governance, safety critique"

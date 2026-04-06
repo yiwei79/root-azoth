@@ -1,5 +1,8 @@
 ---
 name: context-architect
+model: haiku
+effort: low
+maxTurns: 30
 tier: 4
 tier_name: utility
 role: "Maps dependencies, blast radius"

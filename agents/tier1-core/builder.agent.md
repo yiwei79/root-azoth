@@ -1,5 +1,6 @@
 ---
 name: builder
+maxTurns: 50
 tier: 1
 tier_name: core
 role: "Implementation, testing, code changes"

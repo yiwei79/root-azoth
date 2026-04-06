@@ -1,5 +1,6 @@
 ---
 name: architect
+maxTurns: 40
 tier: 1
 tier_name: core
 role: "Design, constraints, alignment, pipeline orchestration"

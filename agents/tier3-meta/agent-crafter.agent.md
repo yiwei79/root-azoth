@@ -1,5 +1,6 @@
 ---
 name: agent-crafter
+maxTurns: 40
 tier: 3
 tier_name: meta
 role: "META: Builds/improves other agents (L3)"

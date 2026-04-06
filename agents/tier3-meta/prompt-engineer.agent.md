@@ -1,5 +1,6 @@
 ---
 name: prompt-engineer
+maxTurns: 35
 tier: 3
 tier_name: meta
 role: "Auto-refine prompts, instructions, rubrics"

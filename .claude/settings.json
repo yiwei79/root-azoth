@@ -19,7 +19,9 @@
   },
   "env": {
     "AZOTH_VERSION": "0.1.0-dev",
-    "AZOTH_PHASE": "3"
+    "AZOTH_PHASE": "3",
+    "CLAUDE_CODE_EFFORT_LEVEL": "auto",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
   },
   "hooks": {
     "PreToolUse": [
@@ -41,6 +43,17 @@
           }
         ]
       }
-    ]
+    ],
+    "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/filter-bash-output.sh"
+        }
+      ]
+    }
+  ]
   }
 }

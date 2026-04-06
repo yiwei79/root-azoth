@@ -1,5 +1,6 @@
 ---
 name: research-orchestrator
+maxTurns: 20
 tier: 2
 tier_name: research
 role: "Coordinates research swarm"
