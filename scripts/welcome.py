@@ -225,12 +225,14 @@ def render_dashboard() -> None:
         details = "  ".join(f"[dim]{k}={layer[k]}[/dim]" for k in detail_keys)
         health_lines.append(f"{icon} [bold]{label}[/bold] {name}  {details}")
 
-    memory = azoth.get("memory", {})
+    patterns_path = ROOT / ".azoth" / "memory" / "patterns.yaml"
+    patterns_data = load_yaml(patterns_path) if patterns_path.exists() else {}
+    pattern_count = len(patterns_data.get("patterns", []))
     health_lines += [
         "",
         "[bold]Memory[/bold]",
-        f"  M3 episodes : {memory.get('episodes', 0)}",
-        f"  M2 patterns : {memory.get('patterns', 0)}",
+        f"  M3 episodes : {len(episodes)}",
+        f"  M2 patterns : {pattern_count}",
         "  M1 kernel   : active",
         "",
     ]

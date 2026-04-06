@@ -59,8 +59,8 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
 | D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) — P3-008/BL-002 is a subset pulled to Phase 3 | 5 |
-| D44 | Pipeline Stage 6 quality rubric for structured content | 📋 planned | pipelines/ (Phase 3) | 3 |
-| D45 | Context-sensitive memory retrieval | 📋 planned | skills/context-recall/ (Phase 3) | 3 |
+| D44 | Pipeline Stage 6 quality rubric for structured content | 🔧 partial | skills/stage6-rubric/SKILL.md | 3 |
+| D45 | Context-sensitive memory retrieval | 🔧 partial | skills/context-recall/SKILL.md | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
 | D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.6 + v0.1.0 target; /next reads versioned structure) | 3 |

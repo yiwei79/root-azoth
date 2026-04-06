@@ -31,6 +31,8 @@ EXPECTED_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "stage6-rubric",
+    "context-recall",
 ]
 
 EXTRACTED_SKILLS = [
@@ -47,6 +49,8 @@ NEW_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "stage6-rubric",
+    "context-recall",
 ]
 
 
@@ -167,7 +171,7 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 5, "Should have 5 new skills"
+        assert len(NEW_SKILLS) == 7, "Should have 7 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_architecture_references_all_skills(self) -> None:
