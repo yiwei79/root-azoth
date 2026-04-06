@@ -165,7 +165,7 @@ items:
     source: session-2026-04-06
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.1.0
     priority: 5
     created_date: "2026-04-06"

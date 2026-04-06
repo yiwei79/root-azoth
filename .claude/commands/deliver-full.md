@@ -13,6 +13,15 @@ governance, kernel, or operating rules.
 Goal Clarification → Architect → Governance Review → Planner → Test Builder → Builder → Architect Review
 ```
 
+## Orchestration Constraints
+
+- Each agent gate (stages 3–6) mandates a fresh-context subagent invocation via `Agent(subagent_type=...)`
+- The Architect (orchestrator) remains the final speaker for all human gates
+- Subagents return findings; Architect disposes and escalates to human if needed
+- No review stage shall execute inline with the stage it reviews
+- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43). Residual risk: an orchestrator that ignores this text can still run stages inline.
+- Isolation constraint applies to agent-gated review stages (3–6). Architect's own internal sub-invocations during Stage 2 (e.g. context-map, research-orchestrator) are governed by the architect archetype contract separately.
+
 1. **Goal Clarification**
    - Parse intent, classify complexity, compose pipeline
    - Gate: human (approve pipeline)
@@ -23,24 +32,24 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
    - Gate: human (approve design)
 
 3. **Governance Review**
-   - Critique the brief for governance gaps, entropy leakage, HITL misplacement
+   - Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement
    - Produce findings and recommended corrections
-   - Gate: agent (architect dispositions findings)
+   - Gate: agent (architect receives reviewer findings; if findings touch kernel, governance changes, or M2→M1 promotion, escalate to human — present compressed decision request per Trust Contract §2)
 
 4. **Planner**
-   - Convert approved design into deterministic tasks
+   - Agent(subagent_type=planner): Convert approved design into deterministic tasks
    - Define test strategy (mandatory)
-   - Gate: agent (architect reviews plan)
+   - Gate: agent (architect reviews plan quality and completeness)
 
 5. **Test Builder**
-   - Design tests from plan's test strategy
+   - Agent(subagent_type=builder): Design tests from plan's test strategy
    - Write test specs and acceptance criteria
-   - Gate: agent (architect reviews tests)
+   - Gate: agent (architect reviews test coverage against plan)
 
 6. **Builder**
-   - Implement against the approved plan
+   - Agent(subagent_type=builder): Implement against the approved plan
    - Run tests, report deviations
-   - Gate: agent (auto-test pass)
+   - Gate: agent (auto-test pass — all tests must pass before hand-off to architect review)
 
 7. **Architect Review**
    - Compare implementation vs approved design
