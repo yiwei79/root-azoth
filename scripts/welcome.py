@@ -3,6 +3,7 @@
 welcome.py — Azoth session welcome dashboard.
 
 Renders a Rich-based 5-panel cockpit for session orientation.
+System Health includes pipeline gate status when scope-gate is governed (M1 / delivery_pipeline).
 Usage: python scripts/welcome.py
 """
 
@@ -87,6 +88,41 @@ def filter_unblocked_items(
     return sorted(result, key=lambda x: x.get("priority", 99))
 
 
+def is_governed_scope(scope: dict[str, Any]) -> bool:
+    """True when scope-gate indicates M1 or governed delivery (matches PreToolUse hook)."""
+    return (
+        scope.get("delivery_pipeline") == "governed"
+        or scope.get("target_layer") == "M1"
+    )
+
+
+def _parse_expires_at_utc(raw: str) -> datetime | None:
+    """Parse ISO 8601 expires_at; normalize Z suffix for Python <3.11."""
+    if not raw:
+        return None
+    try:
+        s = raw.replace("Z", "+00:00") if raw.endswith("Z") else raw
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
+
+
+def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
+    """True when pipeline-gate.json satisfies mechanical enforcement for this scope."""
+    if not pg.get("approved"):
+        return False
+    sid = scope.get("session_id", "")
+    if not sid or pg.get("session_id") != sid:
+        return False
+    exp = _parse_expires_at_utc(str(pg.get("expires_at", "")))
+    if exp is None:
+        return False
+    return datetime.now(timezone.utc) < exp
+
+
 def is_scope_active(
     scope: dict[str, Any], complete_ids: set[str] | None = None
 ) -> bool:
@@ -101,13 +137,10 @@ def is_scope_active(
     expires_raw = scope.get("expires_at") or ""
     if not expires_raw:
         return False
-    try:
-        exp_dt = datetime.fromisoformat(str(expires_raw))
-        if exp_dt.tzinfo is None:
-            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-        if exp_dt <= datetime.now(timezone.utc):
-            return False
-    except (ValueError, TypeError):
+    exp_dt = _parse_expires_at_utc(str(expires_raw))
+    if exp_dt is None:
+        return False
+    if exp_dt <= datetime.now(timezone.utc):
         return False
     if complete_ids:
         goal = scope.get("goal") or ""
@@ -158,6 +191,7 @@ def render_dashboard() -> None:
     azoth = load_yaml(ROOT / "azoth.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
+    pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
 
     repo, branch = git_info()
@@ -247,6 +281,18 @@ def render_dashboard() -> None:
         health_lines.append(
             f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]"
         )
+        if is_governed_scope(scope):
+            if is_pipeline_gate_valid(scope, pipeline_gate):
+                pipe = pipeline_gate.get("pipeline", "?")
+                health_lines.append(
+                    f"  :green_circle: [green]Pipeline gate: OK[/green]  "
+                    f"[dim]{pipe}[/dim]"
+                )
+            else:
+                health_lines.append(
+                    "  :red_circle: [red]Pipeline gate: OPEN[/red]  "
+                    "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
+                )
     else:
         health_lines.append(
             ":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]"

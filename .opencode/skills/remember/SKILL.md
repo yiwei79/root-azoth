@@ -92,6 +92,10 @@ relevance = recency_weight * recency_score
            + reinforcement_weight * reinforcement_count
 ```
 
+**Canonical read path**: The context-recall skill is the canonical read path
+for this step; if context-recall is available, invoke it instead of running
+this section manually.
+
 ### Surfacing Format
 
 ```

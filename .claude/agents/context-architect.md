@@ -1,6 +1,7 @@
 ---
 name: context-architect
 description: Maps dependencies, blast radius
+model: haiku
 ---
 
 # Context Architect

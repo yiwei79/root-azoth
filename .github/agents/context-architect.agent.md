@@ -6,6 +6,7 @@ tools:
 - grep
 - glob
 - ls
+model: haiku
 ---
 
 # Context Architect

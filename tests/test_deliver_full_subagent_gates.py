@@ -1,12 +1,10 @@
-"""Tests for .claude/commands/deliver-full.md — BL-006 / BL-008 (D21).
+"""Tests for .claude/commands/deliver-full.md — BL-006 / BL-008 / BL-011 (D21).
 
 Enforces that each agent-gated stage (3–6) in /deliver-full mandates a
-fresh-context subagent invocation and that an Orchestration Constraints
-section documents the isolation rules and cites the subagent-router skill.
+fresh-context subagent invocation, that Orchestration Constraints documents
+isolation rules, and that BL-011 spawn minimization references the skill.
 
 Governance anchor: D21 — subagent isolation for review gates.
-Failure mode: inline execution of review stages allows prior-stage context
-to contaminate review findings, defeating the isolation guarantee.
 
 All unit tests operate on file content read once at module level.
 """
@@ -18,37 +16,56 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DELIVER_FULL_PATH = REPO_ROOT / ".claude" / "commands" / "deliver-full.md"
+SUBAGENT_ROUTER = REPO_ROOT / "skills" / "subagent-router" / "SKILL.md"
 
 # Read once; reused across all unit tests.
 _CONTENT = DELIVER_FULL_PATH.read_text()
+_ROUTER = SUBAGENT_ROUTER.read_text()
+
+
+# ── BL-011 — spawn table + skill offload ──────────────────────────────────────
+
+
+def test_spawn_invocation_section_present() -> None:
+    """deliver-full must cite BL-011 minimal spawn and the subagent-router contract."""
+    assert "## Spawn invocation (BL-011)" in _CONTENT
+    assert "§Spawn Prompt Contract" in _CONTENT
+    assert "§Stage briefs: deliver-full" in _CONTENT
+
+
+def test_stage0_pipeline_gate_section_present() -> None:
+    """Mechanical layer: Stage 0 must document pipeline-gate.json for governed scopes."""
+    assert "## Stage 0 — Pipeline gate (mechanical)" in _CONTENT
+    assert "pipeline-gate.json" in _CONTENT
+
+
+def test_stage_ids_in_deliver_full_table() -> None:
+    """Stages 3–6 must map to stable stage_id tokens for minimal spawns."""
+    for sid in ("deliver_full_s3", "deliver_full_s4", "deliver_full_s5", "deliver_full_s6"):
+        assert sid in _CONTENT
+
+
+def test_canonical_d21_hints_live_in_subagent_router_skill() -> None:
+    """Long-form D21 audit strings move to the skill; deliver-full stays thin."""
+    for fragment in (
+        "Agent(subagent_type=reviewer): Critique the brief for governance gaps",
+        "Agent(subagent_type=planner): Convert approved design into deterministic tasks",
+        "Agent(subagent_type=builder): Design tests from plan's test strategy",
+        "Agent(subagent_type=builder): Implement against the approved plan",
+    ):
+        assert fragment in _ROUTER
 
 
 # ── Stage 3 — Governance Review ───────────────────────────────────────────────
 
 
-def test_stage3_bullet_has_agent_invocation() -> None:
-    """Stage 3 must delegate to a fresh reviewer subagent (D21)."""
-    assert (
-        "Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement — trigger: review-independence"
-        in _CONTENT
-    )
-
-
-def test_stage3_gate_has_escalation_language() -> None:
+def test_stage3_trust_contract_escalation() -> None:
     """Stage 3 gate must reference architect disposition and Trust Contract §2."""
     assert "architect receives reviewer findings" in _CONTENT
     assert "Trust Contract §2" in _CONTENT
 
 
 # ── Stage 4 — Planner ─────────────────────────────────────────────────────────
-
-
-def test_stage4_bullet_has_agent_invocation() -> None:
-    """Stage 4 must delegate to a fresh planner subagent (D21)."""
-    assert (
-        "Agent(subagent_type=planner): Convert approved design into deterministic tasks — trigger: context-isolation"
-        in _CONTENT
-    )
 
 
 def test_stage4_gate_has_quality_completeness() -> None:
@@ -59,28 +76,12 @@ def test_stage4_gate_has_quality_completeness() -> None:
 # ── Stage 5 — Test Builder ────────────────────────────────────────────────────
 
 
-def test_stage5_bullet_has_agent_invocation() -> None:
-    """Stage 5 must delegate to a fresh builder subagent (D21)."""
-    assert (
-        "Agent(subagent_type=builder): Design tests from plan's test strategy — trigger: review-independence"
-        in _CONTENT
-    )
-
-
 def test_stage5_gate_has_coverage_language() -> None:
     """Stage 5 gate must mention architect review of test coverage."""
     assert "architect reviews test coverage against plan" in _CONTENT
 
 
 # ── Stage 6 — Builder ─────────────────────────────────────────────────────────
-
-
-def test_stage6_bullet_has_agent_invocation() -> None:
-    """Stage 6 must delegate to a fresh builder subagent (D21)."""
-    assert (
-        "Agent(subagent_type=builder): Implement against the approved plan — trigger: context-budget"
-        in _CONTENT
-    )
 
 
 def test_stage6_gate_has_handoff_language() -> None:
@@ -111,6 +112,11 @@ def test_orchestration_constraints_has_all_required_bullets() -> None:
         assert bullet in _CONTENT, f"Missing orchestration constraint: {bullet!r}"
 
 
+def test_version_bump_step_present() -> None:
+    """Stage 7 must still call version-bump after human approval."""
+    assert "python scripts/version-bump.py --patch" in _CONTENT
+
+
 # ── Absence of old inline gate language ───────────────────────────────────────
 
 
@@ -129,4 +135,3 @@ def test_old_inline_gate_language_absent() -> None:
     assert "Gate: agent (auto-test pass)\n" not in _CONTENT, (
         "Old gate string 'Gate: agent (auto-test pass)' still present"
     )
-

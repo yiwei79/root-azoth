@@ -11,7 +11,12 @@ import pytest
 HOOK_PATH = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
 
 
-def _run(tool_name: str, gate_path: Path, file_path: str | None = None) -> dict:
+def _run(
+    tool_name: str,
+    gate_path: Path,
+    file_path: str | None = None,
+    pipeline_gate_path: Path | None = None,
+) -> dict:
     tool_input: dict = {}
     if file_path is not None:
         tool_input["file_path"] = file_path
@@ -23,6 +28,8 @@ def _run(tool_name: str, gate_path: Path, file_path: str | None = None) -> dict:
         }
     )
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    if pipeline_gate_path is not None:
+        env["AZOTH_PIPELINE_GATE_PATH"] = str(pipeline_gate_path)
     result = subprocess.run(
         ["python3", str(HOOK_PATH)],
         input=stdin_payload,
@@ -163,3 +170,96 @@ def test_t12_edit_to_gate_path_gate_absent(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     output = _run("Edit", gate_path, file_path=str(gate_path))
     assert _decision(output) == "allow"
+
+
+# T13–T16: governed scope + pipeline-gate.json (M1 / delivery_pipeline mechanical layer)
+
+
+def test_t13_governed_scope_write_denied_without_pipeline_gate(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "delivery_pipeline": "governed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "src.txt"
+    output = _run("Write", gate_path, file_path=str(target), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t14_governed_scope_write_allowed_with_valid_pipeline_gate(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "delivery_pipeline": "governed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-governed",
+                "expires_at": _future_expiry(),
+                "pipeline": "deliver-full",
+            }
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "src.txt"
+    output = _run("Write", gate_path, file_path=str(target), pipeline_gate_path=pg_path)
+    assert _decision(output) == "allow"
+
+
+def test_t15_governed_scope_write_to_pipeline_gate_path_allowed_without_prior_gate(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "target_layer": "M1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run("Write", gate_path, file_path=str(pg_path), pipeline_gate_path=pg_path)
+    assert _decision(output) == "allow"
+
+
+def test_t16_target_layer_m1_triggers_pipeline_gate(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-m1",
+                "target_layer": "M1",
+                "delivery_pipeline": "standard",
+            }
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "x.txt"
+    output = _run("Write", gate_path, file_path=str(target), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"

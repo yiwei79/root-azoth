@@ -1,6 +1,7 @@
 ---
 description: Maps dependencies, blast radius
 mode: subagent
+model: haiku
 permission:
   edit: ask
   bash: ask

@@ -135,6 +135,44 @@ def test_scope_active_without_complete_ids() -> None:
     assert welcome.is_scope_active(scope) is True
 
 
+# ── is_governed_scope / is_pipeline_gate_valid ────────────────────────────────
+
+
+def test_is_governed_by_delivery_pipeline() -> None:
+    assert welcome.is_governed_scope({"delivery_pipeline": "governed"}) is True
+
+
+def test_is_governed_by_target_layer_m1() -> None:
+    assert welcome.is_governed_scope({"target_layer": "M1"}) is True
+
+
+def test_is_not_governed_standard() -> None:
+    assert welcome.is_governed_scope({"delivery_pipeline": "standard"}) is False
+
+
+def test_pipeline_gate_valid_matching_session() -> None:
+    scope = {"session_id": "s1", "approved": True, "expires_at": _future()}
+    pg = {
+        "approved": True,
+        "session_id": "s1",
+        "expires_at": _future(),
+        "pipeline": "deliver-full",
+    }
+    assert welcome.is_pipeline_gate_valid(scope, pg) is True
+
+
+def test_pipeline_gate_invalid_session_mismatch() -> None:
+    scope = {"session_id": "s1", "approved": True, "expires_at": _future()}
+    pg = {"approved": True, "session_id": "other", "expires_at": _future()}
+    assert welcome.is_pipeline_gate_valid(scope, pg) is False
+
+
+def test_pipeline_gate_invalid_expired() -> None:
+    scope = {"session_id": "s1", "approved": True, "expires_at": _future()}
+    pg = {"approved": True, "session_id": "s1", "expires_at": _past()}
+    assert welcome.is_pipeline_gate_valid(scope, pg) is False
+
+
 # ── render_dashboard smoke tests ──────────────────────────────────────────────
 
 
@@ -229,3 +267,82 @@ items:
     assert "T-001" in output
     assert "T-002" in output
     assert "T-DONE" not in output
+
+
+def test_render_governed_scope_shows_pipeline_gate_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Governed active scope without pipeline-gate.json shows OPEN in health."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "BL-099: Governed task",
+                "session_id": "2026-04-07-bl-099",
+                "delivery_pipeline": "governed",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+
+    out = buf.getvalue()
+    assert "Pipeline gate: OPEN" in out
+    assert "/deliver-full" in out
+
+
+def test_render_governed_scope_shows_pipeline_gate_ok(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Governed scope with valid pipeline-gate.json shows OK and pipeline name."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    sid = "2026-04-07-bl-099"
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "BL-099: Governed task",
+                "session_id": sid,
+                "target_layer": "M1",
+            }
+        )
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": sid,
+                "expires_at": _future(),
+                "pipeline": "deliver-full",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+
+    out = buf.getvalue()
+    assert "Pipeline gate: OK" in out
+    assert "deliver-full" in out

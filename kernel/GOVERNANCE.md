@@ -152,9 +152,14 @@ and `agents/` — equally.
 2. Human approves promotion → `/promote` writes the pattern to M2
 3. Human creates `target_layer: M1` item in `.azoth/backlog.yaml`
 4. `/next` surfaces the item; human approves scope card → `.azoth/scope-gate.json` written
-5. `/deliver-full` pipeline runs: Architect → Governance Review → Planner → Builder
-6. Human gate: final approval before implementation lands
-7. Drift detection validates the change at session boundary
+   (includes `delivery_pipeline` and `target_layer` from the backlog item)
+5. `/deliver-full`, `/auto`, or `/deliver` runs; **Stage 0** writes `.azoth/pipeline-gate.json`
+   when the scope is governed (`delivery_pipeline: governed` or `target_layer: M1`). The
+   PreToolUse hook blocks Write/Edit until this file exists — mechanical enforcement that
+   governed work uses a delivery pipeline with subagent routing instead of inline-only edits.
+6. Pipeline stages (e.g. `/deliver-full`): Architect → Governance Review → Planner → Builder
+7. Human gate: final approval before implementation lands
+8. Drift detection validates the change at session boundary
 
 ### Promotion Anti-Patterns
 

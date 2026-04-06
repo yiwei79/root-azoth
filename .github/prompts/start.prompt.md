@@ -1,5 +1,6 @@
 ---
-description: "Session welcome dashboard — orient, then route to your next action"
+mode: agent
+description: Session welcome dashboard — orient, then route to your next action
 ---
 
 # /start

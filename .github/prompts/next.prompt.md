@@ -12,7 +12,8 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
    active version entry under `versions:`. Use `goal` and `phase_scope` for phase context.
-   (The legacy `current_phase` / `tasks:` fields are deprecated — do not read them.)
+   Also read `current_phase` and `current_phase_title` for display in the scope card header.
+   (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
 3. **Find candidate tasks**: From backlog `items`, collect all where:
    - `status` is not `complete`
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
@@ -39,18 +40,27 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
       "expires_at": "<now + 2 hours, ISO 8601 with +00:00 offset>",
       "goal": "<primary task id>: <primary task title>",
       "session_id": "<current date YYYY-MM-DD>-<primary task id lowercased>",
-      "approved_by": "human"
+      "approved_by": "human",
+      "backlog_id": "<primary task id>",
+      "delivery_pipeline": "<governed | standard — from backlog primary delivery_pipeline>",
+      "target_layer": "<M1 | infrastructure | … — from backlog primary target_layer>"
     }
     ```
 
-    Confirm: "scope-gate.json written — Write/Edit unblocked for this session."
+    **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
+    `target_layer: M1`, the PreToolUse hook **blocks Write/Edit** until
+    `.azoth/pipeline-gate.json` exists (see `/deliver-full`, `/auto`, or `/deliver` **Stage 0**).
+    After scope approval, remind the human: for governed work, invoke the appropriate
+    pipeline command first; the orchestrator must run Stage 0 before other writes.
+
+    Confirm: "scope-gate.json written — Read/Plan unblocked; governed scopes still require pipeline-gate.json after Stage 0 of a delivery pipeline."
 
 ## Scope Card Format
 
 ```markdown
 ## Scope Card — {YYYY-MM-DD}
 
-**Phase:** v{active_version} — {version goal}
+**Phase:** P{current_phase:02d} — {current_phase_title}  ·  v{active_version}
 
 **Primary:** [{id}] {title} ({target_layer}, {delivery_pipeline})
 **Secondary:** [{id}] {title} ({target_layer})        ← omit if none

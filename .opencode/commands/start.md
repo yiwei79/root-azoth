@@ -1,5 +1,5 @@
 ---
-description: "Session welcome dashboard — orient, then route to your next action"
+description: Session welcome dashboard — orient, then route to your next action
 ---
 
 # /start

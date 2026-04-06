@@ -90,6 +90,22 @@ def test_architect_exclusion_clause_present() -> None:
     assert "out-of-scope for this router" in _CONTENT
 
 
+# ── Spawn prompt contract (BL-011) ────────────────────────────────────────────
+
+
+def test_spawn_prompt_contract_present() -> None:
+    """BL-011: skill must define the minimal spawn template and stage briefs."""
+    assert "## Spawn Prompt Contract (BL-011)" in _CONTENT
+    assert "pipeline: deliver-full | deliver | auto" in _CONTENT
+    assert "§Stage briefs: deliver-full" in _CONTENT or "Stage briefs: deliver-full" in _CONTENT
+
+
+def test_before_after_token_illustration_present() -> None:
+    """BL-011: illustrative before/after table for spawn body size."""
+    assert "Before / after" in _CONTENT
+    assert "anti-pattern" in _CONTENT.lower()
+
+
 # ── Integration: file-scoped collateral guard ─────────────────────────────────
 
 

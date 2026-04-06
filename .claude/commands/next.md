@@ -39,11 +39,20 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
       "expires_at": "<now + 2 hours, ISO 8601 with +00:00 offset>",
       "goal": "<primary task id>: <primary task title>",
       "session_id": "<current date YYYY-MM-DD>-<primary task id lowercased>",
-      "approved_by": "human"
+      "approved_by": "human",
+      "backlog_id": "<primary task id>",
+      "delivery_pipeline": "<governed | standard — from backlog primary delivery_pipeline>",
+      "target_layer": "<M1 | infrastructure | … — from backlog primary target_layer>"
     }
     ```
 
-    Confirm: "scope-gate.json written — Write/Edit unblocked for this session."
+    **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
+    `target_layer: M1`, the PreToolUse hook **blocks Write/Edit** until
+    `.azoth/pipeline-gate.json` exists (see `/deliver-full`, `/auto`, or `/deliver` **Stage 0**).
+    After scope approval, remind the human: for governed work, invoke the appropriate
+    pipeline command first; the orchestrator must run Stage 0 before other writes.
+
+    Confirm: "scope-gate.json written — Read/Plan unblocked; governed scopes still require pipeline-gate.json after Stage 0 of a delivery pipeline."
 
 ## Scope Card Format
 

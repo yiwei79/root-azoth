@@ -1,8 +1,8 @@
 {
   "approved": false,
-  "goal": "BL-016: Cursor platform adapter — azoth-memory.mdc template, session-state schema, README",
-  "session_id": "2026-04-07-cursor-adapter",
+  "expires_at": "2026-04-07T01:03:43+00:00",
+  "goal": "BL-011: Spawn prompt minimization — pipeline Agent() calls to minimal goal+params pattern",
+  "session_id": "2026-04-07-bl-011",
   "approved_by": "human",
-  "expires_at": "2026-04-07T23:59:00+00:00",
   "closed_at": "2026-04-07T12:00:00+00:00"
 }
