@@ -9,18 +9,26 @@ Transforms:
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
   skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+  kernel/templates/platform-adapters/cursor/*.mdc.template
+                        →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
   (synthesized)         →  AGENTS.md                          (AAIF cross-platform broadcast)
 
 Usage:
   python scripts/azoth-deploy.py
   python scripts/azoth-deploy.py --dry-run
   python scripts/azoth-deploy.py --platforms claude copilot
+  python scripts/azoth-deploy.py --platforms cursor
   python scripts/azoth-deploy.py --root /path/to/project
+
+Environment:
+  AZOTH_CURSOR_RULES_DIR  If set, deploy Cursor *.mdc templates to this directory instead
+                          of <root>/.cursor/rules (tests; sandboxes that block .cursor/).
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -285,15 +293,64 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "## Platform File Locations",
         "",
-        "| Platform | Agents | Commands | Skills |",
-        "|----------|--------|----------|--------|",
-        "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` |",
-        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` |",
-        "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` |",
+        "| Platform | Agents | Commands | Skills | IDE rules |",
+        "|----------|--------|----------|--------|-----------|",
+        "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
+        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` | — |",
+        "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
+        "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
 
     return "\n".join(lines)
+
+
+# ── Cursor IDE rules (kernel templates → .cursor/rules/) ────────────────────
+
+CURSOR_ADAPTER_DIR = Path("kernel/templates/platform-adapters/cursor")
+
+
+def cursor_rules_dest_dir(root: Path) -> Path:
+    """
+    Destination directory for deployed Cursor rules.
+
+    Default: `<root>/.cursor/rules/`
+    Override: set `AZOTH_CURSOR_RULES_DIR` to an absolute path (used by tests and
+    sandboxes that block creating `.cursor/`).
+    """
+    env = os.environ.get("AZOTH_CURSOR_RULES_DIR")
+    if env:
+        return Path(env).resolve()
+    return (root / ".cursor" / "rules").resolve()
+
+
+def iter_cursor_rule_deployments(root: Path) -> list[tuple[Path, Path]]:
+    """
+    Map each *.mdc.template under the Cursor adapter dir to its deploy path.
+
+    Returns (template_path, dest_path) pairs. Example:
+      .../azoth-memory.mdc.template → .cursor/rules/azoth-memory.mdc
+    """
+    adapter = root / CURSOR_ADAPTER_DIR
+    if not adapter.is_dir():
+        return []
+    dest_dir = cursor_rules_dest_dir(root)
+    pairs: list[tuple[Path, Path]] = []
+    for path in sorted(adapter.glob("*.mdc.template")):
+        out_name = path.name.removesuffix(".template")
+        dest = dest_dir / out_name
+        pairs.append((path, dest))
+    return pairs
+
+
+def deploy_cursor_rules(root: Path, dry_run: bool) -> int:
+    """Copy kernel Cursor templates into .cursor/rules/. Returns files written."""
+    count = 0
+    for template_path, dest_path in iter_cursor_rule_deployments(root):
+        content = template_path.read_text(encoding="utf-8")
+        write_file(dest_path, content, root, dry_run)
+        count += 1
+    return count
 
 
 # ── File writing ─────────────────────────────────────────────────────────────
@@ -301,7 +358,10 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
 
 def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
     """Write content to path, printing the relative path. Creates parent dirs."""
-    rel = path.relative_to(root)
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
     if dry_run:
         print(f"  [dry-run] {rel}")
         return
@@ -312,7 +372,7 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -410,6 +470,18 @@ def main(argv: list[str] | None = None) -> int:
             write_file(root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
                        skill["raw"], root, dry_run)
             count += 1
+        print()
+
+    # ── Cursor rules (kernel templates) ──────────────────────────────────────
+    if "cursor" in platforms:
+        print("── cursor rules ────────────────────────────────────────────────")
+        n = deploy_cursor_rules(root, dry_run)
+        count += n
+        if n == 0:
+            print(
+                f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
+                file=sys.stderr,
+            )
         print()
 
     # ── AGENTS.md ────────────────────────────────────────────────────────────

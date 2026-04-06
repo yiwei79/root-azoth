@@ -1,0 +1,47 @@
+---
+description: Enforce Claude Code parity in Cursor — same commands, skills, and gate discipline (hooks simulated)
+alwaysApply: true
+---
+
+# Claude Code parity (Cursor)
+
+This workspace is configured for **seamless compatibility** with **Claude Code** when Cursor → Settings → Rules → **Include third-party plugin skills and configs** is enabled (loads `CLAUDE.md`, `.claude/commands/`, `agents/`, `skills/`).
+
+## Critical gap — hooks
+
+**PreToolUse hooks** in `.claude/settings.json` (scope-gate, pipeline-gate, pip-install-guard, bash output filter) **do not run in Cursor**. They run only in the Claude Code application.
+
+Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit` that the hooks would enforce. Treat this rule as **non-optional** guardrails — not suggestions.
+
+## MUST — every chat
+
+1. **Session start**: Read `.azoth/memory/patterns.yaml`, `.azoth/bootloader-state.md`, and `.azoth/session-state.md` when present (see `azoth-memory.mdc`). Confirm briefly what loaded.
+
+2. **Before the first substantive Write/Edit** in a turn (simulated PreToolUse):
+   - Read `.azoth/scope-gate.json`. If absent, or `approved` is not `true`, or `expires_at` is past → **do not write**; tell the human to run `/next` and approve a scope card.
+   - If the scope is **governed** (`delivery_pipeline: governed` **or** `target_layer: M1`): read `.azoth/pipeline-gate.json`. It must exist, `approved: true`, `session_id` must match scope-gate, `expires_at` unexpired. Otherwise → **do not write**; execute **Stage 0** from `.claude/commands/deliver-full.md`, `.claude/commands/auto.md`, or `.claude/commands/deliver.md` (write `pipeline-gate.json` first), then continue.
+
+3. **Canonical workflows**: Follow slash-command definitions under **`.claude/commands/`** for `/auto`, `/deliver`, `/deliver-full`, `/next`, `/start`, `/session-closeout` — do not invent parallel workflows.
+
+4. **M1 / governed backlog work**: Do **not** implement `target_layer: M1` or `delivery_pipeline: governed` items as a single long inline session. Use the **staged pipeline + subagent routing** in those commands and `skills/subagent-router/SKILL.md` (spawn contract, pipeline gate).
+
+5. **After editing** canonical `skills/**`, `agents/**/*.agent.md`, or adding/changing `.claude/commands/**`: run `python3 scripts/azoth-deploy.py` so OpenCode and Copilot deploys stay aligned (D46).
+
+6. **If slash commands or skills seem unloaded**: Instruct the human to enable the third-party configs toggle and restart the chat.
+
+## MUST NOT
+
+- Rely on hooks to block writes — they are inactive here.
+- Edit `kernel/**` without an explicit human-approved promotion / scope that allows kernel work.
+- Mix M1 and non-M1 goals in one scope card (D51) — reject and split.
+
+## When to prefer Claude Code
+
+For **native** parallel `Agent()` subagents, **full** PreToolUse enforcement, and **identical** runtime to production Azoth harness — use **Claude Code**. In Cursor, mirror the **same stages and gates** in order, single-threaded if needed.
+
+## Quick parity checklist
+
+- Scope gate valid for writes?
+- Pipeline gate valid if governed?
+- Invoked the right `.claude/commands/*` semantics?
+- `azoth-deploy` after canonical source edits?

@@ -14,7 +14,9 @@ Covers:
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +37,8 @@ transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
 transform_command_opencode = _mod.transform_command_opencode
+iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
+deploy_cursor_rules = _mod.deploy_cursor_rules
 
 
 # ── parse_frontmatter ────────────────────────────────────────────────────────
@@ -284,3 +288,44 @@ def test_opencode_command_no_description_no_frontmatter() -> None:
     out = transform_command_opencode(cmd)
     assert not out.startswith("---")
     assert "Do the thing." in out
+
+
+# ── Cursor rule deployment ────────────────────────────────────────────────────
+
+
+def test_iter_cursor_rule_deployments_maps_templates() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "cursor"
+    adapter.mkdir(parents=True)
+    try:
+        (adapter / "azoth-memory.mdc.template").write_text("---\nx: 1\n---\nbody\n", encoding="utf-8")
+        (adapter / "claude-code-parity.mdc.template").write_text("---\ny: 2\n---\n", encoding="utf-8")
+        pairs = iter_cursor_rule_deployments(root)
+        assert len(pairs) == 2
+        dests = {p[1].name for p in pairs}
+        assert dests == {"azoth-memory.mdc", "claude-code-parity.mdc"}
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_cursor_rules_writes_matching_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deploy to a non-.cursor path — some sandboxes block mkdir `.cursor/`."""
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    rules_out = root / "rules_out"
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "cursor"
+    adapter.mkdir(parents=True)
+    try:
+        src = "---\nalwaysApply: true\n---\n\n# Rule\n"
+        (adapter / "test-rule.mdc.template").write_text(src, encoding="utf-8")
+        monkeypatch.setenv("AZOTH_CURSOR_RULES_DIR", str(rules_out))
+        n = deploy_cursor_rules(root, dry_run=False)
+        assert n == 1
+        out = rules_out / "test-rule.mdc"
+        assert out.read_text(encoding="utf-8") == src
+    finally:
+        monkeypatch.delenv("AZOTH_CURSOR_RULES_DIR", raising=False)
+        shutil.rmtree(root, ignore_errors=True)

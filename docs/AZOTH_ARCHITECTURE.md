@@ -504,21 +504,39 @@ azoth init / azoth-deploy.py
   ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
   ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
-  └─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  ├─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  └─ Cursor (always in dev-sync) → .cursor/rules/*.mdc (from kernel/templates/platform-adapters/cursor/)
 ```
 
 ### Compatibility Matrix
 
-| Component | Claude Code | OpenCode | Copilot |
-|-----------|-------------|----------|---------|
-| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads |
-| AGENTS.md | ✅ Native | ✅ Native | ✅ Native |
-| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ |
-| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ |
-| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ |
-| Config | .claude/settings.json | opencode.json | VS Code settings |
-| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited |
-| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP |
+| Component | Claude Code | OpenCode | Copilot | Cursor |
+|-----------|-------------|----------|---------|--------|
+| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via toggle |
+| AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ .claude + repo (toggle) |
+| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ | .claude/agents/ (toggle) |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | .claude/commands/ (toggle) |
+| `.cursor/rules/*.mdc` | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
+| Config | .claude/settings.json | opencode.json | VS Code settings | Cursor Settings + toggle |
+| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ❌ (use `.mdc` parity rules) |
+| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP | VS Code MCP |
+
+### Cursor IDE (Claude) and Claude Code parity
+
+Cursor can consume the **same** Azoth sources as Claude Code when **Settings → Rules → “Include third-party plugin skills and configs”** is enabled: `CLAUDE.md`, `.claude/commands/`, repo-level `agents/` and `skills/` (paths as laid out in this scaffold; consumer installs may mirror via `azoth-deploy`).
+
+**Seamless parity** means: same slash-command semantics, same skills, same trust and pipeline **logic**. **Runtime parity** differs in one important way:
+
+| Mechanism | Claude Code | Cursor (Claude) |
+|-----------|-------------|-----------------|
+| `CLAUDE.md` + commands + agents + skills | Loaded via product integration | Loaded via toggle above |
+| **PreToolUse hooks** (`.claude/settings.json`) | Executed on every tool call | **Not executed** — Cursor does not run Claude Code’s hook binary |
+| Scope / pipeline gate enforcement | **Mechanical** (deny Write/Edit) | **Behavioral** — enforced by always-applied **`.cursor/rules/*.mdc`** instructing the model to read `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json` and refuse writes when invalid |
+
+**Architectural rule:** Treat Cursor as **source-compatible, hook-soft**. The **kernel/templates/platform-adapters/cursor/** templates (`azoth-memory.mdc`, `claude-code-parity.mdc`) are the **minimum viable guardrails** so sessions honor scope gates, pipeline gates, `/next`, and delivery pipelines **without** relying on hooks. Duplicated policy in M2 patterns + rules is intentional (mechanical enforcement in Claude Code, instruction enforcement in Cursor). **`scripts/azoth-deploy.py --platforms cursor`** copies `*.mdc.template` → `.cursor/rules/*.mdc` so consumer workspaces stay coupled to kernel templates.
+
+**When to use which IDE:** Cursor is appropriate for exploration, edits, and single-agent flows that follow `.claude/commands`. For **native** parallel subagent `Agent()` calls and **identical** hook enforcement, **Claude Code** remains primary. See `kernel/templates/platform-adapters/cursor/README.md`.
 
 ### Platform File Format Differences
 
@@ -557,6 +575,8 @@ agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-sp
                        └→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
 
 skills/**/ ────────────→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+kernel/templates/platform-adapters/cursor/*.mdc.template
+                       → .cursor/rules/<name>.mdc           (Cursor always-on rules)
                          AGENTS.md                          (generated broadcast layer)
 ```
 

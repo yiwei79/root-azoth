@@ -54,8 +54,9 @@ All agents operate under the Azoth Trust Contract:
 
 ## Platform File Locations
 
-| Platform | Agents | Commands | Skills |
-|----------|--------|----------|--------|
-| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` |
-| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` |
-| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` |
+| Platform | Agents | Commands | Skills | IDE rules |
+|----------|--------|----------|--------|-----------|
+| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |
+| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` | — |
+| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |
+| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |

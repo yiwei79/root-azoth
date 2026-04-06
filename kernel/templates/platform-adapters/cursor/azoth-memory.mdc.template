@@ -11,4 +11,6 @@ At the start of every chat in this workspace, read the following files to restor
 
 3. `.azoth/session-state.md` — if this file exists and `state` is not `empty`, read it to resume a cross-IDE handoff. It contains the last session's active task, files, pending decisions, and next action.
 
+**Claude Code parity:** PreToolUse hooks from `.claude/settings.json` do **not** run in Cursor. The always-applied rule `claude-code-parity.mdc` (same folder) mandates simulated scope-gate and pipeline-gate checks before writes — obey it on every turn that edits files.
+
 After reading, briefly confirm what active context was loaded before responding to the user's first message.
