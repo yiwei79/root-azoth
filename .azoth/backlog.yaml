@@ -138,27 +138,31 @@ items:
 
   # ── Priority 5: Pipeline integrity ──────────────────────────────────────
   - id: BL-008
-    title: "Enforce subagent invocation per stage in /deliver (D21)"
+    title: "Subagent auto-routing policy — when-to-subagent rules integrated into pipeline composition (D21)"
     source: ep-041
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.1.0
     priority: 5
     created_date: "2026-04-06"
     decision_ref: D21
-    blocked_by: [BL-006]
     description: >
-      /deliver currently does not mandate that each pipeline stage is executed
-      via Agent(subagent_type=...). Without explicit subagent invocation,
-      Claude runs all stages inline — the architect review gates (plan quality,
-      test coverage) are executed by the same agent that wrote the artifacts,
-      eliminating context isolation. This is the same structural flaw fixed in
-      /deliver-full by BL-006, but the fix was not generalized to /deliver
-      (ep-041). Update .claude/commands/deliver.md to explicitly require
-      Agent(subagent_type=architect) invocation for the Planner gate, Test
-      Builder gate, and Architect Review stage. Blocked by BL-006 so both
-      commands receive consistent treatment.
+      Instead of hardcoding Agent(subagent_type=...) mandates per pipeline command
+      (BL-006 approach), define a general subagent routing policy with four decision
+      triggers: (1) context-isolation — review stage must not share context with the
+      stage it reviews; (2) review-independence — any gate whose job is to critique
+      an artifact must be a fresh subagent; (3) parallel-execution — independent
+      research or analysis tasks that can run concurrently; (4) context-budget —
+      stages that would consume excessive context in the orchestrator.
+      Deliverables: (a) skills/subagent-router/ — routing policy skill that defines
+      the four triggers and maps goal classification dimensions to subagent assignments;
+      (b) /auto updated — pipeline composition stage uses the router to emit subagent
+      assignments automatically after goal classification, so every auto-composed
+      pipeline inherits correct subagent behavior; (c) /deliver updated — reference
+      the routing policy instead of inline mandates; (d) /deliver-full updated —
+      same (BL-006 hardcodes become policy-derived). No per-pipeline audit work
+      required for future pipelines — they inherit the policy via /auto composition.
 
   - id: BL-006
     title: "Enforce subagent invocation per stage in /deliver-full (D21)"

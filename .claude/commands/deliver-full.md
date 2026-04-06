@@ -15,6 +15,7 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 
 ## Orchestration Constraints
 
+- Policy source: `subagent-router` skill (trigger definitions and routing table)
 - Each agent gate (stages 3–6) mandates a fresh-context subagent invocation via `Agent(subagent_type=...)`
 - The Architect (orchestrator) remains the final speaker for all human gates
 - Subagents return findings; Architect disposes and escalates to human if needed
@@ -32,22 +33,22 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
    - Gate: human (approve design)
 
 3. **Governance Review**
-   - Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement
+   - Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement — trigger: review-independence
    - Produce findings and recommended corrections
    - Gate: agent (architect receives reviewer findings; if findings touch kernel, governance changes, or M2→M1 promotion, escalate to human — present compressed decision request per Trust Contract §2)
 
 4. **Planner**
-   - Agent(subagent_type=planner): Convert approved design into deterministic tasks
+   - Agent(subagent_type=planner): Convert approved design into deterministic tasks — trigger: context-isolation
    - Define test strategy (mandatory)
    - Gate: agent (architect reviews plan quality and completeness)
 
 5. **Test Builder**
-   - Agent(subagent_type=builder): Design tests from plan's test strategy
+   - Agent(subagent_type=builder): Design tests from plan's test strategy — trigger: review-independence
    - Write test specs and acceptance criteria
    - Gate: agent (architect reviews test coverage against plan)
 
 6. **Builder**
-   - Agent(subagent_type=builder): Implement against the approved plan
+   - Agent(subagent_type=builder): Implement against the approved plan — trigger: context-budget
    - Run tests, report deviations
    - Gate: agent (auto-test pass — all tests must pass before hand-off to architect review)
 

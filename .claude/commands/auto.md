@@ -36,6 +36,15 @@ if scope == docs:
 default:                            → full pipeline
 ```
 
+## Subagent Assignment
+
+Apply the `subagent-router` skill to each composed stage. For each stage:
+1. Evaluate the four triggers in priority order: review-independence > context-isolation > context-budget > parallel-execution
+2. Assign `subagent_type` from the routing table
+3. Record the trigger rationale alongside the stage
+
+Add `subagent_type` and `trigger` columns to the composed pipeline table in the Declaration.
+
 ## Declaration
 
 Present the composed pipeline to human:
@@ -52,7 +61,7 @@ Present the composed pipeline to human:
 
 **Rationale**: {why this pipeline was chosen}
 
-Approve? [yes / adjust / different-pipeline]
+Approve pipeline composition + subagent assignments? [yes / adjust / different-pipeline]
 ```
 
 ## Execution
