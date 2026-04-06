@@ -1,7 +1,8 @@
 {
-  "approved": true,
-  "expires_at": "2026-04-06T15:05:04+00:00",
-  "goal": "BL-007: Session Welcome UX — /start command and skill (D52)",
-  "session_id": "2026-04-06-bl-007",
-  "approved_by": "human"
+  "approved": false,
+  "expires_at": "2026-04-06T14:49:52.585484+00:00",
+  "goal": "Fix pip-install-guard false positive on heredoc content",
+  "session_id": "2026-04-06-pip-guard-fix",
+  "approved_by": "human",
+  "closed_at": "2026-04-06T13:54:11.804332+00:00"
 }

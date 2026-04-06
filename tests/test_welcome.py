@@ -109,6 +109,32 @@ def test_scope_active_naive_future_datetime() -> None:
     assert welcome.is_scope_active({"approved": True, "expires_at": naive_future}) is True
 
 
+def test_scope_inactive_when_goal_item_complete() -> None:
+    """A scope gate is stale when its referenced backlog item is already complete."""
+    scope = {
+        "approved": True,
+        "expires_at": _future(),
+        "goal": "BL-007: Session Welcome UX",
+    }
+    assert welcome.is_scope_active(scope, complete_ids={"BL-007"}) is False
+
+
+def test_scope_active_when_goal_item_not_complete() -> None:
+    """A scope gate is still active when its referenced item is not yet complete."""
+    scope = {
+        "approved": True,
+        "expires_at": _future(),
+        "goal": "BL-006: Enforce subagent invocation",
+    }
+    assert welcome.is_scope_active(scope, complete_ids={"BL-007"}) is True
+
+
+def test_scope_active_without_complete_ids() -> None:
+    """Calling without complete_ids preserves backward-compatible behaviour."""
+    scope = {"approved": True, "expires_at": _future(), "goal": "BL-007: something"}
+    assert welcome.is_scope_active(scope) is True
+
+
 # ── render_dashboard smoke tests ──────────────────────────────────────────────
 
 

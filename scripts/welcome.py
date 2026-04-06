@@ -87,8 +87,15 @@ def filter_unblocked_items(
     return sorted(result, key=lambda x: x.get("priority", 99))
 
 
-def is_scope_active(scope: dict[str, Any]) -> bool:
-    """Return True if the scope gate is approved and the expiry is in the future."""
+def is_scope_active(
+    scope: dict[str, Any], complete_ids: set[str] | None = None
+) -> bool:
+    """Return True if the scope gate is approved, unexpired, and not already complete.
+
+    If complete_ids is provided, the gate is treated as inactive when the goal's
+    referenced backlog item (e.g. "BL-007: ...") appears in the completed set.
+    This prevents a stale gate from surfacing a "resume" option for finished work.
+    """
     if not scope.get("approved"):
         return False
     expires_raw = scope.get("expires_at") or ""
@@ -98,9 +105,16 @@ def is_scope_active(scope: dict[str, Any]) -> bool:
         exp_dt = datetime.fromisoformat(str(expires_raw))
         if exp_dt.tzinfo is None:
             exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-        return exp_dt > datetime.now(timezone.utc)
+        if exp_dt <= datetime.now(timezone.utc):
+            return False
     except (ValueError, TypeError):
         return False
+    if complete_ids:
+        goal = scope.get("goal") or ""
+        goal_id = goal.split(":")[0].strip()
+        if goal_id in complete_ids:
+            return False
+    return True
 
 
 def git_info() -> tuple[str, str]:
@@ -220,7 +234,13 @@ def render_dashboard() -> None:
         "  M1 kernel   : active",
         "",
     ]
-    if is_scope_active(scope):
+
+    # ── Backlog state (needed for both health panel and backlog panel) ────────
+    items = backlog_data.get("items", [])
+    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
+    top3 = filter_unblocked_items(items, complete_ids)[:3]
+
+    if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
         health_lines.append(
             f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]"
@@ -234,9 +254,6 @@ def render_dashboard() -> None:
     )
 
     # ── Panel 3R: Top backlog (box.ROUNDED) ──────────────────────────────────
-    items = backlog_data.get("items", [])
-    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
-    top3 = filter_unblocked_items(items, complete_ids)[:3]
 
     backlog_lines: list[str] = []
     for item in top3:
@@ -283,7 +300,7 @@ def render_dashboard() -> None:
 
     # ── Panel 5: START options (box.ROUNDED) ─────────────────────────────────
     options_lines: list[str] = []
-    if is_scope_active(scope):
+    if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"

@@ -73,10 +73,12 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 - Append the episode structured in step 4
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
-**W2 — Update session state** → `.azoth/bootloader-state.md`
+**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/scope-gate.json`
 
-- Update with session outcome (phase, what changed, open decisions)
-- Log: `W2 ✓ bootloader-state.md updated — proceeding to W3`
+- Update `bootloader-state.md` with session outcome (phase, what changed, open decisions)
+- Close the scope gate: write `.azoth/scope-gate.json` with `approved: false` and add
+  `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
+- Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
 
 **W3 — Update Claude Code memory** → `~/.claude/projects/.../memory/`
 
@@ -95,7 +97,8 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 If a write checkpoint is denied or fails mid-sequence:
 
 - **W2 or W3 denied**: safe to re-run session-closeout — these are idempotent overwrites.
-  Resume from the denied step only; do not re-append W1.
+  Resume from the denied step only; do not re-append W1. If only the scope gate write
+  was denied, write it standalone before closing.
 - **W1 denied**: the episode was not written. Before re-appending, check
   `.azoth/memory/episodes.jsonl` for the episode `id` to avoid duplicates.
 - Report which checkpoint failed in the close summary so the human can act.
