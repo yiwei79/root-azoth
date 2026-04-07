@@ -545,6 +545,19 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **When to use which IDE:** Cursor is appropriate for exploration, edits, and multi-stage delivery **when** the agent uses **`Task`** per `subagent-router` (same isolation contract as Claude Code). Prefer **Claude Code** when you need **binary** PreToolUse enforcement, not for subagent isolation alone. See `kernel/templates/platform-adapters/cursor/README.md`.
 
+#### Cross-IDE session memory parity (`/session-closeout` W1–W4)
+
+Azoth treats **repo-local state** as the **authoritative** narrative every platform must converge on. **Claude Code project memory** (`~/.claude/projects/<project-key>/memory/`) is a **supplemental mirror**, not a second source of truth.
+
+| Checkpoint | What it writes | Claude Code | Cursor | OpenCode / GitHub Copilot |
+|------------|----------------|-------------|--------|---------------------------|
+| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ (same path) |
+| **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json`, `.azoth/session-state.md` (as applicable) | ✅ | ✅ | ✅ (same paths) |
+| **W3** | `~/.claude/projects/.../memory/project_status.md` (+ `MEMORY.md` index) | ✅ native | ⚠️ requires **write access** to that path, or **defer** and log | N/A — rely on W1/W2 in repo |
+| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ |
+
+**Parity rule:** W3 content must **mirror** the same facts as W2 (phase, version, last delivery, next step, open gaps). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout. **Cursor** assistants completing `/session-closeout` must **attempt** W3 when the environment allows (see `claude-code-parity.mdc`); if denied, they must **not** silently skip — log `W3 deferred` and complete W1/W2/W4. **Copilot** sessions use the **deployed** `.github/prompts/session-closeout.prompt.md` (D46) with the same checkpoint semantics; durable context is always the committed **W1/W2** artifacts.
+
 ### Platform File Format Differences
 
 Key structural differences the dev-sync script (D46) must handle:

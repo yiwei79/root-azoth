@@ -29,6 +29,8 @@ Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit`
 
 6. **If slash commands or skills seem unloaded**: Instruct the human to enable the third-party configs toggle and restart the chat.
 
+7. **`/session-closeout` W3 (Claude Code project memory):** W1/W2 under `.azoth/` are **authoritative** for all IDEs; W3 mirrors the same snapshot into `~/.claude/projects/<project-key>/memory/` for Claude Code only (`docs/AZOTH_ARCHITECTURE.md` — Cross-IDE session memory parity). When running closeout in **Cursor**, **attempt** W3 with full workspace permission to that path; if write is denied, complete W1/W2/W4 and **log explicitly** `W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout in Claude Code`. Do not silently skip W3.
+
 ## MUST — Cursor subagents (`Task` tool, D21)
 
 Claude Code uses `Agent(subagent_type=...)`. Cursor exposes a **`Task`** tool that launches a **separate** subagent with a `subagent_type` parameter. Names align with Azoth archetypes: **architect**, **builder**, **planner**, **reviewer**, **researcher**, **research-orchestrator**, **evaluator**, **prompt-engineer**, **agent-crafter**, **context-architect**, plus utility types (e.g. **generalPurpose**, **explore**, **code-reviewer**). Use the archetype that matches the pipeline stage from `skills/subagent-router/SKILL.md`.
@@ -65,3 +67,4 @@ If **`Task` is unavailable** in the current Cursor session (UI/model limitation)
 - **Prior stage YAML forwarded** into the next `Task` where required (especially evaluator)?
 - **Review failed or request-changes** → stopped and human consulted before continuing?
 - `azoth-deploy` after canonical source edits?
+- **`/session-closeout` W3** attempted or `W3 deferred` logged?
