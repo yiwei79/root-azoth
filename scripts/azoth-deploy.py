@@ -9,18 +9,26 @@ Transforms:
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
   skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+  kernel/templates/platform-adapters/cursor/*.mdc.template
+                        →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
   (synthesized)         →  AGENTS.md                          (AAIF cross-platform broadcast)
 
 Usage:
   python scripts/azoth-deploy.py
   python scripts/azoth-deploy.py --dry-run
   python scripts/azoth-deploy.py --platforms claude copilot
+  python scripts/azoth-deploy.py --platforms cursor
   python scripts/azoth-deploy.py --root /path/to/project
+
+Environment:
+  AZOTH_CURSOR_RULES_DIR  If set, deploy Cursor *.mdc templates to this directory instead
+                          of <root>/.cursor/rules (tests; sandboxes that block .cursor/).
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -73,6 +81,56 @@ _TOOL_KEYWORDS: dict[str, set[str]] = {
     "webfetch": {"web", "search", "fetch", "online", "internet", "lookup"},
     "task":     {"agent", "subagent", "invoke", "spawn", "delegate", "orchestrat", "pipeline self"},
 }
+
+# Canonical Never-Auto lines — kernel/GOVERNANCE.md §5 Default Posture (D26). Merged with
+# per-agent `never_auto` when computing OpenCode permissions so empty YAML lists stay
+# fail-closed vs keyword tightening (BL-015).
+UNIVERSAL_NEVER_AUTO: tuple[str, ...] = (
+    "Kernel modifications",
+    "Governance changes",
+    "Dependency additions",
+    "Pipeline self-modification",
+    "Memory M2 → M1 promotion",
+    "File deletion",
+)
+
+
+def _normalize_posture_line(s: str) -> str:
+    return s.strip().lower()
+
+
+def merge_never_auto(agent_never_auto: list[str] | None) -> list[str]:
+    """
+    Union universal Never-Auto with per-agent lines; dedupe; universal order first,
+    then agent-only lines in first-seen order.
+    """
+    uni_norm = {_normalize_posture_line(x) for x in UNIVERSAL_NEVER_AUTO}
+    out: list[str] = list(UNIVERSAL_NEVER_AUTO)
+    seen: set[str] = set(uni_norm)
+    for raw in agent_never_auto or []:
+        n = _normalize_posture_line(raw)
+        if n in uni_norm:
+            continue
+        if n in seen:
+            continue
+        out.append(raw)
+        seen.add(n)
+    return out
+
+
+def effective_posture_for_permissions(posture: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Shallow copy of posture with `never_auto` merged for permission mapping."""
+    eff: dict[str, list[str]] = {}
+    for k, v in posture.items():
+        if isinstance(v, list):
+            eff[k] = list(v)
+        else:
+            eff[k] = v  # type: ignore[assignment]
+    na = eff.get("never_auto")
+    if not isinstance(na, list):
+        na = []
+    eff["never_auto"] = merge_never_auto(na)
+    return eff
 
 
 def posture_to_permissions(tier: int, posture: dict[str, list[str]]) -> dict[str, str]:
@@ -184,7 +242,8 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     """
     meta = agent["meta"]
     tier = int(meta.get("tier", 3))
-    posture: dict[str, list[str]] = meta.get("posture") or {}
+    raw_posture = meta.get("posture") or {}
+    posture = {k: list(v) if isinstance(v, list) else v for k, v in raw_posture.items()}
 
     # Tier 1–2 agents are top-level orchestrators/workers; tier 3–4 are support subagents.
     mode = "all" if tier <= 2 else "subagent"
@@ -192,7 +251,8 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     fm: dict[str, Any] = {"description": _description(meta), "mode": mode}
     if "model" in meta:
         fm["model"] = meta["model"]
-    fm["permission"] = posture_to_permissions(tier, posture)
+    effective = effective_posture_for_permissions(posture)
+    fm["permission"] = posture_to_permissions(tier, effective)
 
     return render_frontmatter(fm) + agent["body"]
 
@@ -285,15 +345,64 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "## Platform File Locations",
         "",
-        "| Platform | Agents | Commands | Skills |",
-        "|----------|--------|----------|--------|",
-        "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` |",
-        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` |",
-        "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` |",
+        "| Platform | Agents | Commands | Skills | IDE rules |",
+        "|----------|--------|----------|--------|-----------|",
+        "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
+        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` | — |",
+        "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
+        "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
 
     return "\n".join(lines)
+
+
+# ── Cursor IDE rules (kernel templates → .cursor/rules/) ────────────────────
+
+CURSOR_ADAPTER_DIR = Path("kernel/templates/platform-adapters/cursor")
+
+
+def cursor_rules_dest_dir(root: Path) -> Path:
+    """
+    Destination directory for deployed Cursor rules.
+
+    Default: `<root>/.cursor/rules/`
+    Override: set `AZOTH_CURSOR_RULES_DIR` to an absolute path (used by tests and
+    sandboxes that block creating `.cursor/`).
+    """
+    env = os.environ.get("AZOTH_CURSOR_RULES_DIR")
+    if env:
+        return Path(env).resolve()
+    return (root / ".cursor" / "rules").resolve()
+
+
+def iter_cursor_rule_deployments(root: Path) -> list[tuple[Path, Path]]:
+    """
+    Map each *.mdc.template under the Cursor adapter dir to its deploy path.
+
+    Returns (template_path, dest_path) pairs. Example:
+      .../azoth-memory.mdc.template → .cursor/rules/azoth-memory.mdc
+    """
+    adapter = root / CURSOR_ADAPTER_DIR
+    if not adapter.is_dir():
+        return []
+    dest_dir = cursor_rules_dest_dir(root)
+    pairs: list[tuple[Path, Path]] = []
+    for path in sorted(adapter.glob("*.mdc.template")):
+        out_name = path.name.removesuffix(".template")
+        dest = dest_dir / out_name
+        pairs.append((path, dest))
+    return pairs
+
+
+def deploy_cursor_rules(root: Path, dry_run: bool) -> int:
+    """Copy kernel Cursor templates into .cursor/rules/. Returns files written."""
+    count = 0
+    for template_path, dest_path in iter_cursor_rule_deployments(root):
+        content = template_path.read_text(encoding="utf-8")
+        write_file(dest_path, content, root, dry_run)
+        count += 1
+    return count
 
 
 # ── File writing ─────────────────────────────────────────────────────────────
@@ -301,7 +410,10 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
 
 def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
     """Write content to path, printing the relative path. Creates parent dirs."""
-    rel = path.relative_to(root)
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
     if dry_run:
         print(f"  [dry-run] {rel}")
         return
@@ -312,7 +424,7 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -410,6 +522,18 @@ def main(argv: list[str] | None = None) -> int:
             write_file(root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
                        skill["raw"], root, dry_run)
             count += 1
+        print()
+
+    # ── Cursor rules (kernel templates) ──────────────────────────────────────
+    if "cursor" in platforms:
+        print("── cursor rules ────────────────────────────────────────────────")
+        n = deploy_cursor_rules(root, dry_run)
+        count += n
+        if n == 0:
+            print(
+                f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
+                file=sys.stderr,
+            )
         print()
 
     # ── AGENTS.md ────────────────────────────────────────────────────────────
