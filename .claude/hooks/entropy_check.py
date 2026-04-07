@@ -28,11 +28,22 @@ ZONE_YELLOW_MIN = 5.0
 ZONE_RED_MIN = 10.0
 
 
+def _entropy_zone(cumulative: float) -> str:
+    if cumulative >= ZONE_RED_MIN:
+        return "RED"
+    if cumulative >= ZONE_YELLOW_MIN:
+        return "YELLOW"
+    return "GREEN"
+
+
 @dataclass(frozen=True)
 class EntropyCheckResult:
     allowed: bool
     reason: str = ""
     yellow_advisory: bool = False
+    entropy_delta: float | None = None
+    cumulative_entropy: float | None = None
+    entropy_zone: str | None = None
 
 
 def estimate_lines_changed(tool_name: str, tool_input: dict) -> int:
@@ -123,6 +134,9 @@ def evaluate_entropy(
                 "[entropy-check] TRUST_CONTRACT §1: file count cap exceeded "
                 f"(modified≤{MAX_FILES_MODIFIED}, created≤{MAX_FILES_CREATED})."
             ),
+            entropy_delta=delta,
+            cumulative_entropy=cumulative,
+            entropy_zone=_entropy_zone(cumulative),
         )
 
     if lines_total > MAX_LINES_PER_SESSION:
@@ -132,6 +146,9 @@ def evaluate_entropy(
                 f"[entropy-check] TRUST_CONTRACT §1: lines changed cap exceeded "
                 f"({MAX_LINES_PER_SESSION} per session; observed {lines_total})."
             ),
+            entropy_delta=delta,
+            cumulative_entropy=cumulative,
+            entropy_zone=_entropy_zone(cumulative),
         )
 
     if cumulative >= ZONE_RED_MIN:
@@ -141,6 +158,9 @@ def evaluate_entropy(
                 "[entropy-check] red zone — cumulative entropy_delta ≥ "
                 f"{ZONE_RED_MIN} (checkpoint required per TRUST_CONTRACT §1; delta≈{cumulative:.2f})."
             ),
+            entropy_delta=delta,
+            cumulative_entropy=cumulative,
+            entropy_zone="RED",
         )
 
     state.cumulative_entropy = cumulative
@@ -157,6 +177,14 @@ def evaluate_entropy(
                 f"{ZONE_RED_MIN}); checkpoint recommended (≈{cumulative:.2f})."
             ),
             yellow_advisory=True,
+            entropy_delta=delta,
+            cumulative_entropy=cumulative,
+            entropy_zone="YELLOW",
         )
 
-    return EntropyCheckResult(allowed=True)
+    return EntropyCheckResult(
+        allowed=True,
+        entropy_delta=delta,
+        cumulative_entropy=cumulative,
+        entropy_zone="GREEN",
+    )

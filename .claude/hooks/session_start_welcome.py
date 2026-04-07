@@ -14,6 +14,9 @@ import sys
 from pathlib import Path
 
 _HOOK_FILE = Path(__file__).resolve()
+_HOOKS = _HOOK_FILE.parent
+if str(_HOOKS) not in sys.path:
+    sys.path.insert(0, str(_HOOKS))
 # .claude/hooks/this_file.py -> repo root is three levels up
 ROOT = _HOOK_FILE.parent.parent.parent
 
@@ -45,6 +48,17 @@ def main() -> int:
         try:
             out_path.write_text(proc.stdout, encoding="utf-8")
         except OSError:
+            pass
+        try:
+            from session_telemetry import record_session_lifecycle
+
+            record_session_lifecycle(
+                ROOT,
+                event="session_orientation",
+                session_id="",
+                detail="welcome --plain ok",
+            )
+        except Exception:
             pass
         sys.stdout.write(proc.stdout)
     else:

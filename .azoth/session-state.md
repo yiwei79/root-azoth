@@ -12,9 +12,9 @@
 
 state: empty
 last_ide: cursor
-timestamp: 2026-04-08T18:00:00Z
+timestamp: 2026-04-08T23:50:00Z
 active_task: ""
 active_files: []
 pending_decisions: []
 approved_scope: ""
-next_action: "Run /next for a new scope card before governed writes. Optional: /intake for inbox queue; python3 scripts/welcome.py in integrated terminal for Rich dashboard."
+next_action: "Run /next for a new scope card (e.g. P5-005 or P5-006). Optional: /intake for inbox queue."

@@ -178,7 +178,12 @@ Recommendation: Checkpoint first, or split into 2 smaller operations.
 
 ## Telemetry Record
 
-Every entropy measurement is logged:
+**D14 / P5-004:** Durable audit lines are appended by `.claude/hooks/session_telemetry.py`
+(PreToolUse orchestrator + optional session events). See `kernel/GOVERNANCE.md` §6 and
+`docs/AZOTH_ARCHITECTURE.md` §9 for canonical **`outcome`** values (`allowed` / `denied` vs `success`).
+
+The JSON below is an **illustrative** entropy-oriented record; actual lines may include
+`source`, `denial_stage`, `entropy_delta`, `cumulative_entropy`, `entropy_zone`, etc.
 
 ```json
 {

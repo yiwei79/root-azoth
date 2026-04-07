@@ -615,11 +615,24 @@ with a git pre-commit hook triggering regeneration.
 
 ### Session Telemetry
 
+Append-only **JSON Lines** at `.azoth/telemetry/session-log.jsonl` (gitignored). Writer:
+`.claude/hooks/session_telemetry.py` (P5-004). Normative intent: `kernel/GOVERNANCE.md` §6.
+
+**`outcome` vocabulary (canonical):**
+
+| `source`   | Typical `outcome` | Meaning |
+|------------|-------------------|---------|
+| `pretooluse` | `allowed` \| `denied` | PreToolUse `Write`/`Edit` allowed or blocked after scope / alignment / entropy |
+| `session`  | `success` | Session lifecycle (e.g. `session_orientation` after welcome) |
+
+**Example lines (illustrative):**
+
 ```jsonl
-{"session_id":"uuid","turn":3,"agent":"builder","tool":"edit","target":"src/main.py","outcome":"success","files_changed":1,"entropy_delta":0.1,"timestamp":"2026-04-03T19:00:00Z"}
+{"session_id":"2026-04-08-p5-004","turn":2,"source":"pretooluse","tool_name":"Write","action":"write","target":"foo.py","outcome":"allowed","entropy_zone":"GREEN","timestamp":"2026-04-08T12:00:00+00:00"}
+{"session_id":"","source":"session","action":"session_orientation","outcome":"success","timestamp":"2026-04-08T12:00:01+00:00"}
 ```
 
-Stored in `.azoth/telemetry/session-log.jsonl` (gitignored).
+Parsers MUST accept `allowed`/`denied` — not only `"success"`.
 
 ### Error Recovery: Git-Based Checkpoints
 

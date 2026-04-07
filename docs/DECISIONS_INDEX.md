@@ -29,7 +29,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D11 | Memory: 3-layer auto-improving | 🔧 partial | .azoth/memory/ (M3 works, M2→M1 pending) | 1 |
 | D12 | Claude Code Extension: full compat | ✅ implemented | .claude/ config | 1 |
 | D13 | Skills: shared between platforms | ✅ implemented | skills/ | 2 |
-| D14 | Observability: session telemetry | 🔧 partial | kernel/GOVERNANCE.md Section 6 | 1 |
+| D14 | Observability: session telemetry | ✅ implemented | kernel/GOVERNANCE.md §6; `.claude/hooks/session_telemetry.py`; `.azoth/telemetry/session-log.jsonl` (gitignored) | 1 |
 | D15 | Rollback: git-based checkpoints | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D16 | README: Phase 4 deliverable | 📋 planned | — | 4 |
 | D17 | Pipeline schema: Phase 3 deliverable | 🔧 partial | pipelines/pipeline.schema.yaml + pipeline.template.yaml | 3 |

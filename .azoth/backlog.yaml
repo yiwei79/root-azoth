@@ -592,7 +592,7 @@ items:
     roadmap_ref: P5-004
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 5
     created_date: "2026-04-07"

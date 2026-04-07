@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-08T00:24:47+00:00",
-  "goal": "P5-007: Session start hook — auto-trigger /start on session open",
-  "session_id": "2026-04-08-p5-007",
+  "expires_at": "2026-04-08T01:29:55+00:00",
+  "goal": "P5-004: Session telemetry (observability)",
+  "session_id": "2026-04-08-p5-004",
   "approved_by": "human",
-  "backlog_id": "P5-007",
-  "delivery_pipeline": "governed",
-  "target_layer": "M1",
-  "closed_at": "2026-04-08T18:00:00Z"
+  "backlog_id": "P5-004",
+  "delivery_pipeline": "standard",
+  "target_layer": "infrastructure",
+  "closed_at": "2026-04-08T23:50:00Z"
 }
