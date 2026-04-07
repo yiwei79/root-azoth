@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T02:13:59+00:00",
-  "goal": "BL-015: Agent/skill boilerplate dedup — posture single-source + skill trigger compression",
-  "session_id": "2026-04-07-bl-015",
+  "expires_at": "2026-04-08T23:59:59+00:00",
+  "goal": "P4-002: azoth init interactive onboarding",
+  "session_id": "2026-04-07-p4-002",
   "approved_by": "human",
-  "backlog_id": "BL-015",
+  "backlog_id": "P4-002",
   "delivery_pipeline": "standard",
   "target_layer": "infrastructure",
-  "closed_at": "2026-04-07T20:05:00+00:00"
+  "closed_at": "2026-04-07T23:59:59+00:00"
 }

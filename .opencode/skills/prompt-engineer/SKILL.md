@@ -97,6 +97,27 @@ Before deciding, work through these steps:
 5. State what would change your mind
 ```
 
+### Pattern 5: Azoth effect label (build transparency)
+
+Any instruction surface that can trigger **Write/Edit** (builder path) must declare it.
+
+**Slash commands** (`.claude/commands/*.md`): set in YAML frontmatter (see `kernel/GOVERNANCE.md` — Instruction effect labels):
+
+```yaml
+---
+description: "..."
+azoth_effect: read | write | mixed
+---
+```
+
+**Skills, AGENTS.md, or ad-hoc prompts** where frontmatter is not used: put a single visible line near the top:
+
+```markdown
+**Azoth effect:** `write`
+```
+
+Use `read` for analysis-only, `write` when implementation or file mutation is in the default path, `mixed` when the human must approve before any write.
+
 ### Pattern 4: Few-Shot with Rubric
 
 For tasks requiring consistent quality:

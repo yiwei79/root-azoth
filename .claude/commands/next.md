@@ -1,5 +1,6 @@
 ---
 description: "Show the next priority task from the roadmap and suggest how to proceed"
+azoth_effect: mixed
 ---
 
 # /next — What Should I Work On?

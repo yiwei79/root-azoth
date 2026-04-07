@@ -30,6 +30,12 @@ This skill operates at L1 and L2. L3 is the Agent Crafter (Phase 6).
 - **When friction is noticed** — "this keeps being harder than it should be"
 - **Explicitly** — human asks "how can we improve X?"
 
+### Backlog work is not exempt from delivery pipelines (D21)
+
+If the active goal maps to **`.azoth/backlog.yaml`** (`delivery_pipeline: standard` → **`/deliver`**, governed or `target_layer: M1` → **`/deliver-full`**), the orchestrator must **not** implement the full outcome inline in one thread. Use **staged pipelines** with **`Task`** (Cursor) / **`Agent(subagent_type=...)`** (Claude Code): **one spawn per stage**, spawn prompt per **`skills/subagent-router/SKILL.md`** (BL-011), and **typed YAML handoffs** between stages (BL-012). Same rule applies to **docs and README** when they are the deliverable — skipping planner / test-design / builder / review to “save time” is an **architecture bypass**, not a shortcut.
+
+**Recovery:** If the bypass already happened, capture the miss in **M3**, then **re-run** the appropriate pipeline stages (or an explicit review `Task`) before treating the work as closed.
+
 ---
 
 ## L1: Reflexion Loop

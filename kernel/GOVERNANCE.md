@@ -111,6 +111,31 @@ If an action requiring a human gate is attempted without approval:
 3. Present the action to human for explicit approval or rejection
 4. Do not retry until human signal is received
 
+### Instruction effect labels (slash commands & prompts)
+
+Every file in `.claude/commands/*.md` MUST declare repository side-effect intent in the
+YAML frontmatter:
+
+```yaml
+azoth_effect: read | write | mixed
+```
+
+| Value | Meaning |
+|-------|---------|
+| `read` | Default flow does **not** write to the repo (analysis, planning, dashboards, reports to chat). |
+| `write` | Default flow may **Write/Edit** tracked files, append to memory, or write gate files; builder path and scope-gate / pipeline-gate rules apply. |
+| `mixed` | Default flow is read-only until an explicit human signal (e.g. `approved` on a scope card); then writes are allowed. |
+
+**Rationale:** Humans and agents must see whether a command can trigger a **build**
+(implementation / Write/Edit) without reading the full document.
+
+Custom **user prompts** and **skills** that are not slash commands SHOULD include a
+visible first line when the effect is non-obvious:
+
+```markdown
+**Azoth effect:** `read` | `write` | `mixed`
+```
+
 ---
 
 ## 3. Promotion Flow

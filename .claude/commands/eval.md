@@ -1,5 +1,6 @@
 ---
 description: "Governance quality gate — evaluate artifacts against criteria"
+azoth_effect: read
 ---
 
 # /eval $ARGUMENTS

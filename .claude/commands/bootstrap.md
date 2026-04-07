@@ -1,5 +1,6 @@
 ---
 description: "Day 0 bootstrap — create the Azoth kernel from the architecture plan"
+azoth_effect: write
 ---
 
 # Azoth Day 0 Bootstrap

@@ -1,5 +1,6 @@
 ---
 description: "Auto-compose and execute a pipeline based on goal classification"
+azoth_effect: write
 ---
 
 # /auto $ARGUMENTS

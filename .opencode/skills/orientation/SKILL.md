@@ -59,8 +59,8 @@ alignment—not on every session.
 
 ### Phase 4: Distribution & Polish 🎯 CURRENT (v0.0.4)
 - [x] D52: Session Welcome — `.claude/commands/start.md` + `scripts/welcome.py` + template note (BL-007)
-- [ ] P4-001: README (philosophy + quickstart) — D16 — **backlog priority 1**
-- [ ] P4-002: `azoth init` interactive onboarding — D5, D36 — **backlog priority 2**
+- [x] P4-001: README (philosophy + quickstart) — D16 — **backlog priority 1**
+- [x] P4-002: `azoth init` interactive onboarding (`scripts/azoth_init.py`) — D5, D36 — **backlog priority 2**
 - [ ] D42: Path duality convention (kernel/ vs `.azoth/kernel/`) — P4-005
 - [ ] Update kernel docs for dual-path awareness — P4-006
 - [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when dual-path lands)

@@ -1,5 +1,6 @@
 ---
 description: "Capture a cross-session learning as a structured episode"
+azoth_effect: write
 ---
 
 # /remember $ARGUMENTS

@@ -1,5 +1,6 @@
 ---
 description: "Unified eval + close + sync — run at the end of every session"
+azoth_effect: write
 ---
 
 # /session-closeout

@@ -182,7 +182,7 @@ versions:
 
   - id: v0.0.4
     status: active
-    current_patch: 1
+    current_patch: 4
     goal: "Phase 4: Distribution & Polish"
     phase_scope: [4]
     tasks:

@@ -1,5 +1,6 @@
 ---
 description: "Extract patterns from a source framework into Azoth"
+azoth_effect: write
 ---
 
 # /sync — Pattern Extraction

@@ -21,7 +21,7 @@ Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit`
    - Read `.azoth/scope-gate.json`. If absent, or `approved` is not `true`, or `expires_at` is past → **do not write**; tell the human to run `/next` and approve a scope card.
    - If the scope is **governed** (`delivery_pipeline: governed` **or** `target_layer: M1`): read `.azoth/pipeline-gate.json`. It must exist, `approved: true`, `session_id` must match scope-gate, `expires_at` unexpired. Otherwise → **do not write**; execute **Stage 0** from `.claude/commands/deliver-full.md`, `.claude/commands/auto.md`, or `.claude/commands/deliver.md` (write `pipeline-gate.json` first), then continue.
 
-3. **Canonical workflows**: Follow slash-command definitions under **`.claude/commands/`** for `/auto`, `/deliver`, `/deliver-full`, `/next`, `/start`, `/session-closeout` — do not invent parallel workflows.
+3. **Canonical workflows**: Follow slash-command definitions under **`.claude/commands/`** for `/auto`, `/deliver`, `/deliver-full`, `/next`, `/start`, `/session-closeout` — do not invent parallel workflows. Each command file declares `azoth_effect: read | write | mixed` in YAML frontmatter (`kernel/GOVERNANCE.md`). If `write` or `mixed`, assume **Write/Edit** may follow (after gates when applicable); treat `read` as analysis-only unless the human explicitly asks to implement.
 
 4. **M1 / governed backlog work**: Do **not** implement `target_layer: M1` or `delivery_pipeline: governed` items as a single long inline session. Use the **staged pipeline + subagent routing** in those commands and `skills/subagent-router/SKILL.md` (spawn contract, pipeline gate).
 

@@ -1,5 +1,6 @@
 ---
 description: "Generate unit tests for specified code"
+azoth_effect: write
 ---
 
 # /test $ARGUMENTS

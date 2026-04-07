@@ -113,3 +113,27 @@ patterns:
       a scope card that gates execution. Any break in this chain means insights
       exist but cannot change behavior. Apply this audit to any AI workflow that
       maintains state across sessions.
+
+  - id: instruction-effect-labels-visibility
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [ep-064]
+    trigger: authoring or editing slash commands, Cursor rules, or user prompts that may invoke Write/Edit
+    summary: >
+      Any instruction surface that can trigger a build (Write/Edit / builder path)
+      must declare it explicitly. Slash commands use YAML frontmatter
+      `azoth_effect: read | write | mixed` (normative in kernel/GOVERNANCE.md).
+      Read = default flow does not write to the repo; write = implementation may run;
+      mixed = writes only after explicit human approval (e.g. scope card). Other
+      prompts may use a visible line `**Azoth effect:** read|write|mixed`. Drift
+      tests enforce the frontmatter on every `.claude/commands/*.md` file.
+    why_it_matters: >
+      Humans and agents cannot safely choose tools or gates if "planning" and
+      "shipping" prompts look the same. Hiding implementation behind read-only
+      wording caused pipeline bypass (ep-063). Labeled effects align with trust
+      contract entropy awareness and scope-gate expectations.
+    how_to_apply: >
+      When adding or changing a slash command, set `azoth_effect` immediately.
+      When writing a custom prompt or skill without frontmatter, add the one-line
+      Azoth effect line. Run `pytest tests/test_azoth_commands_effect.py` after
+      command edits. After changing the governance rule, run `azoth-deploy.py`.
