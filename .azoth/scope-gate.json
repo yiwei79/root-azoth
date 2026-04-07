@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-08T23:59:59+00:00",
-  "goal": "P4-006: dual-path doc fixes (reviewer) + BOOTLOADER ACTIVATE (D42)",
-  "session_id": "2026-04-07-p4-006",
+  "expires_at": "2026-04-07T22:22:51+00:00",
+  "goal": "P5-001: Commit-time governance enforcement hooks",
+  "session_id": "2026-04-07-p5-001",
   "approved_by": "human",
-  "backlog_id": "P4-006",
-  "delivery_pipeline": "standard",
-  "target_layer": "infrastructure",
-  "closed_at": "2026-04-08T12:35:00+00:00"
+  "backlog_id": "P5-001",
+  "delivery_pipeline": "governed",
+  "target_layer": "M1",
+  "closed_at": "2026-04-07T20:45:00+00:00"
 }
