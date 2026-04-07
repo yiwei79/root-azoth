@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "closed_at": "2026-04-07T21:40:14+00:00",
-  "expires_at": "2026-04-07T22:44:51+00:00",
-  "goal": "P5-002: entropy-check hook (TRUST_CONTRACT §1 enforcement)",
-  "session_id": "2026-04-07-p5-002",
+  "closed_at": "2026-04-07T22:15:20+00:00",
+  "expires_at": "2026-04-07T23:57:31+00:00",
+  "goal": "P5-003: alignment-summary hook (structured stage handoff)",
+  "session_id": "2026-04-07-p5-003",
   "approved_by": "human",
-  "backlog_id": "P5-002",
+  "backlog_id": "P5-003",
   "delivery_pipeline": "governed",
   "target_layer": "M1"
 }
