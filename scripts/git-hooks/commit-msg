@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Azoth commit-msg hook (P5-001 / D43). Installed via scripts/azoth_install_git_hooks.py
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+exec python3 "${ROOT}/scripts/git_commit_policy.py" check --path "$1"

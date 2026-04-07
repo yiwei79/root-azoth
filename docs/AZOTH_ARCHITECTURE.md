@@ -811,8 +811,8 @@ azoth/
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction |
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
-| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | Dual-path awareness for scaffold vs consumer context |
-| D43 | Commit-time governance enforcement hooks | Pre-commit hooks that mechanically enforce CLAUDE.md git rules (no Co-Authored-By, format validation) — moves governance from agent memory (driftable) to tool execution (deterministic) |
+| D42 | Path duality (scaffold `kernel/` vs consumer `.azoth/kernel/`) | Normative rules in §18 Path duality; installer deploys read-only copy |
+| D43 | Commit-time governance enforcement hooks | Git `commit-msg` hook + `scripts/git_commit_policy.py` reject `Co-Authored-By:` trailers; `scripts/azoth_install_git_hooks.py` sets `core.hooksPath` — VCS-time complement to BL-002 PreToolUse scope-gate (write-time); further format rules optional |
 | D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
 | D45 | Context-sensitive memory retrieval | Grep-by-tags read interface for M3/M2; dual trigger at SURVEY + Stage 0; implemented as Layer 1 skill (`context-recall`), not kernel |
 | D46 | Dev-sync script: workspace self-installation to platform directories | `scripts/azoth-deploy.py` translates canonical agents/skills/commands into Claude Code, Copilot, OpenCode platform-specific files + AGENTS.md broadcast layer |
@@ -905,6 +905,21 @@ mechanical step deferred to Phase 4:
 3. Generate clean product repo with consumer-facing README
 4. Validate: fresh clone → install → tests pass
 
+### Path duality (D42): `kernel/` vs `.azoth/kernel/`
+
+Azoth uses **two legitimate locations** for the same four governance documents (`BOOTLOADER.md`, `TRUST_CONTRACT.md`, `GOVERNANCE.md`, `PROMOTION_RUBRIC.md`). Which path is correct depends on **workspace role**, not preference.
+
+| Context | Authoritative path | Role |
+|---------|-------------------|------|
+| **Scaffold / toolkit development** (e.g. root-azoth clone, Tier 2) | Repo root **`kernel/`** | Source of truth. Edits happen here; changes promote via governance. |
+| **Consumer project** (after `install.sh` / `install.ps1`, Tier 3 → consumer) | **`.azoth/kernel/`** | Read-only copy deployed by the installer. Not a second editable tree. |
+
+**How to tell:** If the repository contains a top-level **`kernel/`** directory next to `scripts/` and `skills/`, you are in **scaffold** mode — use `kernel/` for Layer 0. If there is **no** repo root `kernel/` but `.azoth/kernel/*.md` exists, you are in **consumer** mode — treat `.azoth/kernel/` as the governance read path; do not create a parallel root `kernel/` for edits.
+
+**Drift and integrity:** Consumer installs record checksums in **`.azoth/kernel-checksums.sha256`**. The integrity check is defined under **ACTIVATE** in `BOOTLOADER.md` (hashed files live under `.azoth/kernel/` after install). Resolve “where is GOVERNANCE?” using the table above before opening files.
+
+**Related:** P4-006 aligns individual `kernel/*.md` files (including `BOOTLOADER.md` ACTIVATE) with this convention. D42 is the normative story; P4-006 is the mechanical pass.
+
 ### Architecture Decisions (D29–D38)
 
 | # | Decision | Rationale |
@@ -922,6 +937,7 @@ mechanical step deferred to Phase 4:
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | Machine-readable task backlog for agent self-direction *(superseded by D48)* |
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
+| D42 | Path duality: `kernel/` (scaffold) vs `.azoth/kernel/` (consumer) | Same four governance files; role depends on install vs development — see §18 Path duality |
 
 ---
 

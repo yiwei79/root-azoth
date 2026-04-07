@@ -57,17 +57,15 @@ alignment—not on every session.
 ### Phase 3: Agent Archetypes ✅ COMPLETE (v0.0.3)
 - [x] 10 agent archetypes, 8 pipeline presets, workflow loop (D47–D51), auto-router, subagent-router, stage6-rubric, context-recall, `/start` + `scripts/welcome.py` (BL-007), token-optimization tracks (BL-011–BL-015), Cursor adapter (BL-016)
 
-### Phase 4: Distribution & Polish 🎯 CURRENT (v0.0.4)
+### Phase 4: Distribution & Polish ✅ COMPLETE (v0.0.4)
 - [x] D52: Session Welcome — `.claude/commands/start.md` + `scripts/welcome.py` + template note (BL-007)
 - [x] P4-001: README (philosophy + quickstart) — D16 — **backlog priority 1**
 - [x] P4-002: `azoth init` interactive onboarding (`scripts/azoth_init.py`) — D5, D36 — **backlog priority 2**
-- [ ] D42: Path duality convention (kernel/ vs `.azoth/kernel/`) — P4-005
-- [ ] Update kernel docs for dual-path awareness — P4-006
-- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when dual-path lands)
-- [ ] CI for drift detection — P4-003 (deferred until public repo exists)
-- [ ] Publish to GitHub — P4-004
+- [x] D42: Path duality convention (kernel/ vs `.azoth/kernel/`) — P4-005
+- [x] Update kernel docs for dual-path awareness — P4-006
+- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when that template is next revised for consumer installs)
 
-### Phase 5: Trust Layer
+### Phase 5: Trust Layer 🎯 CURRENT (v0.0.5)
 - [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
 - [ ] entropy-check hook
 - [ ] alignment-summary hook
@@ -75,7 +73,9 @@ alignment—not on every session.
 - [ ] Git-based checkpoints
 - [ ] Phone-friendly output
 
-### Phase 6: Meta-Recursive
+### Phase 6: Meta-Recursive (v0.0.6 — last 0.0.x before v0.1.0)
+- [ ] P4-003: CI for drift detection — **deferred from Phase 4**; schedule here with public-repo readiness
+- [ ] P4-004: Publish to GitHub (public azoth) — **deferred from Phase 4**; **D35**, **D37**; pairs with v0.1.0 gate
 - [ ] Agent Crafter
 - [ ] L2 prompt optimization
 - [ ] L3 human-gated architecture proposals

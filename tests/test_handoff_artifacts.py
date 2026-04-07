@@ -373,9 +373,10 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md or "0.1.0" in self.orientation_md
 
     def test_phase_consistent(self) -> None:
-        """Phase 4 in root CLAUDE; earlier phases complete live in orientation skill (BL-013)."""
-        assert self.azoth_yaml["phase"] == 4
-        assert "Phase 4" in self.claude_md
+        """Current phase in azoth.yaml matches CLAUDE.md; earlier phases live in orientation (BL-013)."""
+        phase = int(self.azoth_yaml["phase"])
+        assert phase == 5
+        assert f"Phase {phase}" in self.claude_md
         assert "Phase 2" in self.orientation_md
 
     def test_four_layers_consistent(self) -> None:

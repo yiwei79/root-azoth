@@ -21,11 +21,15 @@ ACTIVATE → SURVEY → OPERATE → HARDEN
 **Purpose**: Load identity, constraints, and trust boundaries.
 
 1. Read `CLAUDE.md` — project instructions, routing table, current phase
-2. Read `kernel/TRUST_CONTRACT.md` — entropy ceiling, alignment protocol
-3. Read `kernel/GOVERNANCE.md` — HITL gates, promotion rules, **Section 2** for typed gate catalog (D24) and mandatory human gates
-4. Load bootloader state (`.azoth/bootloader-state.md` if present)
-5. Validate kernel integrity:
-   - Hash kernel files against `.azoth/kernel-checksums.sha256`
+2. **Resolve governance path `G` (D42 path duality):**
+   - If `kernel/TRUST_CONTRACT.md` exists at the repo root → **`G` := `kernel`**
+   - Else if `.azoth/kernel/TRUST_CONTRACT.md` exists → **`G` := `.azoth/kernel`**
+   - Else → STOP; report missing governance files to the human (neither scaffold nor consumer layout detected).
+3. Read `G/TRUST_CONTRACT.md` — entropy ceiling, alignment protocol
+4. Read `G/GOVERNANCE.md` — HITL gates, promotion rules, **Section 2** for typed gate catalog (D24) and mandatory human gates
+5. Load bootloader state (`.azoth/bootloader-state.md` if present)
+6. Validate kernel integrity:
+   - Hash the deployed governance files against `.azoth/kernel-checksums.sha256` (see checksum manifest under `.azoth/`)
    - If drift detected → STOP, report to human, await signal
 
 **Output**: Agent identity loaded, trust boundaries active.
@@ -83,7 +87,7 @@ proceed. Memory bootstraps from zero — this is expected.
    - Knowledge: known-pattern | needs-research | novel
 3. Compose pipeline from classification (or accept explicit pipeline choice)
 4. Present pipeline to human for approval
-5. Execute pipeline stages, respecting gate types in `kernel/GOVERNANCE.md` Section 2 (`human` vs `agent` approvers, mandatory human gates).
+5. Execute pipeline stages, respecting gate types in `GOVERNANCE.md` Section 2 of the governance copy loaded in ACTIVATE (`G/GOVERNANCE.md`) — `human` vs `agent` approvers, mandatory human gates.
 6. Monitor entropy throughout:
    - Track files changed, scope of modifications
    - If approaching entropy ceiling → checkpoint and report
@@ -151,7 +155,7 @@ This file is runtime state (gitignored) — it is NOT part of the kernel.
 
 | Phase | Reads | Writes |
 |-------|-------|--------|
-| ACTIVATE | CLAUDE.md, kernel/*, .azoth/bootloader-state.md | — |
+| ACTIVATE | CLAUDE.md, `G/*` governance files (see ACTIVATE step 2), `.azoth/bootloader-state.md` | — |
 | SURVEY | Project files, .azoth/memory/*, azoth.yaml, .azoth/roadmap.yaml, .azoth/inbox/*.jsonl | — |
 | OPERATE | Pipeline definitions, agent configs | Source files, tests |
 | HARDEN | Kernel checksums | .azoth/memory/*, .azoth/bootloader-state.md |

@@ -137,3 +137,64 @@ patterns:
       When writing a custom prompt or skill without frontmatter, add the one-line
       Azoth effect line. Run `pytest tests/test_azoth_commands_effect.py` after
       command edits. After changing the governance rule, run `azoth-deploy.py`.
+
+  - id: sibling-artifact-audit-after-structural-fix
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [ep-039, ep-041, ep-042]
+    trigger: after fixing a structural flaw in one pipeline command, skill, or template among related siblings
+    summary: >
+      When a structural flaw is fixed in one place (e.g. inline pipeline stages, missing
+      Agent/subagent mandates), the same flaw often exists in sibling commands or artifacts.
+      Narrow single-site fixes create repeated backlog items and governance debt. Before
+      closeout, audit same-class siblings and apply the fix class everywhere it applies.
+    why_it_matters: >
+      ep-039: inline /deliver-full stages shared context with authored content; ep-041: BL-006
+      closed the gap for /deliver-full but not /deliver, forcing BL-008; ep-042: explicit
+      lesson to audit siblings when a structural flaw is fixed in one pipeline artifact.
+    how_to_apply: >
+      After changing one of /deliver, /deliver-full, /auto, or a shared pipeline skill,
+      list peer artifacts and ask whether the same rule applies. Prefer one routing policy
+      (e.g. subagent-router) over duplicated per-command patches.
+
+  - id: memory-authoring-quality-rules
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [ep-019, ep-020]
+    trigger: capturing user preferences or feedback as durable memory (remember skill, M3, feedback files)
+    summary: >
+      Narrow scoping ("do not do X only in context Y" when the user meant "do not do X
+      everywhere"), invented carve-outs the user never stated, and failing to record that
+      user preference overrides platform defaults all produce memories that look correct
+      but reinforce wrong behavior.
+    why_it_matters: >
+      ep-019: Co-Authored-By feedback memory was narrowly scoped with a false carve-out;
+      ep-020: named three anti-patterns for the remember skill. Rubric D (3+ sessions) is
+      borderline for this pattern; treat as maturing until a third independent reinforcement.
+    how_to_apply: >
+      Default to the broader interpretation of user preference. Do not add exceptions unless
+      the user stated them. When preference conflicts with platform defaults, state the
+      conflict and that user preference wins. Long-term procedural home: skills/remember
+      (M2→M1 when promoted with backlog + /deliver-full).
+
+  - id: standard-delivery-not-exempt-for-markdown
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [ep-063, ep-041]
+    trigger: backlog item uses delivery_pipeline standard or deliverable is mostly markdown/docs but still repo-changing
+    summary: >
+      Items routed to the standard delivery path still require that path's semantics:
+      staged pipeline (e.g. /deliver), Task or Agent per subagent-router, typed stage
+      summaries where BL-011/BL-012 apply — not ad-hoc inline implementation in the
+      orchestrator. "Docs-only" or README work is not an exemption from isolation and
+      review gates when the backlog says standard delivery.
+    why_it_matters: >
+      ep-063: P4-001 README was implemented inline without /deliver, violating D21-style
+      isolation despite delivery_pipeline standard. ep-041: related class of failure —
+      pipeline stages collapsed inline so review gates did not hold. Human approved M2
+      promotion with primary evidence ep-063; ep-041 reinforces the same governance class.
+    how_to_apply: >
+      Before building, read the backlog row's delivery_pipeline and the command referenced
+      by deliver.md / subagent-router. If it says standard (or governed), run that pipeline
+      with separate stages; do not rationalize away gates because the artifact is markdown.
+      Cursor: use Task per stage with prior_stage_summaries per claude-code-parity.

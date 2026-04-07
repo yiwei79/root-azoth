@@ -283,7 +283,7 @@ After Day 0, sessions follow a natural rhythm:
 
 | Task | Pipeline | Notes |
 |------|----------|-------|
-| Commit governance hooks (D43) | `/deliver-full` | Pre-commit strips Co-Authored-By, validates commit format — moves CLAUDE.md git rules from memory to mechanical enforcement |
+| Commit governance hooks (D43) | `/deliver-full` | `commit-msg` git hook + `scripts/git_commit_policy.py` **rejects** `Co-Authored-By:` trailers; run `python3 scripts/azoth_install_git_hooks.py` to set `core.hooksPath` — complements BL-002 (write-time) with VCS-time enforcement |
 | entropy-check hook | `/deliver-full` | Core governance |
 | alignment-summary hook | `/deliver-full` | Core governance |
 | Session telemetry | `/deliver` | `.azoth/telemetry/session-log.jsonl` |

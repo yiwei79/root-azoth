@@ -57,25 +57,25 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D39 | Roadmap tracking: `.azoth/roadmap.yaml` | 🔄 superseded | Superseded by D48 (roadmap.yaml versioned) | 1.5 |
 | D40 | Repo rename: root-azoth | ✅ implemented | Repository naming | 1.5 |
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
-| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | 📋 planned | — (Phase 4) | 4 |
-| D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) — P3-008/BL-002 is a subset pulled to Phase 3 | 5 |
+| D42 | Path duality convention: kernel/ vs .azoth/kernel/ | ✅ implemented | `docs/AZOTH_ARCHITECTURE.md` §18 Path duality | 4 |
+| D43 | Commit-time governance enforcement hooks | 🔧 partial | `scripts/git_commit_policy.py`, `scripts/git-hooks/commit-msg`, `scripts/azoth_install_git_hooks.py` (Co-Authored-By); optional format rules TBD — BL-002 is write-time subset | 5 |
 | D44 | Pipeline Stage 6 quality rubric for structured content | 🔧 partial | skills/stage6-rubric/SKILL.md | 3 |
 | D45 | Context-sensitive memory retrieval | 🔧 partial | skills/context-recall/SKILL.md | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
 | D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.6 + v0.1.0 target; /next reads versioned structure) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
-| D50 | Session scope card | 📋 planned | .claude/commands/next.md + .azoth/scope-gate.json (BL-004) | 3 |
+| D50 | Session scope card | 🔧 partial | `.claude/commands/next.md` + `.azoth/scope-gate.json` (BL-004 delivered; hook enforcement Claude Code–only) | 3 |
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | 📋 planned | scripts/welcome.py + .claude/commands/start.md (BL-007) | 4 |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007) | 4 |
 | D53 | Auto-versioning policy: delivery-triggered version increments | 📋 planned | scripts/version-bump.py + /session-closeout integration (BL-009) | 4 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 30 |
-| 🔧 partial | 8 |
-| 📋 planned | 14 |
+| ✅ implemented | 32 |
+| 🔧 partial | 9 |
+| 📋 planned | 11 |
 | 🔄 superseded | 1 |
 | **Total** | **53** |
