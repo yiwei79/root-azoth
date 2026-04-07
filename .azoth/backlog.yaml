@@ -509,5 +509,133 @@ items:
       architecture §18 drift line; README consumer paths; CLAUDE template Cursor scaffold note;
       DECISIONS_INDEX D50/D52 status; orientation checklist.
 
+  # ── Phase 5: Trust Layer (roadmap v0.0.5) — priority = ROI (1 = highest) ──
+  # Order rationale: mechanical enforcement and per-turn limits before observability;
+  # session /start adoption before deep telemetry; recovery hooks before niche output.
+
+  - id: P5-001
+    title: "Commit-time governance enforcement hooks"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-001
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.5
+    priority: 1
+    created_date: "2026-04-07"
+    decision_ref: [D43]
+    blocked_by: null
+    priority_note: >
+      Initial slice delivered: git commit-msg + scripts/git_commit_policy.py (Co-Authored-By
+      rejection), scripts/azoth_install_git_hooks.py, docs; optional commit-format rules deferred.
+    description: >
+      Extend trust from builder-time (BL-002 scope-gate) to commit-time: hooks or
+      pre-commit checks that enforce governance rules before changes enter history.
+      Surfaces violations with the same mechanical determinism as PreToolUse — not
+      memory-dependent. Composes with entropy and alignment hooks.
+
+  - id: P5-002
+    title: "entropy-check hook (TRUST_CONTRACT §1 enforcement)"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-002
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.5
+    priority: 2
+    created_date: "2026-04-07"
+    decision_ref: [D3]
+    blocked_by: null
+    description: >
+      Mechanical entropy measurement per TRUST_CONTRACT (files/lines/deletes,
+      green/yellow/red zones). Runs at high frequency relative to other hooks;
+      blocks or escalates when red-zone thresholds would be exceeded without
+      checkpoint or human approval.
+
+  - id: P5-003
+    title: "alignment-summary hook (structured stage handoff)"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-003
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.5
+    priority: 3
+    created_date: "2026-04-07"
+    blocked_by: null
+    description: >
+      Enforce or validate the Alignment Summary format (TRUST_CONTRACT §2) at stage
+      boundaries so humans receive pull-based, comparable summaries without relying
+      on prose discipline alone. Lower infrastructure cost than full telemetry (P5-004).
+
+  - id: P5-007
+    title: "Session start hook — auto-trigger /start on session open"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-007
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.5
+    priority: 4
+    created_date: "2026-04-07"
+    decision_ref: [D52]
+    blocked_by: null
+    description: >
+      Where the platform supports it (e.g. Claude Code), invoke or surface /start
+      (scripts/welcome.py) at session open so orientation, scope state, and routing
+      are consistent. Builds on BL-007; closes the loop on session discipline.
+      Platform-parity notes for Cursor in kernel templates / docs as needed.
+
+  - id: P5-004
+    title: "Session telemetry (observability)"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-004
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.5
+    priority: 5
+    created_date: "2026-04-07"
+    decision_ref: [D14]
+    blocked_by: null
+    description: >
+      D14 partial today — deliver durable session metrics (duration, tool use, stage
+      outcomes, entropy events) suitable for tuning hooks and reviewing trust-layer
+      effectiveness. May span scripts, optional local logs, and governance doc updates.
+
+  - id: P5-005
+    title: "Git-based checkpoints (mechanical recovery path)"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-005
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.5
+    priority: 6
+    created_date: "2026-04-07"
+    decision_ref: [D15]
+    blocked_by: null
+    description: >
+      D15 documented in TRUST_CONTRACT — implement hook-assisted or scripted
+      checkpoint/rollback flows (stash, tags, or project convention) so recovery
+      matches the Checkpoint Protocol without ad-hoc git literacy each time.
+
+  - id: P5-006
+    title: "Phone-friendly output (narrow terminals)"
+    source: roadmap-v0.0.5
+    roadmap_ref: P5-006
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.5
+    priority: 7
+    created_date: "2026-04-07"
+    blocked_by: null
+    description: >
+      Optimize welcome/dashboard and key CLI outputs for narrow viewports (mobile
+      SSH, small terminals): line wrapping, panel width, optional compact mode.
+      Lowest relative ROI versus enforcement hooks; polish after core Trust Layer
+      behaviors ship.
+
 # Completed items
 completed: []

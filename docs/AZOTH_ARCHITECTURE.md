@@ -812,7 +812,7 @@ azoth/
 | D40 | Repo rename: root-azoth (private) | Clear distinction from azoth (public product) |
 | D41 | Bootstrap loop: 4 artifacts | Roadmap + /next + preflight gate + decisions index |
 | D42 | Path duality (scaffold `kernel/` vs consumer `.azoth/kernel/`) | Normative rules in §18 Path duality; installer deploys read-only copy |
-| D43 | Commit-time governance enforcement hooks | Pre-commit hooks that mechanically enforce CLAUDE.md git rules (no Co-Authored-By, format validation) — moves governance from agent memory (driftable) to tool execution (deterministic) |
+| D43 | Commit-time governance enforcement hooks | Git `commit-msg` hook + `scripts/git_commit_policy.py` reject `Co-Authored-By:` trailers; `scripts/azoth_install_git_hooks.py` sets `core.hooksPath` — VCS-time complement to BL-002 PreToolUse scope-gate (write-time); further format rules optional |
 | D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
 | D45 | Context-sensitive memory retrieval | Grep-by-tags read interface for M3/M2; dual trigger at SURVEY + Stage 0; implemented as Layer 1 skill (`context-recall`), not kernel |
 | D46 | Dev-sync script: workspace self-installation to platform directories | `scripts/azoth-deploy.py` translates canonical agents/skills/commands into Claude Code, Copilot, OpenCode platform-specific files + AGENTS.md broadcast layer |

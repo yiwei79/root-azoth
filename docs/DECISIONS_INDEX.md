@@ -58,7 +58,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D40 | Repo rename: root-azoth | ✅ implemented | Repository naming | 1.5 |
 | D41 | Bootstrap loop: 4 artifacts | ✅ implemented | roadmap + next + preflight + decisions index | 1.5 |
 | D42 | Path duality convention: kernel/ vs .azoth/kernel/ | ✅ implemented | `docs/AZOTH_ARCHITECTURE.md` §18 Path duality | 4 |
-| D43 | Commit-time governance enforcement hooks | 📋 planned | hooks/ (Phase 5) — P3-008/BL-002 is a subset pulled to Phase 3 | 5 |
+| D43 | Commit-time governance enforcement hooks | 🔧 partial | `scripts/git_commit_policy.py`, `scripts/git-hooks/commit-msg`, `scripts/azoth_install_git_hooks.py` (Co-Authored-By); optional format rules TBD — BL-002 is write-time subset | 5 |
 | D44 | Pipeline Stage 6 quality rubric for structured content | 🔧 partial | skills/stage6-rubric/SKILL.md | 3 |
 | D45 | Context-sensitive memory retrieval | 🔧 partial | skills/context-recall/SKILL.md | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
