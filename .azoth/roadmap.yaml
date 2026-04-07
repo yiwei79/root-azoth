@@ -2,13 +2,12 @@
 # Supersedes the flat-task format of roadmap.yaml (D39).
 # On macOS (case-insensitive FS), ROADMAP.yaml and roadmap.yaml are the same file.
 #
-# COMPATIBILITY: The top-level `current_phase` and `tasks:` fields are preserved
-# for /next until BL-004 (skill update) is delivered. After BL-004, /next reads
-# `active_version` + `versions[active].tasks` + `.azoth/backlog.yaml` instead.
+# COMPATIBILITY: The top-level `current_phase` and `tasks:` fields are preserved for
+# older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
-# ── Legacy compat fields (/next reads these until BL-004) ─────────────────
-current_phase: 4
-current_phase_title: "Distribution & Polish"
+# ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
+current_phase: 5
+current_phase_title: "Trust Layer"
 
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -47,7 +46,7 @@ tasks:
   - id: BL-003
     title: "Update /intake for 3-axis triage (D49)"
     priority: 2
-    status: pending
+    status: complete
     decision_ref: [D33, D49]
     target_layer: M1
     delivery_pipeline: governed
@@ -61,7 +60,7 @@ tasks:
   - id: BL-001
     title: "Fix session-closeout write batching"
     priority: 3
-    status: pending
+    status: complete
     target_layer: M1
     decision_ref: null
     delivery_pipeline: governed
@@ -75,7 +74,7 @@ tasks:
   - id: BL-005
     title: "Formalize M2→M1 promotion path in governance doc (D51)"
     priority: 4
-    status: pending
+    status: complete
     decision_ref: D51
     target_layer: infrastructure
     delivery_pipeline: standard
@@ -89,7 +88,7 @@ tasks:
   - id: P3-004
     title: "Auto-pipeline router (LLM-as-router)"
     priority: 5
-    status: pending
+    status: complete
     decision_ref: D23
     description: "Implement the auto-detection logic that selects pipeline preset based on goal"
     blocked_by: [P3-003]
@@ -97,7 +96,7 @@ tasks:
   - id: P3-005
     title: "Define Stage 6 quality rubric for structured content in delivery pipelines"
     priority: 6
-    status: pending
+    status: complete
     decision_ref: [D21, D44]
     description: >
       The full pipeline Stage 6 (Architect Review) needs explicit quality criteria
@@ -108,7 +107,7 @@ tasks:
   - id: P3-006
     title: "Build context-recall skill (memory read interface)"
     priority: 6
-    status: pending
+    status: complete
     decision_ref: [D11, D45]
     description: >
       Layer 1 skill implementing the D45 read path: extract tags from current goal,
@@ -118,14 +117,14 @@ tasks:
   - id: P1.5-CLEANUP
     title: "M3 episode count sync in azoth.yaml"
     priority: 7
-    status: pending
+    status: complete
     decision_ref: D11
     description: "azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has entries."
     blocked_by: null
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 1
-active_version: v0.0.4
+active_version: v0.0.5
 
 # D53: Bump rules (0.0.PHASE.PATCH scheme)
 # - patch (0.0.N.XX → 0.0.N.XX+1): every delivery session (resets to .1 on phase bump)
@@ -181,29 +180,27 @@ versions:
     pending_task_refs: []
 
   - id: v0.0.4
-    status: active
-    current_patch: 5
+    status: complete
+    final_patch: 5
+    completed_date: "2026-04-07"
     goal: "Phase 4: Distribution & Polish"
     phase_scope: [4]
     note: >
       P4-003 (CI) and P4-004 (publish) are deferred to v0.0.6 — the last 0.0.x phase before
       v0.1.0 — so Phase 4 can close on shipped toolkit UX without blocking on public CI/repo.
-    tasks:
-      - id: P4-001
-        title: "README (philosophy + quickstart)"
-        decision_ref: D16
-      - id: P4-002
-        title: "azoth init interactive onboarding"
-        decision_ref: [D5, D36]
-      - id: P4-005
-        title: "Path duality convention (kernel/ vs .azoth/kernel/)"
-        decision_ref: D42
+    completed_tasks:
+      - {id: P4-001, title: "README (philosophy + quickstart)", decision_ref: D16}
+      - {id: P4-002, title: "azoth init interactive onboarding", decision_ref: [D5, D36]}
+      - {id: P4-005, title: "Path duality convention (kernel/ vs .azoth/kernel/)", decision_ref: D42}
       - id: P4-006
         title: "Update kernel docs for dual-path awareness"
+        decision_ref: D42
         note: "Delivered 2026-04-07 — BOOTLOADER ACTIVATE G resolution + doc/index/README/template/orientation"
+    pending_task_refs: []
 
   - id: v0.0.5
-    status: planned
+    status: active
+    current_patch: 2
     goal: "Phase 5: Trust Layer"
     phase_scope: [5]
     tasks:

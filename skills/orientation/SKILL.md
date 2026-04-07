@@ -57,7 +57,7 @@ alignment—not on every session.
 ### Phase 3: Agent Archetypes ✅ COMPLETE (v0.0.3)
 - [x] 10 agent archetypes, 8 pipeline presets, workflow loop (D47–D51), auto-router, subagent-router, stage6-rubric, context-recall, `/start` + `scripts/welcome.py` (BL-007), token-optimization tracks (BL-011–BL-015), Cursor adapter (BL-016)
 
-### Phase 4: Distribution & Polish 🎯 CURRENT (v0.0.4)
+### Phase 4: Distribution & Polish ✅ COMPLETE (v0.0.4)
 - [x] D52: Session Welcome — `.claude/commands/start.md` + `scripts/welcome.py` + template note (BL-007)
 - [x] P4-001: README (philosophy + quickstart) — D16 — **backlog priority 1**
 - [x] P4-002: `azoth init` interactive onboarding (`scripts/azoth_init.py`) — D5, D36 — **backlog priority 2**
@@ -65,7 +65,7 @@ alignment—not on every session.
 - [x] Update kernel docs for dual-path awareness — P4-006
 - [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when that template is next revised for consumer installs)
 
-### Phase 5: Trust Layer
+### Phase 5: Trust Layer 🎯 CURRENT (v0.0.5)
 - [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
 - [ ] entropy-check hook
 - [ ] alignment-summary hook

@@ -17,7 +17,15 @@ Run at the beginning of any session to get a full project snapshot before decidi
    python scripts/welcome.py
    ```
 
-   The dashboard shows five panels:
+   For the **versioned roadmap** (phases v0.0.x → v0.1.0) without health/backlog panels, run:
+
+   ```bash
+   python scripts/roadmap_dashboard.py
+   ```
+
+   Or invoke **`/roadmap`**.
+
+   The welcome dashboard shows five panels:
    - **Header** — repo · branch · date · version
    - **Phases** — P1–P6 completion status
    - **System Health** (left) — layer status, memory counts, scope gate, pipeline gate (when governed)

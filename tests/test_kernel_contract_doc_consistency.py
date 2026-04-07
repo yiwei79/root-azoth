@@ -37,13 +37,13 @@ class TestGateCrossRefs:
     def test_bootloader_activate_lists_governance_section2_gates(self) -> None:
         boot = _read("kernel/BOOTLOADER.md")
         act = boot.split("## Phase 1: ACTIVATE")[1].split("## Phase 2:")[0]
-        assert "kernel/GOVERNANCE.md" in act
+        assert "GOVERNANCE.md" in act
         assert "Section 2" in act
 
     def test_bootloader_operate_points_to_governance_section2(self) -> None:
         boot = _read("kernel/BOOTLOADER.md")
         op = boot.split("## Phase 3: OPERATE")[1].split("## Phase 4:")[0]
-        assert "kernel/GOVERNANCE.md" in op
+        assert "GOVERNANCE.md" in op
         assert "Section 2" in op
 
 

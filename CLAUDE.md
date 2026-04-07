@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.4.5
+**Version**: v0.0.5.2
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -106,7 +106,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 4 (Distribution & Polish). **Release target:** v0.1.0 — full phase checklist,
+**Current phase:** Phase 5 (Trust Layer). **Release target:** v0.1.0 — full phase checklist,
 expanded workflow, and Phases 4–6 detail live in **`skills/orientation/SKILL.md`** (load on
 demand for planning and roadmap edits).
 
