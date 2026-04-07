@@ -21,3 +21,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# pytest workspace-local temp (sandbox-safe)
+tests/_tmp_deploy/

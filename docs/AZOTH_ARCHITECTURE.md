@@ -504,21 +504,40 @@ azoth init / azoth-deploy.py
   ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
   ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
-  └─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  ├─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  └─ Cursor (always in dev-sync) → .cursor/rules/*.mdc (from kernel/templates/platform-adapters/cursor/)
 ```
 
 ### Compatibility Matrix
 
-| Component | Claude Code | OpenCode | Copilot |
-|-----------|-------------|----------|---------|
-| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads |
-| AGENTS.md | ✅ Native | ✅ Native | ✅ Native |
-| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ |
-| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ |
-| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ |
-| Config | .claude/settings.json | opencode.json | VS Code settings |
-| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited |
-| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP |
+| Component | Claude Code | OpenCode | Copilot | Cursor |
+|-----------|-------------|----------|---------|--------|
+| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via toggle |
+| AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ .claude + repo (toggle) |
+| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ | .claude/agents/ (toggle) |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | .claude/commands/ (toggle) |
+| `.cursor/rules/*.mdc` | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
+| Config | .claude/settings.json | opencode.json | VS Code settings | Cursor Settings + toggle |
+| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ❌ (use `.mdc` parity rules) |
+| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP | VS Code MCP |
+
+### Cursor IDE (Claude) and Claude Code parity
+
+Cursor can consume the **same** Azoth sources as Claude Code when **Settings → Rules → “Include third-party plugin skills and configs”** is enabled: `CLAUDE.md`, `.claude/commands/`, repo-level `agents/` and `skills/` (paths as laid out in this scaffold; consumer installs may mirror via `azoth-deploy`).
+
+**Seamless parity** means: same slash-command semantics, same skills, same trust and pipeline **logic**. **Runtime parity** differs in one important way:
+
+| Mechanism | Claude Code | Cursor (Claude) |
+|-----------|-------------|-----------------|
+| `CLAUDE.md` + commands + agents + skills | Loaded via product integration | Loaded via toggle above |
+| **PreToolUse hooks** (`.claude/settings.json`) | Executed on every tool call | **Not executed** — Cursor does not run Claude Code’s hook binary |
+| Scope / pipeline gate enforcement | **Mechanical** (deny Write/Edit) | **Behavioral** — enforced by always-applied **`.cursor/rules/*.mdc`** instructing the model to read `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json` and refuse writes when invalid |
+| **Subagent isolation (D21)** | `Agent(subagent_type=...)` | **`Task`** with matching `subagent_type` (Azoth archetypes) — orchestrator stays in main chat; **must not** inline all pipeline stages when `Task` is available (see `claude-code-parity.mdc`) |
+
+**Architectural rule:** Treat Cursor as **source-compatible, hook-soft**. The **kernel/templates/platform-adapters/cursor/** templates (`azoth-memory.mdc`, `claude-code-parity.mdc`) are the **minimum viable guardrails** so sessions honor scope gates, pipeline gates, `/next`, delivery pipelines, and **Task-based** subagent routing **without** relying on hooks. Duplicated policy in M2 patterns + rules is intentional (mechanical enforcement in Claude Code, instruction enforcement in Cursor). **`scripts/azoth-deploy.py --platforms cursor`** copies `*.mdc.template` → `.cursor/rules/*.mdc` so consumer workspaces stay coupled to kernel templates.
+
+**When to use which IDE:** Cursor is appropriate for exploration, edits, and multi-stage delivery **when** the agent uses **`Task`** per `subagent-router` (same isolation contract as Claude Code). Prefer **Claude Code** when you need **binary** PreToolUse enforcement, not for subagent isolation alone. See `kernel/templates/platform-adapters/cursor/README.md`.
 
 ### Platform File Format Differences
 
@@ -557,6 +576,8 @@ agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-sp
                        └→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
 
 skills/**/ ────────────→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+kernel/templates/platform-adapters/cursor/*.mdc.template
+                       → .cursor/rules/<name>.mdc           (Cursor always-on rules)
                          AGENTS.md                          (generated broadcast layer)
 ```
 
@@ -800,6 +821,7 @@ azoth/
 | D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |
 | D50 | Session scope card | `/next` outputs a scope card (1 primary + max 2 secondary goals); human approves → writes `.azoth/scope-gate.json`; validator rejects mixed M1+runtime sessions |
 | D51 | Formalized M2→M1 promotion path | M1 changes are a governed event: `target_layer: M1` backlog item + `/deliver-full` pipeline; M1 changes happen between sessions only; scope card validator enforces isolation |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); `.claude/commands/start.md` runs the script via Bash then routes user option; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 adds hook-based auto-trigger |
 
 ---
 
@@ -823,7 +845,7 @@ azoth/
 | **1.5** | Sync Infrastructure | azoth-sync.py, sync-config.yaml, /sync command |
 | **2** | Core Skills | 5 extracted + 3 new skills, drift tests |
 | **3** | Agent Archetypes | 10 agents, pipeline schema, dual-format |
-| **4** | Distribution | README, `azoth init` onboarding, CI, publish |
+| **4** | Distribution | Session Welcome UX (`/start` + `scripts/welcome.py`), README, `azoth init` onboarding, CI, publish |
 | **5** | Trust Layer | Hooks, telemetry, checkpoints, phone-friendly output |
 | **6** | Meta-Recursive | Agent Crafter, L2 optimization, L3 proposals |
 
@@ -1030,7 +1052,7 @@ any insight                 reinforced >=2x                         governance-g
 m2_candidate=true flag      set at intake                           target_layer: M1
 ```
 
-### Architecture Decisions (D47–D51)
+### Architecture Decisions (D47–D53)
 
 | # | Decision | Rationale |
 |---|----------|-----------|
@@ -1039,3 +1061,82 @@ m2_candidate=true flag      set at intake                           target_layer
 | D49 | Intake 3-axis triage | M3/M2/backlog routing is simultaneous and independent, not sequential |
 | D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal |
+| D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH scheme; PATCH per delivery, PHASE per phase completion |
+
+---
+
+## 20. Auto-Versioning Policy (D53)
+
+### Problem
+
+Version numbers in `azoth.yaml` and `roadmap.yaml` require manual updates and drift from
+actual delivery state. There is no signal connecting completed backlog items to version
+progression, so the version number becomes decorative rather than informative.
+
+### Decision
+
+Version increments are **delivery-triggered**, governed by two bump classes:
+
+```
+M1 delivery complete (via /deliver-full)     → patch bump:  0.x.y → 0.x.y+1
+Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
+                                              + git tag proposed (user-confirmed)
+```
+
+### Version Format: `0.0.PHASE.PATCH`
+
+```
+0.0.PHASE.PATCH
+│ │  │      └── delivery counter — increments every session, resets to 1 on phase bump
+│ │  └───────── phase number — equals the current development phase (1–6)
+│ └──────────── reserved: 0 during development
+└────────────── reserved: 0 until public release
+```
+
+### Version Map
+
+| Version | Scope | Phase |
+|---------|-------|-------|
+| v0.0.1 | Phases 1 + 1.5: kernel + sync + inbox | 1, 1.5 |
+| v0.0.2 | Phase 2: core skills | 2 |
+| v0.0.3 | Phase 3: agent archetypes + workflow loop | 3 |
+| v0.0.4 | Phase 4: Distribution & Polish | 4 |
+| v0.0.5 | Phase 5: Trust Layer | 5 |
+| v0.0.6 | Phase 6: Meta-recursive | 6 |
+| **v0.1.0** | **Public azoth release — full roadmap complete** | — |
+
+### Bump Rules
+
+- **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
+  session that produces artifacts. Counter resets to `.1` on each phase bump.
+- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6).
+  PATCH counter resets to `.1`.
+- **Release** (`0.1.0`): full roadmap complete (Phase 6 done). Only non-sequential jump.
+  Git tag proposed — user-confirmed, never auto-pushed.
+
+The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later
+in the phase. PHASE provides coarser orientation. Together they encode "where in development
+are we" without requiring agents to read git history.
+
+### Implementation (BL-009)
+
+- `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
+  writes `azoth.yaml` and updates `roadmap.yaml` `active_version` + `current_patch` fields.
+  `--release` flag triggers the `0.1.0` jump and proposes a git tag.
+- `/session-closeout` integration — final step calls `version-bump.py --patch` after
+  confirming at least one artifact was written this session.
+- `/deliver-full` integration — calls `version-bump.py --patch` after builder stage
+  completes successfully.
+
+### Rules
+
+- Version bumps are never silent — `version-bump.py` prints the old → new transition
+- Git tags are proposed at `--release` only; patch/phase bumps update files only
+- `azoth.yaml` `version` is the authoritative time-series field for agents
+- `roadmap.yaml` `active_version` + `current_patch` mirror it for roadmap context
+- On `--phase` bump: `version-bump.py` writes `final_patch: N` to the completing version
+  entry in `roadmap.yaml` before advancing `active_version` — preserves the full time-series
+  history for completed phases
+- `target_version` in `backlog.yaml` uses the delivery-phase version (e.g. `v0.0.3`),
+  not a future release target — completed items record where they actually landed

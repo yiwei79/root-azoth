@@ -4,37 +4,82 @@ description: Show the next priority task from the roadmap and suggest how to pro
 
 # /next — What Should I Work On?
 
-Read the development roadmap and surface the highest-priority actionable task.
+Read the backlog and roadmap, produce a scope card, and write scope-gate.json on approval.
 
 ## Steps
 
-1. **Load roadmap**: Read `.azoth/roadmap.yaml`
-2. **Identify current phase**: Check `current_phase` and `current_phase_title`
-3. **Find next task**: From `tasks`, find the first entry where:
-   - `status` is `pending` or `in_progress`
-   - `blocked_by` is null or all blockers are complete
-4. **Surface context**: For the selected task:
-   - Show task ID, title, priority
-   - Show related architecture decision(s) from `decision_ref`
-   - Look up the decision in `docs/DECISIONS_INDEX.md` for context
-   - Check if prior episodes in `.azoth/memory/episodes.jsonl` relate to this task
-5. **Suggest approach**: Based on the task description and decision context, propose:
-   - First step to take
-   - Estimated scope (files, complexity)
-   - Whether a `/plan` should be run first
+1. **Load backlog**: Read `.azoth/backlog.yaml`
+2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
+   active version entry under `versions:`. Use `goal` and `phase_scope` for phase context.
+   Also read `current_phase` and `current_phase_title` for display in the scope card header.
+   (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
+3. **Find candidate tasks**: From backlog `items`, collect all where:
+   - `status` is not `complete`
+   - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
+   Sort by `priority` ascending (lower = higher priority).
+4. **Select primary task**: Highest-priority unblocked item.
+5. **Select secondary tasks** (optional, max 2):
+   - Next unblocked items after primary
+   - Must share the same M1/non-M1 class as primary:
+     - Primary `target_layer: M1` → secondary must also be `target_layer: M1`
+     - Primary any other layer → secondary must NOT be `target_layer: M1`
+   - If no valid secondary exists, omit rather than violate the rule
+6. **Validate scope card**: If the selection would mix M1 and non-M1 items, reject and
+   explain. Suggest running primary-only instead.
+7. **Surface decision context**: For the primary task, look up `decision_ref` entries in
+   `docs/DECISIONS_INDEX.md`. Check `.azoth/memory/episodes.jsonl` for related episodes
+   (match on task id or decision refs).
+8. **Output scope card** (format below).
+9. **Wait for human signal**: Do NOT start work. If human types `approved`, proceed to step 10.
+10. **Write scope-gate.json**: Write `.azoth/scope-gate.json` with:
 
-## Output Format
+    ```json
+    {
+      "approved": true,
+      "expires_at": "<now + 2 hours, ISO 8601 with +00:00 offset>",
+      "goal": "<primary task id>: <primary task title>",
+      "session_id": "<current date YYYY-MM-DD>-<primary task id lowercased>",
+      "approved_by": "human",
+      "backlog_id": "<primary task id>",
+      "delivery_pipeline": "<governed | standard — from backlog primary delivery_pipeline>",
+      "target_layer": "<M1 | infrastructure | … — from backlog primary target_layer>"
+    }
+    ```
 
-```
-📋 Phase {N}: {phase_title}
-🎯 Next: [{task_id}] {task_title} (Priority {priority})
-📐 Decision: {decision_ref} — {decision_summary}
-💡 Suggested first step: {suggestion}
+    **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
+    `target_layer: M1`, the PreToolUse hook **blocks Write/Edit** until
+    `.azoth/pipeline-gate.json` exists (see `/deliver-full`, `/auto`, or `/deliver` **Stage 0**).
+    After scope approval, remind the human: for governed work, invoke the appropriate
+    pipeline command first; the orchestrator must run Stage 0 before other writes.
+
+    Confirm: "scope-gate.json written — Read/Plan unblocked; governed scopes still require pipeline-gate.json after Stage 0 of a delivery pipeline."
+
+## Scope Card Format
+
+```markdown
+## Scope Card — {YYYY-MM-DD}
+
+**Phase:** P{current_phase:02d} — {current_phase_title}  ·  v{active_version}
+
+**Primary:** [{id}] {title} ({target_layer}, {delivery_pipeline})
+**Secondary:** [{id}] {title} ({target_layer})        ← omit if none
+**Secondary:** [{id}] {title} ({target_layer})        ← omit if none
+
+**Why:** {decision_ref} — {one-line decision summary from DECISIONS_INDEX.md}
+**Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
+
+---
+Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.
+Type `skip` to skip primary and show next candidate.
 ```
 
 ## Rules
 
-- If all tasks in current phase are complete, congratulate and show Phase N+1 preview
-- If a task is blocked, show the blocker and suggest working on the next unblocked task
-- If roadmap.yaml is missing, suggest running `/bootstrap` to initialize
-- Never auto-start work — present the suggestion and wait for human signal
+- **Never auto-start work** — output the scope card and wait for `approved`
+- **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
+- **Skip completed items** — if all backlog items are complete, congratulate and show the
+  next version entry from `roadmap.yaml versions:` as a preview
+- **If backlog.yaml is missing**, suggest running `/bootstrap` to initialize
+- **Scope card validator**: if a mixed card would result, show the conflict and propose
+  the primary-only card instead
+- **On `skip`**: remove primary from consideration for this run and repeat from step 4

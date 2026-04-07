@@ -1,12 +1,8 @@
 ---
 name: self-improve
 description: |
-  L1-L2 reflexion and prompt refinement loop for systematic improvement. Use this skill when:
-  - Reviewing session episodes for improvement opportunities
-  - Identifying recurring failures or friction patterns
-  - Proposing instruction refinements based on evidence
-  - Running L2 auto-refinement cycles on skills or agent instructions
-  - Evaluating whether a process change would improve outcomes
+  Run L1–L2 reflexion: mine episodes for friction, propose evidence-backed instruction
+  changes, and iterate auto-refinement on skills or agent text.
 ---
 
 # Self-Improve

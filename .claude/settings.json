@@ -4,22 +4,56 @@
       "Read",
       "Grep",
       "Glob",
-      "List",
+      "LS",
       "WebFetch",
       "WebSearch",
-      "Task"
+      "Agent"
     ],
     "deny": [
       "Edit(kernel/**)",
       "Bash(rm -rf *)",
       "Bash(git push --force)",
       "Bash(git reset --hard HEAD~)",
-      "Bash(pip install)*without*requirements",
       "Edit(.claude/settings.json)"
     ]
   },
   "env": {
     "AZOTH_VERSION": "0.1.0-dev",
-    "AZOTH_PHASE": "3"
+    "AZOTH_PHASE": "3",
+    "CLAUDE_CODE_EFFORT_LEVEL": "auto",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/scope-gate.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/pip-install-guard.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/filter-bash-output.sh"
+        }
+      ]
+    }
+  ]
   }
 }

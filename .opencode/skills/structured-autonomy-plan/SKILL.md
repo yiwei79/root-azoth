@@ -1,12 +1,8 @@
 ---
 name: structured-autonomy-plan
 description: |
-  Convert goals into deterministic, executable task plans. Use this skill when:
-  - Breaking down a complex goal into implementation steps
-  - Creating a plan that another agent (or future session) can execute
-  - Ensuring test strategy is defined before implementation begins
-  - Converting an architect's design brief into actionable work
-  - Sequencing tasks with dependencies and validation gates
+  Convert architect briefs into deterministic task plans with explicit test strategy and
+  validation gates for handoff to the builder stage or a future session.
 ---
 
 # Structured Autonomy Plan

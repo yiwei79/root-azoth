@@ -18,6 +18,7 @@ the governed intake protocol defined in `kernel/GOVERNANCE.md` Section 7.
 For each `.jsonl` file in `.azoth/inbox/`:
 
 ### Step 1: Validate
+
 - Parse each line as JSON
 - Verify all required fields present per insight schema (D32):
   `id, source, source_type, timestamp, category, severity, target,
@@ -26,6 +27,7 @@ For each `.jsonl` file in `.azoth/inbox/`:
 - Reject invalid insights with clear error message; continue processing valid ones
 
 ### Step 2: Re-Classify (F2a)
+
 - Source-provided `severity` is ADVISORY ONLY
 - Agent re-assesses severity based on:
   - Target file/area risk (kernel > skills > docs)
@@ -33,24 +35,77 @@ For each `.jsonl` file in `.azoth/inbox/`:
   - Current project state
 - Present BOTH severities to human: "Source says: X, I assess: Y"
 
-### Step 3: Human Triage
-- Present each insight as a summary card:
-  ```
+### Step 3: Human Triage (D49: 3-axis)
+
+- Present each insight as a triage card:
+
+  ```text
   [ID] Category: {category} | Severity: {source} → {agent_assessed}
   Target: {target}
   Summary: {summary}
   Recommended: {recommended_action}
   Auto-applicable: {auto_applicable}
+
+  Triage — respond on all 3 axes simultaneously:
+    M3:      integrate | archive | defer
+    M2:      candidate | skip
+    Backlog: yes | no
   ```
-- For each insight, human decides:
-  - `integrate` → Write to `.azoth/memory/episodes.jsonl` (M3) as type "external-insight"
-  - `archive` → Move to `.azoth/inbox/processed/` (no M3 entry)
-  - `defer` → Leave in inbox for next session
+
+- All three axes are independent — a single response covers all three
+  (e.g. `integrate, candidate, yes` or `archive, skip, no`)
+
+- **M3 axis** — disposition of this insight in memory:
+  - `integrate` → append to M3 (`.azoth/memory/episodes.jsonl`) as type "external-insight"
+  - `archive` → move to `.azoth/inbox/processed/` (no M3 entry)
+  - `defer` → leave in inbox for next session
+
+- **M2 axis** — pattern promotion candidacy:
+  - `candidate` → sets `m2_candidate: true` on the M3 episode; surfaced by `/promote`
+  - `skip` → sets `m2_candidate: false`
+  - **Constraint**: M2 = `candidate` is only meaningful when M3 = `integrate`. If M3 is
+    `archive` or `defer`, treat M2 as `skip` regardless and note it to the human.
+
+- **Backlog axis** — whether a tracked work item is needed:
+  - `yes` → trigger Backlog Draft Flow (see below); human approves before next insight
+  - `no` → no backlog entry created
+
+#### Backlog Draft Flow
+
+When human signals `yes` on the Backlog axis:
+
+1. **Dedup check**: scan `.azoth/backlog.yaml` for any item where `source` matches this
+   insight's `id`. If found, warn and skip the draft — item already exists.
+
+2. **Draft a YAML block** for human review:
+
+   ```yaml
+   - id: BL-{next available number}
+     title: "{derived from insight summary}"
+     source: {insight id}
+     target_layer: "{inferred: M1 | skills | infrastructure | docs}"
+     delivery_pipeline: "{governed | standard}"
+     status: active
+     target_version: "{active_version from roadmap.yaml}"
+     priority: {suggested integer}
+     created_date: "{today YYYY-MM-DD}"
+     decision_ref: [{refs if applicable, else omit}]
+     description: >
+       {one-paragraph description derived from insight recommended_action}
+   ```
+
+3. Human approves or edits the draft.
+
+4. On approval: append to `.azoth/backlog.yaml` under `items:`.
 
 ### Step 4: Process
-- Integrated insights: append to M3 with source attribution
-- Archived insights: move source file to `.azoth/inbox/processed/`
-- Report summary: X integrated, Y archived, Z deferred
+
+- **M3 integrate**: append to `.azoth/memory/episodes.jsonl` with source attribution
+  and `m2_candidate` field set per M2 axis decision
+- **M3 archive**: move source file to `.azoth/inbox/processed/`
+- **M3 defer**: leave in inbox; exclude from this session's summary
+- **Backlog yes** (after human approves draft): append item to `.azoth/backlog.yaml`
+- Report summary: X integrated (Y M2 candidates), Z archived, W deferred, V backlog items added
 
 ## Security Constraints
 
