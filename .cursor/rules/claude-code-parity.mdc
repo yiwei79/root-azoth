@@ -1,0 +1,67 @@
+---
+description: Enforce Claude Code parity in Cursor — same commands, skills, and gate discipline (hooks simulated)
+alwaysApply: true
+---
+
+# Claude Code parity (Cursor)
+
+This workspace is configured for **seamless compatibility** with **Claude Code** when Cursor → Settings → Rules → **Include third-party plugin skills and configs** is enabled (loads `CLAUDE.md`, `.claude/commands/`, `agents/`, `skills/`).
+
+## Critical gap — hooks
+
+**PreToolUse hooks** in `.claude/settings.json` (scope-gate, pipeline-gate, pip-install-guard, bash output filter) **do not run in Cursor**. They run only in the Claude Code application.
+
+Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit` that the hooks would enforce. Treat this rule as **non-optional** guardrails — not suggestions.
+
+## MUST — every chat
+
+1. **Session start**: Read `.azoth/memory/patterns.yaml`, `.azoth/bootloader-state.md`, and `.azoth/session-state.md` when present (see `azoth-memory.mdc`). Confirm briefly what loaded.
+
+2. **Before the first substantive Write/Edit** in a turn (simulated PreToolUse):
+   - Read `.azoth/scope-gate.json`. If absent, or `approved` is not `true`, or `expires_at` is past → **do not write**; tell the human to run `/next` and approve a scope card.
+   - If the scope is **governed** (`delivery_pipeline: governed` **or** `target_layer: M1`): read `.azoth/pipeline-gate.json`. It must exist, `approved: true`, `session_id` must match scope-gate, `expires_at` unexpired. Otherwise → **do not write**; execute **Stage 0** from `.claude/commands/deliver-full.md`, `.claude/commands/auto.md`, or `.claude/commands/deliver.md` (write `pipeline-gate.json` first), then continue.
+
+3. **Canonical workflows**: Follow slash-command definitions under **`.claude/commands/`** for `/auto`, `/deliver`, `/deliver-full`, `/next`, `/start`, `/session-closeout` — do not invent parallel workflows. Each command file declares `azoth_effect: read | write | mixed` in YAML frontmatter (`kernel/GOVERNANCE.md`). If `write` or `mixed`, assume **Write/Edit** may follow (after gates when applicable); treat `read` as analysis-only unless the human explicitly asks to implement.
+
+4. **M1 / governed backlog work**: Do **not** implement `target_layer: M1` or `delivery_pipeline: governed` items as a single long inline session. Use the **staged pipeline + subagent routing** in those commands and `skills/subagent-router/SKILL.md` (spawn contract, pipeline gate).
+
+5. **After editing** canonical `skills/**`, `agents/**/*.agent.md`, or adding/changing `.claude/commands/**`: run `python3 scripts/azoth-deploy.py` so OpenCode and Copilot deploys stay aligned (D46).
+
+6. **If slash commands or skills seem unloaded**: Instruct the human to enable the third-party configs toggle and restart the chat.
+
+## MUST — Cursor subagents (`Task` tool, D21)
+
+Claude Code uses `Agent(subagent_type=...)`. Cursor exposes a **`Task`** tool that launches a **separate** subagent with a `subagent_type` parameter. Names align with Azoth archetypes: **architect**, **builder**, **planner**, **reviewer**, **researcher**, **research-orchestrator**, **evaluator**, **prompt-engineer**, **agent-crafter**, **context-architect**, plus utility types (e.g. **generalPurpose**, **explore**, **code-reviewer**). Use the archetype that matches the pipeline stage from `skills/subagent-router/SKILL.md`.
+
+When executing **`/auto`**, **`/deliver`**, or **`/deliver-full`** (after Declaration / pipeline gate as required):
+
+1. **Orchestrator only in main chat** — Compose stages, run human gates, aggregate results. **Do not** role-play every stage in one thread when **`Task` is available**.
+2. **One `Task` per isolated stage** — For each row in the composed pipeline table, invoke **`Task`** with `subagent_type` set to that stage’s archetype (review-independence and context-isolation require a **fresh** subagent, not the orchestrator’s context).
+3. **BL-011 spawn** — Each `Task` prompt body is **only** the YAML block from `skills/subagent-router/SKILL.md` §Spawn Prompt Contract plus `Read` targets — never paste the full command markdown or pipeline table into `Task`. Role metadata stays compact; **exception:** `inputs.prior_stage_summaries` (verbatim upstream typed YAML) is **required** where the skill says so — not optional prose.
+4. **BL-012 handoff** — Each subagent emits a typed stage summary (`pipelines/stage-summary.schema.yaml`) before return; the orchestrator **must** forward it into the **next** spawn under `prior_stage_summaries` (evaluator/builder/review stages are invalid without this — Cursor subagents do not inherit prior `Task` output).
+5. **Review gate escalation** — If reviewer (or audit stage) returns **request-changes**, **CRITICAL** blockers, `entropy: RED`, or `status: needs-input`, **STOP** the pipeline and wait for explicit human approval before spawning planner/builder/evaluator — see `.claude/commands/auto.md` Execution §5 (same idea for `/deliver` / `/deliver-full`).
+6. **Parallel `Task`** — Allowed when stages are independent; **never** inline a review stage with the stage it critiques.
+
+If **`Task` is unavailable** in the current Cursor session (UI/model limitation), state that explicitly and approximate isolation by **sequential** single-threaded stages — still **not** equivalent to mechanical hooks.
+
+## MUST NOT
+
+- Rely on hooks to block writes — they are inactive here.
+- Edit `kernel/**` without an explicit human-approved promotion / scope that allows kernel work.
+- Mix M1 and non-M1 goals in one scope card (D51) — reject and split.
+- **When `Task` is available:** Collapse full delivery pipelines into one long inline reply — that **violates** D21 / subagent-router isolation.
+
+## When to prefer Claude Code
+
+- **PreToolUse hooks** (mechanical deny on `Write`/`Edit`) — **Claude Code only**; Cursor relies on behavioral parity above.
+- **Subagent isolation** — **Achievable in Cursor** when **`Task`** is used per stage with the correct `subagent_type` (same architecture as `Agent()`). Prefer Claude Code only when you need **binary** hook enforcement or a **non-Cursor** runtime.
+
+## Quick parity checklist
+
+- Scope gate valid for writes?
+- Pipeline gate valid if governed?
+- Invoked the right `.claude/commands/*` semantics?
+- Delivery stages run via **`Task`** with matching `subagent_type` (not inline role-play)?
+- **Prior stage YAML forwarded** into the next `Task` where required (especially evaluator)?
+- **Review failed or request-changes** → stopped and human consulted before continuing?
+- `azoth-deploy` after canonical source edits?

@@ -26,8 +26,8 @@ Phases 1, 1.5, and 2 are complete. Phase 3 (Agent Archetypes) is next.
 ```
 root-azoth repo state:
 ├── CLAUDE.md                      ← Agent reads this first (auto)
-├── docs/AZOTH_ARCHITECTURE.md     ← 41 decisions, full blueprint
-├── docs/DECISIONS_INDEX.md        ← D1-D41 status tracking
+├── docs/AZOTH_ARCHITECTURE.md     ← 51 decisions, full blueprint
+├── docs/DECISIONS_INDEX.md        ← D1-D51 status tracking
 ├── .claude/commands/              ← 14 commands (bootstrap, next, intake, etc.)
 ├── .claude/settings.json          ← Kernel write-protection active
 ├── .azoth/roadmap.yaml            ← Phase goals + task backlog
@@ -54,7 +54,7 @@ root-azoth repo state:
 
 | Artifact | Status | Purpose |
 |----------|--------|---------|
-| Architecture plan (41 decisions) | ✅ Complete | Blueprint for all 6 phases |
+| Architecture plan (51 decisions) | ✅ Complete | Blueprint for all 6 phases |
 | Kernel (4 files, immutable) | ✅ Active | BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC |
 | 8 kernel skills | ✅ Active | context-map, agentic-eval, remember, entropy-guard, etc. |
 | 14 slash commands | ✅ Active | bootstrap, next, intake, eval, plan, session-closeout, etc. |
@@ -467,6 +467,6 @@ never-auto:  Kernel changes, governance, dependencies, M2→M1
 ---
 
 *This tutorial was last updated 2026-04-05.
-Phase 1, 1.5, and 2 complete. 44 architecture decisions. 219 tests passing.
+Phase 1, 1.5, and 2 complete. 51 architecture decisions. 219 tests passing.
 For the source of truth on all design decisions, see `docs/AZOTH_ARCHITECTURE.md`
 and `docs/DECISIONS_INDEX.md`.*

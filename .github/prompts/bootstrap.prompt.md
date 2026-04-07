@@ -11,8 +11,9 @@ This is a guided process — you implement, the human reviews each phase.
 ## Pre-Flight
 
 Before starting, read these files completely:
-1. `CLAUDE.md` — project instructions and current phase status
-2. `docs/AZOTH_ARCHITECTURE.md` — the full architecture plan (28 decisions)
+1. `CLAUDE.md` — project instructions and pointers to current phase
+2. `skills/orientation/SKILL.md` — full v0.1.0 phase roadmap and expanded workflow (lazy-loaded)
+3. `docs/AZOTH_ARCHITECTURE.md` — the full architecture plan (28 decisions)
 
 Confirm you understand:
 - The four-layer Water Molecule Model
@@ -22,7 +23,7 @@ Confirm you understand:
 - The 7-stage pipeline architecture (D21)
 - The auto-pipeline composition (D23)
 - The Proactive Agent Posture tiers (D26)
-- The v0.1.0 phase roadmap
+- The v0.1.0 phase roadmap (detail in `skills/orientation/SKILL.md`)
 
 ## Bootstrap Sequence
 
@@ -156,7 +157,7 @@ Claude Code command for agent-driven sync with proposal generation.
 ## Completion
 
 After all phases complete:
-1. Update CLAUDE.md phase checklist
+1. Update `skills/orientation/SKILL.md` phase checklist (and one-line pointer in `CLAUDE.md` if needed)
 2. Update azoth.yaml status
 3. Git commit with message: "feat: Phase 1 + 1.5 — Kernel extraction and sync infrastructure"
 4. Print final alignment summary:

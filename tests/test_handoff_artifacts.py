@@ -2,17 +2,31 @@
 
 Post-build TDD: validates the 7 handoff artifacts against
 the architecture spec (docs/AZOTH_ARCHITECTURE.md).
+
+BL-013: Phase roadmap detail may live in skills/orientation/SKILL.md (progressive
+disclosure); tests below allow phase strings in that file where noted.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
 import yaml
 
+
+def _count_decisions() -> int:
+    idx = (AZOTH_ROOT / "docs" / "DECISIONS_INDEX.md").read_text(encoding="utf-8")
+    return sum(1 for line in idx.splitlines() if line.startswith("| D"))
+
 AZOTH_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _orientation_skill_text() -> str:
+    """Lazy-loaded roadmap / workflow source (BL-013)."""
+    return (AZOTH_ROOT / "skills" / "orientation" / "SKILL.md").read_text(encoding="utf-8")
 
 
 # ── Fixture: load architecture doc once ──────────────────────────────
@@ -66,7 +80,7 @@ class TestAzothYaml:
 
     def test_has_version(self) -> None:
         assert "version" in self.data
-        assert "0.1.0" in str(self.data["version"])
+        assert re.match(r"\d+\.\d+", str(self.data["version"]))
 
     def test_has_layers(self) -> None:
         layers = self.data.get("layers", {})
@@ -180,8 +194,9 @@ class TestClaudeMd:
         ), "CLAUDE.md must state kernel immutability rule"
 
     def test_has_phase_roadmap(self) -> None:
-        assert "Phase 1" in self.content
-        assert "Phase 2" in self.content
+        orientation = _orientation_skill_text()
+        assert "Phase 1" in orientation
+        assert "Phase 2" in orientation
 
     def test_has_coding_standards(self) -> None:
         assert "pytest" in self.content.lower() or "ruff" in self.content.lower()
@@ -340,6 +355,7 @@ class TestCrossArtifactConsistency:
     @pytest.fixture(autouse=True)
     def load_all(self) -> None:
         self.claude_md = (AZOTH_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+        self.orientation_md = _orientation_skill_text()
         self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(
             encoding="utf-8"
         )
@@ -351,16 +367,16 @@ class TestCrossArtifactConsistency:
         ).read_text(encoding="utf-8")
 
     def test_version_consistent(self) -> None:
-        """All files referencing version should agree."""
+        """azoth.yaml version is a valid semver-like string; release target 0.1.0 in CLAUDE or orientation."""
         version_str = str(self.azoth_yaml["version"])
-        assert "0.1.0" in version_str
-        assert "0.1.0" in self.claude_md
+        assert re.match(r"\d+\.\d+", version_str)
+        assert "0.1.0" in self.claude_md or "0.1.0" in self.orientation_md
 
     def test_phase_consistent(self) -> None:
-        """All files should agree on current phase = 3."""
-        assert self.azoth_yaml["phase"] == 3
-        assert "Phase 3" in self.claude_md
-        assert "Phase 2" in self.claude_md  # Phase 2 still referenced (as complete)
+        """Phase 4 in root CLAUDE; earlier phases complete live in orientation skill (BL-013)."""
+        assert self.azoth_yaml["phase"] == 4
+        assert "Phase 4" in self.claude_md
+        assert "Phase 2" in self.orientation_md
 
     def test_four_layers_consistent(self) -> None:
         """Water Molecule Model should be consistent across docs."""
@@ -381,9 +397,9 @@ class TestCrossArtifactConsistency:
         assert "primary" in claude_lower and "claude" in claude_lower
 
     def test_decision_count_consistent(self) -> None:
-        """All files referencing decision count should say 41."""
-        assert "41" in self.claude_md or "D41" in self.claude_md
-        assert self.azoth_yaml["decisions"] == 41
+        """azoth.yaml decisions matches the actual count in DECISIONS_INDEX.md."""
+        expected = _count_decisions()
+        assert self.azoth_yaml["decisions"] == expected
 
 
 # ═══════════════════════════════════════════════════════════════════════

@@ -1,0 +1,122 @@
+# Azoth Pipeline Stage Summary — BL-012
+# JSON Schema (draft 2020-12) expressed in YAML for readability.
+# Machine-readable handoff between pipeline stages (replaces multi-K prose at boundaries).
+#
+# Decisions: D21 (typed gates), D23 (auto pipeline)
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:stage-summary:v1"
+title: "Azoth Pipeline Stage Summary"
+description: >
+  Emitted by a subagent (or orchestrator) when a pipeline stage completes.
+  Orchestrator passes this document to the next stage; optional markdown alignment
+  is for human pull-review only (see skills/alignment-sync/SKILL.md).
+type: object
+additionalProperties: false
+required:
+  - stage_summary_version
+  - pipeline
+  - stage_id
+  - agent
+  - stage_kind
+  - status
+  - entropy
+
+properties:
+  stage_summary_version:
+    type: integer
+    const: 1
+    description: "Bump when breaking schema changes; orchestrators may reject unknown versions."
+
+  pipeline:
+    type: string
+    enum: [auto, deliver, deliver-full]
+    description: "Which delivery command / preset produced this stage."
+
+  stage_id:
+    type: string
+    minLength: 1
+    maxLength: 128
+    description: >
+      Stable id per subagent-router §Stage briefs (e.g. auto_s2_reviewer, deliver_full_s3).
+
+  agent:
+    type: string
+    enum:
+      - architect
+      - planner
+      - builder
+      - reviewer
+      - researcher
+      - research-orchestrator
+      - evaluator
+      - prompt-engineer
+      - agent-crafter
+      - context-architect
+    description: "Primary archetype for this stage."
+
+  stage_kind:
+    type: string
+    enum: [research, build, eval, audit]
+    description: >
+      Semantic bucket for the handoff (BL-012): research = investigation / discovery;
+      build = planning + implementation artifacts; eval = evaluator-quality pass;
+      audit = governance or final architect review.
+
+  status:
+    type: string
+    enum: [complete, blocked, needs-input]
+    description: "Stage exit status before the gate."
+
+  entropy:
+    type: string
+    enum: [GREEN, YELLOW, RED]
+    description: "Trust Contract entropy zone at stage boundary."
+
+  entropy_delta:
+    type: integer
+    description: "Optional delta vs prior stage (files changed, etc.)."
+
+  gate_outcome:
+    type: string
+    maxLength: 240
+    description: "One line: what the next gate needs (human signal, agent review, tests)."
+
+  session_id:
+    type: string
+    maxLength: 128
+    description: "Optional correlation to .azoth/scope-gate.json session_id."
+
+  done:
+    type: array
+    maxItems: 5
+    items:
+      type: string
+      maxLength: 400
+    description: "1–5 atomic bullets of what completed (token-capped)."
+
+  decisions:
+    type: array
+    maxItems: 5
+    items:
+      type: string
+      maxLength: 400
+
+  open:
+    type: array
+    maxItems: 5
+    items:
+      type: string
+      maxLength: 400
+
+  artifact_refs:
+    type: array
+    items:
+      type: string
+      maxLength: 512
+    description: "Paths or logical artifact names (e.g. architecture-brief, task-plan)."
+
+  next:
+    type: string
+    maxLength: 600
+    description: "What happens next or what signal unblocks."

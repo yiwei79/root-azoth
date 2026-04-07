@@ -1,5 +1,6 @@
 ---
 description: "Git checkpoint and sync — mechanical save point"
+azoth_effect: write
 ---
 
 # /worktree-sync

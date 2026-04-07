@@ -47,3 +47,93 @@ patterns:
       file, or a required /plan step. The memory can still exist as context,
       but the gate must be deterministic. Target layer for the gate: M1
       (kernel/settings/hooks), delivered via /deliver-full.
+
+  - id: auto-pipeline-reviewer-as-safety-net
+    approved: true
+    approved_date: "2026-04-05"
+    extended_date: "2026-04-06"
+    reinforced_by: [ep-034, ep-036, ep-039, ep-041, ep-044]
+    trigger: any auto-pipeline run where evaluator passes but output touches logic, governance, or multi-file changes
+    summary: >
+      In the auto-pipeline, the reviewer stage consistently catches failures
+      that the evaluator misses. The evaluator checks criteria coverage and
+      scoring; the reviewer applies adversarial scrutiny to edge cases,
+      pre-existing failures, and unintended scope changes. Both stages are
+      load-bearing — removing either degrades the quality gate. Critically,
+      the reviewer's value derives from fresh context: a reviewer sharing
+      context with the author is structurally weaker and cannot catch blind
+      spots invisible to the author.
+    why_it_matters: >
+      ep-034: evaluator passed, reviewer caught 2 CRITICAL bugs (naive datetime
+      comparison, Z-suffix rejection on Python <3.11). ep-036: evaluator passed,
+      reviewer caught 3 stale DAY0_TUTORIAL references. ep-039: governance and
+      architect stages that shared context with the content they critiqued
+      missed blind spots only visible from fresh context. ep-041: "Gate: agent"
+      language in a skill is not self-enforcing — stages collapsed inline when
+      Agent() invocation was not explicitly mandated. ep-044: fresh-context
+      reviewer caught a Stage 5 role-capability mismatch (reviewer→builder) that
+      inline review would have missed entirely. Pattern held across five
+      independent sessions and different failure classes.
+    how_to_apply: >
+      Always include both evaluator and reviewer stages when the pipeline
+      touches logic, governance files, or more than ~5 files. Never collapse
+      them into a single "review" stage — they operate at different levels of
+      abstraction. Invoke review stages as separate subagents (not inline):
+      descriptive gate language ("Gate: agent") is insufficient — only explicit
+      Agent() invocation mandates create the mechanical guarantee of context
+      isolation. If a reviewer finds issues, loop the builder back before
+      architect review. BL-006 and BL-008 delivered the M1 implementation of
+      this principle (subagent-router skill + pipeline Agent() mandates).
+
+  - id: memory-requires-read-back-mechanism
+    approved: true
+    approved_date: "2026-04-06"
+    reinforced_by: [ep-032, ep-038]
+    trigger: any session designing or auditing a memory or knowledge-accumulation subsystem
+    summary: >
+      A memory subsystem that only writes (M3 accumulates episodes, M2 grows
+      patterns) but has no read-back into session selection creates a write-only
+      sink. Insights accumulate but never drive behavior change. The fix is an
+      explicit bridge artifact (backlog.yaml) plus a session-planning step (/next)
+      that reads from M2 + backlog together. Without this, the memory pipeline is
+      information-complete but action-incomplete.
+    why_it_matters: >
+      ep-032: root cause session revealed that M3/M2 were write-only paths — after
+      months of episodes and patterns accumulating, none of them were feeding back
+      into which session to run next. The closed-loop design (inbox → intake →
+      M3/M2 + backlog.yaml → /next → scope-gate) was required to make memory
+      actionable. ep-038: in-practice validation confirmed the closed loop works;
+      the /next + backlog.yaml integration is load-bearing and the deliver-full
+      auto-trigger for M1 items is a direct product of the read-back path existing.
+    how_to_apply: >
+      When designing or evaluating a memory system, ask: does every write path
+      have a corresponding read path that feeds into action selection? Accumulation
+      without consumption is waste. Concretely: M3 episodes must feed M2 via
+      /promote; M2 patterns plus backlog items must feed /next; /next must produce
+      a scope card that gates execution. Any break in this chain means insights
+      exist but cannot change behavior. Apply this audit to any AI workflow that
+      maintains state across sessions.
+
+  - id: instruction-effect-labels-visibility
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [ep-064]
+    trigger: authoring or editing slash commands, Cursor rules, or user prompts that may invoke Write/Edit
+    summary: >
+      Any instruction surface that can trigger a build (Write/Edit / builder path)
+      must declare it explicitly. Slash commands use YAML frontmatter
+      `azoth_effect: read | write | mixed` (normative in kernel/GOVERNANCE.md).
+      Read = default flow does not write to the repo; write = implementation may run;
+      mixed = writes only after explicit human approval (e.g. scope card). Other
+      prompts may use a visible line `**Azoth effect:** read|write|mixed`. Drift
+      tests enforce the frontmatter on every `.claude/commands/*.md` file.
+    why_it_matters: >
+      Humans and agents cannot safely choose tools or gates if "planning" and
+      "shipping" prompts look the same. Hiding implementation behind read-only
+      wording caused pipeline bypass (ep-063). Labeled effects align with trust
+      contract entropy awareness and scope-gate expectations.
+    how_to_apply: >
+      When adding or changing a slash command, set `azoth_effect` immediately.
+      When writing a custom prompt or skill without frontmatter, add the one-line
+      Azoth effect line. Run `pytest tests/test_azoth_commands_effect.py` after
+      command edits. After changing the governance rule, run `azoth-deploy.py`.

@@ -1,12 +1,9 @@
 ---
 name: prompt-engineer
 description: |
-  Shape, refine, and optimize prompts and agent instructions. Use this skill when:
-  - Writing or refining SKILL.md files, agent instructions, or commands
-  - Optimizing prompt structure for clarity and reliability
-  - Designing system prompts for coded agents
-  - Applying prompt engineering patterns (few-shot, chain-of-thought, etc.)
-  - Auto-refining instructions based on evaluation evidence (L2 improvement)
+  Refine SKILL.md, agent definitions, and slash commands for clarity and reliability;
+  apply L2 optimization loops from evaluation evidence. Use when editing instruction
+  surfaces or system prompts.
 ---
 
 # Prompt Engineer
@@ -99,6 +96,27 @@ Before deciding, work through these steps:
 4. Choose and state the reasoning
 5. State what would change your mind
 ```
+
+### Pattern 5: Azoth effect label (build transparency)
+
+Any instruction surface that can trigger **Write/Edit** (builder path) must declare it.
+
+**Slash commands** (`.claude/commands/*.md`): set in YAML frontmatter (see `kernel/GOVERNANCE.md` — Instruction effect labels):
+
+```yaml
+---
+description: "..."
+azoth_effect: read | write | mixed
+---
+```
+
+**Skills, AGENTS.md, or ad-hoc prompts** where frontmatter is not used: put a single visible line near the top:
+
+```markdown
+**Azoth effect:** `write`
+```
+
+Use `read` for analysis-only, `write` when implementation or file mutation is in the default path, `mixed` when the human must approve before any write.
 
 ### Pattern 4: Few-Shot with Rubric
 

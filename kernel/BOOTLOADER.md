@@ -22,7 +22,7 @@ ACTIVATE → SURVEY → OPERATE → HARDEN
 
 1. Read `CLAUDE.md` — project instructions, routing table, current phase
 2. Read `kernel/TRUST_CONTRACT.md` — entropy ceiling, alignment protocol
-3. Read `kernel/GOVERNANCE.md` — HITL gates, promotion rules
+3. Read `kernel/GOVERNANCE.md` — HITL gates, promotion rules, **Section 2** for typed gate catalog (D24) and mandatory human gates
 4. Load bootloader state (`.azoth/bootloader-state.md` if present)
 5. Validate kernel integrity:
    - Hash kernel files against `.azoth/kernel-checksums.sha256`
@@ -83,9 +83,7 @@ proceed. Memory bootstraps from zero — this is expected.
    - Knowledge: known-pattern | needs-research | novel
 3. Compose pipeline from classification (or accept explicit pipeline choice)
 4. Present pipeline to human for approval
-5. Execute pipeline stages, respecting gate types:
-   - `human` gates: stop and await explicit signal
-   - `agent` gates: delegate to reviewing agent
+5. Execute pipeline stages, respecting gate types in `kernel/GOVERNANCE.md` Section 2 (`human` vs `agent` approvers, mandatory human gates).
 6. Monitor entropy throughout:
    - Track files changed, scope of modifications
    - If approaching entropy ceiling → checkpoint and report

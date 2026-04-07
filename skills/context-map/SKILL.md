@@ -1,12 +1,8 @@
 ---
 name: context-map
 description: |
-  Map the blast radius and dependency graph before making changes. Use this skill when:
-  - Starting a new task that touches multiple files or modules
-  - Making cross-cutting changes (refactors, renames, API changes)
-  - Entering an unfamiliar part of the codebase
-  - Assessing risk before a pipeline stage begins
-  - Pre-staging dependencies for autonomous agent work
+  Map blast radius and dependency graphs before multi-file or cross-cutting work; assess
+  risk and pre-stage dependencies at the start of a pipeline stage or unfamiliar area.
 ---
 
 # Context Map

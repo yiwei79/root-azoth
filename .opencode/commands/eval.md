@@ -8,7 +8,7 @@ Apply agentic-eval to the specified artifacts or current session output.
 
 ## Evaluation Criteria
 
-1. Architecture alignment — decisions respect D1-D41
+1. Architecture alignment — decisions respect all decisions in docs/DECISIONS_INDEX.md
 2. Kernel integrity — no unauthorized kernel changes
 3. Governance compliance — HITL gates respected, promotion rules followed
 4. Test coverage — new functionality has tests

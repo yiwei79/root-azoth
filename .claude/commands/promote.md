@@ -1,5 +1,6 @@
 ---
 description: "Review promotion candidates from M3 episodes to M2 patterns"
+azoth_effect: mixed
 ---
 
 # /promote $ARGUMENTS

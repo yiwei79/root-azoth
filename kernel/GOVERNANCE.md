@@ -111,6 +111,31 @@ If an action requiring a human gate is attempted without approval:
 3. Present the action to human for explicit approval or rejection
 4. Do not retry until human signal is received
 
+### Instruction effect labels (slash commands & prompts)
+
+Every file in `.claude/commands/*.md` MUST declare repository side-effect intent in the
+YAML frontmatter:
+
+```yaml
+azoth_effect: read | write | mixed
+```
+
+| Value | Meaning |
+|-------|---------|
+| `read` | Default flow does **not** write to the repo (analysis, planning, dashboards, reports to chat). |
+| `write` | Default flow may **Write/Edit** tracked files, append to memory, or write gate files; builder path and scope-gate / pipeline-gate rules apply. |
+| `mixed` | Default flow is read-only until an explicit human signal (e.g. `approved` on a scope card); then writes are allowed. |
+
+**Rationale:** Humans and agents must see whether a command can trigger a **build**
+(implementation / Write/Edit) without reading the full document.
+
+Custom **user prompts** and **skills** that are not slash commands SHOULD include a
+visible first line when the effect is non-obvious:
+
+```markdown
+**Azoth effect:** `read` | `write` | `mixed`
+```
+
 ---
 
 ## 3. Promotion Flow
@@ -135,15 +160,23 @@ M3 (Episodic) → M2 (Semantic) → M1 (Procedural)
 
 ### M2 → M1 Promotion
 
-**Trigger**: Pattern proven durable across 3+ sessions.
+**Trigger (D51)**: A `target_layer: M1` item in `.azoth/backlog.yaml` routed through
+the `/deliver-full` pipeline. Durability across 3+ sessions is the prerequisite for
+creating the backlog item — it is not the trigger itself.
 
-**Process**:
-1. Agent identifies M2 pattern ready for procedural encoding
-2. Agent proposes specific implementation (skill, agent instruction, or kernel change)
-3. Promotion Rubric applied (kernel/PROMOTION_RUBRIC.md)
-4. Governance review (if scope includes kernel or agents)
-5. Human approves → implemented in appropriate location
-6. Drift detection validates the change
+**Between-sessions-only rule**: M1 changes happen *between* sessions, never during an
+active runtime session. The scope card validator (D50) enforces this at card creation time in /next (in deployments where /next is not used, this rule is agent-enforced): a scope card
+containing M1-targeted items cannot be mixed with runtime tasks. M1 sessions are
+dedicated M1 sessions.
+
+**Scope**: Applies to all M1 locations — `kernel/`, `skills/` (`.claude/commands/`),
+and `agents/` — equally.
+
+**Process**: The **normative** step-by-step checklist is **Promotion checklists → M2 → M1** in `kernel/PROMOTION_RUBRIC.md`. Summary (non-duplicative):
+
+- `/intake` accumulates `m2_candidate` and session evidence; human approval via `/promote` writes M2 when eligible.
+- Human creates the `target_layer: M1` backlog item; `/next` produces the scope card; governed delivery runs `/deliver-full` or equivalent (Stage 0 writes `.azoth/pipeline-gate.json` when governed).
+- Pipeline stages complete with human final gate; drift detection at session boundary.
 
 ### Promotion Anti-Patterns
 
@@ -166,15 +199,28 @@ M3 (Episodic) → M2 (Semantic) → M1 (Procedural)
 | `.azoth/memory/patterns.yaml` | Before promotion | Verify no silent edits |
 | `.azoth/trusted-sources.yaml` | Session start | Warn on unauthorized source changes |
 
+### What Counts as Drift
+
+- Any modification to files in `kernel/`
+- Any modification to `azoth.yaml` manifest not initiated by human
+- Unexpected changes to `.claude/settings.json` deny rules
+- Memory files (M2) modified without promotion protocol
+
 ### Integrity Check Mechanism
 
-```bash
-# Generate checksums for kernel files
-sha256sum kernel/*.md > .azoth/kernel-checksums.sha256
+The **canonical** hashed set is the four root-level governance documents (lexicographic order for stable tooling output):
 
-# Verify at session start
+`kernel/BOOTLOADER.md`, `kernel/GOVERNANCE.md`, `kernel/PROMOTION_RUBRIC.md`, `kernel/TRUST_CONTRACT.md`
+
+```bash
+sha256sum kernel/BOOTLOADER.md kernel/GOVERNANCE.md \
+  kernel/PROMOTION_RUBRIC.md kernel/TRUST_CONTRACT.md \
+  > .azoth/kernel-checksums.sha256
+
 sha256sum -c .azoth/kernel-checksums.sha256
 ```
+
+Run at session start (ACTIVATE) and session end (HARDEN). `kernel/TRUST_CONTRACT.md` Section 3 points here; do not maintain a second diverging command block for the same files.
 
 ### Drift Severity Levels
 
@@ -187,7 +233,7 @@ sha256sum -c .azoth/kernel-checksums.sha256
 
 ---
 
-## 5. Proactive Agent Posture (D26)
+## 5. Default Posture (D26)
 
 Agents default to proactive-within-boundaries.
 
@@ -307,3 +353,4 @@ The file `.azoth/trusted-sources.yaml` governs which sources may submit insights
 5. **Drift is detected** — kernel integrity checked at every session boundary
 6. **Violations are logged** — no silent failures, all governance events recorded
 7. **External insights are governed** — all external data enters through `.azoth/inbox/` and the `/intake` protocol only
+8. **M1 changes are session-isolated** — a scope card mixing M1-targeted items with runtime tasks is rejected by the scope card validator (D50)

@@ -2,7 +2,7 @@
 # This file tracks the toolkit's state and installed components.
 
 name: root-azoth
-version: 0.1.0-dev
+version: 0.0.4.4
 description: The Universal Agentic Toolkit
 
 # Root scaffold identity (D34-D38)
@@ -12,10 +12,10 @@ scope:
   is_development_workshop: true
 
 # Current development phase
-phase: 3  # Agent Archetypes (Phase 1, 1.5, 2 complete)
+phase: 4  # Distribution & Polish (Phases 1–3 complete)
 
 # Architecture decisions count
-decisions: 51
+decisions: 53
 
 # Layer status
 layers:
@@ -24,18 +24,18 @@ layers:
     files: 14  # 4 kernel + 4 templates + 6 adapters
   mineral:   # Layer 1: Skills
     status: complete
-    skills: 8  # 5 extracted + 3 new
+    skills: 13  # 5 extracted + 8 new
   wave:      # Layer 2: Agents
     status: active
     agents: 10  # 4 core + 2 research + 3 meta + 1 utility
   current:   # Layer 3: Pipelines
     status: active
-    pipelines: 8  # schema + 8 presets (P3-002, P3-003 complete)
+    pipelines: 8  # 8 presets (P3-003 complete)
 
 # Memory system
 memory:
-  episodes: 33
-  patterns: 2
+  episodes: 65
+  patterns: 5
   last_sync: null
 
 # Platform compatibility

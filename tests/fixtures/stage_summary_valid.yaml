@@ -1,0 +1,66 @@
+# Valid stage-summary examples (one per stage_kind). Used by tests/test_stage_summary_schema.py
+---
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s1_architect
+agent: architect
+stage_kind: research
+status: complete
+entropy: GREEN
+entropy_delta: 0
+gate_outcome: "Human gate: approve design"
+session_id: "2026-04-07-bl-012"
+done:
+  - "Explored pipelines/ and alignment-sync for handoff points"
+  - "Drafted envelope + stage_kind taxonomy"
+decisions:
+  - "Use flat v1 schema; defer per-kind oneOf to v2 if needed"
+open: []
+artifact_refs:
+  - "pipelines/stage-summary.schema.yaml"
+next: "Proceed to governance review stage"
+---
+stage_summary_version: 1
+pipeline: deliver
+stage_id: deliver_impl
+agent: builder
+stage_kind: build
+status: complete
+entropy: GREEN
+done:
+  - "Implemented feature X per task plan"
+open:
+  - "None"
+artifact_refs:
+  - "src/module.py"
+next: "Evaluator auto-test gate"
+---
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s4_evaluator
+agent: evaluator
+stage_kind: eval
+status: complete
+entropy: GREEN
+done:
+  - "Criteria A/B/C satisfied"
+decisions: []
+open: []
+artifact_refs: []
+next: "Hand off to builder"
+---
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s3
+agent: reviewer
+stage_kind: audit
+status: complete
+entropy: YELLOW
+gate_outcome: "Architect disposition — no kernel edits required"
+done:
+  - "Reviewed brief for governance gaps"
+open:
+  - "Confirm HITL placement on promotion path"
+artifact_refs:
+  - "architecture-brief"
+next: "Planner stage"

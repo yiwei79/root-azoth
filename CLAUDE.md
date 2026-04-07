@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.0-dev (pre-release)
+**Version**: v0.0.4.4
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -39,7 +39,7 @@ alignment point.
 
 ## Architecture Reference
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (44 decisions, 4 layers, all components).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (53 decisions, 4 layers, all components).
 
 ### The Water Molecule Model (Quick Reference)
 
@@ -68,15 +68,18 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 4. **macOS primary, Windows validated**. Test on macOS first, verify Windows compat.
 5. **Claude Code primary**. `.claude/` is the development surface. Other platforms via adapters.
 6. **Architecture-first**. Read `docs/AZOTH_ARCHITECTURE.md` before making structural changes.
+7. **Effect labels**. Every `.claude/commands/*.md` file declares `azoth_effect: read | write | mixed` in its frontmatter (`kernel/GOVERNANCE.md`). If a prompt can trigger **Write/Edit** (build path), it must be clearly marked — never hide implementation behind read-only wording.
+8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity.
 
 ### Development Workflow
 
-1. Read this file (you're doing it)
-2. Read `docs/AZOTH_ARCHITECTURE.md` for full context
-3. Check current phase status below
-4. Work within the current phase scope
-5. Validate changes against architecture decisions (D1–D28)
-6. Capture lessons in `.azoth/memory/episodes.jsonl`
+1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work.
+2. For **phase / roadmap / sprint alignment**, read `skills/orientation/SKILL.md` (lazy-loaded).
+3. Work within approved scope; validate against D1–D53; capture durable lessons in `.azoth/memory/episodes.jsonl`.
+
+### Skill index (drift checks)
+
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `orientation`
 
 ### Coding Standards
 
@@ -100,59 +103,11 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
   archetypes, skills, pipeline schemas), match the depth and richness of the source on the
   first pass. Simplified stubs that require a second enrichment pass are a quality failure.
 
-## v0.1.0 Phase Roadmap
+## Orientation & roadmap
 
-### Phase 1: Kernel Extraction ✅ COMPLETE
-- [x] kernel/BOOTLOADER.md
-- [x] kernel/TRUST_CONTRACT.md
-- [x] kernel/GOVERNANCE.md
-- [x] kernel/PROMOTION_RUBRIC.md
-- [x] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
-- [x] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
-- [x] azoth.yaml manifest
-- [x] install.sh + install.ps1
-
-### Phase 1.5: Sync Infrastructure ✅ COMPLETE
-- [x] scripts/azoth-sync.py
-- [x] sync-config.yaml
-- [x] .claude/commands/sync.md
-
-### Phase 2: Core Skills ✅ COMPLETE
-- [x] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
-- [x] 3 new skills (entropy-guard, alignment-sync, self-improve)
-- [x] Skill drift detection tests
-
-### Phase 3: Agent Archetypes 🎯 CURRENT
-- [~] T1: architect, planner, builder, reviewer (initial draft + External Analysis refinements done; online research refinement pending)
-- [~] T2: researcher, research-orchestrator (same)
-- [~] T3: prompt-engineer, evaluator, agent-crafter (same)
-- [~] T4: context-architect (same)
-- [ ] Pipeline YAML schema
-- [ ] Dual-format agent templates
-- [ ] D44: Stage 6 quality rubric for structured content in delivery pipelines
-- [ ] D45: Context-recall skill (memory read interface)
-
-### Phase 4: Distribution & Polish
-- [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)
-- [ ] Update kernel docs for dual-path awareness (BOOTLOADER.md, GOVERNANCE.md, TRUST_CONTRACT.md)
-- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list
-- [ ] README (philosophy + quickstart)
-- [ ] `azoth init` interactive onboarding
-- [ ] CI for drift detection
-- [ ] Publish to GitHub
-
-### Phase 5: Trust Layer
-- [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
-- [ ] entropy-check hook
-- [ ] alignment-summary hook
-- [ ] Session telemetry
-- [ ] Git-based checkpoints
-- [ ] Phone-friendly output
-
-### Phase 6: Meta-Recursive
-- [ ] Agent Crafter
-- [ ] L2 prompt optimization
-- [ ] L3 human-gated architecture proposals
+**Current phase:** Phase 4 (Distribution & Polish). **Release target:** v0.1.0 — full phase checklist,
+expanded workflow, and Phases 4–6 detail live in **`skills/orientation/SKILL.md`** (load on
+demand for planning and roadmap edits).
 
 ## Origin
 
@@ -164,3 +119,8 @@ extracted, sanitized, and crystallized into this toolkit.
 The name comes from alchemy: Azoth is the universal solvent — it encodes
 A-to-Z (completeness), dissolves into anything (be water), and transforms
 what it touches (the animating spirit).
+
+## Context Management
+Compact at natural task boundaries — end of pipeline stage, after receiving subagent results, between unrelated tasks.
+Preserve on compact: active file list, current task state, pending decisions, approved scope.
+Discard on compact: exploration file reads, intermediate reasoning steps, subagent raw outputs.

@@ -1,12 +1,8 @@
 ---
 name: alignment-sync
 description: |
-  Generate phone-friendly alignment summaries for PULL-based human review. Use this skill when:
-  - Completing a pipeline stage and reporting status
-  - Reaching a human gate in a pipeline
-  - Entering yellow or red entropy zone
-  - Closing a session (HARDEN phase)
-  - Human requests a status update
+  Produce pull-based alignment summaries (phone-friendly) at pipeline stage boundaries,
+  human gates, entropy zone shifts, session closeout, or when the human asks for status.
 ---
 
 # Alignment Sync
@@ -23,6 +19,13 @@ for quick comprehension — often on a phone screen.
 ```
 Work Complete → Generate Summary → Human Pulls When Ready → Signal Received → Continue
 ```
+
+### Machine-readable handoff (BL-012)
+
+For `/auto`, `/deliver`, and `/deliver-full`, the **canonical** inter-stage artifact is a YAML
+document validated by `pipelines/stage-summary.schema.yaml`. Markdown summaries in this skill
+remain valuable for **human** pull review (phone-friendly, narrative context); they do
+**not** replace the typed stage summary for orchestrator forwarding.
 
 ## When to Use
 
