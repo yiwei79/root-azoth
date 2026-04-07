@@ -81,13 +81,11 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
 - Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
 
-**W3 — Update Claude Code memory** → `~/.claude/projects/.../memory/`
+**W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
 
-- Update the project status memory with:
-  - What phase is current and what's next
-  - What was built/changed this session
-  - Known gaps and open decisions
-  - Any new context a future session needs
+- **Resolve the path (do not skip this step):** Claude Code stores per-project memory under `~/.claude/projects/`, where **`<project-key>`** is the absolute workspace path with the leading `/` removed and every `/` replaced by `-` (example: `/Users/you/work/root-azoth` → `-Users-you-work-root-azoth`). Full example: `~/.claude/projects/-Users-you-work-root-azoth/memory/`.
+- **Why W3 is often missed:** these files live **outside the repo**; Cursor assistants may lack access or treat W3 as “human-only.” If denied, retry with full permissions or complete W3 manually — do not close the session without updating memory or explicitly logging W3 failed.
+- **Minimum writes:** `project_status.md` (phase, version, roadmap patch, last episode, last delivery, next backlog step, open gaps) and **`MEMORY.md`** index line for Project Status. Add or refresh `feedback_*.md` when a durable preference changed.
 - Add new memories if the session revealed user preferences, feedback, or reference info
 - This ensures the next Claude Code session has full context even before Azoth's
   own memory system (M3 episodes) is surfaced during SURVEY phase
