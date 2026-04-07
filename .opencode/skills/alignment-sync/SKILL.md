@@ -1,12 +1,8 @@
 ---
 name: alignment-sync
 description: |
-  Generate phone-friendly alignment summaries for PULL-based human review. Use this skill when:
-  - Completing a pipeline stage and reporting status
-  - Reaching a human gate in a pipeline
-  - Entering yellow or red entropy zone
-  - Closing a session (HARDEN phase)
-  - Human requests a status update
+  Produce pull-based alignment summaries (phone-friendly) at pipeline stage boundaries,
+  human gates, entropy zone shifts, session closeout, or when the human asks for status.
 ---
 
 # Alignment Sync

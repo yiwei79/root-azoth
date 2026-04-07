@@ -1,12 +1,8 @@
 ---
 name: entropy-guard
 description: |
-  Monitor and bound session entropy in real-time. Use this skill when:
-  - Tracking cumulative changes during a pipeline stage
-  - Deciding whether to checkpoint before continuing
-  - Enforcing the Trust Contract's entropy ceiling
-  - Calculating blast radius for a proposed set of changes
-  - Alerting when approaching or exceeding entropy thresholds
+  Track session entropy, blast radius, and Trust Contract ceilings during pipelines; decide
+  when to checkpoint or escalate before thresholds are exceeded.
 ---
 
 # Entropy Guard

@@ -66,9 +66,11 @@ def test_auto_router_skill_structure() -> None:
         f"Expected frontmatter name 'auto-router', got {frontmatter.get('name')!r}"
     )
 
-    description = frontmatter.get("description", "")
-    assert "Use this skill when:" in description, (
-        "Frontmatter 'description' must contain the phrase 'Use this skill when:'. "
+    description = (frontmatter.get("description") or "").strip()
+    assert len(description) >= 35, "auto-router description must be substantive (BL-015)"
+    lowered = description.lower()
+    assert "use this skill when" in lowered or "/auto" in lowered or "d23" in lowered, (
+        "auto-router description must cite /auto or D23 (routing hook per BL-015). "
         f"Got: {description!r}"
     )
 

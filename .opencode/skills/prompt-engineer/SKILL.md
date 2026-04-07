@@ -1,12 +1,9 @@
 ---
 name: prompt-engineer
 description: |
-  Shape, refine, and optimize prompts and agent instructions. Use this skill when:
-  - Writing or refining SKILL.md files, agent instructions, or commands
-  - Optimizing prompt structure for clarity and reliability
-  - Designing system prompts for coded agents
-  - Applying prompt engineering patterns (few-shot, chain-of-thought, etc.)
-  - Auto-refining instructions based on evaluation evidence (L2 improvement)
+  Refine SKILL.md, agent definitions, and slash commands for clarity and reliability;
+  apply L2 optimization loops from evaluation evidence. Use when editing instruction
+  surfaces or system prompts.
 ---
 
 # Prompt Engineer

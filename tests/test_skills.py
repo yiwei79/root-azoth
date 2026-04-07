@@ -6,7 +6,7 @@ Validates:
 - SKILL.md files have valid YAML frontmatter
 - Frontmatter contains required fields (name, description)
 - Skill names are consistent between directory and frontmatter
-- Description contains "Use this skill when:" trigger list
+- Description contains a routing signal (legacy "Use this skill when:" or BL-015 cue)
 - No unexpected skills (drift detection)
 """
 
@@ -127,11 +127,51 @@ class TestSkillFrontmatter:
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
-    def test_description_has_trigger_list(self, skill_name: str) -> None:
+    def test_description_has_routing_signal(self, skill_name: str) -> None:
+        """BL-015: 1–2 sentence descriptions replace bullet 'Use this skill when:' lists."""
         fm = self._parse_frontmatter(skill_name)
-        desc = fm.get("description", "")
-        assert "Use this skill when:" in desc, (
-            f"Description for {skill_name} must contain 'Use this skill when:' trigger list"
+        desc = (fm.get("description") or "").strip()
+        assert len(desc) >= 35, f"Description for {skill_name} is too short to be substantive"
+        lowered = desc.lower()
+        legacy = "use this skill when" in lowered
+        cue_tokens = (
+            "`",
+            "/",
+            ".yaml",
+            ".md",
+            "m3",
+            "m2",
+            "m1",
+            "pipeline",
+            "stage",
+            "slash",
+            "entropy",
+            "subagent",
+            "trust contract",
+            "episodes",
+            "governance",
+            "roadmap",
+            "backlog",
+            "reviewer",
+            "evaluator",
+            "deliver",
+            "router",
+            "bl-",
+            "memory",
+            "d23",
+            "d44",
+            "d45",
+            "d21",
+            "survey",
+            "phone",
+            "reflexion",
+            "rubric",
+            "optimizer",
+            "blast",
+        )
+        has_cue = any(tok in lowered for tok in cue_tokens)
+        assert legacy or has_cue, (
+            f"Description for {skill_name} must include a concrete routing hook (BL-015)"
         )
 
 

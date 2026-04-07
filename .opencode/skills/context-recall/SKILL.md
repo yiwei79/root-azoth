@@ -1,10 +1,8 @@
 ---
 name: context-recall
 description: |
-  Use this skill when: beginning a session or pipeline stage where prior session
-  knowledge would improve planning quality. Invoke before architect planning begins,
-  at session start (SURVEY phase), or when explicitly asked to recall context for
-  a goal. This skill is the read path for the Azoth 3-layer memory system.
+  Read M3 episodes and M2 patterns by goal tags before architect planning or SURVEY
+  session start (D45 memory read path).
 version: "1.0"
 layer: mineral
 governance_anchor: D45

@@ -1,11 +1,8 @@
 ---
 name: auto-router
 description: |
-  Use this skill when: the Architect needs to select the correct pipeline
-  composition for a goal after Stage 0 goal classification. This skill
-  provides the canonical decision table mapping classification dimensions
-  to ordered stage sequences. Replaces ad-hoc pipeline selection with a
-  governed, auditable routing policy anchored to D23.
+  Map Stage 0 classification to the ordered stage list for `/auto` (D23); use after
+  goal classification, before human approval of the composed pipeline.
 version: "1.0"
 layer: mineral
 governance_anchor: D23

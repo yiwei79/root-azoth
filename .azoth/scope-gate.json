@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T02:04:50+00:00",
-  "goal": "BL-014: Kernel doc consolidation — deduplicate drift detection, gate definitions, promotion checklists",
-  "session_id": "2026-04-07-bl-014",
+  "expires_at": "2026-04-07T02:13:59+00:00",
+  "goal": "BL-015: Agent/skill boilerplate dedup — posture single-source + skill trigger compression",
+  "session_id": "2026-04-07-bl-015",
   "approved_by": "human",
-  "backlog_id": "BL-014",
-  "delivery_pipeline": "governed",
-  "target_layer": "M1",
-  "closed_at": "2026-04-07T00:11:22+00:00"
+  "backlog_id": "BL-015",
+  "delivery_pipeline": "standard",
+  "target_layer": "infrastructure",
+  "closed_at": "2026-04-07T20:05:00+00:00"
 }

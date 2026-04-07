@@ -1,10 +1,8 @@
 ---
 name: stage6-rubric
 description: |
-  Use this skill when: acting as architect at the /deliver-full Stage 6/7 review
-  gate, before approving structured content deliverables. Apply this rubric to
-  agent archetypes (AGENT.md), skills (SKILL.md), and pipeline YAML files to
-  detect shallow first-pass output before it reaches the human final-approval gate.
+  Architect gate for `/deliver-full` Stage 6/7: PASS/FAIL structured content (agents,
+  skills, pipeline YAML) before human approval — implements D44 shallow-output checks.
 version: "1.0"
 layer: mineral
 governance_anchor: D44
@@ -62,8 +60,10 @@ Required sections — each must contain ≥ 3 substantive items (not placeholder
 
 Required frontmatter fields:
 - `name` — matches directory name
-- `description` — contains "Use this skill when:" with ≥ 1 specific trigger condition
-- `layer` — one of: `mineral`, `wave`, `current`, `molecule`
+- `description` — includes at least one **falsifiable invocation cue** (named artifact
+  type, pipeline stage, slash command, or tool surface). Pure generic phrasing with no
+  such cue fails Axis 1 (BL-015: descriptions may be 1–2 sentences instead of bullet lists).
+- `layer` — one of: `mineral`, `wave`, `current`, `molecule` (when the field is present)
 - `governance_anchor` — decision ref (required for M1 skills)
 
 Required sections:
@@ -122,9 +122,10 @@ the human final-approval gate with the specific condition cited.
    `type: agent`) — gate type ambiguity violates D24 (Axis 2, criterion 2)
 4. An agent archetype is missing the Interaction Patterns section entirely
    (Axis 3 completeness threshold not met)
-5. A skill trigger condition is generic rather than specific — examples of failing
-   triggers: "when you need evaluation", "for quality checks", "when reviewing"
-   without a named artifact type, stage, or invocation context
+5. A skill's `description` or `## When to Use` content is generic only — no falsifiable
+   invocation cue (named artifact type, pipeline stage, slash command, or tool surface).
+   Examples of failing text: "when you need evaluation", "for quality checks", "when reviewing"
+   with no concrete routing hook.
 
 ## Integration
 

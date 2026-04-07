@@ -32,6 +32,9 @@ _spec.loader.exec_module(_mod)
 parse_frontmatter = _mod.parse_frontmatter
 render_frontmatter = _mod.render_frontmatter
 posture_to_permissions = _mod.posture_to_permissions
+merge_never_auto = _mod.merge_never_auto
+effective_posture_for_permissions = _mod.effective_posture_for_permissions
+UNIVERSAL_NEVER_AUTO = _mod.UNIVERSAL_NEVER_AUTO
 transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_opencode = _mod.transform_agent_opencode
@@ -134,6 +137,35 @@ def test_pipeline_self_matches_task() -> None:
 def test_unknown_tier_uses_default() -> None:
     perms = posture_to_permissions(99, {})
     assert set(perms.keys()) == {"edit", "bash", "webfetch", "task"}
+
+
+def test_merge_never_auto_empty_is_universal_only() -> None:
+    assert merge_never_auto([]) == list(UNIVERSAL_NEVER_AUTO)
+    assert merge_never_auto(None) == list(UNIVERSAL_NEVER_AUTO)
+
+
+def test_merge_never_auto_skips_duplicate_universal_lines() -> None:
+    merged = merge_never_auto(["Kernel modifications", "Governance changes"])
+    assert merged == list(UNIVERSAL_NEVER_AUTO)
+
+
+def test_merge_never_auto_appends_agent_only_line() -> None:
+    extra = "Approving kernel or governance PRs"
+    merged = merge_never_auto([extra])
+    assert merged[: len(UNIVERSAL_NEVER_AUTO)] == list(UNIVERSAL_NEVER_AUTO)
+    assert merged[-1] == extra
+
+
+def test_effective_posture_for_permissions_preserves_always_do() -> None:
+    eff = effective_posture_for_permissions(
+        {
+            "always_do": ["Do the thing"],
+            "ask_first": [],
+            "never_auto": [],
+        }
+    )
+    assert eff["always_do"] == ["Do the thing"]
+    assert eff["never_auto"] == list(UNIVERSAL_NEVER_AUTO)
 
 
 # ── transform_agent_claude ───────────────────────────────────────────────────
@@ -241,6 +273,21 @@ def test_opencode_agent_has_permission_object() -> None:
     perms = meta.get("permission", {})
     assert set(perms.keys()) == {"edit", "bash", "webfetch", "task"}
     assert all(v in ("allow", "ask", "deny") for v in perms.values())
+
+
+def test_opencode_merge_universal_never_auto_when_agent_lists_empty() -> None:
+    """BL-015: empty per-agent never_auto still tightens OpenCode perms via universal merge."""
+    agent = {
+        "meta": {
+            **{k: v for k, v in _ARCHITECT["meta"].items() if k != "posture"},
+            "posture": {"never_auto": [], "ask_first": [], "always_do": []},
+        },
+        "body": _ARCHITECT["body"],
+    }
+    out = transform_agent_opencode(agent)
+    meta, _ = parse_frontmatter(out)
+    perms = meta.get("permission", {})
+    assert perms["edit"] == "ask"
 
 
 # ── transform_command_copilot ────────────────────────────────────────────────

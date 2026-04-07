@@ -1,12 +1,8 @@
 ---
 name: subagent-router
 description: |
-  Apply the general subagent routing policy to pipeline stages. Use this skill when:
-  - Deciding which agent type to assign to a pipeline stage
-  - Composing a new pipeline and need subagent_type assignments
-  - Determining whether a stage requires context isolation or review independence
-  - Verifying that parallel stages have correct subagent assignments
-  - Ensuring review gates are never executed inline with the stage they review
+  Assign `subagent_type` and isolation triggers to `/auto`, `/deliver`, and `/deliver-full`
+  stages; defines the spawn-prompt contract (BL-011) and forward payload for typed summaries.
 ---
 
 # Subagent Router

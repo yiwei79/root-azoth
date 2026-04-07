@@ -208,7 +208,7 @@ Run at session start (ACTIVATE) and session end (HARDEN). `kernel/TRUST_CONTRACT
 
 ---
 
-## 5. Proactive Agent Posture (D26)
+## 5. Default Posture (D26)
 
 Agents default to proactive-within-boundaries.
 

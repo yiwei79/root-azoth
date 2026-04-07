@@ -82,6 +82,56 @@ _TOOL_KEYWORDS: dict[str, set[str]] = {
     "task":     {"agent", "subagent", "invoke", "spawn", "delegate", "orchestrat", "pipeline self"},
 }
 
+# Canonical Never-Auto lines — kernel/GOVERNANCE.md §5 Default Posture (D26). Merged with
+# per-agent `never_auto` when computing OpenCode permissions so empty YAML lists stay
+# fail-closed vs keyword tightening (BL-015).
+UNIVERSAL_NEVER_AUTO: tuple[str, ...] = (
+    "Kernel modifications",
+    "Governance changes",
+    "Dependency additions",
+    "Pipeline self-modification",
+    "Memory M2 → M1 promotion",
+    "File deletion",
+)
+
+
+def _normalize_posture_line(s: str) -> str:
+    return s.strip().lower()
+
+
+def merge_never_auto(agent_never_auto: list[str] | None) -> list[str]:
+    """
+    Union universal Never-Auto with per-agent lines; dedupe; universal order first,
+    then agent-only lines in first-seen order.
+    """
+    uni_norm = {_normalize_posture_line(x) for x in UNIVERSAL_NEVER_AUTO}
+    out: list[str] = list(UNIVERSAL_NEVER_AUTO)
+    seen: set[str] = set(uni_norm)
+    for raw in agent_never_auto or []:
+        n = _normalize_posture_line(raw)
+        if n in uni_norm:
+            continue
+        if n in seen:
+            continue
+        out.append(raw)
+        seen.add(n)
+    return out
+
+
+def effective_posture_for_permissions(posture: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Shallow copy of posture with `never_auto` merged for permission mapping."""
+    eff: dict[str, list[str]] = {}
+    for k, v in posture.items():
+        if isinstance(v, list):
+            eff[k] = list(v)
+        else:
+            eff[k] = v  # type: ignore[assignment]
+    na = eff.get("never_auto")
+    if not isinstance(na, list):
+        na = []
+    eff["never_auto"] = merge_never_auto(na)
+    return eff
+
 
 def posture_to_permissions(tier: int, posture: dict[str, list[str]]) -> dict[str, str]:
     """
@@ -192,7 +242,8 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     """
     meta = agent["meta"]
     tier = int(meta.get("tier", 3))
-    posture: dict[str, list[str]] = meta.get("posture") or {}
+    raw_posture = meta.get("posture") or {}
+    posture = {k: list(v) if isinstance(v, list) else v for k, v in raw_posture.items()}
 
     # Tier 1–2 agents are top-level orchestrators/workers; tier 3–4 are support subagents.
     mode = "all" if tier <= 2 else "subagent"
@@ -200,7 +251,8 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     fm: dict[str, Any] = {"description": _description(meta), "mode": mode}
     if "model" in meta:
         fm["model"] = meta["model"]
-    fm["permission"] = posture_to_permissions(tier, posture)
+    effective = effective_posture_for_permissions(posture)
+    fm["permission"] = posture_to_permissions(tier, effective)
 
     return render_frontmatter(fm) + agent["body"]
 

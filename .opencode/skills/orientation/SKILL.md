@@ -1,11 +1,9 @@
 ---
 name: orientation
 description: |
-  Use this skill when: you need the v0.1.0 phase roadmap, sprint planning against
-  backlog vs roadmap, current phase checklist, or the expanded development workflow
-  (steps that were moved out of root CLAUDE.md for progressive disclosure). Use this
-  skill when: onboarding to Azoth workshop work after reading root CLAUDE.md. Use this
-  skill when: updating phase status or deciding what belongs in Phase 3–6.
+  Load the v0.1.0 phase roadmap, backlog vs roadmap alignment, and expanded development
+  workflow when planning or editing `.azoth/roadmap.yaml` / backlog — not for routine
+  implementation work.
 ---
 
 # Orientation
