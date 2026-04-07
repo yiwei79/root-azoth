@@ -18,7 +18,7 @@ Apply `agentic-eval` style review to work produced this session.
 2. Tests pass and cover new functionality
 3. Kernel integrity preserved (no unauthorized changes)
 4. Entropy stayed within bounds
-5. Architecture decisions (D1-D41) respected
+5. Architecture decisions (all in docs/DECISIONS_INDEX.md) respected
 
 ### Output Format
 
@@ -59,23 +59,56 @@ Compress session into actionable signals.
      "tags": ["relevant-tags"]
    }
    ```
-   Append to `.azoth/memory/episodes.jsonl`
 
 5. Check for promotion candidates:
    - Any pattern reinforced across 2+ episodes? → Propose M3 → M2 promotion
    - Present proposals to human (never auto-promote)
 
-6. Update `.azoth/bootloader-state.md` with session outcome.
+### Write Checkpoints (W1 → W2 → W3 → W4)
 
-7. **Update Claude Code memory** (for cross-session continuity):
-   - Update the project status memory in `~/.claude/projects/.../memory/` with:
-     - What phase is current and what's next
-     - What was built/changed this session
-     - Known gaps and open decisions
-     - Any new context a future session needs
-   - Add new memories if the session revealed user preferences, feedback, or reference info
-   - This ensures the next Claude Code session has full context even before Azoth's
-     own memory system (M3 episodes) is surfaced during SURVEY phase
+Execute in order. After each write, log its status before proceeding to the next.
+If any write is denied or fails, stop and follow the **On Failure** guidance below.
+
+**W1 — Append episode** → `.azoth/memory/episodes.jsonl`
+
+- Append the episode structured in step 4
+- Log: `W1 ✓ episode {id} appended — proceeding to W2`
+
+**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/scope-gate.json`
+
+- Update `bootloader-state.md` with session outcome (phase, what changed, open decisions)
+- Close the scope gate: write `.azoth/scope-gate.json` with `approved: false` and add
+  `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
+- Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
+
+**W3 — Update Claude Code memory** → `~/.claude/projects/.../memory/`
+
+- Update the project status memory with:
+  - What phase is current and what's next
+  - What was built/changed this session
+  - Known gaps and open decisions
+  - Any new context a future session needs
+- Add new memories if the session revealed user preferences, feedback, or reference info
+- This ensures the next Claude Code session has full context even before Azoth's
+  own memory system (M3 episodes) is surfaced during SURVEY phase
+- Log: `W3 ✓ memory updated — all checkpoints complete`
+
+**W4 — Bump patch version** → `python scripts/version-bump.py --patch`
+
+- Run `python scripts/version-bump.py --patch` from the repo root
+- This always fires — every closeout increments the patch version
+- Log: `W4 ✓ version bumped X → Y`
+
+### On Failure
+
+If a write checkpoint is denied or fails mid-sequence:
+
+- **W2 or W3 denied**: safe to re-run session-closeout — these are idempotent overwrites.
+  Resume from the denied step only; do not re-append W1. If only the scope gate write
+  was denied, write it standalone before closing.
+- **W1 denied**: the episode was not written. Before re-appending, check
+  `.azoth/memory/episodes.jsonl` for the episode `id` to avoid duplicates.
+- Report which checkpoint failed in the close summary so the human can act.
 
 ## Part C: Sync Changes
 
@@ -102,6 +135,29 @@ Check the insight inbox and inform the human. Do NOT process insights during clo
 - **Closeout surfaces; it does not process** (F4). Run `/intake` explicitly to triage insights.
 - **Do NOT read insight content beyond source attribution**. Full triage happens in `/intake`.
 - This step is informational — it never modifies inbox files or M3.
+
+## Permission Settings
+
+If your Claude Code permission mode requires per-call confirmation for Write/Edit tools,
+the W1–W3 checkpoint sequence will prompt three separate approvals. To allow uninterrupted
+batch writes for the duration of a session, add Write and Edit to your project's
+`settings.local.json` allow list:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Write(.azoth/**)",
+      "Edit(.azoth/**)",
+      "Write(.claude/projects/**)",
+      "Edit(.claude/projects/**)"
+    ]
+  }
+}
+```
+
+> **Governance caveat**: This grants Write/Edit without per-call confirmation for the
+> session duration — use only in trusted, scope-gated sessions (scope-gate.json approved).
 
 ## Output
 

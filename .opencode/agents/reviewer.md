@@ -5,7 +5,7 @@ permission:
   edit: ask
   bash: ask
   webfetch: allow
-  task: allow
+  task: ask
 ---
 
 # Reviewer

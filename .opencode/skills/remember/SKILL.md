@@ -1,12 +1,8 @@
 ---
 name: remember
 description: |
-  Capture durable lessons from sessions as structured episodes. Use this skill when:
-  - Closing a session and capturing what was learned
-  - Recording a decision, pattern, or failure for future reference
-  - Classifying episodes for potential promotion (M3 → M2)
-  - Surfacing relevant past episodes at the start of a new session
-  - Building the experience base that drives self-improvement
+  Append structured episodes to `.azoth/memory/episodes.jsonl` and classify lessons for
+  M3→M2 promotion; use at session closeout or when capturing durable decisions or patterns.
 ---
 
 # Remember
@@ -91,6 +87,10 @@ relevance = recency_weight * recency_score
            + tag_match_weight * tag_overlap
            + reinforcement_weight * reinforcement_count
 ```
+
+**Canonical read path**: The context-recall skill is the canonical read path
+for this step; if context-recall is available, invoke it instead of running
+this section manually.
 
 ### Surfacing Format
 

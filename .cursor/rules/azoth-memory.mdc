@@ -1,0 +1,16 @@
+---
+description: Azoth memory and session state bridge — reads M2 patterns, task state, and cross-IDE handoff capsule at session start
+alwaysApply: true
+---
+
+At the start of every chat in this workspace, read the following files to restore session context:
+
+1. `.azoth/memory/patterns.yaml` — M2 semantic memory (approved patterns, architectural decisions, reinforced behaviors). Focus on entries with `approved: true` and highest `reinforcement_count`.
+
+2. `.azoth/bootloader-state.md` — current active task, phase, and approved scope for this repo.
+
+3. `.azoth/session-state.md` — if this file exists and `state` is not `empty`, read it to resume a cross-IDE handoff. It contains the last session's active task, files, pending decisions, and next action.
+
+**Claude Code parity:** PreToolUse hooks from `.claude/settings.json` do **not** run in Cursor. The always-applied rule `claude-code-parity.mdc` (same folder) mandates simulated scope-gate and pipeline-gate checks before writes — obey it on every turn that edits files.
+
+After reading, briefly confirm what active context was loaded before responding to the user's first message.
