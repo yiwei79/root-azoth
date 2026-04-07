@@ -6,7 +6,7 @@ Validates:
 - SKILL.md files have valid YAML frontmatter
 - Frontmatter contains required fields (name, description)
 - Skill names are consistent between directory and frontmatter
-- Description contains "Use this skill when:" trigger list
+- Description contains a routing signal (legacy "Use this skill when:" or BL-015 cue)
 - No unexpected skills (drift detection)
 """
 
@@ -29,6 +29,11 @@ EXPECTED_SKILLS = [
     "entropy-guard",
     "alignment-sync",
     "self-improve",
+    "subagent-router",
+    "auto-router",
+    "stage6-rubric",
+    "context-recall",
+    "orientation",
 ]
 
 EXTRACTED_SKILLS = [
@@ -43,6 +48,11 @@ NEW_SKILLS = [
     "entropy-guard",
     "alignment-sync",
     "self-improve",
+    "subagent-router",
+    "auto-router",
+    "stage6-rubric",
+    "context-recall",
+    "orientation",
 ]
 
 
@@ -117,11 +127,51 @@ class TestSkillFrontmatter:
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
-    def test_description_has_trigger_list(self, skill_name: str) -> None:
+    def test_description_has_routing_signal(self, skill_name: str) -> None:
+        """BL-015: 1–2 sentence descriptions replace bullet 'Use this skill when:' lists."""
         fm = self._parse_frontmatter(skill_name)
-        desc = fm.get("description", "")
-        assert "Use this skill when:" in desc, (
-            f"Description for {skill_name} must contain 'Use this skill when:' trigger list"
+        desc = (fm.get("description") or "").strip()
+        assert len(desc) >= 35, f"Description for {skill_name} is too short to be substantive"
+        lowered = desc.lower()
+        legacy = "use this skill when" in lowered
+        cue_tokens = (
+            "`",
+            "/",
+            ".yaml",
+            ".md",
+            "m3",
+            "m2",
+            "m1",
+            "pipeline",
+            "stage",
+            "slash",
+            "entropy",
+            "subagent",
+            "trust contract",
+            "episodes",
+            "governance",
+            "roadmap",
+            "backlog",
+            "reviewer",
+            "evaluator",
+            "deliver",
+            "router",
+            "bl-",
+            "memory",
+            "d23",
+            "d44",
+            "d45",
+            "d21",
+            "survey",
+            "phone",
+            "reflexion",
+            "rubric",
+            "optimizer",
+            "blast",
+        )
+        has_cue = any(tok in lowered for tok in cue_tokens)
+        assert legacy or has_cue, (
+            f"Description for {skill_name} must include a concrete routing hook (BL-015)"
         )
 
 
@@ -163,20 +213,14 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 3, "Should have 3 new skills"
+        assert len(NEW_SKILLS) == 8, "Should have 8 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_architecture_references_all_skills(self) -> None:
-        """CLAUDE.md should reference all skill categories."""
+        """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""
         claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
-        assert "context-map" in claude_md
-        assert "structured-autonomy-plan" in claude_md
-        assert "agentic-eval" in claude_md
-        assert "remember" in claude_md
-        assert "prompt-engineer" in claude_md
-        assert "entropy-guard" in claude_md
-        assert "alignment-sync" in claude_md
-        assert "self-improve" in claude_md
+        for slug in EXPECTED_SKILLS:
+            assert slug in claude_md, f"CLAUDE.md must reference skill slug {slug!r}"
 
     def test_azoth_yaml_skill_count(self) -> None:
         """azoth.yaml should reflect correct skill count."""
