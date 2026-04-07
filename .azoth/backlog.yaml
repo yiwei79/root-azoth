@@ -385,8 +385,8 @@ items:
     source: session-2026-04-06-token-opt
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
-    target_version: v0.0.4
+    status: complete
+    target_version: v0.0.3.29
     priority: 3
     created_date: "2026-04-06"
     decision_ref: [D26]

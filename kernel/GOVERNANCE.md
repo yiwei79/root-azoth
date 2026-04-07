@@ -147,19 +147,11 @@ dedicated M1 sessions.
 **Scope**: Applies to all M1 locations — `kernel/`, `skills/` (`.claude/commands/`),
 and `agents/` — equally.
 
-**Process**:
-1. `/intake` sets `m2_candidate: true` incrementally on each qualifying event; the pattern becomes eligible for M1 promotion when `m2_candidate: true` set on 2+ intake events AND validated across 3+ distinct sessions
-2. Human approves promotion → `/promote` writes the pattern to M2
-3. Human creates `target_layer: M1` item in `.azoth/backlog.yaml`
-4. `/next` surfaces the item; human approves scope card → `.azoth/scope-gate.json` written
-   (includes `delivery_pipeline` and `target_layer` from the backlog item)
-5. `/deliver-full`, `/auto`, or `/deliver` runs; **Stage 0** writes `.azoth/pipeline-gate.json`
-   when the scope is governed (`delivery_pipeline: governed` or `target_layer: M1`). The
-   PreToolUse hook blocks Write/Edit until this file exists — mechanical enforcement that
-   governed work uses a delivery pipeline with subagent routing instead of inline-only edits.
-6. Pipeline stages (e.g. `/deliver-full`): Architect → Governance Review → Planner → Builder
-7. Human gate: final approval before implementation lands
-8. Drift detection validates the change at session boundary
+**Process**: The **normative** step-by-step checklist is **Promotion checklists → M2 → M1** in `kernel/PROMOTION_RUBRIC.md`. Summary (non-duplicative):
+
+- `/intake` accumulates `m2_candidate` and session evidence; human approval via `/promote` writes M2 when eligible.
+- Human creates the `target_layer: M1` backlog item; `/next` produces the scope card; governed delivery runs `/deliver-full` or equivalent (Stage 0 writes `.azoth/pipeline-gate.json` when governed).
+- Pipeline stages complete with human final gate; drift detection at session boundary.
 
 ### Promotion Anti-Patterns
 
@@ -182,15 +174,28 @@ and `agents/` — equally.
 | `.azoth/memory/patterns.yaml` | Before promotion | Verify no silent edits |
 | `.azoth/trusted-sources.yaml` | Session start | Warn on unauthorized source changes |
 
+### What Counts as Drift
+
+- Any modification to files in `kernel/`
+- Any modification to `azoth.yaml` manifest not initiated by human
+- Unexpected changes to `.claude/settings.json` deny rules
+- Memory files (M2) modified without promotion protocol
+
 ### Integrity Check Mechanism
 
-```bash
-# Generate checksums for kernel files
-sha256sum kernel/*.md > .azoth/kernel-checksums.sha256
+The **canonical** hashed set is the four root-level governance documents (lexicographic order for stable tooling output):
 
-# Verify at session start
+`kernel/BOOTLOADER.md`, `kernel/GOVERNANCE.md`, `kernel/PROMOTION_RUBRIC.md`, `kernel/TRUST_CONTRACT.md`
+
+```bash
+sha256sum kernel/BOOTLOADER.md kernel/GOVERNANCE.md \
+  kernel/PROMOTION_RUBRIC.md kernel/TRUST_CONTRACT.md \
+  > .azoth/kernel-checksums.sha256
+
 sha256sum -c .azoth/kernel-checksums.sha256
 ```
+
+Run at session start (ACTIVATE) and session end (HARDEN). `kernel/TRUST_CONTRACT.md` Section 3 points here; do not maintain a second diverging command block for the same files.
 
 ### Drift Severity Levels
 

@@ -154,33 +154,33 @@ any insight                 reinforced ≥2x                         governance-
 m2_candidate=true           set at intake                          target_layer: M1
 ```
 
-### M2 → M1 Checklist
+### Promotion checklists (by destination)
 
-```
-□ Maturity + Durability: m2_candidate: true set on 2+ intake events AND validated across 3+ distinct sessions
-□ Backlog item: target_layer: M1 item created in .azoth/backlog.yaml
-□ Scope card: /next surfaced the item; human approved scope-gate.json
-□ Pipeline: /deliver-full invoked and all stages (Architect, Governance Review, Planner, Builder, human gate) completed
-□ Session isolation: No runtime tasks in the same scope card (D50 validator passed)
-□ No conflict: Implementation doesn't contradict existing M1 content
-□ Human gate: Final approval given before change lands
-□ Drift check: kernel/ integrity verified at session boundary after change
-```
+Use the checklist for the layer you are promoting **to**. Every row for that destination must pass before promotion.
 
----
+#### M3 → M2
 
-## M3 → M2 Promotion Checklist
+| # | Criterion |
+|---|-----------|
+| 1 | Evidence: 2+ source episodes identified |
+| 2 | Scope: Rubric questions A–D answered, home determined |
+| 3 | No conflict: Pattern doesn't contradict existing M1 content |
+| 4 | Minimal: Pattern captures the essential insight, not surrounding noise |
+| 5 | Actionable: Pattern can be applied — it's not just an observation |
+| 6 | Human review: Human has seen the proposal and approved |
 
-Before promoting any M3 pattern to M2, verify:
+#### M2 → M1
 
-```
-□ Evidence: 2+ source episodes identified
-□ Scope: Rubric questions A-D answered, home determined
-□ No conflict: Pattern doesn't contradict existing M1 content
-□ Minimal: Pattern captures the essential insight, not surrounding noise
-□ Actionable: Pattern can be applied — it's not just an observation
-□ Human review: Human has seen the proposal and approved
-```
+| # | Criterion |
+|---|-----------|
+| 1 | Maturity + Durability: `m2_candidate: true` set on 2+ intake events AND validated across 3+ distinct sessions |
+| 2 | Backlog item: `target_layer: M1` item created in `.azoth/backlog.yaml` |
+| 3 | Scope card: `/next` surfaced the item; human approved `scope-gate.json` |
+| 4 | Pipeline: `/deliver-full` invoked and all stages (Architect, Governance Review, Planner, Builder, human gate) completed |
+| 5 | Session isolation: No runtime tasks in the same scope card (D50 validator passed) |
+| 6 | No conflict: Implementation doesn't contradict existing M1 content |
+| 7 | Human gate: Final approval given before change lands |
+| 8 | Drift check: `kernel/` integrity verified at session boundary after change |
 
 ---
 

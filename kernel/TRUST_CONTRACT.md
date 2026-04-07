@@ -88,6 +88,7 @@ Every pipeline stage completion produces a summary:
 - No jargon without definition
 - Lead with status and entropy — the two things the human needs first
 - Questions are numbered for easy response ("approve 1, adjust 2")
+- **Pipeline gate typing** (D24: `human` vs `agent` approvers) and the **mandatory human gate** list: see `kernel/GOVERNANCE.md` Section 2 (Human-in-the-Loop Gates).
 
 ### Human Signals
 
@@ -102,35 +103,9 @@ Every pipeline stage completion produces a summary:
 
 ## 3. Drift Detection
 
-The kernel is the invariant foundation. Drift detection ensures it stays that way.
+The **normative** drift detection contract (what to monitor, severity levels, checksum commands, and drift response) lives in **`kernel/GOVERNANCE.md` Section 4 (Drift Detection Contract)**. Run integrity checks at session start (ACTIVATE) and session end (HARDEN) per the bootloader.
 
-### Kernel Integrity Check
-
-Run at session start (ACTIVATE phase) and session end (HARDEN phase):
-
-```bash
-sha256sum kernel/BOOTLOADER.md kernel/TRUST_CONTRACT.md \
-  kernel/GOVERNANCE.md kernel/PROMOTION_RUBRIC.md \
-  > .azoth/kernel-checksums.sha256.new
-
-diff .azoth/kernel-checksums.sha256 .azoth/kernel-checksums.sha256.new
-```
-
-### Drift Response
-
-| Drift Level | Detection | Response |
-|-------------|-----------|----------|
-| None | Checksums match | Proceed normally |
-| Minor | Non-kernel config changed unexpectedly | Log warning, continue |
-| Major | Kernel file checksum mismatch | **HALT** — report to human, await signal |
-| Critical | Kernel file missing or corrupted | **HALT** — do not proceed under any circumstance |
-
-### What Counts as Drift
-
-- Any modification to files in `kernel/`
-- Any modification to `azoth.yaml` manifest not initiated by human
-- Unexpected changes to `.claude/settings.json` deny rules
-- Memory files (M2) modified without promotion protocol
+Do not maintain a second diverging specification here.
 
 ---
 

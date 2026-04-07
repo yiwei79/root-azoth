@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T01:48:54+00:00",
-  "goal": "BL-013: CLAUDE.md progressive disclosure — prune roadmap/workflow sections, move to lazy-loaded skills",
-  "session_id": "2026-04-07-bl-013",
+  "expires_at": "2026-04-07T02:04:50+00:00",
+  "goal": "BL-014: Kernel doc consolidation — deduplicate drift detection, gate definitions, promotion checklists",
+  "session_id": "2026-04-07-bl-014",
   "approved_by": "human",
-  "backlog_id": "BL-013",
-  "delivery_pipeline": "standard",
-  "target_layer": "infrastructure",
-  "closed_at": "2026-04-07T12:30:00Z"
+  "backlog_id": "BL-014",
+  "delivery_pipeline": "governed",
+  "target_layer": "M1",
+  "closed_at": "2026-04-07T00:11:22+00:00"
 }
