@@ -549,14 +549,18 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 Azoth treats **repo-local state** as the **authoritative** narrative every platform must converge on. **Claude Code project memory** (`~/.claude/projects/<project-key>/memory/`) is a **supplemental mirror**, not a second source of truth.
 
-| Checkpoint | What it writes | Claude Code | Cursor | OpenCode / GitHub Copilot |
-|------------|----------------|-------------|--------|---------------------------|
-| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ (same path) |
-| **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json`, `.azoth/session-state.md` (as applicable) | ✅ | ✅ | ✅ (same paths) |
-| **W3** | `~/.claude/projects/.../memory/project_status.md` (+ `MEMORY.md` index) | ✅ native | ⚠️ requires **write access** to that path, or **defer** and log | N/A — rely on W1/W2 in repo |
-| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ |
+Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D46 copies to **`.github/prompts/session-closeout.prompt.md`** and **`.opencode/commands/session-closeout.md`**).
 
-**Parity rule:** W3 content must **mirror** the same facts as W2 (phase, version, last delivery, next step, open gaps). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout. **Cursor** assistants completing `/session-closeout` must **attempt** W3 when the environment allows (see `claude-code-parity.mdc`); if denied, they must **not** silently skip — log `W3 deferred` and complete W1/W2/W4. **Copilot** sessions use the **deployed** `.github/prompts/session-closeout.prompt.md` (D46) with the same checkpoint semantics; durable context is always the committed **W1/W2** artifacts.
+| Checkpoint | What it writes | Claude Code | Cursor | OpenCode | GitHub Copilot |
+|------------|----------------|-------------|--------|----------|----------------|
+| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ (same repo path) |
+| **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json` | ✅ | ✅ | ✅ | ✅ (same repo paths) |
+| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | N/A |
+| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
+
+**Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule).
+
+**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists only so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**). **OpenCode** and **GitHub Copilot** do not consume `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or a Cursor session with access.
 
 ### Platform File Format Differences
 
