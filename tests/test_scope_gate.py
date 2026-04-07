@@ -6,9 +6,11 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pytest
+ORCHESTRATOR_PATH = (
+    Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
+)
 
-HOOK_PATH = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
+SCOPE_GATE_THIN_PATH = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
 
 
 def _run(
@@ -27,11 +29,13 @@ def _run(
             "tool_input": tool_input,
         }
     )
+    workspace = gate_path.parent
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
     if pipeline_gate_path is not None:
         env["AZOTH_PIPELINE_GATE_PATH"] = str(pipeline_gate_path)
     result = subprocess.run(
-        ["python3", str(HOOK_PATH)],
+        ["python3", str(ORCHESTRATOR_PATH)],
         input=stdin_payload,
         capture_output=True,
         text=True,
@@ -263,3 +267,47 @@ def test_t16_target_layer_m1_triggers_pipeline_gate(tmp_path: Path) -> None:
     target = tmp_path / "x.txt"
     output = _run("Write", gate_path, file_path=str(target), pipeline_gate_path=pg_path)
     assert _decision(output) == "deny"
+
+
+def test_t17_scope_gate_thin_cli_write_denied_without_gate(tmp_path: Path) -> None:
+    """Regression: scope-gate.py thin CLI (scope-only) must run without NameError."""
+    gate_path = tmp_path / "scope-gate.json"
+    workspace = gate_path.parent
+    env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    stdin_payload = json.dumps(
+        {
+            "tool_name": "Write",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {"file_path": str(tmp_path / "x.txt")},
+        }
+    )
+    result = subprocess.run(
+        ["python3", str(SCOPE_GATE_THIN_PATH)],
+        input=stdin_payload,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    output = json.loads(result.stdout)
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
+def test_t18_scope_gate_thin_malformed_stdin_allow(tmp_path: Path) -> None:
+    """Parity with test_p5_002 test_a1: invalid JSON stdin must allow (fail-open)."""
+    gate_path = tmp_path / "scope-gate.json"
+    workspace = gate_path.parent
+    env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    result = subprocess.run(
+        ["python3", str(SCOPE_GATE_THIN_PATH)],
+        input="not valid json {{{",
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    out = json.loads(result.stdout)
+    assert _decision(out) == "allow"

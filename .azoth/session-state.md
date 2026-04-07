@@ -11,3 +11,5 @@
 #   next_action: concrete first step to resume work
 
 state: empty
+last_ide: cursor
+timestamp: 2026-04-07T21:45:00Z

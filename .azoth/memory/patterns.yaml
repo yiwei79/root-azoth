@@ -198,3 +198,24 @@ patterns:
       by deliver.md / subagent-router. If it says standard (or governed), run that pipeline
       with separate stages; do not rationalize away gates because the artifact is markdown.
       Cursor: use Task per stage with prior_stage_summaries per claude-code-parity.
+
+  - id: evaluator-subagent-agentic-eval-skill
+    approved: true
+    approved_date: "2026-04-07"
+    reinforced_by: [session-2026-04-07-eval-preference]
+    trigger: /eval, pipeline evaluator stage, or post-delivery quality gate on code or plans
+    summary: >
+      Run **evaluation** as an isolated **`Task`** with `subagent_type: evaluator`, not as
+      inline rubric prose in the orchestrator thread. **Read** `.agents/skills/agentic-eval/SKILL.md`
+      first and apply its rubric, threshold (e.g. 0.8), and structured JSON/YAML handoff per
+      BL-012. Do **not** re-spawn evaluator subagents unless the human explicitly asks for
+      another evaluation pass; a prior PASS/CONCERNS is not an automatic cue to re-evaluate.
+    why_it_matters: >
+      Preserves review isolation (D21), spawn discipline (BL-011), and skill-bound scoring
+      instead of ad-hoc judgment. Volunteering repeated evaluator runs wastes tokens and
+      confuses orchestration with quality gates.
+    how_to_apply: >
+      On eval: Task(evaluator) with spawn YAML + Read targets for agentic-eval SKILL and
+      artifacts under review; forward prior_stage_summaries when the skill requires upstream
+      context. After one evaluator return, stop unless the human says to re-run eval or a
+      new artifact materially changes the scope.

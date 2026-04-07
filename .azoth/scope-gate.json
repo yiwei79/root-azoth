@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T22:22:51+00:00",
-  "goal": "P5-001: Commit-time governance enforcement hooks",
-  "session_id": "2026-04-07-p5-001",
+  "closed_at": "2026-04-07T21:40:14+00:00",
+  "expires_at": "2026-04-07T22:44:51+00:00",
+  "goal": "P5-002: entropy-check hook (TRUST_CONTRACT §1 enforcement)",
+  "session_id": "2026-04-07-p5-002",
   "approved_by": "human",
-  "backlog_id": "P5-001",
+  "backlog_id": "P5-002",
   "delivery_pipeline": "governed",
-  "target_layer": "M1",
-  "closed_at": "2026-04-07T20:45:00+00:00"
+  "target_layer": "M1"
 }
