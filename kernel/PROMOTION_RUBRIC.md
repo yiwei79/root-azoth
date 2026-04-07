@@ -119,18 +119,68 @@ with consistent positive outcomes?
 
 ---
 
-## Promotion Checklist
+## M2 → M1 Promotion
 
-Before promoting any pattern, verify:
+The 4-question rubric above answers WHERE an M3 pattern belongs (placement).
+This section answers WHEN an M2 pattern becomes an M1 procedure (graduation).
+
+### What Qualifies
+
+An M2 pattern is ready for M1 promotion when it has been:
+
+- `m2_candidate: true` set on 2+ intake events AND validated across 3+ distinct sessions
+- Determined to belong in `kernel/`, `skills/` (`.claude/commands/`), or `agents/`
+
+### Trigger and Pipeline (D51)
+
+M2→M1 promotion is a **governed event**, not an incremental edit.
+
+**Trigger**: Create a `target_layer: M1` item in `.azoth/backlog.yaml`.
+**Required pipeline**: `/deliver-full` — no other delivery path is valid for M1 changes.
+
+### Between-Sessions-Only Rule
+
+M1 changes happen **between** sessions, never during an active runtime session.
+
+The scope card validator (D50) enforces this at card creation time in /next (in deployments where /next is not used, this rule is agent-enforced): a scope card mixing
+M1-targeted items with runtime tasks is rejected. M1 sessions are dedicated M1 sessions.
+
+### Promotion Chain
 
 ```
-□ Evidence: 2+ source episodes identified (M3 → M2) or 3+ sessions (M2 → M1)
-□ Scope: Rubric questions A-D answered, home determined
-□ No conflict: Pattern doesn't contradict existing M1 content
-□ Minimal: Pattern captures the essential insight, not surrounding noise
-□ Actionable: Pattern can be applied — it's not just an observation
-□ Human review: Human has seen the proposal and approved
+Observation (M3) --/promote--> Pattern (M2) --BL item + /deliver-full--> Procedure (M1)
+    ^                              ^                                           ^
+any insight                 reinforced ≥2x                         governance-gated
+m2_candidate=true           set at intake                          target_layer: M1
 ```
+
+### Promotion checklists (by destination)
+
+Use the checklist for the layer you are promoting **to**. Every row for that destination must pass before promotion.
+
+#### M3 → M2
+
+| # | Criterion |
+|---|-----------|
+| 1 | Evidence: 2+ source episodes identified |
+| 2 | Scope: Rubric questions A–D answered, home determined |
+| 3 | No conflict: Pattern doesn't contradict existing M1 content |
+| 4 | Minimal: Pattern captures the essential insight, not surrounding noise |
+| 5 | Actionable: Pattern can be applied — it's not just an observation |
+| 6 | Human review: Human has seen the proposal and approved |
+
+#### M2 → M1
+
+| # | Criterion |
+|---|-----------|
+| 1 | Maturity + Durability: `m2_candidate: true` set on 2+ intake events AND validated across 3+ distinct sessions |
+| 2 | Backlog item: `target_layer: M1` item created in `.azoth/backlog.yaml` |
+| 3 | Scope card: `/next` surfaced the item; human approved `scope-gate.json` |
+| 4 | Pipeline: `/deliver-full` invoked and all stages (Architect, Governance Review, Planner, Builder, human gate) completed |
+| 5 | Session isolation: No runtime tasks in the same scope card (D50 validator passed) |
+| 6 | No conflict: Implementation doesn't contradict existing M1 content |
+| 7 | Human gate: Final approval given before change lands |
+| 8 | Drift check: `kernel/` integrity verified at session boundary after change |
 
 ---
 
@@ -151,6 +201,8 @@ promotion:
   approved_by: human
   destination: skills/context-map | agents/builder | etc.
 ```
+
+For M2→M1 promotions: omit `rubric_path`; add `checklist_ref: M2→M1` instead. The `evidence` array should cite the backlog item ID rather than episode IDs (e.g., `- backlog_item: BL-NNN`).
 
 ---
 
