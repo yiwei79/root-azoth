@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "closed_at": "2026-04-07T22:15:20+00:00",
-  "expires_at": "2026-04-07T23:57:31+00:00",
-  "goal": "P5-003: alignment-summary hook (structured stage handoff)",
-  "session_id": "2026-04-07-p5-003",
+  "expires_at": "2026-04-08T00:24:47+00:00",
+  "goal": "P5-007: Session start hook — auto-trigger /start on session open",
+  "session_id": "2026-04-08-p5-007",
   "approved_by": "human",
-  "backlog_id": "P5-003",
+  "backlog_id": "P5-007",
   "delivery_pipeline": "governed",
-  "target_layer": "M1"
+  "target_layer": "M1",
+  "closed_at": "2026-04-08T18:00:00Z"
 }

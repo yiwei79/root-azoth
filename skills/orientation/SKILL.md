@@ -55,10 +55,10 @@ alignment—not on every session.
 - [x] Skill drift detection tests
 
 ### Phase 3: Agent Archetypes ✅ COMPLETE (v0.0.3)
-- [x] 10 agent archetypes, 8 pipeline presets, workflow loop (D47–D51), auto-router, subagent-router, stage6-rubric, context-recall, `/start` + `scripts/welcome.py` (BL-007), token-optimization tracks (BL-011–BL-015), Cursor adapter (BL-016)
+- [x] 10 agent archetypes, 8 pipeline presets, workflow loop (D47–D51), auto-router, subagent-router, stage6-rubric, context-recall, `/start` + `scripts/welcome.py` (BL-007; P5-007 SessionStart builds on this in Phase 5), token-optimization tracks (BL-011–BL-015), Cursor adapter (BL-016)
 
 ### Phase 4: Distribution & Polish ✅ COMPLETE (v0.0.4)
-- [x] D52: Session Welcome — `.claude/commands/start.md` + `scripts/welcome.py` + template note (BL-007)
+- [x] D52 (Phase 4): Session Welcome — `.claude/commands/start.md` + `scripts/welcome.py` + template note (BL-007); **Phase 5** extends D52 with `hooks.SessionStart` (P5-007), see below
 - [x] P4-001: README (philosophy + quickstart) — D16 — **backlog priority 1**
 - [x] P4-002: `azoth init` interactive onboarding (`scripts/azoth_init.py`) — D5, D36 — **backlog priority 2**
 - [x] D42: Path duality convention (kernel/ vs `.azoth/kernel/`) — P4-005
@@ -66,6 +66,7 @@ alignment—not on every session.
 - [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when that template is next revised for consumer installs)
 
 ### Phase 5: Trust Layer 🎯 CURRENT (v0.0.5)
+- [x] **P5-007 / D52 (Claude Code):** `hooks.SessionStart` in `.claude/settings.json` runs `.claude/hooks/session_start_welcome.py`, which invokes `scripts/welcome.py --plain` with repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and injects the same text into model context. Matchers `startup|resume`; optional per-hook `timeout` (seconds). **Policy:** root `CLAUDE.md` rules 8–9 — default on injected context; **`Read`** for verbatim plain; **Bash** `welcome.py` (Rich) allowed — expand IDE output for full UI. **Cursor:** no SessionStart — **integrated terminal** `welcome.py` for full Rich UI; Bash in chat + expand; parity rules + `/start`.
 - [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
 - [ ] entropy-check hook
 - [ ] alignment-summary hook
@@ -84,5 +85,6 @@ alignment—not on every session.
 
 - **Canonical phase source for planning:** this file + `azoth.yaml` `phase` + `.azoth/roadmap.yaml` `active_version`.
 - **Root `CLAUDE.md`:** always-loaded; points here for roadmap and expanded workflow.
+- **Session cockpit (D52):** Rich dashboard and routing via `/start` → `scripts/welcome.py` (BL-007). On **Claude Code**, **P5-007** adds automatic plain orientation at session open via **SessionStart** + **`.azoth/session-orientation.txt`** mirror; see rule 9. **Cursor:** run `welcome.py` in the **integrated terminal** for the full Rich UI; **Bash** in chat + expand is an alternative. **Other IDEs without hooks:** `/start` or terminal `welcome.py`; do not assume hook injection.
 - **Maintenance:** When phase checklists change, update **this skill**, not the root file,
   unless the change is a one-line “current phase” pointer in `CLAUDE.md`.

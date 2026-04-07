@@ -574,7 +574,7 @@ items:
     roadmap_ref: P5-007
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 4
     created_date: "2026-04-07"

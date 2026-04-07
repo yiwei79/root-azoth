@@ -11,6 +11,8 @@ At the start of every chat in this workspace, read the following files to restor
 
 3. `.azoth/session-state.md` — if this file exists and `state` is not `empty`, read it to resume a cross-IDE handoff. It contains the last session's active task, files, pending decisions, and next action.
 
+4. **(Claude Code only, optional)** `.azoth/session-orientation.txt` — if present (gitignored), last SessionStart plain snapshot; use **`Read`** only when the user wants **verbatim** orientation in chat — not needed for every turn (`CLAUDE.md` rule 9). **Cursor:** SessionStart does not run. **Rich dashboard UI:** run `python3 scripts/welcome.py` in the **integrated terminal** for full layout (ANSI/Rich). **Bash** tool + expand for the same in chat. Plain: **`Read`** that file or `--plain`.
+
 **Claude Code parity:** PreToolUse hooks from `.claude/settings.json` do **not** run in Cursor. The always-applied rule `claude-code-parity.mdc` (same folder) mandates simulated scope-gate and pipeline-gate checks before writes — obey it on every turn that edits files.
 
 After reading, briefly confirm what active context was loaded before responding to the user's first message.

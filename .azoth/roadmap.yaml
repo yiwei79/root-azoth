@@ -200,7 +200,7 @@ versions:
 
   - id: v0.0.5
     status: active
-    current_patch: 9
+    current_patch: 10
     goal: "Phase 5: Trust Layer"
     phase_scope: [5]
     tasks:

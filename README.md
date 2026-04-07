@@ -39,7 +39,7 @@ For people working **in this repo**:
 3. **Validate:** `python3 -m pytest tests/` (or `ruff` / project scripts if you use them).
 4. **After changing** canonical `skills/**`, `agents/**`, or `.claude/commands/**`, sync platform copies:  
    `python3 scripts/azoth-deploy.py`
-5. **Session entry:** run `/start` in Claude Code, or `python3 scripts/welcome.py`, then use `/next`, `/intake`, or a custom goal per the command docs in `.claude/commands/`.
+5. **Session entry:** In **Claude Code**, **SessionStart** injects plain orientation at open (see `CLAUDE.md` rule 9); you can still run `/start` or `python3 scripts/welcome.py` for Rich or a refresh. Elsewhere, run `/start` or `python3 scripts/welcome.py`, then `/next`, `/intake`, or a custom goal per `.claude/commands/`.
 
 Core contributor context lives in **[`CLAUDE.md`](CLAUDE.md)** — read it first.
 

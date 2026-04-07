@@ -346,3 +346,29 @@ def test_render_governed_scope_shows_pipeline_gate_ok(
     out = buf.getvalue()
     assert "Pipeline gate: OK" in out
     assert "deliver-full" in out
+
+
+def test_plain_dashboard_includes_all_sections(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--plain layout keeps section structure for SessionStart / model context."""
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "── System Health ──" in out
+    assert "── Top Backlog" in out
+    assert "── Last Session" in out
+    assert "── START" in out
+    assert "AZOTH" in out
+    assert "AZOTH_SESSION_ORIENTATION_BEGIN" in out
+    assert "AZOTH_SESSION_ORIENTATION_END" in out

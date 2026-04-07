@@ -11,6 +11,8 @@ This workspace is configured for **seamless compatibility** with **Claude Code**
 
 **PreToolUse hooks** in `.claude/settings.json` (scope-gate, pipeline-gate, pip-install-guard, bash output filter) **do not run in Cursor**. They run only in the Claude Code application.
 
+**SessionStart (Claude Code only, P5-007 / D52):** `hooks.SessionStart` runs `session_start_welcome.py` (tees to **`.azoth/session-orientation.txt`**). Default: injected context — **`Read`** the file for **verbatim plain** chat when needed. **Bash** `welcome.py` (Rich) is allowed; expand tool output for full UI. **Cursor has no SessionStart hook** — for the **full Rich dashboard UI**, run `python3 scripts/welcome.py` in the **integrated terminal** (best ANSI/Rich rendering); **Bash** in chat is OK—expand if collapsed. See `CLAUDE.md` rules 8–9.
+
 Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit` that the hooks would enforce. Treat this rule as **non-optional** guardrails — not suggestions.
 
 ## MUST — every chat

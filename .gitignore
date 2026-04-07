@@ -1,5 +1,6 @@
 # Azoth runtime state (session-specific, not version-controlled)
 .azoth/entropy-state.json
+.azoth/session-orientation.txt
 .azoth/telemetry/
 .azoth/sync-log.jsonl
 .azoth/bootloader-state.md

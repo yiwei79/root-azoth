@@ -245,6 +245,7 @@ $gitignoreEntries = @(
     ""
     "# Azoth runtime state"
     ".azoth/telemetry/"
+    ".azoth/session-orientation.txt"
     ".azoth/bootloader-state.md"
     ".azoth/kernel-checksums.sha256"
 )

@@ -256,6 +256,7 @@ if [ -f ".gitignore" ]; then
         echo "" >> ".gitignore"
         echo "# Azoth runtime state" >> ".gitignore"
         echo ".azoth/telemetry/" >> ".gitignore"
+        echo ".azoth/session-orientation.txt" >> ".gitignore"
         echo ".azoth/bootloader-state.md" >> ".gitignore"
         echo ".azoth/kernel-checksums.sha256" >> ".gitignore"
     fi
@@ -263,6 +264,7 @@ else
     cat > ".gitignore" << 'GITIGNORE'
 # Azoth runtime state
 .azoth/telemetry/
+.azoth/session-orientation.txt
 .azoth/bootloader-state.md
 .azoth/kernel-checksums.sha256
 GITIGNORE
