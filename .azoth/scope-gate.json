@@ -1,10 +1,10 @@
 {
   "approved": false,
   "expires_at": "2026-04-08T23:59:59+00:00",
-  "goal": "P4-002: azoth init interactive onboarding",
-  "session_id": "2026-04-07-p4-002",
+  "goal": "P4-006: dual-path doc fixes (reviewer) + BOOTLOADER ACTIVATE (D42)",
+  "session_id": "2026-04-07-p4-006",
   "approved_by": "human",
-  "backlog_id": "P4-002",
+  "backlog_id": "P4-006",
   "delivery_pipeline": "standard",
   "target_layer": "infrastructure",
   "closed_at": "2026-04-07T23:59:59+00:00"

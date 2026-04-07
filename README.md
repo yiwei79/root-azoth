@@ -66,12 +66,15 @@ The installer detects your AI toolchain (Claude Code, OpenCode, Copilot, etc.), 
 
 ## Where to go next
 
+**Paths:** In **this** repo (root-azoth), Layer 0 lives at **`kernel/`**. In a **consumer project** after `install.sh`, the same governance text is under **`.azoth/kernel/`** — see architecture **§18** (D42).
+
 | Need | Location |
 |------|----------|
 | Architecture & decisions | [`docs/AZOTH_ARCHITECTURE.md`](docs/AZOTH_ARCHITECTURE.md) |
-| Boot sequence (Activate → Survey → Operate → Harden) | [`kernel/BOOTLOADER.md`](kernel/BOOTLOADER.md) |
-| Trust, entropy, alignment | [`kernel/TRUST_CONTRACT.md`](kernel/TRUST_CONTRACT.md) |
-| Governance & memory rules | [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) |
+| Path duality (scaffold `kernel/` vs `.azoth/kernel/`) | Architecture **§18** (D42) |
+| Boot sequence (Activate → Survey → Operate → Harden) | [`kernel/BOOTLOADER.md`](kernel/BOOTLOADER.md) (this repo) · **`BOOTLOADER.md`** under `.azoth/kernel/` after install |
+| Trust, entropy, alignment | [`kernel/TRUST_CONTRACT.md`](kernel/TRUST_CONTRACT.md) · or `.azoth/kernel/TRUST_CONTRACT.md` when installed |
+| Governance & memory rules | [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) · or `.azoth/kernel/GOVERNANCE.md` when installed |
 | Sync / extraction | [`scripts/azoth-sync.py`](scripts/azoth-sync.py), [`sync-config.yaml`](sync-config.yaml) |
 
 ---

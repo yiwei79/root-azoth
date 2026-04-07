@@ -478,5 +478,36 @@ items:
     description: >
       Interactive installer / project bootstrap aligned with scaffold vs project modes.
 
+  - id: P4-005
+    title: "Path duality convention (kernel/ vs .azoth/kernel/) — D42"
+    source: roadmap-v0.0.4
+    roadmap_ref: P4-005
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.4
+    priority: 3
+    created_date: "2026-04-07"
+    decision_ref: [D42]
+    description: >
+      Formalize D42: scaffold uses repo root kernel/; consumer installs use read-only
+      .azoth/kernel/; architecture §18 + DECISIONS_INDEX + CLAUDE pointers.
+
+  - id: P4-006
+    title: "Kernel docs dual-path awareness (BOOTLOADER ACTIVATE + follow-ups)"
+    source: roadmap-v0.0.4
+    roadmap_ref: P4-006
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.4
+    priority: 4
+    created_date: "2026-04-07"
+    decision_ref: [D42]
+    description: >
+      Reviewer/evaluator follow-up: BOOTLOADER ACTIVATE resolves G (kernel vs .azoth/kernel);
+      architecture §18 drift line; README consumer paths; CLAUDE template Cursor scaffold note;
+      DECISIONS_INDEX D50/D52 status; orientation checklist.
+
 # Completed items
 completed: []

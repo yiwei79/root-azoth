@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.4.4
+**Version**: v0.0.4.5
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -27,7 +27,8 @@ alignment point.
 
 | Area | Path | Purpose |
 |------|------|---------|
-| Kernel | `kernel/` | Layer 0 — immutable governance core |
+| Kernel (scaffold) | `kernel/` | Layer 0 — authoritative in this repo |
+| Kernel (consumer) | `.azoth/kernel/` | Read-only copy after install (D42 — see architecture §18) |
 | Skills | `skills/` | Layer 1 — portable capabilities |
 | Agents | `agents/` | Layer 2 — agent archetypes |
 | Pipelines | `pipelines/` | Layer 3 — orchestration templates |
@@ -55,7 +56,7 @@ Layer 0: MOLECULE ─ Kernel (immutable without human approval)
 ```
 M3: EPISODIC  ── .azoth/memory/episodes.jsonl (append-only, auto-classified)
 M2: SEMANTIC  ── .azoth/memory/patterns.yaml (promoted from M3, human-approved)
-M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
+M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` is the governance read path in consumer installs (D42)
 ```
 
 ## Development Instructions

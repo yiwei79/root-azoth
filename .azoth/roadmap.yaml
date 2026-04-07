@@ -182,9 +182,12 @@ versions:
 
   - id: v0.0.4
     status: active
-    current_patch: 4
+    current_patch: 5
     goal: "Phase 4: Distribution & Polish"
     phase_scope: [4]
+    note: >
+      P4-003 (CI) and P4-004 (publish) are deferred to v0.0.6 — the last 0.0.x phase before
+      v0.1.0 — so Phase 4 can close on shipped toolkit UX without blocking on public CI/repo.
     tasks:
       - id: P4-001
         title: "README (philosophy + quickstart)"
@@ -192,18 +195,12 @@ versions:
       - id: P4-002
         title: "azoth init interactive onboarding"
         decision_ref: [D5, D36]
-      - id: P4-003
-        title: "CI for drift detection"
-        deferred_reason: "Deferred until public repo exists"
-      - id: P4-004
-        title: "Publish to GitHub (public azoth repo)"
-        decision_ref: [D35, D37]
       - id: P4-005
         title: "Path duality convention (kernel/ vs .azoth/kernel/)"
         decision_ref: D42
       - id: P4-006
         title: "Update kernel docs for dual-path awareness"
-        deferred_reason: "Depends on D42 design"
+        note: "Delivered 2026-04-07 — BOOTLOADER ACTIVATE G resolution + doc/index/README/template/orientation"
 
   - id: v0.0.5
     status: planned
@@ -235,6 +232,9 @@ versions:
     status: backlog
     goal: "Phase 6: Meta-recursive — roadmap completion milestone"
     phase_scope: [6]
+    note: >
+      Final 0.0.x delivery before v0.1.0: includes deferred Phase 4 closure items (P4-003 CI,
+      P4-004 publish) alongside meta-recursive work — run after Phases 4–5 substance is stable.
     tasks:
       - id: P6-001
         title: "Agent Crafter"
@@ -242,6 +242,16 @@ versions:
         title: "L2 prompt optimization"
       - id: P6-003
         title: "L3 human-gated architecture proposals"
+      - id: P4-003
+        title: "CI for drift detection"
+        decision_ref: null
+        deferred_from: "v0.0.4 Phase 4 — last-phase scheduling (2026-04)"
+        note: "Typically needs public repo; pairs with extraction/sync validation before v0.1.0"
+      - id: P4-004
+        title: "Publish to GitHub (public azoth repo)"
+        decision_ref: [D35, D37]
+        deferred_from: "v0.0.4 Phase 4 — last-phase scheduling (2026-04)"
+        note: "Public product repo + mechanical extraction; aligns with v0.1.0 release gate"
 
   - id: v0.1.0
     status: target
