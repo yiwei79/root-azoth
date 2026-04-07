@@ -33,6 +33,7 @@ EXPECTED_SKILLS = [
     "auto-router",
     "stage6-rubric",
     "context-recall",
+    "orientation",
 ]
 
 EXTRACTED_SKILLS = [
@@ -51,6 +52,7 @@ NEW_SKILLS = [
     "auto-router",
     "stage6-rubric",
     "context-recall",
+    "orientation",
 ]
 
 
@@ -171,20 +173,14 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 7, "Should have 7 new skills"
+        assert len(NEW_SKILLS) == 8, "Should have 8 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_architecture_references_all_skills(self) -> None:
-        """CLAUDE.md should reference all skill categories."""
+        """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""
         claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
-        assert "context-map" in claude_md
-        assert "structured-autonomy-plan" in claude_md
-        assert "agentic-eval" in claude_md
-        assert "remember" in claude_md
-        assert "prompt-engineer" in claude_md
-        assert "entropy-guard" in claude_md
-        assert "alignment-sync" in claude_md
-        assert "self-improve" in claude_md
+        for slug in EXPECTED_SKILLS:
+            assert slug in claude_md, f"CLAUDE.md must reference skill slug {slug!r}"
 
     def test_azoth_yaml_skill_count(self) -> None:
         """azoth.yaml should reflect correct skill count."""

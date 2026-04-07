@@ -61,9 +61,11 @@ handoff.
 
 Policy source: `subagent-router` skill (trigger definitions and routing table).
 
+- **Orchestrator handoff:** Before each downstream `Agent`/`Task`, attach `inputs.prior_stage_summaries` with verbatim typed YAML from upstream stages (`subagent-router` §Orchestrator forward payload).
 - Gate 1 (Planner gate — architect reviews plan quality): `Agent(subagent_type=architect)` — trigger: context-isolation (see §Stage briefs: deliver, `deliver_g1`)
 - Gate 2 (Test Builder gate — architect reviews test coverage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g2`)
 - Gate 3 (Architect Review stage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g3`)
+- **Gate escalation:** If a review gate returns request-changes, CRITICAL/blocking findings, or `entropy: RED`, **STOP** until the human approves continuing (same pattern as `/auto` Execution §5).
 - No review stage shall execute inline with the stage it reviews
 - These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43).
 

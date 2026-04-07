@@ -124,6 +124,30 @@ inputs:
 Optional: one line `role_hint:` repeating the canonical D21 audit string for that stage
 (see §Stage briefs) so logs stay grep-friendly.
 
+### Orchestrator forward payload (mandatory)
+
+BL-011 limits **role metadata** in the spawn (goal, `stage_id`, triggers) — it does **not**
+mean downstream stages receive **zero** context from upstream work.
+
+- **The orchestrator** (main chat in Cursor; Architect in Claude Code) **must** attach the
+  **verbatim typed stage summary YAML** from each dependency stage before spawning the next
+  subagent. Put it under `inputs.prior_stage_summaries` in the same spawn YAML, for example:
+
+```yaml
+inputs:
+  prior_stage_summaries:
+    auto_s3_planner: |
+      stage_summary_version: 1
+      pipeline: auto
+      stage_id: auto_s3_planner
+      ...
+```
+
+- **Evaluator**, **builder**, and any stage that **judges** prior work **must** receive the
+  full summary YAML for the stage being evaluated (not a prose summary of the summary).
+- If the orchestrator skips this forward, evaluators correctly report **CONCERNS** — missing
+  handoff is an **orchestrator failure**, not an evaluator failure.
+
 ### Before / after (illustrative)
 
 | | Approximate subagent spawn body |
@@ -215,6 +239,13 @@ Cursor does not run Claude Code’s `Agent()` API. Use the **`Task`** tool with
 **separate `Task`** with the §Spawn Prompt Contract body only. See
 `kernel/templates/platform-adapters/cursor/claude-code-parity.mdc` (deployed to
 `.cursor/rules/`).
+
+**Critical:** Subagent sessions do **not** inherit prior `Task` outputs. The orchestrator
+**must** paste `prior_stage_summaries` (typed YAML) into each downstream spawn — especially
+**evaluator** — or the pipeline will false-fail quality gates. After **reviewer** returns
+**request-changes**, **blocked**, **CRITICAL** findings, `entropy: RED`, or `status: needs-input`,
+the orchestrator **must not** spawn planner/builder until the **human** explicitly approves
+continuation (see `.claude/commands/auto.md` Execution).
 
 ### With Architecture Decisions
 - D21: Subagent isolation for review gates — this skill is the operational

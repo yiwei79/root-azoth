@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "expires_at": "2026-04-07T01:34:39+00:00",
-  "goal": "BL-012: Typed pipeline stage summary schema — structured handoffs between stages",
-  "session_id": "2026-04-07-bl-012",
+  "expires_at": "2026-04-07T01:48:54+00:00",
+  "goal": "BL-013: CLAUDE.md progressive disclosure — prune roadmap/workflow sections, move to lazy-loaded skills",
+  "session_id": "2026-04-07-bl-013",
   "approved_by": "human",
-  "backlog_id": "BL-012",
-  "delivery_pipeline": "governed",
-  "target_layer": "M1",
-  "closed_at": "2026-04-07T15:00:00Z"
+  "backlog_id": "BL-013",
+  "delivery_pipeline": "standard",
+  "target_layer": "infrastructure",
+  "closed_at": "2026-04-07T12:30:00Z"
 }

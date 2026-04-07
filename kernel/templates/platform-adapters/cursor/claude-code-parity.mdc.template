@@ -37,9 +37,10 @@ When executing **`/auto`**, **`/deliver`**, or **`/deliver-full`** (after Declar
 
 1. **Orchestrator only in main chat** — Compose stages, run human gates, aggregate results. **Do not** role-play every stage in one thread when **`Task` is available**.
 2. **One `Task` per isolated stage** — For each row in the composed pipeline table, invoke **`Task`** with `subagent_type` set to that stage’s archetype (review-independence and context-isolation require a **fresh** subagent, not the orchestrator’s context).
-3. **BL-011 spawn** — Each `Task` prompt body is **only** the YAML block from `skills/subagent-router/SKILL.md` §Spawn Prompt Contract (≤ ~20 lines) plus `Read` targets — never paste the full command markdown or pipeline table into `Task`.
-4. **BL-012 handoff** — Each subagent emits a typed stage summary (`pipelines/stage-summary.schema.yaml`) before return; the orchestrator forwards it to the next stage.
-5. **Parallel `Task`** — Allowed when stages are independent; **never** inline a review stage with the stage it critiques.
+3. **BL-011 spawn** — Each `Task` prompt body is **only** the YAML block from `skills/subagent-router/SKILL.md` §Spawn Prompt Contract plus `Read` targets — never paste the full command markdown or pipeline table into `Task`. Role metadata stays compact; **exception:** `inputs.prior_stage_summaries` (verbatim upstream typed YAML) is **required** where the skill says so — not optional prose.
+4. **BL-012 handoff** — Each subagent emits a typed stage summary (`pipelines/stage-summary.schema.yaml`) before return; the orchestrator **must** forward it into the **next** spawn under `prior_stage_summaries` (evaluator/builder/review stages are invalid without this — Cursor subagents do not inherit prior `Task` output).
+5. **Review gate escalation** — If reviewer (or audit stage) returns **request-changes**, **CRITICAL** blockers, `entropy: RED`, or `status: needs-input`, **STOP** the pipeline and wait for explicit human approval before spawning planner/builder/evaluator — see `.claude/commands/auto.md` Execution §5 (same idea for `/deliver` / `/deliver-full`).
+6. **Parallel `Task`** — Allowed when stages are independent; **never** inline a review stage with the stage it critiques.
 
 If **`Task` is unavailable** in the current Cursor session (UI/model limitation), state that explicitly and approximate isolation by **sequential** single-threaded stages — still **not** equivalent to mechanical hooks.
 
@@ -61,4 +62,6 @@ If **`Task` is unavailable** in the current Cursor session (UI/model limitation)
 - Pipeline gate valid if governed?
 - Invoked the right `.claude/commands/*` semantics?
 - Delivery stages run via **`Task`** with matching `subagent_type` (not inline role-play)?
+- **Prior stage YAML forwarded** into the next `Task` where required (especially evaluator)?
+- **Review failed or request-changes** → stopped and human consulted before continuing?
 - `azoth-deploy` after canonical source edits?

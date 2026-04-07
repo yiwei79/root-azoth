@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.3.13
+**Version**: v0.0.3.28
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -72,12 +72,13 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
 
 ### Development Workflow
 
-1. Read this file (you're doing it)
-2. Read `docs/AZOTH_ARCHITECTURE.md` for full context
-3. Check current phase status below
-4. Work within the current phase scope
-5. Validate changes against architecture decisions (D1–D53)
-6. Capture lessons in `.azoth/memory/episodes.jsonl`
+1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work.
+2. For **phase / roadmap / sprint alignment**, read `skills/orientation/SKILL.md` (lazy-loaded).
+3. Work within approved scope; validate against D1–D53; capture durable lessons in `.azoth/memory/episodes.jsonl`.
+
+### Skill index (drift checks)
+
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `orientation`
 
 ### Coding Standards
 
@@ -101,61 +102,11 @@ M1: PROCEDURAL ─ kernel/ + skills/ + agents/ (promoted from M2 via governance)
   archetypes, skills, pipeline schemas), match the depth and richness of the source on the
   first pass. Simplified stubs that require a second enrichment pass are a quality failure.
 
-## v0.1.0 Phase Roadmap
+## Orientation & roadmap
 
-### Phase 1: Kernel Extraction ✅ COMPLETE
-- [x] kernel/BOOTLOADER.md
-- [x] kernel/TRUST_CONTRACT.md
-- [x] kernel/GOVERNANCE.md
-- [x] kernel/PROMOTION_RUBRIC.md
-- [x] kernel/templates/ (CLAUDE.md.template, settings.json.template, etc.)
-- [x] kernel/templates/platform-adapters/ (claude/, opencode/, copilot/)
-- [x] azoth.yaml manifest
-- [x] install.sh + install.ps1
-
-### Phase 1.5: Sync Infrastructure ✅ COMPLETE
-- [x] scripts/azoth-sync.py
-- [x] sync-config.yaml
-- [x] .claude/commands/sync.md
-
-### Phase 2: Core Skills ✅ COMPLETE
-- [x] 5 extracted skills (context-map, structured-autonomy-plan, agentic-eval, remember, prompt-engineer)
-- [x] 3 new skills (entropy-guard, alignment-sync, self-improve)
-- [x] Skill drift detection tests
-
-### Phase 3: Agent Archetypes 🎯 CURRENT
-- [~] T1: architect, planner, builder, reviewer (initial draft + External Analysis refinements done; online research refinement pending)
-- [~] T2: researcher, research-orchestrator (same)
-- [~] T3: prompt-engineer, evaluator, agent-crafter (same)
-- [~] T4: context-architect (same)
-- [ ] Pipeline YAML schema
-- [ ] Dual-format agent templates
-- [ ] D44: Stage 6 quality rubric for structured content in delivery pipelines
-- [ ] D45: Context-recall skill (memory read interface)
-
-### Phase 4: Distribution & Polish
-- [ ] D52: Session Welcome UX — `skills/session-start/` + `.claude/commands/start.md`
-- [ ] D52: Add `/start` instruction to `kernel/templates/CLAUDE.md.template`
-- [ ] D42: Document path duality convention (kernel/ scaffold vs .azoth/kernel/ consumer)
-- [ ] Update kernel docs for dual-path awareness (BOOTLOADER.md, GOVERNANCE.md, TRUST_CONTRACT.md)
-- [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list
-- [ ] README (philosophy + quickstart)
-- [ ] `azoth init` interactive onboarding
-- [ ] CI for drift detection
-- [ ] Publish to GitHub
-
-### Phase 5: Trust Layer
-- [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
-- [ ] entropy-check hook
-- [ ] alignment-summary hook
-- [ ] Session telemetry
-- [ ] Git-based checkpoints
-- [ ] Phone-friendly output
-
-### Phase 6: Meta-Recursive
-- [ ] Agent Crafter
-- [ ] L2 prompt optimization
-- [ ] L3 human-gated architecture proposals
+**Current phase:** Phase 3 (Agent Archetypes). **Release target:** v0.1.0 — full phase checklist,
+expanded workflow, and Phases 4–6 detail live in **`skills/orientation/SKILL.md`** (load on
+demand for planning and roadmap edits).
 
 ## Origin
 

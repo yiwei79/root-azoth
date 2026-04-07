@@ -74,6 +74,23 @@ After human approval of the Declaration:
    The orchestrator passes that document forward as the machine-readable handoff. Optional
    markdown alignment (`alignment-sync` skill) is for human pull-review only — it does not
    replace the typed summary for inter-stage context.
+4. **Orchestrator handoff (mandatory):** Before spawning the **next** subagent (`Task` /
+   `Agent`), the orchestrator MUST attach every **upstream typed stage summary** the next
+   stage needs under `inputs.prior_stage_summaries` per `skills/subagent-router/SKILL.md`
+   §Orchestrator forward payload. **Evaluators** MUST receive the full YAML for the stage
+   they evaluate (e.g. planner). Subagents do not share chat context; omitting this payload
+   is an orchestrator error and invalidates the evaluator gate.
+5. **Review disposition & human escalation:** After **reviewer** (or any audit stage that
+   critiques upstream work), parse the return for disposition. **STOP** and **do not** spawn
+   planner, evaluator, or builder for the rest of the composed pipeline until the human
+   explicitly continues if **any** of these hold:
+   - Explicit **request-changes** / **request changes** / **BLOCKED** / **blocked**
+   - Any **CRITICAL** finding that requires scope or design revision
+   - Typed summary has `status: needs-input` or `entropy: RED`
+   Present a short **Human gate — review** card: findings, severity, and options (revise
+   design / adjust scope / abort). Wait for a human signal such as **proceed**,
+   **revise-then-continue**, or **abort** before continuing. **Do not** treat “pipeline
+   started” as overriding a failed review gate.
 
 ## Arguments
 
