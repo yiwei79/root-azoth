@@ -7,12 +7,14 @@
 # - Deferral requires explicit target_version.
 # - target_layer routes delivery: M1 → /deliver-full (governed), others → /deliver (standard)
 # - M1 items require a dedicated session (D51) — scope card validator rejects mixed M1+runtime
+# - target_version uses the D53 scheme: v0.0.PHASE (e.g. v0.0.3 for Phase 3 deliveries)
+# - Completed items carry their actual delivery version, not a future release target
 
 schema_version: 1
 
 items:
 
-  # ── Priority 1: Scope enforcement (blocks BL-003, BL-004) ────────────────
+  # ── Priority 1 (complete): Scope enforcement ─────────────────────────────
   - id: BL-002
     title: "Scope-gate: PreToolUse hook for builder-mode enforcement"
     source: ep-031
@@ -20,8 +22,8 @@ items:
     roadmap_ref: P3-008
     target_layer: M1
     delivery_pipeline: governed
-    status: active
-    target_version: v0.1.0
+    status: complete
+    target_version: v0.0.3
     priority: 1
     created_date: "2026-04-05"
     decision_ref: [D43, D50]
@@ -32,14 +34,37 @@ items:
       from agent memory (driftable — violated ep-022, ep-028, ep-029) to
       tool execution (deterministic). Part of the D50 scope card system.
 
+  # ── Priority 1 (complete): Make scope-gate usable (bootstrap gap) ─────────
+  - id: BL-004
+    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
+    source: ep-032
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 1
+    created_date: "2026-04-05"
+    decision_ref: [D47, D48, D50]
+    blocked_by: [BL-002]
+    priority_note: >
+      Elevated to priority 1 (bootstrap exception, 2026-04-05): scope-gate hook
+      is live but scope-gate.json must be written manually until BL-004 delivers
+      the /next scope card writer. BL-004 closes the bootstrap gap.
+    description: >
+      Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version,
+      (2) read backlog.yaml for operational priorities, (3) output a scope card
+      (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on
+      human approval. Scope card validator: reject any card mixing M1-targeted
+      items with runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
+
   # ── Priority 2: Workflow loop M1 updates (require dedicated sessions) ────
   - id: BL-003
     title: "Update /intake for 3-axis triage (D49)"
     source: ep-032
     target_layer: M1
     delivery_pipeline: governed
-    status: active
-    target_version: v0.1.0
+    status: complete
+    target_version: v0.0.3
     priority: 2
     created_date: "2026-04-05"
     decision_ref: [D33, D49]
@@ -51,24 +76,6 @@ items:
       M2 flag consumed by /promote. Backlog draft appended to backlog.yaml
       on human approval. Update .claude/commands/intake.md.
 
-  - id: BL-004
-    title: "Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)"
-    source: ep-032
-    target_layer: M1
-    delivery_pipeline: governed
-    status: active
-    target_version: v0.1.0
-    priority: 2
-    created_date: "2026-04-05"
-    decision_ref: [D47, D48, D50]
-    blocked_by: [BL-002]
-    description: >
-      Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version,
-      (2) read backlog.yaml for operational priorities, (3) output a scope card
-      (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on
-      human approval. Scope card validator: reject any card mixing M1-targeted
-      items with runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
-
   # ── Priority 3: Session-closeout quality ─────────────────────────────────
   - id: BL-001
     title: "Fix session-closeout write batching"
@@ -76,8 +83,8 @@ items:
     source_insight: SCO-2026-04-05-001
     target_layer: M1
     delivery_pipeline: governed
-    status: active
-    target_version: v0.1.0
+    status: complete
+    target_version: v0.0.3
     priority: 3
     created_date: "2026-04-05"
     description: >
@@ -93,8 +100,8 @@ items:
     source: ep-032
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
-    target_version: v0.1.0
+    status: complete
+    target_version: v0.0.3
     priority: 4
     created_date: "2026-04-05"
     decision_ref: D51
@@ -103,6 +110,373 @@ items:
       kernel/PROMOTION_RUBRIC.md. Trigger: target_layer M1 backlog item +
       /deliver-full pipeline. Document the between-sessions-only rule.
       Update PROMOTION_RUBRIC.md to include M2→M1 criteria alongside M3→M2.
+
+  # ── Priority 4: Session Welcome UX ──────────────────────────────────────
+  - id: BL-007
+    title: "Session Welcome UX — /start command and skill (D52)"
+    source: session-2026-04-06
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.3
+    priority: 4
+    created_date: "2026-04-06"
+    decision_ref: [D52, D41]
+    description: >
+      Implement session welcome dashboard as a Rich-based Python script.
+      Deliverables: (1) scripts/welcome.py — reads azoth.yaml, backlog.yaml,
+      scope-gate.json, .azoth/memory/episodes.jsonl; renders 5-panel dashboard
+      using the Rich library (pip install rich). Panel structure: box.HEAVY header
+      (identity: repo/branch/date/version), box.MINIMAL phases strip ([1]✓ ...[6]○),
+      Columns([health, backlog], equal=True, expand=True) with box.ROUNDED panels —
+      left: L0-L3 layer status + M1-M3 memory + scope/kernel; right: top-3 unblocked
+      backlog items with id/title/layer/pipeline. box.ROUNDED last-session strip.
+      box.ROUNDED START options panel with context-sensitive [next]/[resume].
+      (2) .claude/commands/start.md — runs `python scripts/welcome.py` via Bash
+      then routes user option selection to /next, /intake, /promote, /eval, or
+      custom goal → auto-pipeline. (3) kernel/templates/CLAUDE.md.template — add
+      /start usage note. Rich handles all Unicode/emoji width via wcwidth internally;
+      use Rich named markup (:check_mark:, :right_arrow:) for reliable rendering.
+
+  # ── Priority 5: Pipeline integrity ──────────────────────────────────────
+  - id: BL-008
+    title: "Subagent auto-routing policy — when-to-subagent rules integrated into pipeline composition (D21)"
+    source: ep-041
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 5
+    created_date: "2026-04-06"
+    decision_ref: D21
+    description: >
+      Instead of hardcoding Agent(subagent_type=...) mandates per pipeline command
+      (BL-006 approach), define a general subagent routing policy with four decision
+      triggers: (1) context-isolation — review stage must not share context with the
+      stage it reviews; (2) review-independence — any gate whose job is to critique
+      an artifact must be a fresh subagent; (3) parallel-execution — independent
+      research or analysis tasks that can run concurrently; (4) context-budget —
+      stages that would consume excessive context in the orchestrator.
+      Deliverables: (a) skills/subagent-router/ — routing policy skill that defines
+      the four triggers and maps goal classification dimensions to subagent assignments;
+      (b) /auto updated — pipeline composition stage uses the router to emit subagent
+      assignments automatically after goal classification, so every auto-composed
+      pipeline inherits correct subagent behavior; (c) /deliver updated — reference
+      the routing policy instead of inline mandates; (d) /deliver-full updated —
+      same (BL-006 hardcodes become policy-derived). No per-pipeline audit work
+      required for future pipelines — they inherit the policy via /auto composition.
+
+  - id: BL-006
+    title: "Enforce subagent invocation per stage in /deliver-full (D21)"
+    source: session-2026-04-06
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 5
+    created_date: "2026-04-06"
+    decision_ref: D21
+    description: >
+      /deliver-full currently does not mandate that each pipeline stage is
+      executed via Agent(subagent_type=...). Without explicit subagent invocation,
+      Claude runs all stages inline in the same context, eliminating context
+      isolation and allowing the governance/architect review stages to share
+      context with the stages they are supposed to critique independently.
+      Update .claude/commands/deliver-full.md to explicitly require subagent
+      invocation for each stage (architect, reviewer, planner, evaluator, builder)
+      and specify which subagent_type maps to which stage.
+
+  # ── Priority 6: Auto-versioning implementation ──────────────────────────
+  - id: BL-009
+    title: "Auto-versioning: scripts/version-bump.py + session-closeout + deliver-full integration (D53)"
+    source: session-2026-04-06-d53
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 6
+    created_date: "2026-04-06"
+    decision_ref: [D53, D48]
+    description: >
+      Implement delivery-triggered version increments per D53.
+      Version format: 0.0.PHASE.PATCH where PHASE = current phase number
+      (3–6) and PATCH increments every delivery session, resetting to 1 on
+      phase bump. Final release bump: 0.1.0 (full roadmap complete, git tag).
+      Deliverables: (1) scripts/version-bump.py — reads azoth.yaml, applies
+      --patch (PATCH+1), --phase (PHASE+1, PATCH reset to 1), or --release
+      (0.1.0 + git tag proposal); writes azoth.yaml + updates roadmap.yaml
+      active_version and current_patch fields. Prints old→new transition.
+      (2) /session-closeout integration — final step calls version-bump.py
+      --patch after confirming at least one artifact was written this session.
+      (3) /deliver-full integration — calls version-bump.py --patch after
+      builder stage completes successfully.
+
+  # ── Priority 7: Test suite hygiene ─────────────────────────────────────────
+  - id: BL-010
+    title: "Fix 6 pre-existing stale/fragile test failures"
+    source: ep-bl009-delivery
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.3
+    priority: 7
+    created_date: "2026-04-06"
+    description: >
+      Six pre-existing test failures surfaced during BL-009 delivery.
+      Category A (4 stale hardcoded values):
+        - test_handoff_artifacts.py::TestAzothYaml::test_has_version (expects 0.1.0)
+        - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_version_consistent (expects 0.1.0)
+        - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_decision_count_consistent (expects 52)
+        - test_inbox.py::TestRepoIdentity::test_decisions_count_52 (expects 52)
+      Fix: update to dynamic reads from azoth.yaml/DECISIONS_INDEX.md, or update
+      hardcoded values to current (version: 0.0.3.14, decisions: 53).
+      Category B (2 environment-sensitive git-diff state checks):
+        - test_deliver_subagent_gates.py::test_only_deliver_md_modified
+        - test_subagent_router.py::test_only_subagent_router_skill_modified
+      Fix: mark xfail with reason, or refactor to not depend on working tree state.
+
+  # ── Priority 5: Auto-pipeline router ────────────────────────────────────
+  - id: P3-004
+    title: "Auto-pipeline router (LLM-as-router)"
+    source: roadmap-pending-p3
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 5
+    created_date: "2026-04-06"
+    decision_ref: [D23]
+    blocked_by: null
+    description: >
+      Implement the auto-detection logic that classifies an incoming goal and
+      selects the correct pipeline preset. The LLM-as-router reads the goal
+      classification dimensions (scope, layer, risk) and emits a pipeline
+      assignment + subagent routing plan. Referenced as the missing piece in
+      pipelines/auto.pipeline.yaml composition_rules (D23 partial). Validated
+      by ep-017 (auto-pipeline correctly routed P3-001 work) and ep-029
+      (router composition rules referenced but router itself not yet built).
+
+  # ── Priority 6: Stage 6 quality rubric ──────────────────────────────────
+  - id: P3-005
+    title: "Define Stage 6 quality rubric for structured content in delivery pipelines"
+    source: roadmap-pending-p3
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 6
+    created_date: "2026-04-06"
+    decision_ref: [D21, D44]
+    blocked_by: null
+    description: >
+      The full pipeline Stage 6 (Architect Review) needs explicit quality
+      criteria for structured content: minimum depth thresholds, governance
+      constraint coverage, interaction pattern completeness. D44 was created
+      from ep-021 analytics (first-pass shallow output pattern). Defines
+      what "sufficient depth" means for agent archetypes, skill definitions,
+      and pipeline schemas so the reviewer subagent has a concrete rubric.
+
+  # ── Priority 6: Context-recall skill ────────────────────────────────────
+  - id: P3-006
+    title: "Build context-recall skill (memory read interface)"
+    source: roadmap-pending-p3
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3
+    priority: 6
+    created_date: "2026-04-06"
+    decision_ref: [D11, D45]
+    blocked_by: null
+    description: >
+      Layer 1 skill implementing the D45 read path: extract tags from current
+      goal, grep M3 episodes and M2 patterns, rank matches by recency and
+      reinforcement_count, surface top 1-3 relevant episodes before planning
+      begins. Closes the write-only memory sink problem (M2 pattern:
+      memory-requires-read-back-mechanism). Deliverable: skills/context-recall/
+      SKILL.md + implementation. Added to roadmap via ep-025.
+
+  # ── Priority 7: M3 episode count sync ───────────────────────────────────
+  - id: P1.5-CLEANUP
+    title: "M3 episode count sync in azoth.yaml"
+    source: roadmap-pending-p3
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.3
+    priority: 7
+    created_date: "2026-04-06"
+    decision_ref: [D11]
+    blocked_by: null
+    description: >
+      azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has 50+
+      entries. Fix: either update the count field to reflect actual count, or
+      make the field dynamic (scripts read live count). Also verify other
+      stale counts in azoth.yaml (patterns, skills) match filesystem reality.
+
+  # ── Token Optimization: Phase 4 deferred items ──────────────────────────
+
+  - id: BL-011
+    title: "Spawn prompt minimization — pipeline Agent() calls to minimal goal+params pattern"
+    source: session-2026-04-06-token-opt
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.4
+    priority: 1
+    created_date: "2026-04-06"
+    decision_ref: [D21, D23]
+    description: >
+      Each Agent() subagent spawn currently passes 100-300 line prompts that load
+      into the subagent context at turn 0, on top of inherited CLAUDE.md + skills.
+      Fix: move subagent-specific context into dedicated skill files (lazy-loaded);
+      spawn prompts carry only goal + parameters (~20 lines max). Deliverables:
+      (1) pattern documented in skills/subagent-router/ as spawn-prompt convention;
+      (2) existing pipeline skills (/auto, /deliver, /deliver-full) updated to
+      follow minimal-spawn pattern; (3) example before/after showing token delta.
+      Estimated yield: 500-2,000 tokens saved per subagent invocation, compounds
+      across every pipeline run.
+
+  - id: BL-012
+    title: "Typed pipeline stage summary schema — structured handoffs between stages"
+    source: session-2026-04-06-token-opt
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3.26
+    priority: 1
+    created_date: "2026-04-06"
+    decision_ref: [D21, D23]
+    description: >
+      Pipeline stages currently pass full prose reports back to the orchestrator
+      (3-8K tokens per stage). Define a typed YAML summary schema (10-15 fields,
+      200-400 tokens) that each stage emits instead of prose. Deliverables:
+      (1) pipelines/stage-summary.schema.yaml — typed schema with required/optional
+      fields per stage type (research, build, eval, audit); (2) pipeline skills
+      updated to require structured summary output from subagents; (3) orchestrator
+      instructions updated to expect and pass typed summaries between stages.
+      Estimated yield: 3-8K → 200-400 tokens per stage boundary; a 4-stage pipeline
+      saves ~15-25K tokens in orchestrator context per run.
+
+  - id: BL-013
+    title: "CLAUDE.md progressive disclosure — prune roadmap/workflow sections, move to lazy-loaded skills"
+    source: session-2026-04-06-token-opt
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.3.28
+    priority: 2
+    created_date: "2026-04-06"
+    description: >
+      CLAUDE.md is 173 lines (target: ~80-90). The phase roadmap section (~60 lines)
+      changes every sprint and does not guide behavior — move to a lazy-loaded
+      skills/orientation/ skill. The verbose Development Workflow section restates
+      rules already in kernel/ — trim to pointers. Behavioral rules (git conventions,
+      coding standards, core rules) stay in root CLAUDE.md. Deliverables:
+      (1) CLAUDE.md pruned to ~80-90 lines; (2) skills/orientation/SKILL.md captures
+      phase roadmap + detailed workflow context (loaded on-demand when working on
+      roadmap/planning tasks); (3) verify no behavioral regressions (Claude still
+      follows all rules). Estimated yield: ~500-700 tokens freed from always-loaded
+      context; eliminates instruction-degradation risk from oversized CLAUDE.md.
+    blocked_by: null
+
+  - id: BL-014
+    title: "Kernel doc consolidation — deduplicate drift detection, gate definitions, promotion checklists"
+    source: session-2026-04-06-token-opt
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.3.29
+    priority: 3
+    created_date: "2026-04-06"
+    decision_ref: [D26]
+    description: >
+      Three redundancy targets in always-loaded kernel files (~2K tokens total):
+      (1) Drift detection: mechanics duplicated between TRUST_CONTRACT.md §3 and
+      GOVERNANCE.md §4 — keep full spec in GOVERNANCE.md, replace TRUST_CONTRACT.md
+      §3 with a 2-line pointer (~800 tokens saved);
+      (2) Gate definitions: human/agent gate types defined in GOVERNANCE.md §2,
+      BOOTLOADER.md, and TRUST_CONTRACT.md §2 — single source in GOVERNANCE.md,
+      pointers elsewhere (~600 tokens saved);
+      (3) Promotion checklists: M3→M2 and M2→M1 checklists in PROMOTION_RUBRIC.md
+      are near-identical structures — merge into one universal checklist with
+      destination branches (~600 tokens saved).
+      All changes are pointer-replacements, not content deletion. Requires /deliver-full.
+
+  - id: BL-015
+    title: "Agent/skill boilerplate dedup — posture single-source + skill trigger compression"
+    source: session-2026-04-06-token-opt
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.4
+    priority: 4
+    created_date: "2026-04-06"
+    description: >
+      Two boilerplate reduction targets:
+      (1) Agent posture: all 10 agents/*.agent.md files have near-identical
+      posture: sections (~300 chars each, ~3K total). Define "Default Posture"
+      once in GOVERNANCE.md §Default-Posture; replace posture blocks in agent
+      files with a single-line pointer. Agents with genuinely unique posture
+      rules keep only those deltas.
+      (2) Skill triggers: 12 SKILL.md files have "Use this skill when:" preambles
+      averaging 3-5 bullets each. Compress to 1-2 sentences per skill — enough
+      signal for Claude to match the skill, not a comprehensive list of scenarios.
+      Estimated yield: ~800 tokens (agents, on-demand) + ~600 tokens (skills,
+      on-demand). Low yield per session but improves maintainability.
+    blocked_by: null
+
+  # ── Phase 4: Cursor platform adapter ────────────────────────────────────
+  - id: BL-016
+    title: "Cursor platform adapter — minimal bridge for cross-IDE session continuity"
+    source: session-2026-04-07-cursor
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.4
+    priority: 4
+    created_date: "2026-04-07"
+    description: >
+      Cursor (v1.x) has a native toggle — Settings → Rules → "Include third-party
+      plugin skills and configs" — that auto-loads CLAUDE.md, .claude/commands/,
+      agents/, and skills/ into every Cursor chat. This gives ~90% Claude Code
+      compatibility for free. The adapter bridges the remaining gap: M2 memory
+      and cross-IDE session handoff.
+      Deliverables: (1) kernel/templates/platform-adapters/cursor/azoth-memory.mdc.template
+      — alwaysApply rule that reads patterns.yaml, bootloader-state.md, and
+      session-state.md at session start; (2) kernel/templates/platform-adapters/cursor/README.md
+      — setup instructions (toggle + manual install) and capability delta table;
+      (3) .azoth/session-state.md — cross-IDE handoff capsule schema, written by
+      /session-closeout, read by azoth-memory.mdc on resume.
+
+  # ── Phase 4: Distribution & Polish (see roadmap v0.0.4) ─────────────────
+  - id: P4-001
+    title: "README (philosophy + quickstart)"
+    source: roadmap-v0.0.4
+    roadmap_ref: P4-001
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.4
+    priority: 1
+    created_date: "2026-04-07"
+    decision_ref: [D16]
+    description: >
+      Public-facing README: philosophy, quickstart, install path. Decision D16.
+
+  - id: P4-002
+    title: "azoth init interactive onboarding"
+    source: roadmap-v0.0.4
+    roadmap_ref: P4-002
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.4
+    priority: 2
+    created_date: "2026-04-07"
+    decision_ref: [D5, D36]
+    description: >
+      Interactive installer / project bootstrap aligned with scaffold vs project modes.
 
 # Completed items
 completed: []
