@@ -124,6 +124,17 @@ def validate_digest(data: Any, *, path: str | None = None) -> list[str]:
                 errs.append(f"{label}: consensus_themes[{i}].id must be a non-empty str")
             if "summary" not in item or not isinstance(item.get("summary"), str):
                 errs.append(f"{label}: consensus_themes[{i}].summary must be a str")
+            cp = item.get("contributing_packs")
+            if cp is not None:
+                if not isinstance(cp, list):
+                    errs.append(f"{label}: consensus_themes[{i}].contributing_packs must be a list")
+                else:
+                    for j, ref in enumerate(cp):
+                        if not isinstance(ref, str) or not ref.strip():
+                            errs.append(
+                                f"{label}: consensus_themes[{i}].contributing_packs[{j}] "
+                                "must be non-empty str"
+                            )
 
     packs = data["research_packs"]
     if not isinstance(packs, list):
@@ -162,6 +173,17 @@ def validate_digest(data: Any, *, path: str | None = None) -> list[str]:
         for i, tid in enumerate(mrt):
             if not isinstance(tid, str):
                 errs.append(f"{label}: mapped_roadmap_tasks[{i}] must be str")
+
+    mn = data.get("mapping_notes")
+    if mn is not None:
+        if not isinstance(mn, dict):
+            errs.append(f"{label}: mapping_notes must be a mapping")
+        else:
+            for k, v in mn.items():
+                if not isinstance(k, str) or not k.strip():
+                    errs.append(f"{label}: mapping_notes keys must be non-empty str")
+                elif not isinstance(v, str) or not v.strip():
+                    errs.append(f"{label}: mapping_notes[{k!r}] must be non-empty str")
 
     if "meta" in data and data["meta"] is not None and not isinstance(data["meta"], dict):
         errs.append(f"{label}: meta must be a mapping when present")
@@ -209,7 +231,10 @@ def cmd_append_pack(args: argparse.Namespace) -> None:
         _die(EXIT_USER, "existing digest failed validation; fix before append-pack")
 
     if args.pack:
-        pack_src = Path(args.pack).read_text(encoding="utf-8")
+        try:
+            pack_src = Path(args.pack).read_text(encoding="utf-8")
+        except OSError as e:
+            _die(EXIT_IO, f"read pack failed: {e}")
     else:
         pack_src = sys.stdin.read()
     try:
@@ -228,7 +253,8 @@ def cmd_append_pack(args: argparse.Namespace) -> None:
         _die(EXIT_USER, "pack validation failed")
 
     pid = pack.get("id")
-    assert isinstance(pid, str)
+    if not isinstance(pid, str) or not pid.strip():
+        _die(EXIT_USER, "pack id missing after validation (internal error)")
     for existing in data["research_packs"]:
         if isinstance(existing, dict) and existing.get("id") == pid:
             _die(EXIT_USER, f"refuse: research_pack id {pid!r} already exists")
