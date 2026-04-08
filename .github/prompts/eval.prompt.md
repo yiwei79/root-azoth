@@ -17,7 +17,7 @@ Evaluate this list from the **current goal, scope card, pipeline preset, and art
 | # | Trigger | Rationale |
 |---|---------|-----------|
 | E1 | **≥ 2 independent deliverables** or branches to judge (e.g. multiple backlog slices, parallel file groups, or separate acceptance criteria) | Parallel work needs **parallel isolated evaluators**; one thread inherits author bias. |
-| E2 | **Composed pipeline** (`/auto`, `/deliver`, `/deliver-full`) and this is the **evaluator stage** after **multi-file**, **governance-touching**, or **cross-layer** changes | Same as E1; aligns with **review-independence** (`skills/subagent-router/SKILL.md`). |
+| E2 | **Composed pipeline** (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) and this is the **evaluator stage** after **multi-file**, **governance-touching**, or **cross-layer** changes | Same as E1; aligns with **review-independence** (`skills/subagent-router/SKILL.md`). |
 | E3 | Active scope has **`delivery_pipeline: governed`** and/or **`target_layer: M1`** | Higher stakes; mechanical gates expect **strict** quality. |
 | E4 | **Entropy / blast radius** high for this session (e.g. approaches or exceeds **Trust Contract** file ceiling, or touches **kernel templates**, **commands**, **skills** deploy paths) | Drift risk warrants **0.90** + isolated passes. |
 | E5 | **Prior** review or eval on the same deliverable returned **CONDITIONAL** or **FAIL**, or **reviewer request-changes** is open | Re-check with **fresh** evaluators; prefer swarm wave over repeating inline critique. |
