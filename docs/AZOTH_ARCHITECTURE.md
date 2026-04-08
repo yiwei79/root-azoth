@@ -285,9 +285,11 @@ orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/
 | `/session-closeout` | Lifecycle | Unified eval + close + sync |
 | `/remember` | Lifecycle | Capture cross-session learning |
 | `/auto` | Pipeline | Auto-compose and execute pipeline (default) |
+| `/dynamic-full-auto` | Pipeline | DYNAMIC-FULL-AUTO+ discovery swarms, digest, Γ, then delivery handoff |
 | `/deliver` | Pipeline | Lean pipeline (pre-approved work) |
 | `/deliver-full` | Pipeline | Full pipeline with governance gates |
 | `/plan` | Pipeline | Structured planning without execution |
+| `/context-architect` | Pipeline | Dependency map and blast radius (read-only) |
 | `/eval` | Quality | Governance quality gate |
 | `/test` | Quality | Unit test generation |
 | `/promote` | Governance | Review promotion candidates |
@@ -795,6 +797,8 @@ azoth/
     └── sync-log.jsonl
 ```
 
+**Developer preflight (P8-003):** When `scripts/pipeline_lint.py` exists, run it on `pipelines/*.pipeline.yaml` before relying on composed `/auto` output; CI/pytest should cover happy-path and one malformed fixture once the linter lands.
+
 ---
 
 ## 14. Risks & Mitigations
@@ -1092,6 +1096,60 @@ hook (P3-008) reads this file before allowing Write/Edit.
 
 **Validator rule:** A scope card mixing M1-targeted items with runtime tasks
 is rejected. M1 changes require a dedicated session.
+
+### Long-running sessions (P8-005)
+
+Multi-hour or multi-wave work (including DYNAMIC-FULL-AUTO+ discovery and `/eval-swarm`) must stay
+compatible with **short-lived scope and pipeline gates** (D50) and the Trust Contract entropy ceiling.
+
+**Checklist**
+
+1. **Refresh scope before TTL expiry** — Run `/next` (or human-approved scope card) to write a new
+   `.azoth/scope-gate.json` when the current `expires_at` is near; do not assume silent extension.
+2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
+   rather than exceeding the per-turn file ceiling.
+3. **Optional run ledger (P8-001)** — When implemented, append wave outcomes to the gitignored
+   ledger file so a new chat can resume without replaying full orchestrator prose; until then,
+   rely on typed stage summaries (BL-012) and committed artifacts.
+4. **Digest merges** — After swarm append to `SWARM_RESEARCH_DIGEST.yaml`, run
+   `python3 scripts/swarm_research_digest.py validate` on that path before commit.
+5. **Never disable hooks** — Long runs do not bypass PreToolUse scope-gate or pipeline-gate; adjust
+   scope instead.
+
+**Risks:** Expired gates mid-run cause mechanical Write/Edit denies; stale scope cards mis-label M1
+vs infrastructure work; unbounded parallel Task fan-out violates swarm Iron Laws (see
+`.agents/skills/swarm-coordination/SKILL.md`).
+
+### Context & token budget (P8-011)
+
+**Goal:** Lower median tokens and latency per session **without** weakening D50 gates, **BL-012**
+typed handoffs, or **`/eval-swarm`** quality bars.
+
+**Principles (toolkit-level):**
+
+1. **Compaction at stage boundaries** — Prefer machine-readable **`pipelines/stage-summary.schema.yaml`**
+   payloads (`prior_stage_summaries`) over pasting full subagent prose into the orchestrator thread
+   (extends completed **BL-012**).
+
+2. **Static prefix, volatile suffix** — For provider **prompt caching**, keep **stable** system
+   instructions, tool definitions, and rubrics **early**; put **session-specific** state (scope
+   cards, file lists that churn every turn) **late**. Small tool or parameter toggles can
+   **invalidate** large cached prefixes — document this when changing hooks or command bodies.
+
+3. **Spawn hygiene** — Follow **`skills/subagent-router/SKILL.md`** **BL-011**: minimal YAML spawn +
+   **`Read`** targets instead of embedding the whole pipeline table in every **Task**.
+
+4. **Parallel eval economics** — **`/eval-swarm`** multiplies tokens vs a single evaluator; use it
+   when **E1–E6** triggers fire (**`.claude/commands/eval.md`**). For **offline** scoring, vendor
+   **batch** APIs trade latency for cost — not a substitute for interactive gates.
+
+5. **Deploy stability** — **`scripts/azoth-deploy.py`** (**D46**) should keep mirrored command/agent
+   text **deterministic** so repeated installs share long identical prefixes where the API layer
+   repeats scaffold text.
+
+**Research aggregate:** `.azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml` pack **RP-E**
+(sources: OpenAI / Anthropic / Gemini caching docs; ACON arXiv:2510.00615; Context Folding OpenReview;
+JetBrains context-efficiency blog; PASTE arXiv:2603.18897; OpenAI Batch API).
 
 ### D51: Formalized M2→M1 Promotion Path
 
