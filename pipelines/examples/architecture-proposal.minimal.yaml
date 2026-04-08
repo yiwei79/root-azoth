@@ -1,0 +1,17 @@
+# Minimal valid architecture proposal (P6-003). Validate with:
+#   python3 scripts/architecture_proposal_validate.py pipelines/examples/architecture-proposal.minimal.yaml
+proposal_schema_version: 1
+created_at: "2026-04-08T12:00:00+00:00"
+session_id: "2026-04-08-p6-003"
+backlog_id: "P6-003"
+title: "Example L3 architecture proposal"
+summary: >
+  Illustrative proposal only. After human approved_for_docs, a human promotes text into
+  docs/AZOTH_ARCHITECTURE.md, optional docs/adrs/, and docs/DECISIONS_INDEX.md — agents
+  do not auto-write those paths.
+status: draft
+decision_refs:
+  - D1
+scope_layers:
+  - docs
+details: {}

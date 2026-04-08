@@ -40,7 +40,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D22 | Goal Clarification Protocol (Stage 0) | 🔧 partial | pipelines/full.pipeline.yaml goal-clarification stage | 3 |
 | D23 | Auto-pipeline: LLM-as-router | ✅ implemented | skills/auto-router/SKILL.md + pipelines/auto.pipeline.yaml | 3 |
 | D24 | Gate typing: human vs agent | ✅ implemented | kernel/GOVERNANCE.md | 1 |
-| D25 | 12 seed slash commands | ✅ implemented | .claude/commands/ | 1 |
+| D25 | Seed slash commands (minimum table + scaffold e.g. `/next`, `/arch-proposal`) | ✅ implemented | .claude/commands/ + docs § Seed Commands (D25) | 1 |
 | D26 | Proactive Agent Posture: 3 tiers | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D27 | Explore/Research as Architect tools | ✅ implemented | Design decision | 1 |
 | D28 | 8 pipeline presets | 📋 planned | pipelines/ (Phase 3) | 3 |

@@ -6,6 +6,7 @@
 .azoth/memory/l2-refinement-evidence.jsonl
 .azoth/bootloader-state.md
 .azoth/kernel-checksums.sha256
+.azoth/proposals/
 
 # Python
 __pycache__/

@@ -275,7 +275,9 @@ The Trust Contract defines the overall ceiling.
 
 ### Seed Commands (D25)
 
-12 built-in slash commands ship with every Azoth installation:
+Core **seed** commands (D25) include at least the table below. **Additional** lifecycle and
+orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/start`,
+`/roadmap`, and platform-specific aliases) and are not meant to replace the minimum seeded set.
 
 | Command | Category | Purpose |
 |---------|----------|---------|
@@ -291,6 +293,7 @@ The Trust Contract defines the overall ceiling.
 | `/promote` | Governance | Review promotion candidates |
 | `/sync` | Infrastructure | Pattern extraction from source framework |
 | `/worktree-sync` | Infrastructure | Git checkpoint and sync |
+| `/arch-proposal` | Governance | L3 human-gated architecture proposal YAML (P6-003) |
 
 Project-specific commands (session-close, classify-learning, fill-bootloader)
 are NOT seeded — they emerge naturally in each consumer project via the memory system.
@@ -837,7 +840,7 @@ azoth/
 | D22 | Goal Clarification Protocol (Stage 0) | Adaptive questioning, no hard cap |
 | D23 | Auto-pipeline: LLM-as-router composition | Default behavior, 8 presets |
 | D24 | Gate typing: human vs agent | Kernel/governance gates must be human |
-| D25 | 12 seed slash commands | Essential lifecycle + pipeline + quality |
+| D25 | Seed slash commands: documented minimum set + scaffold extensions | Essential lifecycle + pipeline + quality; see § Seed Commands (D25) |
 | D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |
 | D27 | Explore/Research as Architect tools | Not separate pipeline stages |
 | D28 | 8 pipeline presets | full, deliver, hotfix, docs, research, review, refactor, auto |

@@ -63,6 +63,16 @@ classification:
 
 Apply D23 composition rules to select the pipeline preset, then present the composed pipeline to the human for approval.
 
+## L3 architecture proposals (P6-003)
+
+When the goal changes how D1–D53 apply, layer boundaries, or normative architecture
+documentation, route structured intent through **`/arch-proposal`**: emit a validated YAML
+artifact under **`.azoth/proposals/`** (see `pipelines/architecture-proposal.schema.yaml`).
+The file is **not** authority for **`kernel/**`**. After human **`approved_for_docs`**, a
+**human** promotes edits into **`docs/AZOTH_ARCHITECTURE.md`**, optional **`docs/adrs/`**,
+and **`docs/DECISIONS_INDEX.md`** when decision rows change — agents do not auto-write
+those paths.
+
 ## Architecture Brief Format
 
 Every architecture brief must include:

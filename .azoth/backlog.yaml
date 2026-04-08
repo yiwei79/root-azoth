@@ -689,7 +689,7 @@ items:
     roadmap_ref: P6-003
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.6
     priority: 3
     created_date: "2026-04-08"
@@ -699,6 +699,22 @@ items:
       Structured path for architecture changes that touch D1–D53 or layer boundaries:
       proposal artifact, explicit human gate, and promotion into `docs/AZOTH_ARCHITECTURE.md`
       / ADR flow without bypassing kernel immutability or scope discipline.
+
+  - id: P6-003-OPT
+    title: "P6-003 optional: /next proposal footer, AZOTH command row, ruff, regression tests"
+    source: session-2026-04-08
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    priority: 5
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Close deferred P6-003 polish: read-only architecture proposal line on /next scope card
+      when unambiguous; add /arch-proposal to docs/AZOTH_ARCHITECTURE.md command table with
+      accurate D25 note; run ruff on architecture_proposal_validate.py; extend pytest
+      regression (test_azoth_commands_effect, TestGitignore or equivalents).
 
   # ── Governance / drift (from GOV reviewer B2, test_handoff_artifacts) ─────────
   - id: BL-017

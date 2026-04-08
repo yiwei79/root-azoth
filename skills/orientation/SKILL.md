@@ -84,7 +84,7 @@ used before BL-013.
 
 - P6-001: Agent Crafter
 - P6-002: L2 prompt optimization
-- P6-003: L3 human-gated architecture proposals
+- P6-003: L3 human-gated architecture proposals — **done** (`/arch-proposal`, `pipelines/architecture-proposal.schema.yaml`, `scripts/architecture_proposal_validate.py`)
 
 ### Phase 7: Publishing & public product (v0.0.7 — after Phase 6)
 
