@@ -6,9 +6,8 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 6
-current_phase_title: "Meta-Recursive"
-
+current_phase: 8
+current_phase_title: "Next — roadmap TBD"
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
   - id: BL-002
@@ -124,12 +123,12 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 1
-active_version: v0.0.6
+active_version: v0.2.0
 
-# D53: Bump rules (0.0.PHASE.PATCH scheme)
-# - patch (0.0.N.XX → 0.0.N.XX+1): every delivery session (resets to .1 on phase bump)
-# - significant (0.0.N → 0.0.N+1):  phase completion; N = phase number (through 7)
-# - release (0.1.0):                 full roadmap complete — public azoth release
+# D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
+# - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.M → 0.1.M+1 + v0.2.0 current_patch +1
+# - phase: 0.0.N.M → 0.0.N+1.1 (not used after v0.0.7; use --release for 0.1.0)
+# - release: v0.0.7 active → close v0.0.7 + v0.1.0, azoth 0.1.0, phase 8, activate v0.2.0
 # - git tag proposed at release only (user-confirmed, never auto-pushed)
 
 versions:
@@ -225,8 +224,8 @@ versions:
         note: "Phase 5 component of D52; BL-007 delivers the /start skill in v0.0.3"
 
   - id: v0.0.6
-    status: active
-    current_patch: 8
+    status: complete
+    final_patch: 9
     goal: "Phase 6: Meta-recursive — agent/skill meta layer"
     phase_scope: [6]
     note: >
@@ -241,13 +240,15 @@ versions:
         title: "L3 human-gated architecture proposals"
 
   - id: v0.0.7
-    status: backlog
+    status: complete
+    completed_date: "2026-04-08"
+    final_patch: 6
     goal: "Phase 7: Publishing & public product — CI, extraction, GitHub"
     phase_scope: [7]
     note: >
       Deferred-from-Phase-4 closure plus release mechanics: drift CI on the public surface,
-      mechanical extraction to public azoth, aligned with the v0.1.0 gate. Activate after
-      Phase 6 (v0.0.6) is complete.
+      mechanical extraction to public azoth, aligned with the v0.1.0 gate. Phase 7 active
+      after Phase 6 (v0.0.6) completion.
     tasks:
       - id: P4-003
         title: "CI for drift detection"
@@ -261,17 +262,19 @@ versions:
         note: "Public product repo + mechanical extraction; aligns with v0.1.0 release gate"
 
   - id: v0.1.0
-    status: target
+    status: complete
+    completed_date: "2026-04-08"
     goal: "Public azoth release — full roadmap complete (Phases 1–7)"
     note: "Version bumped to 0.1.0 when Phase 7 (v0.0.7) is complete. Git tag proposed."
 
   - id: v0.2.0
-    status: backlog
-    goal: "Post–v0.1.0 polish and ergonomics (unscheduled)"
+    status: active
+    current_patch: 3
+    goal: "Post–v0.1.0 — next roadmap TBD (phases & backlog to seed)"
     phase_scope: []
     note: >
-      Bucket for work explicitly deferred past the initial public release. No phase tie-in;
-      scheduled when v0.1.0 is stable and capacity allows.
+      v0.1.0 release complete. Phases and backlog for this slice are undefined until you
+      promote the next planning episode. Existing placeholder: P5-006 (phone-friendly output).
     tasks:
       - id: P5-006
         title: "Phone-friendly output (narrow terminals)"

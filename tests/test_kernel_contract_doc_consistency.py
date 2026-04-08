@@ -8,6 +8,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 
+
 def _read(rel: str) -> str:
     return (REPO / rel).read_text(encoding="utf-8")
 

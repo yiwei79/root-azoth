@@ -8,8 +8,6 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 APPEND = ROOT / "scripts" / "l2_evidence_append.py"
 
@@ -71,7 +69,9 @@ def _minimal_record(session_id: str) -> dict:
     }
 
 
-def _run_append(tmp: Path, session_id: str, record: dict, *, expect_ok: bool) -> subprocess.CompletedProcess:
+def _run_append(
+    tmp: Path, session_id: str, record: dict, *, expect_ok: bool
+) -> subprocess.CompletedProcess:
     azoth = tmp / ".azoth"
     jsonl = azoth / "memory" / "l2-refinement-evidence.jsonl"
     proc = subprocess.run(

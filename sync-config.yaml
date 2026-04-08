@@ -46,23 +46,35 @@ scan_extensions:
 
 # ── Product Extraction Profile (D38) ──────────────────────
 # Used when extracting the public `azoth` product from this scaffold.
-# This is scaffold infrastructure — actual extraction is Phase 4.
+# Implementation: dedicated extractor script (P4-004) — not azoth-sync.py (Tier 1→2 only).
+#
+# Pipeline order (mandatory for public publish — reviewer gate P4-004):
+#   1. Select files: copy tree honoring exclude_paths (prefix match from repo root).
+#   2. apply_transforms: run each `transform` entry (requires scripts — declarative spec only here).
+#   3. apply_sanitize: apply `sanitize.strip_patterns` to eligible text files (same strings as Tier 1→2).
+# Skipping (2) or (3) can ship wrong CLAUDE.md/azoth.yaml or leak org-specific strings (D35).
 product_extraction:
   target_repo: azoth
   mode: scaffold-to-product
 
+  extraction_pipeline:
+    - copy_tree_respecting_excludes
+    - apply_transforms
+    - apply_sanitize_strip_patterns
+
   # Paths to EXCLUDE from the public product
   # (scaffold-only artifacts that don't ship to consumers)
   exclude_paths:
-    - ".azoth/inbox/"
-    - ".azoth/memory/"
-    - ".azoth/telemetry/"
-    - ".azoth/sync-log.jsonl"
-    - ".azoth/trusted-sources.yaml"
+    # Never ship scaffold git history into the product tree (extract uses source.rglob).
+    - ".git/"
+    # Entire `.azoth/` in root-azoth is workshop/runtime: backlog, roadmap, bootloader,
+    # handoffs, proposals, gates, inbox, memory, telemetry, session orientation, etc.
+    # Consumer `.azoth/kernel/` is created by install from `kernel/` (D42), not by copying this tree.
+    - ".azoth/"
     - ".claude/commands/"          # Scaffold dev commands, not consumer commands
     - ".claude/settings.json"      # Scaffold dev settings
     - ".claude/settings.local.json"
-    - ".github/"                   # Scaffold CI/CD, not consumer
+    - ".github/"                   # Scaffold CI/CD; public repo gets its own minimal CI (P4-004)
     - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
     - "tests/"                     # Scaffold tests (product gets its own)
     - "workspace/"
@@ -70,6 +82,7 @@ product_extraction:
 
   # Files to TRANSFORM during extraction
   # (content changes needed for consumer context)
+  # Actions are defined here only; implementer MUST implement in extractor (no silent no-op).
   transform:
     - source: "CLAUDE.md"
       action: "regenerate-from-template"

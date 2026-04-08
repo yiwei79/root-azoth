@@ -21,6 +21,7 @@ def _count_decisions() -> int:
     idx = (AZOTH_ROOT / "docs" / "DECISIONS_INDEX.md").read_text(encoding="utf-8")
     return sum(1 for line in idx.splitlines() if line.startswith("| D"))
 
+
 AZOTH_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -321,9 +322,7 @@ class TestBootloaderState:
 
     def test_references_kernel_files(self) -> None:
         for kernel_file in ("BOOTLOADER.md", "TRUST_CONTRACT.md", "GOVERNANCE.md"):
-            assert kernel_file in self.content, (
-                f"Missing kernel file reference: {kernel_file}"
-            )
+            assert kernel_file in self.content, f"Missing kernel file reference: {kernel_file}"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -365,15 +364,11 @@ class TestCrossArtifactConsistency:
     def load_all(self) -> None:
         self.claude_md = (AZOTH_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
         self.orientation_md = _orientation_skill_text()
-        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(
+        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(encoding="utf-8")
+        self.azoth_yaml = yaml.safe_load((AZOTH_ROOT / "azoth.yaml").read_text(encoding="utf-8"))
+        self.bootloader = (AZOTH_ROOT / ".github" / "AGENTIC_BOOTLOADER.md").read_text(
             encoding="utf-8"
         )
-        self.azoth_yaml = yaml.safe_load(
-            (AZOTH_ROOT / "azoth.yaml").read_text(encoding="utf-8")
-        )
-        self.bootloader = (
-            AZOTH_ROOT / ".github" / "AGENTIC_BOOTLOADER.md"
-        ).read_text(encoding="utf-8")
 
     def test_version_consistent(self) -> None:
         """azoth.yaml version is a valid semver-like string; release target 0.1.0 in CLAUDE or orientation."""
@@ -394,12 +389,8 @@ class TestCrossArtifactConsistency:
     def test_four_layers_consistent(self) -> None:
         """Water Molecule Model should be consistent across docs."""
         for layer in ("MOLECULE", "MINERAL", "WAVE", "CURRENT"):
-            assert layer in self.claude_md.upper(), (
-                f"CLAUDE.md missing layer: {layer}"
-            )
-            assert layer in self.arch_doc.upper(), (
-                f"Architecture missing layer: {layer}"
-            )
+            assert layer in self.claude_md.upper(), f"CLAUDE.md missing layer: {layer}"
+            assert layer in self.arch_doc.upper(), f"Architecture missing layer: {layer}"
             assert layer.lower() in str(self.azoth_yaml.get("layers", {}))
 
     def test_platform_targets_consistent(self) -> None:
@@ -432,9 +423,7 @@ class TestGovernanceBlockers:
         self.settings = json.loads(
             (AZOTH_ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
         )
-        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(
-            encoding="utf-8"
-        )
+        self.arch_doc = (AZOTH_ROOT / "docs" / "AZOTH_ARCHITECTURE.md").read_text(encoding="utf-8")
 
     def test_b2_kernel_integrity_script(self) -> None:
         """B2: A kernel integrity validation script should exist in Phase 1."""
@@ -478,7 +467,16 @@ class TestPipelineArchitecture:
 
     def test_has_pipeline_presets(self) -> None:
         """D28: All 8 pipeline presets must be referenced."""
-        for preset in ("full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"):
+        for preset in (
+            "full",
+            "deliver",
+            "hotfix",
+            "docs",
+            "research",
+            "review",
+            "refactor",
+            "auto",
+        ):
             assert preset in self.content.lower(), f"Missing pipeline preset: {preset}"
 
     def test_explore_research_as_architect_tools(self) -> None:

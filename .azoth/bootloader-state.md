@@ -1,11 +1,53 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (`/session-closeout` ep-088)
+Last updated: 2026-04-08 (session-closeout ep-097 — OPS-HEALTH-PARITY + /auto swarm)
 
 ## Current Phase
 
-Phase 6 — Meta-Recursive  
-**Toolkit version:** **0.0.6.8** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **8** (`.azoth/roadmap.yaml`, D53)
+Phase 8 — Next — roadmap TBD  
+**Toolkit version:** **0.1.2** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **3** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches. Seed **v0.2.0** backlog when ready.
+
+## Session outcome (ep-097) — session-closeout
+
+- **Delivered / refined:** **`/auto`** with human-approved scope **OPS-HEALTH-PARITY** — explore swarm ×4, **`azoth-deploy`** idempotent run, **`CLAUDE.md`** **Version** **v0.1.1** alignment (pre-bump); verification swarm ×3; **architect → reviewer (approve) → planner (zero-build) → eval-swarm ×3 (≥0.9 PASS) → architect close**. **W1** **ep-097**; **W2** bootloader + scope **`closed_at`**; **W3** Claude memory mirror (attempt); **W4** **`0.1.1 → 0.1.2`**, roadmap **`current_patch` `2 → 3`**; **`azoth.yaml`** **`episodes: 97`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.2`**.
+- **Closeout:** W1–W4 complete.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** when new backlog rows exist; **`git push`** when ready.
+
+## Session outcome (ep-096) — session-closeout
+
+- **Delivered / refined:** **`git tag -a v0.1.0`** + **`git push`** branch **`phase-7-v0.0.7-publishing`** and tag **`v0.1.0`**. **W1** **ep-096**; **W2** bootloader + scope gate **`closed_at`** refresh; **W3** **`~/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md`** mirror; **W4** **`0.1.0 → 0.1.1`**, roadmap **`current_patch` `1 → 2`**; **`azoth.yaml`** **`episodes: 96`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.1`**.
+- **Closeout:** W1–W4 complete.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); define **v0.2.0** roadmap when ready.
+
+## Session outcome (ep-095) — session-closeout
+
+- **Delivered / refined:** **`/eval-swarm`** Wave C on extract + license + governance (0.90); extract **FAIL** then **Wave D** (`.git/` guard, tests, `--out` help) + **re-eval PASS**; **follow-up** **`test_extract_removes_pre_existing_out_directory`**, module doc + **destructive `--out`** argparse text (**staging / rsync**). **`AZOTH_VERSION`** in **`.claude/settings.json`** synced **0.0.7.6** (**BL-018**).
+- **Closeout:** W1 **ep-095**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.5 → 0.0.7.6**; **M3** **episodes: 95**.
+- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`**; **`/intake`** for **3** queued inbox JSONL; **`/next`** for post–Phase 7 scope; merge **PR #6** when CI green.
+
+## Session outcome (ep-094) — session-closeout
+
+- **Delivered / refined:** **GitHub PR #6** metadata aligned with full Phase 7 branch; **ready for review**; **`@copilot`** review comment; **D32** inbox — `.azoth/inbox/cursor-review-2026-04-08.jsonl` (appended) + **`.azoth/inbox/pr-code-review-pr6-phase7-2026-04-08.jsonl`**. **`azoth_extract_product.py`** — defense-in-depth **never copy `.git/`** even if `exclude_paths` misconfigured; **`test_copy_tree_always_skips_dot_git`** + minimal-tree assertion; **`--out` help** documents rmtree behavior.
+- **Closeout:** W1 **ep-094**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.4 → 0.0.7.5**; **M3** **episodes: 94**.
+- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`** (closeout commit + prior **35be673** if not pushed); **`/next`** for post–Phase 7 scope; **`/intake`** for **3** queued inbox JSONL; merge **PR #6** when CI green.
+
+## Session outcome (ep-093) — session-closeout
+
+- **Delivered / refined:** **P4-004** **complete** — public **`yiwei79/azoth`** populated via **`azoth_extract_product.py`** + staging rsync; **`sync-config.yaml`** excludes **`.git/`**; **PolyForm Noncommercial 1.0.0** `LICENSE` + docs/README alignment + public README license block; **`kernel/templates/README.public.azoth.md`** for future extracts.
+- **Closeout:** W1 **ep-093**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.3 → 0.0.7.4**; **BL-018** settings **`AZOTH_VERSION`** synced; **M3** **episodes: 93**.
+- **Next:** **`git push`** **`origin`** (branch **`phase-7-v0.0.7-publishing`**); **`/next`** for post–Phase 7 scope; **`/intake`** if inbox queued; verify **public** GitHub Actions on **`main`**.
+
+## Session outcome (ep-092) — session-closeout
+
+- **Delivered / refined:** **`/eval-swarm`** command; **`/eval`** intelligent routing **E1–E6**; **`/auto`** Execution §6 + **`/deliver`** / **`/deliver-full`** eval–swarm wiring; **`tests/test_eval_pipeline_wiring.py`**; **`/intake`** — inbox empty (nothing to triage). **`python3 scripts/azoth-deploy.py`** after command edits.
+- **Closeout:** W1 **ep-092**; W2 bootloader + scope gate closed; W3 Claude memory (deferred in Cursor — mirror manually if needed); W4 patch **0.0.6.8 → 0.0.6.9**; **M3** **episodes: 92**.
+- **Next:** **`git push`** **`origin main`**; **`/next`** when backlog seeded; **`/promote`** for M2 candidates if any.
+
+## Session outcome (ep-090) — BL-024–BL-026
+
+- **Delivered:** **BL-024** — `/session-closeout` W2 field checklist + W2b (post-W4 refresh) in `.claude/commands/session-closeout.md`; **`azoth-deploy`** mirrors (Copilot/OpenCode prompts). **BL-025** — `tests/test_governance_never_auto_parity.py` (GOVERNANCE §5 Never-Auto vs `UNIVERSAL_NEVER_AUTO`). **BL-026** — `install.sh` Step 7 explicit four-file §4 order; `tests/test_install_sh_kernel_checksums.py`.
+- **Swarm:** parallel architect wave (prior session) + parallel **reviewer** verification wave on acceptance criteria.
+- **Next:** **`/next`** for next backlog row; **`/intake`** if inbox queued.
 
 ## Session outcome (ep-088) — session-closeout
 
@@ -100,10 +142,10 @@ Phase 6 — Meta-Recursive
 
 ## Open decisions
 
-- **P4-003 / P4-004** execution timing tied to public-repo readiness and v0.0.6 scheduling (per roadmap notes).
+- **Phase 7 wrap:** v0.1.0 readiness, extraction cadence, and public-repo hygiene (Actions on **`yiwei79/azoth`**).
 - **settings.json.template** deny list for `.azoth/kernel/**` (optional consumer hardening) still open in orientation.
 - **D43 remainder:** optional commit-format rules beyond Co-Authored-By (human sign-off before expansion).
 
 ## Next action
 
-**Phase 6 (v0.0.6)** slice: **P6-001–P6-003** and **BL-017** are **complete**. **`/intake`** — **5** insight files in **`.azoth/inbox/`** (excluding **processed/**). Next roadmap activation: **v0.0.7** (**Phase 7** publishing / **P4-003**–**P4-004**) when you are ready to advance. **P5-006** remains **deferred** to **v0.2.0**. Add new **`backlog.yaml`** rows if **`/next`** should queue work before phase advance.
+**Phase 7 (v0.0.7)** — **`P4-003`** / **`P4-004`** **complete**. **`git push`** **`phase-7-v0.0.7-publishing`**; **`/intake`** — **3** JSONL in **`.azoth/inbox/`** (cursor-review + pr-code-review); **`/next`** toward **v0.1.0** when ready. **P5-006** **deferred** **v0.2.0**.

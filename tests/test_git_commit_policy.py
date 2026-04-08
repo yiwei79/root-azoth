@@ -49,7 +49,13 @@ def test_cli_rejects_violation(tmp_path: Path) -> None:
     p = tmp_path / "msg.txt"
     p.write_text("Co-Authored-By: X <x@y.com>\n", encoding="utf-8")
     r = subprocess.run(
-        [sys.executable, str(REPO_ROOT / "scripts/git_commit_policy.py"), "check", "--path", str(p)],
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts/git_commit_policy.py"),
+            "check",
+            "--path",
+            str(p),
+        ],
         capture_output=True,
         text=True,
     )
@@ -61,7 +67,13 @@ def test_cli_accepts_clean(tmp_path: Path) -> None:
     p = tmp_path / "msg.txt"
     p.write_text("fix: ok\n", encoding="utf-8")
     r = subprocess.run(
-        [sys.executable, str(REPO_ROOT / "scripts/git_commit_policy.py"), "check", "--path", str(p)],
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts/git_commit_policy.py"),
+            "check",
+            "--path",
+            str(p),
+        ],
         capture_output=True,
         text=True,
     )
@@ -89,7 +101,10 @@ def test_install_git_hooks_idempotent(tmp_path: Path) -> None:
     scripts = tmp_path / "scripts" / "git-hooks"
     scripts.mkdir(parents=True)
     shutil.copy(REPO_ROOT / "scripts" / "git-hooks" / "commit-msg", scripts / "commit-msg")
-    shutil.copy(REPO_ROOT / "scripts" / "git_commit_policy.py", tmp_path / "scripts" / "git_commit_policy.py")
+    shutil.copy(
+        REPO_ROOT / "scripts" / "git_commit_policy.py",
+        tmp_path / "scripts" / "git_commit_policy.py",
+    )
 
     r = subprocess.run(
         [sys.executable, str(REPO_ROOT / "scripts/azoth_install_git_hooks.py")],

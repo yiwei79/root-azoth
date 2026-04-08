@@ -46,7 +46,7 @@ Run at the beginning of any session to get a full project snapshot before decidi
    | `next` | Run `/next` to open a scope card for the next priority task |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |
-   | `eval` | Run `/eval` to run a quality gate on current work |
+   | `eval` | Run `/eval` — quality gate (**0.85** baseline); **escalates to `/eval-swarm`** when workflow/content triggers multi-branch or high-stakes review (see `eval.md`) |
    | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset |
 
 3. **If the dashboard script is missing or errors**, fall back to manual orientation:

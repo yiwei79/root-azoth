@@ -137,9 +137,7 @@ def _apply_single_edit(content: str, old_string: str, new_string: str, *, label:
     if n == 0:
         raise StageSummaryValidationError(f"{label}: old_string not found in file")
     if n > 1:
-        raise StageSummaryValidationError(
-            f"{label}: old_string must match exactly once, found {n}"
-        )
+        raise StageSummaryValidationError(f"{label}: old_string must match exactly once, found {n}")
     return content.replace(old_string, new_string, 1)
 
 

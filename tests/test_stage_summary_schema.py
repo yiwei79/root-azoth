@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -23,7 +22,6 @@ if str(_HOOKS) not in sys.path:
     sys.path.insert(0, str(_HOOKS))
 
 from stage_summary_validate import (  # noqa: E402
-    VALID_AGENTS,
     VALID_KINDS,
     StageSummaryValidationError,
     validate_stage_summary,

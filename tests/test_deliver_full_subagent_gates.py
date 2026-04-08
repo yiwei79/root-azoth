@@ -8,11 +8,10 @@ Governance anchor: D21 — subagent isolation for review gates.
 
 All unit tests operate on file content read once at module level.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DELIVER_FULL_PATH = REPO_ROOT / ".claude" / "commands" / "deliver-full.md"

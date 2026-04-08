@@ -86,10 +86,6 @@ def validate_stage_summary(doc: Any, *, label: str = "document") -> None:
                 raise StageSummaryValidationError(f"{label}: {arr_key} max 5 items")
             for i, item in enumerate(v):
                 if not isinstance(item, str):
-                    raise StageSummaryValidationError(
-                        f"{label}: {arr_key}[{i}] must be string"
-                    )
+                    raise StageSummaryValidationError(f"{label}: {arr_key}[{i}] must be string")
                 if len(item) > 400:
-                    raise StageSummaryValidationError(
-                        f"{label}: {arr_key}[{i}] exceeds 400 chars"
-                    )
+                    raise StageSummaryValidationError(f"{label}: {arr_key}[{i}] exceeds 400 chars")

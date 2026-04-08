@@ -93,6 +93,21 @@ After human approval of the Declaration:
    **revise-then-continue**, or **abort** before continuing. **Do not** treat “pipeline
    started” as overriding a failed review gate.
 
+6. **Evaluator stage — `/eval` routing (E1–E6):** When the **composed pipeline** includes an
+   **evaluator** stage (or the orchestrator runs a **final quality gate** equivalent to
+   `/eval` before declaring success), **before** spawning evaluator work:
+   - `Read` `.claude/commands/eval.md` and evaluate triggers **E1–E6** using the active
+     scope (`.azoth/scope-gate.json`), pipeline row count / branch count, file-change
+     footprint, `prior_stage_summaries`, and any reviewer disposition.
+   - If **any** trigger fires → follow **`/eval-swarm`** (`.claude/commands/eval-swarm.md`)
+     and `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`: **N** parallel
+     `Task(subagent_type=evaluator, readonly=true)` with **`threshold: 0.9`**, one orchestrator
+     message per wave — **not** a single collapsed 0.85 eval in the orchestrator thread.
+   - If **none** fire → a **single** `Task(evaluator)` at **0.85** is valid.
+   - If triggers are borderline, **prefer escalation** (see `/eval` § ambiguity).
+   - This applies whether the caller is human or agent; skipping the table is an
+     orchestrator error for evaluator-sized work.
+
 ## Arguments
 
 Goal: $ARGUMENTS

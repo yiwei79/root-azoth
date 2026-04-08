@@ -7,7 +7,8 @@ the script is implemented.
 Coverage:
 - --patch: increments 4th component in azoth.yaml and roadmap current_patch
 - --phase: resets patch, writes final_patch, advances active_version
-- --release: writes flat semver when active_version is v0.0.7
+- --release: closes v0.0.7/v0.1.0, activates v0.2.0, azoth 0.1.0 + phase 8
+- --patch: post-1.0 accepts 0.1.M (three-part) semver
 - Guard rails: wrong version format, non-empty pending_task_refs, wrong phase
 - Comment preservation in both YAML files
 - Command reference presence in .claude/commands/ files
@@ -19,7 +20,6 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -161,9 +161,7 @@ def test_patch_prints_bump_message(tmp_path: Path) -> None:
     assert "0.0.3.5" in combined and "0.0.3.6" in combined, (
         f"Expected 'version bumped 0.0.3.5 → 0.0.3.6' in output; got: {combined!r}"
     )
-    assert "bumped" in combined.lower(), (
-        f"Expected word 'bumped' in output; got: {combined!r}"
-    )
+    assert "bumped" in combined.lower(), f"Expected word 'bumped' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -266,9 +264,7 @@ def test_phase_refused_when_pending_tasks(tmp_path: Path) -> None:
         f"Expected exit 1 when pending_task_refs non-empty; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
-    assert "refused" in combined.lower(), (
-        f"Expected 'refused' in output; got: {combined!r}"
-    )
+    assert "refused" in combined.lower(), f"Expected 'refused' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -306,9 +302,7 @@ def test_phase_refused_at_v007(tmp_path: Path) -> None:
         f"Expected exit 1 when active_version is v0.0.7; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
-    assert "v0.0.7" in combined, (
-        f"Expected 'v0.0.7' in output; got: {combined!r}"
-    )
+    assert "v0.0.7" in combined, f"Expected 'v0.0.7' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -321,10 +315,13 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
     roadmap_p = base / "roadmap.yaml"
-    azoth_p.write_text("version: 0.0.7.4\n", encoding="utf-8")
+    azoth_p.write_text("version: 0.0.7.4\nphase: 7\n", encoding="utf-8")
     roadmap_p.write_text(
         textwrap.dedent(
             """\
+            current_phase: 7
+            current_phase_title: "Publishing"
+
             active_version: v0.0.7
 
             versions:
@@ -337,6 +334,11 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
               - id: v0.1.0
                 status: target
                 goal: "Public release"
+
+              - id: v0.2.0
+                status: backlog
+                goal: "Post v0.1.0"
+                phase_scope: []
             """
         ),
         encoding="utf-8",
@@ -348,6 +350,19 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
     assert data["version"] == "0.1.0", (
         f"Expected version 0.1.0 after --release, got {data['version']!r}"
     )
+    assert int(data["phase"]) == 8, f"Expected phase 8 after --release, got {data.get('phase')!r}"
+
+    rdata = yaml.safe_load(roadmap_p.read_text())
+    assert rdata["active_version"] == "v0.2.0"
+    assert rdata["current_phase"] == 8
+    v007 = next(x for x in rdata["versions"] if x["id"] == "v0.0.7")
+    assert v007["status"] == "complete"
+    assert v007.get("final_patch") == 4
+    v010 = next(x for x in rdata["versions"] if x["id"] == "v0.1.0")
+    assert v010["status"] == "complete"
+    v020 = next(x for x in rdata["versions"] if x["id"] == "v0.2.0")
+    assert v020["status"] == "active"
+    assert v020.get("current_patch") == 1
 
 
 # ---------------------------------------------------------------------------
@@ -390,20 +405,53 @@ def test_patch_preserves_yaml_comments(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T10 — Version with wrong format (3 components only) → exit 1
+# T10 — Version with wrong format (fewer than 3 components) → exit 1
 # ---------------------------------------------------------------------------
 
 
 def test_patch_rejects_malformed_version(tmp_path: Path) -> None:
     azoth_p, roadmap_p = _make_env(
         tmp_path / "t10",
-        azoth_version="1.2.3",  # only 3 components — invalid for this script
+        azoth_version="1.2",  # two components — invalid
         current_patch=5,
     )
     result = _run("--patch", azoth_p, roadmap_p)
     assert result.returncode == 1, (
-        f"Expected exit 1 for malformed version '1.2.3'; got {result.returncode}"
+        f"Expected exit 1 for malformed version '1.2'; got {result.returncode}"
     )
+
+
+# ---------------------------------------------------------------------------
+# T10b — Post-release three-part semver: 0.1.0 → 0.1.1 + roadmap current_patch
+# ---------------------------------------------------------------------------
+
+
+def test_patch_three_part_post_release(tmp_path: Path) -> None:
+    base = tmp_path / "t10b"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    azoth_p.write_text("version: 0.1.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.2.0
+
+            versions:
+              - id: v0.2.0
+                status: active
+                current_patch: 1
+                goal: "Next"
+            """
+        ),
+        encoding="utf-8",
+    )
+    result = _run("--patch", azoth_p, roadmap_p)
+    assert result.returncode == 0, result.stderr
+    assert yaml.safe_load(azoth_p.read_text())["version"] == "0.1.1"
+    r = yaml.safe_load(roadmap_p.read_text())
+    v = next(x for x in r["versions"] if x["id"] == "v0.2.0")
+    assert v["current_patch"] == 2
 
 
 # ---------------------------------------------------------------------------
@@ -418,9 +466,7 @@ def test_session_closeout_references_version_bump() -> None:
     assert "version-bump.py --patch" in text, (
         "session-closeout.md must reference 'version-bump.py --patch'"
     )
-    assert "W4" in text, (
-        "session-closeout.md must contain a W4 checkpoint for version bumping"
-    )
+    assert "W4" in text, "session-closeout.md must contain a W4 checkpoint for version bumping"
 
 
 # ---------------------------------------------------------------------------

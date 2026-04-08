@@ -1,4 +1,5 @@
-# Azoth root scaffold — tests + kernel integrity (D2 / §4).
+# Azoth — drift CI (P4-003): repo-wide Ruff, kernel integrity (D2 / GOVERNANCE §4),
+# full pytest (D46 deploy parity, adapters, handoff consistency).
 name: CI
 
 on:
@@ -19,24 +20,11 @@ jobs:
       - name: Install dev tools
         run: pip install -r requirements-dev.txt
 
-      - name: Ruff (tracked proposal + integrity stack)
-        run: |
-          ruff check \
-            scripts/architecture_proposal_validate.py \
-            scripts/kernel-integrity.py \
-            tests/test_architecture_proposal_schema.py \
-            tests/test_kernel_integrity.py \
-            tests/test_next_arch_proposal_footer.py \
-            tests/test_settings_azoth_manifest_alignment.py \
-            tests/test_requirements_dev_txt.py
-          ruff format --check \
-            scripts/architecture_proposal_validate.py \
-            scripts/kernel-integrity.py \
-            tests/test_architecture_proposal_schema.py \
-            tests/test_kernel_integrity.py \
-            tests/test_next_arch_proposal_footer.py \
-            tests/test_settings_azoth_manifest_alignment.py \
-            tests/test_requirements_dev_txt.py
+      - name: Ruff lint (repo-wide)
+        run: python3 -m ruff check .
+
+      - name: Ruff format
+        run: python3 -m ruff format --check .
 
       - name: Kernel integrity (D2 + optional §4)
         run: |

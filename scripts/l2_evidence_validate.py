@@ -24,13 +24,9 @@ VALID_AGENTS = frozenset(
         "context-architect",
     }
 )
-VALID_EVIDENCE_KINDS = frozenset(
-    {"eval_summary", "reviewer_gate", "episode_ref", "manual_eval"}
-)
+VALID_EVIDENCE_KINDS = frozenset({"eval_summary", "reviewer_gate", "episode_ref", "manual_eval"})
 
-_ISO_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
-)
+_ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$")
 
 
 class L2EvidenceValidationError(Exception):
@@ -94,9 +90,7 @@ def validate_l2_evidence_record(doc: Any, *, label: str = "record") -> None:
 
     summary = doc["summary"]
     if not isinstance(summary, str) or not (1 <= len(summary) <= SUMMARY_MAX_LEN):
-        raise L2EvidenceValidationError(
-            f"{label}: summary must be str length 1..{SUMMARY_MAX_LEN}"
-        )
+        raise L2EvidenceValidationError(f"{label}: summary must be str length 1..{SUMMARY_MAX_LEN}")
 
     if not isinstance(doc["payload"], dict):
         raise L2EvidenceValidationError(f"{label}: payload must be an object")

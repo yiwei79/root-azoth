@@ -8,6 +8,7 @@ per-pipeline hardcoding to diverge or be omitted entirely.
 All unit tests operate on file content read once at module level.
 The integration test guards against collateral file modifications.
 """
+
 from __future__ import annotations
 
 import subprocess

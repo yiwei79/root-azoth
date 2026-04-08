@@ -66,6 +66,10 @@ Policy source: `subagent-router` skill (trigger definitions and routing table).
 - Gate 2 (Test Builder gate — architect reviews test coverage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g2`)
 - Gate 3 (Architect Review stage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g3`)
 - **Gate escalation:** If a review gate returns request-changes, CRITICAL/blocking findings, or `entropy: RED`, **STOP** until the human approves continuing (same pattern as `/auto` Execution §5).
+- **Eval / swarm routing:** If the run includes an **evaluator** step or a **post-build `/eval`**
+  quality pass, apply `.claude/commands/eval.md` triggers **E1–E6** before choosing baseline
+  **`/eval` (0.85)** vs **`/eval-swarm` (0.9)** — same rules as `/auto` Execution §6 (parallel
+  isolated evaluators when any trigger fires).
 - No review stage shall execute inline with the stage it reviews
 - These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43).
 

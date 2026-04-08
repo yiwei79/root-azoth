@@ -345,8 +345,12 @@ def test_iter_cursor_rule_deployments_maps_templates() -> None:
     adapter = root / "kernel" / "templates" / "platform-adapters" / "cursor"
     adapter.mkdir(parents=True)
     try:
-        (adapter / "azoth-memory.mdc.template").write_text("---\nx: 1\n---\nbody\n", encoding="utf-8")
-        (adapter / "claude-code-parity.mdc.template").write_text("---\ny: 2\n---\n", encoding="utf-8")
+        (adapter / "azoth-memory.mdc.template").write_text(
+            "---\nx: 1\n---\nbody\n", encoding="utf-8"
+        )
+        (adapter / "claude-code-parity.mdc.template").write_text(
+            "---\ny: 2\n---\n", encoding="utf-8"
+        )
         pairs = iter_cursor_rule_deployments(root)
         assert len(pairs) == 2
         dests = {p[1].name for p in pairs}

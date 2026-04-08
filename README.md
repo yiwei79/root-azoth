@@ -4,7 +4,7 @@
 
 **Azoth** is a portable agentic toolkit: disciplined agents, layered memory, governed delivery pipelines, and a single human alignment point. The name comes from alchemy — Azoth is the *universal solvent*: it dissolves into any project and transforms how agents work within it.
 
-**License:** MIT · **Version:** see `[azoth.yaml](azoth.yaml)`
+**License:** [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) (copyright retained; commercial use by arrangement — see `LICENSE`) · **Version:** see `[azoth.yaml](azoth.yaml)`
 
 ---
 
@@ -39,10 +39,12 @@ For people working **in this repo**:
 2. **Install Python deps** used by tooling (e.g. Rich for the welcome dashboard):
   `pip install -r requirements-dev.txt` (from repo root; or your project venv).
   This form satisfies **pip-install-guard** in Claude Code Bash.
-3. **Validate:** `python3 -m pytest tests/` (or `ruff` / project scripts if you use them).
+3. **Validate:** `python3 -m pytest` and `python3 -m ruff check .` / `ruff format --check .` (same gates as **GitHub Actions** `.github/workflows/ci.yml`).
 4. **After changing** canonical `skills/*`*, `agents/**`, or `.claude/commands/**`, sync platform copies:
   `python3 scripts/azoth-deploy.py`
-5. **Session entry:** In **Claude Code**, **SessionStart** injects plain orientation at open (see `CLAUDE.md` rule 9); you can still run `/start` or `python3 scripts/welcome.py` for Rich or a refresh. Elsewhere, run `/start` or `python3 scripts/welcome.py`, then `/next`, `/intake`, or a custom goal per `.claude/commands/`.
+5. **Public product extract (P4-004):** `python3 scripts/azoth_extract_product.py --validate-only` (CI smoke) or
+  `python3 scripts/azoth_extract_product.py --out /tmp/azoth-dist` (full tree per `sync-config.yaml` `product_extraction`).
+6. **Session entry:** In **Claude Code**, **SessionStart** injects plain orientation at open (see `CLAUDE.md` rule 9); you can still run `/start` or `python3 scripts/welcome.py` for Rich or a refresh. Elsewhere, run `/start` or `python3 scripts/welcome.py`, then `/next`, `/intake`, or a custom goal per `.claude/commands/`.
 
 Core contributor context lives in `**[CLAUDE.md](CLAUDE.md)`** — read it first.
 

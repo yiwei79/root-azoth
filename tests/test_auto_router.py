@@ -9,6 +9,7 @@ Tests use lazy reads inside each function (not module-level) so this file
 can be imported before the skill is created; tests will fail until the
 builder delivers the skill.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -101,8 +102,7 @@ def test_auto_router_rule_ordering() -> None:
     # Verify all conditions are present
     for condition in CANONICAL_CONDITIONS:
         assert condition in content, (
-            f"Canonical condition {condition!r} is missing from "
-            "skills/auto-router/SKILL.md"
+            f"Canonical condition {condition!r} is missing from skills/auto-router/SKILL.md"
         )
 
     # Verify canonical order: position of condition[i] < position of condition[i+1]
@@ -125,9 +125,7 @@ def test_auto_router_cross_file_consistency() -> None:
         f"Skill file not found: {SKILL_PATH}. "
         "Builder must create skills/auto-router/SKILL.md before this test passes."
     )
-    assert PIPELINE_PATH.is_file(), (
-        f"Pipeline file not found: {PIPELINE_PATH}"
-    )
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
     skill_content = SKILL_PATH.read_text(encoding="utf-8")
     pipeline_content = PIPELINE_PATH.read_text(encoding="utf-8")

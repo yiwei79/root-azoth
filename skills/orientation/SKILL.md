@@ -80,16 +80,21 @@ used before BL-013.
 - P5-005: Git-based checkpoints
 - P5-006: Phone-friendly output — **deferred to v0.2.0** (post–v0.1.0), backlog `status: deferred`
 
-### Phase 6: Meta-Recursive 🎯 CURRENT (v0.0.6)
+### Phase 6: Meta-Recursive ✅ COMPLETE (v0.0.6)
 
 - P6-001: Agent Crafter
 - P6-002: L2 prompt optimization
 - P6-003: L3 human-gated architecture proposals — **done** (`/arch-proposal`, `pipelines/architecture-proposal.schema.yaml`, `scripts/architecture_proposal_validate.py`)
 
-### Phase 7: Publishing & public product (v0.0.7 — after Phase 6)
+### Phase 7: Publishing & public product ✅ COMPLETE (v0.0.7 → v0.1.0)
 
-- P4-003: CI for drift detection — **deferred from Phase 4**; public-repo readiness
-- P4-004: Publish to GitHub (public azoth) — **D35**, **D37**; pairs with v0.1.0 gate
+- P4-003: CI for drift detection — **shipped** (Phase 7)
+- P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
+
+### Phase 8: Next — roadmap TBD 🎯 CURRENT
+
+- **Canonical state:** `azoth.yaml` `phase: 8`; `.azoth/roadmap.yaml` `active_version: v0.2.0` (slice active, `current_patch` for delivery sessions).
+- **Intent:** Define the next versioned roadmap (phases, `versions[]`, backlog rows) when insights and priorities settle. Placeholder work already parked under v0.2.0 includes **P5-006** (phone-friendly output), **deferred** in backlog.
 
 ## Integration
 

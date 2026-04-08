@@ -53,9 +53,7 @@ def _check_gates(
     if now > exp:
         sys.exit("l2_evidence_append: scope-gate expired")
     if sg.get("session_id") != expected_session_id:
-        sys.exit(
-            "l2_evidence_append: session_id mismatch (scope-gate vs --session-id)"
-        )
+        sys.exit("l2_evidence_append: session_id mismatch (scope-gate vs --session-id)")
 
     delivery = sg.get("delivery_pipeline") == "governed"
     m1 = sg.get("target_layer") == "M1"
@@ -89,9 +87,7 @@ def main() -> None:
     jsonl = args.jsonl
     scope_gate = args.scope_gate if args.azoth_dir is None else root / ".azoth" / "scope-gate.json"
     pipeline_gate = (
-        args.pipeline_gate
-        if args.azoth_dir is None
-        else root / ".azoth" / "pipeline-gate.json"
+        args.pipeline_gate if args.azoth_dir is None else root / ".azoth" / "pipeline-gate.json"
     )
     if args.azoth_dir is not None:
         jsonl = root / ".azoth" / "memory" / "l2-refinement-evidence.jsonl"

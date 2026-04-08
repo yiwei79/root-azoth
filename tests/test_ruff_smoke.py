@@ -1,30 +1,25 @@
-"""Optional ruff gate when `ruff` is on PATH (dev/CI with dev-deps)."""
+"""Ruff gate aligned with `.github/workflows/ci.yml` (P4-003: repo-wide drift lint)."""
 
 from __future__ import annotations
 
-import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-RUFF_TARGETS = [
-    "scripts/architecture_proposal_validate.py",
-    "scripts/kernel-integrity.py",
-    "tests/test_architecture_proposal_schema.py",
-    "tests/test_kernel_integrity.py",
-    "tests/test_next_arch_proposal_footer.py",
-]
 
 
-@pytest.mark.skipif(shutil.which("ruff") is None, reason="ruff not on PATH")
-def test_ruff_check_architecture_proposal_stack() -> None:
+def test_ruff_check_repo_wide() -> None:
+    """`python -m ruff check .` must pass (same as CI) when ruff is installed."""
     r = subprocess.run(
-        ["ruff", "check", *RUFF_TARGETS],
+        [sys.executable, "-m", "ruff", "check", "."],
         cwd=REPO,
         check=False,
         capture_output=True,
         text=True,
     )
+    if r.returncode != 0 and "No module named ruff" in (r.stderr or ""):
+        pytest.skip("ruff not installed (pip install -r requirements-dev.txt)")
     assert r.returncode == 0, r.stdout + r.stderr

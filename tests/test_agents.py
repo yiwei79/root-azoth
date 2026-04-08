@@ -95,9 +95,7 @@ class TestAgentStructure:
 
     @pytest.mark.parametrize("tier_dir", TIER_DIRS.keys())
     def test_tier_directory_exists(self, tier_dir: str) -> None:
-        assert (AGENTS_DIR / tier_dir).is_dir(), (
-            f"agents/{tier_dir}/ directory must exist"
-        )
+        assert (AGENTS_DIR / tier_dir).is_dir(), f"agents/{tier_dir}/ directory must exist"
 
     @pytest.mark.parametrize("agent_name", EXPECTED_AGENTS.keys())
     def test_agent_md_exists(self, agent_name: str) -> None:
@@ -123,9 +121,7 @@ class TestAgentStructure:
     def test_no_unexpected_tier_dirs(self) -> None:
         """Drift detection: no tier directories should exist that aren't expected."""
         actual_dirs = sorted(
-            d.name
-            for d in AGENTS_DIR.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
+            d.name for d in AGENTS_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")
         )
         unexpected = set(actual_dirs) - set(TIER_DIRS.keys())
         assert not unexpected, f"Unexpected tier directories found (drift): {unexpected}"
@@ -135,16 +131,19 @@ class TestAgentStructure:
         for tier_dir in TIER_DIRS:
             tier_path = AGENTS_DIR / tier_dir
             if tier_path.is_dir():
-                count += sum(
-                    1 for f in tier_path.iterdir() if f.name.endswith(".agent.md")
-                )
+                count += sum(1 for f in tier_path.iterdir() if f.name.endswith(".agent.md"))
         assert count == len(EXPECTED_AGENTS), (
             f"Expected {len(EXPECTED_AGENTS)} agents, found {count}"
         )
 
     def test_tier_agent_counts(self) -> None:
         """Each tier should have the expected number of agents."""
-        expected_per_tier = {"tier1-core": 4, "tier2-research": 2, "tier3-meta": 3, "tier4-utility": 1}
+        expected_per_tier = {
+            "tier1-core": 4,
+            "tier2-research": 2,
+            "tier3-meta": 3,
+            "tier4-utility": 1,
+        }
         for tier_dir, expected_count in expected_per_tier.items():
             tier_path = AGENTS_DIR / tier_dir
             actual = sum(1 for f in tier_path.iterdir() if f.name.endswith(".agent.md"))
@@ -170,9 +169,7 @@ class TestAgentFrontmatter:
     def test_frontmatter_has_required_fields(self, agent_name: str) -> None:
         fm = _parse_frontmatter(agent_name)
         for field in REQUIRED_FRONTMATTER_FIELDS:
-            assert field in fm, (
-                f"Frontmatter missing '{field}' field for {agent_name}"
-            )
+            assert field in fm, f"Frontmatter missing '{field}' field for {agent_name}"
 
     @pytest.mark.parametrize("agent_name", EXPECTED_AGENTS.keys())
     def test_name_matches_filename(self, agent_name: str) -> None:
@@ -205,9 +202,7 @@ class TestAgentFrontmatter:
         posture = fm.get("posture", {})
         assert isinstance(posture, dict), f"posture must be a mapping for {agent_name}"
         for key in POSTURE_SUBKEYS:
-            assert key in posture, (
-                f"posture missing '{key}' for {agent_name}"
-            )
+            assert key in posture, f"posture missing '{key}' for {agent_name}"
 
     @pytest.mark.parametrize("agent_name", EXPECTED_AGENTS.keys())
     def test_skills_is_list(self, agent_name: str) -> None:
@@ -234,9 +229,7 @@ class TestAgentContent:
     def test_has_required_sections(self, agent_name: str) -> None:
         content = _agent_path(agent_name).read_text(encoding="utf-8")
         for section in REQUIRED_SECTIONS:
-            assert section in content, (
-                f"{agent_name}.agent.md missing '{section}' section"
-            )
+            assert section in content, f"{agent_name}.agent.md missing '{section}' section"
 
     @pytest.mark.parametrize("agent_name", EXPECTED_AGENTS.keys())
     def test_has_sufficient_sections(self, agent_name: str) -> None:
@@ -244,7 +237,7 @@ class TestAgentContent:
         content = _agent_path(agent_name).read_text(encoding="utf-8")
         # Count ## headings after frontmatter
         end_idx = content.index("---", 3)
-        body = content[end_idx + 3:]
+        body = content[end_idx + 3 :]
         h2_count = sum(1 for line in body.split("\n") if line.startswith("## "))
         assert h2_count >= 3, (
             f"{agent_name}.agent.md has {h2_count} h2 sections — minimum 3 expected"
@@ -322,6 +315,4 @@ class TestAgentCrafterMetaLoop:
             "Task",
         ]
         missing = [m for m in markers if m not in body]
-        assert not missing, (
-            f"agent-crafter body missing required meta-loop markers: {missing}"
-        )
+        assert not missing, f"agent-crafter body missing required meta-loop markers: {missing}"

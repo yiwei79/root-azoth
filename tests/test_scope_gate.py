@@ -10,7 +10,9 @@ ORCHESTRATOR_PATH = (
     Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
 )
 
-SCOPE_GATE_THIN_PATH = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
+SCOPE_GATE_THIN_PATH = (
+    Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "scope-gate.py"
+)
 
 
 def _run(

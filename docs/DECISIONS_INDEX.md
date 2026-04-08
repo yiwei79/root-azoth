@@ -63,19 +63,19 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D45 | Context-sensitive memory retrieval | 🔧 partial | skills/context-recall/SKILL.md | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
-| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.7 + v0.1.0 target; /next reads versioned structure) | 3 |
+| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.1.0 complete + v0.2.0 active; /next reads versioned structure) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 🔧 partial | `.claude/commands/next.md` + `.azoth/scope-gate.json` (BL-004 delivered; hook enforcement Claude Code–only) | 3 |
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007); Phase 5: `.claude/hooks/session_start_welcome.py`, `.azoth/session-orientation.txt` (runtime), `CLAUDE.md` rule 9 | 4 |
-| D53 | Auto-versioning policy: delivery-triggered version increments | 📋 planned | scripts/version-bump.py + /session-closeout integration (BL-009) | 4 |
+| D53 | Auto-versioning policy: delivery-triggered version increments | ✅ implemented | `scripts/version-bump.py` (--patch / --phase / --release) + roadmap `active_version`; /session-closeout + /deliver-full `--patch` (BL-009); `--release` closes v0.0.7→v0.1.0 and activates v0.2.0 | 4 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 32 |
+| ✅ implemented | 38 |
 | 🔧 partial | 9 |
-| 📋 planned | 11 |
+| 📋 planned | 5 |
 | 🔄 superseded | 1 |
 | **Total** | **53** |

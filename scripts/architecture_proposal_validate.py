@@ -14,14 +14,10 @@ PROPOSAL_SCHEMA_VERSION = 1
 TITLE_MAX_LEN = 256
 SUMMARY_MAX_LEN = 8192
 
-_VALID_STATUSES = frozenset(
-    {"draft", "submitted", "approved_for_docs", "superseded", "rejected"}
-)
+_VALID_STATUSES = frozenset({"draft", "submitted", "approved_for_docs", "superseded", "rejected"})
 _VALID_SCOPE_LAYERS = frozenset({"kernel", "skills", "agents", "pipelines", "docs", "mixed"})
 
-_ISO_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
-)
+_ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$")
 _DECISION_REF_RE = re.compile(r"^D\d+$")
 
 _TOP_KEYS = frozenset(
@@ -49,7 +45,9 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
         raise ArchitectureProposalValidationError(f"{label}: must be a JSON/YAML object")
     extra = set(doc.keys()) - _TOP_KEYS
     if extra:
-        raise ArchitectureProposalValidationError(f"{label}: unknown top-level keys {sorted(extra)}")
+        raise ArchitectureProposalValidationError(
+            f"{label}: unknown top-level keys {sorted(extra)}"
+        )
     for k in _TOP_KEYS:
         if k not in doc:
             raise ArchitectureProposalValidationError(f"{label}: missing required field {k!r}")
@@ -61,7 +59,9 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
 
     ca = doc["created_at"]
     if not isinstance(ca, str) or not _ISO_RE.match(ca):
-        raise ArchitectureProposalValidationError(f"{label}: created_at must be ISO-8601 UTC string")
+        raise ArchitectureProposalValidationError(
+            f"{label}: created_at must be ISO-8601 UTC string"
+        )
     try:
         if ca.endswith("Z"):
             datetime.fromisoformat(ca.replace("Z", "+00:00"))
@@ -73,7 +73,9 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
     for key, maxlen in (("session_id", 128), ("backlog_id", 64)):
         v = doc[key]
         if not isinstance(v, str) or not (1 <= len(v) <= maxlen):
-            raise ArchitectureProposalValidationError(f"{label}: {key} must be non-empty str, max {maxlen}")
+            raise ArchitectureProposalValidationError(
+                f"{label}: {key} must be non-empty str, max {maxlen}"
+            )
 
     title = doc["title"]
     if not isinstance(title, str) or not (1 <= len(title) <= TITLE_MAX_LEN):
@@ -105,7 +107,9 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
         raise ArchitectureProposalValidationError(f"{label}: scope_layers must be non-empty array")
     for i, layer in enumerate(layers):
         if layer not in _VALID_SCOPE_LAYERS:
-            raise ArchitectureProposalValidationError(f"{label}: invalid scope_layers[{i}] {layer!r}")
+            raise ArchitectureProposalValidationError(
+                f"{label}: invalid scope_layers[{i}] {layer!r}"
+            )
 
     if not isinstance(doc["details"], dict):
         raise ArchitectureProposalValidationError(f"{label}: details must be an object")
