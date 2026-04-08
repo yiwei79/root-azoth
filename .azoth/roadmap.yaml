@@ -6,8 +6,8 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 5
-current_phase_title: "Trust Layer"
+current_phase: 6
+current_phase_title: "Meta-Recursive"
 
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -124,7 +124,7 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 1
-active_version: v0.0.5
+active_version: v0.0.6
 
 # D53: Bump rules (0.0.PHASE.PATCH scheme)
 # - patch (0.0.N.XX → 0.0.N.XX+1): every delivery session (resets to .1 on phase bump)
@@ -199,8 +199,8 @@ versions:
     pending_task_refs: []
 
   - id: v0.0.5
-    status: active
-    current_patch: 14
+    status: complete
+    final_patch: 14
     goal: "Phase 5: Trust Layer"
     phase_scope: [5]
     tasks:
@@ -224,7 +224,8 @@ versions:
         note: "Phase 5 component of D52; BL-007 delivers the /start skill in v0.0.3"
 
   - id: v0.0.6
-    status: backlog
+    status: active
+    current_patch: 2
     goal: "Phase 6: Meta-recursive — roadmap completion milestone"
     phase_scope: [6]
     note: >

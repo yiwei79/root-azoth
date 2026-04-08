@@ -54,7 +54,7 @@ def test_render_dashboard_smoke() -> None:
     )
     out = console.export_text()
     assert "ROADMAP" in out
-    assert "v0.0.5" in out
+    assert "v0.0.6" in out
 
 
 def test_status_style_known() -> None:

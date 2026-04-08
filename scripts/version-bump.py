@@ -13,7 +13,8 @@ Usage:
 
 Flags:
   --patch    0.0.N.M → 0.0.N.M+1  (every session delivery)
-  --phase    0.0.N.M → 0.0.N+1.1  (phase completion — requires empty pending_task_refs)
+  --phase    0.0.N.M → 0.0.N+1.1  (phase completion — empty pending_task_refs; next
+              slice status planned or backlog → active + current_patch 1)
   --release  0.0.6.M → 0.1.0      (HUMAN-ONLY: confirms readiness for public release)
 
 --release is intentionally minimal: it only writes azoth.yaml and prints the
@@ -257,17 +258,21 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     # 3. Top-level active_version → next
     roadmap_text = _set_active_version(roadmap_text, next_active_id)
 
-    # 4. In new active block: insert current_patch: 1 after status: planned line
+    # 4. Activate new version block: planned|backlog → active + current_patch: 1
     start, end = _find_block(roadmap_text, next_active_id)
     block = roadmap_text[start:end]
-    # Insert current_patch: 1 after the "    status: planned" line
     new_block = re.sub(
-        r"^(    status: planned\n)",
-        r"\g<1>    current_patch: 1\n",
+        r"^(    status: (?:planned|backlog)\n)",
+        "    status: active\n    current_patch: 1\n",
         block,
         count=1,
         flags=re.MULTILINE,
     )
+    if new_block == block:
+        _die(
+            f"--phase refused: could not activate version block {next_active_id!r}: "
+            "expected leading '    status: planned' or '    status: backlog'"
+        )
     roadmap_text = roadmap_text[:start] + new_block + roadmap_text[end:]
 
     # Write both files

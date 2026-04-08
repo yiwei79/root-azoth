@@ -207,6 +207,47 @@ def test_phase_advances_version(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# T4b — --phase activates next slice when status was backlog (v0.0.6-style)
+# ---------------------------------------------------------------------------
+
+
+def test_phase_activates_backlog_version_block(tmp_path: Path) -> None:
+    base = tmp_path / "t4b"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    azoth_p.write_text("version: 0.0.3.1\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.0.3
+
+            versions:
+              - id: v0.0.3
+                status: active
+                current_patch: 1
+                goal: "Phase 3"
+                pending_task_refs: []
+
+              - id: v0.0.4
+                status: backlog
+                goal: "Phase 4"
+            """
+        ),
+        encoding="utf-8",
+    )
+    result = _run("--phase", azoth_p, roadmap_p)
+    assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
+
+    roadmap_data = yaml.safe_load(roadmap_p.read_text())
+    v004 = next(v for v in roadmap_data["versions"] if v["id"] == "v0.0.4")
+    assert v004["status"] == "active", f"Expected status active, got {v004['status']!r}"
+    assert v004.get("current_patch") == 1, (
+        f"Expected current_patch=1 after backlog→active, got {v004.get('current_patch')!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # T5 — --phase exits 1 when pending_task_refs is non-empty; output contains "refused"
 # ---------------------------------------------------------------------------
 

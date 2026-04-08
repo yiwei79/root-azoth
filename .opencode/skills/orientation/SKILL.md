@@ -65,21 +65,21 @@ alignment—not on every session.
 - [x] Update kernel docs for dual-path awareness — P4-006
 - [ ] Add Edit(.azoth/kernel/**) to settings.json.template deny list (when that template is next revised for consumer installs)
 
-### Phase 5: Trust Layer 🎯 CURRENT (v0.0.5)
+### Phase 5: Trust Layer ✅ COMPLETE (v0.0.5)
 - [x] **P5-007 / D52 (Claude Code):** `hooks.SessionStart` in `.claude/settings.json` runs `.claude/hooks/session_start_welcome.py`, which invokes `scripts/welcome.py --plain` with repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and injects the same text into model context. Matchers `startup|resume`; optional per-hook `timeout` (seconds). **Policy:** root `CLAUDE.md` rules 8–9 — default on injected context; **`Read`** for verbatim plain; **Bash** `welcome.py` (Rich) allowed — expand IDE output for full UI. **Cursor:** no SessionStart — **integrated terminal** `welcome.py` for full Rich UI; Bash in chat + expand; parity rules + `/start`.
-- [ ] D43: Commit-time governance hooks (Co-Authored-By stripping, commit format validation)
-- [ ] entropy-check hook
-- [ ] alignment-summary hook
-- [ ] Session telemetry
-- [ ] Git-based checkpoints
-- [ ] Phone-friendly output
+- [x] D43 / P5-001: Commit-time governance hooks (Co-Authored-By rejection, install path) — optional format rules still open in bootloader
+- [x] P5-002: entropy-check hook
+- [x] P5-003: alignment-summary hook
+- [x] P5-004: Session telemetry
+- [x] P5-005: Git-based checkpoints
+- [ ] P5-006: Phone-friendly output — **deferred to v0.2.0** (post–v0.1.0), backlog `status: deferred`
 
-### Phase 6: Meta-Recursive (v0.0.6 — last 0.0.x before v0.1.0)
+### Phase 6: Meta-Recursive 🎯 CURRENT (v0.0.6 — last 0.0.x before v0.1.0)
 - [ ] P4-003: CI for drift detection — **deferred from Phase 4**; schedule here with public-repo readiness
 - [ ] P4-004: Publish to GitHub (public azoth) — **deferred from Phase 4**; **D35**, **D37**; pairs with v0.1.0 gate
-- [ ] Agent Crafter
-- [ ] L2 prompt optimization
-- [ ] L3 human-gated architecture proposals
+- [ ] P6-001: Agent Crafter
+- [ ] P6-002: L2 prompt optimization
+- [ ] P6-003: L3 human-gated architecture proposals
 
 ## Integration
 

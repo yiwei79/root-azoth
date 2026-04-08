@@ -85,6 +85,12 @@ Reflexion doesn't need explicit invocation. Every agent should:
 - Notice when the human corrects or adjusts
 - Record these observations as episodes
 
+### Ordinal reuse across menus (ep-081)
+
+**Failure mode:** The human chooses **option 2** from an early branching list (e.g. phase-close vs other paths). Later, the assistant lists **“what you should do next”** as **option 1 / option 2 / …** using the **same ordinal scheme**. The human says **“option 2”** meaning the **second follow-up**, not the **original** option 2 — routing error.
+
+**Practice:** After a numbered branch, use **named** follow-ups (**Session closeout**, **Seed backlog**, **Run /intake**) or a **different** label scheme (**Next A/B/C**, **Step 1…**). If the human says **option N** without context, **confirm which list** before acting.
+
 ---
 
 ## L2: Evidence-Based Refinement
