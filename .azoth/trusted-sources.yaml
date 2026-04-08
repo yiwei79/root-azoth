@@ -31,3 +31,11 @@ sources:
     require_approval: human
     added_date: "2026-04-05"
     added_by: human
+
+  - id: cursor-review
+    name: "Cursor Code Review — blindspot sweep"
+    description: "Structured review findings from Cursor using skills/cursor-review-insights (D32 → .azoth/inbox/)"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-08"
+    added_by: human

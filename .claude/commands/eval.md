@@ -33,16 +33,20 @@ Apply agentic-eval to the specified artifacts or current session output.
    - recommended action:
    ```
 
-3. Produce overall assessment:
-   - PASS: All criteria met, proceed
-   - CONDITIONAL: Minor gaps, proceed with noted caveats
-   - FAIL: Significant gaps, address before proceeding
+3. Produce overall assessment (when using 0.0–1.0 rubric weights, align with **evaluator** agent):
+   - **PASS:** overall **≥ 0.85** and no dimension below **0.5**, proceed
+   - **CONDITIONAL:** overall **≥ 0.70 and < 0.85** (or pass line met but max one dimension below 0.5 per evaluator protocol), proceed with noted caveats
+   - **FAIL:** overall **< 0.70** or **2+** dimensions below 0.5, address before proceeding
 
 ## Rules
 
 - If governance, HITL placement, or ownership boundaries are unclear, flag them
 - Be specific about gaps — "needs improvement" is not actionable
 - Score honestly — passing everything defeats the purpose
+
+## L2 follow-on (optional, P6-002)
+
+`/eval` stays **read-only** for repo files. If the human wants delivery evidence preserved for a later **prompt-engineer** pass, map this command’s structured output to an L2 evidence record (`skills/agentic-eval/SKILL.md` — L2 mapping) and append with `python3 scripts/l2_evidence_append.py --session-id <active scope session_id>` — only when scope (and pipeline, if M1/governed) gates are valid.
 
 ## Arguments
 

@@ -345,6 +345,15 @@ class TestGitignore:
     def test_excludes_python_artifacts(self) -> None:
         assert "__pycache__" in self.content or ".pyc" in self.content
 
+    def test_excludes_runtime_scope_and_pipeline_gate_json(self) -> None:
+        """BL-020: live gate files are local-only; examples stay tracked."""
+        assert ".azoth/scope-gate.json" in self.content
+        assert ".azoth/pipeline-gate.json" in self.content
+
+    def test_excludes_session_state_md(self) -> None:
+        """BL-021: session-state.md is local cross-IDE handoff; example file is tracked."""
+        assert ".azoth/session-state.md" in self.content
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # 9. CROSS-ARTIFACT CONSISTENCY
@@ -373,10 +382,13 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md or "0.1.0" in self.orientation_md
 
     def test_phase_consistent(self) -> None:
-        """Current phase in azoth.yaml matches CLAUDE.md; earlier phases live in orientation (BL-013)."""
+        """Current phase in azoth.yaml matches CLAUDE.md and roadmap; orientation still carries earlier phases (BL-013)."""
         phase = int(self.azoth_yaml["phase"])
-        assert phase == 5
         assert f"Phase {phase}" in self.claude_md
+        roadmap_path = AZOTH_ROOT / ".azoth" / "roadmap.yaml"
+        assert roadmap_path.is_file()
+        roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
+        assert int(roadmap["current_phase"]) == phase
         assert "Phase 2" in self.orientation_md
 
     def test_four_layers_consistent(self) -> None:
@@ -424,7 +436,6 @@ class TestGovernanceBlockers:
             encoding="utf-8"
         )
 
-    @pytest.mark.xfail(reason="B2: kernel-integrity.py not yet created (Phase 1)")
     def test_b2_kernel_integrity_script(self) -> None:
         """B2: A kernel integrity validation script should exist in Phase 1."""
         path = AZOTH_ROOT / "scripts" / "kernel-integrity.py"

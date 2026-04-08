@@ -6,8 +6,8 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 5
-current_phase_title: "Trust Layer"
+current_phase: 6
+current_phase_title: "Meta-Recursive"
 
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -124,11 +124,11 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 1
-active_version: v0.0.5
+active_version: v0.0.6
 
 # D53: Bump rules (0.0.PHASE.PATCH scheme)
 # - patch (0.0.N.XX → 0.0.N.XX+1): every delivery session (resets to .1 on phase bump)
-# - significant (0.0.N → 0.0.N+1):  phase completion; SIGNIFICANT = phase number
+# - significant (0.0.N → 0.0.N+1):  phase completion; N = phase number (through 7)
 # - release (0.1.0):                 full roadmap complete — public azoth release
 # - git tag proposed at release only (user-confirmed, never auto-pushed)
 
@@ -186,8 +186,9 @@ versions:
     goal: "Phase 4: Distribution & Polish"
     phase_scope: [4]
     note: >
-      P4-003 (CI) and P4-004 (publish) are deferred to v0.0.6 — the last 0.0.x phase before
-      v0.1.0 — so Phase 4 can close on shipped toolkit UX without blocking on public CI/repo.
+      P4-003 (CI) and P4-004 (publish) were deferred from Phase 4; they ship in Phase 7
+      (v0.0.7) after Phase 6 meta-recursive work — so Phase 4 could close on toolkit UX
+      without blocking on public CI/repo.
     completed_tasks:
       - {id: P4-001, title: "README (philosophy + quickstart)", decision_ref: D16}
       - {id: P4-002, title: "azoth init interactive onboarding", decision_ref: [D5, D36]}
@@ -199,8 +200,8 @@ versions:
     pending_task_refs: []
 
   - id: v0.0.5
-    status: active
-    current_patch: 3
+    status: complete
+    final_patch: 14
     goal: "Phase 5: Trust Layer"
     phase_scope: [5]
     tasks:
@@ -218,20 +219,19 @@ versions:
       - id: P5-005
         title: "Git-based checkpoints"
         decision_ref: D15
-      - id: P5-006
-        title: "Phone-friendly output"
       - id: P5-007
         title: "Session start hook: auto-trigger /start on session open"
         decision_ref: D52
         note: "Phase 5 component of D52; BL-007 delivers the /start skill in v0.0.3"
 
   - id: v0.0.6
-    status: backlog
-    goal: "Phase 6: Meta-recursive — roadmap completion milestone"
+    status: active
+    current_patch: 7
+    goal: "Phase 6: Meta-recursive — agent/skill meta layer"
     phase_scope: [6]
     note: >
-      Final 0.0.x delivery before v0.1.0: includes deferred Phase 4 closure items (P4-003 CI,
-      P4-004 publish) alongside meta-recursive work — run after Phases 4–5 substance is stable.
+      P6-001–P6-003 (Agent Crafter, L2 prompt optimization, L3 human-gated architecture).
+      Publishing, public CI, and extraction closure are Phase 7 (v0.0.7).
     tasks:
       - id: P6-001
         title: "Agent Crafter"
@@ -239,18 +239,41 @@ versions:
         title: "L2 prompt optimization"
       - id: P6-003
         title: "L3 human-gated architecture proposals"
+
+  - id: v0.0.7
+    status: backlog
+    goal: "Phase 7: Publishing & public product — CI, extraction, GitHub"
+    phase_scope: [7]
+    note: >
+      Deferred-from-Phase-4 closure plus release mechanics: drift CI on the public surface,
+      mechanical extraction to public azoth, aligned with the v0.1.0 gate. Activate after
+      Phase 6 (v0.0.6) is complete.
+    tasks:
       - id: P4-003
         title: "CI for drift detection"
         decision_ref: null
-        deferred_from: "v0.0.4 Phase 4 — last-phase scheduling (2026-04)"
+        deferred_from: "v0.0.4 Phase 4 — Phase 7 scheduling (2026-04)"
         note: "Typically needs public repo; pairs with extraction/sync validation before v0.1.0"
       - id: P4-004
         title: "Publish to GitHub (public azoth repo)"
         decision_ref: [D35, D37]
-        deferred_from: "v0.0.4 Phase 4 — last-phase scheduling (2026-04)"
+        deferred_from: "v0.0.4 Phase 4 — Phase 7 scheduling (2026-04)"
         note: "Public product repo + mechanical extraction; aligns with v0.1.0 release gate"
 
   - id: v0.1.0
     status: target
-    goal: "Public azoth release — full roadmap complete (Phases 1–6)"
-    note: "Version bumped to 0.1.0 when Phase 6 (v0.0.6) is complete. Git tag proposed."
+    goal: "Public azoth release — full roadmap complete (Phases 1–7)"
+    note: "Version bumped to 0.1.0 when Phase 7 (v0.0.7) is complete. Git tag proposed."
+
+  - id: v0.2.0
+    status: backlog
+    goal: "Post–v0.1.0 polish and ergonomics (unscheduled)"
+    phase_scope: []
+    note: >
+      Bucket for work explicitly deferred past the initial public release. No phase tie-in;
+      scheduled when v0.1.0 is stable and capacity allows.
+    tasks:
+      - id: P5-006
+        title: "Phone-friendly output (narrow terminals)"
+        deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
+        note: "Welcome/dashboard and key CLI width; optional compact mode"

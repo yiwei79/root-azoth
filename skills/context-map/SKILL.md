@@ -80,11 +80,13 @@ Blast Radius Assessment:
 
 Based on the blast radius:
 
-| Blast Radius | Action |
-|-------------|--------|
-| GREEN (< 5 files) | Proceed directly |
-| YELLOW (5-10 files) | Checkpoint, then proceed |
-| RED (> 10 files) | Scope down or get human approval |
+
+| Blast Radius        | Action                           |
+| ------------------- | -------------------------------- |
+| GREEN (< 5 files)   | Proceed directly                 |
+| YELLOW (5-10 files) | Checkpoint, then proceed         |
+| RED (> 10 files)    | Scope down or get human approval |
+
 
 ---
 
@@ -135,10 +137,13 @@ not action taking.
 
 ## Best Practices
 
-| Practice | Rationale |
-|----------|-----------|
-| **Map before changing** | Prevents surprise cascading failures |
-| **Include tests** | Tests are dependencies — if they break, the change isn't done |
-| **Check git blame** | Recent changes to targets suggest active development — coordinate |
-| **Update the map** | If scope changes during implementation, re-map |
-| **Share the map** | Include in alignment summary so human sees the blast radius |
+
+| Practice                | Rationale                                                         |
+| ----------------------- | ----------------------------------------------------------------- |
+| **Map before changing** | Prevents surprise cascading failures                              |
+| **Include tests**       | Tests are dependencies — if they break, the change isn't done     |
+| **Check git blame**     | Recent changes to targets suggest active development — coordinate |
+| **Update the map**      | If scope changes during implementation, re-map                    |
+| **Share the map**       | Include in alignment summary so human sees the blast radius       |
+
+

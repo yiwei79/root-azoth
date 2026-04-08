@@ -229,14 +229,19 @@ The `remember` skill handles writes to M3; `context-recall` handles reads from M
 
 ### The Meta-Recursive Pattern (Agent Crafter)
 
+Operational loop (D21): each stage after the architect brief uses a **fresh subagent context** (e.g. Cursor **`Task`** per stage with the mapped archetype). The orchestrator forwards **BL-012** typed YAML via `inputs.prior_stage_summaries` so **evaluator** and **reviewer** never inherit the crafter’s scratch context.
+
 ```
-Goal → Architect decides agent needed → Agent Crafter designs agent
-→ Evaluator scores → Prompt Engineer refines → Agent Crafter updates
-→ Human approves → Agent becomes permanent
+Architect brief → Agent Crafter designs → Evaluator scores (isolated)
+→ Prompt Engineer refines → Agent Crafter integrates
+→ Reviewer (governance-review) default-on for governed M1 → Human approves
+→ Canonical write under agents/ + tests + azoth-deploy (D46)
 
 Meta-level: Agent Crafter improves itself (with human approval)
-Entropy guard prevents unbounded self-modification
+Entropy guard prevents unbounded self-modification; recursion depth = 1 by default
 ```
+
+**Waiver:** For **governed** backlog work, the human may skip the post-integration **reviewer** only by recording a **one-line waiver rationale** in the pipeline Declaration; default remains reviewer-on.
 
 ### Proactive Agent Posture (D26)
 
@@ -270,7 +275,9 @@ The Trust Contract defines the overall ceiling.
 
 ### Seed Commands (D25)
 
-12 built-in slash commands ship with every Azoth installation:
+Core **seed** commands (D25) include at least the table below. **Additional** lifecycle and
+orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/start`,
+`/roadmap`, and platform-specific aliases) and are not meant to replace the minimum seeded set.
 
 | Command | Category | Purpose |
 |---------|----------|---------|
@@ -286,6 +293,7 @@ The Trust Contract defines the overall ceiling.
 | `/promote` | Governance | Review promotion candidates |
 | `/sync` | Infrastructure | Pattern extraction from source framework |
 | `/worktree-sync` | Infrastructure | Git checkpoint and sync |
+| `/arch-proposal` | Governance | L3 human-gated architecture proposal YAML (P6-003) |
 
 Project-specific commands (session-close, classify-learning, fill-bootloader)
 are NOT seeded — they emerge naturally in each consumer project via the memory system.
@@ -535,9 +543,34 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 | Scope / pipeline gate enforcement | **Mechanical** (deny Write/Edit) | **Behavioral** — enforced by always-applied **`.cursor/rules/*.mdc`** instructing the model to read `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json` and refuse writes when invalid |
 | **Subagent isolation (D21)** | `Agent(subagent_type=...)` | **`Task`** with matching `subagent_type` (Azoth archetypes) — orchestrator stays in main chat; **must not** inline all pipeline stages when `Task` is available (see `claude-code-parity.mdc`) |
 
+**PreToolUse hook commands** in `.claude/settings.json` should use **paths relative to the repository root** (for example `python3 .claude/hooks/edit_pretooluse_orchestrator.py`) so clones and CI do not embed machine-specific absolute paths. Claude Code runs hooks with the **project workspace as the current working directory**. If a hook fails to resolve, use an absolute path only for local debugging.
+
+**Entropy (Write/Edit, P5-002):** `kernel/TRUST_CONTRACT.md` §1 states per-*turn* limits for agents. The **PreToolUse** entropy hook runs **once per tool call**, not per LLM turn. In this toolkit, **cumulative entropy_delta** and file/line caps are **session-scoped**, keyed to `scope-gate.json` `session_id`, and reset when the scope card changes—mechanical alignment with an approved scope, not a literal per-tool-call interpretation of the §1 table alone.
+
+**Alignment summary (Write/Edit, P5-003):** `kernel/TRUST_CONTRACT.md` §2 defines the human-facing Alignment Summary. For **machine-comparable** handoffs, pipeline stages emit typed YAML per **BL-012** (`pipelines/stage-summary.schema.yaml`). The **PreToolUse orchestrator** (`.claude/hooks/edit_pretooluse_orchestrator.py`) runs **after** the scope gate and **before** entropy: for **Write** and **Edit** targeting `.azoth/handoffs/**/*.yaml|yml`, it validates **one YAML document** per call using shared structural checks (`.claude/hooks/stage_summary_validate.py`). Invalid **handoff content** → deny with `[alignment-summary]`; **malformed JSON on stdin** remains fail-open (same rationale as scope/entropy hooks). **Edit** resolves `old_string`/`new_string` to candidate text (single match), then applies the same validation as **Write**.
+
+**Malformed stdin (fail-open):** If the hook process receives **invalid JSON** on stdin (PreToolUse payload), the scope and orchestrator hooks **allow** the tool call—same posture as `scope-gate.py` and `pip-install-guard.py`. Rationale: without a parseable payload there is no reliable `tool_name` / `tool_input` to enforce; denying would block **all** Write/Edit on environmental or platform glitches. For the strictest threat model (deny when stdin is corrupt), that would require a separate product or hook contract change—not Azoth-only policy.
+
 **Architectural rule:** Treat Cursor as **source-compatible, hook-soft**. The **kernel/templates/platform-adapters/cursor/** templates (`azoth-memory.mdc`, `claude-code-parity.mdc`) are the **minimum viable guardrails** so sessions honor scope gates, pipeline gates, `/next`, delivery pipelines, and **Task-based** subagent routing **without** relying on hooks. Duplicated policy in M2 patterns + rules is intentional (mechanical enforcement in Claude Code, instruction enforcement in Cursor). **`scripts/azoth-deploy.py --platforms cursor`** copies `*.mdc.template` → `.cursor/rules/*.mdc` so consumer workspaces stay coupled to kernel templates.
 
 **When to use which IDE:** Cursor is appropriate for exploration, edits, and multi-stage delivery **when** the agent uses **`Task`** per `subagent-router` (same isolation contract as Claude Code). Prefer **Claude Code** when you need **binary** PreToolUse enforcement, not for subagent isolation alone. See `kernel/templates/platform-adapters/cursor/README.md`.
+
+#### Cross-IDE session memory parity (`/session-closeout` W1–W4)
+
+Azoth treats **repo-local state** as the **authoritative** narrative every platform must converge on. **Claude Code project memory** (`~/.claude/projects/<project-key>/memory/`) is a **supplemental mirror**, not a second source of truth.
+
+Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D46 copies to **`.github/prompts/session-closeout.prompt.md`** and **`.opencode/commands/session-closeout.md`**).
+
+| Checkpoint | What it writes | Claude Code | Cursor | OpenCode | GitHub Copilot |
+|------------|----------------|-------------|--------|----------|----------------|
+| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ (same repo path) |
+| **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json` | ✅ | ✅ | ✅ | ✅ (same repo paths) |
+| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | N/A |
+| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
+
+**Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule).
+
+**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists only so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**). **OpenCode** and **GitHub Copilot** do not consume `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or a Cursor session with access.
 
 ### Platform File Format Differences
 
@@ -590,11 +623,24 @@ with a git pre-commit hook triggering regeneration.
 
 ### Session Telemetry
 
+Append-only **JSON Lines** at `.azoth/telemetry/session-log.jsonl` (gitignored). Writer:
+`.claude/hooks/session_telemetry.py` (P5-004). Normative intent: `kernel/GOVERNANCE.md` §6.
+
+**`outcome` vocabulary (canonical):**
+
+| `source`   | Typical `outcome` | Meaning |
+|------------|-------------------|---------|
+| `pretooluse` | `allowed` \| `denied` | PreToolUse `Write`/`Edit` allowed or blocked after scope / alignment / entropy |
+| `session`  | `success` | Session lifecycle (e.g. `session_orientation` after welcome) |
+
+**Example lines (illustrative):**
+
 ```jsonl
-{"session_id":"uuid","turn":3,"agent":"builder","tool":"edit","target":"src/main.py","outcome":"success","files_changed":1,"entropy_delta":0.1,"timestamp":"2026-04-03T19:00:00Z"}
+{"session_id":"2026-04-08-p5-004","turn":2,"source":"pretooluse","tool_name":"Write","action":"write","target":"foo.py","outcome":"allowed","entropy_zone":"GREEN","timestamp":"2026-04-08T12:00:00+00:00"}
+{"session_id":"","source":"session","action":"session_orientation","outcome":"success","timestamp":"2026-04-08T12:00:01+00:00"}
 ```
 
-Stored in `.azoth/telemetry/session-log.jsonl` (gitignored).
+Parsers MUST accept `allowed`/`denied` — not only `"success"`.
 
 ### Error Recovery: Git-Based Checkpoints
 
@@ -794,7 +840,7 @@ azoth/
 | D22 | Goal Clarification Protocol (Stage 0) | Adaptive questioning, no hard cap |
 | D23 | Auto-pipeline: LLM-as-router composition | Default behavior, 8 presets |
 | D24 | Gate typing: human vs agent | Kernel/governance gates must be human |
-| D25 | 12 seed slash commands | Essential lifecycle + pipeline + quality |
+| D25 | Seed slash commands: documented minimum set + scaffold extensions | Essential lifecycle + pipeline + quality; see § Seed Commands (D25) |
 | D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |
 | D27 | Explore/Research as Architect tools | Not separate pipeline stages |
 | D28 | 8 pipeline presets | full, deliver, hotfix, docs, research, review, refactor, auto |
@@ -821,7 +867,7 @@ azoth/
 | D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |
 | D50 | Session scope card | `/next` outputs a scope card (1 primary + max 2 secondary goals); human approves → writes `.azoth/scope-gate.json`; validator rejects mixed M1+runtime sessions |
 | D51 | Formalized M2→M1 promotion path | M1 changes are a governed event: `target_layer: M1` backlog item + `/deliver-full` pipeline; M1 changes happen between sessions only; scope card validator enforces isolation |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); `.claude/commands/start.md` runs the script via Bash then routes user option; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 adds hook-based auto-trigger |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); `.claude/commands/start.md` runs the script via Bash then routes user option; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 (Claude Code): `hooks.SessionStart` → `.claude/hooks/session_start_welcome.py` runs `welcome.py --plain`, tees stdout to `.azoth/session-orientation.txt` (gitignored), injects same text into model context; matchers `startup|resume`; optional per-hook `timeout` (seconds, hooks doc); `CLAUDE.md` rule 9 — default trust injection, `Read` file for verbatim chat only; Cursor has no SessionStart — parity rules + manual script |
 
 ---
 
@@ -846,7 +892,7 @@ azoth/
 | **2** | Core Skills | 5 extracted + 3 new skills, drift tests |
 | **3** | Agent Archetypes | 10 agents, pipeline schema, dual-format |
 | **4** | Distribution | Session Welcome UX (`/start` + `scripts/welcome.py`), README, `azoth init` onboarding, CI, publish |
-| **5** | Trust Layer | Hooks, telemetry, checkpoints, phone-friendly output |
+| **5** | Trust Layer | Hooks (incl. P5-007 SessionStart → plain orientation + `.azoth/session-orientation.txt` on Claude Code), telemetry, checkpoints, phone-friendly output |
 | **6** | Meta-Recursive | Agent Crafter, L2 optimization, L3 proposals |
 
 ---
@@ -1077,7 +1123,7 @@ m2_candidate=true flag      set at intake                           target_layer
 | D49 | Intake 3-axis triage | M3/M2/backlog routing is simultaneous and independent, not sequential |
 | D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
 | D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH scheme; PATCH per delivery, PHASE per phase completion |
 
 ---
@@ -1105,7 +1151,7 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 ```
 0.0.PHASE.PATCH
 │ │  │      └── delivery counter — increments every session, resets to 1 on phase bump
-│ │  └───────── phase number — equals the current development phase (1–6)
+│ │  └───────── phase number — equals the current development phase (1–7)
 │ └──────────── reserved: 0 during development
 └────────────── reserved: 0 until public release
 ```
@@ -1120,15 +1166,16 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 | v0.0.4 | Phase 4: Distribution & Polish | 4 |
 | v0.0.5 | Phase 5: Trust Layer | 5 |
 | v0.0.6 | Phase 6: Meta-recursive | 6 |
+| v0.0.7 | Phase 7: Publishing & public product | 7 |
 | **v0.1.0** | **Public azoth release — full roadmap complete** | — |
 
 ### Bump Rules
 
 - **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
   session that produces artifacts. Counter resets to `.1` on each phase bump.
-- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6).
+- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6→7).
   PATCH counter resets to `.1`.
-- **Release** (`0.1.0`): full roadmap complete (Phase 6 done). Only non-sequential jump.
+- **Release** (`0.1.0`): full roadmap complete (Phase 7 done). Only non-sequential jump.
   Git tag proposed — user-confirmed, never auto-pushed.
 
 The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later

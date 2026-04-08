@@ -1,0 +1,11 @@
+# Azoth Session State — Cross-IDE Handoff Capsule
+# Written by /session-closeout. Read by .cursor/rules/azoth-memory.mdc on Cursor session start.
+
+state: empty
+last_ide: ""
+timestamp: ""
+active_task: ""
+active_files: []
+pending_decisions: []
+approved_scope: ""
+next_action: ""

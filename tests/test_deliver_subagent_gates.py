@@ -19,7 +19,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DELIVER_PATH = REPO_ROOT / ".claude" / "commands" / "deliver.md"
 
 # Read once; reused across all unit tests.
-_CONTENT = DELIVER_PATH.read_text()
+_CONTENT = DELIVER_PATH.read_text(encoding="utf-8")
 
 
 # ── Orchestration Constraints section ────────────────────────────────────────

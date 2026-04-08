@@ -245,14 +245,20 @@ $gitignoreEntries = @(
     ""
     "# Azoth runtime state"
     ".azoth/telemetry/"
+    ".azoth/session-orientation.txt"
     ".azoth/bootloader-state.md"
     ".azoth/kernel-checksums.sha256"
+    ".azoth/proposals/"
 )
 
 if (Test-Path ".gitignore") {
     $content = Get-Content ".gitignore" -Raw
     if ($content -notmatch "\.azoth/telemetry") {
         $gitignoreEntries | Add-Content ".gitignore"
+    }
+    $content2 = Get-Content ".gitignore" -Raw
+    if ($content2 -notmatch "\.azoth/proposals/") {
+        Add-Content ".gitignore" ".azoth/proposals/"
     }
 } else {
     $gitignoreEntries | Set-Content ".gitignore"

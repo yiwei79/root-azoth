@@ -1,8 +1,18 @@
-# Azoth runtime state (session-specific, not version-controlled)
+# Azoth runtime state (session-specific; root scaffold may still track selected files)
+.azoth/entropy-state.json
+.azoth/session-orientation.txt
 .azoth/telemetry/
 .azoth/sync-log.jsonl
-.azoth/bootloader-state.md
-.azoth/kernel-checksums.sha256
+.azoth/memory/l2-refinement-evidence.jsonl
+# Session gates — local runtime only (D50); never commit live gates — see *.json.example
+.azoth/scope-gate.json
+.azoth/pipeline-gate.json
+# Cross-IDE handoff capsule — local only; tracked example is session-state.md.example
+.azoth/session-state.md
+# bootloader-state.md — tracked in root-azoth for cloud sync / cross-machine handoff
+# Golden §4 manifest is tracked in this repo for CI / verify-checksums (GOV-B2).
+# Consumer installs may regenerate locally; see install.sh.
+.azoth/proposals/
 
 # Python
 __pycache__/

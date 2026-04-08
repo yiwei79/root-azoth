@@ -25,4 +25,4 @@ Show the **D48 versioned roadmap** as a Rich terminal dashboard: each roadmap ve
 
 - Canonical data lives in `.azoth/roadmap.yaml` under `versions:` (`active_version`, D53 bumps).
 - The legacy top-level `tasks:` block is for older tooling; prefer `versions[]` for planning.
-- For session cockpit (health, backlog, last episode), use `/start` → `scripts/welcome.py`.
+- For session cockpit (health, backlog, last episode), use `/start` → `scripts/welcome.py`. On **Claude Code**, **SessionStart** (P5-007) also injects plain orientation; **`Read`** `.azoth/session-orientation.txt` only for verbatim chat (`CLAUDE.md` rule 9).

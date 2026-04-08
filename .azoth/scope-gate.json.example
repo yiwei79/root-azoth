@@ -1,0 +1,10 @@
+{
+  "approved": true,
+  "expires_at": "2026-04-08T22:00:00+00:00",
+  "goal": "BL-000: example goal text",
+  "session_id": "2026-04-08-bl-000-example",
+  "approved_by": "human",
+  "backlog_id": "BL-000",
+  "delivery_pipeline": "standard",
+  "target_layer": "infrastructure"
+}

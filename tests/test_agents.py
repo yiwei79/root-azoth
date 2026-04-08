@@ -287,3 +287,41 @@ class TestAgentConsistency:
             assert len(fm["pipeline_stages"]) > 0, (
                 f"Core agent {agent_name} must reference at least one pipeline stage"
             )
+
+
+# ---------------------------------------------------------------------------
+# Agent Crafter (P6-001) — meta-loop contract markers
+# ---------------------------------------------------------------------------
+
+
+class TestAgentCrafterMetaLoop:
+    """P6-001: governed meta-recursive loop is documented and machine-checkable."""
+
+    def test_agent_crafter_pipeline_stages_non_empty(self) -> None:
+        fm = _parse_frontmatter("agent-crafter")
+        ps = fm["pipeline_stages"]
+        assert isinstance(ps, list) and len(ps) >= 1, (
+            "agent-crafter must list at least one pipeline_stages slug"
+        )
+        assert all(isinstance(s, str) and s.strip() for s in ps), (
+            "pipeline_stages must be non-empty strings"
+        )
+
+    def test_agent_crafter_meta_loop_markers(self) -> None:
+        content = _agent_path("agent-crafter").read_text(encoding="utf-8")
+        end_idx = content.index("---", 3)
+        body = content[end_idx + 3 :]
+        markers = [
+            "prior_stage_summaries",
+            "evaluator",
+            "prompt-engineer",
+            "reviewer",
+            "governed",
+            "waiver",
+            "Human",
+            "Task",
+        ]
+        missing = [m for m in markers if m not in body]
+        assert not missing, (
+            f"agent-crafter body missing required meta-loop markers: {missing}"
+        )

@@ -18,8 +18,8 @@
     ]
   },
   "env": {
-    "AZOTH_VERSION": "0.1.0-dev",
-    "AZOTH_PHASE": "3",
+    "AZOTH_VERSION": "0.0.6.7",
+    "AZOTH_PHASE": "6",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
   },
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/scope-gate.py"
+            "command": "python3 .claude/hooks/edit_pretooluse_orchestrator.py"
           }
         ]
       },
@@ -39,21 +39,33 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/pip-install-guard.py"
+            "command": "python3 .claude/hooks/pip-install-guard.py"
           }
         ]
       }
     ],
     "PostToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash /Users/yiwei/GithubRepos/root-azoth/.claude/hooks/filter-bash-output.sh"
-        }
-      ]
-    }
-  ]
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/filter-bash-output.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session_start_welcome.py",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
   }
 }

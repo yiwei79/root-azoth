@@ -19,24 +19,14 @@ lastVerifiedAt: 2026-02-22T00:00:00.000Z
 
 # Swarm Coordination Skill
 
-<identity>
 Swarm Coordination Skill - Orchestrates parallel agent execution, manages inter-agent communication, handles task distribution, and coordinates results aggregation for complex multi-agent workflows.
-</identity>
 
-<capabilities>
-- Parallel agent spawning
-- Task distribution strategies
-- Results aggregation
-- Inter-agent communication
-- Failure handling and recovery
-</capabilities>
-
-<instructions>
-<execution_process>
+- Parallel agent spawning - Task distribution strategies - Results aggregation - Inter-agent communication - Failure handling and recovery
 
 ### Step 1: Analyze Task for Parallelization
 
 Identify parallelizable work:
+
 
 | Pattern           | Example                        | Strategy               |
 | ----------------- | ------------------------------ | ---------------------- |
@@ -44,6 +34,7 @@ Identify parallelizable work:
 | Dependent tasks   | Design → Implement             | Sequential spawn       |
 | Fan-out/Fan-in    | Multiple reviews → Consolidate | Parallel + Aggregation |
 | Pipeline          | Parse → Transform → Validate   | Sequential handoff     |
+
 
 ### Step 2: Spawn Agents in Parallel
 
@@ -128,6 +119,7 @@ Combine outputs from parallel agents:
 
 Strategies for partial failures:
 
+
 | Scenario                | Strategy                        |
 | ----------------------- | ------------------------------- |
 | Agent timeout           | Retry with simpler prompt       |
@@ -135,9 +127,6 @@ Strategies for partial failures:
 | Conflicting results     | Use consensus-voting skill      |
 | Missing critical result | Block and retry                 |
 
-</execution_process>
-
-<best_practices>
 
 1. **Parallelize Aggressively**: Independent work should run in parallel
 2. **Structured Handoffs**: Use consistent formats for communication
@@ -145,11 +134,6 @@ Strategies for partial failures:
 4. **Clear Aggregation**: Combine results systematically
 5. **Track Provenance**: Know which agent produced each result
 
-</best_practices>
-</instructions>
-
-<examples>
-<usage_example>
 **Parallel Review Request**:
 
 ```
@@ -181,9 +165,6 @@ Task({ task_id: 'task-5', description: 'Performance reviewing API', prompt: '...
 2. [HIGH] Use connection pooling (Performance)
 3. [MED] Add versioning to URLs (Architect)
 ```
-
-</usage_example>
-</examples>
 
 ## Rules
 
@@ -231,6 +212,7 @@ This skill powers multi-agent orchestration patterns across the framework:
 
 ## Anti-Patterns
 
+
 | Anti-Pattern               | Why It Fails                                           | Correct Approach                                           |
 | -------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
 | Sequential spawning        | No parallelism; swarm executes like a queue            | Spawn all independent workers in a single message          |
@@ -238,6 +220,7 @@ This skill powers multi-agent orchestration patterns across the framework:
 | No failure handling        | One worker crash stalls the swarm                      | Detect hung/failed workers and re-spawn with fresh state   |
 | Unbounded parallelism      | Coordination overhead exceeds speedup beyond 7 workers | Limit to 5-7 workers per fan-out for optimal throughput    |
 | Free-form worker reports   | Cannot aggregate results programmatically              | Require all workers to use the structured handoff template |
+
 
 ## Memory Protocol (MANDATORY)
 
@@ -254,3 +237,4 @@ cat .claude/context/memory/learnings.md
 - Decision made -> `.claude/context/memory/decisions.md`
 
 > ASSUME INTERRUPTION: Your context may reset. If it's not in memory, it didn't happen.
+

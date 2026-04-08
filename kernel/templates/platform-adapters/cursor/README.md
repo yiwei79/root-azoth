@@ -64,5 +64,8 @@ To hand off a session from Claude Code to Cursor (or vice versa):
 | `/deliver`, `/plan`, `/eval` | ✓ | ✓ follow command docs; use **`Task`** per stage when the command assigns subagents |
 | `/deliver-full` / `/auto` (subagent isolation) | ✓ `Agent(subagent_type=...)` | ✓ **`Task(subagent_type=...)`** per `subagent-router` — same D21 contract when parity rule is followed |
 | Governed pipelines with stage isolation | ✓ hooks + commands | ✓ hooks simulated + **`Task`** for workers — risky only if orchestrator inlines stages |
+| `/session-closeout` **W3** (Claude Code `~/.claude/.../memory/`) | ✓ native | ✓ attempt or log `W3 deferred` (see `claude-code-parity.mdc`) — **not** a substitute for repo W1/W2 |
+
+**GitHub Copilot / OpenCode:** They do not load `.cursor/rules/*.mdc`; they use D46-deployed commands under `.github/prompts/` and `.opencode/commands/`. **`/session-closeout` W1/W2/W4** apply the same way in-repo; **W3** (Claude Code project memory under `~/.claude/`) does not apply — parity is **committed** episodes, bootloader, and `azoth.yaml`.
 
 **Rule of thumb:** Install both `.mdc` rules. Use **`Task`** with Azoth archetype names for each pipeline stage that requires isolation (see `claude-code-parity.mdc`). Prefer **Claude Code** when you need **mechanical** PreToolUse enforcement (not behavioral).

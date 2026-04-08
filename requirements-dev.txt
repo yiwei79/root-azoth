@@ -1,0 +1,8 @@
+# Development dependencies for root-azoth (CLI UX, YAML, tests, lint).
+# Install: pip install -r requirements-dev.txt
+# Version floors keep installs compatible across environments; pin in CI if needed.
+
+rich>=13
+pyyaml>=6
+pytest>=8
+ruff>=0.4

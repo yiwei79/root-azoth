@@ -156,20 +156,23 @@ This skill is used primarily in **Stage 3 (Planning)** of the pipeline:
 
 A good plan passes these checks:
 
-- [ ] Every task has explicit files and validation
-- [ ] Dependencies are explicit (no implicit ordering)
-- [ ] Test strategy exists and covers acceptance criteria
-- [ ] Entropy estimate is within green/yellow zone
-- [ ] A different agent could execute this plan without clarification
+- Every task has explicit files and validation
+- Dependencies are explicit (no implicit ordering)
+- Test strategy exists and covers acceptance criteria
+- Entropy estimate is within green/yellow zone
+- A different agent could execute this plan without clarification
 
 ---
 
 ## Anti-Patterns
 
-| Anti-Pattern | Fix |
-|-------------|-----|
-| "Implement the feature" | Break into specific file-level tasks |
-| No test strategy | Add tests — no plan is complete without them |
-| Implicit dependencies | Make every dependency explicit with `depends_on` |
-| Unbounded tasks | Each task should touch ≤ 5 files |
-| Plan assumes context | Include enough detail for cold-start execution |
+
+| Anti-Pattern            | Fix                                              |
+| ----------------------- | ------------------------------------------------ |
+| "Implement the feature" | Break into specific file-level tasks             |
+| No test strategy        | Add tests — no plan is complete without them     |
+| Implicit dependencies   | Make every dependency explicit with `depends_on` |
+| Unbounded tasks         | Each task should touch ≤ 5 files                 |
+| Plan assumes context    | Include enough detail for cold-start execution   |
+
+

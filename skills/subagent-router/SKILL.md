@@ -79,12 +79,14 @@ archetype contract, not by this routing policy.
 
 ## Routing Table
 
-| Trigger | subagent_type | Notes |
-|---------|---------------|-------|
-| review-independence | reviewer / architect | architect when reviewing plan or test quality |
-| context-isolation | planner / architect | architect for investigation; planner for task planning |
-| context-budget | builder | — |
-| parallel-execution | builder | NOT researcher |
+
+| Trigger             | subagent_type        | Notes                                                  |
+| ------------------- | -------------------- | ------------------------------------------------------ |
+| review-independence | reviewer / architect | architect when reviewing plan or test quality          |
+| context-isolation   | planner / architect  | architect for investigation; planner for task planning |
+| context-budget      | builder              | —                                                      |
+| parallel-execution  | builder              | NOT researcher                                         |
+
 
 ## Exclusion Clause
 
@@ -126,8 +128,8 @@ BL-011 limits **role metadata** in the spawn (goal, `stage_id`, triggers) — it
 mean downstream stages receive **zero** context from upstream work.
 
 - **The orchestrator** (main chat in Cursor; Architect in Claude Code) **must** attach the
-  **verbatim typed stage summary YAML** from each dependency stage before spawning the next
-  subagent. Put it under `inputs.prior_stage_summaries` in the same spawn YAML, for example:
+**verbatim typed stage summary YAML** from each dependency stage before spawning the next
+subagent. Put it under `inputs.prior_stage_summaries` in the same spawn YAML, for example:
 
 ```yaml
 inputs:
@@ -140,16 +142,18 @@ inputs:
 ```
 
 - **Evaluator**, **builder**, and any stage that **judges** prior work **must** receive the
-  full summary YAML for the stage being evaluated (not a prose summary of the summary).
+full summary YAML for the stage being evaluated (not a prose summary of the summary).
 - If the orchestrator skips this forward, evaluators correctly report **CONCERNS** — missing
-  handoff is an **orchestrator failure**, not an evaluator failure.
+handoff is an **orchestrator failure**, not an evaluator failure.
 
 ### Before / after (illustrative)
 
-| | Approximate subagent spawn body |
-|---|--------------------------------|
+
+|                           | Approximate subagent spawn body                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
 | **Before (anti-pattern)** | 1.5–3K tokens: full pipeline markdown + stage bullets + CLAUDE.md excerpts copied into the spawn |
-| **After (contract)** | 120–400 tokens: YAML block above + `Read` of this skill + archetype file |
+| **After (contract)**      | 120–400 tokens: YAML block above + `Read` of this skill + archetype file                         |
+
 
 **After** is the only approved pattern for `/auto`, `/deliver`, and `/deliver-full` execution.
 
@@ -169,12 +173,14 @@ The orchestrator passes this file forward; do not rely on long prose alone at st
 
 Use `stage_id` with `pipeline: deliver-full`.
 
-| stage_id | subagent_type | trigger | Canonical `role_hint` (D21 audit) |
-|----------|---------------|---------|-----------------------------------|
-| `deliver_full_s3` | reviewer | review-independence | `Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement — trigger: review-independence` |
-| `deliver_full_s4` | planner | context-isolation | `Agent(subagent_type=planner): Convert approved design into deterministic tasks — trigger: context-isolation` |
-| `deliver_full_s5` | builder | review-independence | `Agent(subagent_type=builder): Design tests from plan's test strategy — trigger: review-independence` |
-| `deliver_full_s6` | builder | context-budget | `Agent(subagent_type=builder): Implement against the approved plan — trigger: context-budget` |
+
+| stage_id          | subagent_type | trigger             | Canonical `role_hint` (D21 audit)                                                                                                          |
+| ----------------- | ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `deliver_full_s3` | reviewer      | review-independence | `Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement — trigger: review-independence` |
+| `deliver_full_s4` | planner       | context-isolation   | `Agent(subagent_type=planner): Convert approved design into deterministic tasks — trigger: context-isolation`                              |
+| `deliver_full_s5` | builder       | review-independence | `Agent(subagent_type=builder): Design tests from plan's test strategy — trigger: review-independence`                                      |
+| `deliver_full_s6` | builder       | context-budget      | `Agent(subagent_type=builder): Implement against the approved plan — trigger: context-budget`                                              |
+
 
 **Stage 3 — Governance Review:** Gate: agent (orchestrator receives reviewer findings; if findings touch kernel, governance changes, or M2→M1 promotion, escalate to human — compressed decision request per Trust Contract §2).
 
@@ -188,11 +194,13 @@ Use `stage_id` with `pipeline: deliver-full`.
 
 Use `pipeline: deliver` and `stage_id` from this table.
 
-| stage_id | subagent_type | trigger | Canonical `role_hint` (D21 audit) |
-|----------|---------------|---------|-----------------------------------|
-| `deliver_g1` | architect | context-isolation | Planner gate — `Agent(subagent_type=architect)` reviews plan quality (trigger: context-isolation) |
-| `deliver_g2` | architect | review-independence | Test Builder gate — `Agent(subagent_type=architect)` reviews test coverage (trigger: review-independence) |
-| `deliver_g3` | architect | review-independence | Architect Review stage — `Gate 3 (Architect Review stage): Agent(subagent_type=architect)` — trigger: review-independence |
+
+| stage_id     | subagent_type | trigger             | Canonical `role_hint` (D21 audit)                                                                                         |
+| ------------ | ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `deliver_g1` | architect     | context-isolation   | Planner gate — `Agent(subagent_type=architect)` reviews plan quality (trigger: context-isolation)                         |
+| `deliver_g2` | architect     | review-independence | Test Builder gate — `Agent(subagent_type=architect)` reviews test coverage (trigger: review-independence)                 |
+| `deliver_g3` | architect     | review-independence | Architect Review stage — `Gate 3 (Architect Review stage): Agent(subagent_type=architect)` — trigger: review-independence |
+
 
 ## Stage briefs: auto
 
@@ -201,12 +209,24 @@ For `pipeline: auto`, set `stage_id` to a stable identifier per composed stage (
 routing table above. Full composition rules remain in `skills/auto-router/SKILL.md` and
 `pipelines/auto.pipeline.yaml`.
 
+### Agent Crafter meta-loop (governed M1)
+
+When the goal involves **Agent Crafter** or meta-agent definition work (`agents/tier3-meta/agent-crafter.agent.md`):
+
+- Use **fresh-context** spawns for **evaluator**, **prompt-engineer**, **reviewer**, and **builder** stages per the trigger table; do not collapse these into the orchestrator thread when `**Task`** / `Agent` is available.
+- The orchestrator **must** attach **prior_stage_summaries** (BL-012 YAML) at every handoff — especially into **evaluator** and **reviewer**.
+- For **governed** M1 scopes, treat **governance-review** as **default-on** after crafter integration; a **human-declared waiver** in the `/auto` Declaration is the only supported skip, and should be mirrored in alignment notes.
+
+### L2 evidence → prompt-engineer (P6-002)
+
+When the human or orchestrator runs the **L2 refinement** branch, **do not** paste evaluator/reviewer transcripts into the prompt-engineer spawn. Append a typed record to `.azoth/memory/l2-refinement-evidence.jsonl` using **`scripts/l2_evidence_append.py`** (gated), then spawn **prompt-engineer** with **review-independence** (fresh context) and `Read` of the JSONL tail (or session-filtered lines) plus `target_surfaces` from the record.
+
 ## When to Use
 
 - **Pipeline composition** (`/auto` Subagent Assignment step) — apply the routing
-  table to each composed stage and record subagent_type + trigger rationale
+table to each composed stage and record subagent_type + trigger rationale
 - **Pipeline authoring** — when adding a new stage to any pipeline, consult this
-  skill to determine the correct subagent_type
+skill to determine the correct subagent_type
 - **Governance review** — verify that each agent-gated stage has a trigger citation
 
 ---
@@ -214,6 +234,7 @@ routing table above. Full composition rules remain in `skills/auto-router/SKILL.
 ## Integration
 
 ### With /deliver-full
+
 The Orchestration Constraints section cites this skill as the policy source.
 Stages 3–6 carry Agent() invocations with trigger citations derived from this router.
 **Stage 0** of `/deliver-full` writes `.azoth/pipeline-gate.json` when scope-gate indicates
@@ -221,15 +242,18 @@ governed delivery — the PreToolUse hook blocks other writes until that gate ex
 pipeline cannot be skipped for M1 work.
 
 ### With /deliver
+
 The Orchestration Constraints section cites this skill as the policy source.
 Gates 1–3 carry Agent() invocations with trigger citations derived from this router.
 
 ### With /auto
+
 The Subagent Assignment step applies this routing table to every composed stage
 before presenting the pipeline for human approval.
 
 ### With Cursor (Task tool)
-Cursor does not run Claude Code’s `Agent()` API. Use the **`Task`** tool with
+
+Cursor does not run Claude Code’s `Agent()` API. Use the `**Task`** tool with
 `subagent_type` set to the same archetype this table assigns (e.g. `reviewer`,
 `planner`, `builder`). The **main chat** is the orchestrator; each isolated stage is a
 **separate `Task`** with the §Spawn Prompt Contract body only. See
@@ -244,5 +268,7 @@ the orchestrator **must not** spawn planner/builder until the **human** explicit
 continuation (see `.claude/commands/auto.md` Execution).
 
 ### With Architecture Decisions
+
 - D21: Subagent isolation for review gates — this skill is the operational
-  expression of D21's mandate.
+expression of D21's mandate.
+

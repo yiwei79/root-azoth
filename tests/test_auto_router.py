@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -58,7 +57,7 @@ def test_auto_router_skill_structure() -> None:
         "Builder must create skills/auto-router/SKILL.md before this test passes."
     )
 
-    content = SKILL_PATH.read_text()
+    content = SKILL_PATH.read_text(encoding="utf-8")
 
     # Frontmatter
     frontmatter = _parse_frontmatter(content)
@@ -97,7 +96,7 @@ def test_auto_router_rule_ordering() -> None:
         "Builder must create skills/auto-router/SKILL.md before this test passes."
     )
 
-    content = SKILL_PATH.read_text()
+    content = SKILL_PATH.read_text(encoding="utf-8")
 
     # Verify all conditions are present
     for condition in CANONICAL_CONDITIONS:
@@ -130,8 +129,8 @@ def test_auto_router_cross_file_consistency() -> None:
         f"Pipeline file not found: {PIPELINE_PATH}"
     )
 
-    skill_content = SKILL_PATH.read_text()
-    pipeline_content = PIPELINE_PATH.read_text()
+    skill_content = SKILL_PATH.read_text(encoding="utf-8")
+    pipeline_content = PIPELINE_PATH.read_text(encoding="utf-8")
 
     for condition in CANONICAL_CONDITIONS:
         assert condition in skill_content, (

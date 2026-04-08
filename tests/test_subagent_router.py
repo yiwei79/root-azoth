@@ -19,7 +19,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = REPO_ROOT / "skills" / "subagent-router" / "SKILL.md"
 
 # Read once; reused across all unit tests.
-_CONTENT = SKILL_PATH.read_text()
+_CONTENT = SKILL_PATH.read_text(encoding="utf-8")
 
 
 # ── File existence ────────────────────────────────────────────────────────────

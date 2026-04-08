@@ -256,16 +256,24 @@ if [ -f ".gitignore" ]; then
         echo "" >> ".gitignore"
         echo "# Azoth runtime state" >> ".gitignore"
         echo ".azoth/telemetry/" >> ".gitignore"
+        echo ".azoth/session-orientation.txt" >> ".gitignore"
         echo ".azoth/bootloader-state.md" >> ".gitignore"
         echo ".azoth/kernel-checksums.sha256" >> ".gitignore"
+        echo ".azoth/proposals/" >> ".gitignore"
     fi
 else
     cat > ".gitignore" << 'GITIGNORE'
 # Azoth runtime state
 .azoth/telemetry/
+.azoth/session-orientation.txt
 .azoth/bootloader-state.md
 .azoth/kernel-checksums.sha256
+.azoth/proposals/
 GITIGNORE
+fi
+
+if [ -f ".gitignore" ] && ! grep -qF ".azoth/proposals/" ".gitignore" 2>/dev/null; then
+    echo ".azoth/proposals/" >> ".gitignore"
 fi
 
 ok "Gitignore updated"

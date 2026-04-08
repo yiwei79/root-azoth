@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.5.2
+**Version**: v0.0.6.7
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -70,7 +70,13 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 5. **Claude Code primary**. `.claude/` is the development surface. Other platforms via adapters.
 6. **Architecture-first**. Read `docs/AZOTH_ARCHITECTURE.md` before making structural changes.
 7. **Effect labels**. Every `.claude/commands/*.md` file declares `azoth_effect: read | write | mixed` in its frontmatter (`kernel/GOVERNANCE.md`). If a prompt can trigger **Write/Edit** (build path), it must be clearly marked — never hide implementation behind read-only wording.
-8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity.
+8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
+9. **SessionStart orientation (Claude Code):** `hooks.SessionStart` runs **`.claude/hooks/session_start_welcome.py`**, which invokes **`welcome.py --plain`** with correct repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and **injects** the same text into model context. Treat that as the **single mechanical source**; avoid duplicating the full blob with **`Read`** unless the user needs verbatim output in chat.
+   - **Default (token-efficient):** Use the injected SessionStart text as-is. Short proactive routing (e.g. “try `/next` for P5-004”) is **OK** without re-pasting the entire dashboard.
+   - **Verbatim in chat:** When the user asks for the **full** snapshot, **verbatim** orientation, or **paste the file**, then **`Read` `.azoth/session-orientation.txt`** and put the **entire file** in one fenced code block — **or** quote the injected block exactly. **Do not** answer those requests with only a bullet summary.
+   - **Rich UI via Bash:** **Bash** to run `python3 scripts/welcome.py` (no `--plain`) is **allowed** when the user wants the **designed Rich dashboard** in the IDE tool surface. Output may appear **collapsed or summarized** at first; **expand** the Bash output to see the full layout (panels, colors, spacing). For **plain-text** facts in chat without re-running, use **`Read`** of `.azoth/session-orientation.txt` or the injected SessionStart text.
+   - **Cursor — Rich UI:** SessionStart does not run. For the **full Rich dashboard** as the UI was designed, run `python3 scripts/welcome.py` in Cursor’s **integrated terminal** (renders ANSI/Rich correctly). **Bash** in chat is an alternative—**expand** tool output if collapsed. Plain snapshot: **`Read`** `.azoth/session-orientation.txt` (if present) or `welcome.py --plain`.
+   - **Token efficiency:** Prefer **injected** SessionStart text for the model when nothing new is needed; avoid redundant Bash runs when the same facts are already in context unless the user wants the Rich view.
 
 ### Development Workflow
 
@@ -80,7 +86,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ### Skill index (drift checks)
 
-`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `orientation`
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `orientation`
 
 ### Coding Standards
 
@@ -106,7 +112,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 5 (Trust Layer). **Release target:** v0.1.0 — full phase checklist,
+**Current phase:** Phase 6 (Meta-Recursive); Phase 7 (publishing / public product) follows before v0.1.0. **Release target:** v0.1.0 — full phase checklist,
 expanded workflow, and Phases 4–6 detail live in **`skills/orientation/SKILL.md`** (load on
 demand for planning and roadmap edits).
 

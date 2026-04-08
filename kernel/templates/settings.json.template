@@ -20,5 +20,19 @@
   "env": {
     "AZOTH_VERSION": "{{AZOTH_VERSION}}",
     "AZOTH_PHASE": "operate"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session_start_welcome.py",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
   }
 }

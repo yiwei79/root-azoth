@@ -4,7 +4,8 @@
 #
 # RULES:
 # - Active items cannot be silently dropped.
-# - Deferral requires explicit target_version.
+# - Deferral requires explicit target_version and status: deferred (excluded from
+#   welcome top-N and /next candidate sourcing until requeued or version is active).
 # - target_layer routes delivery: M1 → /deliver-full (governed), others → /deliver (standard)
 # - M1 items require a dedicated session (D51) — scope card validator rejects mixed M1+runtime
 # - target_version uses the D53 scheme: v0.0.PHASE (e.g. v0.0.3 for Phase 3 deliveries)
@@ -540,7 +541,7 @@ items:
     roadmap_ref: P5-002
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 2
     created_date: "2026-04-07"
@@ -558,7 +559,7 @@ items:
     roadmap_ref: P5-003
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 3
     created_date: "2026-04-07"
@@ -574,7 +575,7 @@ items:
     roadmap_ref: P5-007
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 4
     created_date: "2026-04-07"
@@ -592,7 +593,7 @@ items:
     roadmap_ref: P5-004
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 5
     created_date: "2026-04-07"
@@ -609,7 +610,7 @@ items:
     roadmap_ref: P5-005
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.5
     priority: 6
     created_date: "2026-04-07"
@@ -626,8 +627,9 @@ items:
     roadmap_ref: P5-006
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: pending
-    target_version: v0.0.5
+    status: deferred
+    target_version: v0.2.0
+    deferred_from: "v0.0.5 Phase 5 — deprioritized past v0.1.0 public release track (2026-04-08)"
     priority: 7
     created_date: "2026-04-07"
     blocked_by: null
@@ -636,6 +638,272 @@ items:
       SSH, small terminals): line wrapping, panel width, optional compact mode.
       Lowest relative ROI versus enforcement hooks; polish after core Trust Layer
       behaviors ship.
+
+  # ── Phase 6: Meta-recursive (roadmap v0.0.6) — priority = dependency / leverage ──
+  # 1 = Agent Crafter (L3 meta surface) before broad prompt optimization;
+  # 2 = L2 prompt optimization (skills / evidence loops);
+  # 3 = L3 human-gated architecture proposals (doc + gate heavy). All: /deliver-full per DAY0.
+
+  - id: P6-001
+    title: "Agent Crafter — meta-recursive agent design loop"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-001
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.6
+    priority: 1
+    created_date: "2026-04-08"
+    decision_ref: [D7, D21]
+    blocked_by: null
+    priority_note: >
+      Delivers the closed loop: design/refine agents with evaluator + prompt-engineer,
+      entropy guard, human promotion — see AZOTH_ARCHITECTURE “Meta-Recursive Pattern”.
+    description: >
+      Harden the Agent Crafter archetype and its wiring: documented workflow from
+      architect intent through crafter output, evaluation, and human-gated promotion
+      into `agents/` + deploy surfaces. Aligns Tier 3 meta role with trust contract
+      and subagent isolation (fresh-context review where applicable).
+
+  - id: P6-002
+    title: "L2 prompt optimization (evidence-driven refinement)"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-002
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.6
+    priority: 2
+    created_date: "2026-04-08"
+    decision_ref: [D21, D44]
+    blocked_by: null
+    description: >
+      Auto-refine prompts, skills, and rubrics from delivery evidence (evaluator
+      scores, reviewer findings, episode tags). Connect `prompt-engineer` and pipeline
+      stages so L2 improvements are repeatable, scoped, and reviewable — not ad-hoc
+      rewrites.
+
+  - id: P6-003
+    title: "L3 human-gated architecture proposals"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-003
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.6
+    priority: 3
+    created_date: "2026-04-08"
+    decision_ref: [D1]
+    blocked_by: null
+    description: >
+      Structured path for architecture changes that touch D1–D53 or layer boundaries:
+      proposal artifact, explicit human gate, and promotion into `docs/AZOTH_ARCHITECTURE.md`
+      / ADR flow without bypassing kernel immutability or scope discipline.
+
+  - id: P6-003-OPT
+    title: "P6-003 optional: /next proposal footer, AZOTH command row, ruff, regression tests"
+    source: session-2026-04-08
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    priority: 5
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Close deferred P6-003 polish: read-only architecture proposal line on /next scope card
+      when unambiguous; add /arch-proposal to docs/AZOTH_ARCHITECTURE.md command table with
+      accurate D25 note; run ruff on architecture_proposal_validate.py; extend pytest
+      regression (test_azoth_commands_effect, TestGitignore or equivalents).
+
+  # ── Governance / drift (from GOV reviewer B2, test_handoff_artifacts) ─────────
+  - id: BL-017
+    title: "Kernel integrity validation script (GOV-B2)"
+    source: governance-review-b2
+    source_insight: test_handoff_artifacts.TestGovernanceBlockers.test_b2_kernel_integrity_script
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 4
+    created_date: "2026-04-08"
+    decision_ref: [D2]
+    blocked_by: null
+    description: >
+      Deliver `scripts/kernel-integrity.py`: validate kernel invariants (authoritative
+      file set under `kernel/`, LOC/file-count bounds per D2, optional checksums or
+      drift vs templates). Wire into CI or developer preflight; document in
+      `kernel/GOVERNANCE.md` or README as needed. Resolves governance blocker B2 and
+      removes xfail on `test_b2_kernel_integrity_script`.
+
+  # ── Intake batch 2026-04-08 (D33) — ep-087 — from .azoth/inbox/*.jsonl ─────────
+  - id: BL-018
+    title: "Claude settings: portable hook paths + AZOTH_VERSION/AZOTH_PHASE sync"
+    source: intake-d33-2026-04-08
+    source_insight: "PRC-P4-001, PRC-P4-002"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 1
+    created_date: "2026-04-08"
+    decision_ref: [D12]
+    blocked_by: null
+    description: >
+      Ensure .claude/settings.json hook commands use repo-relative paths (no machine
+      absolute paths) and CI-safe resolution. Align or derive AZOTH_VERSION and
+      AZOTH_PHASE with azoth.yaml (currently env can drift from manifest). Insight
+      refs: PRC-P4-001, PRC-P4-002.
+
+  - id: BL-019
+    title: "Pip install guidance vs pip-install-guard (README + azoth_init)"
+    source: intake-d33-2026-04-08
+    source_insight: "PRC-P4-003, PRC-P4-004"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 2
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Resolve conflict between bare `pip install rich pyyaml` in docs/scaffold output
+      and pip-install-guard on Claude Code Bash: prefer requirements.txt or approved
+      manifest language. Insight refs: PRC-P4-003, PRC-P4-004.
+
+  - id: BL-020
+    title: "Runtime gate JSON policy — scope-gate + pipeline-gate vs version control"
+    source: intake-d33-2026-04-08
+    source_insight: "PRC-P4-005, PRC-P4-006"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 3
+    created_date: "2026-04-08"
+    decision_ref: [D50]
+    blocked_by: null
+    description: >
+      Clarify and enforce whether .azoth/scope-gate.json and pipeline-gate.json are
+      tracked, templated, or gitignored; avoid committing live session gates that
+      could unblock wrong sessions. Pair with *.example templates and docs. Insight
+      refs: PRC-P4-005, PRC-P4-006.
+
+  - id: BL-021
+    title: "DAY0 tutorial counts + test read_text UTF-8 + session-state.md tracking"
+    source: intake-d33-2026-04-08
+    source_insight: "PRC-P4-007, PRC-P4-008, PRC-P4-009, PRC-P4-010, PRC-P4-011"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 4
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Align DAY0_TUTORIAL decision counts with DECISIONS_INDEX; add encoding=utf-8
+      to test file reads where missing; decide gitignore or template policy for
+      .azoth/session-state.md to reduce merge churn. Insight refs: PRC-P4-007
+      through PRC-P4-011.
+
+  - id: BL-022
+    title: "roadmap_dashboard.py — defensive validation for malformed roadmap YAML"
+    source: intake-d33-2026-04-08
+    source_insight: "PRC-P5D-001, PRC-P5D-002"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 5
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Guard render_dashboard and _format_task_block against non-dict / malformed
+      version and task entries; user-friendly error panels instead of tracebacks.
+      Insight refs: PRC-P5D-001, PRC-P5D-002.
+
+  - id: BL-023
+    title: "azoth-deploy parity — slash-command changes before merge (D46)"
+    source: intake-d33-2026-04-08
+    source_insight: "SRF-2026-04-08-001"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    target_version: v0.0.6
+    completed_date: "2026-04-08"
+    priority: 6
+    created_date: "2026-04-08"
+    decision_ref: [D46]
+    blocked_by: null
+    description: >
+      Operationalize run `python3 scripts/azoth-deploy.py` after material changes to
+      .claude/commands/*.md; optional drift test for deployed command parity across
+      OpenCode and Copilot mirrors. Insight ref: SRF-2026-04-08-001.
+
+  - id: BL-024
+    title: "Bootloader-state alignment with azoth.yaml + roadmap on closeout"
+    source: intake-d33-2026-04-08
+    source_insight: "SRF-2026-04-08-002"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.0.6
+    priority: 7
+    created_date: "2026-04-08"
+    blocked_by: null
+    description: >
+      Keep .azoth/bootloader-state.md Current Phase / toolkit version line in sync
+      with azoth.yaml and roadmap active_version during W2 session-closeout.
+      Insight ref: SRF-2026-04-08-002.
+
+  - id: BL-025
+    title: "Mechanical parity: GOVERNANCE Never-Auto vs azoth-deploy UNIVERSAL_NEVER_AUTO"
+    source: intake-d33-2026-04-08
+    source_insight: "SRF-BL015-001"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.0.6
+    priority: 8
+    created_date: "2026-04-08"
+    decision_ref: [D26]
+    blocked_by: null
+    description: >
+      Add test or single-source generation so kernel/GOVERNANCE.md §5 Never-Auto
+      bullets and scripts/azoth-deploy.py UNIVERSAL_NEVER_AUTO stay identical.
+      m2_candidate insight from BL-015 follow-up. Insight ref: SRF-BL015-001.
+
+  - id: BL-026
+    title: "install.sh Step 7 checksums aligned with GOVERNANCE §4 canonical form"
+    source: intake-d33-2026-04-08
+    source_insight: "SRF-BL014-001"
+    roadmap_ref: intake-ep-087
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.0.6
+    priority: 9
+    created_date: "2026-04-08"
+    decision_ref: [D2]
+    blocked_by: null
+    description: >
+      Align install.sh post-copy sha256/shasum step with GOVERNANCE §4 wording and
+      stable four-file ordering; document consumer .azoth/kernel/ path equivalence.
+      Insight ref: SRF-BL014-001.
 
 # Completed items
 completed: []

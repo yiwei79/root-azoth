@@ -1,0 +1,64 @@
+# L3 architecture proposal — P6-003
+# Human-gated artifact under `.azoth/proposals/` (gitignored in consumer installs).
+# Validated by `scripts/architecture_proposal_validate.py` (no jsonschema runtime dependency).
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:architecture-proposal:v1"
+title: Azoth architecture proposal
+type: object
+additionalProperties: false
+required:
+  - proposal_schema_version
+  - created_at
+  - session_id
+  - backlog_id
+  - title
+  - summary
+  - status
+  - decision_refs
+  - scope_layers
+  - details
+properties:
+  proposal_schema_version:
+    type: integer
+    const: 1
+  created_at:
+    type: string
+    minLength: 10
+    description: ISO-8601 UTC, Z or +00:00 offset
+  session_id:
+    type: string
+    minLength: 1
+    maxLength: 128
+  backlog_id:
+    type: string
+    minLength: 1
+    maxLength: 64
+  title:
+    type: string
+    minLength: 1
+    maxLength: 256
+  summary:
+    type: string
+    minLength: 1
+    maxLength: 8192
+  status:
+    type: string
+    enum: [draft, submitted, approved_for_docs, superseded, rejected]
+  decision_refs:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      pattern: "^D[0-9]+$"
+  scope_layers:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      enum: [kernel, skills, agents, pipelines, docs, mixed]
+  details:
+    type: object
+    description: >
+      Free-form slots (rationale, risks, alternatives, suggested paths). Must be an object;
+      may be empty. This document is not authority for kernel/ or normative docs.

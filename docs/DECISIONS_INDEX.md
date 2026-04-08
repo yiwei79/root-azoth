@@ -29,7 +29,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D11 | Memory: 3-layer auto-improving | 🔧 partial | .azoth/memory/ (M3 works, M2→M1 pending) | 1 |
 | D12 | Claude Code Extension: full compat | ✅ implemented | .claude/ config | 1 |
 | D13 | Skills: shared between platforms | ✅ implemented | skills/ | 2 |
-| D14 | Observability: session telemetry | 🔧 partial | kernel/GOVERNANCE.md Section 6 | 1 |
+| D14 | Observability: session telemetry | ✅ implemented | kernel/GOVERNANCE.md §6; `.claude/hooks/session_telemetry.py`; `.azoth/telemetry/session-log.jsonl` (gitignored) | 1 |
 | D15 | Rollback: git-based checkpoints | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D16 | README: Phase 4 deliverable | 📋 planned | — | 4 |
 | D17 | Pipeline schema: Phase 3 deliverable | 🔧 partial | pipelines/pipeline.schema.yaml + pipeline.template.yaml | 3 |
@@ -40,7 +40,7 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D22 | Goal Clarification Protocol (Stage 0) | 🔧 partial | pipelines/full.pipeline.yaml goal-clarification stage | 3 |
 | D23 | Auto-pipeline: LLM-as-router | ✅ implemented | skills/auto-router/SKILL.md + pipelines/auto.pipeline.yaml | 3 |
 | D24 | Gate typing: human vs agent | ✅ implemented | kernel/GOVERNANCE.md | 1 |
-| D25 | 12 seed slash commands | ✅ implemented | .claude/commands/ | 1 |
+| D25 | Seed slash commands (minimum table + scaffold e.g. `/next`, `/arch-proposal`) | ✅ implemented | .claude/commands/ + docs § Seed Commands (D25) | 1 |
 | D26 | Proactive Agent Posture: 3 tiers | ✅ implemented | kernel/TRUST_CONTRACT.md | 1 |
 | D27 | Explore/Research as Architect tools | ✅ implemented | Design decision | 1 |
 | D28 | 8 pipeline presets | 📋 planned | pipelines/ (Phase 3) | 3 |
@@ -63,11 +63,11 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D45 | Context-sensitive memory retrieval | 🔧 partial | skills/context-recall/SKILL.md | 3 |
 | D46 | Dev-sync script: workspace self-installation to platform directories | ✅ implemented | scripts/azoth-deploy.py | 3 |
 | D47 | Persistent backlog: `.azoth/backlog.yaml` | ✅ implemented | .azoth/backlog.yaml | 3 |
-| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.6 + v0.1.0 target; /next reads versioned structure) | 3 |
+| D48 | Versioned roadmap: `.azoth/roadmap.yaml` | ✅ implemented | .azoth/roadmap.yaml (v0.0.1–v0.0.7 + v0.1.0 target; /next reads versioned structure) | 3 |
 | D49 | Intake 3-axis triage (extends D33) | ✅ implemented | .claude/commands/intake.md | 3 |
 | D50 | Session scope card | 🔧 partial | `.claude/commands/next.md` + `.azoth/scope-gate.json` (BL-004 delivered; hook enforcement Claude Code–only) | 3 |
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007) | 4 |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007); Phase 5: `.claude/hooks/session_start_welcome.py`, `.azoth/session-orientation.txt` (runtime), `CLAUDE.md` rule 9 | 4 |
 | D53 | Auto-versioning policy: delivery-triggered version increments | 📋 planned | scripts/version-bump.py + /session-closeout integration (BL-009) | 4 |
 
 ## Summary

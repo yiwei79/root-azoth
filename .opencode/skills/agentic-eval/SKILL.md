@@ -29,6 +29,21 @@ Generate → Evaluate → Critique → Refine → Output
 
 ---
 
+## L2 evidence records (P6-002)
+
+When a governed session should feed **prompt-engineer** later, normalize evaluator/reviewer output into one JSON object per `pipelines/l2-evidence-record.schema.yaml` and append via `scripts/l2_evidence_append.py` (never raw Write to the JSONL path).
+
+| Source | `evidence_kind` | `payload` hints |
+|--------|-----------------|-----------------|
+| Evaluator rubric / numeric score | `eval_summary` | `overall_score`, `threshold`, per-dimension scores, `rubric_refs` |
+| Reviewer disposition + findings | `reviewer_gate` | `disposition`, `findings` (list), `severity` |
+| M3 episode pointer | `episode_ref` | `episode_id`, `tags` |
+| Human `/eval` structured output | `manual_eval` | criteria scores, `recommended_action` |
+
+Set `source_pipeline` and `source_stage_id` to the active pipeline and stage; set `source_agent` to the archetype that produced the evidence; set `target_surfaces` to the `skills/` / `agents/` / command paths the refinement should consider.
+
+---
+
 ## Pattern 1: Basic Reflection
 
 Agent evaluates and improves its own output through self-critique.
@@ -66,7 +81,7 @@ Separate generation and evaluation into distinct components.
 
 ```python
 class EvaluatorOptimizer:
-    def __init__(self, score_threshold: float = 0.8):
+    def __init__(self, score_threshold: float = 0.85):
         self.score_threshold = score_threshold
     
     def generate(self, task: str) -> str:
@@ -167,7 +182,7 @@ gate:
     - Tests pass
     - No governance violations
     - Entropy within bounds
-  threshold: 0.8
+  threshold: 0.85
 ```
 
 ### Session Closeout Evaluation
@@ -198,7 +213,7 @@ Apply eval before closing a session:
 ```markdown
 ### Setup
 - [ ] Define evaluation criteria/rubric
-- [ ] Set score threshold for "good enough"
+- [ ] Set score threshold for "good enough" (default **0.85**, aligned with evaluator agent)
 - [ ] Configure max iterations (default: 3)
 
 ### Implementation

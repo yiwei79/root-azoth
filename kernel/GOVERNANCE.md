@@ -284,6 +284,8 @@ Every agent action is logged for auditability.
 }
 ```
 
+The example above is **illustrative**. **Canonical implementation (P5-004, D14):** each line is a JSON object written by `.claude/hooks/session_telemetry.py`. Common fields include `session_id`, `turn`, `timestamp`, `source` (`pretooluse` \| `session`), `tool_name`, `action`, `target`, and optional entropy fields. **`outcome` values:** for PreToolUse `Write`/`Edit` logging, use **`allowed`** or **`denied`** (gate result); for session lifecycle events (e.g. orientation), use **`success`**. Consumers parsing `session-log.jsonl` MUST accept this vocabulary — do not assume only `"success"`.
+
 Stored in `.azoth/telemetry/session-log.jsonl` (gitignored).
 Used by entropy guard for real-time monitoring and by HARDEN phase for
 session summary generation.

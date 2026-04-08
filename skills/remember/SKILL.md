@@ -66,13 +66,15 @@ Experience → Capture Episode → Auto-Classify → Surface in Future → Propo
 
 ### Episode Types
 
-| Type | When | Example |
-|------|------|---------|
-| `success` | Something worked well | "TDD approach caught 3 edge cases early" |
-| `failure` | Something went wrong | "Skipped context map, broke downstream API" |
-| `decision` | A non-obvious choice was made | "Chose YAML over JSON for pipeline format" |
-| `pattern` | A recurring theme noticed | "Third time blast radius > 10 files in auth module" |
-| `observation` | Something worth noting | "OpenCode reads CLAUDE.md differently than Claude Code" |
+
+| Type          | When                          | Example                                                 |
+| ------------- | ----------------------------- | ------------------------------------------------------- |
+| `success`     | Something worked well         | "TDD approach caught 3 edge cases early"                |
+| `failure`     | Something went wrong          | "Skipped context map, broke downstream API"             |
+| `decision`    | A non-obvious choice was made | "Chose YAML over JSON for pipeline format"              |
+| `pattern`     | A recurring theme noticed     | "Third time blast radius > 10 files in auth module"     |
+| `observation` | Something worth noting        | "OpenCode reads CLAUDE.md differently than Claude Code" |
+
 
 ---
 
@@ -172,10 +174,13 @@ When a pattern has been reinforced across 2+ episodes:
 
 ## Best Practices
 
-| Practice | Rationale |
-|----------|-----------|
-| **Capture failures, not just successes** | Failures teach more — don't filter them out |
-| **Be specific, not generic** | "Ruff caught type error in auth.py" > "linting helps" |
-| **Tag consistently** | Use a small, stable tag vocabulary |
-| **Don't force promotions** | Let patterns prove themselves over 3+ sessions |
-| **Review episodes periodically** | Stale episodes decay — that's fine |
+
+| Practice                                 | Rationale                                             |
+| ---------------------------------------- | ----------------------------------------------------- |
+| **Capture failures, not just successes** | Failures teach more — don't filter them out           |
+| **Be specific, not generic**             | "Ruff caught type error in auth.py" > "linting helps" |
+| **Tag consistently**                     | Use a small, stable tag vocabulary                    |
+| **Don't force promotions**               | Let patterns prove themselves over 3+ sessions        |
+| **Review episodes periodically**         | Stale episodes decay — that's fine                    |
+
+

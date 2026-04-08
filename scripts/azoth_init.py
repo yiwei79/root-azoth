@@ -82,7 +82,7 @@ def _scaffold_guidance(azoth_root: Path, cwd: Path) -> None:
         )
     print("Root-azoth workshop — suggested next steps:\n")
     print("  • Read CLAUDE.md and docs/AZOTH_ARCHITECTURE.md")
-    print("  • pip install rich pyyaml   # welcome + tests")
+    print("  • pip install -r requirements-dev.txt   # from repo root; dev deps")
     print("  • python3 -m pytest tests/")
     print("  • After editing skills/agents/commands: python3 scripts/azoth-deploy.py")
     print("  • Session entry: python3 scripts/welcome.py  or  /start in Claude Code\n")

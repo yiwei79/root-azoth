@@ -9,19 +9,17 @@ Covers:
 - transform_agent_opencode: no name field, mode from tier, permission object
 - transform_command_copilot: mode:agent added
 - transform_command_opencode: description preserved, body unchanged
+- deployed command parity: .github/prompts + .opencode/commands match transforms (D46, BL-023)
 """
 
 from __future__ import annotations
 
 import importlib.util
 import shutil
-import sys
 import uuid
 from pathlib import Path
-from typing import Any
 
 import pytest
-import yaml
 
 # Load the script as a module without executing main()
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "azoth-deploy.py"
@@ -42,6 +40,7 @@ transform_command_copilot = _mod.transform_command_copilot
 transform_command_opencode = _mod.transform_command_opencode
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
+load_commands = _mod.load_commands
 
 
 # ── parse_frontmatter ────────────────────────────────────────────────────────
@@ -376,3 +375,40 @@ def test_deploy_cursor_rules_writes_matching_content(
     finally:
         monkeypatch.delenv("AZOTH_CURSOR_RULES_DIR", raising=False)
         shutil.rmtree(root, ignore_errors=True)
+
+
+# ── Deployed command parity (D46 / BL-023) ────────────────────────────────────
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_deployed_copilot_prompts_match_transform() -> None:
+    """`.github/prompts/*.prompt.md` must match `transform_command_copilot` output."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        expected = transform_command_copilot(cmd)
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{cmd['name']}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Copilot prompt drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_opencode_commands_match_transform() -> None:
+    """`.opencode/commands/*.md` must match `transform_command_opencode` output."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        expected = transform_command_opencode(cmd)
+        dest = _REPO_ROOT / ".opencode" / "commands" / f"{cmd['name']}.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )

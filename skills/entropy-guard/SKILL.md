@@ -42,6 +42,7 @@ entropy_delta = files_changed + files_created + (files_deleted * 3) + (lines_cha
 ```
 
 **Why this formula:**
+
 - File changes and creates are weighted equally (1 each)
 - Deletions are weighted 3x because they're harder to recover
 - Line changes are normalized (100 lines ≈ 1 unit of entropy)
@@ -54,22 +55,26 @@ session_entropy = sum(entropy_delta for each turn)
 
 ### Zone Classification
 
-| Zone | Threshold | Meaning | Response |
-|------|-----------|---------|----------|
-| GREEN | delta < 5 | Normal operation | Proceed freely |
-| YELLOW | 5 ≤ delta < 10 | Elevated change rate | Checkpoint recommended |
-| RED | delta ≥ 10 | High change rate | Checkpoint required, notify human |
+
+| Zone   | Threshold      | Meaning              | Response                          |
+| ------ | -------------- | -------------------- | --------------------------------- |
+| GREEN  | delta < 5      | Normal operation     | Proceed freely                    |
+| YELLOW | 5 ≤ delta < 10 | Elevated change rate | Checkpoint recommended            |
+| RED    | delta ≥ 10     | High change rate     | Checkpoint required, notify human |
+
 
 ### Per-Turn Limits (from Trust Contract)
 
-| Resource | Limit | On Exceed |
-|----------|-------|-----------|
-| Files modified | 10 | Checkpoint + human approval |
-| Files created | 10 | Checkpoint + human approval |
-| Files deleted | 0 | Always human approval |
-| Lines changed | 500 | Checkpoint + human approval |
-| New dependencies | 0 | Always human approval |
-| Kernel files | 0 | Always human approval |
+
+| Resource         | Limit | On Exceed                   |
+| ---------------- | ----- | --------------------------- |
+| Files modified   | 10    | Checkpoint + human approval |
+| Files created    | 10    | Checkpoint + human approval |
+| Files deleted    | 0     | Always human approval       |
+| Lines changed    | 500   | Checkpoint + human approval |
+| New dependencies | 0     | Always human approval       |
+| Kernel files     | 0     | Always human approval       |
+
 
 ---
 
@@ -78,6 +83,10 @@ session_entropy = sum(entropy_delta for each turn)
 When entropy threshold is approached or exceeded:
 
 ### 1. Create Checkpoint
+
+Prefer the mechanical helper (repo root): `python3 scripts/azoth_checkpoint.py create`
+(stash) or `python3 scripts/azoth_checkpoint.py tag` (lightweight tag on `HEAD`). Same naming
+convention as below; see `--help` for `git stash apply` vs `git stash pop`.
 
 ```bash
 # For uncommitted work:
@@ -110,6 +119,7 @@ git tag "azoth/checkpoint/$(date +%s)"
 ### 3. Present to Human (if RED zone)
 
 Include the entropy report in the alignment summary with clear options:
+
 - Continue with current scope
 - Scope down to reduce entropy
 - Rollback to checkpoint
@@ -144,22 +154,27 @@ Recommendation: Checkpoint first, or split into 2 smaller operations.
 ## Integration
 
 ### With Bootloader
+
 - **OPERATE**: Entropy guard is active throughout
 - **HARDEN**: Final entropy report included in session summary
 
 ### With Pipeline
+
 - Stage boundaries trigger entropy reports
 - Gate evaluations consider entropy zone
 
 ### With Trust Contract
+
 - Entropy guard ENFORCES the Trust Contract's entropy ceiling
 - Per-turn limits are the Trust Contract's rules, not the guard's
 
 ### With Alignment-Sync
+
 - Entropy zone is always included in alignment summaries
 - RED zone triggers immediate alignment summary
 
 ### With Remember
+
 - Entropy events (yellow/red zone entries) are recorded as episodes
 - Patterns in entropy can drive process improvements
 
@@ -167,7 +182,12 @@ Recommendation: Checkpoint first, or split into 2 smaller operations.
 
 ## Telemetry Record
 
-Every entropy measurement is logged:
+**D14 / P5-004:** Durable audit lines are appended by `.claude/hooks/session_telemetry.py`
+(PreToolUse orchestrator + optional session events). See `kernel/GOVERNANCE.md` §6 and
+`docs/AZOTH_ARCHITECTURE.md` §9 for canonical **`outcome`** values (`allowed` / `denied` vs `success`).
+
+The JSON below is an **illustrative** entropy-oriented record; actual lines may include
+`source`, `denial_stage`, `entropy_delta`, `cumulative_entropy`, `entropy_zone`, etc.
 
 ```json
 {

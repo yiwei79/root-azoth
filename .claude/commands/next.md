@@ -15,7 +15,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
    Also read `current_phase` and `current_phase_title` for display in the scope card header.
    (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
 3. **Find candidate tasks**: From backlog `items`, collect all where:
-   - `status` is not `complete`
+   - `status` is not `complete` and not `deferred` (deferred items target a future `target_version`)
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
    Sort by `priority` ascending (lower = higher priority).
 4. **Select primary task**: Highest-priority unblocked item.
@@ -31,6 +31,34 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
    `docs/DECISIONS_INDEX.md`. Check `.azoth/memory/episodes.jsonl` for related episodes
    (match on task id or decision refs).
 8. **Output scope card** (format below).
+8b. **Architecture proposal footer** (optional, informational only):
+
+    After composing the main scope card body for step 8, decide whether to append a single
+    extra line **after** that body and **before** the `---` separator and the “Type `approved`…”
+    line. The footer is **read-only** and **informational only** — it does **not** govern scope,
+    backlog, or build authority.
+
+    1. If `.azoth/scope-gate.json` is missing, omit the footer (end 8b).
+    2. Parse it as JSON. Require `approved: true` (boolean). Require `session_id` to be a
+       non-empty string; otherwise omit the footer.
+    3. Parse `expires_at` as an ISO-8601 instant and compare to **current UTC**; require it
+       to be **strictly in the future** (unexpired). If missing, invalid, or expired, omit the
+       footer.
+    4. If `.azoth/proposals/` is missing or is not a directory, **skip** the rest of 8b (omit
+       footer).
+    5. Collect only `*.yaml` files **directly** in `.azoth/proposals/` (no subdirectories).
+    6. For each file: read the text and parse with **safe** YAML (`yaml.safe_load` in Python,
+       or an equivalent that does not allow arbitrary object construction / unsafe tags).
+    7. For each top-level mapping, count it if `session_id` equals the gate’s `session_id`
+       **and** `status` is `draft` or `submitted`.
+    8. If the count is **exactly one**, append a blank line and:
+
+       `**Architecture proposal (read-only, informational only):** \`{backlog_id}\` — {title} — status {status}`
+
+       (values from the matching YAML).
+
+    9. If the count is **zero** or **more than one**, omit the footer entirely.
+
 9. **Wait for human signal**: Do NOT start work. If human types `approved`, proceed to step 10.
 10. **Write scope-gate.json**: Write `.azoth/scope-gate.json` with:
 
@@ -68,6 +96,8 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 
 **Why:** {decision_ref} — {one-line decision summary from DECISIONS_INDEX.md}
 **Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
+
+**Architecture proposal (read-only, informational only):** `{backlog_id}` — {title} — status {status}    ← only if step 8b matches exactly one file
 
 ---
 Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.

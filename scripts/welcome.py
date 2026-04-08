@@ -4,12 +4,17 @@ welcome.py — Azoth session welcome dashboard.
 
 Renders a Rich-based 5-panel cockpit for session orientation.
 System Health includes pipeline gate status when scope-gate is governed (M1 / delivery_pipeline).
-Usage: python scripts/welcome.py
+
+``--plain`` prints the same facts as structured UTF-8 text (no Rich markup). Use for
+SessionStart hooks and any capture where ANSI/markup is lost — keeps the full dashboard
+in model context instead of a thin summary.
+
+Usage: python scripts/welcome.py [--plain]
 """
 
 from __future__ import annotations
 
-import io
+import argparse
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -80,7 +85,7 @@ def filter_unblocked_items(
     """
     result = []
     for item in items:
-        if item.get("status") == "complete":
+        if item.get("status") in {"complete", "deferred"}:
             continue
         blocked_by = item.get("blocked_by") or []
         if all(bid in complete_ids for bid in blocked_by):
@@ -183,11 +188,11 @@ def git_info() -> tuple[str, str]:
     return repo, branch
 
 
-# ── Dashboard renderer ────────────────────────────────────────────────────────
+# ── Dashboard data + renderers ────────────────────────────────────────────────
 
 
-def render_dashboard() -> None:
-    """Render the 5-panel Azoth session dashboard to the console."""
+def gather_dashboard_state() -> dict[str, Any]:
+    """Load all dashboard inputs; shared by Rich and plain renderers."""
     azoth = load_yaml(ROOT / "azoth.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
@@ -198,6 +203,215 @@ def render_dashboard() -> None:
     today = datetime.now().strftime("%Y-%m-%d")
     version = azoth.get("version", "?")
     phase = azoth.get("phase", "?")
+
+    items = backlog_data.get("items", [])
+    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
+    top3 = filter_unblocked_items(items, complete_ids)[:3]
+
+    return {
+        "azoth": azoth,
+        "backlog_data": backlog_data,
+        "scope": scope,
+        "pipeline_gate": pipeline_gate,
+        "episodes": episodes,
+        "repo": repo,
+        "branch": branch,
+        "today": today,
+        "version": version,
+        "phase": phase,
+        "items": items,
+        "complete_ids": complete_ids,
+        "top3": top3,
+    }
+
+
+def _wrap_plain(text: str, width: int, indent: str) -> list[str]:
+    """Simple word-wrap for episode summary."""
+    if not text:
+        return [f"{indent}(no summary)"]
+    words = text.split()
+    lines_out: list[str] = []
+    cur = indent
+    for w in words:
+        if len(cur) + len(w) + 1 > width and len(cur) > len(indent):
+            lines_out.append(cur)
+            cur = indent + w
+        else:
+            cur = cur + (" " if cur != indent else "") + w
+    if cur.strip():
+        lines_out.append(cur)
+    return lines_out[:20]
+
+
+def render_dashboard_plain(state: dict[str, Any]) -> None:
+    """Structured plain text: same information density as Rich, no markup."""
+    azoth = state["azoth"]
+    scope = state["scope"]
+    pipeline_gate = state["pipeline_gate"]
+    episodes = state["episodes"]
+    repo = state["repo"]
+    branch = state["branch"]
+    today = state["today"]
+    version = state["version"]
+    phase = state["phase"]
+    complete_ids = state["complete_ids"]
+    top3 = state["top3"]
+
+    phase_num = phase
+    try:
+        current_phase = int(phase)
+    except (ValueError, TypeError):
+        current_phase = 0
+
+    lines: list[str] = []
+    lines.append("# AZOTH_SESSION_ORIENTATION_BEGIN")
+    lines.append(
+        "# Claude Code: SessionStart injects this block; .azoth/session-orientation.txt "
+        "mirrors it. Prefer relying on injection (token-efficient). Read+paste the file "
+        "only when the user asks for verbatim/full orientation in chat (see CLAUDE.md rule 9)."
+    )
+    lines.append("")
+    sep = "═" * 72
+    lines.append(sep)
+    lines.append(
+        f"  AZOTH  ·  v{version}  ·  Phase {phase_num}  ·  {repo}  ·  {branch}  ·  {today}"
+    )
+    lines.append(f"  (plain layout — full orientation; Rich panels: run without --plain)")
+    lines.append(sep)
+    lines.append("")
+
+    _phases = [
+        (1, "Kernel"),
+        (2, "Skills"),
+        (3, "Agents"),
+        (4, "Distribution"),
+        (5, "Trust"),
+        (6, "Meta"),
+        (7, "Publish"),
+    ]
+    pl: list[str] = []
+    for num, name in _phases:
+        if num < current_phase:
+            pl.append(f"[{num}]✓ {name}")
+        elif num == current_phase:
+            pl.append(f"[{num}]→ {name}  (current)")
+        else:
+            pl.append(f"[{num}]○ {name}")
+    lines.append("Phases:  " + "   ".join(pl))
+    lines.append("")
+
+    layers = azoth.get("layers", {})
+    _layer_map = [
+        ("molecule", "L0", "Kernel"),
+        ("mineral", "L1", "Skills"),
+        ("wave", "L2", "Agents"),
+        ("current", "L3", "Pipelines"),
+    ]
+    lines.append("── System Health ──")
+    for key, label, name in _layer_map:
+        layer = layers.get(key, {})
+        status = layer.get("status", "unknown")
+        detail_keys = [k for k in layer if k != "status"]
+        details = "  ".join(f"{k}={layer[k]}" for k in detail_keys)
+        icon = "✓" if status == "complete" else ("…" if status == "active" else "?")
+        lines.append(f"  {icon} {label} {name}  ({status})  {details}")
+
+    patterns_path = ROOT / ".azoth" / "memory" / "patterns.yaml"
+    patterns_data = load_yaml(patterns_path) if patterns_path.exists() else {}
+    pattern_count = len(patterns_data.get("patterns", []))
+    lines.append("")
+    lines.append("  Memory")
+    lines.append(f"    M3 episodes : {len(episodes)}")
+    lines.append(f"    M2 patterns : {pattern_count}")
+    lines.append("    M1 kernel   : active")
+    lines.append("")
+
+    if is_scope_active(scope, complete_ids):
+        session_id = scope.get("session_id", "")
+        lines.append(f"  Scope: ACTIVE  ({session_id})")
+        goal = scope.get("goal", "")
+        if goal:
+            lines.append(f"    Goal: {goal}")
+        if is_governed_scope(scope):
+            if is_pipeline_gate_valid(scope, pipeline_gate):
+                pipe = pipeline_gate.get("pipeline", "?")
+                lines.append(f"    Pipeline gate: OK  ({pipe})")
+            else:
+                lines.append(
+                    "    Pipeline gate: OPEN  (Stage 0 of /deliver-full, /auto, or /deliver)"
+                )
+    else:
+        lines.append("  Scope: NONE  (run /next to open a scope card)")
+
+    lines.append("")
+    lines.append("── Top Backlog (next unblocked) ──")
+    if top3:
+        for item in top3:
+            iid = item.get("id", "?")
+            title = item.get("title", "?")
+            layer = item.get("target_layer", "?")
+            pipeline = item.get("delivery_pipeline", "?")
+            status = item.get("status", "?")
+            lines.append(f"  {iid}  [{status}]")
+            lines.append(f"    {title}")
+            lines.append(f"    {layer} · {pipeline}")
+            lines.append("")
+    else:
+        lines.append("  (all backlog items complete)")
+        lines.append("")
+
+    lines.append("── Last Session (M3) ──")
+    if episodes:
+        ep = episodes[-1]
+        ep_id = ep.get("id", "?")
+        ts = (ep.get("timestamp") or "")[:10]
+        goal = ep.get("goal", "?")
+        summary = ep.get("summary", "")
+        tags = ", ".join(ep.get("tags", [])[:8])
+        lines.append(f"  {ep_id}  {ts}")
+        lines.append(f"  Goal: {goal}")
+        for chunk in _wrap_plain(summary, width=68, indent="    "):
+            lines.append(chunk)
+        if tags:
+            lines.append(f"  Tags: {tags}")
+    else:
+        lines.append("  No episodes recorded yet.")
+    lines.append("")
+
+    lines.append("── START (what to type) ──")
+    if is_scope_active(scope, complete_ids):
+        goal_truncated = (scope.get("goal") or "")[:72]
+        lines.append(f"  resume   → continue approved scope: {goal_truncated}")
+    lines.append("  next     → /next — scope card for next priority task")
+    lines.append("  intake   → /intake — process .azoth/inbox/")
+    lines.append("  promote  → /promote — M2→M1 promotion review")
+    lines.append("  eval     → /eval — quality gate")
+    lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
+    lines.append("")
+    lines.append(sep)
+    lines.append("  AZOTH session orientation (end)")
+    lines.append("# AZOTH_SESSION_ORIENTATION_END")
+    lines.append(sep)
+
+    out = "\n".join(lines) + "\n"
+    console.print(out)
+
+
+def render_dashboard() -> None:
+    """Render the 5-panel Azoth session dashboard to the console."""
+    state = gather_dashboard_state()
+    azoth = state["azoth"]
+    backlog_data = state["backlog_data"]
+    scope = state["scope"]
+    pipeline_gate = state["pipeline_gate"]
+    episodes = state["episodes"]
+    repo = state["repo"]
+    branch = state["branch"]
+    today = state["today"]
+    version = state["version"]
+    phase = state["phase"]
+    complete_ids = state["complete_ids"]
+    top3 = state["top3"]
 
     # ── Panel 1: Header (box.HEAVY) ──────────────────────────────────────────
     header_text = Text(justify="center")
@@ -222,6 +436,7 @@ def render_dashboard() -> None:
         (4, "Distribution"),
         (5, "Trust"),
         (6, "Meta"),
+        (7, "Publish"),
     ]
     try:
         current_phase = int(phase)
@@ -271,10 +486,7 @@ def render_dashboard() -> None:
         "",
     ]
 
-    # ── Backlog state (needed for both health panel and backlog panel) ────────
-    items = backlog_data.get("items", [])
-    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
-    top3 = filter_unblocked_items(items, complete_ids)[:3]
+    # Backlog / top3 already computed in gather_dashboard_state()
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
@@ -376,5 +588,20 @@ def render_dashboard() -> None:
     console.print()
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Azoth session welcome dashboard.")
+    parser.add_argument(
+        "--plain",
+        action="store_true",
+        help="Structured UTF-8 text (no Rich). Use for SessionStart hooks so full "
+        "orientation survives in model context.",
+    )
+    args = parser.parse_args()
+    if args.plain:
+        render_dashboard_plain(gather_dashboard_state())
+    else:
+        render_dashboard()
+
+
 if __name__ == "__main__":
-    render_dashboard()
+    main()

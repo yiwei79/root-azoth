@@ -209,6 +209,22 @@ When writing prompts, apply the Trust Contract's anti-slop commitment:
 
 ---
 
+## L2 evidence consumption (P6-002)
+
+Delivery runs can leave **machine-readable evidence** for L2 refinement without merging that text into evaluator/reviewer threads (D21 isolation).
+
+**Store:** append-only `.azoth/memory/l2-refinement-evidence.jsonl` (one JSON object per line).
+
+**Schema:** `pipelines/l2-evidence-record.schema.yaml` — validated by `scripts/l2_evidence_validate.py`.
+
+**Write path:** only `scripts/l2_evidence_append.py` may append. It requires an **approved**, unexpired `.azoth/scope-gate.json` whose `session_id` matches `--session-id` and the record’s `session_id`. If `delivery_pipeline` is `governed` **or** `target_layer` is `M1`, it also requires an approved, unexpired `.azoth/pipeline-gate.json` with the same `session_id`. Do **not** use the Edit/Write tool directly on the JSONL file.
+
+**Orchestrator flow:** after evaluator/reviewer (or human `/eval`), optionally build one record (see `skills/agentic-eval/SKILL.md` — L2 mapping), run `python3 scripts/l2_evidence_append.py --session-id <scope session_id>` with the JSON on stdin, then spawn **prompt-engineer** in a **fresh** context with `Read` targets: last *K* lines of the JSONL filtered by `session_id`, plus the instruction surfaces in `target_surfaces`.
+
+**Human gate:** refinements to `skills/` or `agents/` remain **ask_first** / propose-only — never auto-apply.
+
+---
+
 ## Integration
 
 ### With Skills

@@ -21,13 +21,13 @@
 ## Pre-Flight
 
 **Your repo is ready.** This is root-azoth — your private development scaffold.
-Phases 1, 1.5, and 2 are complete. Phase 3 (Agent Archetypes) is next.
+Early phases through skills and infrastructure are complete. **Phase 6 (Meta-Recursive)** is **current** per `azoth.yaml` (Phase 7 = publishing / public product before v0.1.0). For sprint and roadmap detail, load **`skills/orientation/SKILL.md`** on demand.
 
 ```
 root-azoth repo state:
 ├── CLAUDE.md                      ← Agent reads this first (auto)
-├── docs/AZOTH_ARCHITECTURE.md     ← 51 decisions, full blueprint
-├── docs/DECISIONS_INDEX.md        ← D1-D51 status tracking
+├── docs/AZOTH_ARCHITECTURE.md     ← 53 decisions, full blueprint
+├── docs/DECISIONS_INDEX.md        ← D1–D53 status tracking
 ├── .claude/commands/              ← 14 commands (bootstrap, next, intake, etc.)
 ├── .claude/settings.json          ← Kernel write-protection active
 ├── .azoth/roadmap.yaml            ← Phase goals + task backlog
@@ -36,8 +36,8 @@ root-azoth repo state:
 ├── .azoth/trusted-sources.yaml    ← External source registry
 ├── azoth.yaml                     ← Manifest (name: root-azoth)
 ├── kernel/                        ← 4 governance files (immutable)
-├── skills/                        ← 8 kernel skills
-├── tests/                         ← 219 tests passing
+├── skills/                        ← 14 skills (see CLAUDE.md skill index)
+├── tests/                         ← 865 tests collected (full suite)
 └── .gitignore                     ← Runtime state excluded
 ```
 
@@ -54,15 +54,15 @@ root-azoth repo state:
 
 | Artifact | Status | Purpose |
 |----------|--------|---------|
-| Architecture plan (51 decisions) | ✅ Complete | Blueprint for all 6 phases |
+| Architecture plan (53 decisions) | ✅ Complete | Blueprint for all 6 phases |
 | Kernel (4 files, immutable) | ✅ Active | BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC |
-| 8 kernel skills | ✅ Active | context-map, agentic-eval, remember, entropy-guard, etc. |
+| 14 skills | ✅ Active | context-map, orientation, subagent-router, etc. (see CLAUDE.md) |
 | 14 slash commands | ✅ Active | bootstrap, next, intake, eval, plan, session-closeout, etc. |
 | Insight Inbox Protocol (D29-D33) | ✅ Active | Governed channel for external insights |
 | Root scaffold identity (D34-D38) | ✅ Active | Private root-azoth → public azoth split |
 | Bootstrap loop (D39-D41) | ✅ Active | Roadmap + /next + preflight + decisions index |
 | Kernel write protection | ✅ Active | `settings.json` denies `Edit(kernel/**)` |
-| 219 validation tests | ✅ Passing | Architecture + governance + inbox + identity |
+| 865 validation tests (collected) | ✅ CI baseline | Architecture + governance + inbox + identity — full suite expected green per CI; local runs may show skips/xpass |
 | Development roadmap | ✅ Active | `.azoth/roadmap.yaml` — machine-readable task queue |
 
 ---
@@ -77,11 +77,12 @@ cd root-azoth
 # ── Python environment ─────────────────────────────────
 python3 -m venv .venv
 source .venv/bin/activate
-pip install pytest pyyaml ruff
+pip install -r requirements-dev.txt
 
 # ── Verify everything works ────────────────────────────
-python -m pytest tests/ -v
-# Expected: 219 passed, 1 xfail ✅
+python -m pytest tests/ -q
+# ~865 tests collected (pytest --collect-only); expect full suite green per CI
+# (local runs may differ: e.g. skips, xpass — use -v or --tb=long to inspect)
 
 # ── Install Claude Code (if not already) ───────────────
 npm install -g @anthropic-ai/claude-code
@@ -399,8 +400,8 @@ v0.2.0        ← After Phase 6 (meta-recursive, self-improving)
 ```
 Pre-Flight
   ☑  Clone root-azoth on MacBook
-  ☑  Set up Python venv + dependencies (pytest, pyyaml, ruff)
-  ☑  Run 219 tests — verify all green
+  ☑  Set up Python venv + `pip install -r requirements-dev.txt`
+  ☑  Run full validation suite (`python -m pytest tests/ -q`) — ~865 tests collected; expect green per CI
 
 Phase 1: Kernel ✅ COMPLETE
   ☑  4 kernel files created (BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC)
@@ -415,15 +416,14 @@ Phase 1.5: Infrastructure ✅ COMPLETE
   ☑  Bootstrap loop: roadmap + /next + preflight + decisions index (D39-D41)
 
 Phase 2: Skills ✅ COMPLETE
-  ☑  8 kernel skills (5 extracted + 3 Azoth-native)
+  ☑  14 skills (see `azoth.yaml` / CLAUDE.md skill index)
   ☑  Skill drift tests
 
-Phase 3: Agent Archetypes 🎯 CURRENT
+Phase 3–5: Agents, distribution, trust ✅ COMPLETE (repo baseline: `agents/`, `pipelines/`, CI, hooks)
+
+Phase 6: Meta-Recursive 🎯 CURRENT
   □  Run /next to see current priority task
-  □  Define 10 agent archetypes (D7)
-  □  Create pipeline YAML schema (D6)
-  □  Implement 8 pipeline presets (D28)
-  □  Define Stage 6 quality rubric for structured content (D44)
+  □  Phase / roadmap: `skills/orientation/SKILL.md`
 
 Session Workflow
   □  Start: claude → agent reads CLAUDE.md → runs BOOTLOADER → loads roadmap
@@ -466,7 +466,7 @@ never-auto:  Kernel changes, governance, dependencies, M2→M1
 
 ---
 
-*This tutorial was last updated 2026-04-05.
-Phase 1, 1.5, and 2 complete. 51 architecture decisions. 219 tests passing.
+*This tutorial was last updated 2026-04-08.
+Phase 1, 1.5, and 2 complete; Phase 6 Meta-Recursive current per `azoth.yaml`. 53 architecture decisions (`docs/DECISIONS_INDEX.md`). 865 tests collected (`python3 -m pytest tests/ --collect-only`).
 For the source of truth on all design decisions, see `docs/AZOTH_ARCHITECTURE.md`
 and `docs/DECISIONS_INDEX.md`.*
