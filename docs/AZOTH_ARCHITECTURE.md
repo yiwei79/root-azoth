@@ -229,14 +229,19 @@ The `remember` skill handles writes to M3; `context-recall` handles reads from M
 
 ### The Meta-Recursive Pattern (Agent Crafter)
 
+Operational loop (D21): each stage after the architect brief uses a **fresh subagent context** (e.g. Cursor **`Task`** per stage with the mapped archetype). The orchestrator forwards **BL-012** typed YAML via `inputs.prior_stage_summaries` so **evaluator** and **reviewer** never inherit the crafter’s scratch context.
+
 ```
-Goal → Architect decides agent needed → Agent Crafter designs agent
-→ Evaluator scores → Prompt Engineer refines → Agent Crafter updates
-→ Human approves → Agent becomes permanent
+Architect brief → Agent Crafter designs → Evaluator scores (isolated)
+→ Prompt Engineer refines → Agent Crafter integrates
+→ Reviewer (governance-review) default-on for governed M1 → Human approves
+→ Canonical write under agents/ + tests + azoth-deploy (D46)
 
 Meta-level: Agent Crafter improves itself (with human approval)
-Entropy guard prevents unbounded self-modification
+Entropy guard prevents unbounded self-modification; recursion depth = 1 by default
 ```
+
+**Waiver:** For **governed** backlog work, the human may skip the post-integration **reviewer** only by recording a **one-line waiver rationale** in the pipeline Declaration; default remains reviewer-on.
 
 ### Proactive Agent Posture (D26)
 
@@ -1143,7 +1148,7 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 ```
 0.0.PHASE.PATCH
 │ │  │      └── delivery counter — increments every session, resets to 1 on phase bump
-│ │  └───────── phase number — equals the current development phase (1–6)
+│ │  └───────── phase number — equals the current development phase (1–7)
 │ └──────────── reserved: 0 during development
 └────────────── reserved: 0 until public release
 ```
@@ -1158,15 +1163,16 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 | v0.0.4 | Phase 4: Distribution & Polish | 4 |
 | v0.0.5 | Phase 5: Trust Layer | 5 |
 | v0.0.6 | Phase 6: Meta-recursive | 6 |
+| v0.0.7 | Phase 7: Publishing & public product | 7 |
 | **v0.1.0** | **Public azoth release — full roadmap complete** | — |
 
 ### Bump Rules
 
 - **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
   session that produces artifacts. Counter resets to `.1` on each phase bump.
-- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6).
+- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6→7).
   PATCH counter resets to `.1`.
-- **Release** (`0.1.0`): full roadmap complete (Phase 6 done). Only non-sequential jump.
+- **Release** (`0.1.0`): full roadmap complete (Phase 7 done). Only non-sequential jump.
   Git tag proposed — user-confirmed, never auto-pushed.
 
 The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later

@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "closed_at": "2026-04-08T10:21:43+00:00",
-  "expires_at": "2026-04-08T03:08:45+00:00",
-  "goal": "Phase 5→6 transition — D53 phase advance; v0.0.6 active",
-  "session_id": "2026-04-08-phase5-close",
+  "closed_at": "2026-04-08T11:32:13+00:00",
+  "expires_at": "2026-04-08T13:04:35+00:00",
+  "goal": "P6-001: Agent Crafter — meta-recursive agent design loop",
+  "session_id": "2026-04-08-p6-001",
   "approved_by": "human",
-  "backlog_id": "",
-  "delivery_pipeline": "standard",
-  "target_layer": "infrastructure"
+  "backlog_id": "P6-001",
+  "delivery_pipeline": "governed",
+  "target_layer": "M1"
 }

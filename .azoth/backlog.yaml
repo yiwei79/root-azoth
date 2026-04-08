@@ -639,5 +639,66 @@ items:
       Lowest relative ROI versus enforcement hooks; polish after core Trust Layer
       behaviors ship.
 
+  # ── Phase 6: Meta-recursive (roadmap v0.0.6) — priority = dependency / leverage ──
+  # 1 = Agent Crafter (L3 meta surface) before broad prompt optimization;
+  # 2 = L2 prompt optimization (skills / evidence loops);
+  # 3 = L3 human-gated architecture proposals (doc + gate heavy). All: /deliver-full per DAY0.
+
+  - id: P6-001
+    title: "Agent Crafter — meta-recursive agent design loop"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-001
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
+    target_version: v0.0.6
+    priority: 1
+    created_date: "2026-04-08"
+    decision_ref: [D7, D21]
+    blocked_by: null
+    priority_note: >
+      Delivers the closed loop: design/refine agents with evaluator + prompt-engineer,
+      entropy guard, human promotion — see AZOTH_ARCHITECTURE “Meta-Recursive Pattern”.
+    description: >
+      Harden the Agent Crafter archetype and its wiring: documented workflow from
+      architect intent through crafter output, evaluation, and human-gated promotion
+      into `agents/` + deploy surfaces. Aligns Tier 3 meta role with trust contract
+      and subagent isolation (fresh-context review where applicable).
+
+  - id: P6-002
+    title: "L2 prompt optimization (evidence-driven refinement)"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-002
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.6
+    priority: 2
+    created_date: "2026-04-08"
+    decision_ref: [D21, D44]
+    blocked_by: null
+    description: >
+      Auto-refine prompts, skills, and rubrics from delivery evidence (evaluator
+      scores, reviewer findings, episode tags). Connect `prompt-engineer` and pipeline
+      stages so L2 improvements are repeatable, scoped, and reviewable — not ad-hoc
+      rewrites.
+
+  - id: P6-003
+    title: "L3 human-gated architecture proposals"
+    source: roadmap-v0.0.6
+    roadmap_ref: P6-003
+    target_layer: M1
+    delivery_pipeline: governed
+    status: pending
+    target_version: v0.0.6
+    priority: 3
+    created_date: "2026-04-08"
+    decision_ref: [D1]
+    blocked_by: null
+    description: >
+      Structured path for architecture changes that touch D1–D53 or layer boundaries:
+      proposal artifact, explicit human gate, and promotion into `docs/AZOTH_ARCHITECTURE.md`
+      / ADR flow without bypassing kernel immutability or scope discipline.
+
 # Completed items
 completed: []

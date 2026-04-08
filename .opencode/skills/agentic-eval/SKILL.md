@@ -66,7 +66,7 @@ Separate generation and evaluation into distinct components.
 
 ```python
 class EvaluatorOptimizer:
-    def __init__(self, score_threshold: float = 0.8):
+    def __init__(self, score_threshold: float = 0.85):
         self.score_threshold = score_threshold
     
     def generate(self, task: str) -> str:
@@ -167,7 +167,7 @@ gate:
     - Tests pass
     - No governance violations
     - Entropy within bounds
-  threshold: 0.8
+  threshold: 0.85
 ```
 
 ### Session Closeout Evaluation
@@ -198,7 +198,7 @@ Apply eval before closing a session:
 ```markdown
 ### Setup
 - [ ] Define evaluation criteria/rubric
-- [ ] Set score threshold for "good enough"
+- [ ] Set score threshold for "good enough" (default **0.85**, aligned with evaluator agent)
 - [ ] Configure max iterations (default: 3)
 
 ### Implementation

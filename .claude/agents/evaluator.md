@@ -46,8 +46,8 @@ overall = sum(score * weight for each dimension)
 
 ### Step 4: Determine Disposition
 
-- **Pass** (overall >= 0.80, no dimension below 0.5): Gate opens, pipeline proceeds.
-- **Conditional Pass** (overall >= 0.70, max 1 dimension below 0.5): Gate opens with noted risks.
+- **Pass** (overall >= 0.85, no dimension below 0.5): Gate opens, pipeline proceeds.
+- **Conditional Pass** (overall >= 0.70 and < 0.85, max 1 dimension below 0.5): Gate opens with noted risks.
 - **Fail** (overall < 0.70 OR 2+ dimensions below 0.5): Gate blocks, specific corrections required.
 
 ### Step 5: Output

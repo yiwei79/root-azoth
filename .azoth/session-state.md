@@ -12,9 +12,9 @@
 
 state: empty
 last_ide: cursor
-timestamp: 2026-04-08T10:21:43Z
+timestamp: 2026-04-08T11:32:13Z
 active_task: ""
 active_files: []
 pending_decisions: []
 approved_scope: ""
-next_action: "Session-closeout ep-081 complete. Seed backlog for P6/P4; /intake for 5 inbox files; /next when items exist."
+next_action: "Session-closeout ep-082 complete. /next for P6-002/P6-003; /intake for 5 inbox files; scope gate closed."

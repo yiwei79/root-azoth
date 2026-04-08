@@ -33,10 +33,10 @@ Apply agentic-eval to the specified artifacts or current session output.
    - recommended action:
    ```
 
-3. Produce overall assessment:
-   - PASS: All criteria met, proceed
-   - CONDITIONAL: Minor gaps, proceed with noted caveats
-   - FAIL: Significant gaps, address before proceeding
+3. Produce overall assessment (when using 0.0–1.0 rubric weights, align with **evaluator** agent):
+   - **PASS:** overall **≥ 0.85** and no dimension below **0.5**, proceed
+   - **CONDITIONAL:** overall **≥ 0.70 and < 0.85** (or pass line met but max one dimension below 0.5 per evaluator protocol), proceed with noted caveats
+   - **FAIL:** overall **< 0.70** or **2+** dimensions below 0.5, address before proceeding
 
 ## Rules
 

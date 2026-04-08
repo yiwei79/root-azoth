@@ -107,7 +107,7 @@ stages:
       # rubric: (D44 quality rubric — structure defined in P3-005, optional until then)
       #   min_capability_depth: 3
       #   required_sections: [constraints, interaction-patterns, governance]
-      #   scoring_threshold: 0.8
+      #   scoring_threshold: 0.85
 
 # Optional. Label for the final artifact this pipeline produces.
 output: alignment-summary

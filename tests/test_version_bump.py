@@ -7,7 +7,7 @@ the script is implemented.
 Coverage:
 - --patch: increments 4th component in azoth.yaml and roadmap current_patch
 - --phase: resets patch, writes final_patch, advances active_version
-- --release: writes flat semver when active_version is v0.0.6
+- --release: writes flat semver when active_version is v0.0.7
 - Guard rails: wrong version format, non-empty pending_task_refs, wrong phase
 - Comment preservation in both YAML files
 - Command reference presence in .claude/commands/ files
@@ -79,6 +79,10 @@ def _make_env(
           - id: v0.0.6
             status: planned
             goal: "Phase 6"
+
+          - id: v0.0.7
+            status: planned
+            goal: "Phase 7"
 
           - id: v0.1.0
             status: target
@@ -207,7 +211,7 @@ def test_phase_advances_version(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T4b — --phase activates next slice when status was backlog (v0.0.6-style)
+# T4b — --phase activates next slice when status was backlog
 # ---------------------------------------------------------------------------
 
 
@@ -268,40 +272,74 @@ def test_phase_refused_when_pending_tasks(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T6 — --phase exits 1 when active_version is v0.0.6; message contains "v0.0.6"
+# T6 — --phase exits 1 when active_version is v0.0.7; message contains "v0.0.7"
 # ---------------------------------------------------------------------------
 
 
-def test_phase_refused_at_v006(tmp_path: Path) -> None:
-    azoth_p, roadmap_p = _make_env(
-        tmp_path / "t6",
-        azoth_version="0.0.6.3",
-        active_version="v0.0.6",
-        current_patch=3,
-        pending_task_refs=[],
+def test_phase_refused_at_v007(tmp_path: Path) -> None:
+    base = tmp_path / "t6"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    azoth_p.write_text("version: 0.0.7.3\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.0.7
+
+            versions:
+              - id: v0.0.7
+                status: active
+                current_patch: 3
+                goal: "Phase 7"
+                pending_task_refs: []
+
+              - id: v0.1.0
+                status: target
+                goal: "Public release"
+            """
+        ),
+        encoding="utf-8",
     )
     result = _run("--phase", azoth_p, roadmap_p)
     assert result.returncode == 1, (
-        f"Expected exit 1 when active_version is v0.0.6; got {result.returncode}"
+        f"Expected exit 1 when active_version is v0.0.7; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
-    assert "v0.0.6" in combined, (
-        f"Expected 'v0.0.6' in output; got: {combined!r}"
+    assert "v0.0.7" in combined, (
+        f"Expected 'v0.0.7' in output; got: {combined!r}"
     )
 
 
 # ---------------------------------------------------------------------------
-# T7 — --release writes version "0.1.0" to azoth.yaml when active_version is v0.0.6
+# T7 — --release writes version "0.1.0" to azoth.yaml when active_version is v0.0.7
 # ---------------------------------------------------------------------------
 
 
 def test_release_writes_semver_version(tmp_path: Path) -> None:
-    azoth_p, roadmap_p = _make_env(
-        tmp_path / "t7",
-        azoth_version="0.0.6.4",
-        active_version="v0.0.6",
-        current_patch=4,
-        pending_task_refs=[],
+    base = tmp_path / "t7"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    azoth_p.write_text("version: 0.0.7.4\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.0.7
+
+            versions:
+              - id: v0.0.7
+                status: active
+                current_patch: 4
+                goal: "Phase 7"
+                pending_task_refs: []
+
+              - id: v0.1.0
+                status: target
+                goal: "Public release"
+            """
+        ),
+        encoding="utf-8",
     )
     result = _run("--release", azoth_p, roadmap_p)
     assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
@@ -313,11 +351,11 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T8 — --release exits 1 unless active_version is v0.0.6 (test with v0.0.3)
+# T8 — --release exits 1 unless active_version is v0.0.7 (test with v0.0.3)
 # ---------------------------------------------------------------------------
 
 
-def test_release_refused_unless_v006(tmp_path: Path) -> None:
+def test_release_refused_unless_v007(tmp_path: Path) -> None:
     azoth_p, roadmap_p = _make_env(
         tmp_path / "t8",
         azoth_version="0.0.3.5",
@@ -326,7 +364,7 @@ def test_release_refused_unless_v006(tmp_path: Path) -> None:
     )
     result = _run("--release", azoth_p, roadmap_p)
     assert result.returncode == 1, (
-        f"Expected exit 1 when active_version is not v0.0.6; got {result.returncode}"
+        f"Expected exit 1 when active_version is not v0.0.7; got {result.returncode}"
     )
 
 

@@ -207,7 +207,7 @@ patterns:
     summary: >
       Run **evaluation** as an isolated **`Task`** with `subagent_type: evaluator`, not as
       inline rubric prose in the orchestrator thread. **Read** `.agents/skills/agentic-eval/SKILL.md`
-      first and apply its rubric, threshold (e.g. 0.8), and structured JSON/YAML handoff per
+      first and apply its rubric, threshold (e.g. 0.85), and structured JSON/YAML handoff per
       BL-012. Do **not** re-spawn evaluator subagents unless the human explicitly asks for
       another evaluation pass; a prior PASS/CONCERNS is not an automatic cue to re-evaluate.
     why_it_matters: >

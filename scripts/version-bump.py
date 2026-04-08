@@ -215,10 +215,10 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
     active_version = _extract_active_version(roadmap_text)
 
-    # Guard: v0.0.6 must use --release
-    if active_version == "v0.0.6":
+    # Guard: v0.0.7 is the last 0.0.x slice — use --release for 0.1.0
+    if active_version == "v0.0.7":
         _die(
-            "--phase refused: active_version is v0.0.6; "
+            "--phase refused: active_version is v0.0.7; "
             "use --release to advance to v0.1.0"
         )
 
@@ -283,7 +283,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
 
 def do_release(azoth_path: Path, roadmap_path: Path) -> None:
-    """Write flat semver 0.1.0 when active_version is v0.0.6.
+    """Write flat semver 0.1.0 when active_version is v0.0.7 (Phase 7 complete).
 
     NOTE: This is intentionally human-gated. The script writes azoth.yaml and
     prints the manual git-tag command. The human must verify, tag, and push.
@@ -294,10 +294,10 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     raw_version = _extract_azoth_version(azoth_text)
     active_version = _extract_active_version(roadmap_text)
 
-    if active_version != "v0.0.6":
+    if active_version != "v0.0.7":
         _die(
             f"--release refused: active_version is {active_version}; "
-            "must be v0.0.6"
+            "must be v0.0.7"
         )
 
     _write(azoth_path, _set_azoth_version(azoth_text, "0.1.0"))
@@ -320,7 +320,7 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--patch", action="store_true", help="Increment 4th version component")
     group.add_argument("--phase", action="store_true", help="Advance to next phase")
-    group.add_argument("--release", action="store_true", help="Write 0.1.0 (requires v0.0.6)")
+    group.add_argument("--release", action="store_true", help="Write 0.1.0 (requires v0.0.7)")
 
     parser.add_argument(
         "--azoth-yaml",
