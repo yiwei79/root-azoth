@@ -350,6 +350,10 @@ class TestGitignore:
         assert ".azoth/scope-gate.json" in self.content
         assert ".azoth/pipeline-gate.json" in self.content
 
+    def test_excludes_session_state_md(self) -> None:
+        """BL-021: session-state.md is local cross-IDE handoff; example file is tracked."""
+        assert ".azoth/session-state.md" in self.content
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # 9. CROSS-ARTIFACT CONSISTENCY
