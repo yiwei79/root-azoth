@@ -1,5 +1,5 @@
 # Roadmap task spec — v0.2.0
-id: P8-002
+id: P1-002
 roadmap_version: v0.2.0
 title: "Declarative swarm / eval-wave specification (data, not prose-only)"
 decision_ref: [D23, D28]
@@ -27,7 +27,7 @@ acceptance:
   - .claude/workflows/enterprise/e2e-swarm-eval-loop.md links the canonical data path
 
 dependencies:
-  - P8-001
+  - P1-001
 
 delivery:
   target_layer: M1

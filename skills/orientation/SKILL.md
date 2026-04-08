@@ -91,27 +91,27 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Phase 8: v0.2.0 — continuity · swarm data plane · memory · UX 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `phase: 8`; `.azoth/roadmap.yaml` `active_version: v0.2.0`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P8-001 … P8-011** (`status: active`, priorities 1–11); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Canonical state:** `azoth.yaml` `phase: 1` + `milestone: v0.2.0` + `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0`, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
+- **Execution queue:** `.azoth/backlog.yaml` — **P1-001 … P1-011** (`status: active`, priorities 1–11); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids):**
-  - **P8-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
-  - **P8-002** — Declarative eval/swarm wave YAML + schema (depends on P8-001 backlog completion).
-  - **P8-003** — Pipeline composition linter (`pipelines/*.pipeline.yaml`).
-  - **P8-004** — Welcome control plane: gate TTL / EXPIRED + optional ledger line (depends on P8-001).
-  - **P8-005** — Long-running session playbook vs D50 gates (docs).
-  - **P8-006** — Memory loop: W2/session-state alignment, `reinforcement_count` semantics (governed).
-  - **P8-007** — Recall elasticity: tags, decay/contradiction policy, consumer boundary.
-  - **P8-008** — `auto-router` L2 / self-improve lane (governed).
-  - **P8-009** — Cursor session-open parity vs P5-007 SessionStart.
-  - **P8-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
-  - **P8-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
+  - **P1-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
+  - **P1-002** — Declarative eval/swarm wave YAML + schema (depends on P1-001 backlog completion).
+  - **P1-003** — Pipeline composition linter (`pipelines/*.pipeline.yaml`).
+  - **P1-004** — Welcome control plane: gate TTL / EXPIRED + optional ledger line (depends on P1-001).
+  - **P1-005** — Long-running session playbook vs D50 gates (docs).
+  - **P1-006** — Memory loop: W2/session-state alignment, `reinforcement_count` semantics (governed).
+  - **P1-007** — Recall elasticity: tags, decay/contradiction policy, consumer boundary.
+  - **P1-008** — `auto-router` L2 / self-improve lane (governed).
+  - **P1-009** — Cursor session-open parity vs P5-007 SessionStart.
+  - **P1-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
+  - **P1-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
   - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
 ## Integration
 
-- **Canonical phase source for planning:** this file + `azoth.yaml` `phase` + `.azoth/roadmap.yaml` `active_version`.
+- **Canonical phase source for planning:** this file + `azoth.yaml` (`phase` = milestone-local, `lifecycle_phase` = welcome strip) + `.azoth/roadmap.yaml` `active_version` + matching `current_phase` / `lifecycle_phase`.
 - **Root `CLAUDE.md`:** always-loaded; points here for roadmap and expanded workflow.
 - **Session cockpit (D52):** Rich dashboard and routing via `/start` → `scripts/welcome.py` (BL-007). On **Claude Code**, **P5-007** adds automatic plain orientation at session open via **SessionStart** + `**.azoth/session-orientation.txt`** mirror; see rule 9. **Cursor:** run `welcome.py` in the **integrated terminal** for the full Rich UI; **Bash** in chat + expand is an alternative. **Other IDEs without hooks:** `/start` or terminal `welcome.py`; do not assume hook injection.
 - **DYNAMIC-FULL-AUTO+:** `skills/dynamic-full-auto/SKILL.md` — parallel research + explore swarms, queen merge to **`SWARM_RESEARCH_DIGEST.yaml`**, helper `scripts/swarm_research_digest.py` (`init` / `append-pack` / `validate`). Use before gated `/auto` delivery, not as a substitute for scope/pipeline gates.

@@ -377,13 +377,17 @@ class TestCrossArtifactConsistency:
         assert "0.1.0" in self.claude_md or "0.1.0" in self.orientation_md
 
     def test_phase_consistent(self) -> None:
-        """Current phase in azoth.yaml matches CLAUDE.md and roadmap; orientation still carries earlier phases (BL-013)."""
+        """Milestone phase in azoth.yaml matches roadmap and CLAUDE; lifecycle_phase matches when milestone mode (BL-013)."""
         phase = int(self.azoth_yaml["phase"])
         assert f"Phase {phase}" in self.claude_md
         roadmap_path = AZOTH_ROOT / ".azoth" / "roadmap.yaml"
         assert roadmap_path.is_file()
         roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
         assert int(roadmap["current_phase"]) == phase
+        if self.azoth_yaml.get("milestone"):
+            assert int(self.azoth_yaml.get("lifecycle_phase", -1)) == int(
+                roadmap.get("lifecycle_phase", -2)
+            )
         assert "Phase 2" in self.orientation_md
 
     def test_four_layers_consistent(self) -> None:

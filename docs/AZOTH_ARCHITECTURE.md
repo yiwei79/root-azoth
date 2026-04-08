@@ -797,7 +797,7 @@ azoth/
     └── sync-log.jsonl
 ```
 
-**Developer preflight (P8-003):** When `scripts/pipeline_lint.py` exists, run it on `pipelines/*.pipeline.yaml` before relying on composed `/auto` output; CI/pytest should cover happy-path and one malformed fixture once the linter lands.
+**Developer preflight (P1-003):** When `scripts/pipeline_lint.py` exists, run it on `pipelines/*.pipeline.yaml` before relying on composed `/auto` output; CI/pytest should cover happy-path and one malformed fixture once the linter lands.
 
 ---
 
@@ -1097,7 +1097,7 @@ hook (P3-008) reads this file before allowing Write/Edit.
 **Validator rule:** A scope card mixing M1-targeted items with runtime tasks
 is rejected. M1 changes require a dedicated session.
 
-### Long-running sessions (P8-005)
+### Long-running sessions (P1-005)
 
 Multi-hour or multi-wave work (including DYNAMIC-FULL-AUTO+ discovery and `/eval-swarm`) must stay
 compatible with **short-lived scope and pipeline gates** (D50) and the Trust Contract entropy ceiling.
@@ -1108,7 +1108,7 @@ compatible with **short-lived scope and pipeline gates** (D50) and the Trust Con
    `.azoth/scope-gate.json` when the current `expires_at` is near; do not assume silent extension.
 2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
    rather than exceeding the per-turn file ceiling.
-3. **Optional run ledger (P8-001)** — When implemented, append wave outcomes to the gitignored
+3. **Optional run ledger (P1-001)** — When implemented, append wave outcomes to the gitignored
    ledger file so a new chat can resume without replaying full orchestrator prose; until then,
    rely on typed stage summaries (BL-012) and committed artifacts.
 4. **Digest merges** — After swarm append to `SWARM_RESEARCH_DIGEST.yaml`, run
@@ -1120,7 +1120,7 @@ compatible with **short-lived scope and pipeline gates** (D50) and the Trust Con
 vs infrastructure work; unbounded parallel Task fan-out violates swarm Iron Laws (see
 `.agents/skills/swarm-coordination/SKILL.md`).
 
-### Context & token budget (P8-011)
+### Context & token budget (P1-011)
 
 **Goal:** Lower median tokens and latency per session **without** weakening D50 gates, **BL-012**
 typed handoffs, or **`/eval-swarm`** quality bars.
@@ -1226,7 +1226,7 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 | v0.0.6 | Phase 6: Meta-recursive | 6 |
 | v0.0.7 | Phase 7: Publishing & public product | 7 |
 | **v0.1.0** | **Public azoth release — full roadmap complete (Phases 1–7)** | — |
-| v0.2.0 | Post–v0.1.0 slice — next roadmap TBD (phases/backlog to seed) | 8 (placeholder) |
+| v0.2.0 | Post–v0.1.0 slice — swarm · memory · UX | Milestone-local phase 1+ (task ids **P1-NNN**); `lifecycle_phase: 8` drives welcome strip |
 
 ### Bump Rules
 
@@ -1238,8 +1238,9 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 - **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6→7).
   PATCH counter resets to `.1`.
 - **Release** (`--release` from `v0.0.7` active): writes `0.1.0`, closes v0.0.7 + v0.1.0 roadmap
-  blocks, sets legacy `current_phase: 8`, activates **v0.2.0** @ `current_patch: 1`. Git tag
-  proposed — user-confirmed, never auto-pushed.
+  blocks, sets **`current_phase: 1`** (milestone-local for v0.2.0) + **`lifecycle_phase: 8`**
+  (welcome strip = historical pre-1.0 phases + Next), sets **`milestone: v0.2.0`** in `azoth.yaml`,
+  activates **v0.2.0** @ `current_patch: 1`. Git tag proposed — user-confirmed, never auto-pushed.
 
 The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later
 in the phase. PHASE provides coarser orientation. Together they encode "where in development
@@ -1249,8 +1250,8 @@ are we" without requiring agents to read git history.
 
 - `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
   writes `azoth.yaml` and updates `roadmap.yaml` `active_version` + `current_patch` fields.
-  `--release` closes the v0.0.7 slice, marks v0.1.0 complete, activates v0.2.0, sets phase 8,
-  writes `0.1.0`, and proposes a git tag.
+  `--release` closes the v0.0.7 slice, marks v0.1.0 complete, activates v0.2.0, sets milestone-local
+  `phase: 1` + `milestone` + `lifecycle_phase: 8`, writes `0.1.0`, and proposes a git tag.
 - `/session-closeout` integration — final step calls `version-bump.py --patch` after
   confirming at least one artifact was written this session.
 - `/deliver-full` integration — calls `version-bump.py --patch` after builder stage

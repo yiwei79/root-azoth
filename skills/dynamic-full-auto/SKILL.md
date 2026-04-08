@@ -42,7 +42,7 @@ to merge when the situation warrants (see decision table).
 
 Align `<active_roadmap_version>` with `.azoth/roadmap.yaml` top-level `active_version` (D48).
 
-**Scope TTL and multi-wave runs:** See `docs/AZOTH_ARCHITECTURE.md` **Long-running sessions (P8-005)** for refresh, chunking, and gate policy alongside this skill.
+**Scope TTL and multi-wave runs:** See `docs/AZOTH_ARCHITECTURE.md` **Long-running sessions (P1-005)** for refresh, chunking, and gate policy alongside this skill.
 
 **Mechanical helper:**
 
@@ -231,5 +231,5 @@ table as `.claude/commands/eval.md`.
 
 ## Future refinement
 
-Architecture will evolve (run ledger P8-001, declarative wave YAML P8-002). Keep **digest schema_version**
+Architecture will evolve (run ledger P1-001, declarative wave YAML P1-002). Keep **digest schema_version**
 int; extend fields only with backward-compatible keys or bump schema.

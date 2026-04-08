@@ -31,17 +31,17 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
     by_id = {t["id"]: t for t in _active_version_tasks(road)}
     for tid in (
         "P5-006",
-        "P8-001",
-        "P8-002",
-        "P8-003",
-        "P8-004",
-        "P8-005",
-        "P8-006",
-        "P8-007",
-        "P8-008",
-        "P8-009",
-        "P8-010",
-        "P8-011",
+        "P1-001",
+        "P1-002",
+        "P1-003",
+        "P1-004",
+        "P1-005",
+        "P1-006",
+        "P1-007",
+        "P1-008",
+        "P1-009",
+        "P1-010",
+        "P1-011",
     ):
         assert tid in by_id, f"roadmap active version missing task {tid}"
         task = by_id[tid]

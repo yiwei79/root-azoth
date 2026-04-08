@@ -7,7 +7,7 @@ the script is implemented.
 Coverage:
 - --patch: increments 4th component in azoth.yaml and roadmap current_patch
 - --phase: resets patch, writes final_patch, advances active_version
-- --release: closes v0.0.7/v0.1.0, activates v0.2.0, azoth 0.1.0 + phase 8
+- --release: closes v0.0.7/v0.1.0, activates v0.2.0, azoth 0.1.0 + milestone phase 1 + lifecycle 8
 - --patch: post-1.0 accepts 0.1.M (three-part) semver
 - Guard rails: wrong version format, non-empty pending_task_refs, wrong phase
 - Comment preservation in both YAML files
@@ -350,11 +350,14 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
     assert data["version"] == "0.1.0", (
         f"Expected version 0.1.0 after --release, got {data['version']!r}"
     )
-    assert int(data["phase"]) == 8, f"Expected phase 8 after --release, got {data.get('phase')!r}"
+    assert int(data["phase"]) == 1, f"Expected phase 1 after --release, got {data.get('phase')!r}"
+    assert data.get("milestone") == "v0.2.0"
+    assert int(data.get("lifecycle_phase", 0)) == 8
 
     rdata = yaml.safe_load(roadmap_p.read_text())
     assert rdata["active_version"] == "v0.2.0"
-    assert rdata["current_phase"] == 8
+    assert rdata["current_phase"] == 1
+    assert int(rdata.get("lifecycle_phase", 0)) == 8
     v007 = next(x for x in rdata["versions"] if x["id"] == "v0.0.7")
     assert v007["status"] == "complete"
     assert v007.get("final_patch") == 4

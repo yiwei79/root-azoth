@@ -1,5 +1,5 @@
 # Roadmap task spec — v0.2.0
-id: P8-011
+id: P1-011
 roadmap_version: v0.2.0
 title: "Token & inference efficiency (context budget, caching discipline, spawn hygiene)"
 decision_ref: [D21, D23, D44, D46]
@@ -28,7 +28,7 @@ non_goals:
 acceptance:
   - Authoritative doc section or orientation bullets: static-vs-dynamic prompt segments; when to use Batch/offline eval vs interactive swarm
   - Cross-link to BL-012 stage-summary.schema.yaml as primary compaction boundary
-  - pytest tests/test_p8_011_token_efficiency_anchor.py passes (anchors heading or key phrase in chosen doc)
+  - pytest tests/test_p1_011_token_efficiency_anchor.py passes (anchors heading or key phrase in chosen doc)
   - If skills/subagent-router touched and governed → /deliver-full; else /deliver for doc-only slice
 
 dependencies: []

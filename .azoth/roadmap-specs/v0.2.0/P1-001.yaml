@@ -1,5 +1,5 @@
 # Roadmap task spec — v0.2.0
-id: P8-001
+id: P1-001
 roadmap_version: v0.2.0
 title: "Swarm & pipeline run ledger + resume protocol"
 decision_ref: [D21, D50]

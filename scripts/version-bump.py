@@ -15,8 +15,9 @@ Flags:
   --patch    0.0.N.M → 0.0.N.M+1  (every session delivery)
   --phase    0.0.N.M → 0.0.N+1.1  (phase completion — empty pending_task_refs; next
               slice status planned or backlog → active + current_patch 1)
-  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, azoth 0.1.0 + phase 8,
-           activate v0.2.0 @ current_patch 1 (post–v0.1.0 slice; phases TBD)
+  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, azoth 0.1.0 + milestone v0.2.0
+           at milestone-local phase 1 + lifecycle_phase 8 (welcome strip), activate v0.2.0 @
+           current_patch 1
 
 --release is human-gated: updates azoth.yaml + .azoth/roadmap.yaml, prints the
 manual git-tag command. The human must inspect, run tests, tag, and push.
@@ -98,6 +99,43 @@ def _set_azoth_phase_line(text: str, new_phase: int, comment: str | None = None)
         line = f"phase: {new_phase}  # {comment}"
         return re.sub(r"^phase:\s*\d+.*$", line, text, flags=re.MULTILINE)
     return re.sub(r"^(phase:\s*)\d+", rf"\g<1>{new_phase}", text, flags=re.MULTILINE)
+
+
+def _ensure_azoth_milestone_post_release(text: str) -> str:
+    """After --release, ensure milestone v0.2.0 + lifecycle_phase for welcome strip (D48)."""
+    if not re.search(r"^milestone:", text, re.MULTILINE):
+        text = re.sub(
+            r"^(phase:\s*\d+[^\n]*\n)",
+            r"\1milestone: v0.2.0\n",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    else:
+        text = re.sub(
+            r"^milestone:\s*\S+.*$",
+            "milestone: v0.2.0",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    if not re.search(r"^lifecycle_phase:", text, re.MULTILINE):
+        text = re.sub(
+            r"^(milestone:.*\n)",
+            r"\1lifecycle_phase: 8\n",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    else:
+        text = re.sub(
+            r"^lifecycle_phase:\s*\d+.*$",
+            "lifecycle_phase: 8",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    return text
 
 
 def _ensure_completed_date_in_block(text: str, version_id: str, iso_date: str) -> str:
@@ -319,7 +357,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
 
 def do_release(azoth_path: Path, roadmap_path: Path) -> None:
-    """Close v0.0.7 + v0.1.0, set azoth 0.1.0 / phase 8, activate v0.2.0 slice (roadmap TBD).
+    """Close v0.0.7 + v0.1.0, set azoth 0.1.0 + v0.2.0 milestone-local phase 1, activate v0.2.0.
 
     Human-gated: prints the manual git-tag command; verify, tag, and push locally.
     """
@@ -358,21 +396,37 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     )
     roadmap_text = _ensure_completed_date_in_block(roadmap_text, "v0.1.0", completed)
 
-    # Legacy roadmap header: phase 8 placeholder until next roadmap is defined
+    # Roadmap header: milestone-local phase 1 for v0.2.0 + lifecycle strip marker
     roadmap_text = re.sub(
         r"^current_phase:\s*\d+\s*$",
-        "current_phase: 8",
+        "current_phase: 1",
         roadmap_text,
         count=1,
         flags=re.MULTILINE,
     )
     roadmap_text = re.sub(
         r'^current_phase_title:\s*".*"\s*$',
-        'current_phase_title: "Next — roadmap TBD"',
+        'current_phase_title: "v0.2.0 — post-1.0 slice (milestone phase 1)"',
         roadmap_text,
         count=1,
         flags=re.MULTILINE,
     )
+    if re.search(r"^lifecycle_phase:", roadmap_text, re.MULTILINE):
+        roadmap_text = re.sub(
+            r"^lifecycle_phase:\s*\d+\s*$",
+            "lifecycle_phase: 8",
+            roadmap_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    else:
+        roadmap_text = re.sub(
+            r'(^current_phase_title:\s*".*"\s*\n)',
+            r"\1lifecycle_phase: 8\n",
+            roadmap_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
 
     # Activate v0.2.0 (backlog → active + current_patch 1)
     roadmap_text = _set_active_version(roadmap_text, "v0.2.0")
@@ -395,9 +449,10 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     azoth_text = _set_azoth_version(azoth_text, "0.1.0")
     azoth_text = _set_azoth_phase_line(
         azoth_text,
-        8,
-        "Phases 1–7 + v0.1.0 release complete; next roadmap slice v0.2.0 (TBD)",
+        1,
+        "Milestone v0.2.0 — local phase 1 (task ids P1-NNN); lifecycle_phase drives welcome strip",
     )
+    azoth_text = _ensure_azoth_milestone_post_release(azoth_text)
 
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)

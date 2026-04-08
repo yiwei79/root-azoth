@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (session-closeout ep-098 — v0.2.0 P8-011 + commands + digest)
+Last updated: 2026-04-08 (session-closeout ep-100 — v0.2.0 milestone phases + P1 ids + closeout)
 
 ## Current Phase
 
-Phase 8 — v0.2.0 active  
-**Toolkit version:** **0.1.3** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches.
+Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
+**Toolkit version:** **0.1.4** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **5** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches.
+
+## Session outcome (ep-100) — session-closeout
+
+- **Delivered / refined:** **Milestone-phase model** — `azoth.yaml` + `roadmap.yaml` (`current_phase` / `lifecycle_phase`), **P1-001…P1-011** specs/backlog/roadmap/digest, **`scripts/welcome.py`** strip vs header, **`version-bump.py` `--release`** → phase 1 + milestone + lifecycle + **T7** test updates, **D53** / **`docs/AZOTH_ARCHITECTURE.md`**, **CLAUDE** + **orientation**, **SWARM** `meta` + validate, **3× Task(explore)** Wave B, **pytest** green, **`azoth-deploy`**, **`.claude/settings.json`** **AZOTH_VERSION** + **AZOTH_PHASE** sync. **ep-099** swarm-orchestration drift captured earlier in session. **W1** **ep-100**; **W2** bootloader + **`session-state.md`** + scope **`closed_at`**; **W3** Claude memory (attempt); **W4** **`0.1.3 → 0.1.4`**, roadmap **`current_patch` `4 → 5`**; **`azoth.yaml`** **`episodes: 100`**.
+- **Closeout:** W1–W4 sequence; scope gate closed post-delivery.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** for **P1-001** or next backlog row; **`git push`** when ready.
 
 ## Session outcome (ep-098) — session-closeout
 

@@ -947,11 +947,11 @@ items:
       (excludes `.git/`); public repo github.com/yiwei79/azoth initial push; PolyForm Noncommercial
       1.0.0 LICENSE + README license section; confirm Actions green on default branch as ongoing hygiene.
 
-  # ── v0.2.0 (Phase 8) — DYNAMIC-FULL-AUTO+ backlog pre-fill ─────────────────
-  - id: P8-001
+  # ── v0.2.0 (milestone phase 1) — DYNAMIC-FULL-AUTO+ backlog pre-fill ─────────
+  - id: P1-001
     title: "Swarm & pipeline run ledger + resume protocol"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-001
+    roadmap_ref: P1-001
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -961,13 +961,13 @@ items:
     decision_ref: [D21, D50]
     blocked_by: []
     description: >
-      See .azoth/roadmap-specs/v0.2.0/P8-001.yaml and SWARM_RESEARCH_DIGEST.yaml (durability).
+      See .azoth/roadmap-specs/v0.2.0/P1-001.yaml and SWARM_RESEARCH_DIGEST.yaml (durability).
       Durable .azoth run state; optional welcome surfacing.
 
-  - id: P8-002
+  - id: P1-002
     title: "Declarative swarm / eval-wave specification"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-002
+    roadmap_ref: P1-002
     target_layer: M1
     delivery_pipeline: governed
     status: active
@@ -975,14 +975,14 @@ items:
     priority: 2
     created_date: "2026-04-08"
     decision_ref: [D23, D28]
-    blocked_by: [P8-001]
+    blocked_by: [P1-001]
     description: >
-      YAML/schema beside e2e-swarm-eval-loop.md; see P8-002.yaml and digest RP-B.
+      YAML/schema beside e2e-swarm-eval-loop.md; see P1-002.yaml and digest RP-B.
 
-  - id: P8-003
+  - id: P1-003
     title: "Pipeline composition linter"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-003
+    roadmap_ref: P1-003
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -992,12 +992,12 @@ items:
     decision_ref: [D28]
     blocked_by: []
     description: >
-      Structural validation for pipelines/*.pipeline.yaml; P8-003.yaml.
+      Structural validation for pipelines/*.pipeline.yaml; P1-003.yaml.
 
-  - id: P8-004
+  - id: P1-004
     title: "Control-plane surfacing in welcome (gates TTL + optional ledger)"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-004
+    roadmap_ref: P1-004
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1005,14 +1005,14 @@ items:
     priority: 4
     created_date: "2026-04-08"
     decision_ref: [D52, D50]
-    blocked_by: [P8-001]
+    blocked_by: [P1-001]
     description: >
-      Scope/pipeline expiry visibility; optional active run line; P8-004.yaml.
+      Scope/pipeline expiry visibility; optional active run line; P1-004.yaml.
 
-  - id: P8-005
+  - id: P1-005
     title: "Long-running session policy (docs + scope playbook)"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-005
+    roadmap_ref: P1-005
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1022,12 +1022,12 @@ items:
     decision_ref: [D50]
     blocked_by: []
     description: >
-      Document autonomous/long-run patterns vs D50 gates; P8-005.yaml; digest RP-A.
+      Document autonomous/long-run patterns vs D50 gates; P1-005.yaml; digest RP-A.
 
-  - id: P8-006
+  - id: P1-006
     title: "Memory loop hardening (reinforcement, closeout, session-state)"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-006
+    roadmap_ref: P1-006
     target_layer: M1
     delivery_pipeline: governed
     status: active
@@ -1037,12 +1037,12 @@ items:
     decision_ref: [D11, D49, D51]
     blocked_by: []
     description: >
-      W2 includes session-state.md; reinforcement_count semantics; explore swarm P8-006 targets.
+      W2 includes session-state.md; reinforcement_count semantics; explore swarm P1-006 targets.
 
-  - id: P8-007
+  - id: P1-007
     title: "Elasticity: M2/M3 recall governance"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-007
+    roadmap_ref: P1-007
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1052,12 +1052,12 @@ items:
     decision_ref: [D45]
     blocked_by: []
     description: >
-      Tags, decay policy, contradictions; digest RP-D; P8-007.yaml.
+      Tags, decay policy, contradictions; digest RP-D; P1-007.yaml.
 
-  - id: P8-008
+  - id: P1-008
     title: "auto-router L2 / self-improve lane"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-008
+    roadmap_ref: P1-008
     target_layer: M1
     delivery_pipeline: governed
     status: active
@@ -1067,12 +1067,12 @@ items:
     decision_ref: [D23, D44]
     blocked_by: []
     description: >
-      Stage 0 composition for instruction refinement; P8-008.yaml.
+      Stage 0 composition for instruction refinement; P1-008.yaml.
 
-  - id: P8-009
+  - id: P1-009
     title: "Cursor session-open parity"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-009
+    roadmap_ref: P1-009
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1082,12 +1082,12 @@ items:
     decision_ref: [D52, D46]
     blocked_by: []
     description: >
-      Documented automation vs SessionStart; P8-009.yaml.
+      Documented automation vs SessionStart; P1-009.yaml.
 
-  - id: P8-010
+  - id: P1-010
     title: "Eval / eval-swarm wiring drift hardening"
     source: dynamic-full-auto-plus
-    roadmap_ref: P8-010
+    roadmap_ref: P1-010
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1097,12 +1097,12 @@ items:
     decision_ref: [D46]
     blocked_by: []
     description: >
-      tests/test_eval_pipeline_wiring.py + mirrors; P8-010.yaml; digest RP-C.
+      tests/test_eval_pipeline_wiring.py + mirrors; P1-010.yaml; digest RP-C.
 
-  - id: P8-011
+  - id: P1-011
     title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
     source: researcher-context-architect-2026-04-08
-    roadmap_ref: P8-011
+    roadmap_ref: P1-011
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
@@ -1114,7 +1114,7 @@ items:
     description: >
       Ad-hoc roadmap slice from research (provider prompt caching, ACON/context folding, JetBrains
       observation-heavy traces, speculative tool execution tradeoffs) + context-architect blast map.
-      Spec: P8-011.yaml; digest RP-E; builds on completed BL-011/BL-012. Doc-first acceptance + anchor test.
+      Spec: P1-011.yaml; digest RP-E; builds on completed BL-011/BL-012. Doc-first acceptance + anchor test.
 
 # Completed items
 completed: []

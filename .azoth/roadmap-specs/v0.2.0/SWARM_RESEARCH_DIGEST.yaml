@@ -5,6 +5,12 @@
 schema_version: 1
 roadmap_version: v0.2.0
 
+meta:
+  session_id: "2026-04-09-dynamic-full-auto-v020-milestone"
+  wave_a: "skipped — known-pattern (milestone IDs + welcome lifecycle split; no external research packs)"
+  wave_b: "Task(explore)x3 — repo P1 drift, welcome strip semantics, version-bump --release expectations"
+  checkpoint_gamma: "standard · infrastructure · known-pattern → gated builder delivery"
+
 consensus_themes:
   - id: durability
     contributing_packs: [RP-A]
@@ -16,7 +22,7 @@ consensus_themes:
     contributing_packs: [RP-A, RP-B]
     summary: >
       Tool-based handoffs + declarative YAML workflows (vendor agent frameworks) complement
-      prose commands; canonical data reduces drift if linked from markdown (D23, D28 — P8-002).
+      prose commands; canonical data reduces drift if linked from markdown (D23, D28 — P1-002).
   - id: multi_eval_independence
     contributing_packs: [RP-C]
     summary: >
@@ -26,13 +32,13 @@ consensus_themes:
     contributing_packs: [RP-D]
     summary: >
       Relevance filter + utility/decay/access signals beat pure semantic retrieval; Azoth’s
-      recency + reinforcement_count aligns partially; outcome-linked utility needs HITL (D11, D45 — P8-007).
+      recency + reinforcement_count aligns partially; outcome-linked utility needs HITL (D11, D45 — P1-007).
   - id: inference_efficiency
     contributing_packs: [RP-E]
     summary: >
       Provider prompt caching rewards static prefixes + minimal volatile suffix; BL-012 stage
       boundaries are compaction points; parallel eval and speculative tools trade cost, latency,
-      and safety (D21, D23, D44, D46 — P8-011).
+      and safety (D21, D23, D44, D46 — P1-011).
 
 research_packs:
   - id: RP-A
@@ -61,7 +67,7 @@ research_packs:
       - { title: "Databricks Supervisor Agent", url: "https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor" }
       - { title: "LangGraph workflows and agents", url: "https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/" }
     implications_for_azoth:
-      - "YAML wave tables (P8-002) as canonical alongside e2e-swarm-eval-loop.md."
+      - "YAML wave tables (P1-002) as canonical alongside e2e-swarm-eval-loop.md."
       - "BL-012 remains boundary artifact; wave rows reference stage_id / spawn contract."
       - "Map orchestrator→manager, Task spawn→handoff, typed YAML→validated payload."
     risks:
@@ -129,24 +135,24 @@ research_packs:
 explore_swarm_summary:
   wave: "B + synthesis"
   findings:
-    - "backlog.yaml lacked P8-* rows before pre-fill; welcome lacked TTL/EXPIRED and run-ledger surfacing (P8-004)."
-    - ".claude/workflows/enterprise/e2e-swarm-eval-loop.md plus pipelines/*.pipeline.yaml and test_eval_pipeline_wiring anchor P8-002/003/010."
-    - "session-closeout W2 checklist should name session-state.md explicitly (P8-006)."
-    - "Second pass: mapped task list ordered ledger-first (P8-001) then declarative waves (P8-002), linter (P8-003), welcome TTL (P8-004)."
-    - "Researcher + context-architect pass: add P8-011 roadmap/backlog/spec + RP-E (caching, ACON/folding, JetBrains observation cost, PASTE, Batch API)."
+    - "backlog.yaml lacked P1-* rows before pre-fill; welcome lacked TTL/EXPIRED and run-ledger surfacing (P1-004)."
+    - ".claude/workflows/enterprise/e2e-swarm-eval-loop.md plus pipelines/*.pipeline.yaml and test_eval_pipeline_wiring anchor P1-002/003/010."
+    - "session-closeout W2 checklist should name session-state.md explicitly (P1-006)."
+    - "Second pass: mapped task list ordered ledger-first (P1-001) then declarative waves (P1-002), linter (P1-003), welcome TTL (P1-004)."
+    - "Researcher + context-architect pass: add P1-011 roadmap/backlog/spec + RP-E (caching, ACON/folding, JetBrains observation cost, PASTE, Batch API)."
 
-mapped_roadmap_tasks: [P8-001, P8-002, P8-003, P8-004, P8-005, P8-006, P8-007, P8-008, P8-009, P8-010, P8-011, P5-006]
+mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P5-006]
 
 mapping_notes:
-  P8-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
-  P8-002: "RP-B declarative workflows — YAML wave rows beside e2e-swarm-eval-loop.md prose."
-  P8-003: "Structural safety for pipelines/*.pipeline.yaml — typos caught before /auto runtime."
-  P8-004: "Explore: TTL visibility; depends on stable ledger shape from P8-001."
-  P8-005: "D50 long runs vs short TTL — playbook in architecture + dynamic-full-auto skill cross-link."
-  P8-006: "Explore finding: W2 vs session-state.md; reinforcement semantics (D11, D49, D51)."
-  P8-007: "RP-D memory elasticity — M2/M3 recall governance without auto-delete."
-  P8-008: "D23/D44 — Stage 0 lane for instruction refinement via auto-router."
-  P8-009: "D52/D46 — Cursor SessionStart parity documentation path."
-  P8-010: "D46 — eval/eval-swarm wiring tests across deploy mirrors."
-  P8-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
+  P1-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
+  P1-002: "RP-B declarative workflows — YAML wave rows beside e2e-swarm-eval-loop.md prose."
+  P1-003: "Structural safety for pipelines/*.pipeline.yaml — typos caught before /auto runtime."
+  P1-004: "Explore: TTL visibility; depends on stable ledger shape from P1-001."
+  P1-005: "D50 long runs vs short TTL — playbook in architecture + dynamic-full-auto skill cross-link."
+  P1-006: "Explore finding: W2 vs session-state.md; reinforcement semantics (D11, D49, D51)."
+  P1-007: "RP-D memory elasticity — M2/M3 recall governance without auto-delete."
+  P1-008: "D23/D44 — Stage 0 lane for instruction refinement via auto-router."
+  P1-009: "D52/D46 — Cursor SessionStart parity documentation path."
+  P1-010: "D46 — eval/eval-swarm wiring tests across deploy mirrors."
+  P1-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
   P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."

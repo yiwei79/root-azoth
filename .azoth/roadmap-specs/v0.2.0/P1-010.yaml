@@ -1,5 +1,5 @@
 # Roadmap task spec — v0.2.0
-id: P8-010
+id: P1-010
 roadmap_version: v0.2.0
 title: "Eval / eval-swarm wiring drift hardening"
 decision_ref: [D46]

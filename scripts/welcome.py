@@ -112,6 +112,36 @@ def _parse_expires_at_utc(raw: str) -> datetime | None:
         return None
 
 
+def resolve_strip_phase(azoth: dict[str, Any], roadmap: dict[str, Any]) -> int:
+    """Index for the 1–8 Kernel→Next strip. Milestone mode uses lifecycle_phase, not local phase."""
+    if azoth.get("milestone"):
+        raw_lp = azoth.get("lifecycle_phase")
+        if raw_lp is not None:
+            try:
+                return int(raw_lp)
+            except (ValueError, TypeError):
+                pass
+        rlc = roadmap.get("lifecycle_phase")
+        if rlc is not None:
+            try:
+                return int(rlc)
+            except (ValueError, TypeError):
+                pass
+        return 0
+    raw = azoth.get("phase")
+    try:
+        return int(raw)  # type: ignore[arg-type]
+    except (ValueError, TypeError):
+        return 0
+
+
+def header_phase_label(azoth: dict[str, Any], phase_display: Any) -> str:
+    m = azoth.get("milestone")
+    if m:
+        return f"Phase {phase_display} · {m}"
+    return f"Phase {phase_display}"
+
+
 def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
     """True when pipeline-gate.json satisfies mechanical enforcement for this scope."""
     if not pg.get("approved"):
@@ -187,6 +217,7 @@ def git_info() -> tuple[str, str]:
 def gather_dashboard_state() -> dict[str, Any]:
     """Load all dashboard inputs; shared by Rich and plain renderers."""
     azoth = load_yaml(ROOT / "azoth.yaml")
+    roadmap_data = load_yaml(ROOT / ".azoth" / "roadmap.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
@@ -196,6 +227,8 @@ def gather_dashboard_state() -> dict[str, Any]:
     today = datetime.now().strftime("%Y-%m-%d")
     version = azoth.get("version", "?")
     phase = azoth.get("phase", "?")
+    strip_phase = resolve_strip_phase(azoth, roadmap_data)
+    phase_header = header_phase_label(azoth, phase)
 
     items = backlog_data.get("items", [])
     complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
@@ -203,6 +236,7 @@ def gather_dashboard_state() -> dict[str, Any]:
 
     return {
         "azoth": azoth,
+        "roadmap": roadmap_data,
         "backlog_data": backlog_data,
         "scope": scope,
         "pipeline_gate": pipeline_gate,
@@ -212,6 +246,8 @@ def gather_dashboard_state() -> dict[str, Any]:
         "today": today,
         "version": version,
         "phase": phase,
+        "strip_phase": strip_phase,
+        "phase_header": phase_header,
         "items": items,
         "complete_ids": complete_ids,
         "top3": top3,
@@ -247,14 +283,12 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     today = state["today"]
     version = state["version"]
     phase = state["phase"]
+    strip_phase = int(state.get("strip_phase") or 0)
+    phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
 
-    phase_num = phase
-    try:
-        current_phase = int(phase)
-    except (ValueError, TypeError):
-        current_phase = 0
+    current_phase = strip_phase
 
     lines: list[str] = []
     lines.append("# AZOTH_SESSION_ORIENTATION_BEGIN")
@@ -267,7 +301,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     sep = "═" * 72
     lines.append(sep)
     lines.append(
-        f"  AZOTH  ·  v{version}  ·  Phase {phase_num}  ·  {repo}  ·  {branch}  ·  {today}"
+        f"  AZOTH  ·  v{version}  ·  {phase_header}  ·  {repo}  ·  {branch}  ·  {today}"
     )
     lines.append("  (plain layout — full orientation; Rich panels: run without --plain)")
     lines.append(sep)
@@ -403,6 +437,8 @@ def render_dashboard() -> None:
     today = state["today"]
     version = state["version"]
     phase = state["phase"]
+    strip_phase = int(state.get("strip_phase") or 0)
+    phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
 
@@ -412,7 +448,7 @@ def render_dashboard() -> None:
     header_text.append("  ·  ", style="dim white")
     header_text.append(f"v{version}", style="bold cyan")
     header_text.append("  ·  ", style="dim white")
-    header_text.append(f"Phase {phase}", style="bold yellow")
+    header_text.append(phase_header, style="bold yellow")
     header_text.append("  ·  ", style="dim white")
     header_text.append(repo, style="bold white")
     header_text.append("  ·  ", style="dim white")
@@ -432,10 +468,7 @@ def render_dashboard() -> None:
         (7, "Publish"),
         (8, "Next"),
     ]
-    try:
-        current_phase = int(phase)
-    except (ValueError, TypeError):
-        current_phase = 0
+    current_phase = strip_phase
 
     phase_parts = []
     for num, name in _phases:

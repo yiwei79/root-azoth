@@ -1,5 +1,5 @@
 # Roadmap task spec — v0.2.0
-id: P8-004
+id: P1-004
 roadmap_version: v0.2.0
 title: "Control-plane surfacing in welcome (scope, pipeline, active run)"
 decision_ref: [D52, D50]
@@ -13,7 +13,7 @@ problem: >
 
 scope:
   - scripts/welcome.py (plain + Rich)
-  - Optional read of P8-001 ledger file
+  - Optional read of P1-001 ledger file
   - .claude/commands/start.md copy alignment if needed
 
 non_goals:
@@ -26,7 +26,7 @@ acceptance:
   - pytest for time formatting or panel substring (stable clock injection)
 
 dependencies:
-  - P8-001
+  - P1-001
 
 delivery:
   target_layer: infrastructure

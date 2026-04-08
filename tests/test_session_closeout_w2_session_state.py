@@ -1,4 +1,4 @@
-"""P8-006: session-closeout W2 names session-state handoff path."""
+"""P1-006: session-closeout W2 names session-state handoff path."""
 
 from __future__ import annotations
 

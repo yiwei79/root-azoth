@@ -6,8 +6,9 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 8
-current_phase_title: "Next — v0.2.0 (continuity · swarm data plane · memory · UX)"
+current_phase: 1
+current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 1)"
+lifecycle_phase: 8
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
   - id: BL-002
@@ -128,7 +129,7 @@ active_version: v0.2.0
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
 # - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.M → 0.1.M+1 + v0.2.0 current_patch +1
 # - phase: 0.0.N.M → 0.0.N+1.1 (not used after v0.0.7; use --release for 0.1.0)
-# - release: v0.0.7 active → close v0.0.7 + v0.1.0, azoth 0.1.0, phase 8, activate v0.2.0
+# - release: v0.0.7 active → close v0.0.7 + v0.1.0, azoth 0.1.0, milestone phase 1 + lifecycle 8, activate v0.2.0
 # - git tag proposed at release only (user-confirmed, never auto-pushed)
 
 versions:
@@ -269,19 +270,19 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 4
+    current_patch: 5
     goal: >
       Long-running, low-friction agentic work: durable run state and resume; declarative
       swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
       and recall elasticity without toolkit over-fit; calmer UX (narrow terminals, gate
       visibility, Cursor orientation parity); optional L2/auto-router lane for refinement goals;
       token and inference efficiency (context budget, provider caching discipline, spawn hygiene).
-    phase_scope: [8]
+    phase_scope: [1]
     note: >
       Detailed specs per task: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Aggregated online
       research + repo explore swarm: .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml
-      (DYNAMIC-FULL-AUTO+). Roadmap tasks stay scannable; backlog.yaml holds execution queue.
-      Phase number remains 8 in azoth.yaml until release process advances phase (D48).
+      (DYNAMIC-FULL-AUTO+). Task ids use milestone-local P1-NNN; azoth.yaml phase + roadmap
+      current_phase are milestone-local; lifecycle_phase (8) drives the welcome 1–8 strip (D48).
     tasks:
       - id: P5-006
         title: "Phone-friendly output (narrow terminals)"
@@ -289,60 +290,60 @@ versions:
         deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
         note: "Deferred UX; compact/width-aware welcome + dashboards"
-      - id: P8-001
+      - id: P1-001
         title: "Swarm & pipeline run ledger + resume protocol"
         decision_ref: [D21, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-001.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-001.yaml"
         note: "Durable .azoth run state; optional welcome surfacing"
-      - id: P8-002
+      - id: P1-002
         title: "Declarative swarm / eval-wave specification"
         decision_ref: [D23, D28]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-002.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
         note: "YAML/schema alongside e2e-swarm-eval-loop.md"
-        blocked_by: [P8-001]
-      - id: P8-003
+        blocked_by: [P1-001]
+      - id: P1-003
         title: "Pipeline composition linter"
         decision_ref: [D28]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-003.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-003.yaml"
         note: "Structural validation for pipelines/*.pipeline.yaml"
-      - id: P8-004
+      - id: P1-004
         title: "Control-plane surfacing in welcome (gates + optional ledger)"
         decision_ref: [D52, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-004.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
         note: "TTL visibility; active run summary when ledger exists"
-        blocked_by: [P8-001]
-      - id: P8-005
+        blocked_by: [P1-001]
+      - id: P1-005
         title: "Long-running session policy (docs + scope playbook)"
         decision_ref: [D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-005.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-005.yaml"
         note: "DYNAMIC-FULL-AUTO-style runs vs trust gates"
-      - id: P8-006
+      - id: P1-006
         title: "Memory loop hardening (reinforcement, closeout, session-state)"
         decision_ref: [D11, D49, D51]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-006.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
         note: "W2 parity; reinforcement_count semantics"
-      - id: P8-007
+      - id: P1-007
         title: "Elasticity: M2/M3 recall governance"
         decision_ref: [D45]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-007.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
         note: "Tags, decay, contradictions; consumer boundary"
-      - id: P8-008
+      - id: P1-008
         title: "auto-router L2 / self-improve lane"
         decision_ref: [D23, D44]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-008.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
         note: "Stage 0 → composition_rules for refinement goals"
-      - id: P8-009
+      - id: P1-009
         title: "Cursor session-open parity"
         decision_ref: [D52, D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-009.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
         note: "Documented automation path vs SessionStart"
-      - id: P8-010
+      - id: P1-010
         title: "Eval / eval-swarm wiring drift hardening"
         decision_ref: [D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-010.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
         note: "tests + mirror surfaces stay aligned"
-      - id: P8-011
+      - id: P1-011
         title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
         decision_ref: [D21, D23, D44, D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-011.yaml"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"
         note: "BL-012 + deploy mirrors + provider caching; RP-E in SWARM_RESEARCH_DIGEST"

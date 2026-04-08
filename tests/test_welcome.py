@@ -181,6 +181,27 @@ def test_pipeline_gate_invalid_expired() -> None:
     assert welcome.is_pipeline_gate_valid(scope, pg) is False
 
 
+def test_resolve_strip_phase_milestone_uses_lifecycle() -> None:
+    azoth = {"phase": 1, "milestone": "v0.2.0", "lifecycle_phase": 8}
+    assert welcome.resolve_strip_phase(azoth, {}) == 8
+
+
+def test_resolve_strip_phase_milestone_falls_back_to_roadmap() -> None:
+    azoth = {"phase": 1, "milestone": "v0.2.0"}
+    roadmap = {"lifecycle_phase": 8}
+    assert welcome.resolve_strip_phase(azoth, roadmap) == 8
+
+
+def test_resolve_strip_phase_legacy_uses_azoth_phase() -> None:
+    azoth = {"phase": 3}
+    assert welcome.resolve_strip_phase(azoth, {}) == 3
+
+
+def test_header_phase_label_includes_milestone() -> None:
+    azoth = {"milestone": "v0.2.0"}
+    assert welcome.header_phase_label(azoth, 1) == "Phase 1 · v0.2.0"
+
+
 # ── render_dashboard smoke tests ──────────────────────────────────────────────
 
 

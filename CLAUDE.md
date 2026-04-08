@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.2
+**Version**: v0.1.4
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
@@ -80,7 +80,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ### Development Workflow
 
-1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work (including **Long-running sessions (P8-005)** when scope may span waves or TTL).
+1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work (including **Long-running sessions (P1-005)** when scope may span waves or TTL).
 2. For **phase / roadmap / sprint alignment**, read `skills/orientation/SKILL.md` (lazy-loaded).
 3. Work within approved scope; validate against D1–D53; capture durable lessons in `.azoth/memory/episodes.jsonl`.
 
@@ -112,7 +112,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 8 (next roadmap TBD); **v0.1.0** shipped (Phases 1–7 complete). **Next slice:** roadmap `active_version: v0.2.0` — seed phases/backlog when ready. Expanded workflow, earlier phase detail, and the historical release checklist live in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
+**Current phase:** Phase 1 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0` with milestone-local task ids **P1-001…P1-011**. Expanded workflow lives in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
 
 ## Origin
 

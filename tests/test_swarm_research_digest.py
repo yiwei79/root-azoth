@@ -118,7 +118,7 @@ def _minimal_digest(**extra: object) -> dict:
             }
         ],
         "explore_swarm_summary": {"wave": "B", "findings": ["f"]},
-        "mapped_roadmap_tasks": ["P8-001"],
+        "mapped_roadmap_tasks": ["P1-001"],
     }
     base.update(extra)
     return base
@@ -155,13 +155,13 @@ def test_validate_rejects_mapping_notes_empty_key() -> None:
 
 
 def test_validate_rejects_mapping_notes_empty_value() -> None:
-    d = _minimal_digest(mapping_notes={"P8-001": "   "})
+    d = _minimal_digest(mapping_notes={"P1-001": "   "})
     errs = validate_digest(d)
     assert any("mapping_notes[" in e and "non-empty str" in e for e in errs)
 
 
 def test_validate_rejects_mapping_notes_non_string_value() -> None:
-    d = _minimal_digest(mapping_notes={"P8-001": 99})
+    d = _minimal_digest(mapping_notes={"P1-001": 99})
     errs = validate_digest(d)
     assert any("mapping_notes[" in e and "non-empty str" in e for e in errs)
 
