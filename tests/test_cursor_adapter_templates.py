@@ -1,4 +1,5 @@
 """Drift guard: Cursor platform adapter templates stay present and marked alwaysApply."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -34,7 +35,9 @@ def test_live_cursor_rules_mirror_templates() -> None:
     for template in sorted(adapter.glob("*.mdc.template")):
         out_name = template.name.removesuffix(".template")
         deployed = rules / out_name
-        assert deployed.is_file(), f"missing deployed {deployed} — run: python3 scripts/azoth-deploy.py --platforms cursor"
-        assert deployed.read_text(encoding="utf-8") == template.read_text(
-            encoding="utf-8"
-        ), f"{out_name} drift — run: python3 scripts/azoth-deploy.py --platforms cursor"
+        assert deployed.is_file(), (
+            f"missing deployed {deployed} — run: python3 scripts/azoth-deploy.py --platforms cursor"
+        )
+        assert deployed.read_text(encoding="utf-8") == template.read_text(encoding="utf-8"), (
+            f"{out_name} drift — run: python3 scripts/azoth-deploy.py --platforms cursor"
+        )

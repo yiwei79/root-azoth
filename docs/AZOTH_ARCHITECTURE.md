@@ -735,7 +735,7 @@ sanitize:
 ```
 azoth/
 ├── CLAUDE.md                     # Azoth development instructions
-├── LICENSE                       # MIT
+├── LICENSE                       # PolyForm Noncommercial 1.0.0 (see file)
 ├── azoth.yaml                    # Toolkit manifest
 ├── install.sh                    # macOS/Linux installer
 ├── install.ps1                   # Windows installer

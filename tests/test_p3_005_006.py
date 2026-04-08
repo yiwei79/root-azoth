@@ -57,20 +57,16 @@ class TestStage6RubricContent:
         # Isolate text after the Fail Conditions heading
         idx = content.index("Fail Conditions")
         section = content[idx:]
-        count = sum(
-            f"\n{n}." in section for n in range(1, 6)
-        )
+        count = sum(f"\n{n}." in section for n in range(1, 6))
         assert count == 5, (
             f"Fail Conditions section must list exactly 5 numbered items, found {count}"
         )
 
     def test_axis1_requires_three_items(self) -> None:
         content = self._content()
-        assert (
-            "3 substantive" in content
-            or "\u2265 3" in content
-            or "three" in content.lower()
-        ), "Axis 1 must reference a minimum of 3 substantive items"
+        assert "3 substantive" in content or "\u2265 3" in content or "three" in content.lower(), (
+            "Axis 1 must reference a minimum of 3 substantive items"
+        )
 
     def test_axis2_references_decisions_index(self) -> None:
         assert "DECISIONS_INDEX" in self._content(), (
@@ -84,9 +80,7 @@ class TestStage6RubricContent:
         )
 
     def test_fail_condition_5_generic_trigger(self) -> None:
-        assert "generic" in self._content(), (
-            "Fail condition 5 must reference 'generic' triggers"
-        )
+        assert "generic" in self._content(), "Fail condition 5 must reference 'generic' triggers"
 
     def test_integration_references_deliver_full(self) -> None:
         assert "deliver-full" in self._content(), (
@@ -109,9 +103,7 @@ class TestContextRecallContent:
         )
 
     def test_has_scoring_algorithm_section(self) -> None:
-        assert "Scoring" in self._content(), (
-            "context-recall must contain a Scoring section"
-        )
+        assert "Scoring" in self._content(), "context-recall must contain a Scoring section"
 
     def test_scoring_formula_tag_overlap(self) -> None:
         assert "tag_overlap_count * 2" in self._content(), (
@@ -167,9 +159,7 @@ class TestContextRecallContent:
         )
 
     def test_when_to_use_stage2(self) -> None:
-        assert "Stage 2" in self._content(), (
-            "context-recall When to Use must reference Stage 2"
-        )
+        assert "Stage 2" in self._content(), "context-recall When to Use must reference Stage 2"
 
 
 class TestRememberSoftDependency:

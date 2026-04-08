@@ -19,7 +19,6 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -161,9 +160,7 @@ def test_patch_prints_bump_message(tmp_path: Path) -> None:
     assert "0.0.3.5" in combined and "0.0.3.6" in combined, (
         f"Expected 'version bumped 0.0.3.5 → 0.0.3.6' in output; got: {combined!r}"
     )
-    assert "bumped" in combined.lower(), (
-        f"Expected word 'bumped' in output; got: {combined!r}"
-    )
+    assert "bumped" in combined.lower(), f"Expected word 'bumped' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -266,9 +263,7 @@ def test_phase_refused_when_pending_tasks(tmp_path: Path) -> None:
         f"Expected exit 1 when pending_task_refs non-empty; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
-    assert "refused" in combined.lower(), (
-        f"Expected 'refused' in output; got: {combined!r}"
-    )
+    assert "refused" in combined.lower(), f"Expected 'refused' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -306,9 +301,7 @@ def test_phase_refused_at_v007(tmp_path: Path) -> None:
         f"Expected exit 1 when active_version is v0.0.7; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
-    assert "v0.0.7" in combined, (
-        f"Expected 'v0.0.7' in output; got: {combined!r}"
-    )
+    assert "v0.0.7" in combined, f"Expected 'v0.0.7' in output; got: {combined!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -418,9 +411,7 @@ def test_session_closeout_references_version_bump() -> None:
     assert "version-bump.py --patch" in text, (
         "session-closeout.md must reference 'version-bump.py --patch'"
     )
-    assert "W4" in text, (
-        "session-closeout.md must contain a W4 checkpoint for version bumping"
-    )
+    assert "W4" in text, "session-closeout.md must contain a W4 checkpoint for version bumping"
 
 
 # ---------------------------------------------------------------------------

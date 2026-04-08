@@ -185,8 +185,10 @@ def test_write_handoff_valid_allow(tmp_path: Path) -> None:
 
 def test_write_handoff_multi_doc_deny(tmp_path: Path) -> None:
     hf = _handoff_file(tmp_path, "multi.yaml")
-    two_docs = _VALID_MINIMAL_YAML + "\n---\n" + _VALID_MINIMAL_YAML.replace(
-        "deliver_full_s5", "deliver_full_s6"
+    two_docs = (
+        _VALID_MINIMAL_YAML
+        + "\n---\n"
+        + _VALID_MINIMAL_YAML.replace("deliver_full_s5", "deliver_full_s6")
     )
     payload = _write_payload(hf, two_docs)
     out = _run_gate(payload, repo_root=tmp_path)

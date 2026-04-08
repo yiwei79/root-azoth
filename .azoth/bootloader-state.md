@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (`/session-closeout` ep-092)
+Last updated: 2026-04-08 (session closeout ep-093 — P4-004 + license)
 
 ## Current Phase
 
-Phase 6 — Meta-Recursive  
-**Toolkit version:** **0.0.6.9** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **9** (`.azoth/roadmap.yaml`, D53)
+Phase 7 — Publishing & public product  
+**Toolkit version:** **0.0.7.4** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.7` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53)
+
+## Session outcome (ep-093) — session-closeout
+
+- **Delivered / refined:** **P4-004** **complete** — public **`yiwei79/azoth`** populated via **`azoth_extract_product.py`** + staging rsync; **`sync-config.yaml`** excludes **`.git/`**; **PolyForm Noncommercial 1.0.0** `LICENSE` + docs/README alignment + public README license block; **`kernel/templates/README.public.azoth.md`** for future extracts.
+- **Closeout:** W1 **ep-093**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.3 → 0.0.7.4**; **BL-018** settings **`AZOTH_VERSION`** synced; **M3** **episodes: 93**.
+- **Next:** **`git push`** **`origin`** (branch **`phase-7-v0.0.7-publishing`**); **`/next`** for post–Phase 7 scope; **`/intake`** if inbox queued; verify **public** GitHub Actions on **`main`**.
 
 ## Session outcome (ep-092) — session-closeout
 
@@ -112,10 +118,10 @@ Phase 6 — Meta-Recursive
 
 ## Open decisions
 
-- **P4-003 / P4-004** execution timing tied to public-repo readiness and v0.0.6 scheduling (per roadmap notes).
+- **Phase 7 wrap:** v0.1.0 readiness, extraction cadence, and public-repo hygiene (Actions on **`yiwei79/azoth`**).
 - **settings.json.template** deny list for `.azoth/kernel/**` (optional consumer hardening) still open in orientation.
 - **D43 remainder:** optional commit-format rules beyond Co-Authored-By (human sign-off before expansion).
 
 ## Next action
 
-**Phase 6 (v0.0.6)** slice: **P6-001–P6-003** and **BL-017** are **complete**. **`/intake`** — **5** insight files in **`.azoth/inbox/`** (excluding **processed/**). Next roadmap activation: **v0.0.7** (**Phase 7** publishing / **P4-003**–**P4-004**) when you are ready to advance. **P5-006** remains **deferred** to **v0.2.0**. Add new **`backlog.yaml`** rows if **`/next`** should queue work before phase advance.
+**Phase 7 (v0.0.7)** — **`P4-003`** and **`P4-004`** **complete** (CI + public publish + PolyForm license). **`git push`** this branch; **`/next`** for the next backlog slice toward **v0.1.0**; **`/intake`** if **`.azoth/inbox/*.jsonl`** queued. **P5-006** remains **deferred** to **v0.2.0**.

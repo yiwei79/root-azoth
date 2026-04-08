@@ -50,13 +50,17 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     except ValueError:
         return {}, text
     meta = yaml.safe_load(text[3:end]) or {}
-    body = text[end + 4:].lstrip("\n")
+    body = text[end + 4 :].lstrip("\n")
     return meta, body
 
 
 def render_frontmatter(data: dict[str, Any]) -> str:
     """Render a dict as a YAML frontmatter block."""
-    return "---\n" + yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False) + "---\n\n"
+    return (
+        "---\n"
+        + yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        + "---\n\n"
+    )
 
 
 # ── Posture → OpenCode permission mapping ────────────────────────────────────
@@ -65,10 +69,10 @@ def render_frontmatter(data: dict[str, Any]) -> str:
 # Rationale: Tier 1 orchestrators need broad tool access; Tier 3 meta agents should
 # not run bash by default (they inspect and evaluate, not execute).
 _TIER_BASE_PERMS: dict[int, dict[str, str]] = {
-    1: {"edit": "allow", "bash": "ask",  "webfetch": "allow", "task": "allow"},
-    2: {"edit": "ask",   "bash": "ask",  "webfetch": "allow", "task": "allow"},
-    3: {"edit": "ask",   "bash": "deny", "webfetch": "allow", "task": "ask"},
-    4: {"edit": "allow", "bash": "ask",  "webfetch": "ask",   "task": "ask"},
+    1: {"edit": "allow", "bash": "ask", "webfetch": "allow", "task": "allow"},
+    2: {"edit": "ask", "bash": "ask", "webfetch": "allow", "task": "allow"},
+    3: {"edit": "ask", "bash": "deny", "webfetch": "allow", "task": "ask"},
+    4: {"edit": "allow", "bash": "ask", "webfetch": "ask", "task": "ask"},
 }
 
 _DEFAULT_PERMS: dict[str, str] = {"edit": "ask", "bash": "ask", "webfetch": "allow", "task": "ask"}
@@ -76,10 +80,10 @@ _DEFAULT_PERMS: dict[str, str] = {"edit": "ask", "bash": "ask", "webfetch": "all
 # Keywords to match posture item text against OpenCode tool names.
 # Used to tighten tier baseline based on ask_first / never_auto content.
 _TOOL_KEYWORDS: dict[str, set[str]] = {
-    "edit":     {"kernel", "governance", "file", "write", "modify", "create", "delete", "edit"},
-    "bash":     {"execute", "script", "command", "run", "shell", "bash", "hook"},
+    "edit": {"kernel", "governance", "file", "write", "modify", "create", "delete", "edit"},
+    "bash": {"execute", "script", "command", "run", "shell", "bash", "hook"},
     "webfetch": {"web", "search", "fetch", "online", "internet", "lookup"},
-    "task":     {"agent", "subagent", "invoke", "spawn", "delegate", "orchestrat", "pipeline self"},
+    "task": {"agent", "subagent", "invoke", "spawn", "delegate", "orchestrat", "pipeline self"},
 }
 
 # Canonical Never-Auto lines — kernel/GOVERNANCE.md §5 Default Posture (D26). Merged with
@@ -151,7 +155,10 @@ def posture_to_permissions(tier: int, posture: dict[str, list[str]]) -> dict[str
     for item in restricted:
         item_lower = item.lower()
         for tool, keywords in _TOOL_KEYWORDS.items():
-            if any(re.search(r"\b" + re.escape(kw) + r"\b", item_lower) for kw in keywords) and perms[tool] == "allow":
+            if (
+                any(re.search(r"\b" + re.escape(kw) + r"\b", item_lower) for kw in keywords)
+                and perms[tool] == "allow"
+            ):
                 perms[tool] = "ask"
 
     return perms
@@ -477,22 +484,34 @@ def main(argv: list[str] | None = None) -> int:
         if "claude" in platforms:
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(root / ".claude" / "agents" / f"{name}.md",
-                           transform_agent_claude(agent), root, dry_run)
+                write_file(
+                    root / ".claude" / "agents" / f"{name}.md",
+                    transform_agent_claude(agent),
+                    root,
+                    dry_run,
+                )
                 count += 1
 
         if "copilot" in platforms:
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(root / ".github" / "agents" / f"{name}.agent.md",
-                           transform_agent_copilot(agent), root, dry_run)
+                write_file(
+                    root / ".github" / "agents" / f"{name}.agent.md",
+                    transform_agent_copilot(agent),
+                    root,
+                    dry_run,
+                )
                 count += 1
 
         if "opencode" in platforms:
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(root / ".opencode" / "agents" / f"{name}.md",
-                           transform_agent_opencode(agent), root, dry_run)
+                write_file(
+                    root / ".opencode" / "agents" / f"{name}.md",
+                    transform_agent_opencode(agent),
+                    root,
+                    dry_run,
+                )
                 count += 1
 
         print()
@@ -503,14 +522,22 @@ def main(argv: list[str] | None = None) -> int:
 
         if "copilot" in platforms:
             for cmd in commands:
-                write_file(root / ".github" / "prompts" / f"{cmd['name']}.prompt.md",
-                           transform_command_copilot(cmd), root, dry_run)
+                write_file(
+                    root / ".github" / "prompts" / f"{cmd['name']}.prompt.md",
+                    transform_command_copilot(cmd),
+                    root,
+                    dry_run,
+                )
                 count += 1
 
         if "opencode" in platforms:
             for cmd in commands:
-                write_file(root / ".opencode" / "commands" / f"{cmd['name']}.md",
-                           transform_command_opencode(cmd), root, dry_run)
+                write_file(
+                    root / ".opencode" / "commands" / f"{cmd['name']}.md",
+                    transform_command_opencode(cmd),
+                    root,
+                    dry_run,
+                )
                 count += 1
 
         print()
@@ -519,8 +546,12 @@ def main(argv: list[str] | None = None) -> int:
     if skills and "opencode" in platforms:
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
-            write_file(root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
-                       skill["raw"], root, dry_run)
+            write_file(
+                root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
+                skill["raw"],
+                root,
+                dry_run,
+            )
             count += 1
         print()
 

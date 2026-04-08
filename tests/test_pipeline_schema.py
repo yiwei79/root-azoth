@@ -29,9 +29,16 @@ TEMPLATE_FILE = PIPELINES_DIR / "pipeline.template.yaml"
 VALID_PRESETS = {"full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"}
 VALID_GATE_TYPES = {"human", "agent"}
 VALID_AGENT_NAMES = {
-    "architect", "planner", "builder", "reviewer", "researcher",
-    "research-orchestrator", "evaluator", "prompt-engineer",
-    "agent-crafter", "context-architect",
+    "architect",
+    "planner",
+    "builder",
+    "reviewer",
+    "researcher",
+    "research-orchestrator",
+    "evaluator",
+    "prompt-engineer",
+    "agent-crafter",
+    "context-architect",
 }
 VALID_TOOLS = {"explore", "research", "research-orchestrator"}
 VALID_SCOPE = {"kernel", "skills", "agents", "pipelines", "docs", "mixed"}
@@ -41,6 +48,7 @@ VALID_KNOWLEDGE = {"known-pattern", "needs-research", "novel"}
 
 
 # ── Validator ────────────────────────────────────────────────────────────────
+
 
 class ValidationError(Exception):
     pass
@@ -57,13 +65,9 @@ def validate_gate(gate: Any, stage_name: str) -> None:
             f"stage '{stage_name}': gate.type '{gate['type']}' not in {VALID_GATE_TYPES}"
         )
     if gate["type"] == "agent" and "agent" not in gate:
-        raise ValidationError(
-            f"stage '{stage_name}': gate.type=agent requires gate.agent"
-        )
+        raise ValidationError(f"stage '{stage_name}': gate.type=agent requires gate.agent")
     if gate["type"] == "human" and "agent" in gate:
-        raise ValidationError(
-            f"stage '{stage_name}': gate.type=human must not have gate.agent"
-        )
+        raise ValidationError(f"stage '{stage_name}': gate.type=human must not have gate.agent")
     if "agent" in gate and gate["agent"] not in VALID_AGENT_NAMES:
         raise ValidationError(
             f"stage '{stage_name}': gate.agent '{gate['agent']}' not in valid agent names"
@@ -78,9 +82,7 @@ def validate_stage(stage: Any) -> None:
             raise ValidationError(f"stage missing required field '{field}'")
     name = stage["name"]
     if stage["agent"] not in VALID_AGENT_NAMES:
-        raise ValidationError(
-            f"stage '{name}': agent '{stage['agent']}' not in valid agent names"
-        )
+        raise ValidationError(f"stage '{name}': agent '{stage['agent']}' not in valid agent names")
     if "tools" in stage:
         invalid = set(stage["tools"]) - VALID_TOOLS
         if invalid:
@@ -132,9 +134,7 @@ def validate_pipeline(data: Any) -> None:
         validate_stage(stage)
     if "composition_rules" in data:
         if data["preset"] != "auto":
-            raise ValidationError(
-                "composition_rules is only valid when preset=auto"
-            )
+            raise ValidationError("composition_rules is only valid when preset=auto")
         validate_composition_rules(data["composition_rules"])
 
 
@@ -250,6 +250,7 @@ AUTO_PIPELINE = {
 
 # ── Schema file tests ─────────────────────────────────────────────────────────
 
+
 class TestSchemaFile:
     def test_schema_file_exists(self) -> None:
         assert SCHEMA_FILE.exists(), f"Schema file not found: {SCHEMA_FILE}"
@@ -292,6 +293,7 @@ class TestSchemaFile:
 
 # ── Template file tests ───────────────────────────────────────────────────────
 
+
 class TestTemplateFile:
     def test_template_file_exists(self) -> None:
         assert TEMPLATE_FILE.exists(), f"Template file not found: {TEMPLATE_FILE}"
@@ -311,6 +313,7 @@ class TestTemplateFile:
 
 
 # ── Valid pipeline tests ──────────────────────────────────────────────────────
+
 
 class TestValidPipelines:
     def test_minimal_hotfix_pipeline(self) -> None:
@@ -337,12 +340,14 @@ class TestValidPipelines:
 
     def test_stage_with_all_optional_fields(self) -> None:
         pipeline = copy.deepcopy(MINIMAL_PIPELINE)
-        pipeline["stages"][0].update({
-            "role": "lead-planner",
-            "tools": ["explore"],
-            "inputs": ["prior-artifact"],
-            "outputs": ["task-plan"],
-        })
+        pipeline["stages"][0].update(
+            {
+                "role": "lead-planner",
+                "tools": ["explore"],
+                "inputs": ["prior-artifact"],
+                "outputs": ["task-plan"],
+            }
+        )
         validate_pipeline(pipeline)
 
     def test_pipeline_with_output_field(self) -> None:
@@ -365,6 +370,7 @@ class TestValidPipelines:
 
 
 # ── Invalid pipeline tests ────────────────────────────────────────────────────
+
 
 class TestInvalidPipelines:
     def test_missing_name(self) -> None:

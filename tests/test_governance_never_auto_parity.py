@@ -47,4 +47,3 @@ def test_governance_never_auto_matches_universal_never_auto() -> None:
         f"GOVERNANCE Never-Auto bullets {extracted!r} != "
         f"UNIVERSAL_NEVER_AUTO {list(UNIVERSAL_NEVER_AUTO)!r}"
     )
-

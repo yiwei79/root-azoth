@@ -84,9 +84,7 @@ def session_start_contract_holds(data: dict[str, Any]) -> tuple[bool, str]:
             if h.get("type") != "command":
                 continue
             cmd = h.get("command")
-            if isinstance(cmd, str) and (
-                "welcome.py" in cmd or "session_start_welcome.py" in cmd
-            ):
+            if isinstance(cmd, str) and ("welcome.py" in cmd or "session_start_welcome.py" in cmd):
                 found_command = True
     if not found_matcher:
         return False, "no SessionStart block with matcher covering startup and resume"

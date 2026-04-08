@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from entropy_state import EntropyState, load_state, reset_if_session_changed, save_state
+from entropy_state import load_state, reset_if_session_changed, save_state
 from scope_gate_core import REPO_ROOT, entropy_state_path, resolved_target
 
 # When tool_input lacks content strings, use conservative placeholder (planner r3).

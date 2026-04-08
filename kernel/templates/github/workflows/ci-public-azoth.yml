@@ -1,0 +1,30 @@
+# Minimal CI for the extracted public `azoth` product tree (P4-004).
+# Emitted into `.github/workflows/ci.yml` by `scripts/azoth_extract_product.py`.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev tools
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff (scripts only — full tree may exclude tests/)
+        run: python3 -m ruff check scripts/
+
+      - name: Validate sync-config loads
+        run: python3 -c "import yaml; yaml.safe_load(open('sync-config.yaml', encoding='utf-8'))"
+
+      - name: Smoke — product extractor validate-only
+        run: python3 scripts/azoth_extract_product.py --validate-only

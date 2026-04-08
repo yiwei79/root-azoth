@@ -9,7 +9,9 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-_ORCHESTRATOR = Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
+_ORCHESTRATOR = (
+    Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
+)
 _HOOKS = Path(__file__).resolve().parent.parent / ".claude" / "hooks"
 if str(_HOOKS) not in sys.path:
     sys.path.insert(0, str(_HOOKS))
@@ -369,4 +371,3 @@ def test_r4_session_id_change_resets_entropy_state(tmp_path: Path) -> None:
     data = json.loads(est_path.read_text(encoding="utf-8"))
     assert data["session_id"] == "sess-new"
     assert data["cumulative_entropy"] < 5.0
-

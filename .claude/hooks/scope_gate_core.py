@@ -163,7 +163,9 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
 
     exp_scope = parse_expires_at(str(data.get("expires_at", "")))
     if exp_scope is None:
-        return ScopeGateResult(allowed=False, deny_reason="scope-gate.json expires_at is invalid ISO 8601")
+        return ScopeGateResult(
+            allowed=False, deny_reason="scope-gate.json expires_at is invalid ISO 8601"
+        )
     if datetime.now(timezone.utc) >= exp_scope:
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 

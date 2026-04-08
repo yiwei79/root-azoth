@@ -14,6 +14,7 @@ Validates:
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +25,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PIPELINES_DIR = REPO_ROOT / "pipelines"
 
 # Import validator from schema tests — single source of truth
-import sys
 sys.path.insert(0, str(REPO_ROOT / "tests"))
-from test_pipeline_schema import validate_pipeline
+from test_pipeline_schema import validate_pipeline  # noqa: E402
 
 EXPECTED_PRESETS = {"full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"}
 
@@ -41,14 +41,11 @@ def stage_agents(pipeline: dict[str, Any]) -> list[str]:
 
 
 def human_gate_actions(pipeline: dict[str, Any]) -> list[str]:
-    return [
-        s["gate"]["action"]
-        for s in pipeline["stages"]
-        if s["gate"]["type"] == "human"
-    ]
+    return [s["gate"]["action"] for s in pipeline["stages"] if s["gate"]["type"] == "human"]
 
 
 # ── Existence and validity ────────────────────────────────────────────────────
+
 
 class TestPresetFiles:
     @pytest.mark.parametrize("preset", sorted(EXPECTED_PRESETS))
@@ -89,6 +86,7 @@ class TestPresetFiles:
 
 # ── Stage count and composition (D21, D28) ────────────────────────────────────
 
+
 class TestPresetComposition:
     def test_full_has_7_stages(self) -> None:
         """D21: full pipeline has exactly 7 stages."""
@@ -101,13 +99,13 @@ class TestPresetComposition:
         """D28: full = Goal→Architect→Governance→Planner→TestBuilder→SWE→ArchReview"""
         agents = stage_agents(load_preset("full"))
         assert agents == [
-            "architect",   # goal-clarification
-            "architect",   # architect-design
-            "reviewer",    # governance-review
-            "planner",     # planning
-            "evaluator",   # test-design
-            "builder",     # implementation
-            "architect",   # architect-review
+            "architect",  # goal-clarification
+            "architect",  # architect-design
+            "reviewer",  # governance-review
+            "planner",  # planning
+            "evaluator",  # test-design
+            "builder",  # implementation
+            "architect",  # architect-review
         ]
 
     def test_deliver_stage_agent_sequence(self) -> None:
@@ -194,6 +192,7 @@ class TestPresetComposition:
 
 # ── Gate typing (D24) ─────────────────────────────────────────────────────────
 
+
 class TestGateConstraints:
     def test_full_has_human_gates_at_design_and_final(self) -> None:
         """D24: full pipeline must have human gates at design approval and final delivery."""
@@ -222,8 +221,7 @@ class TestGateConstraints:
                 gate = stage["gate"]
                 if gate["type"] == "agent":
                     assert "agent" in gate, (
-                        f"preset '{preset}', stage '{stage['name']}': "
-                        f"agent gate missing gate.agent"
+                        f"preset '{preset}', stage '{stage['name']}': agent gate missing gate.agent"
                     )
 
     def test_human_gates_have_no_gate_agent(self) -> None:

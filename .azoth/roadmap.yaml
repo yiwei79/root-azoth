@@ -6,8 +6,8 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 6
-current_phase_title: "Meta-Recursive"
+current_phase: 7
+current_phase_title: "Publishing & public product"
 
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -124,7 +124,7 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 1
-active_version: v0.0.6
+active_version: v0.0.7
 
 # D53: Bump rules (0.0.PHASE.PATCH scheme)
 # - patch (0.0.N.XX → 0.0.N.XX+1): every delivery session (resets to .1 on phase bump)
@@ -225,8 +225,8 @@ versions:
         note: "Phase 5 component of D52; BL-007 delivers the /start skill in v0.0.3"
 
   - id: v0.0.6
-    status: active
-    current_patch: 9
+    status: complete
+    final_patch: 9
     goal: "Phase 6: Meta-recursive — agent/skill meta layer"
     phase_scope: [6]
     note: >
@@ -241,13 +241,14 @@ versions:
         title: "L3 human-gated architecture proposals"
 
   - id: v0.0.7
-    status: backlog
+    status: active
+    current_patch: 4
     goal: "Phase 7: Publishing & public product — CI, extraction, GitHub"
     phase_scope: [7]
     note: >
       Deferred-from-Phase-4 closure plus release mechanics: drift CI on the public surface,
-      mechanical extraction to public azoth, aligned with the v0.1.0 gate. Activate after
-      Phase 6 (v0.0.6) is complete.
+      mechanical extraction to public azoth, aligned with the v0.1.0 gate. Phase 7 active
+      after Phase 6 (v0.0.6) completion.
     tasks:
       - id: P4-003
         title: "CI for drift detection"

@@ -18,8 +18,8 @@
     ]
   },
   "env": {
-    "AZOTH_VERSION": "0.0.6.8",
-    "AZOTH_PHASE": "6",
+    "AZOTH_VERSION": "0.0.7.4",
+    "AZOTH_PHASE": "7",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
   },

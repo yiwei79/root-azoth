@@ -908,5 +908,44 @@ items:
       stable four-file ordering; document consumer .azoth/kernel/ path equivalence.
       Insight ref: SRF-BL014-001.
 
+  # ── Phase 7: Publishing (v0.0.7) — active slice ─────────────────────────────
+  - id: P4-003
+    title: "CI for drift detection"
+    source: roadmap-v0.0.7
+    roadmap_ref: P4-003
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    completed_date: "2026-04-08"
+    target_version: v0.0.7
+    priority: 1
+    created_date: "2026-04-08"
+    decision_ref: null
+    blocked_by: null
+    description: >
+      Drift CI on the public surface; pairs with extraction/sync validation before v0.1.0.
+      Deferred from Phase 4 per roadmap v0.0.7.
+      Delivered: `.github/workflows/ci.yml` runs repo-wide `ruff check` + `ruff format --check`,
+      kernel-integrity, full pytest; Ruff issues fixed + `ruff format` applied across Python tree.
+
+  - id: P4-004
+    title: "Publish to GitHub (public azoth repo)"
+    source: roadmap-v0.0.7
+    roadmap_ref: P4-004
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: complete
+    completed_date: "2026-04-08"
+    target_version: v0.0.7
+    priority: 2
+    created_date: "2026-04-08"
+    decision_ref: [D35, D37]
+    blocked_by: null
+    description: >
+      Public product repo + mechanical extraction; aligns with v0.1.0 release gate.
+      Delivered: `scripts/azoth_extract_product.py` + tests + `sync-config.yaml` `product_extraction`
+      (excludes `.git/`); public repo github.com/yiwei79/azoth initial push; PolyForm Noncommercial
+      1.0.0 LICENSE + README license section; confirm Actions green on default branch as ongoing hygiene.
+
 # Completed items
 completed: []

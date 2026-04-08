@@ -1,4 +1,5 @@
 """Tests for scripts/welcome.py — Azoth session welcome dashboard."""
+
 from __future__ import annotations
 
 import io
@@ -8,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+from rich.console import Console
 
 # Allow importing welcome.py from scripts/ without installing it as a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -182,15 +184,11 @@ def test_pipeline_gate_invalid_expired() -> None:
 # ── render_dashboard smoke tests ──────────────────────────────────────────────
 
 
-def _patched_console(tmp_path: Path) -> "Console":
-    from rich.console import Console
-
+def _patched_console(tmp_path: Path) -> Console:
     return Console(file=io.StringIO(), force_terminal=False)
 
 
-def test_render_no_crash_all_files_absent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_render_no_crash_all_files_absent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """render_dashboard() must not crash when all data files are absent."""
     monkeypatch.setattr(welcome, "ROOT", tmp_path)
     monkeypatch.setattr(welcome, "console", _patched_console(tmp_path))

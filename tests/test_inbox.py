@@ -6,10 +6,10 @@ and Root Scaffold Identity (D34–D38).
 
 TDD: Written first; tests initially fail, then pass as implementation proceeds.
 """
+
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -74,9 +74,7 @@ class TestTrustedSources:
     def load_file(self) -> None:
         self.path = AZOTH_ROOT / ".azoth" / "trusted-sources.yaml"
         self.lines = self.path.read_text().splitlines() if self.path.exists() else []
-        self.data = (
-            yaml.safe_load(self.path.read_text()) if self.path.exists() else None
-        )
+        self.data = yaml.safe_load(self.path.read_text()) if self.path.exists() else None
 
     def test_trusted_sources_exists(self) -> None:
         """T3: .azoth/trusted-sources.yaml must exist."""
@@ -89,9 +87,9 @@ class TestTrustedSources:
     def test_trusted_sources_has_governance_header(self) -> None:
         """T3, F3: First 5 lines must contain a '# GOVERNANCE:' comment."""
         first_lines = self.lines[:5]
-        assert any(
-            line.startswith("# GOVERNANCE:") for line in first_lines
-        ), "trusted-sources.yaml must have '# GOVERNANCE:' in first 5 lines"
+        assert any(line.startswith("# GOVERNANCE:") for line in first_lines), (
+            "trusted-sources.yaml must have '# GOVERNANCE:' in first 5 lines"
+        )
 
     def test_all_sources_require_human_approval(self) -> None:
         """T3, F3: Every source entry must have require_approval: human."""
@@ -270,18 +268,14 @@ class TestSessionCloseoutInbox:
 
     def test_session_closeout_has_part_d(self) -> None:
         """T7: session-closeout.md must contain Part D."""
-        assert "Part D" in self.content, (
-            "session-closeout.md must have a Part D section"
-        )
+        assert "Part D" in self.content, "session-closeout.md must have a Part D section"
 
     def test_session_closeout_part_d_surfaces_not_processes(self) -> None:
         """T7, F4: Part D must say 'Surface' not 'Process'; must not say 'auto-intake'."""
         assert "Surface" in self.content or "surface" in self.content, (
             "Part D must say 'Surface' (not auto-process)"
         )
-        assert "auto-intake" not in self.content, (
-            "Part D must NOT say 'auto-intake'"
-        )
+        assert "auto-intake" not in self.content, "Part D must NOT say 'auto-intake'"
 
     def test_session_closeout_part_d_mentions_intake_command(self) -> None:
         """T7, F4: Part D must reference the /intake command."""
@@ -309,9 +303,7 @@ class TestIntakeCommand:
 
     def test_intake_command_has_frontmatter(self) -> None:
         """T4: File must start with --- YAML frontmatter."""
-        assert self.content.startswith("---"), (
-            "intake.md must start with YAML frontmatter (---)"
-        )
+        assert self.content.startswith("---"), "intake.md must start with YAML frontmatter (---)"
 
     def test_intake_command_frontmatter_has_description(self) -> None:
         """T4: Frontmatter must have a 'description' key."""
@@ -332,16 +324,13 @@ class TestIntakeCommand:
 
     def test_intake_command_references_inbox_dir(self) -> None:
         """T4: intake.md must reference .azoth/inbox/."""
-        assert ".azoth/inbox/" in self.content, (
-            "intake.md must reference .azoth/inbox/ directory"
-        )
+        assert ".azoth/inbox/" in self.content, "intake.md must reference .azoth/inbox/ directory"
 
     def test_intake_command_references_governance(self) -> None:
         """T4: intake.md must reference governance or GOVERNANCE.md."""
-        assert (
-            "governance" in self.content.lower()
-            or "GOVERNANCE.md" in self.content
-        ), "intake.md must reference governance"
+        assert "governance" in self.content.lower() or "GOVERNANCE.md" in self.content, (
+            "intake.md must reference governance"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -356,11 +345,7 @@ class TestHandoffInboxFile:
     def find_inbox_files(self) -> None:
         inbox_dir = AZOTH_ROOT / ".azoth" / "inbox"
         self.jsonl_files = (
-            [
-                f
-                for f in inbox_dir.iterdir()
-                if f.suffix == ".jsonl" and f.is_file()
-            ]
+            [f for f in inbox_dir.iterdir() if f.suffix == ".jsonl" and f.is_file()]
             if inbox_dir.exists()
             else []
         )
@@ -377,7 +362,7 @@ class TestHandoffInboxFile:
         """T15: Each line in each .jsonl file must be valid JSON."""
         assert len(self.jsonl_files) >= 1, "No .jsonl files to validate"
         for jf in self.jsonl_files:
-            lines = [l for l in jf.read_text().splitlines() if l.strip()]
+            lines = [line for line in jf.read_text().splitlines() if line.strip()]
             assert len(lines) >= 1, f"{jf.name} must have at least one line"
             for i, line in enumerate(lines, 1):
                 try:
@@ -389,21 +374,20 @@ class TestHandoffInboxFile:
         """T15: Each insight in inbox files must have all required schema fields."""
         assert len(self.jsonl_files) >= 1, "No .jsonl files to validate"
         for jf in self.jsonl_files:
-            lines = [l for l in jf.read_text().splitlines() if l.strip()]
+            lines = [line for line in jf.read_text().splitlines() if line.strip()]
             for i, line in enumerate(lines, 1):
                 try:
                     obj = json.loads(line)
                 except json.JSONDecodeError:
                     continue  # covered by previous test
                 missing = INSIGHT_REQUIRED_FIELDS - set(obj.keys())
-                assert not missing, (
-                    f"{jf.name} line {i} missing required fields: {missing}"
-                )
+                assert not missing, f"{jf.name} line {i} missing required fields: {missing}"
 
 
 # ---------------------------------------------------------------------------
 # Bootstrap loop artifact tests (D39-D41)
 # ---------------------------------------------------------------------------
+
 
 class TestRoadmap:
     """Validate .azoth/roadmap.yaml structure."""

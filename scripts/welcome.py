@@ -95,10 +95,7 @@ def filter_unblocked_items(
 
 def is_governed_scope(scope: dict[str, Any]) -> bool:
     """True when scope-gate indicates M1 or governed delivery (matches PreToolUse hook)."""
-    return (
-        scope.get("delivery_pipeline") == "governed"
-        or scope.get("target_layer") == "M1"
-    )
+    return scope.get("delivery_pipeline") == "governed" or scope.get("target_layer") == "M1"
 
 
 def _parse_expires_at_utc(raw: str) -> datetime | None:
@@ -128,9 +125,7 @@ def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
     return datetime.now(timezone.utc) < exp
 
 
-def is_scope_active(
-    scope: dict[str, Any], complete_ids: set[str] | None = None
-) -> bool:
+def is_scope_active(scope: dict[str, Any], complete_ids: set[str] | None = None) -> bool:
     """Return True if the scope gate is approved, unexpired, and not already complete.
 
     If complete_ids is provided, the gate is treated as inactive when the goal's
@@ -179,9 +174,7 @@ def git_info() -> tuple[str, str]:
             cwd=ROOT,
             check=False,
         ).stdout.strip()
-        repo = (
-            url.rstrip("/").split("/")[-1].replace(".git", "") if url else ROOT.name
-        )
+        repo = url.rstrip("/").split("/")[-1].replace(".git", "") if url else ROOT.name
     except OSError:
         repo = ROOT.name
 
@@ -276,7 +269,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append(
         f"  AZOTH  ·  v{version}  ·  Phase {phase_num}  ·  {repo}  ·  {branch}  ·  {today}"
     )
-    lines.append(f"  (plain layout — full orientation; Rich panels: run without --plain)")
+    lines.append("  (plain layout — full orientation; Rich panels: run without --plain)")
     lines.append(sep)
     lines.append("")
 
@@ -401,7 +394,6 @@ def render_dashboard() -> None:
     """Render the 5-panel Azoth session dashboard to the console."""
     state = gather_dashboard_state()
     azoth = state["azoth"]
-    backlog_data = state["backlog_data"]
     scope = state["scope"]
     pipeline_gate = state["pipeline_gate"]
     episodes = state["episodes"]
@@ -490,15 +482,12 @@ def render_dashboard() -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        health_lines.append(
-            f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]"
-        )
+        health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]")
         if is_governed_scope(scope):
             if is_pipeline_gate_valid(scope, pipeline_gate):
                 pipe = pipeline_gate.get("pipeline", "?")
                 health_lines.append(
-                    f"  :green_circle: [green]Pipeline gate: OK[/green]  "
-                    f"[dim]{pipe}[/dim]"
+                    f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]"
                 )
             else:
                 health_lines.append(
@@ -506,9 +495,7 @@ def render_dashboard() -> None:
                     "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
                 )
     else:
-        health_lines.append(
-            ":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]"
-        )
+        health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
     health_panel = Panel(
         "\n".join(health_lines), title="[bold]System Health[/bold]", box=box.ROUNDED
     )
@@ -529,9 +516,7 @@ def render_dashboard() -> None:
             f"  [dim]{layer} · {pipeline}[/dim]"
         )
     if not top3:
-        backlog_lines.append(
-            "[green]:party_popper: All backlog items complete![/green]"
-        )
+        backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
     backlog_panel = Panel(
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED
     )
@@ -554,9 +539,7 @@ def render_dashboard() -> None:
         )
     else:
         last_content = "[dim]No episodes recorded yet.[/dim]"
-    last_panel = Panel(
-        last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED
-    )
+    last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
     # ── Panel 5: START options (box.ROUNDED) ─────────────────────────────────
     options_lines: list[str] = []
@@ -574,9 +557,7 @@ def render_dashboard() -> None:
         "[bold cyan]eval[/bold cyan]     :right_arrow: /eval — run quality gate on current work",
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
     ]
-    start_panel = Panel(
-        "\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED
-    )
+    start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 
     # ── Render all panels ─────────────────────────────────────────────────────
     console.print()

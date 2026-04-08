@@ -114,7 +114,7 @@ def _find_block(text: str, version_id: str) -> tuple[int, int]:
     block_start = m.start()
 
     # Find the next "  - id:" after this point
-    next_block = re.search(r"^  - id:", text[m.end():], re.MULTILINE)
+    next_block = re.search(r"^  - id:", text[m.end() :], re.MULTILINE)
     if next_block:
         block_end = m.end() + next_block.start()
     else:
@@ -217,19 +217,13 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
     # Guard: v0.0.7 is the last 0.0.x slice — use --release for 0.1.0
     if active_version == "v0.0.7":
-        _die(
-            "--phase refused: active_version is v0.0.7; "
-            "use --release to advance to v0.1.0"
-        )
+        _die("--phase refused: active_version is v0.0.7; use --release to advance to v0.1.0")
 
     # Guard: pending_task_refs must be empty
     pending = _get_pending_task_refs(roadmap_text, active_version)
     if pending:
         refs_str = ", ".join(pending)
-        _die(
-            f"--phase refused: pending_task_refs is non-empty for "
-            f"{active_version}: {refs_str}"
-        )
+        _die(f"--phase refused: pending_task_refs is non-empty for {active_version}: {refs_str}")
 
     # Compute next version identifiers
     new_phase_num = c + 1
@@ -239,12 +233,11 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     # Mutations on roadmap_text — applied in sequence
 
     # 1. In old active block: rename current_patch → final_patch
-    current_patch = _get_current_patch_from_block(roadmap_text, active_version)
     roadmap_text = _replace_in_block(
         roadmap_text,
         active_version,
         r"^(\s+)current_patch:(\s*\d+)",
-        rf"\g<1>final_patch:\g<2>",
+        r"\g<1>final_patch:\g<2>",
     )
 
     # 2. In old active block: status active → complete
@@ -295,10 +288,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     active_version = _extract_active_version(roadmap_text)
 
     if active_version != "v0.0.7":
-        _die(
-            f"--release refused: active_version is {active_version}; "
-            "must be v0.0.7"
-        )
+        _die(f"--release refused: active_version is {active_version}; must be v0.0.7")
 
     _write(azoth_path, _set_azoth_version(azoth_text, "0.1.0"))
 

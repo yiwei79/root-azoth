@@ -36,10 +36,19 @@ SYNC_LOG = AZOTH_ROOT / ".azoth" / "sync-log.jsonl"
 SYNCABLE_EXTENSIONS = {".md", ".yaml", ".yml", ".json", ".py", ".txt"}
 SYNCABLE_DIRS = {"skills", "agents", "instructions", "commands", "pipelines"}
 # Directories within the source that contain agent/skill content (may be nested)
-SYNCABLE_PARENT_DIRS = {".agents", ".claude", "skills", "agents", "instructions", "commands", "pipelines"}
+SYNCABLE_PARENT_DIRS = {
+    ".agents",
+    ".claude",
+    "skills",
+    "agents",
+    "instructions",
+    "commands",
+    "pipelines",
+}
 
 
 # ── Phase 1: SCAN ──────────────────────────────────────────────
+
 
 def _is_excluded(rel_path: Path, strip_paths: list[str]) -> bool:
     """Check if a path should be excluded based on strip_paths config."""
@@ -92,6 +101,7 @@ def scan_source(
 
 # ── Phase 2: DIFF ──────────────────────────────────────────────
 
+
 def diff_inventories(
     source: dict[str, dict[str, Any]],
     target_root: Path,
@@ -114,20 +124,25 @@ def diff_inventories(
         target_hash = hashlib.sha256(target_content.encode()).hexdigest()
 
         if target_hash != source_info["hash"]:
-            results["modified"].append({
-                **source_info,
-                "target_hash": target_hash,
-            })
+            results["modified"].append(
+                {
+                    **source_info,
+                    "target_hash": target_hash,
+                }
+            )
         else:
             results["unchanged"].append(source_info)
 
-    print(f"[diff] New: {len(results['new'])}, "
-          f"Modified: {len(results['modified'])}, "
-          f"Unchanged: {len(results['unchanged'])}")
+    print(
+        f"[diff] New: {len(results['new'])}, "
+        f"Modified: {len(results['modified'])}, "
+        f"Unchanged: {len(results['unchanged'])}"
+    )
     return results
 
 
 # ── Phase 3: PROPOSE ──────────────────────────────────────────
+
 
 def propose_actions(
     diff: dict[str, list[dict[str, Any]]],
@@ -136,30 +151,35 @@ def propose_actions(
     proposals: list[dict[str, Any]] = []
 
     for item in diff["new"]:
-        proposals.append({
-            "action": "add",
-            "path": item["path"],
-            "size": item["size"],
-            "lines": item["lines"],
-            "rubric": "B (reuse test) — new pattern from source",
-            "status": "pending",
-        })
+        proposals.append(
+            {
+                "action": "add",
+                "path": item["path"],
+                "size": item["size"],
+                "lines": item["lines"],
+                "rubric": "B (reuse test) — new pattern from source",
+                "status": "pending",
+            }
+        )
 
     for item in diff["modified"]:
-        proposals.append({
-            "action": "update",
-            "path": item["path"],
-            "size": item["size"],
-            "lines": item["lines"],
-            "rubric": "D (maturity test) — source has evolved",
-            "status": "pending",
-        })
+        proposals.append(
+            {
+                "action": "update",
+                "path": item["path"],
+                "size": item["size"],
+                "lines": item["lines"],
+                "rubric": "D (maturity test) — source has evolved",
+                "status": "pending",
+            }
+        )
 
     print(f"[propose] Generated {len(proposals)} proposals")
     return proposals
 
 
 # ── Phase 4: ALIGN ────────────────────────────────────────────
+
 
 def align_with_human(
     proposals: list[dict[str, Any]],
@@ -222,6 +242,7 @@ def align_with_human(
 
 
 # ── Phase 5: SANITIZE ─────────────────────────────────────────
+
 
 def load_sanitize_config(config_path: Path) -> dict[str, Any]:
     """Load sanitization rules from sync-config.yaml."""
@@ -289,6 +310,7 @@ def execute_sync(
 
 # ── Logging ───────────────────────────────────────────────────
 
+
 def log_sync(
     source_path: Path,
     proposals: list[dict[str, Any]],
@@ -314,6 +336,7 @@ def log_sync(
 
 
 # ── CLI ───────────────────────────────────────────────────────
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -385,7 +408,11 @@ def main() -> None:
 
     # Phase 5: SANITIZE + EXECUTE
     synced = execute_sync(
-        proposals, source_path, AZOTH_ROOT, config, dry_run=args.dry_run,
+        proposals,
+        source_path,
+        AZOTH_ROOT,
+        config,
+        dry_run=args.dry_run,
     )
 
     # Log

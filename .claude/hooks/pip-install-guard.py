@@ -17,6 +17,7 @@ Why: direct package installs bypass the project's dependency manifest.
 Every dependency should be declared in a requirements file so the install
 is reproducible and auditable.
 """
+
 from __future__ import annotations
 
 import json
@@ -42,9 +43,7 @@ _REMINDER = (
 # those words appear inside a string argument (python3 -c "...pip install...") or
 # a heredoc body. Compound commands like "git status && pip install X" slip through,
 # but that edge case is acceptable — the guard targets direct invocations.
-_PIP_INSTALL = re.compile(
-    r"^(?:python3?\s+-m\s+pip|pip3?)\s+install\b"
-)
+_PIP_INSTALL = re.compile(r"^(?:python3?\s+-m\s+pip|pip3?)\s+install\b")
 
 # Matches the start of a heredoc: << 'EOF', << "EOF", or << EOF
 _HEREDOC_START = re.compile(r"<<\s*['\"]?(\w+)['\"]?")
@@ -72,24 +71,32 @@ def _first_command(command: str) -> str:
 
 
 def _deny(reason: str) -> None:
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": reason,
-        }
-    }))
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": reason,
+                }
+            }
+        )
+    )
     sys.exit(0)
 
 
 def _allow() -> None:
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "allow",
-            "permissionDecisionReason": "",
-        }
-    }))
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "permissionDecisionReason": "",
+                }
+            }
+        )
+    )
     sys.exit(0)
 
 
