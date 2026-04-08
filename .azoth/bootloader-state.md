@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-09 (v0.1.0 release close — roadmap v0.2.0 active)
+Last updated: 2026-04-09 (session-closeout ep-096 — v0.1.0 tag + W4 patch)
 
 ## Current Phase
 
 Phase 8 — Next — roadmap TBD  
-**Toolkit version:** **0.1.0** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **1** (`.azoth/roadmap.yaml`, D53). **v0.1.0** milestone complete; seed next phases/backlog when ready.
+**Toolkit version:** **0.1.1** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **2** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** pushed (`284eb59`). Post-closeout patch bump applied; seed next phases/backlog when ready.
+
+## Session outcome (ep-096) — session-closeout
+
+- **Delivered / refined:** **`git tag -a v0.1.0`** + **`git push`** branch **`phase-7-v0.0.7-publishing`** and tag **`v0.1.0`**. **W1** **ep-096**; **W2** bootloader + scope gate **`closed_at`** refresh; **W3** **`~/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md`** mirror; **W4** **`0.1.0 → 0.1.1`**, roadmap **`current_patch` `1 → 2`**; **`azoth.yaml`** **`episodes: 96`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.1`**.
+- **Closeout:** W1–W4 complete.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); define **v0.2.0** roadmap when ready.
 
 ## Session outcome (ep-095) — session-closeout
 
