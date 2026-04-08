@@ -242,7 +242,7 @@ versions:
 
   - id: v0.0.7
     status: active
-    current_patch: 4
+    current_patch: 6
     goal: "Phase 7: Publishing & public product — CI, extraction, GitHub"
     phase_scope: [7]
     note: >

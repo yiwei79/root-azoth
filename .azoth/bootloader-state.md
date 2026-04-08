@@ -1,11 +1,23 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (session closeout ep-093 — P4-004 + license)
+Last updated: 2026-04-09 (session closeout ep-095 — eval-swarm + extract follow-up)
 
 ## Current Phase
 
 Phase 7 — Publishing & public product  
-**Toolkit version:** **0.0.7.4** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.7` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53)
+**Toolkit version:** **0.0.7.6** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.7` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53)
+
+## Session outcome (ep-095) — session-closeout
+
+- **Delivered / refined:** **`/eval-swarm`** Wave C on extract + license + governance (0.90); extract **FAIL** then **Wave D** (`.git/` guard, tests, `--out` help) + **re-eval PASS**; **follow-up** **`test_extract_removes_pre_existing_out_directory`**, module doc + **destructive `--out`** argparse text (**staging / rsync**). **`AZOTH_VERSION`** in **`.claude/settings.json`** synced **0.0.7.6** (**BL-018**).
+- **Closeout:** W1 **ep-095**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.5 → 0.0.7.6**; **M3** **episodes: 95**.
+- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`**; **`/intake`** for **3** queued inbox JSONL; **`/next`** for post–Phase 7 scope; merge **PR #6** when CI green.
+
+## Session outcome (ep-094) — session-closeout
+
+- **Delivered / refined:** **GitHub PR #6** metadata aligned with full Phase 7 branch; **ready for review**; **`@copilot`** review comment; **D32** inbox — `.azoth/inbox/cursor-review-2026-04-08.jsonl` (appended) + **`.azoth/inbox/pr-code-review-pr6-phase7-2026-04-08.jsonl`**. **`azoth_extract_product.py`** — defense-in-depth **never copy `.git/`** even if `exclude_paths` misconfigured; **`test_copy_tree_always_skips_dot_git`** + minimal-tree assertion; **`--out` help** documents rmtree behavior.
+- **Closeout:** W1 **ep-094**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.4 → 0.0.7.5**; **M3** **episodes: 94**.
+- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`** (closeout commit + prior **35be673** if not pushed); **`/next`** for post–Phase 7 scope; **`/intake`** for **3** queued inbox JSONL; merge **PR #6** when CI green.
 
 ## Session outcome (ep-093) — session-closeout
 
@@ -124,4 +136,4 @@ Phase 7 — Publishing & public product
 
 ## Next action
 
-**Phase 7 (v0.0.7)** — **`P4-003`** and **`P4-004`** **complete** (CI + public publish + PolyForm license). **`git push`** this branch; **`/next`** for the next backlog slice toward **v0.1.0**; **`/intake`** if **`.azoth/inbox/*.jsonl`** queued. **P5-006** remains **deferred** to **v0.2.0**.
+**Phase 7 (v0.0.7)** — **`P4-003`** / **`P4-004`** **complete**. **`git push`** **`phase-7-v0.0.7-publishing`**; **`/intake`** — **3** JSONL in **`.azoth/inbox/`** (cursor-review + pr-code-review); **`/next`** toward **v0.1.0** when ready. **P5-006** **deferred** **v0.2.0**.

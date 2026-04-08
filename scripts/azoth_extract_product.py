@@ -10,6 +10,9 @@ Pipeline (mandatory order — must not skip steps):
 
 Then emits public CI + README from kernel templates (same contract as sync-config comments).
 
+If ``--out`` already exists, it is removed with ``shutil.rmtree`` before writing — never
+use a live git clone as ``--out``; extract to staging and copy/rsync into the target.
+
 Not azoth-sync.py (Tier 1→2 only).
 """
 
@@ -84,9 +87,7 @@ def validate_pipeline(pe: dict[str, Any]) -> None:
         _die("product_extraction.extraction_pipeline must be a list")
     got = tuple(str(x) for x in pipe)
     if got != EXPECTED_PIPELINE:
-        _die(
-            f"extraction_pipeline must be exactly {EXPECTED_PIPELINE!r}, got {got!r}"
-        )
+        _die(f"extraction_pipeline must be exactly {EXPECTED_PIPELINE!r}, got {got!r}")
 
 
 def path_is_excluded(rel_posix: str, exclude_paths: list[str]) -> bool:
@@ -117,6 +118,9 @@ def copy_tree_respecting_excludes(
         if not path.is_file():
             continue
         rel = path.relative_to(source).as_posix()
+        # Defense-in-depth: never copy VCS metadata even if exclude_paths is misconfigured.
+        if rel == ".git" or rel.startswith(".git/"):
+            continue
         if path_is_excluded(rel, exclude_paths):
             continue
         target = dest / path.relative_to(source)
@@ -202,9 +206,7 @@ def apply_transforms(
             if not isinstance(tpl, str):
                 raise RuntimeError("regenerate-from-template requires template: str")
             if src_name != "CLAUDE.md":
-                raise RuntimeError(
-                    f"unsupported regenerate-from-template source: {src_name!r}"
-                )
+                raise RuntimeError(f"unsupported regenerate-from-template source: {src_name!r}")
             apply_regenerate_claude(
                 source_root,
                 dest_root,
@@ -308,16 +310,12 @@ def extract_product(
     pe = get_product_extraction(cfg)
     validate_pipeline(pe)
     exclude_paths = pe.get("exclude_paths")
-    if not isinstance(exclude_paths, list) or not all(
-        isinstance(x, str) for x in exclude_paths
-    ):
+    if not isinstance(exclude_paths, list) or not all(isinstance(x, str) for x in exclude_paths):
         _die("product_extraction.exclude_paths must be a list of strings")
 
     sanitize_cfg = cfg.get("sanitize", {})
     strip_patterns = sanitize_cfg.get("strip_patterns", [])
-    if not isinstance(strip_patterns, list) or not all(
-        isinstance(x, str) for x in strip_patterns
-    ):
+    if not isinstance(strip_patterns, list) or not all(isinstance(x, str) for x in strip_patterns):
         _die("sanitize.strip_patterns must be a list of strings")
 
     transforms = pe.get("transform")
@@ -330,7 +328,9 @@ def extract_product(
         _die(f"--source is not a directory: {source}")
 
     if dry_run:
-        print("dry-run: step 1 only (listing copies); transforms need a real tree — use full extract or --validate-only")
+        print(
+            "dry-run: step 1 only (listing copies); transforms need a real tree — use full extract or --validate-only"
+        )
         n = copy_tree_respecting_excludes(source, dest, exclude_paths, dry_run=True)
         print(f"   would copy {n} files")
         print("done (dry-run).")
@@ -372,7 +372,12 @@ def main() -> int:
         "--out",
         type=Path,
         default=None,
-        help="Output directory for extracted product (required unless --validate-only)",
+        help=(
+            "Output directory for extracted product (required unless --validate-only). "
+            "Destructive: if this path already exists, it is deleted entirely "
+            "(shutil.rmtree), then recreated — do not point at a git clone or any "
+            "directory you need to keep; use a staging path and rsync into the target."
+        ),
     )
     parser.add_argument(
         "--config",
