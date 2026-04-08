@@ -46,6 +46,12 @@ def test_filter_excludes_complete() -> None:
     assert [x["id"] for x in result] == ["B"]
 
 
+def test_filter_excludes_deferred() -> None:
+    items = [_item("A", status="deferred"), _item("B")]
+    result = welcome.filter_unblocked_items(items, set())
+    assert [x["id"] for x in result] == ["B"]
+
+
 def test_filter_excludes_blocked_when_dep_incomplete() -> None:
     items = [_item("A"), _item("B", blocked_by=["A"])]
     result = welcome.filter_unblocked_items(items, set())

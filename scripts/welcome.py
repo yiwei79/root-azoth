@@ -85,7 +85,7 @@ def filter_unblocked_items(
     """
     result = []
     for item in items:
-        if item.get("status") == "complete":
+        if item.get("status") in {"complete", "deferred"}:
             continue
         blocked_by = item.get("blocked_by") or []
         if all(bid in complete_ids for bid in blocked_by):

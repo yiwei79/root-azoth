@@ -200,7 +200,7 @@ versions:
 
   - id: v0.0.5
     status: active
-    current_patch: 13
+    current_patch: 14
     goal: "Phase 5: Trust Layer"
     phase_scope: [5]
     tasks:
@@ -218,8 +218,6 @@ versions:
       - id: P5-005
         title: "Git-based checkpoints"
         decision_ref: D15
-      - id: P5-006
-        title: "Phone-friendly output"
       - id: P5-007
         title: "Session start hook: auto-trigger /start on session open"
         decision_ref: D52
@@ -254,3 +252,16 @@ versions:
     status: target
     goal: "Public azoth release — full roadmap complete (Phases 1–6)"
     note: "Version bumped to 0.1.0 when Phase 6 (v0.0.6) is complete. Git tag proposed."
+
+  - id: v0.2.0
+    status: backlog
+    goal: "Post–v0.1.0 polish and ergonomics (unscheduled)"
+    phase_scope: []
+    note: >
+      Bucket for work explicitly deferred past the initial public release. No phase tie-in;
+      scheduled when v0.1.0 is stable and capacity allows.
+    tasks:
+      - id: P5-006
+        title: "Phone-friendly output (narrow terminals)"
+        deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
+        note: "Welcome/dashboard and key CLI width; optional compact mode"

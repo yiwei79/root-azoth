@@ -4,7 +4,8 @@
 #
 # RULES:
 # - Active items cannot be silently dropped.
-# - Deferral requires explicit target_version.
+# - Deferral requires explicit target_version and status: deferred (excluded from
+#   welcome top-N and /next candidate sourcing until requeued or version is active).
 # - target_layer routes delivery: M1 → /deliver-full (governed), others → /deliver (standard)
 # - M1 items require a dedicated session (D51) — scope card validator rejects mixed M1+runtime
 # - target_version uses the D53 scheme: v0.0.PHASE (e.g. v0.0.3 for Phase 3 deliveries)
@@ -626,8 +627,9 @@ items:
     roadmap_ref: P5-006
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: pending
-    target_version: v0.0.5
+    status: deferred
+    target_version: v0.2.0
+    deferred_from: "v0.0.5 Phase 5 — deprioritized past v0.1.0 public release track (2026-04-08)"
     priority: 7
     created_date: "2026-04-07"
     blocked_by: null

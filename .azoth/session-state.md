@@ -12,9 +12,9 @@
 
 state: empty
 last_ide: cursor
-timestamp: 2026-04-08T00:00:41Z
+timestamp: 2026-04-08T00:14:45Z
 active_task: ""
 active_files: []
 pending_decisions: []
 approved_scope: ""
-next_action: "Run /next for P5-006 (phone-friendly narrow terminals) or another backlog item. Optional: /intake for inbox queue."
+next_action: "P5-006 deferred to v0.2.0 (post–v0.1.0). v0.0.5 Phase 5 backlog otherwise complete — plan v0.0.6 / phase close or run /intake."

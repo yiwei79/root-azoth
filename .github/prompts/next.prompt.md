@@ -15,7 +15,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
    Also read `current_phase` and `current_phase_title` for display in the scope card header.
    (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
 3. **Find candidate tasks**: From backlog `items`, collect all where:
-   - `status` is not `complete`
+   - `status` is not `complete` and not `deferred` (deferred items target a future `target_version`)
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
    Sort by `priority` ascending (lower = higher priority).
 4. **Select primary task**: Highest-priority unblocked item.
