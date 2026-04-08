@@ -48,7 +48,7 @@ DEFAULT_CLAUDE_SUBSTITUTIONS: dict[str, str] = {
     "TEST_DIR": "tests",
     "FORMATTER": "ruff format + ruff check",
     "TEST_FRAMEWORK": "pytest",
-    "AZOTH_VERSION": "0.0.7",
+    "AZOTH_VERSION": "0.1.0",
     "INSTALLED_SKILLS": "see skills/",
     "INSTALLED_AGENTS": "see agents/",
     "INSTALLED_PIPELINES": "see pipelines/",

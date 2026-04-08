@@ -15,11 +15,11 @@ Flags:
   --patch    0.0.N.M → 0.0.N.M+1  (every session delivery)
   --phase    0.0.N.M → 0.0.N+1.1  (phase completion — empty pending_task_refs; next
               slice status planned or backlog → active + current_patch 1)
-  --release  0.0.6.M → 0.1.0      (HUMAN-ONLY: confirms readiness for public release)
+  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, azoth 0.1.0 + phase 8,
+           activate v0.2.0 @ current_patch 1 (post–v0.1.0 slice; phases TBD)
 
---release is intentionally minimal: it only writes azoth.yaml and prints the
-manual git-tag command. The human must inspect the repo, run tests, and push
-the tag themselves. This is a governance boundary, not a bug.
+--release is human-gated: updates azoth.yaml + .azoth/roadmap.yaml, prints the
+manual git-tag command. The human must inspect, run tests, tag, and push.
 """
 
 from __future__ import annotations
@@ -27,11 +27,13 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-_VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
+_VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
+_VERSION3_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 # ── File I/O helpers ──────────────────────────────────────────────────────────
 
@@ -49,10 +51,24 @@ def _write(path: Path, content: str) -> None:
 
 def _parse_version(v: str) -> tuple[int, int, int, int]:
     """Parse a 4-component version string or exit 1."""
-    m = _VERSION_RE.match(v.strip())
+    m = _VERSION4_RE.match(v.strip())
     if not m:
         _die(f"version '{v}' does not match required format \\d+.\\d+.\\d+.\\d+")
     return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+
+
+def _parse_version_patchable(v: str) -> tuple[list[int], bool]:
+    """Parse azoth.yaml version for --patch: 4-part pre-1.0 or 3-part post-1.0 semver."""
+    s = v.strip()
+    m4 = _VERSION4_RE.match(s)
+    if m4:
+        return [int(m4.group(i)) for i in range(1, 5)], True
+    m3 = _VERSION3_RE.match(s)
+    if m3:
+        return [int(m3.group(i)) for i in range(1, 4)], False
+    _die(
+        f"version '{v}' must be \\d+.\\d+.\\d+.\\d+ (pre-release) or \\d+.\\d+.\\d+ (post-1.0 patch)"
+    )
 
 
 # ── Regex helpers ─────────────────────────────────────────────────────────────
@@ -74,6 +90,34 @@ def _set_azoth_version(text: str, new_version: str) -> str:
         text,
         flags=re.MULTILINE,
     )
+
+
+def _set_azoth_phase_line(text: str, new_phase: int, comment: str | None = None) -> str:
+    """Replace the phase: line in azoth.yaml; optional full-line comment after #."""
+    if comment is not None:
+        line = f"phase: {new_phase}  # {comment}"
+        return re.sub(r"^phase:\s*\d+.*$", line, text, flags=re.MULTILINE)
+    return re.sub(r"^(phase:\s*)\d+", rf"\g<1>{new_phase}", text, flags=re.MULTILINE)
+
+
+def _ensure_completed_date_in_block(text: str, version_id: str, iso_date: str) -> str:
+    """Insert completed_date after status: complete if missing (within version block)."""
+    start, end = _find_block(text, version_id)
+    block = text[start:end]
+    if re.search(r"^\s+completed_date:", block, re.MULTILINE):
+        return text
+    new_block = re.sub(
+        r"(^(\s+status:\s*complete)\s*\n)",
+        rf'\1    completed_date: "{iso_date}"\n',
+        block,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if new_block == block:
+        _die(
+            f"could not insert completed_date into block {version_id!r} (expected status: complete)"
+        )
+    return text[:start] + new_block + text[end:]
 
 
 def _extract_active_version(text: str) -> str:
@@ -176,19 +220,19 @@ def _die(msg: str) -> None:
 
 
 def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
-    """Increment 4th component in azoth.yaml and current_patch in roadmap.yaml."""
+    """Increment patch: 0.0.N.M → 0.0.N.M+1, or post-1.0 0.1.M → 0.1.M+1; roadmap current_patch +1."""
     azoth_text = _read(azoth_path)
     roadmap_text = _read(roadmap_path)
 
-    # Read + validate current version
     raw_version = _extract_azoth_version(azoth_text)
-    a, b, c, d = _parse_version(raw_version)
-    new_version = f"{a}.{b}.{c}.{d + 1}"
+    parts, is_four = _parse_version_patchable(raw_version)
+    if is_four:
+        new_version = f"{parts[0]}.{parts[1]}.{parts[2]}.{parts[3] + 1}"
+    else:
+        new_version = f"{parts[0]}.{parts[1]}.{parts[2] + 1}"
 
-    # Determine active version block
     active_version = _extract_active_version(roadmap_text)
 
-    # Increment current_patch in roadmap block
     current_patch = _get_current_patch_from_block(roadmap_text, active_version)
     new_patch = current_patch + 1
     new_roadmap = _replace_in_block(
@@ -198,7 +242,6 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
         rf"\g<1>{new_patch}",
     )
 
-    # Write both files
     _write(azoth_path, _set_azoth_version(azoth_text, new_version))
     _write(roadmap_path, new_roadmap)
 
@@ -276,10 +319,9 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
 
 def do_release(azoth_path: Path, roadmap_path: Path) -> None:
-    """Write flat semver 0.1.0 when active_version is v0.0.7 (Phase 7 complete).
+    """Close v0.0.7 + v0.1.0, set azoth 0.1.0 / phase 8, activate v0.2.0 slice (roadmap TBD).
 
-    NOTE: This is intentionally human-gated. The script writes azoth.yaml and
-    prints the manual git-tag command. The human must verify, tag, and push.
+    Human-gated: prints the manual git-tag command; verify, tag, and push locally.
     """
     azoth_text = _read(azoth_path)
     roadmap_text = _read(roadmap_path)
@@ -290,7 +332,75 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     if active_version != "v0.0.7":
         _die(f"--release refused: active_version is {active_version}; must be v0.0.7")
 
-    _write(azoth_path, _set_azoth_version(azoth_text, "0.1.0"))
+    completed = date.today().isoformat()
+
+    # v0.0.7: current_patch → final_patch, active → complete, completed_date
+    roadmap_text = _replace_in_block(
+        roadmap_text,
+        "v0.0.7",
+        r"^(\s+)current_patch:",
+        r"\g<1>final_patch:",
+    )
+    roadmap_text = _replace_in_block(
+        roadmap_text,
+        "v0.0.7",
+        r"^(\s+status:\s*)active",
+        r"\g<1>complete",
+    )
+    roadmap_text = _ensure_completed_date_in_block(roadmap_text, "v0.0.7", completed)
+
+    # v0.1.0: target → complete
+    roadmap_text = _replace_in_block(
+        roadmap_text,
+        "v0.1.0",
+        r"^(\s+status:\s*)target",
+        r"\g<1>complete",
+    )
+    roadmap_text = _ensure_completed_date_in_block(roadmap_text, "v0.1.0", completed)
+
+    # Legacy roadmap header: phase 8 placeholder until next roadmap is defined
+    roadmap_text = re.sub(
+        r"^current_phase:\s*\d+\s*$",
+        "current_phase: 8",
+        roadmap_text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    roadmap_text = re.sub(
+        r'^current_phase_title:\s*".*"\s*$',
+        'current_phase_title: "Next — roadmap TBD"',
+        roadmap_text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
+    # Activate v0.2.0 (backlog → active + current_patch 1)
+    roadmap_text = _set_active_version(roadmap_text, "v0.2.0")
+    start, end = _find_block(roadmap_text, "v0.2.0")
+    block = roadmap_text[start:end]
+    new_block = re.sub(
+        r"^(    status: (?:planned|backlog)\n)",
+        "    status: active\n    current_patch: 1\n",
+        block,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if new_block == block:
+        _die(
+            "--release refused: v0.2.0 block must start with '    status: backlog' or "
+            "'    status: planned' to activate the post-1.0 slice"
+        )
+    roadmap_text = roadmap_text[:start] + new_block + roadmap_text[end:]
+
+    azoth_text = _set_azoth_version(azoth_text, "0.1.0")
+    azoth_text = _set_azoth_phase_line(
+        azoth_text,
+        8,
+        "Phases 1–7 + v0.1.0 release complete; next roadmap slice v0.2.0 (TBD)",
+    )
+
+    _write(azoth_path, azoth_text)
+    _write(roadmap_path, roadmap_text)
 
     print(f"version bumped {raw_version} → 0.1.0 (release)")
     print(

@@ -121,6 +121,7 @@ def test_render_dashboard_smoke() -> None:
     assert "ROADMAP" in out
     assert "v0.0.6" in out
     assert "v0.0.7" in out
+    assert "v0.2.0" in out
 
 
 def test_status_style_known() -> None:

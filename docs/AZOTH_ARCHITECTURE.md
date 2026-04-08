@@ -1167,16 +1167,21 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 | v0.0.5 | Phase 5: Trust Layer | 5 |
 | v0.0.6 | Phase 6: Meta-recursive | 6 |
 | v0.0.7 | Phase 7: Publishing & public product | 7 |
-| **v0.1.0** | **Public azoth release — full roadmap complete** | — |
+| **v0.1.0** | **Public azoth release — full roadmap complete (Phases 1–7)** | — |
+| v0.2.0 | Post–v0.1.0 slice — next roadmap TBD (phases/backlog to seed) | 8 (placeholder) |
 
 ### Bump Rules
 
 - **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
   session that produces artifacts. Counter resets to `.1` on each phase bump.
+- **PATCH (post–1.0)** (`0.1.M+1`): after `--release`, `azoth.yaml` uses three-part semver;
+  `--patch` increments the third component; `roadmap.yaml` `active_version` (e.g. v0.2.0)
+  `current_patch` still advances per delivery session.
 - **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6→7).
   PATCH counter resets to `.1`.
-- **Release** (`0.1.0`): full roadmap complete (Phase 7 done). Only non-sequential jump.
-  Git tag proposed — user-confirmed, never auto-pushed.
+- **Release** (`--release` from `v0.0.7` active): writes `0.1.0`, closes v0.0.7 + v0.1.0 roadmap
+  blocks, sets legacy `current_phase: 8`, activates **v0.2.0** @ `current_patch: 1`. Git tag
+  proposed — user-confirmed, never auto-pushed.
 
 The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later
 in the phase. PHASE provides coarser orientation. Together they encode "where in development
@@ -1186,7 +1191,8 @@ are we" without requiring agents to read git history.
 
 - `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
   writes `azoth.yaml` and updates `roadmap.yaml` `active_version` + `current_patch` fields.
-  `--release` flag triggers the `0.1.0` jump and proposes a git tag.
+  `--release` closes the v0.0.7 slice, marks v0.1.0 complete, activates v0.2.0, sets phase 8,
+  writes `0.1.0`, and proposes a git tag.
 - `/session-closeout` integration — final step calls `version-bump.py --patch` after
   confirming at least one artifact was written this session.
 - `/deliver-full` integration — calls `version-bump.py --patch` after builder stage

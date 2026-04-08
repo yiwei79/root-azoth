@@ -1,11 +1,11 @@
 # Bootloader State
 
-Last updated: 2026-04-09 (session closeout ep-095 — eval-swarm + extract follow-up)
+Last updated: 2026-04-09 (v0.1.0 release close — roadmap v0.2.0 active)
 
 ## Current Phase
 
-Phase 7 — Publishing & public product  
-**Toolkit version:** **0.0.7.6** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.7` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53)
+Phase 8 — Next — roadmap TBD  
+**Toolkit version:** **0.1.0** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **1** (`.azoth/roadmap.yaml`, D53). **v0.1.0** milestone complete; seed next phases/backlog when ready.
 
 ## Session outcome (ep-095) — session-closeout
 

@@ -281,6 +281,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         (5, "Trust"),
         (6, "Meta"),
         (7, "Publish"),
+        (8, "Next"),
     ]
     pl: list[str] = []
     for num, name in _phases:
@@ -429,6 +430,7 @@ def render_dashboard() -> None:
         (5, "Trust"),
         (6, "Meta"),
         (7, "Publish"),
+        (8, "Next"),
     ]
     try:
         current_phase = int(phase)
