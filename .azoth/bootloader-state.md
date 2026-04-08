@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (`/session-closeout` ep-086)
+Last updated: 2026-04-08 (`/session-closeout` ep-088)
 
 ## Current Phase
 
 Phase 6 — Meta-Recursive  
-**Toolkit version:** **0.0.6.7** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53)
+**Toolkit version:** **0.0.6.8** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **8** (`.azoth/roadmap.yaml`, D53)
+
+## Session outcome (ep-088) — session-closeout
+
+- **Delivered / refined:** **`main`** merged **`patch/bl-023-azoth-deploy-parity`** (**`78be4fa`**) — backlog deliveries **BL-018**–**BL-023** on default branch (settings sync, pip/requirements-dev, runtime gate JSON policy, DAY0 + UTF-8 + session-state example, roadmap dashboard hardening, **D46** deploy parity tests). **`python3 scripts/azoth-deploy.py`** — 84 files reported written; **working tree clean** (mirrors already matched).
+- **Closeout:** W1 **ep-088**; W2 bootloader + session-state; W3 Claude memory (attempt); W4 patch **0.0.6.7 → 0.0.6.8**; **M3** **episodes: 88**.
+- **Next:** **`git push`** **`origin main`**; **`/next`** **BL-024** (bootloader alignment on closeout); **`/intake`** if new inbox lines.
 
 ## Session outcome (ep-086) — session-closeout
 
