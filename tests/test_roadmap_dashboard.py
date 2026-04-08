@@ -37,6 +37,65 @@ def test_load_roadmap_scalar_root_returns_empty(tmp_path: Path) -> None:
     assert roadmap_dashboard.load_roadmap(scalar) == {}
 
 
+def test_load_roadmap_diag_reasons(tmp_path: Path) -> None:
+    missing = roadmap_dashboard.load_roadmap_diag(REPO / "nonexistent-xyz-123.yaml")
+    assert missing.data == {}
+    assert missing.empty_reason == "missing"
+
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("{ not valid yaml\n", encoding="utf-8")
+    inv = roadmap_dashboard.load_roadmap_diag(bad)
+    assert inv.data == {}
+    assert inv.empty_reason is not None
+    assert "yaml_parse_error" in inv.empty_reason
+
+    scalar = tmp_path / "s.yaml"
+    scalar.write_text("scalar-only\n", encoding="utf-8")
+    nd = roadmap_dashboard.load_roadmap_diag(scalar)
+    assert nd.data == {}
+    assert nd.empty_reason is not None
+    assert "non_dict_root" in nd.empty_reason
+
+    empty_map = tmp_path / "empty.yaml"
+    empty_map.write_text("{}\n", encoding="utf-8")
+    em = roadmap_dashboard.load_roadmap_diag(empty_map)
+    assert em.data == {}
+    assert em.empty_reason == "empty_mapping"
+
+
+def test_render_dashboard_differentiates_empty_causes(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    miss = tmp_path / "missing.yaml"
+    buf = io.StringIO()
+    c = Console(record=True, width=100, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=miss, console=c)
+    assert "not found" in c.export_text().lower()
+
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("{ not valid yaml [[[\n", encoding="utf-8")
+    buf2 = io.StringIO()
+    c2 = Console(record=True, width=100, file=buf2)
+    roadmap_dashboard.render_dashboard(roadmap_path=bad, console=c2)
+    assert "Invalid YAML" in c2.export_text()
+
+    scalar = tmp_path / "scalar.yaml"
+    scalar.write_text("only-scalar\n", encoding="utf-8")
+    buf3 = io.StringIO()
+    c3 = Console(record=True, width=100, file=buf3)
+    roadmap_dashboard.render_dashboard(roadmap_path=scalar, console=c3)
+    assert "mapping" in c3.export_text().lower()
+
+    empty = tmp_path / "empty_map.yaml"
+    empty.write_text("{}\n", encoding="utf-8")
+    buf4 = io.StringIO()
+    c4 = Console(record=True, width=100, file=buf4)
+    roadmap_dashboard.render_dashboard(roadmap_path=empty, console=c4)
+    assert "empty mapping" in c4.export_text().lower()
+
+
 def test_build_version_body_includes_tasks() -> None:
     path = REPO / ".azoth" / "roadmap.yaml"
     with path.open() as f:
@@ -122,6 +181,44 @@ def test_build_version_body_schema_warning_for_non_dict_task() -> None:
     assert "completed_tasks[0]" in body
     assert "T1" in body
     assert "Fine" in body
+
+
+def test_build_version_body_tasks_block_non_list() -> None:
+    version: dict = {
+        "status": "active",
+        "id": "v0.0.x",
+        "completed_tasks": [],
+        "tasks": "not-a-list",
+    }
+    body = roadmap_dashboard.build_version_body(version)
+    assert "schema:" in body
+    assert "tasks: expected list" in body
+
+
+def test_build_version_body_escapes_rich_markup_in_task_fields() -> None:
+    version: dict = {
+        "status": "complete",
+        "id": "v0.0.x",
+        "completed_tasks": [
+            {"id": "T1", "title": "[bold]fake[/bold]", "note": "[red]x[/]"},
+        ],
+        "tasks": [],
+    }
+    body = roadmap_dashboard.build_version_body(version)
+    assert "\\[bold]fake\\[/bold]" in body
+    assert "fake" in body
+
+
+def test_schema_warnings_cap_message() -> None:
+    bad_tasks = [f"bad-{i}" for i in range(roadmap_dashboard.MAX_SCHEMA_WARNINGS + 8)]
+    version: dict = {
+        "status": "complete",
+        "id": "v0.0.x",
+        "completed_tasks": bad_tasks,
+        "tasks": [],
+    }
+    body = roadmap_dashboard.build_version_body(version)
+    assert "more schema warning" in body
 
 
 def test_normalize_task_entries_non_list() -> None:

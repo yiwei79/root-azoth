@@ -14,11 +14,12 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import yaml
 from rich import box
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.text import Text
 
@@ -30,22 +31,65 @@ FOOTER = (
     "block is retained for older tooling; prefer versioned blocks for planning.[/]"
 )
 
+MAX_SCHEMA_WARNINGS = 25
+
+
+class RoadmapLoadDiag(NamedTuple):
+    """Result of loading roadmap YAML: data (possibly empty) and why it is empty."""
+
+    data: dict[str, Any]
+    empty_reason: str | None  # None iff data is non-empty; else diagnostic tag/message
+
+
+def load_roadmap_diag(path: Path | None = None) -> RoadmapLoadDiag:
+    """Load roadmap YAML with a reason when the result is an empty mapping."""
+    p = path or DEFAULT_ROADMAP
+    if not p.exists():
+        return RoadmapLoadDiag({}, "missing")
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError as exc:
+        return RoadmapLoadDiag({}, f"read_error: {exc}")
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        return RoadmapLoadDiag({}, f"yaml_parse_error: {exc}")
+    except Exception as exc:  # pragma: no cover - defensive
+        return RoadmapLoadDiag({}, f"parse_error: {exc}")
+    if data is None:
+        return RoadmapLoadDiag({}, "null_root")
+    if not isinstance(data, dict):
+        return RoadmapLoadDiag({}, f"non_dict_root:{type(data).__name__}")
+    if not data:
+        return RoadmapLoadDiag({}, "empty_mapping")
+    return RoadmapLoadDiag(data, None)
+
 
 def load_roadmap(path: Path | None = None) -> dict[str, Any]:
     """Load roadmap YAML; return empty dict if missing or invalid.
 
-    Non-dict YAML roots (e.g. a bare string) normalize to {} so callers always
-    receive a mapping; ``render_dashboard`` does not need a separate non-dict check.
+    For differentiated empty-file UX in the dashboard, use ``load_roadmap_diag``.
     """
-    p = path or DEFAULT_ROADMAP
-    if not p.exists():
-        return {}
-    try:
-        with p.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
+    return load_roadmap_diag(path).data
+
+
+def _empty_roadmap_panel_body(path: Path, reason: str | None) -> str:
+    """Human-facing copy when ``data`` is empty (missing, parse error, wrong shape)."""
+    r = reason or "unknown"
+    loc = escape(str(path))
+    if r == "missing":
+        return f"[yellow]Roadmap file not found:[/] {loc}"
+    if r.startswith("read_error:"):
+        return f"[yellow]Could not read roadmap file[/] {loc}\n[dim]{escape(r)}[/]"
+    if r.startswith("yaml_parse_error:") or r.startswith("parse_error:"):
+        return f"[yellow]Invalid YAML[/] {loc}\n[dim]{escape(r)}[/]"
+    if r.startswith("non_dict_root:"):
+        return f"[yellow]Roadmap root must be a mapping[/] {loc}\n[dim]{escape(r)}[/]"
+    if r == "null_root":
+        return f"[yellow]Roadmap YAML is null or empty[/] {loc}"
+    if r == "empty_mapping":
+        return f"[yellow]Roadmap is an empty mapping[/] {loc}"
+    return f"[yellow]No roadmap data[/] {loc}\n[dim]{escape(r)}[/]"
 
 
 def _status_style(status: str) -> str:
@@ -91,17 +135,21 @@ def _format_task_block(
     if not entries and not schema_warnings:
         return lines
     lines.append(f"[bold]{label}[/bold]")
-    for w in schema_warnings:
-        lines.append(f"  [yellow]schema:[/] [dim]{w}[/]")
+    shown = schema_warnings[:MAX_SCHEMA_WARNINGS]
+    for w in shown:
+        lines.append(f"  [yellow]schema:[/] [dim]{escape(w)}[/]")
+    extra = len(schema_warnings) - len(shown)
+    if extra > 0:
+        lines.append(f"  [dim]... and {extra} more schema warning(s)[/]")
     for task in entries:
-        tid = task.get("id", "?")
-        title = task.get("title", "")
+        tid = escape(str(task.get("id", "?")))
+        title = escape(str(task.get("title", "")))
         mark = _task_done_icon(done)
         lines.append(f"  {mark} [cyan]{tid}[/]  {title}")
         for key in ("note", "deferred_from"):
             val = task.get(key)
             if val:
-                lines.append(f"      [dim]{val}[/]")
+                lines.append(f"      [dim]{escape(str(val))}[/]")
     return lines
 
 
@@ -110,14 +158,14 @@ def build_version_body(version: dict[str, Any]) -> str:
     st = version.get("status", "?")
     lines: list[str] = []
 
-    lines.append(f"[{_status_style(st)}]● {str(st).upper()}[/]")
+    lines.append(f"[{_status_style(st)}]● {escape(str(st).upper())}[/]")
     ps = version.get("phase_scope")
     if ps is not None:
-        lines.append(f"[dim]Phases:[/] {ps!s}")
+        lines.append(f"[dim]Phases:[/] {escape(str(ps))}")
     lines.append("")
     goal = version.get("goal", "")
     if goal:
-        lines.append(goal)
+        lines.append(escape(str(goal)))
 
     if "current_patch" in version:
         lines.append(f"[dim]current_patch:[/] {version['current_patch']}")
@@ -130,7 +178,7 @@ def build_version_body(version: dict[str, Any]) -> str:
     note = version.get("note", "")
     if note:
         lines.append("")
-        lines.append(f"[dim italic]{note}[/]")
+        lines.append(f"[dim italic]{escape(str(note))}[/]")
 
     completed, cw = _normalize_task_entries(
         version.get("completed_tasks"), block_label="completed_tasks"
@@ -164,7 +212,8 @@ def render_version_panel(version: dict[str, Any]) -> Panel:
     vid = version.get("id", "?")
     st = version.get("status", "?")
     body = build_version_body(version)
-    title_bar = f"[bold]{vid}[/]  [{_status_style(st)}]{st}[/{_status_style(st)}]"
+    ss = _status_style(st)
+    title_bar = f"[bold]{escape(str(vid))}[/]  [{ss}]{escape(str(st))}[/{ss}]"
     return Panel(
         body,
         title=title_bar,
@@ -180,14 +229,15 @@ def render_dashboard(
 ) -> None:
     """Print full roadmap dashboard to console."""
     path = roadmap_path or DEFAULT_ROADMAP
-    data = load_roadmap(path)
+    diag = load_roadmap_diag(path)
+    data = diag.data
     out = console or Console(width=100)
 
     out.print()
     if not data:
         out.print(
             Panel(
-                f"[yellow]No roadmap data at {path}[/]",
+                _empty_roadmap_panel_body(path, diag.empty_reason),
                 title="Roadmap",
                 box=box.HEAVY,
             )
