@@ -270,7 +270,7 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 5
+    current_patch: 6
     goal: >
       Long-running, low-friction agentic work: durable run state and resume; declarative
       swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
@@ -347,3 +347,8 @@ versions:
         decision_ref: [D21, D23, D44, D46]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"
         note: "BL-012 + deploy mirrors + provider caching; RP-E in SWARM_RESEARCH_DIGEST"
+      - id: P1-012
+        title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
+        decision_ref: [D21, D23, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
+        note: "Urgent: mode fails smooth e2e due to gates, spawn, ledger, IDE parity in blast radius"

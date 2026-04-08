@@ -1,0 +1,46 @@
+# Roadmap task spec — v0.2.0
+id: P1-012
+roadmap_version: v0.2.0
+title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
+decision_ref: [D21, D23, D50]
+
+intent: >
+  Make skills/dynamic-full-auto/SKILL.md and /.claude/commands/dynamic-full-auto.md honest and
+  operable for a single human goal through discovery, digest validation, reclassification, and
+  gated implementation — without excessive manual orchestration or dead ends.
+
+problem: >
+  Current practice diverges from the documented mode: scope/pipeline gates interrupt multi-phase
+  flows; Cursor lacks SessionStart/hooks; Task/subagent fan-out is uneven; queen merge and
+  append-pack are manual; handoff to /deliver|/auto often requires a second scope approval;
+  P1-001/P1-002 deferred capabilities (ledger, declarative waves) leave durability gaps. Result:
+  high friction starting a goal and finishing end-to-end as designed.
+
+scope:
+  - skills/dynamic-full-auto/SKILL.md — friction table, prerequisites, explicit non-goals
+  - .claude/commands/dynamic-full-auto.md — align prose with achievable path per IDE
+  - docs/AZOTH_ARCHITECTURE.md — short subsection or cross-link if architecture clarification needed
+  - tests — only if new mechanical checks are introduced
+
+non_goals:
+  - Full P1-001 run-ledger implementation in the same slice (may depend on or split from it)
+  - Kernel promotion without human scope
+
+acceptance:
+  - Written friction map (spec problem + blast-radius list) accepted in review
+  - >
+    Documented happy path for at least one supported IDE combo, or mechanical reduction of one
+    top friction (for example scope/digest sequencing) with pytest if applicable
+  - Run python3 scripts/azoth-deploy.py after command/skill edits (D46)
+  - pytest green including test_v020_roadmap_spec_decision_ref_parity
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Split doc-only honesty pass vs one hook/script improvement if entropy rises; do not mix M1
+  declarative schema (P1-002) into this slice without separate scope.

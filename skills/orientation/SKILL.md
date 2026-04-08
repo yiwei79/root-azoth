@@ -94,7 +94,7 @@ used before BL-013.
 ### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
 - **Canonical state:** `azoth.yaml` `phase: 1` + `milestone: v0.2.0` + `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0`, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P1-001 … P1-011** (`status: active`, priorities 1–11); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Execution queue:** `.azoth/backlog.yaml` — **P1-012** (**priority 0**, DYNAMIC-FULL-AUTO+ e2e friction) + **P1-001 … P1-011** (`status: active`); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids):**
   - **P1-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
   - **P1-002** — Declarative eval/swarm wave YAML + schema (depends on P1-001 backlog completion).
@@ -107,6 +107,7 @@ used before BL-013.
   - **P1-009** — Cursor session-open parity vs P5-007 SessionStart.
   - **P1-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
   - **P1-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
+  - **P1-012** — **Urgent:** DYNAMIC-FULL-AUTO+ end-to-end friction (goal through digest, Γ, gated delivery); blast radius D21/D23/D50 + ledger/wave gaps.
   - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
 ## Integration

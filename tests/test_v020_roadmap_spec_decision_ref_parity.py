@@ -42,6 +42,7 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-009",
         "P1-010",
         "P1-011",
+        "P1-012",
     ):
         assert tid in by_id, f"roadmap active version missing task {tid}"
         task = by_id[tid]

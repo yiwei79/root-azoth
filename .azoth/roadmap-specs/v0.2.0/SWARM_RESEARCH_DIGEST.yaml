@@ -6,10 +6,12 @@ schema_version: 1
 roadmap_version: v0.2.0
 
 meta:
-  session_id: "2026-04-09-dynamic-full-auto-v020-milestone"
-  wave_a: "skipped — known-pattern (milestone IDs + welcome lifecycle split; no external research packs)"
-  wave_b: "Task(explore)x3 — repo P1 drift, welcome strip semantics, version-bump --release expectations"
-  checkpoint_gamma: "standard · infrastructure · known-pattern → gated builder delivery"
+  session_id: "2026-04-09-p1-010-orchestration"
+  prior_session_id: "2026-04-09-dynamic-full-auto-v020-milestone"
+  wave_a: "skipped — known-pattern (no new external packs)"
+  wave_b: "orchestrator pass — eval.md / deliver.md / deploy mirrors; declare /deliver pipeline + test matrix"
+  wave_b2: "2026-04-08T23:19Z bare /dynamic-full-auto — scope-gate valid P1-010; digest merge + Γ only; no new explore Tasks"
+  checkpoint_gamma: "scope infrastructure · risk additive · complexity simple · knowledge known-pattern → auto-router rule 6 → /deliver"
 
 consensus_themes:
   - id: durability
@@ -140,8 +142,12 @@ explore_swarm_summary:
     - "session-closeout W2 checklist should name session-state.md explicitly (P1-006)."
     - "Second pass: mapped task list ordered ledger-first (P1-001) then declarative waves (P1-002), linter (P1-003), welcome TTL (P1-004)."
     - "Researcher + context-architect pass: add P1-011 roadmap/backlog/spec + RP-E (caching, ACON/folding, JetBrains observation cost, PASTE, Batch API)."
+    - "P1-010 orchestration (2026-04-09): extend test_eval_pipeline_wiring with mirror-aware checks — for each of auto/deliver/deliver-full/eval/eval-swarm/dynamic-full-auto, assert E1–E6 + eval-swarm + eval.md cross-refs exist in BOTH .github/prompts/*.prompt.md AND .opencode/commands/*.md; failure messages must name rel path."
+    - "PRE_DELIVERY_EVAL for implementation wave: E2 true (evaluator in /deliver rule-6 pipeline); E4 borderline (multi-file test only) — default baseline /eval at 0.85 unless human demands /eval-swarm."
+    - "No pipeline-gate.json for this scope (delivery_pipeline standard, target_layer infrastructure)."
+    - "Continuation: approved scope still P1-010 until expires_at; implementation not started in orchestrator thread — next action remains /deliver with Task-isolated stages."
 
-mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P5-006]
+mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P1-012, P5-006]
 
 mapping_notes:
   P1-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
@@ -155,4 +161,5 @@ mapping_notes:
   P1-009: "D52/D46 — Cursor SessionStart parity documentation path."
   P1-010: "D46 — eval/eval-swarm wiring tests across deploy mirrors."
   P1-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
+  P1-012: "Urgent DFA e2e friction — D21/D23/D50 blast radius: gates vs multi-wave mode, Task spawn, queen merge/handoff to /deliver|/auto; overlaps P1-001 ledger + P1-002 declarative waves."
   P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."

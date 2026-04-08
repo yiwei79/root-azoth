@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (session-closeout ep-100 — v0.2.0 milestone phases + P1 ids + closeout)
+Last updated: 2026-04-08 (session-closeout ep-101 — P1-010 mirror tests + P1-012 DFA friction + branch)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.4** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **5** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches.
+**Toolkit version:** **0.1.5** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-101) — session-closeout
+
+- **Delivered / refined:** **P1-010** — `tests/test_eval_pipeline_wiring.py` mirror-aware wiring checks for **`.github/prompts`** + **`.opencode/commands`** (auto, deliver, deliver-full, eval, eval-swarm, dynamic-full-auto). **P1-012** — backlog **priority 0**, `roadmap.yaml` task, **`P1-012.yaml`**, **`SWARM_RESEARCH_DIGEST.yaml`** `mapped_roadmap_tasks` + **`mapping_notes`**, **`skills/orientation/SKILL.md`** + **`CLAUDE.md`**, **`test_v020_roadmap_spec_decision_ref_parity`**. **`python3 scripts/azoth-deploy.py`** after orientation. **Branch** **`patch/v0.2.0-p1-012-dfa-e2e-friction`**. **W1** **ep-101**; **W2** bootloader + **`session-state.md`** + scope **`closed_at`**; **W3** Claude project memory (attempt); **W4** **`0.1.4 → 0.1.5`**, roadmap **`current_patch` `5 → 6`**; **`azoth.yaml`** **`episodes: 101`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.5`**.
+- **Closeout:** W1 → W4 → W2 (bootloader/scope/session after bump per BL-024 W2b intent); full **pytest** **928** passed (**5** skip, **2** xfail).
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** → **P1-012** (priority **0**); **`git push`** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
 
 ## Session outcome (ep-100) — session-closeout
 
@@ -160,4 +166,4 @@ Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `
 
 ## Next action
 
-**Phase 7 (v0.0.7)** — **`P4-003`** / **`P4-004`** **complete**. **`git push`** **`phase-7-v0.0.7-publishing`**; **`/intake`** — **3** JSONL in **`.azoth/inbox/`** (cursor-review + pr-code-review); **`/next`** toward **v0.1.0** when ready. **P5-006** **deferred** **v0.2.0**.
+**v0.2.0 / ep-101** — **`/intake`** **4** JSONL (inbox root); **`/next`** → **P1-012** (priority **0**); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.

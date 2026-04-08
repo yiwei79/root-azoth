@@ -58,3 +58,53 @@ def test_e2e_workflow_references_eval_commands() -> None:
     text = _read(".claude/workflows/enterprise/e2e-swarm-eval-loop.md")
     assert "/eval-swarm" in text
     assert "/eval" in text
+
+
+def _copilot_prompt(stem: str) -> str:
+    return f".github/prompts/{stem}.prompt.md"
+
+
+def _opencode_cmd(stem: str) -> str:
+    return f".opencode/commands/{stem}.md"
+
+
+def _mirror_paths(stem: str) -> tuple[str, str]:
+    return (_copilot_prompt(stem), _opencode_cmd(stem))
+
+
+@pytest.mark.parametrize("stem", ["eval", "eval-swarm", "auto", "deliver", "deliver-full", "dynamic-full-auto"])
+def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
+    """D46: Copilot + OpenCode deploy targets keep eval / eval-swarm routing (P1-010)."""
+    copilot_rel, opencode_rel = _mirror_paths(stem)
+    for rel in (copilot_rel, opencode_rel):
+        assert (REPO / rel).is_file(), f"missing {rel} — run: python3 scripts/azoth-deploy.py"
+        text = _read(rel)
+        if stem == "eval":
+            for marker in ("E1", "E2", "E3", "E4", "E5", "E6"):
+                assert marker in text, f"{rel}: missing trigger {marker}"
+            for needle in (
+                "Orchestrator (agents)",
+                "/eval-swarm",
+                "Intelligent routing",
+            ):
+                assert needle in text, f"{rel}: missing {needle!r}"
+        elif stem == "eval-swarm":
+            assert (
+                "eval.md" in text.lower() or "/eval`" in text
+            ), f"{rel}: must reference eval.md for baseline routing"
+        elif stem == "auto":
+            assert "E1–E6" in text or "E1-E6" in text, f"{rel}: missing E1–E6 routing marker"
+            assert (
+                "eval-swarm" in text.lower() or "/eval-swarm" in text
+            ), f"{rel}: missing eval-swarm reference"
+            assert "Evaluator stage" in text, f"{rel}: missing Evaluator stage wiring"
+        elif stem in ("deliver", "deliver-full"):
+            assert "Eval / swarm routing" in text, f"{rel}: missing Eval / swarm routing bullet"
+            assert "E1" in text and "E6" in text, f"{rel}: missing E1–E6 span in routing bullet"
+        else:
+            assert stem == "dynamic-full-auto"
+            assert "E1–E6" in text or "E1-E6" in text, f"{rel}: missing E1–E6 (eval.md routing)"
+            assert ".claude/commands/eval.md" in text, f"{rel}: missing normative eval.md pointer"
+            assert (
+                "eval-swarm" in text.lower() or "/eval-swarm" in text
+            ), f"{rel}: missing eval-swarm reference"

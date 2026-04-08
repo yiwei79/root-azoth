@@ -948,6 +948,29 @@ items:
       1.0.0 LICENSE + README license section; confirm Actions green on default branch as ongoing hygiene.
 
   # ── v0.2.0 (milestone phase 1) — DYNAMIC-FULL-AUTO+ backlog pre-fill ─────────
+  - id: P1-012
+    title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal start through gated delivery)"
+    source: session-2026-04-09
+    roadmap_ref: P1-012
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.2.0
+    priority: 0
+    created_date: "2026-04-09"
+    decision_ref: [D21, D23, D50]
+    blocked_by: []
+    priority_note: >
+      Urgent / high friction: operators report difficulty running DYNAMIC-FULL-AUTO+ from a stated
+      goal through digest, Checkpoint Γ, and handoff to /auto|/deliver without manual glue.
+    description: >
+      Blast radius includes D50 scope and pipeline gates (Cursor hook-soft vs Claude mechanical),
+      subagent/Task availability and BL-011 isolation (D21), auto-router and pipeline composition (D23),
+      optional PRE_DELIVERY_EVAL (/eval-swarm) vs scope TTL, queen merge + validate ergonomics,
+      overlap with P1-001 ledger/resume and P1-002 declarative waves. Deliver: friction map,
+      minimal mechanical fixes or doc-honest "happy path" that matches reality; optional welcome
+      surfacing when P1-004 lands. Spec: .azoth/roadmap-specs/v0.2.0/P1-012.yaml.
+
   - id: P1-001
     title: "Swarm & pipeline run ledger + resume protocol"
     source: dynamic-full-auto-plus
