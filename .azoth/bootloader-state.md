@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-09 (session-closeout ep-096 — v0.1.0 tag + W4 patch)
+Last updated: 2026-04-08 (session-closeout ep-097 — OPS-HEALTH-PARITY + /auto swarm)
 
 ## Current Phase
 
 Phase 8 — Next — roadmap TBD  
-**Toolkit version:** **0.1.1** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **2** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** pushed (`284eb59`). Post-closeout patch bump applied; seed next phases/backlog when ready.
+**Toolkit version:** **0.1.2** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **3** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches. Seed **v0.2.0** backlog when ready.
+
+## Session outcome (ep-097) — session-closeout
+
+- **Delivered / refined:** **`/auto`** with human-approved scope **OPS-HEALTH-PARITY** — explore swarm ×4, **`azoth-deploy`** idempotent run, **`CLAUDE.md`** **Version** **v0.1.1** alignment (pre-bump); verification swarm ×3; **architect → reviewer (approve) → planner (zero-build) → eval-swarm ×3 (≥0.9 PASS) → architect close**. **W1** **ep-097**; **W2** bootloader + scope **`closed_at`**; **W3** Claude memory mirror (attempt); **W4** **`0.1.1 → 0.1.2`**, roadmap **`current_patch` `2 → 3`**; **`azoth.yaml`** **`episodes: 97`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.2`**.
+- **Closeout:** W1–W4 complete.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** when new backlog rows exist; **`git push`** when ready.
 
 ## Session outcome (ep-096) — session-closeout
 

@@ -269,7 +269,7 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 2
+    current_patch: 3
     goal: "Post–v0.1.0 — next roadmap TBD (phases & backlog to seed)"
     phase_scope: []
     note: >
