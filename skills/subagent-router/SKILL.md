@@ -267,6 +267,13 @@ Cursor does not run Claude Code’s `Agent()` API. Use the `**Task`** tool with
 the orchestrator **must not** spawn planner/builder until the **human** explicitly approves
 continuation (see `.claude/commands/auto.md` Execution).
 
+### With DYNAMIC-FULL-AUTO+
+
+Digest-mode and research swarms do **not** relax evaluator escalation: at any **evaluator boundary**
+(including optional PRE_DELIVERY_EVAL Wave C), the orchestrator still computes **E1–E6** from
+`.claude/commands/eval.md` the same way as `/auto` — then chooses `/eval-swarm` vs single eval per
+that table. `skills/dynamic-full-auto/SKILL.md` references the same triggers.
+
 ### With Architecture Decisions
 
 - D21: Subagent isolation for review gates — this skill is the operational

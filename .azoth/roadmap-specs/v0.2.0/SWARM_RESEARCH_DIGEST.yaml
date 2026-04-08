@@ -1,0 +1,100 @@
+# DYNAMIC-FULL-AUTO+ — online research swarm aggregate (queen merge)
+# Skill: skills/dynamic-full-auto/SKILL.md · Tool: scripts/swarm_research_digest.py validate
+# Append packs: swarm_research_digest.py append-pack THIS_FILE --pack <pack.yaml>
+# Generated: orchestrator session; packs RP-A..RP-D from parallel researcher Tasks.
+schema_version: 1
+roadmap_version: v0.2.0
+
+consensus_themes:
+  - id: durability
+    summary: >
+      Durable execution separates persisted checkpoints/event history from replay semantics;
+      side effects need idempotency keys and explicit activity boundaries (Temporal, LangGraph, Dapr).
+  - id: declarative_orchestration
+    summary: >
+      Tool-based handoffs + declarative YAML workflows (vendor agent frameworks) complement
+      prose commands; canonical data reduces drift if linked from markdown.
+  - id: multi_eval_independence
+    summary: >
+      Correlated LLM errors weaken naive majority vote; prefer diverse judges, structured
+      disagreement, audit-style aggregation over raw consensus.
+  - id: memory_elasticity
+    summary: >
+      Relevance filter + utility/decay/access signals beat pure semantic retrieval; Azoth’s
+      recency + reinforcement_count aligns partially; outcome-linked utility needs governance.
+
+research_packs:
+  - id: RP-A
+    topic: "Durable execution, checkpointing, idempotency"
+    sources:
+      - { title: "LangGraph Persistence", url: "https://docs.langchain.com/oss/python/langgraph/persistence" }
+      - { title: "Temporal Activity Definition", url: "https://docs.temporal.io/activity-definition" }
+      - { title: "Dapr Workflow features", url: "https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts" }
+      - { title: "Temporal Idempotency and Durable Execution", url: "https://temporal.io/blog/idempotency-and-durable-execution" }
+    implications_for_azoth:
+      - "Treat gate JSON transitions as checkpoint records with correlation ids (session_id, stage)."
+      - "Idempotency keys for scripts/hooks that mutate repo or call network APIs."
+      - "Partial completion in machine-readable handoffs (BL-012) before monolithic retries."
+      - "Optional consumer bridges to full engines; core stays gate-driven files."
+    risks:
+      - "Replay re-invokes LLM/API calls → cost and divergence."
+      - "At-least-once side effects without atomic completion records."
+
+  - id: RP-B
+    topic: "Supervisor, tool handoffs, declarative workflows"
+    sources:
+      - { title: "OpenAI Agents Python Handoffs", url: "https://openai.github.io/openai-agents-python/handoffs/" }
+      - { title: "OpenAI Agents JS multi-agent", url: "https://openai.github.io/openai-agents-js/guides/multi-agent/" }
+      - { title: "AutoGen Handoffs", url: "https://microsoft.github.io/autogen/dev/user-guide/core-user-guide/design-patterns/handoffs.html" }
+      - { title: "Microsoft Agent Framework declarative workflows", url: "https://learn.microsoft.com/en-us/agent-framework/user-guide/workflows/declarative-workflows/advanced-patterns" }
+      - { title: "Databricks Supervisor Agent", url: "https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor" }
+      - { title: "LangGraph workflows and agents", url: "https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/" }
+    implications_for_azoth:
+      - "YAML wave tables (P8-002) as canonical alongside e2e-swarm-eval-loop.md."
+      - "BL-012 remains boundary artifact; wave rows reference stage_id / spawn contract."
+      - "Map orchestrator→manager, Task spawn→handoff, typed YAML→validated payload."
+    risks:
+      - "Dual maintenance YAML vs prose; schema_version for churn."
+      - "YAML must not imply unsupported CI runtime execution."
+
+  - id: RP-C
+    topic: "Multi-agent evaluation, consensus limits"
+    sources:
+      - { title: "CollabEval arXiv", url: "https://arxiv.org/abs/2603.00993" }
+      - { title: "Correlated Errors in LLMs arXiv", url: "https://arxiv.org/abs/2506.07962" }
+      - { title: "AgentAuditor arXiv", url: "https://arxiv.org/abs/2602.09341" }
+      - { title: "D3 arXiv", url: "https://arxiv.org/abs/2410.04663" }
+      - { title: "AEMA arXiv", url: "https://arxiv.org/abs/2601.11903" }
+      - { title: "CARE arXiv", url: "https://arxiv.org/abs/2603.00039" }
+    implications_for_azoth:
+      - "eval-swarm agreement is weak without diverse judges / independence."
+      - "Keep rationales and disagreement in stage summaries vs collapsing to one vote."
+      - "Governed pipelines: audit trail of rubric versions and outputs (AEMA-style)."
+    risks:
+      - "False confidence from correlated unanimous wrong answers."
+      - "Token/latency cost of audit and debate patterns."
+
+  - id: RP-D
+    topic: "Episodic memory utility, decay, stale retrieval"
+    sources:
+      - { title: "MemRL arXiv", url: "https://arxiv.org/abs/2601.03192" }
+      - { title: "RetroAgent arXiv", url: "https://arxiv.org/abs/2603.08561" }
+      - { title: "FadeMem arXiv", url: "https://arxiv.org/abs/2601.18642" }
+      - { title: "Oblivion arXiv", url: "https://arxiv.org/abs/2604.00131" }
+      - { title: "GSW episodic RAG arXiv", url: "https://arxiv.org/abs/2511.07587" }
+      - { title: "RA-DT arXiv", url: "https://arxiv.org/abs/2410.07071" }
+    implications_for_azoth:
+      - "context-recall: optional second-stage rerank or decay weights; gated read when M2 strong match."
+      - "reinforcement_count as human/process strengthening; automation needs HITL policy."
+    risks:
+      - "Utility overfits narrow tasks; reward hacking on proxies."
+      - "Preprints — verify claims before kernel-hard rules."
+
+explore_swarm_summary:
+  wave: B
+  findings:
+    - "backlog.yaml had no P8-* rows; welcome lacks TTL/EXPIRED and run-ledger surfacing."
+    - "e2e-swarm-eval-loop.md + 8 pipeline YAMLs + test_eval_pipeline_wiring anchor P8-002/003/010."
+    - "session-closeout W2 omits session-state.md explicit checklist (P8-006)."
+
+mapped_roadmap_tasks: [P8-001, P8-002, P8-003, P8-004, P8-005, P8-006, P8-007, P8-008, P8-009, P8-010, P5-006]

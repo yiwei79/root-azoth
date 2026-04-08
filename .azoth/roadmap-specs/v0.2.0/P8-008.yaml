@@ -1,0 +1,36 @@
+# Roadmap task spec — v0.2.0
+id: P8-008
+roadmap_version: v0.2.0
+title: "auto-router L2 / self-improve lane (Stage 0 → composition)"
+
+intent: >
+  Instruction and skill refinement goals route through auto.pipeline.yaml + auto-router
+  skill with explicit stages instead of ad-hoc orchestrator prose.
+
+problem: >
+  P6-002 L2 evidence exists but Stage 0 classification does not reliably compose a pipeline
+  for "refine prompts/skills from evidence."
+
+scope:
+  - skills/auto-router/SKILL.md
+  - pipelines/auto.pipeline.yaml
+  - .claude/commands/auto.md cross-reference only if needed
+
+non_goals:
+  - Auto-editing skills without human approval on governed items
+  - Replacing subagent-router triggers
+
+acceptance:
+  - New classification dimension or trigger (e.g. knowledge: instruction-refinement) documented
+  - Matching composition_rules row with stage list
+  - pytest or skill drift test if present for auto-router references
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Lane should default to conservative pipeline (architect → reviewer → …) when risk ambiguous.

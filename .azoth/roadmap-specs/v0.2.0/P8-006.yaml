@@ -1,0 +1,40 @@
+# Roadmap task spec — v0.2.0
+id: P8-006
+roadmap_version: v0.2.0
+title: "Memory loop hardening (reinforcement, closeout, session-state parity)"
+
+intent: >
+  /promote signals (reinforcement_count) and W2 closeout narrative match architecture for
+  session-state.md so cross-IDE handoff and M2 promotion stay reliable.
+
+problem: >
+  reinforcement_count often inert; session-closeout W2 text may omit session-state.md updates
+  documented in architecture — weak mechanical closure.
+
+scope:
+  - .claude/commands/session-closeout.md
+  - Optional script or rubric update in kernel/PROMOTION_RUBRIC.md (if M1 — use /deliver-full)
+  - skills/remember or context-recall cross-links
+
+non_goals:
+  - Auto-promoting M3→M2 without human
+  - Rewriting entire episode schema
+
+acceptance:
+  - Documented rule for when reinforcement_count increments (closeout and/or promote)
+  - W2 checklist explicitly includes session-state.md when used
+  - pytest if any new script; else governance review sign-off in episode
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Prefer documenting incremental semantics first; automate increment in a later patch if needed.
+
+research_notes: >
+  MemRL-style utility on episodic memory suggests outcome-based ranking; Azoth can approximate
+  via reinforcement_count + human promotion without ML training.

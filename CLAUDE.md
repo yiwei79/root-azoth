@@ -86,7 +86,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ### Skill index (drift checks)
 
-`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `orientation`
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `dynamic-full-auto`, `orientation`
 
 ### Coding Standards
 

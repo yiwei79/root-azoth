@@ -1,0 +1,41 @@
+# Roadmap task spec — v0.2.0
+id: P8-002
+roadmap_version: v0.2.0
+title: "Declarative swarm / eval-wave specification (data, not prose-only)"
+
+intent: >
+  Enterprise eval-swarm and swarm-coordination waves are expressible as YAML (or JSON)
+  validated against schema so drift is testable and tooling can evolve without rewriting markdown.
+
+problem: >
+  Waves A–D and fan-out rules live only in .claude/workflows/enterprise/*.md — hard to diff,
+  lint, or compose dynamically.
+
+scope:
+  - New pipelines/*.yaml or pipelines/swarm-eval appendix referenced by e2e doc
+  - pipelines/pipeline.schema.yaml or sibling schema extended minimally
+  - tests asserting required keys mirror eval-swarm.md intent
+
+non_goals:
+  - Executing swarms from Python in CI (orchestrator remains LLM + Task)
+  - Replacing slash-command human instructions entirely
+
+acceptance:
+  - Schema file + at least one example wave table in data form
+  - pytest loads and validates example against schema
+  - .claude/workflows/enterprise/e2e-swarm-eval-loop.md links the canonical data path
+
+dependencies:
+  - P8-001
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Keep schema minimal (stage_id, wave, max_parallel, threshold); allow extra keys only with schema_version bump.
+
+research_notes: >
+  Tool-based handoffs and structured state transitions are preferred over prose routing (LangGraph
+  supervisor pattern, 2025–2026) — Azoth aligns BL-012 typed summaries with declarative wave rows.

@@ -1,0 +1,41 @@
+# Roadmap task spec — v0.2.0
+id: P8-001
+roadmap_version: v0.2.0
+title: "Swarm & pipeline run ledger + resume protocol"
+
+intent: >
+  Multi-wave /eval-swarm and long /auto runs leave durable, machine-readable state under
+  .azoth/ so a new chat session or orchestrator can resume without replaying full prose history.
+
+problem: >
+  "Queen" aggregation lives in chat context only; compaction or IDE restart loses wave
+  scores, branch IDs, and next-action — contradicts long-running autonomous goals.
+
+scope:
+  - New schema doc + example under .azoth/ (e.g. run-ledger.schema.yaml or documented JSON)
+  - Optional scripts/run_ledger_*.py for append/validate
+  - scripts/welcome.py optional one-line "active run" when ledger present
+
+non_goals:
+  - Temporal/LangGraph-class external orchestration engine inside this repo
+  - Cross-machine distributed queue
+
+acceptance:
+  - Documented fields: run_id, pipeline/mode, wave, branch outcomes, updated_at, next_action
+  - Validator or pytest ensures malformed ledger fails loudly
+  - Architecture or orientation pointer explains when to write vs gitignore ledger files
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Start with gitignored local ledger; promote to tracked template only if teams need shared runs.
+
+research_notes: >
+  Durable workflows use thread/run id + checkpoint history; idempotency keys prevent duplicate
+  side effects on replay (LangGraph/Postgres patterns, 2025–2026). Azoth maps this to
+  append-only ledger + explicit resume instructions for the orchestrator.

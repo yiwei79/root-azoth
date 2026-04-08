@@ -29,6 +29,8 @@ Evaluate this list from the **current goal, scope card, pipeline preset, and art
 
 **Ambiguity:** If unsure whether **E1** or **E4** applies, **prefer escalation** — false positives cost extra compute; false negatives leak bias.
 
+**Consumer reference:** `skills/dynamic-full-auto/SKILL.md` (PRE_DELIVERY_EVAL / Wave C) uses this same E1–E6 table for orchestrator decisions before writes; normative text stays here — do not fork trigger definitions into other files.
+
 ## Evaluation Criteria
 
 1. Architecture alignment — decisions respect all decisions in docs/DECISIONS_INDEX.md

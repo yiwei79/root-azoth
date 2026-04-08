@@ -1,0 +1,34 @@
+# Roadmap task spec — v0.2.0
+id: P8-003
+roadmap_version: v0.2.0
+title: "Pipeline composition linter"
+
+intent: >
+  pipelines/*.pipeline.yaml stay structurally valid and reference real stage_ids / archetypes
+  before humans rely on them for /auto composition.
+
+problem: >
+  Declarative YAML and execution in markdown can drift; typos surface only at runtime.
+
+scope:
+  - scripts/pipeline_lint.py (or extend existing validator)
+  - CI or pytest invoking lint on pipelines/
+  - Document in kernel or docs developer preflight
+
+non_goals:
+  - Proving behavioral equivalence of LLM routing vs YAML (semantic lint)
+
+acceptance:
+  - Non-zero exit on malformed pipeline file
+  - pytest covers happy path + one failure fixture
+  - README or orientation mentions optional pre-commit hook (doc only OK)
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Start with structural checks; add optional rules (e.g. every review stage maps to reviewer) behind flags.

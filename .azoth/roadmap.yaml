@@ -7,7 +7,7 @@
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
 current_phase: 8
-current_phase_title: "Next — roadmap TBD"
+current_phase_title: "Next — v0.2.0 (continuity · swarm data plane · memory · UX)"
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
   - id: BL-002
@@ -270,13 +270,72 @@ versions:
   - id: v0.2.0
     status: active
     current_patch: 3
-    goal: "Post–v0.1.0 — next roadmap TBD (phases & backlog to seed)"
-    phase_scope: []
+    goal: >
+      Long-running, low-friction agentic work: durable run state and resume; declarative
+      swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
+      and recall elasticity without toolkit over-fit; calmer UX (narrow terminals, gate
+      visibility, Cursor orientation parity); optional L2/auto-router lane for refinement goals.
+    phase_scope: [8]
     note: >
-      v0.1.0 release complete. Phases and backlog for this slice are undefined until you
-      promote the next planning episode. Existing placeholder: P5-006 (phone-friendly output).
+      Detailed specs per task: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Aggregated online
+      research + repo explore swarm: .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml
+      (DYNAMIC-FULL-AUTO+). Roadmap tasks stay scannable; backlog.yaml holds execution queue.
+      Phase number remains 8 in azoth.yaml until release process advances phase (D48).
     tasks:
       - id: P5-006
         title: "Phone-friendly output (narrow terminals)"
         deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
-        note: "Welcome/dashboard and key CLI width; optional compact mode"
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
+        note: "Deferred UX; compact/width-aware welcome + dashboards"
+      - id: P8-001
+        title: "Swarm & pipeline run ledger + resume protocol"
+        decision_ref: [D21, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-001.yaml"
+        note: "Durable .azoth run state; optional welcome surfacing"
+      - id: P8-002
+        title: "Declarative swarm / eval-wave specification"
+        decision_ref: [D23, D28]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-002.yaml"
+        note: "YAML/schema alongside e2e-swarm-eval-loop.md"
+        blocked_by: [P8-001]
+      - id: P8-003
+        title: "Pipeline composition linter"
+        decision_ref: [D28]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-003.yaml"
+        note: "Structural validation for pipelines/*.pipeline.yaml"
+      - id: P8-004
+        title: "Control-plane surfacing in welcome (gates + optional ledger)"
+        decision_ref: [D52, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-004.yaml"
+        note: "TTL visibility; active run summary when ledger exists"
+        blocked_by: [P8-001]
+      - id: P8-005
+        title: "Long-running session policy (docs + scope playbook)"
+        decision_ref: [D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-005.yaml"
+        note: "DYNAMIC-FULL-AUTO-style runs vs trust gates"
+      - id: P8-006
+        title: "Memory loop hardening (reinforcement, closeout, session-state)"
+        decision_ref: [D11, D49, D51]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-006.yaml"
+        note: "W2 parity; reinforcement_count semantics"
+      - id: P8-007
+        title: "Elasticity: M2/M3 recall governance"
+        decision_ref: [D45]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-007.yaml"
+        note: "Tags, decay, contradictions; consumer boundary"
+      - id: P8-008
+        title: "auto-router L2 / self-improve lane"
+        decision_ref: [D23, D44]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-008.yaml"
+        note: "Stage 0 → composition_rules for refinement goals"
+      - id: P8-009
+        title: "Cursor session-open parity"
+        decision_ref: [D52, D46]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-009.yaml"
+        note: "Documented automation path vs SessionStart"
+      - id: P8-010
+        title: "Eval / eval-swarm wiring drift hardening"
+        decision_ref: [D46]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-010.yaml"
+        note: "tests + mirror surfaces stay aligned"

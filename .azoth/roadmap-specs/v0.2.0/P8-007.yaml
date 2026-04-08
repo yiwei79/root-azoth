@@ -1,0 +1,41 @@
+# Roadmap task spec — v0.2.0
+id: P8-007
+roadmap_version: v0.2.0
+title: "Elasticity: M2/M3 recall governance (tags, decay, contradictions)"
+
+intent: >
+  context-recall and promotion paths resist wrong-lesson retrieval and toolkit over-fit while
+  keeping human approval as the final gate.
+
+problem: >
+  Tag drift and stale M3 episodes can dominate recall; highly specific M2 patterns may not
+  generalize to consumer installs.
+
+scope:
+  - skills/context-recall/SKILL.md
+  - skills/remember/SKILL.md
+  - kernel/PROMOTION_RUBRIC.md pointers (doc-only if not M1-touching)
+  - Optional .azoth/trusted-sources or inbox protocol notes
+
+non_goals:
+  - Automated deletion of M3 without human triage
+  - Vector DB for memory in-repo
+
+acceptance:
+  - Documented tag vocabulary guidance + "when not to add a pattern" section
+  - Explicit contradiction/stale episode handling policy (archive vs supersede tags)
+  - At least one pytest unchanged or new for recall ranking if logic added
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Favor rubric and skill text first; add mechanical grep-lint for forbidden pattern shapes later.
+
+research_notes: >
+  Correlated LLM errors weaken naive majority vote; Azoth uses independent reviewer context
+  + human promote — aligns with anti-consensus auditing literature for eval, not memory voting.

@@ -1,0 +1,33 @@
+# Roadmap task spec — v0.2.0
+id: P8-010
+roadmap_version: v0.2.0
+title: "Eval / eval-swarm wiring drift hardening"
+
+intent: >
+  OpenCode, Copilot, and Cursor mirrors cannot silently lose eval → eval-swarm references;
+  tests encode the wiring contract explicitly.
+
+problem: >
+  test_eval_pipeline_wiring may use loose substring checks; deploy surfaces multiply (D46).
+
+scope:
+  - tests/test_eval_pipeline_wiring.py
+  - scripts/azoth-deploy.py only if generator logic must change
+
+non_goals:
+  - Changing PASS thresholds (0.85 / 0.9) semantics
+
+acceptance:
+  - Tests assert presence of key phrases across .claude/commands/eval.md, eval-swarm.md, e2e doc
+  - Failure message names which mirror is wrong if multi-root check added
+  - pytest green
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Allow opt-in list of deploy targets to avoid brittle full-file equality tests.
