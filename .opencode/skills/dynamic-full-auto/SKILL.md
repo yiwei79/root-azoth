@@ -42,6 +42,35 @@ to merge when the situation warrants (see decision table).
 
 Align `<active_roadmap_version>` with `.azoth/roadmap.yaml` top-level `active_version` (D48).
 
+## Prerequisites
+
+Before running DYNAMIC-FULL-AUTO+ end-to-end:
+
+- **Scope** — A valid `.azoth/scope-gate.json` (and `.azoth/pipeline-gate.json` when delivery is governed or `target_layer: M1`) before **any** `Write/Edit`, including digest updates (`append-pack` outcomes committed to disk). Discovery waves are read-mostly, but mutating the digest file is a write.
+- **Roadmap alignment** — Digest path matches `active_version` in `.azoth/roadmap.yaml` (D48).
+- **Orchestration** — Ability to spawn parallel `Task` / `Agent` workers per wave (BL-011); queen merges in the orchestrator thread.
+- **Human** — Available for **Checkpoint Γ** pipeline declaration and for any review stop; for **delivery** after handoff, same gates as `/auto` / `/deliver` / `/deliver-full`.
+- **Cursor** — Third-party rules/skills toggle enabled where applicable; **no** PreToolUse hooks — simulate scope-gate / pipeline-gate checks before every write (`.cursor/rules/claude-code-parity.mdc`).
+
+## Non-goals (this skill / P1-012 slice)
+
+- **No full P1-001 run ledger** in the same delivery slice as a friction/doc pass (ledger is a separate backlog item).
+- **No `kernel/**` promotion** or consumer-kernel edits without human-approved scope.
+- **No P1-002 declarative wave schema** folded in here without its **own** scope card.
+- **No claim** that Cursor gains mechanical SessionStart or PreToolUse — only documented **behavioral** parity paths.
+
+## Friction map (P1-012)
+
+Canonical problem statement (from `.azoth/roadmap-specs/v0.2.0/P1-012.yaml`): documented DFA+ implies a smooth path from goal through digest to gated delivery, but **scope/pipeline gates**, **IDE asymmetry** (hooks vs simulated parity), **manual queen merge / append-pack / validate**, uneven `Task` fan-out, and **handoff to `/auto` | `/deliver` often needing a fresh scope approval** make the flow feel discontinuous. **P1-001 / P1-002** (durable run state, declarative waves) are deferred and widen the honesty gap until delivered.
+
+| Friction | Blast radius (surfaces) | Decisions |
+| -------- | ------------------------ | --------- |
+| Gates interrupt a single narrative of “one session to shipped” | `.azoth/scope-gate.json`, `.azoth/pipeline-gate.json`, `/auto` Execution, `.cursor/rules/claude-code-parity.mdc` | **D50** scope card; **D21** typed stages / handoffs |
+| Cursor lacks SessionStart / PreToolUse | This skill, `.claude/commands/dynamic-full-auto.md`, `CLAUDE.md`, Cursor rules | **D52** orientation; parity is behavioral in Cursor |
+| Manual digest ops (merge, append-pack, validate) | `scripts/swarm_research_digest.py`, `SWARM_RESEARCH_DIGEST.yaml` | **D48** versioned roadmap paths |
+| Re-classification and delivery composition | `skills/auto-router/SKILL.md`, `pipelines/auto.pipeline.yaml` | **D23** LLM-as-router composition |
+| Second scope between digest work and implementation tail | `/next`, scope TTL, long-running checklist | **D50** + **P1-005** (see architecture doc) |
+
 **Scope TTL and multi-wave runs:** See `docs/AZOTH_ARCHITECTURE.md` **Long-running sessions (P1-005)** for refresh, chunking, and gate policy alongside this skill.
 
 **Mechanical helper:**
@@ -196,12 +225,29 @@ summaries inside governed pipelines.
 | ----------- | ------------------------------------------------ | ---------------------------------------- |
 | Goal        | Digest + reconnaissance                          | Composed delivery + gated writes         |
 | Parallelism | Research + explore swarms first                  | Stage-isolated `Task` per pipeline row   |
-| Human       | Opt-in once; no mid-run gates *by mode contract* | Declaration + review stops as documented |
+| Human       | Opt-in once for **this mode**; **during discovery/digest** there is **no extra** human pipeline-declaration step *until* Checkpoint Γ — **not** “no gates for the whole session.” After Γ, same declaration + review semantics as `/auto` for the **delivery** pipeline. | Declaration + review stops as documented for the composed delivery table |
 | Outputs     | `SWARM_RESEARCH_DIGEST.yaml`                     | Merged code/config under scope           |
 
 
-Any **Write/Edit** still requires valid `**.azoth/scope-gate.json`** (and **pipeline-gate** when
-governed) per `claude-code-parity.mdc` in Cursor.
+**Writes vs “mid-run”:** Any **Write/Edit** (including mutating the digest on disk) still requires valid **`.azoth/scope-gate.json`** (and **`.azoth/pipeline-gate.json`** when governed, with **`pipeline`** set to the delivery command you will actually run: `"auto"` \| `"deliver"` \| `"deliver-full"` — **do not** assume `auto` if the handoff is `/deliver` or `/deliver-full` per `.claude/commands/dynamic-full-auto.md` **Gates**). *Mode contract* means the **discovery/digest phases** do not add a **second** `/auto`-style pipeline table **before** Γ; it does **not** exempt tool writes from D50.
+
+## Happy path — Claude Code
+
+1. Human opts in (e.g. `/dynamic-full-auto` with a goal); orchestrator `Read`s this skill.
+2. **Waves A/B** — One message per wave; parallel `Task(researcher)` / `Task(explore)` with BL-011 payloads; queen merges; `append-pack` / validate as needed.
+3. **Checkpoint Γ** — Fresh Stage 0 `classification` + `skills/auto-router/SKILL.md`; present composed delivery table for human approval (same idea as `/auto` Declaration).
+4. **Optional PRE_DELIVERY_EVAL** — If **E1–E6** in `.claude/commands/eval.md` fire, run `/eval-swarm` (0.90) per skill § In-between pipeline routing.
+5. **Delivery** — Run `/auto`, `/deliver`, or `/deliver-full`; PreToolUse can **mechanically** enforce scope-gate / pipeline-gate before writes when configured.
+6. **SessionStart / welcome** — May run via hooks (D52); see `CLAUDE.md` for plain vs Rich orientation.
+
+## Happy path — Cursor
+
+1. Same command/skill text may load via adapters; **PreToolUse and SessionStart do not run** — the orchestrator **simulates** the same checks as `claude-code-parity.mdc` before **every** Write/Edit.
+2. **Orientation** — Plain snapshot: `Read` `.azoth/session-orientation.txt` or `python3 scripts/welcome.py --plain`; **Rich** dashboard: run `python3 scripts/welcome.py` in the **integrated terminal** (ANSI), not assumed in agent chat output.
+3. **Waves A/B** — Same BL-011 `Task` pattern when **`Task`** is available; if unavailable, **sequential** stages with explicit warning — **not** equivalent isolation (state this in the session log).
+4. **Digest writes** — `append-pack` / file edits to the digest are **writes**; scope-gate must **approve** that work (often the same card as discovery; if TTL expires, **`/next`** before continuing).
+5. **Checkpoint Γ + delivery** — Same logical flow as Claude Code; **`pipeline-gate.json`** must set `"pipeline"` to match the **next** delivery command (`"auto"` \| `"deliver"` \| `"deliver-full"`).
+6. **`/next`** — Use before gated implementation if scope is missing or expired; do not invent parallel workflows — see `.claude/commands/next.md`.
 
 ## Integration
 

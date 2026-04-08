@@ -954,10 +954,11 @@ items:
     roadmap_ref: P1-012
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
     target_version: v0.2.0
     priority: 0
     created_date: "2026-04-09"
+    completed_date: "2026-04-09"
     decision_ref: [D21, D23, D50]
     blocked_by: []
     priority_note: >

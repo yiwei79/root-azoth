@@ -28,7 +28,15 @@ When the composed delivery pipeline includes an evaluator (or you run a pre-deli
 
 ## Cursor / other IDEs
 
-This command is defined for **Claude Code** (`.claude/commands/`). Other tools consume the same sources via their compatibility layers; behavior is specified by **`skills/dynamic-full-auto/SKILL.md`**, not duplicated here.
+This command is defined for **Claude Code** (`.claude/commands/`). Other tools mirror it via deploy (`python3 scripts/azoth-deploy.py`, D46).
+
+**Normative behavior** lives in **`skills/dynamic-full-auto/SKILL.md`** — in particular:
+
+- **Happy path (Cursor)** — Simulated scope-gate / pipeline-gate before writes (no PreToolUse); **`Task`** per delivery stage when the tool exists; Rich welcome via integrated terminal; digest mutations are writes and require an approved scope.
+- **Happy path (Claude Code)** — Same flow; hooks may enforce gates mechanically where configured.
+- **Gates** — When writing **`.azoth/pipeline-gate.json`**, set **`"pipeline"`** to the delivery command you will actually run next: **`"auto"`**, **`"deliver"`**, or **`"deliver-full"`** — do not default to `auto` when handing off to `/deliver` or `/deliver-full`.
+
+**Parity references:** `.cursor/rules/claude-code-parity.mdc`, `CLAUDE.md` (Cursor SessionStart gap, welcome paths).
 
 ## Arguments
 

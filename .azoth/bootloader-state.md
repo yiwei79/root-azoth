@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (session-closeout ep-101 — P1-010 mirror tests + P1-012 DFA friction + branch)
+Last updated: 2026-04-09 (session-closeout ep-102 — P1-012 Slice A DFA docs + welcome START + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.5** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.6** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-102) — session-closeout
+
+- **Delivered / refined:** **P1-012 Slice A** — `skills/dynamic-full-auto/SKILL.md` friction map (D21/D23/D50), prerequisites, non-goals, Claude/Cursor happy paths, `/auto` comparison table vs write gates + `pipeline-gate` `pipeline` field; `.claude/commands/dynamic-full-auto.md` Cursor subsection; `docs/AZOTH_ARCHITECTURE.md` long-running cross-link to skill/P1-012. **`/auto`** staged delivery (architect→reviewer→planner→eval-swarm→builder). **Welcome /start** — `scripts/welcome.py` + `.claude/commands/start.md` add `roadmap`, `plan`, `remember`, `closeout` routes; **`azoth-deploy`** mirrors. **W1** **ep-102**; **W2** scope **`closed_at`**, **`session-state.md`**, bootloader (post-W4); **W3** Claude project memory (attempt); **W4** **`0.1.5 → 0.1.6`**, roadmap **`current_patch` `6 → 7`**; **`azoth.yaml`** **`episodes: 102`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.6`**.
+- **Closeout:** full **pytest** **928** passed (**5** skip, **2** xfail) before commit slice.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (root, excluding **`processed/`**); **`/next`** → **P1-001**; optional **P1-012 Slice B** mechanical; **`git push`** when ready.
 
 ## Session outcome (ep-101) — session-closeout
 
@@ -166,4 +172,4 @@ Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `
 
 ## Next action
 
-**v0.2.0 / ep-101** — **`/intake`** **4** JSONL (inbox root); **`/next`** → **P1-012** (priority **0**); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.
+**v0.2.0 / ep-102** — **`/intake`** **4** JSONL (inbox root); **P1-012** backlog **`complete`** (Slice A); **`/next`** → **P1-001**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.

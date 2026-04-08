@@ -1101,6 +1101,8 @@ is rejected. M1 changes require a dedicated session.
 
 Multi-hour or multi-wave work (including DYNAMIC-FULL-AUTO+ discovery and `/eval-swarm`) must stay
 compatible with **short-lived scope and pipeline gates** (D50) and the Trust Contract entropy ceiling.
+Operator-visible friction (discovery narrative vs gates, Claude Code vs Cursor, digest handoffs) is
+documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
 
 **Checklist**
 

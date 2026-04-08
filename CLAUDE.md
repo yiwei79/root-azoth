@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.4
+**Version**: v0.1.6
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
@@ -112,7 +112,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 1 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0` with milestone-local task ids **P1-001…P1-012** (see **`skills/orientation/SKILL.md`** for **P1-012** urgent DFA friction). Expanded workflow lives in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
+**Current phase:** Phase 1 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0` with milestone-local task ids **P1-001…P1-012** (**P1-012** Slice A delivered; **P1-001** leads the queue — see **`skills/orientation/SKILL.md`**). Expanded workflow lives in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
 
 ## Origin
 

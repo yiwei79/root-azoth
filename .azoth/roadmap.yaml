@@ -270,7 +270,7 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 6
+    current_patch: 7
     goal: >
       Long-running, low-friction agentic work: durable run state and resume; declarative
       swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop

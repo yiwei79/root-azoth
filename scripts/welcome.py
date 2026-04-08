@@ -414,6 +414,10 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
     lines.append("  eval     → /eval — quality gate")
+    lines.append("  roadmap  → /roadmap — versioned roadmap dashboard (D48)")
+    lines.append("  plan     → /plan — structured autonomy / planning")
+    lines.append("  remember → /remember — quick M3 capture (no full closeout)")
+    lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
     lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
     lines.append("")
     lines.append(sep)
@@ -590,6 +594,10 @@ def render_dashboard() -> None:
         "[bold cyan]intake[/bold cyan]   :right_arrow: /intake — process queued insights from inbox",
         "[bold cyan]promote[/bold cyan]  :right_arrow: /promote — review M2:right_arrow:M1 promotion candidates",
         "[bold cyan]eval[/bold cyan]     :right_arrow: /eval — run quality gate on current work",
+        "[bold cyan]roadmap[/bold cyan]  :right_arrow: /roadmap — versioned roadmap dashboard (D48)",
+        "[bold cyan]plan[/bold cyan]     :right_arrow: /plan — structured autonomy / planning",
+        "[bold cyan]remember[/bold cyan] :right_arrow: /remember — quick M3 capture (not full closeout)",
+        "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff",
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
