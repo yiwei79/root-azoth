@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "closed_at": "2026-04-08T16:16:11Z",
-  "expires_at": "2026-04-08T18:06:22+00:00",
-  "goal": "P6-003-OPT: /next proposal footer, AZOTH command row, ruff, regression tests",
-  "session_id": "2026-04-08-p6-003-opt",
+  "closed_at": "2026-04-08T16:33:54Z",
+  "goal": "BL-017: Kernel integrity validation script (GOV-B2)",
+  "session_id": "2026-04-08-bl-017",
   "approved_by": "human",
-  "backlog_id": "P6-003-OPT",
+  "backlog_id": "BL-017",
   "delivery_pipeline": "standard",
-  "target_layer": "infrastructure"
+  "target_layer": "infrastructure",
+  "note": "Scope closed after delivery (kernel-integrity.py, §4 manifest, CI, tests)."
 }

@@ -427,9 +427,6 @@ class TestGovernanceBlockers:
             encoding="utf-8"
         )
 
-    @pytest.mark.xfail(
-        reason="B2: scripts/kernel-integrity.py not yet created — tracked as BL-017 in .azoth/backlog.yaml",
-    )
     def test_b2_kernel_integrity_script(self) -> None:
         """B2: A kernel integrity validation script should exist in Phase 1."""
         path = AZOTH_ROOT / "scripts" / "kernel-integrity.py"

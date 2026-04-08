@@ -723,8 +723,9 @@ items:
     source_insight: test_handoff_artifacts.TestGovernanceBlockers.test_b2_kernel_integrity_script
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: pending
+    status: complete
     target_version: v0.0.6
+    completed_date: "2026-04-08"
     priority: 4
     created_date: "2026-04-08"
     decision_ref: [D2]

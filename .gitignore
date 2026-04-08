@@ -5,7 +5,8 @@
 .azoth/sync-log.jsonl
 .azoth/memory/l2-refinement-evidence.jsonl
 .azoth/bootloader-state.md
-.azoth/kernel-checksums.sha256
+# Golden §4 manifest is tracked in this repo for CI / verify-checksums (GOV-B2).
+# Consumer installs may regenerate locally; see install.sh.
 .azoth/proposals/
 
 # Python

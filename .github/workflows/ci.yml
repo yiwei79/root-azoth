@@ -1,0 +1,43 @@
+# Azoth root scaffold — tests + kernel integrity (D2 / §4).
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev tools
+        run: pip install pytest ruff
+
+      - name: Ruff (tracked proposal + integrity stack)
+        run: |
+          ruff check \
+            scripts/architecture_proposal_validate.py \
+            scripts/kernel-integrity.py \
+            tests/test_architecture_proposal_schema.py \
+            tests/test_kernel_integrity.py \
+            tests/test_next_arch_proposal_footer.py
+          ruff format --check \
+            scripts/architecture_proposal_validate.py \
+            scripts/kernel-integrity.py \
+            tests/test_architecture_proposal_schema.py \
+            tests/test_kernel_integrity.py \
+            tests/test_next_arch_proposal_footer.py
+
+      - name: Kernel integrity (D2 + optional §4)
+        run: |
+          python3 scripts/kernel-integrity.py
+          python3 scripts/kernel-integrity.py --verify-checksums
+
+      - name: Pytest
+        run: python3 -m pytest -q
