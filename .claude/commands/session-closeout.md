@@ -81,6 +81,18 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
 - Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
 
+**W2 field checklist (BL-024)** — Before writing `bootloader-state.md`, align the **Current Phase** /
+toolkit summary with canonical sources (read from disk, not from memory):
+
+| Source | Fields to mirror |
+|--------|------------------|
+| `azoth.yaml` | `version` (delivery time-series), `phase` (1–7) |
+| `.azoth/roadmap.yaml` | Top-level `active_version`; in that version’s block, `current_patch` when `status: active`; `current_phase` / `current_phase_title` should stay consistent with `azoth.yaml` `phase` (see `tests/test_handoff_artifacts.py::test_phase_consistent`) |
+
+**W2 vs W4 ordering:** `python scripts/version-bump.py --patch` (W4) updates `azoth.yaml` `version` and the active block’s `current_patch` in `roadmap.yaml`. If you draft `bootloader-state.md` **before** W4, the header can show a **pre-bump** patch — **refresh the bootloader narrative after W4** (or perform W2 only after W4 for the version line).
+
+**W2b (after W4, recommended)** — Re-read `azoth.yaml` and `.azoth/roadmap.yaml` and fix any **Current Phase** one-liner in `bootloader-state.md` if it still reflects the old patch.
+
 **W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
 
 - **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). Copilot/OpenCode do not read `~/.claude/`; parity for them is **committed W1/W2** (and `azoth.yaml`).

@@ -13,6 +13,7 @@ RUFF_TARGETS = [
     "scripts/architecture_proposal_validate.py",
     "scripts/kernel-integrity.py",
     "tests/test_architecture_proposal_schema.py",
+    "tests/test_eval_pipeline_wiring.py",
     "tests/test_kernel_integrity.py",
     "tests/test_next_arch_proposal_footer.py",
 ]

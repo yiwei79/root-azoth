@@ -127,12 +127,12 @@ info "Deploying kernel..."
 
 mkdir -p ".azoth/memory" ".azoth/telemetry"
 
-# Copy kernel governance docs (read-only reference)
+# Copy kernel governance docs (read-only reference; lexicographic order matches GOVERNANCE §4)
 mkdir -p ".azoth/kernel"
 cp "$SCRIPT_DIR/kernel/BOOTLOADER.md" ".azoth/kernel/"
-cp "$SCRIPT_DIR/kernel/TRUST_CONTRACT.md" ".azoth/kernel/"
 cp "$SCRIPT_DIR/kernel/GOVERNANCE.md" ".azoth/kernel/"
 cp "$SCRIPT_DIR/kernel/PROMOTION_RUBRIC.md" ".azoth/kernel/"
+cp "$SCRIPT_DIR/kernel/TRUST_CONTRACT.md" ".azoth/kernel/"
 
 ok "Kernel deployed to .azoth/kernel/"
 
@@ -241,12 +241,23 @@ sed -e "s|operate|1|g" \
 
 ok "Memory system initialized"
 
-# ── Step 7: Generate kernel checksums ──────────────────────────
+# ── Step 7: Generate kernel checksums (GOVERNANCE §4 — four files, lex order; D42 mirror) ─
+# Authoritative toolkit paths are kernel/*.md; consumer read-only mirror is .azoth/kernel/ (four §4 files)
 info "Generating kernel checksums..."
 if command -v sha256sum &>/dev/null; then
-    sha256sum .azoth/kernel/*.md > .azoth/kernel-checksums.sha256
+    sha256sum \
+        .azoth/kernel/BOOTLOADER.md \
+        .azoth/kernel/GOVERNANCE.md \
+        .azoth/kernel/PROMOTION_RUBRIC.md \
+        .azoth/kernel/TRUST_CONTRACT.md \
+        > .azoth/kernel-checksums.sha256
 elif command -v shasum &>/dev/null; then
-    shasum -a 256 .azoth/kernel/*.md > .azoth/kernel-checksums.sha256
+    shasum -a 256 \
+        .azoth/kernel/BOOTLOADER.md \
+        .azoth/kernel/GOVERNANCE.md \
+        .azoth/kernel/PROMOTION_RUBRIC.md \
+        .azoth/kernel/TRUST_CONTRACT.md \
+        > .azoth/kernel-checksums.sha256
 fi
 ok "Kernel integrity baseline established"
 

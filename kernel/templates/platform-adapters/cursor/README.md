@@ -61,7 +61,7 @@ To hand off a session from Claude Code to Cursor (or vice versa):
 | Slash commands, skills | ✓ | ✓ via toggle |
 | `CLAUDE.md` + repo layout parity | ✓ | ✓ with toggle + `.cursor/rules` |
 | PreToolUse hooks (scope / pipeline gate) | ✓ mechanical | ✗ — **simulate** via `claude-code-parity.mdc` |
-| `/deliver`, `/plan`, `/eval` | ✓ | ✓ follow command docs; use **`Task`** per stage when the command assigns subagents |
+| `/deliver`, `/plan`, `/eval`, `/eval-swarm` | ✓ | ✓ follow command docs; use **`Task`** per stage when the command assigns subagents (`/eval-swarm` = stricter 0.90 swarm gate) |
 | `/deliver-full` / `/auto` (subagent isolation) | ✓ `Agent(subagent_type=...)` | ✓ **`Task(subagent_type=...)`** per `subagent-router` — same D21 contract when parity rule is followed |
 | Governed pipelines with stage isolation | ✓ hooks + commands | ✓ hooks simulated + **`Task`** for workers — risky only if orchestrator inlines stages |
 | `/session-closeout` **W3** (Claude Code `~/.claude/.../memory/`) | ✓ native | ✓ attempt or log `W3 deferred` (see `claude-code-parity.mdc`) — **not** a substitute for repo W1/W2 |

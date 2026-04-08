@@ -174,11 +174,12 @@ Task({ task_id: 'task-5', description: 'Performance reviewing API', prompt: '...
 
 ## Related Workflow
 
-This skill has a corresponding workflow for complex multi-agent scenarios:
+This skill has corresponding workflows under `.claude/workflows/enterprise/`:
 
-- **Workflow**: `.claude/workflows/enterprise/swarm-coordination-skill-workflow.md`
-- **When to use workflow**: For massively parallel task execution with Queen/Worker topology, fault tolerance, and distributed coordination (large-scale refactoring, parallel code review, multi-file implementation)
-- **When to use skill directly**: For simple parallel agent spawning or when integrating swarm patterns into other workflows
+- **Index**: `.claude/workflows/enterprise/swarm-coordination-skill-workflow.md`
+- **E2E eval iteration (threshold 0.9, isolated evaluators)**: `.claude/workflows/enterprise/e2e-swarm-eval-loop.md` — multi-wave swarm, **iterate** until every branch passes **overall ≥ 0.9**; **fresh `Task(evaluator)` per wave** with **minimal spawn payload** (artifacts + criteria only) to avoid author–evaluator bias. Invoked via slash command **`/eval-swarm`** (not **`/eval`**).
+- **When to use E2E workflow**: Quality-critical multi-branch delivery, or when baseline **`/eval` (0.85)** is too loose for the swarm gate.
+- **When to use skill only**: Simple parallel spawn without iteration loop.
 
 ## Workflow Integration
 
@@ -202,6 +203,26 @@ This skill powers multi-agent orchestration patterns across the framework:
 
 ---
 
+## Advanced parallelism (orchestrator contract)
+
+Use this when fanning out work that must stay fast and auditable:
+
+1. **Single-message dispatch** — Put every independent `Task` (or `Agent`) for the same wave in **one** orchestrator turn. Spawning workers one turn after another **serializes** execution and is not a swarm.
+2. **Queen aggregation** — Workers do not read each other’s scratch space. The orchestrator collects structured handoffs, resolves conflicts, and forwards only what the next stage needs (same idea as BL-011 / `prior_stage_summaries` in governed pipelines).
+3. **Wave layering** — If you need more than **7** parallel workers, split into **waves**: wave A fan-out → aggregate → wave B fan-out. Do not raise a single fan-out without bound.
+4. **Pipeline vs swarm** — `/auto` and `/deliver-full` stages are **often sequential** (architect → planner → builder → reviewer) because outputs depend on prior typed summaries. **Swarm** applies to **sibling** tasks with **no** upstream dependency (e.g. three independent backlog blueprints, three independent file reviews). Never parallelize a stage that must consume the previous stage’s YAML verbatim without passing that payload.
+
+### End-to-end eval loop (strict — 0.9)
+
+Use **`e2e-swarm-eval-loop.md`** when the orchestrator must **loop** Wave C (parallel evals) → Wave D (fixes) until thresholds clear:
+
+| Rule | Why |
+|------|-----|
+| **Threshold 0.9** | Use **`/eval-swarm`**, not **`/eval`**; document disposition explicitly. |
+| **New evaluator `Task` each wave** | Prevents “sticky” PASS from prior turn; aligns with **review-independence**. |
+| **Spawn body = paths + criteria** | Do not inject builder narrative into eval prompts. |
+| **Max 3 rounds** | Avoid infinite micro-tweak loops; queen escalates to human. |
+
 ## Iron Laws
 
 1. **NEVER** spawn workers sequentially — all independent agents must be dispatched in a single message
@@ -224,7 +245,9 @@ This skill powers multi-agent orchestration patterns across the framework:
 
 ## Memory Protocol (MANDATORY)
 
-**Before starting:**
+**Azoth workshop (this repo):** durable capture is **`.azoth/memory/episodes.jsonl`** (M3) and, when promoted, **`.azoth/memory/patterns.yaml`** (M2). Reference swarm lessons there so Cursor/Claude Code parity stays in-repo.
+
+**Optional Claude Code project path (consumer installs):**
 
 ```bash
 cat .claude/context/memory/learnings.md
@@ -232,9 +255,9 @@ cat .claude/context/memory/learnings.md
 
 **After completing:**
 
-- New pattern -> `.claude/context/memory/learnings.md`
-- Issue found -> `.claude/context/memory/issues.md`
-- Decision made -> `.claude/context/memory/decisions.md`
+- New pattern → `.azoth/memory/episodes.jsonl` (and optional `.claude/context/memory/learnings.md` if using that layout)
+- Issue found → `.azoth/inbox/` or episodes; optional `issues.md` in project memory
+- Decision made → episodes + `docs/DECISIONS_INDEX.md` when architectural
 
 > ASSUME INTERRUPTION: Your context may reset. If it's not in memory, it didn't happen.
 

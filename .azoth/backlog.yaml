@@ -859,7 +859,8 @@ items:
     roadmap_ref: intake-ep-087
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
+    completed_date: "2026-04-08"
     target_version: v0.0.6
     priority: 7
     created_date: "2026-04-08"
@@ -876,7 +877,8 @@ items:
     roadmap_ref: intake-ep-087
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
+    completed_date: "2026-04-08"
     target_version: v0.0.6
     priority: 8
     created_date: "2026-04-08"
@@ -894,7 +896,8 @@ items:
     roadmap_ref: intake-ep-087
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
+    completed_date: "2026-04-08"
     target_version: v0.0.6
     priority: 9
     created_date: "2026-04-08"

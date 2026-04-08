@@ -1,11 +1,23 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (`/session-closeout` ep-088)
+Last updated: 2026-04-08 (`/session-closeout` ep-092)
 
 ## Current Phase
 
 Phase 6 — Meta-Recursive  
-**Toolkit version:** **0.0.6.8** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **8** (`.azoth/roadmap.yaml`, D53)
+**Toolkit version:** **0.0.6.9** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **9** (`.azoth/roadmap.yaml`, D53)
+
+## Session outcome (ep-092) — session-closeout
+
+- **Delivered / refined:** **`/eval-swarm`** command; **`/eval`** intelligent routing **E1–E6**; **`/auto`** Execution §6 + **`/deliver`** / **`/deliver-full`** eval–swarm wiring; **`tests/test_eval_pipeline_wiring.py`**; **`/intake`** — inbox empty (nothing to triage). **`python3 scripts/azoth-deploy.py`** after command edits.
+- **Closeout:** W1 **ep-092**; W2 bootloader + scope gate closed; W3 Claude memory (deferred in Cursor — mirror manually if needed); W4 patch **0.0.6.8 → 0.0.6.9**; **M3** **episodes: 92**.
+- **Next:** **`git push`** **`origin main`**; **`/next`** when backlog seeded; **`/promote`** for M2 candidates if any.
+
+## Session outcome (ep-090) — BL-024–BL-026
+
+- **Delivered:** **BL-024** — `/session-closeout` W2 field checklist + W2b (post-W4 refresh) in `.claude/commands/session-closeout.md`; **`azoth-deploy`** mirrors (Copilot/OpenCode prompts). **BL-025** — `tests/test_governance_never_auto_parity.py` (GOVERNANCE §5 Never-Auto vs `UNIVERSAL_NEVER_AUTO`). **BL-026** — `install.sh` Step 7 explicit four-file §4 order; `tests/test_install_sh_kernel_checksums.py`.
+- **Swarm:** parallel architect wave (prior session) + parallel **reviewer** verification wave on acceptance criteria.
+- **Next:** **`/next`** for next backlog row; **`/intake`** if inbox queued.
 
 ## Session outcome (ep-088) — session-closeout
 
