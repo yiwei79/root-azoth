@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (session-closeout ep-097 — OPS-HEALTH-PARITY + /auto swarm)
+Last updated: 2026-04-08 (session-closeout ep-098 — v0.2.0 P8-011 + commands + digest)
 
 ## Current Phase
 
-Phase 8 — Next — roadmap TBD  
-**Toolkit version:** **0.1.2** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **3** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches. Seed **v0.2.0** backlog when ready.
+Phase 8 — v0.2.0 active  
+**Toolkit version:** **0.1.3** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53). **Git:** annotated tag **`v0.1.0`** on `284eb59`; HEAD carries post-release patches.
+
+## Session outcome (ep-098) — session-closeout
+
+- **Delivered / refined:** **P8-011** token & inference efficiency — `P8-011.yaml`, backlog + roadmap task, **RP-E** + **inference_efficiency** theme in **`SWARM_RESEARCH_DIGEST.yaml`**; architecture **Long-running (P8-005)** + **Context & token budget (P8-011)**; **`/context-architect`** + **`/dynamic-full-auto`** commands; **`eval.md` E2**; **session-closeout** W2 **`.azoth/session-state.md`** bullet; **`swarm_research_digest.py`** optional **mapping_notes** / **contributing_packs** + **append-pack** IO tests; **v0.2.0** spec **decision_ref** tightening + **`test_v020_roadmap_spec_decision_ref_parity`**; anchor tests **P8-005** / **P8-011** / **closeout**; **orientation** queue **P8-001…P8-011**. **W1** **ep-098**; **W2** bootloader + scope **`closed_at`** refresh; **W3** Claude memory (attempt); **W4** **`0.1.2 → 0.1.3`**, roadmap **`current_patch` `3 → 4`**; **`azoth.yaml`** **`episodes: 98`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.3`**.
+- **Closeout:** Split git commits (digest tooling, `.azoth` slice, docs, skills, commands, deploy mirrors, closeout metadata).
+- **Next:** **`/intake`** for queued **`.azoth/inbox/*.jsonl`**; continue **P8-001** execution or **`/next`** new scope; **`git push`** when ready.
 
 ## Session outcome (ep-097) — session-closeout
 
