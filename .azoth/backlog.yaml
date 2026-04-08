@@ -1099,5 +1099,22 @@ items:
     description: >
       tests/test_eval_pipeline_wiring.py + mirrors; P8-010.yaml; digest RP-C.
 
+  - id: P8-011
+    title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
+    source: researcher-context-architect-2026-04-08
+    roadmap_ref: P8-011
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.2.0
+    priority: 11
+    created_date: "2026-04-08"
+    decision_ref: [D21, D23, D44, D46]
+    blocked_by: []
+    description: >
+      Ad-hoc roadmap slice from research (provider prompt caching, ACON/context folding, JetBrains
+      observation-heavy traces, speculative tool execution tradeoffs) + context-architect blast map.
+      Spec: P8-011.yaml; digest RP-E; builds on completed BL-011/BL-012. Doc-first acceptance + anchor test.
+
 # Completed items
 completed: []

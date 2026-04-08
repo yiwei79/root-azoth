@@ -2,6 +2,7 @@
 id: P8-008
 roadmap_version: v0.2.0
 title: "auto-router L2 / self-improve lane (Stage 0 → composition)"
+decision_ref: [D23, D44]
 
 intent: >
   Instruction and skill refinement goals route through auto.pipeline.yaml + auto-router
@@ -23,7 +24,7 @@ non_goals:
 acceptance:
   - New classification dimension or trigger (e.g. knowledge: instruction-refinement) documented
   - Matching composition_rules row with stage list
-  - pytest or skill drift test if present for auto-router references
+  - pytest tests/test_auto_router.py passes after changes
 
 dependencies: []
 

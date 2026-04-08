@@ -1,27 +1,38 @@
 # DYNAMIC-FULL-AUTO+ — online research swarm aggregate (queen merge)
 # Skill: skills/dynamic-full-auto/SKILL.md · Tool: scripts/swarm_research_digest.py validate
 # Append packs: swarm_research_digest.py append-pack THIS_FILE --pack <pack.yaml>
-# Generated: orchestrator session; packs RP-A..RP-D from parallel researcher Tasks.
+# Generated: orchestrator session; packs RP-A..RP-E from researcher + roadmap updates.
 schema_version: 1
 roadmap_version: v0.2.0
 
 consensus_themes:
   - id: durability
+    contributing_packs: [RP-A]
     summary: >
       Durable execution separates persisted checkpoints/event history from replay semantics;
       side effects need idempotency keys and explicit activity boundaries (Temporal, LangGraph, Dapr).
+      Maps to Azoth D21 (subagent/Task isolation) and D50 (scope-gate as session checkpoint).
   - id: declarative_orchestration
+    contributing_packs: [RP-A, RP-B]
     summary: >
       Tool-based handoffs + declarative YAML workflows (vendor agent frameworks) complement
-      prose commands; canonical data reduces drift if linked from markdown.
+      prose commands; canonical data reduces drift if linked from markdown (D23, D28 — P8-002).
   - id: multi_eval_independence
+    contributing_packs: [RP-C]
     summary: >
       Correlated LLM errors weaken naive majority vote; prefer diverse judges, structured
-      disagreement, audit-style aggregation over raw consensus.
+      disagreement, audit-style aggregation over raw consensus (aligns with BL-012 handoffs, D46 mirrors).
   - id: memory_elasticity
+    contributing_packs: [RP-D]
     summary: >
       Relevance filter + utility/decay/access signals beat pure semantic retrieval; Azoth’s
-      recency + reinforcement_count aligns partially; outcome-linked utility needs governance.
+      recency + reinforcement_count aligns partially; outcome-linked utility needs HITL (D11, D45 — P8-007).
+  - id: inference_efficiency
+    contributing_packs: [RP-E]
+    summary: >
+      Provider prompt caching rewards static prefixes + minimal volatile suffix; BL-012 stage
+      boundaries are compaction points; parallel eval and speculative tools trade cost, latency,
+      and safety (D21, D23, D44, D46 — P8-011).
 
 research_packs:
   - id: RP-A
@@ -71,6 +82,7 @@ research_packs:
       - "Keep rationales and disagreement in stage summaries vs collapsing to one vote."
       - "Governed pipelines: audit trail of rubric versions and outputs (AEMA-style)."
     risks:
+      - "Preprints and arXiv-only sources — verify methods, samples, and replication before kernel-hard rules."
       - "False confidence from correlated unanimous wrong answers."
       - "Token/latency cost of audit and debate patterns."
 
@@ -90,11 +102,51 @@ research_packs:
       - "Utility overfits narrow tasks; reward hacking on proxies."
       - "Preprints — verify claims before kernel-hard rules."
 
-explore_swarm_summary:
-  wave: B
-  findings:
-    - "backlog.yaml had no P8-* rows; welcome lacks TTL/EXPIRED and run-ledger surfacing."
-    - "e2e-swarm-eval-loop.md + 8 pipeline YAMLs + test_eval_pipeline_wiring anchor P8-002/003/010."
-    - "session-closeout W2 omits session-state.md explicit checklist (P8-006)."
+  - id: RP-E
+    topic: "Token, latency, and context efficiency for agentic stacks"
+    sources:
+      - { title: "OpenAI prompt caching", url: "https://platform.openai.com/docs/guides/prompt-caching" }
+      - { title: "Anthropic prompt caching", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" }
+      - { title: "Anthropic tool use with prompt caching", url: "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/tool-use-with-prompt-caching" }
+      - { title: "Gemini context caching", url: "https://ai.google.dev/gemini-api/docs/caching" }
+      - { title: "ACON context compression (arXiv)", url: "https://arxiv.org/abs/2510.00615" }
+      - { title: "Context Folding (OpenReview)", url: "https://openreview.net/forum?id=JaLXQnA2wi" }
+      - { title: "JetBrains efficient context for coding agents", url: "https://blog.jetbrains.com/research/2025/12/efficient-context-management/" }
+      - { title: "PASTE speculative tool execution (arXiv)", url: "https://arxiv.org/abs/2603.18897" }
+      - { title: "OpenAI Batch API", url: "https://platform.openai.com/docs/guides/batch" }
+    implications_for_azoth:
+      - "BL-012 summaries as canonical compaction; keep orchestrator prompts thin at stage boundaries."
+      - "subagent-router BL-011 minimal spawns align with static-prefix caching."
+      - "azoth-deploy deterministic mirrors help repeated identical long prefixes across platforms."
+      - "Document interactive /eval-swarm vs batch offline eval for cost/latency tradeoffs."
+      - "Speculative parallel tools need idempotency review before any automation — not default."
+    risks:
+      - "Over-compression drops decision-critical detail; validate with failure replay."
+      - "Tool/thinking toggles invalidate caches — feature flags can silently destroy savings."
+      - "Cached KV retention and ZDR — policy-specific data posture."
+      - "Preprints (ACON, PASTE, folding) — verify before kernel-hard rules."
 
-mapped_roadmap_tasks: [P8-001, P8-002, P8-003, P8-004, P8-005, P8-006, P8-007, P8-008, P8-009, P8-010, P5-006]
+explore_swarm_summary:
+  wave: "B + synthesis"
+  findings:
+    - "backlog.yaml lacked P8-* rows before pre-fill; welcome lacked TTL/EXPIRED and run-ledger surfacing (P8-004)."
+    - ".claude/workflows/enterprise/e2e-swarm-eval-loop.md plus pipelines/*.pipeline.yaml and test_eval_pipeline_wiring anchor P8-002/003/010."
+    - "session-closeout W2 checklist should name session-state.md explicitly (P8-006)."
+    - "Second pass: mapped task list ordered ledger-first (P8-001) then declarative waves (P8-002), linter (P8-003), welcome TTL (P8-004)."
+    - "Researcher + context-architect pass: add P8-011 roadmap/backlog/spec + RP-E (caching, ACON/folding, JetBrains observation cost, PASTE, Batch API)."
+
+mapped_roadmap_tasks: [P8-001, P8-002, P8-003, P8-004, P8-005, P8-006, P8-007, P8-008, P8-009, P8-010, P8-011, P5-006]
+
+mapping_notes:
+  P8-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
+  P8-002: "RP-B declarative workflows — YAML wave rows beside e2e-swarm-eval-loop.md prose."
+  P8-003: "Structural safety for pipelines/*.pipeline.yaml — typos caught before /auto runtime."
+  P8-004: "Explore: TTL visibility; depends on stable ledger shape from P8-001."
+  P8-005: "D50 long runs vs short TTL — playbook in architecture + dynamic-full-auto skill cross-link."
+  P8-006: "Explore finding: W2 vs session-state.md; reinforcement semantics (D11, D49, D51)."
+  P8-007: "RP-D memory elasticity — M2/M3 recall governance without auto-delete."
+  P8-008: "D23/D44 — Stage 0 lane for instruction refinement via auto-router."
+  P8-009: "D52/D46 — Cursor SessionStart parity documentation path."
+  P8-010: "D46 — eval/eval-swarm wiring tests across deploy mirrors."
+  P8-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
+  P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."

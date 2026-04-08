@@ -2,6 +2,7 @@
 id: P8-002
 roadmap_version: v0.2.0
 title: "Declarative swarm / eval-wave specification (data, not prose-only)"
+decision_ref: [D23, D28]
 
 intent: >
   Enterprise eval-swarm and swarm-coordination waves are expressible as YAML (or JSON)
@@ -12,9 +13,9 @@ problem: >
   lint, or compose dynamically.
 
 scope:
-  - New pipelines/*.yaml or pipelines/swarm-eval appendix referenced by e2e doc
-  - pipelines/pipeline.schema.yaml or sibling schema extended minimally
-  - tests asserting required keys mirror eval-swarm.md intent
+  - Canonical data file under pipelines/ (e.g. swarm-eval-wave.example.yaml) + schema sibling
+  - pipelines/pipeline.schema.yaml or dedicated swarm-wave schema; single canonical path linked from e2e doc
+  - pytest loads example and validates against schema (keys mirror eval-swarm / e2e intent)
 
 non_goals:
   - Executing swarms from Python in CI (orchestrator remains LLM + Task)

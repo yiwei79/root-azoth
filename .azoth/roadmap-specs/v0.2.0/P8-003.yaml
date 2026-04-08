@@ -2,6 +2,7 @@
 id: P8-003
 roadmap_version: v0.2.0
 title: "Pipeline composition linter"
+decision_ref: [D28]
 
 intent: >
   pipelines/*.pipeline.yaml stay structurally valid and reference real stage_ids / archetypes
@@ -13,7 +14,7 @@ problem: >
 scope:
   - scripts/pipeline_lint.py (or extend existing validator)
   - CI or pytest invoking lint on pipelines/
-  - Document in kernel or docs developer preflight
+  - Authoritative developer note: docs/AZOTH_ARCHITECTURE.md (preflight) or CLAUDE.md Development Workflow — one sentence minimum
 
 non_goals:
   - Proving behavioral equivalence of LLM routing vs YAML (semantic lint)
@@ -21,7 +22,7 @@ non_goals:
 acceptance:
   - Non-zero exit on malformed pipeline file
   - pytest covers happy path + one failure fixture
-  - README or orientation mentions optional pre-commit hook (doc only OK)
+  - docs/AZOTH_ARCHITECTURE.md mentions pipeline lint in developer workflow or preflight (one line)
 
 dependencies: []
 

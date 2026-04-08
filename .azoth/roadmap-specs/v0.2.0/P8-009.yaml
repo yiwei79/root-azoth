@@ -2,6 +2,7 @@
 id: P8-009
 roadmap_version: v0.2.0
 title: "Cursor session-open parity (orientation automation path)"
+decision_ref: [D52, D46]
 
 intent: >
   Cursor users get a practical, documented path to near–Claude Code SessionStart behavior

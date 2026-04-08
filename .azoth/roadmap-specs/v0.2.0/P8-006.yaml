@@ -2,6 +2,7 @@
 id: P8-006
 roadmap_version: v0.2.0
 title: "Memory loop hardening (reinforcement, closeout, session-state parity)"
+decision_ref: [D11, D49, D51]
 
 intent: >
   /promote signals (reinforcement_count) and W2 closeout narrative match architecture for
@@ -23,7 +24,7 @@ non_goals:
 acceptance:
   - Documented rule for when reinforcement_count increments (closeout and/or promote)
   - W2 checklist explicitly includes session-state.md when used
-  - pytest if any new script; else governance review sign-off in episode
+  - pytest tests/test_session_closeout_w2_session_state.py passes (literal mention of session-state path in closeout command)
 
 dependencies: []
 

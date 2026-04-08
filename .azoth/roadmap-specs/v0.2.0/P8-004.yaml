@@ -2,6 +2,7 @@
 id: P8-004
 roadmap_version: v0.2.0
 title: "Control-plane surfacing in welcome (scope, pipeline, active run)"
+decision_ref: [D52, D50]
 
 intent: >
   The session cockpit shows not only gates but time-to-expiry and optional active swarm/run

@@ -1,0 +1,49 @@
+# Roadmap task spec — v0.2.0
+id: P8-011
+roadmap_version: v0.2.0
+title: "Token & inference efficiency (context budget, caching discipline, spawn hygiene)"
+decision_ref: [D21, D23, D44, D46]
+
+intent: >
+  Reduce median tokens and wall-clock per session without weakening D50 gates, BL-012 handoffs,
+  or /eval-swarm quality — by documenting provider caching patterns, stabilizing long static
+  prefixes in deploy mirrors, and tightening spawn/orientation surfaces.
+
+problem: >
+  BL-011/BL-012 delivered minimal spawns and typed stage summaries; remaining cost drivers are
+  provider-side cache affinity, observation-heavy traces, parallel eval economics, and volatile
+  prefixes in always-loaded orientation (see SWARM_RESEARCH_DIGEST RP-E).
+
+scope:
+  - docs/AZOTH_ARCHITECTURE.md or skills/orientation — "Context & token budget" subsection (pointers only)
+  - skills/subagent-router/SKILL.md — optional note on static-prefix-friendly spawn ordering
+  - scripts/welcome.py — optional token/usage surfacing when API exposes cached_tokens (doc-only if N/A)
+  - tests — pytest for any new wiring (e.g. digest RP-E parity, doc anchors)
+
+non_goals:
+  - Changing /eval-swarm 0.90 threshold semantics
+  - Vendor-specific SDK code in kernel/
+  - Speculative tool execution without idempotency review (see RP-E risks)
+
+acceptance:
+  - Authoritative doc section or orientation bullets: static-vs-dynamic prompt segments; when to use Batch/offline eval vs interactive swarm
+  - Cross-link to BL-012 stage-summary.schema.yaml as primary compaction boundary
+  - pytest tests/test_p8_011_token_efficiency_anchor.py passes (anchors heading or key phrase in chosen doc)
+  - If skills/subagent-router touched and governed → /deliver-full; else /deliver for doc-only slice
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Phase 1 = docs + tests; Phase 2 = optional welcome telemetry hook; Phase 3 = M1 skill/router
+  edits under separate scope if human promotes.
+
+research_notes: >
+  RP-E (SWARM_RESEARCH_DIGEST.yaml): OpenAI/Anthropic/Gemini prompt caching docs; ACON (arXiv:2510.00615);
+  Context Folding (OpenReview); JetBrains efficient context management blog; PASTE speculative tools
+  (arXiv:2603.18897); OpenAI Batch API for offline eval cost. Aligns BL-012 boundaries with
+  prefix-stable caching and documents eval-swarm vs batch tradeoffs.

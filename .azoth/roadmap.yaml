@@ -269,12 +269,13 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 3
+    current_patch: 4
     goal: >
       Long-running, low-friction agentic work: durable run state and resume; declarative
       swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
       and recall elasticity without toolkit over-fit; calmer UX (narrow terminals, gate
-      visibility, Cursor orientation parity); optional L2/auto-router lane for refinement goals.
+      visibility, Cursor orientation parity); optional L2/auto-router lane for refinement goals;
+      token and inference efficiency (context budget, provider caching discipline, spawn hygiene).
     phase_scope: [8]
     note: >
       Detailed specs per task: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Aggregated online
@@ -284,6 +285,7 @@ versions:
     tasks:
       - id: P5-006
         title: "Phone-friendly output (narrow terminals)"
+        decision_ref: [D48, D52]
         deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
         note: "Deferred UX; compact/width-aware welcome + dashboards"
@@ -339,3 +341,8 @@ versions:
         decision_ref: [D46]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-010.yaml"
         note: "tests + mirror surfaces stay aligned"
+      - id: P8-011
+        title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
+        decision_ref: [D21, D23, D44, D46]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P8-011.yaml"
+        note: "BL-012 + deploy mirrors + provider caching; RP-E in SWARM_RESEARCH_DIGEST"

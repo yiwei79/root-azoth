@@ -2,6 +2,7 @@
 id: P8-007
 roadmap_version: v0.2.0
 title: "Elasticity: M2/M3 recall governance (tags, decay, contradictions)"
+decision_ref: [D45]
 
 intent: >
   context-recall and promotion paths resist wrong-lesson retrieval and toolkit over-fit while
@@ -24,7 +25,8 @@ non_goals:
 acceptance:
   - Documented tag vocabulary guidance + "when not to add a pattern" section
   - Explicit contradiction/stale episode handling policy (archive vs supersede tags)
-  - At least one pytest unchanged or new for recall ranking if logic added
+  - If recall ranking logic is implemented in Python: new pytest required
+  - If skill/markdown only: pytest tests/test_skills.py must still pass (no regressions)
 
 dependencies: []
 

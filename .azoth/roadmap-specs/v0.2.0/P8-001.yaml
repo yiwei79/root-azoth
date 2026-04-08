@@ -2,6 +2,14 @@
 id: P8-001
 roadmap_version: v0.2.0
 title: "Swarm & pipeline run ledger + resume protocol"
+decision_ref: [D21, D50]
+
+ledger_canonical:
+  format: yaml
+  default_path: .azoth/run-ledger.local.yaml
+  note: >
+    Gitignored by default; single-file YAML v1. Ship pipelines/run-ledger.schema.yaml (or
+    documented JSON Schema) in the same delivery PR for validate/append tooling.
 
 intent: >
   Multi-wave /eval-swarm and long /auto runs leave durable, machine-readable state under
@@ -12,7 +20,7 @@ problem: >
   scores, branch IDs, and next-action — contradicts long-running autonomous goals.
 
 scope:
-  - New schema doc + example under .azoth/ (e.g. run-ledger.schema.yaml or documented JSON)
+  - Schema + example keyed to ledger_canonical (YAML v1; JSON only if schema doc explicitly allows)
   - Optional scripts/run_ledger_*.py for append/validate
   - scripts/welcome.py optional one-line "active run" when ledger present
 

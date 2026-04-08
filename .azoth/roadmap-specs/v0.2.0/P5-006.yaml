@@ -2,6 +2,7 @@
 id: P5-006
 roadmap_version: v0.2.0
 title: "Phone-friendly output (narrow terminals)"
+decision_ref: [D48, D52]
 
 intent: >
   Toolkit operators on mobile SSH, split panes, or narrow terminals can read welcome,
@@ -14,7 +15,8 @@ problem: >
 scope:
   - scripts/welcome.py
   - scripts/roadmap_dashboard.py
-  - docs or skill notes for /start parity (no kernel mutation unless separately scoped)
+  - docs/AZOTH_ARCHITECTURE.md or skills/orientation/SKILL.md (narrow-layout notes only)
+  - no kernel/ mutation unless separately scoped
 
 non_goals:
   - Full mobile app or web UI for Azoth

@@ -2,6 +2,7 @@
 id: P8-005
 roadmap_version: v0.2.0
 title: "Long-running session policy (scope TTL, async-friendly docs)"
+decision_ref: [D50]
 
 intent: >
   Documented patterns for DYNAMIC-FULL-AUTO-style runs: how to refresh scope, chunk work,
@@ -21,11 +22,11 @@ non_goals:
   - Infinite TTL by default
 
 acceptance:
-  - Single authoritative doc section "Long-running sessions" with steps and risks
-  - Cross-link from orientation or CLAUDE.md pointer (one line)
-  - Reviewer-evaluable checklist for scope refresh + ledger use
-  - Digest pattern documented in skills/dynamic-full-auto/SKILL.md; mechanical validate via
-    scripts/swarm_research_digest.py on SWARM_RESEARCH_DIGEST.yaml after each swarm append
+  - docs/AZOTH_ARCHITECTURE.md contains heading "### Long-running sessions (P8-005)" with steps, TTL refresh, entropy, ledger pointer
+  - CLAUDE.md Development Workflow or orientation pointer mentions that section (one line)
+  - Reviewer-evaluable checklist in same section (scope refresh, /next, optional P8-001 ledger)
+  - skills/dynamic-full-auto/SKILL.md cross-links the architecture section (one line)
+  - pytest tests/test_p8_005_long_running_architecture.py passes (anchors the heading)
 
 dependencies: []
 
