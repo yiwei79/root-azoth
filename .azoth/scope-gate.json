@@ -1,11 +1,7 @@
 {
   "approved": false,
-  "closed_at": "2026-04-08T16:45:00Z",
-  "goal": "BL-017: Kernel integrity validation script (GOV-B2) — delivered",
-  "session_id": "2026-04-08-bl-017",
-  "approved_by": "human",
-  "backlog_id": "BL-017",
-  "delivery_pipeline": "standard",
-  "target_layer": "infrastructure",
-  "note": "Session-closeout ep-085 — scope closed; patch 0.0.6.6"
+  "closed_at": "2026-04-08T16:52:00Z",
+  "goal": "Session slice: Copilot PR template + Cursor review-insights — closeout ep-086",
+  "session_id": "2026-04-08-ep086-closeout",
+  "note": "No active scope card; ep-086 closeout only."
 }

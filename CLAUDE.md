@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.6.6
+**Version**: v0.0.6.7
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT
@@ -86,7 +86,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ### Skill index (drift checks)
 
-`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `orientation`
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `orientation`
 
 ### Coding Standards
 

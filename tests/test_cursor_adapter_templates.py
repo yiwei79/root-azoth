@@ -14,6 +14,7 @@ CURSOR_DIR = REPO / "kernel" / "templates" / "platform-adapters" / "cursor"
     [
         "azoth-memory.mdc.template",
         "claude-code-parity.mdc.template",
+        "code-review-insights.mdc.template",
     ],
 )
 def test_cursor_template_exists_and_always_apply(name: str) -> None:

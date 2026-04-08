@@ -226,7 +226,7 @@ versions:
 
   - id: v0.0.6
     status: active
-    current_patch: 6
+    current_patch: 7
     goal: "Phase 6: Meta-recursive — agent/skill meta layer"
     phase_scope: [6]
     note: >

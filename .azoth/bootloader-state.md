@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-08 (`/session-closeout` ep-085)
+Last updated: 2026-04-08 (`/session-closeout` ep-086)
 
 ## Current Phase
 
 Phase 6 — Meta-Recursive  
-**Toolkit version:** **0.0.6.6** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53)
+**Toolkit version:** **0.0.6.7** (`azoth.yaml`) · **Roadmap:** `active_version: v0.0.6` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53)
+
+## Session outcome (ep-086) — session-closeout
+
+- **Delivered / refined:** **Copilot PR workflow** — `.github/pull_request_template.md`, `.github/copilot-instructions.md`, `tests/test_github_pr_template.py`. **Cursor review → inbox** — `skills/cursor-review-insights/SKILL.md`, `.claude/commands/review-insights.md`, `kernel/templates/platform-adapters/cursor/code-review-insights.mdc.template` → `.cursor/rules/code-review-insights.mdc`; **`.azoth/trusted-sources.yaml`** `cursor-review`; `README.md` / **`CLAUDE.md`** skill index; **`azoth.yaml`** skills **14**; **`tests/test_skills.py`**, **`tests/test_cursor_adapter_templates.py`**, **`tests/test_cursor_review_insights.py`**. **`azoth-deploy`** (84 files). PR **#5** created; Copilot inbox comment posted earlier in session.
+- **Closeout:** W1 **ep-086**; W2 bootloader + session-state; W3 Claude memory (attempt); W4 patch **0.0.6.6 → 0.0.6.7**; **M3** **episodes: 86**.
+- **Next:** **`/intake`** queued insights (inbox + any Copilot/Cursor JSONL); merge **PR #5** when CI green; continue **Phase 7** planning when ready.
 
 ## Session outcome (ep-085) — session-closeout
 

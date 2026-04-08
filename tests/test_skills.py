@@ -33,6 +33,7 @@ EXPECTED_SKILLS = [
     "auto-router",
     "stage6-rubric",
     "context-recall",
+    "cursor-review-insights",
     "orientation",
 ]
 
@@ -52,6 +53,7 @@ NEW_SKILLS = [
     "auto-router",
     "stage6-rubric",
     "context-recall",
+    "cursor-review-insights",
     "orientation",
 ]
 
@@ -213,7 +215,7 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 8, "Should have 8 new skills"
+        assert len(NEW_SKILLS) == 9, "Should have 9 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_architecture_references_all_skills(self) -> None:

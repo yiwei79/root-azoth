@@ -87,4 +87,8 @@ The installer detects your AI toolchain (Claude Code, OpenCode, Copilot, etc.), 
 
 Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, or slash commands, run `**python3 scripts/azoth-deploy.py**` so OpenCode, Copilot, and Cursor stays stay aligned.
 
+**Pull requests:** Opening a PR loads [`.github/pull_request_template.md`](.github/pull_request_template.md) — including a **one-liner** to request **GitHub Copilot** review so findings land as **D32 inbox JSONL** (see [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) §7) for **`/intake`**, not ad-hoc drive-by edits. Repository Copilot context: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+
+**Cursor:** For IDE-side blindspot review that **writes the same D32 contract** to `.azoth/inbox/`, use **`/review-insights`** or follow **`skills/cursor-review-insights/SKILL.md`** (see [`.cursor/rules/code-review-insights.mdc`](.cursor/rules/code-review-insights.mdc) after `azoth-deploy`).
+
 **Slash commands** (`.claude/commands/*.md`) must declare `**azoth_effect: read | write | mixed`** in YAML frontmatter so it is obvious whether the default path can **build** (Write/Edit) or stays read-only — see `[kernel/GOVERNANCE.md](kernel/GOVERNANCE.md)`.
