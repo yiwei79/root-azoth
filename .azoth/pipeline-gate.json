@@ -1,7 +1,7 @@
 {
-  "session_id": "2026-04-08-p5-004",
-  "pipeline": "auto",
+  "session_id": "2026-04-08-p5-005",
+  "pipeline": "deliver-full",
   "approved": true,
-  "expires_at": "2026-04-08T01:29:55+00:00",
-  "opened_at": "2026-04-07T23:30:19+00:00"
+  "expires_at": "2026-04-08T03:49:36+00:00",
+  "opened_at": "2026-04-07T23:49:55+00:00"
 }

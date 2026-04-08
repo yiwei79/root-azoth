@@ -84,6 +84,10 @@ When entropy threshold is approached or exceeded:
 
 ### 1. Create Checkpoint
 
+Prefer the mechanical helper (repo root): `python3 scripts/azoth_checkpoint.py create`
+(stash) or `python3 scripts/azoth_checkpoint.py tag` (lightweight tag on `HEAD`). Same naming
+convention as below; see `--help` for `git stash apply` vs `git stash pop`.
+
 ```bash
 # For uncommitted work:
 git stash push -m "azoth-checkpoint-$(date +%s)"

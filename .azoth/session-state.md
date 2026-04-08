@@ -12,9 +12,9 @@
 
 state: empty
 last_ide: cursor
-timestamp: 2026-04-08T23:50:00Z
+timestamp: 2026-04-08T00:00:41Z
 active_task: ""
 active_files: []
 pending_decisions: []
 approved_scope: ""
-next_action: "Run /next for a new scope card (e.g. P5-005 or P5-006). Optional: /intake for inbox queue."
+next_action: "Run /next for P5-006 (phone-friendly narrow terminals) or another backlog item. Optional: /intake for inbox queue."

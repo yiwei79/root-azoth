@@ -156,7 +156,9 @@ def evaluate_entropy(
             allowed=False,
             reason=(
                 "[entropy-check] red zone — cumulative entropy_delta ≥ "
-                f"{ZONE_RED_MIN} (checkpoint required per TRUST_CONTRACT §1; delta≈{cumulative:.2f})."
+                f"{ZONE_RED_MIN} (checkpoint required per TRUST_CONTRACT §1; delta≈{cumulative:.2f}). "
+                "Before continuing, run `python3 scripts/azoth_checkpoint.py create` from the repo "
+                "root (see TRUST_CONTRACT §4 Recovery Protocol)."
             ),
             entropy_delta=delta,
             cumulative_entropy=cumulative,

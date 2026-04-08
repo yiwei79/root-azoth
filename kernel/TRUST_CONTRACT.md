@@ -113,22 +113,25 @@ Do not maintain a second diverging specification here.
 
 All risky operations are recoverable via git-based checkpoints.
 
-### Automatic Checkpoints
+### When to checkpoint
 
-Checkpoints are created before:
+Humans and agents create checkpoints **before** crossing into risky work — not via silent
+PreToolUse automation. Run the mechanical helper from the repository root when:
 
-- Any operation in the **yellow** or **red** entropy zone
-- Pipeline stages that modify more than 5 files
-- Any operation touching test infrastructure
-- Any operation the agent assesses as non-trivially reversible
+- Entropy is in the **yellow** or **red** zone (see §1), or you are about to exceed it
+- A pipeline stage will modify more than five files, touch test infrastructure, or feels hard to revert
+
+**Mechanical path:** `python3 scripts/azoth_checkpoint.py create` (stash) or
+`python3 scripts/azoth_checkpoint.py tag` (lightweight tag on `HEAD`). See `--help` for
+recovery notes (`git stash apply` vs `git stash pop`).
 
 ### Checkpoint Mechanism
 
 ```bash
-# Primary: git stash (for uncommitted work)
+# Primary: git stash (for uncommitted work) — or use scripts/azoth_checkpoint.py create
 git stash push -m "azoth-checkpoint-$(date +%s)"
 
-# Secondary: git tag (for committed work)
+# Secondary: git tag (for committed work) — or use scripts/azoth_checkpoint.py tag
 git tag "azoth/checkpoint/$(date +%s)"
 ```
 
