@@ -671,7 +671,7 @@ items:
     roadmap_ref: P6-002
     target_layer: M1
     delivery_pipeline: governed
-    status: pending
+    status: complete
     target_version: v0.0.6
     priority: 2
     created_date: "2026-04-08"
@@ -699,6 +699,26 @@ items:
       Structured path for architecture changes that touch D1–D53 or layer boundaries:
       proposal artifact, explicit human gate, and promotion into `docs/AZOTH_ARCHITECTURE.md`
       / ADR flow without bypassing kernel immutability or scope discipline.
+
+  # ── Governance / drift (from GOV reviewer B2, test_handoff_artifacts) ─────────
+  - id: BL-017
+    title: "Kernel integrity validation script (GOV-B2)"
+    source: governance-review-b2
+    source_insight: test_handoff_artifacts.TestGovernanceBlockers.test_b2_kernel_integrity_script
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: pending
+    target_version: v0.0.6
+    priority: 4
+    created_date: "2026-04-08"
+    decision_ref: [D2]
+    blocked_by: null
+    description: >
+      Deliver `scripts/kernel-integrity.py`: validate kernel invariants (authoritative
+      file set under `kernel/`, LOC/file-count bounds per D2, optional checksums or
+      drift vs templates). Wire into CI or developer preflight; document in
+      `kernel/GOVERNANCE.md` or README as needed. Resolves governance blocker B2 and
+      removes xfail on `test_b2_kernel_integrity_script`.
 
 # Completed items
 completed: []

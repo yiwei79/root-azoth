@@ -21,7 +21,8 @@ posture:
     - Changing evaluation rubrics
   never_auto:
     - M2-to-M1 promotion of refined prompts
-pipeline_stages: []
+pipeline_stages:
+  - l2-evidence-refine
 trust_level: medium
 ---
 
@@ -118,3 +119,4 @@ Before improving any prompt, analyze it using structured reasoning:
 - Changes to skills/ or agents/ require ask-first approval
 - Refined prompts enter M3 first — direct M1 changes are never-auto
 - Trust level: medium — refinements must be validated before promotion
+- **L2 evidence:** consume `.azoth/memory/l2-refinement-evidence.jsonl` only via `Read` (filter by `session_id`); evidence is appended only by `scripts/l2_evidence_append.py` under valid scope/pipeline gates — see `skills/prompt-engineer/SKILL.md` §L2 evidence consumption

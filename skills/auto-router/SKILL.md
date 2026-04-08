@@ -36,15 +36,17 @@ This skill is invoked by `/auto` before the Declaration step.
 
 Rules are evaluated in the order below. **Stop at the first match.**
 
-| Priority | Condition | Pipeline Stages | Notes |
-|----------|-----------|-----------------|-------|
-| 1 | `risk == governance-change` | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — any governance mutation requires maximum oversight |
-| 2 | `scope == kernel` | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — kernel is immutable without human-approved promotion |
-| 3 | `knowledge == needs-research` | `[architect, planner, evaluator, builder, architect]` | Inject research-phase into architect stage before planner |
-| 4 | `scope == docs` | `[architect, builder, architect]` | Lightweight — docs carry low risk and need no review or evaluation |
-| 5 | `complexity == simple AND risk == cosmetic` | `[planner, builder, architect]` | Minimal pipeline — no review or evaluation needed |
-| 6 | `complexity == simple AND risk == additive` | `[planner, evaluator, builder, architect]` | Additive changes need evaluation even when simple |
-| 7 | `default` | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — when in doubt, use maximum coverage |
+
+| Priority | Condition                                   | Pipeline Stages                                                 | Notes                                                                |
+| -------- | ------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1        | `risk == governance-change`                 | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — any governance mutation requires maximum oversight   |
+| 2        | `scope == kernel`                           | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — kernel is immutable without human-approved promotion |
+| 3        | `knowledge == needs-research`               | `[architect, planner, evaluator, builder, architect]`           | Inject research-phase into architect stage before planner            |
+| 4        | `scope == docs`                             | `[architect, builder, architect]`                               | Lightweight — docs carry low risk and need no review or evaluation   |
+| 5        | `complexity == simple AND risk == cosmetic` | `[planner, builder, architect]`                                 | Minimal pipeline — no review or evaluation needed                    |
+| 6        | `complexity == simple AND risk == additive` | `[planner, evaluator, builder, architect]`                      | Additive changes need evaluation even when simple                    |
+| 7        | `default`                                   | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — when in doubt, use maximum coverage                  |
+
 
 ### Rule Rationale
 
@@ -106,9 +108,14 @@ to the Declaration table before presenting for approval.
 At **execution** time, each subagent spawn must follow `subagent-router`
 §Spawn Prompt Contract (BL-011): YAML goal + parameters only, not pasted pipeline prose.
 
+### L2 / instruction-rubric goals (P6-002, v1 inject-only)
+
+The Stage 0 classification tuple (`scope`, `risk`, `complexity`, `knowledge`) does not yet include an explicit “instruction refinement” flag, so **v1** does **not** add a new `composition_rules` row to `pipelines/auto.pipeline.yaml`. For goals that should feed **prompt-engineer** after delivery evidence exists, the **orchestrator** documents and runs an **inject-only** branch: append an L2 evidence record (`scripts/l2_evidence_append.py`), then spawn **prompt-engineer** with fresh context. When classification is extended (future task), a single new auto-router rule may reference that flag.
+
 ### Related files
 
 - `pipelines/auto.pipeline.yaml` — YAML representation of these rules
 - `skills/subagent-router/SKILL.md` — stage-level subagent assignment
 - `.claude/commands/auto.md` — the `/auto` command that invokes this skill
 - `docs/DECISIONS_INDEX.md` D23 — governance anchor
+

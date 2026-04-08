@@ -1,0 +1,76 @@
+# L2 refinement evidence record — P6-002
+# One JSON object per line in `.azoth/memory/l2-refinement-evidence.jsonl`.
+# Validated by `scripts/l2_evidence_validate.py` (no jsonschema runtime dependency).
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:l2-evidence-record:v1"
+title: Azoth L2 evidence record
+type: object
+additionalProperties: false
+required:
+  - record_schema_version
+  - recorded_at
+  - session_id
+  - backlog_id
+  - source_pipeline
+  - source_stage_id
+  - source_agent
+  - evidence_kind
+  - target_surfaces
+  - summary
+  - payload
+properties:
+  record_schema_version:
+    type: integer
+    const: 1
+  recorded_at:
+    type: string
+    minLength: 10
+    description: ISO-8601 UTC, Z or +00:00 offset
+  session_id:
+    type: string
+    minLength: 1
+    maxLength: 128
+  backlog_id:
+    type: string
+    minLength: 1
+    maxLength: 64
+  source_pipeline:
+    type: string
+    enum: [auto, deliver, deliver-full]
+  source_stage_id:
+    type: string
+    minLength: 1
+    maxLength: 128
+  source_agent:
+    type: string
+    enum:
+      - architect
+      - planner
+      - builder
+      - reviewer
+      - researcher
+      - research-orchestrator
+      - evaluator
+      - prompt-engineer
+      - agent-crafter
+      - context-architect
+  evidence_kind:
+    type: string
+    enum: [eval_summary, reviewer_gate, episode_ref, manual_eval]
+  target_surfaces:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+      maxLength: 512
+  summary:
+    type: string
+    minLength: 1
+    maxLength: 4096
+  payload:
+    type: object
+    description: >
+      Structured slots e.g. scores, findings, rubric_refs, episode_id.
+      Additional keys allowed inside payload only.

@@ -217,6 +217,10 @@ When the goal involves **Agent Crafter** or meta-agent definition work (`agents/
 - The orchestrator **must** attach **prior_stage_summaries** (BL-012 YAML) at every handoff — especially into **evaluator** and **reviewer**.
 - For **governed** M1 scopes, treat **governance-review** as **default-on** after crafter integration; a **human-declared waiver** in the `/auto` Declaration is the only supported skip, and should be mirrored in alignment notes.
 
+### L2 evidence → prompt-engineer (P6-002)
+
+When the human or orchestrator runs the **L2 refinement** branch, **do not** paste evaluator/reviewer transcripts into the prompt-engineer spawn. Append a typed record to `.azoth/memory/l2-refinement-evidence.jsonl` using **`scripts/l2_evidence_append.py`** (gated), then spawn **prompt-engineer** with **review-independence** (fresh context) and `Read` of the JSONL tail (or session-filtered lines) plus `target_surfaces` from the record.
+
 ## When to Use
 
 - **Pipeline composition** (`/auto` Subagent Assignment step) — apply the routing

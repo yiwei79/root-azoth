@@ -29,7 +29,24 @@ def _run_checkpoint(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def _init_repo(path: Path) -> None:
-    subprocess.run(["git", "init"], cwd=path, check=True, capture_output=True)
+    init = subprocess.run(
+        ["git", "init", "-b", "main"],
+        cwd=path,
+        capture_output=True,
+        text=True,
+    )
+    if init.returncode != 0:
+        legacy = subprocess.run(
+            ["git", "init"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+        )
+        if legacy.returncode != 0:
+            pytest.skip(
+                "git init failed (install git or relax sandbox for checkpoint tests): "
+                f"{legacy.stderr.strip() or legacy.stdout.strip()}"
+            )
     subprocess.run(
         ["git", "config", "user.email", "test@example.com"],
         cwd=path,

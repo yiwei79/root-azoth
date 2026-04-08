@@ -3,6 +3,7 @@
 .azoth/session-orientation.txt
 .azoth/telemetry/
 .azoth/sync-log.jsonl
+.azoth/memory/l2-refinement-evidence.jsonl
 .azoth/bootloader-state.md
 .azoth/kernel-checksums.sha256
 
