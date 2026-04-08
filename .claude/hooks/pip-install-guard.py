@@ -29,6 +29,7 @@ _REMINDER = (
     "\n"
     "Add the package to a requirements file first, then install with:\n"
     "    pip install -r requirements.txt\n"
+    "    pip install -r requirements-dev.txt   # root-azoth workshop dev deps\n"
     "\n"
     "Exceptions allowed without a requirements file:\n"
     "  pip install -e .          (editable local install)\n"

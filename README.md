@@ -37,7 +37,8 @@ For people working **in this repo**:
 
 1. **Prerequisites:** Python **3.11+**, `git`, [Claude Code](https://claude.com/claude-code) (primary). Optional: OpenCode, Copilot adapters.
 2. **Install Python deps** used by tooling (e.g. Rich for the welcome dashboard):
-  `pip install rich pyyaml` (or your project venv).
+  `pip install -r requirements-dev.txt` (from repo root; or your project venv).
+  This form satisfies **pip-install-guard** in Claude Code Bash.
 3. **Validate:** `python3 -m pytest tests/` (or `ruff` / project scripts if you use them).
 4. **After changing** canonical `skills/*`*, `agents/**`, or `.claude/commands/**`, sync platform copies:
   `python3 scripts/azoth-deploy.py`
