@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.0.6.3
+**Version**: v0.0.6.6
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: MIT

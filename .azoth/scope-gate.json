@@ -1,11 +1,11 @@
 {
   "approved": false,
-  "closed_at": "2026-04-08T16:33:54Z",
-  "goal": "BL-017: Kernel integrity validation script (GOV-B2)",
+  "closed_at": "2026-04-08T16:45:00Z",
+  "goal": "BL-017: Kernel integrity validation script (GOV-B2) — delivered",
   "session_id": "2026-04-08-bl-017",
   "approved_by": "human",
   "backlog_id": "BL-017",
   "delivery_pipeline": "standard",
   "target_layer": "infrastructure",
-  "note": "Scope closed after delivery (kernel-integrity.py, §4 manifest, CI, tests)."
+  "note": "Session-closeout ep-085 — scope closed; patch 0.0.6.6"
 }
