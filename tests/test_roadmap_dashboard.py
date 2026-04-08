@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -29,6 +28,13 @@ def test_load_roadmap_invalid_yaml_returns_empty(tmp_path: Path) -> None:
     bad = tmp_path / "bad.yaml"
     bad.write_text("{ not valid yaml [[[\n", encoding="utf-8")
     assert roadmap_dashboard.load_roadmap(bad) == {}
+
+
+def test_load_roadmap_scalar_root_returns_empty(tmp_path: Path) -> None:
+    """Non-dict YAML root normalizes to {} (load_roadmap contract)."""
+    scalar = tmp_path / "scalar.yaml"
+    scalar.write_text("bare-scalar-root\n", encoding="utf-8")
+    assert roadmap_dashboard.load_roadmap(scalar) == {}
 
 
 def test_build_version_body_includes_tasks() -> None:
@@ -60,3 +66,65 @@ def test_render_dashboard_smoke() -> None:
 
 def test_status_style_known() -> None:
     assert "green" in roadmap_dashboard._status_style("complete")
+
+
+def test_render_dashboard_versions_not_list_shows_error(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        "active_version: v0\nversions: {not: a list}\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=100, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=bad, console=console)
+    out = console.export_text()
+    assert "Invalid `versions`" in out
+    assert "expected list" in out
+
+
+def test_render_dashboard_skips_non_dict_version_entry(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    bad = tmp_path / "bad.yaml"
+    bad.write_text(
+        "active_version: v0\n"
+        "versions:\n"
+        "  - plain-string-version\n"
+        "  - id: v-fixed\n"
+        "    status: complete\n"
+        "    goal: ok\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=100, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=bad, console=console)
+    out = console.export_text()
+    assert "Skipping versions[0]" in out
+    assert "v-fixed" in out
+    assert "ok" in out
+
+
+def test_build_version_body_schema_warning_for_non_dict_task() -> None:
+    version: dict = {
+        "status": "complete",
+        "id": "v0.0.x",
+        "completed_tasks": ["not-a-dict", {"id": "T1", "title": "Fine"}],
+        "tasks": [],
+    }
+    body = roadmap_dashboard.build_version_body(version)
+    assert "schema:" in body
+    assert "completed_tasks[0]" in body
+    assert "T1" in body
+    assert "Fine" in body
+
+
+def test_normalize_task_entries_non_list() -> None:
+    valid, warnings = roadmap_dashboard._normalize_task_entries("oops", block_label="tasks")
+    assert valid == []
+    assert "expected list" in warnings[0]

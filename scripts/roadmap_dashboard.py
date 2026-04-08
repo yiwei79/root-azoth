@@ -32,7 +32,11 @@ FOOTER = (
 
 
 def load_roadmap(path: Path | None = None) -> dict[str, Any]:
-    """Load roadmap YAML; return empty dict if missing or invalid."""
+    """Load roadmap YAML; return empty dict if missing or invalid.
+
+    Non-dict YAML roots (e.g. a bare string) normalize to {} so callers always
+    receive a mapping; ``render_dashboard`` does not need a separate non-dict check.
+    """
     p = path or DEFAULT_ROADMAP
     if not p.exists():
         return {}
@@ -58,16 +62,37 @@ def _task_done_icon(done: bool) -> str:
     return ":white_check_mark:" if done else ":white_circle:"
 
 
+def _normalize_task_entries(
+    raw: Any, *, block_label: str
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Return dict tasks and human-readable warnings for invalid items."""
+    if raw is None:
+        return [], []
+    if not isinstance(raw, list):
+        return [], [f"{block_label}: expected list, got {type(raw).__name__}"]
+    valid: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    for i, item in enumerate(raw):
+        if isinstance(item, dict):
+            valid.append(item)
+        else:
+            warnings.append(f"{block_label}[{i}]: expected mapping, got {type(item).__name__}")
+    return valid, warnings
+
+
 def _format_task_block(
     label: str,
     entries: list[dict[str, Any]],
     *,
     done: bool,
+    schema_warnings: list[str],
 ) -> list[str]:
     lines: list[str] = []
-    if not entries:
+    if not entries and not schema_warnings:
         return lines
     lines.append(f"[bold]{label}[/bold]")
+    for w in schema_warnings:
+        lines.append(f"  [yellow]schema:[/] [dim]{w}[/]")
     for task in entries:
         tid = task.get("id", "?")
         title = task.get("title", "")
@@ -107,16 +132,18 @@ def build_version_body(version: dict[str, Any]) -> str:
         lines.append("")
         lines.append(f"[dim italic]{note}[/]")
 
-    completed = version.get("completed_tasks") or []
-    pending = version.get("tasks") or []
+    completed, cw = _normalize_task_entries(
+        version.get("completed_tasks"), block_label="completed_tasks"
+    )
+    pending, pw = _normalize_task_entries(version.get("tasks"), block_label="tasks")
 
-    if completed or pending:
+    if completed or pending or cw or pw:
         lines.append("")
 
-    lines.extend(_format_task_block("Delivered", completed, done=True))
-    if completed and pending:
+    lines.extend(_format_task_block("Delivered", completed, done=True, schema_warnings=cw))
+    if (completed or cw) and (pending or pw):
         lines.append("")
-    lines.extend(_format_task_block("Upcoming", pending, done=False))
+    lines.extend(_format_task_block("Upcoming", pending, done=False, schema_warnings=pw))
 
     return "\n".join(lines)
 
@@ -170,8 +197,36 @@ def render_dashboard(
     out.print(render_header(data))
     out.print()
 
-    versions = data.get("versions") or []
-    for v in versions:
+    versions_raw = data.get("versions")
+    if versions_raw is None:
+        versions_iter: list[Any] = []
+    elif not isinstance(versions_raw, list):
+        out.print(
+            Panel(
+                f"[red]Invalid `versions`:[/] expected list, got {type(versions_raw).__name__}",
+                title="Roadmap error",
+                border_style="red",
+                box=box.HEAVY,
+            )
+        )
+        out.print(Panel(FOOTER, box=box.MINIMAL))
+        out.print()
+        return
+    else:
+        versions_iter = versions_raw
+
+    for i, v in enumerate(versions_iter):
+        if not isinstance(v, dict):
+            out.print(
+                Panel(
+                    f"[yellow]Skipping versions[{i}]:[/] expected mapping, got {type(v).__name__!r}",
+                    title="Version schema",
+                    border_style="yellow",
+                    box=box.ROUNDED,
+                )
+            )
+            out.print()
+            continue
         out.print(render_version_panel(v))
         out.print()
 
