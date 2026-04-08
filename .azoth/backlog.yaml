@@ -840,8 +840,9 @@ items:
     roadmap_ref: intake-ep-087
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
     target_version: v0.0.6
+    completed_date: "2026-04-08"
     priority: 6
     created_date: "2026-04-08"
     decision_ref: [D46]
