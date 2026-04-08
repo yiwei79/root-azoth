@@ -345,6 +345,11 @@ class TestGitignore:
     def test_excludes_python_artifacts(self) -> None:
         assert "__pycache__" in self.content or ".pyc" in self.content
 
+    def test_excludes_runtime_scope_and_pipeline_gate_json(self) -> None:
+        """BL-020: live gate files are local-only; examples stay tracked."""
+        assert ".azoth/scope-gate.json" in self.content
+        assert ".azoth/pipeline-gate.json" in self.content
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # 9. CROSS-ARTIFACT CONSISTENCY

@@ -4,6 +4,9 @@
 .azoth/telemetry/
 .azoth/sync-log.jsonl
 .azoth/memory/l2-refinement-evidence.jsonl
+# Session gates — local runtime only (D50); never commit live gates — see *.json.example
+.azoth/scope-gate.json
+.azoth/pipeline-gate.json
 # bootloader-state.md — tracked in root-azoth for cloud sync / cross-machine handoff
 # Golden §4 manifest is tracked in this repo for CI / verify-checksums (GOV-B2).
 # Consumer installs may regenerate locally; see install.sh.
