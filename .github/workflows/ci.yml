@@ -17,7 +17,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dev tools
-        run: pip install pytest ruff
+        run: pip install pytest ruff pyyaml rich
 
       - name: Ruff (tracked proposal + integrity stack)
         run: |
@@ -26,13 +26,15 @@ jobs:
             scripts/kernel-integrity.py \
             tests/test_architecture_proposal_schema.py \
             tests/test_kernel_integrity.py \
-            tests/test_next_arch_proposal_footer.py
+            tests/test_next_arch_proposal_footer.py \
+            tests/test_settings_azoth_manifest_alignment.py
           ruff format --check \
             scripts/architecture_proposal_validate.py \
             scripts/kernel-integrity.py \
             tests/test_architecture_proposal_schema.py \
             tests/test_kernel_integrity.py \
-            tests/test_next_arch_proposal_footer.py
+            tests/test_next_arch_proposal_footer.py \
+            tests/test_settings_azoth_manifest_alignment.py
 
       - name: Kernel integrity (D2 + optional §4)
         run: |
