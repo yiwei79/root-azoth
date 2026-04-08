@@ -142,6 +142,13 @@ def _format_task_block(
     if extra > 0:
         lines.append(f"  [dim]... and {extra} more schema warning(s)[/]")
     for task in entries:
+        if not isinstance(task, dict):
+            lines.append(
+                "  [yellow]schema:[/] [dim]"
+                f"{escape(f'task entry: expected mapping, got {type(task).__name__}')}"
+                "[/]"
+            )
+            continue
         tid = escape(str(task.get("id", "?")))
         title = escape(str(task.get("title", "")))
         mark = _task_done_icon(done)
@@ -153,8 +160,13 @@ def _format_task_block(
     return lines
 
 
-def build_version_body(version: dict[str, Any]) -> str:
+def build_version_body(version: Any) -> str:
     """Build markdown-rich body text for one roadmap version block."""
+    if not isinstance(version, dict):
+        return (
+            "[yellow]Invalid version block:[/] "
+            f"expected mapping, got [dim]{escape(type(version).__name__)}[/]"
+        )
     st = version.get("status", "?")
     lines: list[str] = []
 
@@ -196,8 +208,15 @@ def build_version_body(version: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def render_header(data: dict[str, Any]) -> Panel:
+def render_header(data: Any) -> Panel:
     """Top banner: active_version + schema hint."""
+    if not isinstance(data, dict):
+        return Panel(
+            f"[yellow]Invalid roadmap root:[/] expected mapping, got {type(data).__name__}",
+            title="Roadmap error",
+            border_style="yellow",
+            box=box.HEAVY,
+        )
     av = data.get("active_version", "?")
     header = Text()
     header.append("ROADMAP ", style="bold white")
@@ -207,8 +226,15 @@ def render_header(data: dict[str, Any]) -> Panel:
     return Panel(header, box=box.HEAVY)
 
 
-def render_version_panel(version: dict[str, Any]) -> Panel:
+def render_version_panel(version: Any) -> Panel:
     """Single bordered panel for one `versions[]` entry."""
+    if not isinstance(version, dict):
+        return Panel(
+            f"[yellow]Invalid version:[/] expected mapping, got {escape(type(version).__name__)}",
+            title="Version schema",
+            border_style="yellow",
+            box=box.ROUNDED,
+        )
     vid = version.get("id", "?")
     st = version.get("status", "?")
     body = build_version_body(version)

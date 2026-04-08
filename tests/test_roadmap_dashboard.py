@@ -225,3 +225,34 @@ def test_normalize_task_entries_non_list() -> None:
     valid, warnings = roadmap_dashboard._normalize_task_entries("oops", block_label="tasks")
     assert valid == []
     assert "expected list" in warnings[0]
+
+
+def test_build_version_body_non_dict_version() -> None:
+    body = roadmap_dashboard.build_version_body("not-a-mapping")
+    assert "Invalid version block" in body
+    assert "str" in body
+
+
+def test_render_version_panel_non_dict() -> None:
+    panel = roadmap_dashboard.render_version_panel(["list-not-dict"])
+    assert "Invalid version" in str(panel.renderable)
+
+
+def test_render_header_non_dict_root() -> None:
+    panel = roadmap_dashboard.render_header("oops")
+    assert "Invalid roadmap root" in str(panel.renderable)
+
+
+def test_format_task_block_non_dict_entry_still_renders_valid() -> None:
+    """BL-022: malformed entries after normalization must not crash Rich render."""
+    bad_entries: list = [{"id": "ok", "title": "Fine"}, "string-instead-of-dict"]
+    lines = roadmap_dashboard._format_task_block(
+        "Upcoming",
+        bad_entries,  # type: ignore[arg-type]
+        done=False,
+        schema_warnings=[],
+    )
+    joined = "\n".join(lines)
+    assert "Fine" in joined
+    assert "expected mapping" in joined
+    assert "str" in joined
