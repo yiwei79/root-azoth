@@ -94,7 +94,7 @@ used before BL-013.
 ### Phase 8: v0.2.0 — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
 - **Canonical state:** `azoth.yaml` `phase: 8`; `.azoth/roadmap.yaml` `active_version: v0.2.0`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P8-001 … P8-010** (`status: active`, priorities 1–10); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Execution queue:** `.azoth/backlog.yaml` — **P8-001 … P8-011** (`status: active`, priorities 1–11); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids):**
   - **P8-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
   - **P8-002** — Declarative eval/swarm wave YAML + schema (depends on P8-001 backlog completion).
@@ -106,6 +106,7 @@ used before BL-013.
   - **P8-008** — `auto-router` L2 / self-improve lane (governed).
   - **P8-009** — Cursor session-open parity vs P5-007 SessionStart.
   - **P8-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
+  - **P8-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
   - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
 ## Integration
