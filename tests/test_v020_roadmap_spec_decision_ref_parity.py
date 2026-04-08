@@ -1,0 +1,53 @@
+"""v0.2.0 roadmap task specs carry decision_ref aligned with roadmap.yaml."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+REPO = Path(__file__).resolve().parent.parent
+ROADMAP = REPO / ".azoth" / "roadmap.yaml"
+SPECS_DIR = REPO / ".azoth" / "roadmap-specs" / "v0.2.0"
+
+
+def _active_version_tasks(road: dict) -> list[dict]:
+    av = road["active_version"]
+    for block in road["versions"]:
+        if block.get("id") == av:
+            return list(block.get("tasks") or [])
+    raise AssertionError(f"active_version {av!r} not found under versions[]")
+
+
+def test_v020_spec_files_have_decision_ref() -> None:
+    for path in sorted(SPECS_DIR.glob("P*.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert "decision_ref" in data, f"{path.name} missing decision_ref"
+        assert isinstance(data["decision_ref"], list), f"{path.name} decision_ref not a list"
+
+
+def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+    by_id = {t["id"]: t for t in _active_version_tasks(road)}
+    for tid in (
+        "P5-006",
+        "P8-001",
+        "P8-002",
+        "P8-003",
+        "P8-004",
+        "P8-005",
+        "P8-006",
+        "P8-007",
+        "P8-008",
+        "P8-009",
+        "P8-010",
+        "P8-011",
+    ):
+        assert tid in by_id, f"roadmap active version missing task {tid}"
+        task = by_id[tid]
+        spec_path = SPECS_DIR / f"{tid}.yaml"
+        spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
+        assert spec["decision_ref"] == task.get("decision_ref"), (
+            f"{tid}: spec decision_ref {spec['decision_ref']!r} != "
+            f"roadmap {task.get('decision_ref')!r}"
+        )
