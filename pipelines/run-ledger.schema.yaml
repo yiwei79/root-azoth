@@ -1,0 +1,150 @@
+# Azoth Run Ledger Schema — P1-001
+# JSON Schema (draft 2020-12) expressed in YAML for readability.
+# Validates .azoth/run-ledger.local.yaml (gitignored; example: run-ledger.local.yaml.example).
+#
+# Decisions: D21 (subagent isolation / typed gates), D50 (session scope card)
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:run-ledger:v1"
+title: "Azoth Run Ledger"
+description: >
+  Durable machine-readable state for multi-wave /eval-swarm and long /auto runs.
+  Stored under .azoth/ (gitignored) so a new chat session can resume without
+  replaying full orchestrator prose. Append-only list of run entries.
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - runs
+
+properties:
+
+  schema_version:
+    type: integer
+    const: 1
+    description: "Bump only on breaking changes; consumers reject unknown versions."
+
+  runs:
+    type: array
+    description: "Ordered list of run entries; most recent active entry is the current run."
+    items:
+      $ref: "#/$defs/run_entry"
+
+$defs:
+
+  run_entry:
+    type: object
+    additionalProperties: false
+    required:
+      - run_id
+      - mode
+      - goal
+      - status
+      - created_at
+      - updated_at
+      - next_action
+    description: "State snapshot for one pipeline run."
+    properties:
+
+      run_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: "Unique identifier. Convention: YYYY-MM-DD-<task-id>-<pipeline> (session_id style)."
+
+      mode:
+        type: string
+        minLength: 1
+        description: "Pipeline preset or mode label (e.g. deliver, eval-swarm, dfa, auto)."
+
+      goal:
+        type: string
+        minLength: 1
+        description: "Human-readable goal for this run (mirrors scope-gate goal field)."
+
+      status:
+        type: string
+        enum: [active, complete, failed, paused]
+        description: "active = in progress; complete = delivered; failed = aborted; paused = awaiting human."
+
+      created_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        description: "ISO-8601 timestamp when this run was created. Frozen on creation."
+
+      updated_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        description: "ISO-8601 timestamp of last mutation. Updated on every append call."
+
+      next_action:
+        type: string
+        minLength: 1
+        description: >
+          Resume instruction for the next session. Should be precise enough that
+          a new orchestrator can continue without re-reading full prose history.
+          Example: 'resume at implementation stage — task-plan and test-specs ready'
+
+      stages_completed:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "Ordered list of pipeline stage names completed so far."
+
+      waves:
+        type: array
+        items:
+          $ref: "#/$defs/wave_entry"
+        description: "Eval-swarm wave outcomes. Empty for non-swarm runs."
+
+      branches:
+        type: array
+        items:
+          $ref: "#/$defs/branch_entry"
+        description: "Swarm branch outcomes. Empty for single-branch runs."
+
+  wave_entry:
+    type: object
+    additionalProperties: false
+    required:
+      - wave
+      - status
+    description: "Outcome of one eval-swarm wave."
+    properties:
+      wave:
+        type: integer
+        minimum: 1
+        description: "Wave number (1-indexed)."
+      scores:
+        type: array
+        items:
+          type: number
+        description: "Per-evaluator scores for this wave."
+      consensus:
+        type: number
+        description: "Aggregated consensus score for this wave."
+      status:
+        type: string
+        enum: [pass, fail, partial]
+        description: "pass = threshold met; fail = below threshold; partial = incomplete."
+
+  branch_entry:
+    type: object
+    additionalProperties: false
+    required:
+      - branch_id
+      - disposition
+    description: "Outcome of one swarm branch."
+    properties:
+      branch_id:
+        type: string
+        minLength: 1
+        description: "Unique identifier for this branch (e.g. evaluator agent name or index)."
+      score:
+        type: number
+        description: "Optional score for this branch's output."
+      disposition:
+        type: string
+        enum: [merged, discarded, pending]
+        description: "merged = incorporated into queen; discarded = dropped; pending = awaiting review."

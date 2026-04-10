@@ -217,6 +217,17 @@ def git_info() -> tuple[str, str]:
 _INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
 
+def load_active_run(root: Path) -> dict[str, Any] | None:
+    """Return the last active entry from run-ledger.local.yaml, or None if absent."""
+    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
+    data = load_yaml(ledger_path)
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        return None
+    active = [r for r in runs if isinstance(r, dict) and r.get("status") == "active"]
+    return active[-1] if active else None
+
+
 def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
     """Return phase-agnostic initiatives sorted by priority (high→medium→low). Skips non-dict entries."""
     raw = roadmap_data.get("initiatives")
@@ -265,6 +276,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "complete_ids": complete_ids,
         "top3": top3,
         "unphased_initiatives": unphased_initiatives,
+        "run_ledger": load_active_run(ROOT),
     }
 
 
@@ -384,6 +396,13 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
                 )
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
+
+    active_run = state.get("run_ledger")
+    if active_run:
+        run_id = active_run.get("run_id", "?")
+        mode = active_run.get("mode", "?")
+        next_action = (active_run.get("next_action") or "")[:60]
+        lines.append(f"  \u25cf Active run  {run_id}  ({mode})  \u2192 {next_action}")
 
     lines.append("")
     lines.append("── Top Backlog (next unblocked) ──")
@@ -561,6 +580,17 @@ def render_dashboard() -> None:
                 )
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
+
+    active_run = state.get("run_ledger")
+    if active_run:
+        run_id = active_run.get("run_id", "?")
+        mode = active_run.get("mode", "?")
+        next_action = (active_run.get("next_action") or "")[:60]
+        health_lines.append(
+            f":blue_circle: [bold]Active run[/bold]  [cyan]{run_id}[/cyan]"
+            f"  [dim]({mode})[/dim]  \u2192 {next_action}"
+        )
+
     health_panel = Panel(
         "\n".join(health_lines), title="[bold]System Health[/bold]", box=box.ROUNDED
     )

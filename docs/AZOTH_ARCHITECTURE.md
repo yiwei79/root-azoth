@@ -1110,9 +1110,8 @@ documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
    `.azoth/scope-gate.json` when the current `expires_at` is near; do not assume silent extension.
 2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
    rather than exceeding the per-turn file ceiling.
-3. **Optional run ledger (P1-001)** — When implemented, append wave outcomes to the gitignored
-   ledger file so a new chat can resume without replaying full orchestrator prose; until then,
-   rely on typed stage summaries (BL-012) and committed artifacts.
+3. **Run ledger (P1-001)** — Append wave outcomes to `.azoth/run-ledger.local.yaml` (gitignored)
+   after each wave or stage; use `python3 scripts/run_ledger.py status` to resume without replaying prose. Schema: `pipelines/run-ledger.schema.yaml`.
 4. **Digest merges** — After swarm append to `SWARM_RESEARCH_DIGEST.yaml`, run
    `python3 scripts/swarm_research_digest.py validate` on that path before commit.
 5. **Never disable hooks** — Long runs do not bypass PreToolUse scope-gate or pipeline-gate; adjust
