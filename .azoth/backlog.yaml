@@ -978,7 +978,7 @@ items:
     roadmap_ref: P1-001
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
     target_version: v0.2.0
     priority: 1
     created_date: "2026-04-08"
