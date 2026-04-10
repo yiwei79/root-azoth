@@ -296,6 +296,15 @@ def transform_command_opencode(command: dict[str, Any]) -> str:
     return command["body"]
 
 
+def transform_command_antigravity(command: dict[str, Any]) -> str:
+    """
+    Antigravity command format (.agents/workflows/<name>.md).
+    Antigravity invokes these as /<name>. Body passes through unchanged.
+    Frontmatter is stripped, as Antigravity rules and workflows are plain markdown.
+    """
+    return command["body"]
+
+
 # ── AGENTS.md generation ─────────────────────────────────────────────────────
 
 _TIER_LABELS: dict[int, str] = {1: "Core", 2: "Research", 3: "Meta", 4: "Utility"}
@@ -359,6 +368,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "| Platform | Agents | Commands | Skills | IDE rules |",
         "|----------|--------|----------|--------|-----------|",
+        "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
@@ -436,7 +446,7 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "antigravity")
 COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
 
 
@@ -573,19 +583,38 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 count += 1
 
+        if "antigravity" in platforms:
+            for cmd in commands:
+                write_file(
+                    root / ".agents" / "workflows" / f"{cmd['name']}.md",
+                    transform_command_antigravity(cmd),
+                    root,
+                    dry_run,
+                )
+                count += 1
+
         print()
 
     # ── Skills ───────────────────────────────────────────────────────────────
-    if skills and "opencode" in platforms:
+    if skills and ("opencode" in platforms or "antigravity" in platforms):
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
-            write_file(
-                root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
-                skill["raw"],
-                root,
-                dry_run,
-            )
-            count += 1
+            if "opencode" in platforms:
+                write_file(
+                    root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
+                    skill["raw"],
+                    root,
+                    dry_run,
+                )
+                count += 1
+            if "antigravity" in platforms:
+                write_file(
+                    root / ".agents" / "skills" / skill["name"] / "SKILL.md",
+                    skill["raw"],
+                    root,
+                    dry_run,
+                )
+                count += 1
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────
@@ -598,6 +627,25 @@ def main(argv: list[str] | None = None) -> int:
                 f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
                 file=sys.stderr,
             )
+        print()
+
+    # ── Antigravity rules (kernel templates) ─────────────────────────────────
+    if "antigravity" in platforms:
+        print("── antigravity rules ───────────────────────────────────────────")
+        # Inline deploy_antigravity_rules logic here or define above
+        adapter = root / "kernel/templates/platform-adapters/antigravity"
+        if not adapter.is_dir():
+            print(f"  [warning] no format files under {adapter}", file=sys.stderr)
+        else:
+            n = 0
+            dest_dir = root / ".agents" / "rules"
+            for path in sorted(adapter.glob("*.md.template")):
+                out_name = path.name.removesuffix(".template")
+                dest = dest_dir / out_name
+                content = path.read_text(encoding="utf-8")
+                write_file(dest, content, root, dry_run)
+                n += 1
+            count += n
         print()
 
     # ── AGENTS.md ────────────────────────────────────────────────────────────

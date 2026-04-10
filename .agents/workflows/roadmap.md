@@ -1,0 +1,24 @@
+# /roadmap
+
+Show the **D48 versioned roadmap** as a Rich terminal dashboard: each roadmap version
+(v0.0.1 … v0.1.0) with status, phase scope, goals, notes, **Delivered** vs **Upcoming** tasks.
+
+## Steps
+
+1. Run:
+
+   ```bash
+   python scripts/roadmap_dashboard.py
+   ```
+
+2. Optional: point at a specific file (e.g. fork or fixture):
+
+   ```bash
+   python scripts/roadmap_dashboard.py --roadmap path/to/roadmap.yaml
+   ```
+
+## Notes
+
+- Canonical data lives in `.azoth/roadmap.yaml` under `versions:` (`active_version`, D53 bumps).
+- The legacy top-level `tasks:` block is for older tooling; prefer `versions[]` for planning.
+- For session cockpit (health, backlog, last episode), use `/start` → `scripts/welcome.py`. On **Claude Code**, **SessionStart** (P5-007) also injects plain orientation; **`Read`** `.azoth/session-orientation.txt` only for verbatim chat (`CLAUDE.md` rule 9).

@@ -1,8 +1,8 @@
 ---
 name: agentic-eval
 description: |
-    Evaluate and refine agent outputs using rubrics, reflection loops, and evaluator-optimizer
-    pipelines (code, reports, analysis). Not for one-off formatting or trivial copy edits.
+  Evaluate and refine agent outputs using rubrics, reflection loops, and evaluator-optimizer
+  pipelines (code, reports, analysis). Not for one-off formatting or trivial copy edits.
 ---
 
 # Agentic Evaluation Patterns
@@ -166,6 +166,8 @@ FUNCTION evaluate_with_rubric(output, rubric):
     weighted_total = SUM(scores[dimension] * rubric[dimension].weight for each dimension)
     RETURN weighted_total / 5
 ```
+
+---
 
 ## Best Practices
 
