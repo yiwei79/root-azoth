@@ -317,7 +317,6 @@ def test_t18_scope_gate_thin_malformed_stdin_allow(tmp_path: Path) -> None:
 
 def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> None:
     """Writes to ~/.claude/… must be allowed even when scope gate is closed (W3 exemption)."""
-    import os as _os
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
         json.dumps({"approved": False, "expires_at": _future_expiry()}),

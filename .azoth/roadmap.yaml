@@ -124,7 +124,7 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
-active_version: v0.2.0
+active_version: v0.2.1
 
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
 # - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.M → 0.1.M+1 + v0.2.0 current_patch +1
@@ -270,98 +270,123 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 8
     goal: >
-      Long-running, low-friction agentic work: durable run state and resume; declarative
-      swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
-      and recall elasticity without toolkit over-fit; calmer UX (narrow terminals, gate
-      visibility, Cursor orientation parity); optional L2/auto-router lane for refinement goals;
-      token and inference efficiency (context budget, provider caching discipline, spawn hygiene).
-    phase_scope: [1]
+      Milestone: Long-running, low-friction agentic work: durable run state and resume;
+      declarative swarm/eval waves beside prose workflows; pipeline lint and wiring tests;
+      memory-loop and recall elasticity without toolkit over-fit; calmer UX (narrow terminals,
+      gate visibility, Cursor orientation parity); optional L2/auto-router lane for refinement
+      goals; token and inference efficiency (context budget, provider caching discipline,
+      spawn hygiene).
     note: >
-      Detailed specs per task: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Aggregated online
-      research + repo explore swarm: .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml
-      (DYNAMIC-FULL-AUTO+). Task ids use milestone-local P1-NNN; azoth.yaml phase + roadmap
-      current_phase are milestone-local; lifecycle_phase (8) drives the welcome 1–8 strip (D48).
+      Milestone container for v0.2.x series. Working phases: v0.2.1+. All tasks staged as
+      initiatives by theme (A: run-state, B: pipeline, C: memory, D: ux/platform,
+      E: efficiency). Detailed specs: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Research digest:
+      .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml (DYNAMIC-FULL-AUTO+).
+
+  - id: v0.2.1
+    status: active
+    current_patch: 1
+    goal: "Run state foundation + pipeline quality + session policy"
+    phase_scope: [1]
+    themes: [A, B]
+    note: >
+      First working phase of v0.2.0 milestone. Unblocks durable run state (P1-001),
+      closes DFA+ e2e friction gaps (P1-012 Slice B+), adds pipeline linting (P1-003),
+      documents long-running session policy (P1-005).
     tasks:
-      - id: P5-006
-        title: "Phone-friendly output (narrow terminals)"
-        decision_ref: [D48, D52]
-        deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
-        note: "Deferred UX; compact/width-aware welcome + dashboards"
+      - id: P1-012
+        title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
+        decision_ref: [D21, D23, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
+        note: "Slice A done; complete e2e gates, spawn, ledger, IDE parity"
       - id: P1-001
         title: "Swarm & pipeline run ledger + resume protocol"
         decision_ref: [D21, D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-001.yaml"
         note: "Durable .azoth run state; optional welcome surfacing"
-      - id: P1-002
-        title: "Declarative swarm / eval-wave specification"
-        decision_ref: [D23, D28]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
-        note: "YAML/schema alongside e2e-swarm-eval-loop.md"
-        blocked_by: [P1-001]
       - id: P1-003
         title: "Pipeline composition linter"
         decision_ref: [D28]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-003.yaml"
         note: "Structural validation for pipelines/*.pipeline.yaml"
-      - id: P1-004
-        title: "Control-plane surfacing in welcome (gates + optional ledger)"
-        decision_ref: [D52, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
-        note: "TTL visibility; active run summary when ledger exists"
-        blocked_by: [P1-001]
       - id: P1-005
         title: "Long-running session policy (docs + scope playbook)"
         decision_ref: [D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-005.yaml"
         note: "DYNAMIC-FULL-AUTO-style runs vs trust gates"
-      - id: P1-006
-        title: "Memory loop hardening (reinforcement, closeout, session-state)"
-        decision_ref: [D11, D49, D51]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
-        note: "W2 parity; reinforcement_count semantics"
-      - id: P1-007
-        title: "Elasticity: M2/M3 recall governance"
-        decision_ref: [D45]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
-        note: "Tags, decay, contradictions; consumer boundary"
-      - id: P1-008
-        title: "auto-router L2 / self-improve lane"
-        decision_ref: [D23, D44]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
-        note: "Stage 0 → composition_rules for refinement goals"
-      - id: P1-009
-        title: "Cursor session-open parity"
-        decision_ref: [D52, D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
-        note: "Documented automation path vs SessionStart"
-      - id: P1-010
-        title: "Eval / eval-swarm wiring drift hardening"
-        decision_ref: [D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
-        note: "tests + mirror surfaces stay aligned"
-      - id: P1-011
-        title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
-        decision_ref: [D21, D23, D44, D46]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"
-        note: "BL-012 + deploy mirrors + provider caching; RP-E in SWARM_RESEARCH_DIGEST"
-      - id: P1-012
-        title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
-        decision_ref: [D21, D23, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
-        note: "Urgent: mode fails smooth e2e due to gates, spawn, ledger, IDE parity in blast radius"
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.
-# Grouped by category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
+# Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
+# Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
 initiatives:
-  # ── memory ────────────────────────────────────────────────────────────────
+
+  # ── Theme A: run-state ─────────────────────────────────────────────────────
+  - id: INI-RST-001
+    title: "Declarative swarm / eval-wave specification"
+    category: run-state
+    theme: A
+    phase: null
+    priority: high
+    task_ref: P1-002
+    blocked_by: [P1-001]
+    summary: >
+      YAML/schema spec for declarative swarm and eval-wave definitions alongside
+      e2e-swarm-eval-loop.md. Moves pipeline orchestration from prose workflows to
+      structured, lintable declarations. Depends on run ledger (P1-001 in v0.2.1).
+    decision_ref: [D23, D28]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
+
+  - id: INI-RST-002
+    title: "Control-plane surfacing in welcome (gates + optional ledger)"
+    category: run-state
+    theme: A
+    phase: null
+    priority: medium
+    task_ref: P1-004
+    blocked_by: [P1-001]
+    summary: >
+      TTL visibility and active run summary in welcome dashboard when ledger exists.
+      Surfaces scope gate expiry, pipeline gate status, and optional run ledger summary
+      in the session cockpit. Depends on run ledger (P1-001 in v0.2.1).
+    decision_ref: [D52, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
+
+  # ── Theme B: pipeline ──────────────────────────────────────────────────────
+  - id: INI-PPL-001
+    title: "auto-router L2 / self-improve lane"
+    category: pipeline
+    theme: B
+    phase: null
+    priority: medium
+    task_ref: P1-008
+    summary: >
+      Stage 0 composition_rules for refinement goals; optional L2 self-improve lane
+      in auto-router that routes low-risk refinement goals through a lighter pipeline
+      (no full planner/builder/evaluator chain). Reduces overhead for iterative work.
+    decision_ref: [D23, D44]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
+
+  - id: INI-PPL-002
+    title: "Eval / eval-swarm wiring drift hardening"
+    category: pipeline
+    theme: B
+    phase: null
+    priority: medium
+    task_ref: P1-010
+    summary: >
+      Tests and mirror surfaces for eval/eval-swarm stay aligned across
+      skills/agentic-eval, skills/eval-swarm, and pipeline presets. Drift detection
+      prevents silent divergence between the eval skill and its swarm escalation path.
+    decision_ref: [D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+
+  # ── Theme C: memory ────────────────────────────────────────────────────────
   - id: INI-MEM-001
     title: "Verbatim-first M3 storage strategy"
     category: memory
+    theme: C
     phase: null
     priority: high
     summary: >
@@ -376,6 +401,7 @@ initiatives:
   - id: INI-MEM-002
     title: "Temporal validity windows for M2 patterns"
     category: memory
+    theme: C
     phase: null
     priority: medium
     summary: >
@@ -391,6 +417,7 @@ initiatives:
   - id: INI-MEM-003
     title: "Vector retrieval layer for M3 context-recall"
     category: memory
+    theme: C
     phase: null
     priority: medium
     summary: >
@@ -403,10 +430,56 @@ initiatives:
     research_ref: "RP-MEM-B"
     decision_ref: [D11, D45]
 
-  # ── platform ───────────────────────────────────────────────────────────────
+  - id: INI-MEM-004
+    title: "Memory loop hardening (reinforcement, closeout, session-state)"
+    category: memory
+    theme: C
+    phase: null
+    priority: high
+    task_ref: P1-006
+    summary: >
+      W2 parity for memory loop; reinforcement_count semantics in M2 patterns;
+      session-state handoff integrity across closeout. Ensures /session-closeout
+      reliably writes M3, updates session-state.md, and increments reinforcement
+      counts without silent failures.
+    decision_ref: [D11, D49, D51]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
+
+  - id: INI-MEM-005
+    title: "Elasticity: M2/M3 recall governance"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    task_ref: P1-007
+    summary: >
+      Tags, decay rules, contradiction handling, and consumer boundary governance for
+      M2/M3 recall. Prevents memory bloat and stale pattern surfacing without requiring
+      constant manual pruning. Consumer boundary: defines what a downstream azoth install
+      inherits vs builds fresh.
+    decision_ref: [D45]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
+
+  # ── Theme D: ux / platform ─────────────────────────────────────────────────
+  - id: INI-UX-001
+    title: "Phone-friendly output (narrow terminals)"
+    category: ux
+    theme: D
+    phase: null
+    priority: low
+    task_ref: P5-006
+    deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
+    summary: >
+      Compact/width-aware layouts for welcome dashboard and roadmap panels in narrow
+      terminals (mobile SSH, phone-sized viewports). Graceful degradation when terminal
+      width < 80 columns without breaking structured output.
+    decision_ref: [D48, D52]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
+
   - id: INI-PLT-001
     title: "Memory operation platform parity"
     category: platform
+    theme: D
     phase: null
     priority: low
     summary: >
@@ -417,3 +490,34 @@ initiatives:
       the development surface but silently degrade under adapter paths.
     research_ref: "RP-PLT-A"
     decision_ref: [D42, D46, D52]
+
+  - id: INI-PLT-002
+    title: "Cursor session-open parity"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    task_ref: P1-009
+    summary: >
+      Documented and validated automation path for Cursor session-open that reaches
+      parity with Claude Code's SessionStart hook. Covers azoth-memory.mdc rule loading,
+      session-orientation.txt fallback, and Rich UI access via integrated terminal.
+    decision_ref: [D52, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
+
+  # ── Theme E: efficiency ────────────────────────────────────────────────────
+  - id: INI-EFF-001
+    title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
+    category: efficiency
+    theme: E
+    phase: null
+    priority: medium
+    task_ref: P1-011
+    summary: >
+      Context budget discipline (BL-012), deploy mirror pruning, provider caching
+      (prompt cache headers, cache-friendly prompt ordering), and spawn hygiene
+      (avoid cold subagent starts when warm context suffices). RP-E findings in
+      SWARM_RESEARCH_DIGEST.yaml. Goal: measurable token reduction per session without
+      sacrificing pipeline isolation.
+    decision_ref: [D21, D23, D44, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"

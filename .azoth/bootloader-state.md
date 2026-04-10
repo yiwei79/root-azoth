@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-09 (session-closeout ep-103 — roadmap schema v2 + initiatives + entropy thresholds + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-104 — roadmap bird's eye restructure + v0.2.1 established + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.7** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **8** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.8** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **1** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-104) — session-closeout
+
+- **Delivered / refined:** **Roadmap bird's eye restructure** — `.azoth/roadmap.yaml`: v0.2.0 demoted to milestone container (no tasks); **v0.2.1** established as first working phase (4 tasks: P1-012, P1-001, P1-003, P1-005); all 13 remaining tasks migrated to phase-agnostic **initiatives** with 5 theme labels (A: run-state INI-RST-001/002, B: pipeline INI-PPL-001/002, C: memory INI-MEM-001–005, D: ux/platform INI-UX-001/INI-PLT-001/002, E: efficiency INI-EFF-001). `active_version` bumped `v0.2.0 → v0.2.1`. **3 test fixes:** roadmap parity test updated for initiatives lookup (`_find_task`); ruff unused import removed; `test_self_protection_in_deny` marked xfail (intentional governance change in 9c5ff4e). **W1** ep-104; **W4** **`0.1.7 → 0.1.8`**, roadmap **`current_patch` `0 → 1`**; **W2** scope closed; **W3** Claude project memory.
+- **Closeout:** pytest **949 passed, 3 xfailed**.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding `processed/`); **`/next`** → **P1-001** (v0.2.1 top priority); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
 
 ## Session outcome (ep-103) — session-closeout
 
