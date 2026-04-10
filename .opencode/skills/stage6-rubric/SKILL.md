@@ -127,30 +127,3 @@ the human final-approval gate with the specific condition cited.
    Examples of failing text: "when you need evaluation", "for quality checks", "when reviewing"
    with no concrete routing hook.
 
-## Integration
-
-### With `/deliver-full`
-
-Apply this rubric at Stage 6 (Architect Review) before signing off on structured
-deliverables. If any fail condition triggers, document which condition failed and
-the specific location in the artifact. Do not suppress a fail — surface it at
-Stage 7 for human resolution.
-
-### With Agent Archetypes
-
-All archetypes in `agents/` are subject to this rubric on delivery and on
-re-delivery after enrichment. The `agents/tier*/` directory structure does not
-exempt any archetype from Axis 3 requirements.
-
-### With `docs/DECISIONS_INDEX.md`
-
-D44 governance anchor. When verifying Axis 2 criterion 1, cross-reference the
-artifact's `governance_anchor` value against the D-column of DECISIONS_INDEX.md.
-An anchor that does not appear in the index fails criterion 1.
-
-### Enforcement status
-
-This rubric is currently **voluntary** — invocation depends on the architect
-remembering to apply it. Mechanical enforcement (hook or gate that requires a
-rubric pass before Stage 7 approval is granted) is pending Phase 5 (P5-001, D43).
-Until then, the rubric must be cited explicitly in the Stage 7 hand-off summary.

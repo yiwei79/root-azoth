@@ -209,30 +209,4 @@ Self-improvement has strict governance:
 
 ---
 
-## Integration
-
-### With Remember
-
-- Episodes are the raw data for improvement signals
-- Reinforcement counts indicate pattern strength
-
-### With Agentic-Eval
-
-- Evaluation scores are the measurement tool
-- Variant scoring uses eval patterns
-
-### With Prompt-Engineer
-
-- L2 refinements are instruction changes — prompt-engineer crafts them
-- Quality checklist applies to all variants
-
-### With Entropy Guard
-
-- Entropy patterns are a key improvement signal
-- Clustering of yellow/red zones indicates process issues
-
-### With Promotion Rubric
-
-- L2 refinements that prove durable become M2 → M1 promotion candidates
-- The rubric determines where improvements land
 

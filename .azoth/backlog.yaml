@@ -1130,8 +1130,9 @@ items:
     roadmap_ref: P1-011
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
     target_version: v0.2.0
+    completed_date: "2026-04-10"
     priority: 11
     created_date: "2026-04-08"
     decision_ref: [D21, D23, D44, D46]

@@ -76,12 +76,15 @@ description: |
 ## Template
 {copy-paste template for quick use}
 
-## Integration
-{how this connects to pipeline, bootloader, other skills}
+## References
+{canonical docs, schemas, or neighboring skills this skill points to}
 
 ## Best Practices
 {table of practices with rationales}
 ```
+
+Cross-skill dependencies now live in `skills/index.yaml`; prefer that shared index over
+repeating a per-skill `## Integration` section unless a skill has a unique operational note.
 
 ### Pattern 3: Chain-of-Thought Gate
 
@@ -225,20 +228,3 @@ Delivery runs can leave **machine-readable evidence** for L2 refinement without 
 
 ---
 
-## Integration
-
-### With Skills
-- Every SKILL.md follows prompt-engineer structure patterns
-- New skills should pass the instruction quality checklist
-
-### With Agents
-- Agent `.agent.md` files use RCTF pattern
-- Posture tier definitions follow structured format
-
-### With Pipeline
-- Stage prompts follow chain-of-thought gate pattern
-- Gate evaluation criteria use rubric-based format
-
-### With Self-Improve
-- L2 auto-refinement is the active partnership between
-  prompt-engineer and self-improve skills

@@ -33,11 +33,10 @@ Add `subagent_type` and `trigger` columns to the composed pipeline table in the 
 
 ## Spawn invocation (BL-011)
 
-During **Execution**, each stage that invokes a subagent MUST use the YAML spawn template
-in `skills/subagent-router/SKILL.md` §Spawn Prompt Contract (≤ ~20 lines). Use
-`pipeline: auto`, a stable `stage_id` per row (see §Stage briefs: auto), and `Read` of
-`skills/subagent-router/SKILL.md` / archetype files after spawn — do not paste the
-composed pipeline table or CLAUDE.md into the subagent spawn.
+During **Execution**, each stage that invokes a subagent MUST use the minimal YAML
+contract in `skills/subagent-router/SKILL.md` §§Spawn Prompt Contract, Stage summary output,
+and Orchestrator forward payload. Use `pipeline: auto`, a stable `stage_id` per row (see
+§Stage briefs: auto), and keep the spawn body to the compact YAML plus required handoff data.
 
 ## Declaration
 
@@ -62,18 +61,14 @@ Approve pipeline composition + subagent assignments? [yes / adjust / different-p
 
 After human approval of the Declaration:
 
-1. **Pipeline gate (mechanical):** Before the first Write/Edit in this execution phase,
-   `Read` `.azoth/scope-gate.json`. If `delivery_pipeline` is `governed` **or**
-   `target_layer` is `M1`, `Write` `.azoth/pipeline-gate.json` with `"pipeline": "auto"`
-   (same `session_id`, `approved`, `expires_at`, `opened_at` shape as `/deliver-full` Stage 0).
+1. **Pipeline gate (mechanical):** `Read` `docs/GATE_PROTOCOL.md` and apply its
+  scope-gate / pipeline-gate procedure. If this command writes `.azoth/pipeline-gate.json`,
+  set `"pipeline": "auto"`.
 2. Execute each stage in sequence — respect gate types (human gates stop and wait),
    monitor entropy, produce alignment summary at each stage boundary.
-3. **Typed stage summary (BL-012):** When a stage completes (before the next stage consumes
-   context), the subagent MUST emit a YAML document that conforms to
-   `pipelines/stage-summary.schema.yaml` (`stage_id` must match the spawn for that stage).
-   The orchestrator passes that document forward as the machine-readable handoff. Optional
-   markdown alignment (`alignment-sync` skill) is for human pull-review only — it does not
-   replace the typed summary for inter-stage context.
+3. **Typed stage summary (BL-012):** When a stage completes, the subagent MUST emit YAML
+  that conforms to `pipelines/stage-summary.schema.yaml`; `stage_id` must match the spawn
+  and the orchestrator treats that YAML as the machine-readable handoff.
 4. **Orchestrator handoff (mandatory):** Before spawning the **next** subagent (`Task` /
    `Agent`), the orchestrator MUST attach every **upstream typed stage summary** the next
    stage needs under `inputs.prior_stage_summaries` per `skills/subagent-router/SKILL.md`

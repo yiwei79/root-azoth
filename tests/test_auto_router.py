@@ -19,6 +19,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = REPO_ROOT / "skills" / "auto-router" / "SKILL.md"
 PIPELINE_PATH = REPO_ROOT / "pipelines" / "auto.pipeline.yaml"
+SKILL_INDEX_PATH = REPO_ROOT / "skills" / "index.yaml"
 
 # Canonical condition strings in required top-to-bottom order.
 CANONICAL_CONDITIONS: list[str] = [
@@ -75,10 +76,17 @@ def test_auto_router_skill_structure() -> None:
     )
 
     # Required sections
-    for section in ("## Overview", "## When to Use", "## Integration"):
+    for section in ("## Overview", "## When to Use"):
         assert section in content, (
             f"Required section '{section}' is missing from skills/auto-router/SKILL.md"
         )
+
+    index = yaml.safe_load(SKILL_INDEX_PATH.read_text(encoding="utf-8")) or {}
+    entries = {entry["name"]: entry for entry in index.get("skills", [])}
+    assert "auto-router" in entries, "skills/index.yaml must include auto-router"
+    assert entries["auto-router"].get("depends_on") == ["subagent-router"], (
+        "skills/index.yaml must record auto-router's dependency on subagent-router"
+    )
 
     # Minimum content length
     line_count = len(content.splitlines())

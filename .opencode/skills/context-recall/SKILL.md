@@ -104,24 +104,3 @@ If no episodes or patterns score above zero, output:
 No prior context found for: {goal-summary}
 ```
 
-## Integration
-
-### With `remember` skill
-
-`remember` is the write path for M3 episodes. `context-recall` is the canonical
-read path. They are complementary: `remember` captures at session close;
-`context-recall` surfaces at session open. Do not use the Episode Surfacing section
-in `remember` directly — invoke `context-recall` instead for consistency.
-
-### With `full.pipeline.yaml`
-
-`context-recall` is an optional tool in the `architect-design` stage. Invoke it
-before reading the codebase to prime the architect with relevant prior session
-knowledge.
-
-### With `.azoth/memory/`
-
-Reads from:
-- `.azoth/memory/episodes.jsonl` — M3 append-only episode log
-- `.azoth/memory/patterns.yaml` — M2 human-approved patterns (read-only; absence
-  handled gracefully)

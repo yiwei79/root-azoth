@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-106 — P1-002 declarative swarm/eval-wave spec + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-107 — P1-011 token-efficiency optimization + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.10** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **3** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.11** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-107) — P1-011 token-efficiency optimization
+
+- **Delivered:** **P1-011 complete** — extracted `docs/GATE_PROTOCOL.md` and `skills/index.yaml` as canonical references, removed repeated Integration prose from skill surfaces, converted `agentic-eval` examples to pseudocode in canonical/runtime mirrors, tightened `/deliver` stage review wording, clarified DFA gate/eval loading, and preserved **E1-E6**, **0.85 /eval**, **0.90 /eval-swarm**, BL-011, BL-012, and review-independence behavior. Deploy mirrors refreshed; focused pytest **215 passed, 2 xfailed**.
+- **Closeout:** **W1** ep-107 appended; **W2** scope closed, P1-011 backlog marked complete, `azoth.yaml` `memory.episodes` synced to **107**; **W3** Claude project memory mirrored; **W4** **`0.1.10 → 0.1.11`**, roadmap **`current_patch` `3 → 4`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.11`**.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`/next`** → **P1-003** (pipeline composition linter) or **P1-005** (long-running session policy); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
 
 ## Session outcome (ep-106) — P1-002 declarative swarm/eval-wave spec
 

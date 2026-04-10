@@ -36,6 +36,7 @@ def test_stage0_pipeline_gate_section_present() -> None:
     """Mechanical layer: Stage 0 must document pipeline-gate.json for governed scopes."""
     assert "## Stage 0 — Pipeline gate (mechanical)" in _CONTENT
     assert "pipeline-gate.json" in _CONTENT
+    assert "docs/GATE_PROTOCOL.md" in _CONTENT
 
 
 def test_stage_ids_in_deliver_full_table() -> None:

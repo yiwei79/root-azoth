@@ -79,43 +79,4 @@ is retained to verify correctness before the architect approves.
 **Rule 7 (default)** — Any goal that does not match conditions 1–6 uses the
 full pipeline. The default is conservative: prefer more oversight over less.
 
-## Integration
-
-### How the Architect uses this skill
-
-```
-1. Complete Stage 0 classification.
-2. Invoke the `auto-router` skill with the classification YAML.
-3. Match the classification against the routing table top-to-bottom.
-4. Record the matched condition and resulting pipeline.
-5. Emit the Declaration block (pipeline + rationale + approval prompt).
-6. Wait for human approval before executing.
-```
-
-### Cross-file consistency
-
-This skill is the single source of truth for routing logic. The condition
-strings and pipeline arrays in this file MUST match `pipelines/auto.pipeline.yaml`
-exactly. If you need to add or modify a rule, update BOTH files in the same
-change and update the tests in `tests/test_auto_router.py`.
-
-### Subagent assignment
-
-After composing the pipeline, apply the `subagent-router` skill to assign
-a `subagent_type` to each stage. Add `subagent_type` and `trigger` columns
-to the Declaration table before presenting for approval.
-
-At **execution** time, each subagent spawn must follow `subagent-router`
-§Spawn Prompt Contract (BL-011): YAML goal + parameters only, not pasted pipeline prose.
-
-### L2 / instruction-rubric goals (P6-002, v1 inject-only)
-
-The Stage 0 classification tuple (`scope`, `risk`, `complexity`, `knowledge`) does not yet include an explicit “instruction refinement” flag, so **v1** does **not** add a new `composition_rules` row to `pipelines/auto.pipeline.yaml`. For goals that should feed **prompt-engineer** after delivery evidence exists, the **orchestrator** documents and runs an **inject-only** branch: append an L2 evidence record (`scripts/l2_evidence_append.py`), then spawn **prompt-engineer** with fresh context. When classification is extended (future task), a single new auto-router rule may reference that flag.
-
-### Related files
-
-- `pipelines/auto.pipeline.yaml` — YAML representation of these rules
-- `skills/subagent-router/SKILL.md` — stage-level subagent assignment
-- `.claude/commands/auto.md` — the `/auto` command that invokes this skill
-- `docs/DECISIONS_INDEX.md` D23 — governance anchor
 

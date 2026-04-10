@@ -110,7 +110,7 @@ used before BL-013.
   - **P1-012** — **Complete** (ep-102): DFA+ friction map + honest IDE paths in `skills/dynamic-full-auto/SKILL.md` (Slice A); optional Slice B mechanical deferred.
   - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
-## Integration
+## Planning Sources
 
 - **Canonical phase source for planning:** this file + `azoth.yaml` (`phase` = milestone-local, `lifecycle_phase` = welcome strip) + `.azoth/roadmap.yaml` `active_version` + matching `current_phase` / `lifecycle_phase`.
 - **Root `CLAUDE.md`:** always-loaded; points here for roadmap and expanded workflow.

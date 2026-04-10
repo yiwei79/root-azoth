@@ -187,25 +187,6 @@ Used during HARDEN phase.
 
 ---
 
-## Integration
-
-### With Bootloader
-- **HARDEN**: Produces session close summary
-
-### With Pipeline
-- Every stage boundary produces a stage completion summary
-- Human gates produce decision-required summaries
-
-### With Entropy Guard
-- Yellow/red zone triggers entropy alert summary
-- Entropy zone always included in every summary type
-
-### With Remember
-- Session close summary references captured episodes
-- Promotion proposals included when applicable
-
----
-
 ## Best Practices
 
 | Practice | Rationale |

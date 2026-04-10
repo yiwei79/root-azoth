@@ -19,6 +19,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
+SKILL_INDEX = SKILLS_DIR / "index.yaml"
 
 EXPECTED_SKILLS = [
     "context-map",
@@ -65,6 +66,9 @@ class TestSkillStructure:
 
     def test_skills_directory_exists(self) -> None:
         assert SKILLS_DIR.is_dir(), "skills/ directory must exist"
+
+    def test_skill_index_exists(self) -> None:
+        assert SKILL_INDEX.is_file(), "skills/index.yaml must exist"
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_skill_directory_exists(self, skill_name: str) -> None:
@@ -197,13 +201,6 @@ class TestSkillContent:
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
-    def test_has_integration_section(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
-        assert "## Integration" in content or "## integration" in content.lower(), (
-            f"{skill_name} SKILL.md should have an Integration section"
-        )
-
-    @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_minimum_content_length(self, skill_name: str) -> None:
         content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         lines = content.strip().split("\n")
@@ -215,10 +212,31 @@ class TestSkillContent:
 class TestSkillConsistency:
     """Verify skills are consistent with architecture and each other."""
 
+    @staticmethod
+    def _load_skill_index() -> dict:
+        return yaml.safe_load(SKILL_INDEX.read_text(encoding="utf-8")) or {}
+
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
         assert len(NEW_SKILLS) == 10, "Should have 10 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
+
+    def test_skill_index_lists_all_expected_skills(self) -> None:
+        index = self._load_skill_index()
+        listed = [entry["name"] for entry in index.get("skills", [])]
+        assert sorted(listed) == sorted(EXPECTED_SKILLS), (
+            "skills/index.yaml must list every canonical skill exactly once"
+        )
+
+    def test_skill_index_dependencies_reference_known_skills(self) -> None:
+        index = self._load_skill_index()
+        known = set(EXPECTED_SKILLS)
+        for entry in index.get("skills", []):
+            for dependency in entry.get("depends_on", []):
+                assert dependency in known, (
+                    f"skills/index.yaml dependency {dependency!r} for {entry['name']!r} "
+                    "must reference a known skill"
+                )
 
     def test_architecture_references_all_skills(self) -> None:
         """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""

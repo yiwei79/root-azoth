@@ -118,15 +118,6 @@ Use this template at the start of any implementation stage:
 
 ---
 
-## Integration with Pipeline
-
-Context mapping happens automatically in the **OPERATE** phase (bootloader)
-and explicitly in pipeline stages:
-
-- **Stage 1 (Architect)**: Full context map of the goal's blast radius
-- **Stage 3 (Planning)**: Context map per planned task
-- **Stage 5 (Implementation)**: Verify context map still holds before each change
-
 ## Proactive Posture
 
 This skill operates at **always-do** tier (D26): agents should map context

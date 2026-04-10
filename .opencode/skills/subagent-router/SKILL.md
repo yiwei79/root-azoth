@@ -157,6 +157,21 @@ handoff is an **orchestrator failure**, not an evaluator failure.
 
 **After** is the only approved pattern for `/auto`, `/deliver`, and `/deliver-full` execution.
 
+### Static-prefix-friendly ordering (P1-011)
+
+Keep spawn YAML keys in this order whenever practical:
+
+1. `pipeline`
+2. `stage_id`
+3. `subagent_type`
+4. `trigger`
+5. optional `role_hint`
+6. `goal`
+7. `inputs`
+
+Put high-variance text (`goal`, large artifact lists, `prior_stage_summaries`) later so the
+prefix stays stable for provider-side prompt caching.
+
 ## Stage summary output (BL-012)
 
 When the stage finishes (before returning control to the orchestrator), emit a **YAML**
@@ -221,6 +236,20 @@ When the goal involves **Agent Crafter** or meta-agent definition work (`agents/
 
 When the human or orchestrator runs the **L2 refinement** branch, **do not** paste evaluator/reviewer transcripts into the prompt-engineer spawn. Append a typed record to `.azoth/memory/l2-refinement-evidence.jsonl` using **`scripts/l2_evidence_append.py`** (gated), then spawn **prompt-engineer** with **review-independence** (fresh context) and `Read` of the JSONL tail (or session-filtered lines) plus `target_surfaces` from the record.
 
+## Cursor Note
+
+Cursor uses `Task` instead of Claude Code `Agent()`. The main chat remains the
+orchestrator, each isolated stage is a separate `Task` with the same `subagent_type`
+this router assigns, and downstream spawns still need verbatim `prior_stage_summaries`.
+If reviewer output returns request-changes, blocked, CRITICAL findings, `entropy: RED`,
+or `status: needs-input`, stop until the human explicitly continues.
+
+## Evaluator Note
+
+DYNAMIC-FULL-AUTO+ and normal delivery pipelines use the same evaluator escalation rule:
+compute **E1-E6** from `.claude/commands/eval.md` at evaluator boundaries, then choose
+`/eval-swarm` versus a single evaluator pass from that result.
+
 ## When to Use
 
 - **Pipeline composition** (`/auto` Subagent Assignment step) — apply the routing
@@ -229,53 +258,5 @@ table to each composed stage and record subagent_type + trigger rationale
 skill to determine the correct subagent_type
 - **Governance review** — verify that each agent-gated stage has a trigger citation
 
----
-
-## Integration
-
-### With /deliver-full
-
-The Orchestration Constraints section cites this skill as the policy source.
-Stages 3–6 carry Agent() invocations with trigger citations derived from this router.
-**Stage 0** of `/deliver-full` writes `.azoth/pipeline-gate.json` when scope-gate indicates
-governed delivery — the PreToolUse hook blocks other writes until that gate exists, so the
-pipeline cannot be skipped for M1 work.
-
-### With /deliver
-
-The Orchestration Constraints section cites this skill as the policy source.
-Gates 1–3 carry Agent() invocations with trigger citations derived from this router.
-
-### With /auto
-
-The Subagent Assignment step applies this routing table to every composed stage
-before presenting the pipeline for human approval.
-
-### With Cursor (Task tool)
-
-Cursor does not run Claude Code’s `Agent()` API. Use the `**Task`** tool with
-`subagent_type` set to the same archetype this table assigns (e.g. `reviewer`,
-`planner`, `builder`). The **main chat** is the orchestrator; each isolated stage is a
-**separate `Task`** with the §Spawn Prompt Contract body only. See
-`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc` (deployed to
-`.cursor/rules/`).
-
-**Critical:** Subagent sessions do **not** inherit prior `Task` outputs. The orchestrator
-**must** paste `prior_stage_summaries` (typed YAML) into each downstream spawn — especially
-**evaluator** — or the pipeline will false-fail quality gates. After **reviewer** returns
-**request-changes**, **blocked**, **CRITICAL** findings, `entropy: RED`, or `status: needs-input`,
-the orchestrator **must not** spawn planner/builder until the **human** explicitly approves
-continuation (see `.claude/commands/auto.md` Execution).
-
-### With DYNAMIC-FULL-AUTO+
-
-Digest-mode and research swarms do **not** relax evaluator escalation: at any **evaluator boundary**
-(including optional PRE_DELIVERY_EVAL Wave C), the orchestrator still computes **E1–E6** from
-`.claude/commands/eval.md` the same way as `/auto` — then chooses `/eval-swarm` vs single eval per
-that table. `skills/dynamic-full-auto/SKILL.md` references the same triggers.
-
-### With Architecture Decisions
-
-- D21: Subagent isolation for review gates — this skill is the operational
-expression of D21's mandate.
+D21 remains the architecture anchor for the isolation rules in this router.
 

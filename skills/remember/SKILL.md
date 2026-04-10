@@ -152,26 +152,6 @@ When a pattern has been reinforced across 2+ episodes:
 
 ---
 
-## Integration
-
-### With Bootloader
-
-- **SURVEY**: Surface relevant episodes
-- **HARDEN**: Capture session episode, propose promotions
-
-### With Pipeline
-
-- **Stage 6 (Architect Review)**: Evaluator scores → episode captured
-- **Session Closeout**: Unified capture + classification + proposal
-
-### With Other Skills
-
-- `agentic-eval` → evaluation results become episode content
-- `entropy-guard` → entropy events become episode observations
-- `alignment-sync` → alignment summaries reference relevant episodes
-
----
-
 ## Best Practices
 
 

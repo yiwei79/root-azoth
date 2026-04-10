@@ -18,13 +18,19 @@ Follow **`.agents/skills/swarm-coordination/SKILL.md`**: single-message fan-out,
 
 ## Gates
 
-- **Scope / pipeline:** Same rules as **`/auto`** (see `.claude/commands/auto.md` **Execution**): before the first **Write/Edit** in a governed or M1 delivery tail, satisfy **`.azoth/scope-gate.json`** and, when required, **`.azoth/pipeline-gate.json`**. When you **write** `pipeline-gate.json`, set **`"pipeline"`** to the delivery command you actually run next — exactly one of **`"auto"`** (see `.claude/commands/auto.md`), **`"deliver"`** (see `.claude/commands/deliver.md` Stage 0), or **`"deliver-full"`** (see `.claude/commands/deliver-full.md` Stage 0). Do **not** default to **`auto`** when the handoff is **`/deliver`** or **`/deliver-full`**.
+- **Scope / pipeline:** `Read` `docs/GATE_PROTOCOL.md` and apply it before the first
+	**Write/Edit** in governed or M1 work, including digest mutation and the delivery tail. When you write `pipeline-gate.json`, set
+	**`"pipeline"`** to the delivery command you actually run next — exactly one of
+	**`"auto"`**, **`"deliver"`**, or **`"deliver-full"`**. Do **not** default to **`auto`** when
+	the handoff is **`/deliver`** or **`/deliver-full`**.
 - **`azoth_effect: write`:** Discovery waves are **read/analysis** unless scope already permits writes; **writes** (digest append, implementation) require the same gates as **`/auto`** for governed/M1 work.
 - **Review failure:** If any review / audit stage returns request-changes, CRITICAL blockers, **`entropy: RED`**, or **`status: needs-input`**, **STOP** and wait for explicit human approval before continuing — same as **`/auto`**.
 
 ## Evaluator routing
 
-When the composed delivery pipeline includes an evaluator (or you run a pre-delivery eval gate), follow **`.claude/commands/eval.md`** **E1–E6** and the skill’s **PRE_DELIVERY_EVAL** section (including **`/eval-swarm`** when triggers fire).
+When deciding whether to insert PRE_DELIVERY_EVAL Wave C, or when the delivery tail includes
+an evaluator boundary, read **`.claude/commands/eval.md`** and apply **E1–E6** plus the skill’s
+PRE_DELIVERY_EVAL section (including **`/eval-swarm`** when triggers fire).
 
 ## Cursor / other IDEs
 

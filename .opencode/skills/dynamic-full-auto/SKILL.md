@@ -138,7 +138,8 @@ tiny, **skip Wave B** with explicit justification in `explore_swarm_summary.find
   (present pipeline to human unless session contract says otherwise). Subagent assignments still
    follow `skills/subagent-router/SKILL.md`.
 3. **Optional `/eval-swarm` insertion (Wave C)**
-  When quality bar needs **≥ 0.90**, parallel independent work, or **eval.md** escalation triggers:
+  Only when Wave C is actually selected because the quality bar needs **≥ 0.90**, parallel
+  independent work is present, or **eval.md** escalation triggers fire:
   - `**Read` `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`** and `**.claude/commands/eval-swarm.md`**.  
   - Spawn **one message**, **≤7** `Task(subagent_type=evaluator, readonly=true)` with **minimal**
   YAML: `pipeline: e2e-swarm-eval`, `stage_id`, `artifacts` paths, `threshold: 0.9`,
@@ -249,19 +250,11 @@ summaries inside governed pipelines.
 5. **Checkpoint Γ + delivery** — Same logical flow as Claude Code; **`pipeline-gate.json`** must set `"pipeline"` to match the **next** delivery command (`"auto"` \| `"deliver"` \| `"deliver-full"`).
 6. **`/next`** — Use before gated implementation if scope is missing or expired; do not invent parallel workflows — see `.claude/commands/next.md`.
 
-## Integration
+## Lazy Eval Loading
 
-- **Swarm mechanics:** `.agents/skills/swarm-coordination/SKILL.md` and
-`.claude/workflows/enterprise/e2e-swarm-eval-loop.md` (Wave C/D; **threshold 0.9**).
-- `**/eval-swarm` surface:** `.claude/commands/eval-swarm.md` — use for **PRE_DELIVERY_EVAL** when
-the stricter gate or parallel judge branches are needed; align spawn shape with e2e doc.
-- **Baseline `/eval`:** `.claude/commands/eval.md` — **E1–E6** triggers decide when to **insert**
-eval-swarm vs single evaluator inside downstream `/auto` (orchestrator must not ignore them).
-- **Subagent policy:** `skills/subagent-router/SKILL.md`, `**skills/auto-router/SKILL.md`** (mandatory
-at Checkpoint Γ after digest).
-- **Roadmap context:** `skills/orientation/SKILL.md`, `.azoth/roadmap.yaml`, `.azoth/backlog.yaml`.
-- **Digest tool:** `scripts/swarm_research_digest.py` (init / append-pack / validate).
-- **Deploy:** After editing this skill, run `python3 scripts/azoth-deploy.py` (D46).
+Do not pre-load `.claude/commands/eval.md`, `.claude/commands/eval-swarm.md`, or
+`.claude/workflows/enterprise/e2e-swarm-eval-loop.md` during discovery-only work. Read them
+only if the delivery tail reaches an evaluator boundary or Wave C is actually inserted.
 
 ## Operator Checklist
 
@@ -270,10 +263,13 @@ at Checkpoint Γ after digest).
 - Sources are real URLs; contradictions called out in `risks` or `consensus_themes`.
 - **Checkpoint Γ:** Stage 0 classification + `auto-router` re-run logged; pipeline table matches
 post-digest reality.
+- Eval docs are loaded only if PRE_DELIVERY_EVAL or another evaluator boundary is actually used.
 - If PRE_DELIVERY_EVAL ran: `/eval-swarm` rules respected (fresh evaluators, minimal spawns, 0.9).
 - **E1–E6 audit:** logged which triggers fired (or “none — Wave C skipped by policy”) using the same
 table as `.claude/commands/eval.md`.
 - Transition to `**/auto`** (or `/deliver-full`) with a **fresh** scope for implementation work.
+
+After editing this skill, run `python3 scripts/azoth-deploy.py` (D46).
 
 ## Future refinement
 

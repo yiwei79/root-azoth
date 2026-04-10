@@ -112,12 +112,6 @@ Apply what fits the changed or requested files — skip N/A sections.
 4. **Write** (or propose write) to `.azoth/inbox/cursor-review-YYYY-MM-DD.jsonl`.
 5. Remind: run **`/intake`** when ready; do not auto-promote to M2/M3.
 
-## Integration
-
-- **Slash command:** `.claude/commands/review-insights.md` — `/review-insights` (deploys to Copilot/OpenCode prompts via `azoth-deploy`).
-- **Cursor rule:** `kernel/templates/platform-adapters/cursor/code-review-insights.mdc.template` → `.cursor/rules/code-review-insights.mdc`.
-- **Intake:** `/intake` after files land in `.azoth/inbox/`; `source` **`cursor-review`** must be in `.azoth/trusted-sources.yaml`.
-
 ## Related
 
 - `skills/agentic-eval/SKILL.md` — rubric-style evaluation (different purpose)

@@ -149,36 +149,9 @@ Expected zone after: RED (≥ 25)
 Recommendation: Checkpoint first, or split into 2 smaller operations.
 ```
 
----
-
-## Integration
-
-### With Bootloader
-
-- **OPERATE**: Entropy guard is active throughout
-- **HARDEN**: Final entropy report included in session summary
-
-### With Pipeline
-
-- Stage boundaries trigger entropy reports
-- Gate evaluations consider entropy zone
-
-### With Trust Contract
-
-- Entropy guard ENFORCES the Trust Contract's entropy ceiling
-- Per-turn limits are the Trust Contract's rules, not the guard's
-
-### With Alignment-Sync
-
-- Entropy zone is always included in alignment summaries
-- RED zone triggers immediate alignment summary
-
-### With Remember
-
-- Entropy events (yellow/red zone entries) are recorded as episodes
-- Patterns in entropy can drive process improvements
-
----
+Operational note: entropy is active throughout OPERATE/HARDEN, stage boundaries should
+surface the current zone in alignment summaries, and repeated yellow/red entries are worth
+capturing during remember or session closeout.
 
 ## Telemetry Record
 
