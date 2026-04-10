@@ -285,7 +285,7 @@ versions:
 
   - id: v0.2.1
     status: active
-    current_patch: 5
+    current_patch: 6
     goal: "Run state foundation + pipeline quality + session policy"
     phase_scope: [1]
     themes: [A, B]

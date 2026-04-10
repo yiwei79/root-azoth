@@ -1,11 +1,18 @@
 # Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-108 — Claude/Copilot parity + orchestrator-default planning + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-109 — Claude-only autocompact split + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.12** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **5** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.13** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-109) — Claude-only autocompact split
+
+- **Delivered:** Moved the strict Claude-only autocompact override (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=65`) out of the repo-shared `.claude/settings.json` and into `~/.claude/settings.json`, so Copilot no longer inherits the workspace threshold while Claude Code keeps the stricter compaction guard.
+- **Validated:** Both settings files parse cleanly; no kernel or command surfaces changed.
+- **Decision capture:** Keep repo-shared `.claude/settings.json` neutral when a runtime override is meant for Claude Code only; use the user-level Claude config for that split.
+- **Closeout:** **W1** ep-109 appended; `azoth.yaml` `memory.episodes` synced to **109**; a newer approved scope (`INV-ANTIGRAVITY-PARITY`) was left open by user request instead of being closed by this session; **W3** Claude project memory mirrored that state with a local-override preference note; **W4** **`0.1.12 → 0.1.13`**, roadmap **`current_patch` `5 → 6`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.13`**.
 
 ## Session outcome (ep-108) — Claude/Copilot parity hardening + orchestrator-default planning
 
