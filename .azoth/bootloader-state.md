@@ -1,11 +1,23 @@
 # Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-104 — roadmap bird's eye restructure + v0.2.1 established + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-106 — P1-002 declarative swarm/eval-wave spec + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.8** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **1** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.10** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **3** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-106) — P1-002 declarative swarm/eval-wave spec
+
+- **Delivered:** **P1-002 complete** — `pipelines/swarm-eval-wave.schema.yaml` (JSON Schema draft 2020-12: schema_version, constants, waves with if/then threshold enforcement), `pipelines/swarm-eval-wave.example.yaml` (waves A–D encoding e2e-swarm-eval-loop.md topology), `tests/test_swarm_wave_schema.py` (53 tests, all pass), `.claude/workflows/enterprise/e2e-swarm-eval-loop.md` (+1 reference line). Governance review returned `request-changes` (F4 schema_version const, F5 conditional threshold tests, F7 Wave D agent enum); human approved continuation; corrections applied at Planner level. Backlog P1-002 marked complete.
+- **Closeout:** **W1** ep-106; **W4** **`0.1.9 → 0.1.10`** (performed at Stage 7); **W2** scope already closed; **W3** Claude project memory.
+- **Next:** **P1-003** (Pipeline composition linter) or **P1-005** (Long-running session policy); **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
+
+## Session outcome (ep-105) — P1-001 run ledger delivery
+
+- **Delivered:** **P1-001 complete** — `pipelines/run-ledger.schema.yaml`, `.azoth/run-ledger.local.yaml.example`, `scripts/run_ledger.py` (validate/status/append CLI + `load_active_run()` helper), `scripts/welcome.py` active run line (Rich + plain), `docs/AZOTH_ARCHITECTURE.md` P1-001 pointer, `.gitignore` entry, `tests/test_run_ledger.py` (26 tests, all pass). Entropy gate hit twice at 1000-line cap; resolved by checkpoint commit + state reset. Backlog P1-001 marked complete.
+- **Closeout:** **W1** ep-105 (Stage 4); **W4** **`0.1.8 → 0.1.9`**, roadmap **`current_patch` `1 → 2`**; **W2** scope closed; **W3** Claude project memory.
+- **Next:** **P1-002** (Declarative swarm / eval-wave spec — M1/governed, requires `/deliver-full`); **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
 
 ## Session outcome (ep-104) — session-closeout
 

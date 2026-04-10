@@ -105,3 +105,4 @@ acceptance:
 - `.claude/commands/eval.md` — baseline **0.85** thresholds
 - `.claude/commands/eval-swarm.md` — **0.90** swarm eval process
 - `.agents/skills/swarm-coordination/SKILL.md` — parallelism and Iron Laws
+- `pipelines/swarm-eval-wave.example.yaml` — canonical wave-topology data validated against `pipelines/swarm-eval-wave.schema.yaml`

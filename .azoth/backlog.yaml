@@ -994,8 +994,9 @@ items:
     roadmap_ref: P1-002
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.2.0
+    completed_date: "2026-04-10"
     priority: 2
     created_date: "2026-04-08"
     decision_ref: [D23, D28]

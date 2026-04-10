@@ -1,0 +1,53 @@
+# Azoth Swarm Eval-Wave Example — P1-002
+# Encodes waves A–D from .claude/workflows/enterprise/e2e-swarm-eval-loop.md
+# Validates against pipelines/swarm-eval-wave.schema.yaml
+
+schema_version: 1
+description: >
+  E2E eval-swarm loop with four waves: parallel implementation, parallel review,
+  parallel evaluation (threshold 0.9), and targeted fix iteration.
+  Queen orchestrates; fan-out capped at 7 per Iron Laws.
+
+constants:
+  eval_threshold: 0.9
+  max_iteration_rounds: 3
+
+waves:
+  - stage_id: wave_a_build
+    wave: A
+    agent: builder
+    max_parallel: 7
+    optional: true
+    description: >
+      Wave A — parallel implementation. Each Task(builder) works on independent files.
+      Spawn all builders in ONE message. Skip if no implementation work applies.
+
+  - stage_id: wave_b_review
+    wave: B
+    agent: reviewer
+    max_parallel: 7
+    optional: true
+    description: >
+      Wave B — parallel review. Each Task(reviewer) uses a fresh context.
+      Skip if review is not required for this swarm run.
+
+  - stage_id: wave_c_eval
+    wave: C
+    agent: evaluator
+    max_parallel: 7
+    threshold: 0.9
+    description: >
+      Wave C — parallel evaluation with strict isolation.
+      Each evaluator receives only artifact paths + acceptance criteria + threshold.
+      No builder chat, prior eval prose, or author framing in the spawn payload.
+
+  - stage_id: wave_d_fix
+    wave: D
+    agent: builder
+    max_parallel: 7
+    optional: true
+    description: >
+      Wave D — targeted fix for branches that scored below threshold.
+      Primary fixer is builder; planner role is noted here but uses agent=builder
+      (single enum value per wave row; planner intent documented in description only).
+      Queen passes gap labels only — not full evaluator reports — to preserve context isolation.
