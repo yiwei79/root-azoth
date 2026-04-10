@@ -14,7 +14,7 @@ import sys
 
 from alignment_summary_gate import evaluate_alignment_handoff, resolve_repo_root
 from entropy_check import evaluate_entropy
-from scope_gate_core import emit_hook_response, evaluate_scope_gate
+from scope_gate_core import emit_hook_response, evaluate_scope_gate, normalized_write_action
 from session_telemetry import record_pretooluse_write_edit
 
 
@@ -32,8 +32,7 @@ def main() -> None:
     except json.JSONDecodeError:
         emit_hook_response(allow=True)
         return
-    tool_name = payload.get("tool_name", "")
-    if tool_name not in {"Write", "Edit"}:
+    if normalized_write_action(payload) is None:
         emit_hook_response(allow=True)
         return
     result = evaluate_scope_gate(payload, repo_root=repo_root)

@@ -4,7 +4,7 @@ azoth-deploy.py — Translate canonical Azoth sources into platform-specific dep
 
 Transforms:
   agents/**/*.agent.md  →  .claude/agents/<name>.md            (Claude Code)
-                        →  .github/agents/<name>.agent.md      (GitHub Copilot)
+                                                →  .github/agents/<name>.agent.md      (GitHub Copilot compatibility mirror)
                         →  .opencode/agents/<name>.md          (OpenCode)
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
@@ -17,6 +17,7 @@ Usage:
   python scripts/azoth-deploy.py
   python scripts/azoth-deploy.py --dry-run
   python scripts/azoth-deploy.py --platforms claude copilot
+    python scripts/azoth-deploy.py --platforms copilot --copilot-agent-location claude
   python scripts/azoth-deploy.py --platforms cursor
   python scripts/azoth-deploy.py --root /path/to/project
 
@@ -228,7 +229,7 @@ def transform_agent_claude(agent: dict[str, Any]) -> str:
 
 def transform_agent_copilot(agent: dict[str, Any]) -> str:
     """
-    Copilot agent format (.github/agents/<name>.agent.md).
+    Copilot compatibility mirror format (.github/agents/<name>.agent.md).
     Frontmatter: name, description (required), tools (optional), model (optional).
     """
     meta = agent["meta"]
@@ -275,6 +276,8 @@ def transform_command_copilot(command: dict[str, Any]) -> str:
     fm: dict[str, Any] = {"mode": "agent"}
     if desc := command["meta"].get("description"):
         fm["description"] = desc
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
     return render_frontmatter(fm) + command["body"]
 
 
@@ -286,6 +289,8 @@ def transform_command_opencode(command: dict[str, Any]) -> str:
     fm: dict[str, Any] = {}
     if desc := command["meta"].get("description"):
         fm["description"] = desc
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
     if fm:
         return render_frontmatter(fm) + command["body"]
     return command["body"]
@@ -355,7 +360,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Platform | Agents | Commands | Skills | IDE rules |",
         "|----------|--------|----------|--------|-----------|",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
-        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` | — |",
+        "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
@@ -432,6 +437,17 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor")
+COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
+
+
+def _deploy_claude_agents(platforms: set[str], copilot_agent_location: str) -> bool:
+    return "claude" in platforms or (
+        "copilot" in platforms and copilot_agent_location in {"claude", "both"}
+    )
+
+
+def _deploy_github_agents(platforms: set[str], copilot_agent_location: str) -> bool:
+    return "copilot" in platforms and copilot_agent_location in {"github", "both"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -457,17 +473,34 @@ def main(argv: list[str] | None = None) -> int:
         metavar="PLATFORM",
         help=f"Platforms to target (default: all). Choices: {', '.join(ALL_PLATFORMS)}",
     )
+    parser.add_argument(
+        "--copilot-agent-location",
+        choices=COPILOT_AGENT_LOCATIONS,
+        default="claude",
+        help=(
+            "Where to deploy Copilot custom agents: 'claude' keeps Copilot agent discovery "
+            "Claude-first via .claude/agents/ while preserving .github/prompts/, 'github' "
+            "writes .github/agents/ only, and 'both' writes both agent locations. "
+            "Default: claude"
+        ),
+    )
     args = parser.parse_args(argv)
 
     root: Path = args.root.resolve()
     platforms: set[str] = set(args.platforms)
     dry_run: bool = args.dry_run
+    copilot_agent_location: str = args.copilot_agent_location
 
     if not root.is_dir():
         print(f"error: root not found: {root}", file=sys.stderr)
         return 1
 
-    print(f"azoth-deploy  root={root}  platforms={sorted(platforms)}  dry-run={dry_run}\n")
+    extra = ""
+    if "copilot" in platforms:
+        extra = f"  copilot-agent-location={copilot_agent_location}"
+    print(
+        f"azoth-deploy  root={root}  platforms={sorted(platforms)}  dry-run={dry_run}{extra}\n"
+    )
 
     agents = load_agents(root)
     commands = load_commands(root)
@@ -481,7 +514,7 @@ def main(argv: list[str] | None = None) -> int:
     if agents:
         print("── agents ──────────────────────────────────────────────────────")
 
-        if "claude" in platforms:
+        if _deploy_claude_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
                 write_file(
@@ -492,7 +525,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 count += 1
 
-        if "copilot" in platforms:
+        if _deploy_github_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
                 write_file(

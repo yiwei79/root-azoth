@@ -86,6 +86,65 @@ def test_t3_edit_gate_absent(tmp_path: Path) -> None:
     assert "scope-gate" in _reason(output)
 
 
+def test_t3b_create_file_gate_absent_vscode_payload(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    stdin_payload = json.dumps(
+        {
+            "tool_name": "create_file",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {
+                "filePath": str(tmp_path / "vscode-created.txt"),
+                "content": "hello\n",
+            },
+        }
+    )
+    workspace = gate_path.parent
+    env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    result = subprocess.run(
+        ["python3", str(ORCHESTRATOR_PATH)],
+        input=stdin_payload,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0
+    output = json.loads(result.stdout)
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
+def test_t3c_replace_string_gate_absent_vscode_payload(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    target = tmp_path / "vscode-edit.txt"
+    target.write_text("alpha\n", encoding="utf-8")
+    stdin_payload = json.dumps(
+        {
+            "tool_name": "replace_string_in_file",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {
+                "filePath": str(target),
+                "oldString": "alpha",
+                "newString": "beta",
+            },
+        }
+    )
+    workspace = gate_path.parent
+    env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    result = subprocess.run(
+        ["python3", str(ORCHESTRATOR_PATH)],
+        input=stdin_payload,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0
+    output = json.loads(result.stdout)
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
 # T4: Write, approved=false, future expiry — must deny
 def test_t4_write_approved_false(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
@@ -175,6 +234,30 @@ def test_t11_write_to_gate_path_gate_absent(tmp_path: Path) -> None:
 def test_t12_edit_to_gate_path_gate_absent(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     output = _run("Edit", gate_path, file_path=str(gate_path))
+    assert _decision(output) == "allow"
+
+
+def test_t12b_create_file_to_gate_path_allowed_vscode_payload(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    stdin_payload = json.dumps(
+        {
+            "tool_name": "create_file",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {"filePath": str(gate_path), "content": "{}\n"},
+        }
+    )
+    workspace = gate_path.parent
+    env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    result = subprocess.run(
+        ["python3", str(ORCHESTRATOR_PATH)],
+        input=stdin_payload,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0
+    output = json.loads(result.stdout)
     assert _decision(output) == "allow"
 
 

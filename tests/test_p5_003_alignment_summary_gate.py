@@ -183,6 +183,19 @@ def test_write_handoff_valid_allow(tmp_path: Path) -> None:
     assert _decision(out) == "allow"
 
 
+def test_write_handoff_valid_allow_vscode_create_file(tmp_path: Path) -> None:
+    hf = _handoff_file(tmp_path, "ok-vscode.yaml")
+    payload = json.dumps(
+        {
+            "tool_name": "create_file",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {"filePath": str(hf.resolve()), "content": _VALID_MINIMAL_YAML},
+        }
+    )
+    out = _run_gate(payload, repo_root=tmp_path)
+    assert _decision(out) == "allow"
+
+
 def test_write_handoff_multi_doc_deny(tmp_path: Path) -> None:
     hf = _handoff_file(tmp_path, "multi.yaml")
     two_docs = (
@@ -242,6 +255,31 @@ entropy: GREEN
         hf,
         "stage_kind: build\nentropy:",
         "stage_kind: build\nstatus: complete\nentropy:",
+    )
+    out = _run_gate(payload, repo_root=tmp_path)
+    assert _decision(out) == "allow"
+
+
+def test_edit_handoff_valid_allow_vscode_replace_string(tmp_path: Path) -> None:
+    hf = _handoff_file(tmp_path, "edit_ok_vscode.yaml")
+    incomplete = """stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s5
+agent: builder
+stage_kind: build
+entropy: GREEN
+"""
+    hf.write_text(incomplete, encoding="utf-8")
+    payload = json.dumps(
+        {
+            "tool_name": "replace_string_in_file",
+            "hook_event_name": "PreToolUse",
+            "tool_input": {
+                "filePath": str(hf.resolve()),
+                "oldString": "stage_kind: build\nentropy:",
+                "newString": "stage_kind: build\nstatus: complete\nentropy:",
+            },
+        }
     )
     out = _run_gate(payload, repo_root=tmp_path)
     assert _decision(out) == "allow"

@@ -173,13 +173,33 @@ def test_a4_red_zone_deny(tmp_path: Path) -> None:
 
 
 def test_estimate_lines_placeholder_when_missing() -> None:
-    assert estimate_lines_changed("Write", {}) == PLACEHOLDER_LINES
-    assert estimate_lines_changed("Edit", {}) == PLACEHOLDER_LINES
+    assert estimate_lines_changed({"tool_name": "Write", "tool_input": {}}) == PLACEHOLDER_LINES
+    assert estimate_lines_changed({"tool_name": "Edit", "tool_input": {}}) == PLACEHOLDER_LINES
 
 
 def test_estimate_lines_write_content() -> None:
-    n = estimate_lines_changed("Write", {"content": "a\nb\nc"})
+    n = estimate_lines_changed({"tool_name": "Write", "tool_input": {"content": "a\nb\nc"}})
     assert n == 3
+
+
+def test_estimate_lines_create_file_content_vscode() -> None:
+    n = estimate_lines_changed(
+        {
+            "tool_name": "create_file",
+            "tool_input": {"filePath": "notes.txt", "content": "a\nb\nc\n"},
+        }
+    )
+    assert n == 3
+
+
+def test_estimate_lines_replace_string_vscode() -> None:
+    n = estimate_lines_changed(
+        {
+            "tool_name": "replace_string_in_file",
+            "tool_input": {"filePath": "notes.txt", "oldString": "a\nb", "newString": "c\nd"},
+        }
+    )
+    assert n == 4
 
 
 def test_t14_settings_json_single_pretool_command() -> None:

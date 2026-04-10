@@ -41,6 +41,7 @@ transform_command_opencode = _mod.transform_command_opencode
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
 load_commands = _mod.load_commands
+main = _mod.main
 
 
 # ── parse_frontmatter ────────────────────────────────────────────────────────
@@ -310,6 +311,17 @@ def test_copilot_prompt_description_preserved() -> None:
     assert meta["description"] == "Capture a cross-session learning"
 
 
+def test_copilot_prompt_preserves_agent_binding() -> None:
+    out = transform_command_copilot(
+        {
+            **_REMEMBER_CMD,
+            "meta": {**_REMEMBER_CMD["meta"], "agent": "architect"},
+        }
+    )
+    meta, _ = parse_frontmatter(out)
+    assert meta["agent"] == "architect"
+
+
 def test_copilot_prompt_body_preserved() -> None:
     out = transform_command_copilot(_REMEMBER_CMD)
     assert "Capture a durable lesson." in out
@@ -329,11 +341,109 @@ def test_opencode_command_body_preserved() -> None:
     assert "$ARGUMENTS" in out
 
 
+def test_opencode_command_preserves_agent_binding() -> None:
+    out = transform_command_opencode(
+        {
+            **_REMEMBER_CMD,
+            "meta": {**_REMEMBER_CMD["meta"], "agent": "architect"},
+        }
+    )
+    meta, _ = parse_frontmatter(out)
+    assert meta["agent"] == "architect"
+
+
 def test_opencode_command_no_description_no_frontmatter() -> None:
     cmd = {"name": "bare", "meta": {}, "body": "# bare\nDo the thing.\n"}
     out = transform_command_opencode(cmd)
     assert not out.startswith("---")
     assert "Do the thing." in out
+
+
+def _write_minimal_agent(root: Path) -> None:
+    path = root / "agents" / "tier1-core" / "architect.agent.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "name: architect\n"
+        "description: Design authority\n"
+        "role: Design authority\n"
+        "tier: 1\n"
+        "---\n\n"
+        "# Architect\n",
+        encoding="utf-8",
+    )
+
+
+def _write_minimal_command(root: Path) -> None:
+    path = root / ".claude" / "commands" / "auto.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "description: Auto pipeline\n"
+        "---\n\n"
+        "# /auto $ARGUMENTS\n",
+        encoding="utf-8",
+    )
+
+
+def test_main_copilot_default_agent_location_is_claude(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert not (tmp_path / ".github" / "agents" / "architect.agent.md").exists()
+    assert (tmp_path / ".github" / "prompts" / "auto.prompt.md").is_file()
+
+
+def test_main_copilot_agent_location_claude_preserves_prompts(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+            "--copilot-agent-location",
+            "claude",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert not (tmp_path / ".github" / "agents" / "architect.agent.md").exists()
+    assert (tmp_path / ".github" / "prompts" / "auto.prompt.md").is_file()
+
+
+def test_main_copilot_agent_location_both_writes_both_agent_formats(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+            "--copilot-agent-location",
+            "both",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert (tmp_path / ".github" / "agents" / "architect.agent.md").is_file()
 
 
 # ── Cursor rule deployment ────────────────────────────────────────────────────

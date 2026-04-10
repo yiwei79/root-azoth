@@ -1,11 +1,18 @@
 # Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-107 — P1-011 token-efficiency optimization + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-108 — Claude/Copilot parity + orchestrator-default planning + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.11** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **4** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.12** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **5** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-108) — Claude/Copilot parity hardening + orchestrator-default planning
+
+- **Delivered:** Cross-platform parity fixes for VS Code-style write/edit and terminal payloads across scope, alignment, entropy, telemetry, and terminal filtering; Copilot deployment now defaults to **`.claude/agents/`** while keeping **`.github/prompts/`** and optional **`.github/agents/`** compatibility output; `/auto` no longer carries a hard architect binding; architecture/bootstrap/generated tables updated to reflect Claude-first Copilot agent discovery.
+- **Validated:** Focused pytest **158 passed** (hook/deploy/roadmap surfaces) + roadmap/dashboard **30 passed**; Ruff passed on touched Python files; `scripts/kernel-integrity.py` stayed clean.
+- **Decision capture:** Verified Claude Code does **not** currently default this repo to `architect` because `.claude/settings.json` has no `agent` field. Added **INI-PLT-003 / P1-013** to define an explicit main-session orchestrator contract for Claude Code and Copilot parity.
+- **Closeout:** **W1** ep-108 appended; **W2** scope re-closed, session-state refreshed, `azoth.yaml` `memory.episodes` synced to **108**; **W3** Claude project memory mirrored; **W4** **`0.1.11 → 0.1.12`**, roadmap **`current_patch` `4 → 5`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.12`**.
 
 ## Session outcome (ep-107) — P1-011 token-efficiency optimization
 
@@ -196,10 +203,12 @@ Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `
 
 ## Open decisions
 
+- **P1-013 design:** decide whether Azoth should introduce a dedicated `orchestrator` agent or reuse `architect` as the explicit main-session orchestrator in Claude Code.
+- **Copilot orchestrator parity:** decide whether the default orchestrator role should live primarily in prompt/instruction surfaces, adapter metadata, or both.
 - **Phase 7 wrap:** v0.1.0 readiness, extraction cadence, and public-repo hygiene (Actions on **`yiwei79/azoth`**).
 - **settings.json.template** deny list for `.azoth/kernel/**` (optional consumer hardening) still open in orientation.
 - **D43 remainder:** optional commit-format rules beyond Co-Authored-By (human sign-off before expansion).
 
 ## Next action
 
-**v0.2.0 / ep-102** — **`/intake`** **4** JSONL (inbox root); **P1-012** backlog **`complete`** (Slice A); **`/next`** → **P1-001**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.
+**v0.2.0 / ep-108** — **`/intake`** **4** JSONL (inbox root); **`/next`** → **P1-003** (pipeline composition linter) while **P1-013** waits for an orchestrator-design decision; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.

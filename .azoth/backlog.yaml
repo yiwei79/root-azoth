@@ -1142,5 +1142,23 @@ items:
       observation-heavy traces, speculative tool execution tradeoffs) + context-architect blast map.
       Spec: P1-011.yaml; digest RP-E; builds on completed BL-011/BL-012. Doc-first acceptance + anchor test.
 
+  - id: P1-013
+    title: "Explicit main-session orchestrator default (Claude Code + Copilot role parity)"
+    source: session-2026-04-10-platform-default-agent
+    roadmap_ref: P1-013
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.2.0
+    priority: 12
+    created_date: "2026-04-10"
+    decision_ref: [D21, D23, D46]
+    blocked_by: []
+    description: >
+      Claude Code supports a project/session default agent, but Azoth currently leaves the
+      main thread on the product default and relies on explicit `Agent(subagent_type=...)`
+      spawns for archetype behavior. Define an explicit Azoth orchestrator default for Claude
+      Code and equivalent default-agent role semantics for Copilot adapters; see P1-013.yaml.
+
 # Completed items
 completed: []

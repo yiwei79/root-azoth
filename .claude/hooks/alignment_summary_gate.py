@@ -15,7 +15,14 @@ from pathlib import Path
 
 import yaml
 
-from scope_gate_core import emit_hook_response
+from scope_gate_core import (
+    emit_hook_response,
+    extract_old_new_strings,
+    extract_target_path_str,
+    extract_write_content,
+    normalized_write_action,
+    tool_input_dict,
+)
 from stage_summary_validate import StageSummaryValidationError, validate_stage_summary
 
 _PREFIX = "[alignment-summary] "
@@ -42,13 +49,14 @@ def evaluate_alignment_handoff(
     payload: dict, *, repo_root: Path | None = None
 ) -> AlignmentHandoffResult:
     """Validate BL-012 YAML for Write/Edit targeting `.azoth/handoffs/**/*.yaml|yml`."""
-    tool_name = payload.get("tool_name", "")
-    if tool_name not in {"Write", "Edit"}:
+    action = normalized_write_action(payload)
+    if action is None:
         return AlignmentHandoffResult(allowed=True)
 
     root = repo_root if repo_root is not None else resolve_repo_root()
-    tool_input = payload.get("tool_input") or {}
-    file_path_str = tool_input.get("file_path", "")
+    tool_name = str(payload.get("tool_name", "") or "")
+    tool_input = tool_input_dict(payload)
+    file_path_str = extract_target_path_str(payload)
     if not _is_handoff_target(root, file_path_str):
         return AlignmentHandoffResult(allowed=True)
 
@@ -62,11 +70,12 @@ def evaluate_alignment_handoff(
         return AlignmentHandoffResult(allowed=False, deny_reason=_PREFIX + "invalid file_path")
 
     text = ""
-    if tool_name == "Write":
-        c = tool_input.get("content")
+    if action == "write":
+        c = extract_write_content(tool_input)
         if not isinstance(c, str):
             return AlignmentHandoffResult(
-                allowed=False, deny_reason=_PREFIX + "Write requires string content"
+                allowed=False,
+                deny_reason=_PREFIX + f"{tool_name or 'write-style tool'} requires string content",
             )
         text = c
     else:
@@ -76,12 +85,11 @@ def evaluate_alignment_handoff(
             return AlignmentHandoffResult(
                 allowed=False, deny_reason=_PREFIX + "cannot read file for Edit"
             )
-        old_s = tool_input.get("old_string")
-        new_s = tool_input.get("new_string")
+        old_s, new_s = extract_old_new_strings(tool_input)
         if not isinstance(old_s, str) or not isinstance(new_s, str):
             return AlignmentHandoffResult(
                 allowed=False,
-                deny_reason=_PREFIX + "Edit requires old_string and new_string",
+                deny_reason=_PREFIX + f"{tool_name or 'edit-style tool'} requires old/new strings",
             )
         try:
             text = _apply_single_edit(text, old_s, new_s, label="handoff")

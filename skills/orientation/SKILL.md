@@ -94,7 +94,7 @@ used before BL-013.
 ### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
 - **Canonical state:** `azoth.yaml` `phase: 1` + `milestone: v0.2.0` + `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0`, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P1-001** (**priority 1**, run ledger + resume) leads active v0.2.0 work after **P1-012** **complete** (Slice A docs, ep-102); **P1-002 … P1-011** (`status: active`); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Execution queue:** `.azoth/backlog.yaml` — **P1-003** (**priority 3**, pipeline linter) leads active v0.2.0 work after **P1-001**, **P1-002**, **P1-011**, and **P1-012** completed; **P1-004 … P1-010** plus **P1-013** remain active; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids):**
   - **P1-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
   - **P1-002** — Declarative eval/swarm wave YAML + schema (depends on P1-001 backlog completion).
@@ -108,6 +108,7 @@ used before BL-013.
   - **P1-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
   - **P1-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
   - **P1-012** — **Complete** (ep-102): DFA+ friction map + honest IDE paths in `skills/dynamic-full-auto/SKILL.md` (Slice A); optional Slice B mechanical deferred.
+  - **P1-013** — Explicit main-session orchestrator default: Claude Code default-agent semantics plus Copilot default-role parity for pipeline entry.
   - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
 ## Planning Sources

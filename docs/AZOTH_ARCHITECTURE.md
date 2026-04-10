@@ -496,7 +496,7 @@ Every pipeline gate must declare its type:
 CLAUDE.md (universal)
     ├── Claude Code ──── primary, full features
     ├── OpenCode ─────── reads CLAUDE.md natively (free compatibility)
-    ├── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+  ├── GitHub Copilot ── reads CLAUDE.md + .github/prompts/ and can discover .claude/agents/
     └── AGENTS.md ──────── AAIF standard (Copilot, OpenCode, Codex, Cursor, Gemini)
 ```
 
@@ -514,7 +514,7 @@ azoth init / azoth-deploy.py
   ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
   ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
-  ├─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  ├─ Copilot detected?     → .github/ (prompts/, copilot-instructions.md) + .claude/agents/ by default
   └─ Cursor (always in dev-sync) → .cursor/rules/*.mdc (from kernel/templates/platform-adapters/cursor/)
 ```
 
@@ -525,7 +525,7 @@ azoth init / azoth-deploy.py
 | CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via toggle |
 | AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
 | Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ .claude + repo (toggle) |
-| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ | .claude/agents/ (toggle) |
+| Agents | .claude/agents/ | .opencode/agents/ | .claude/agents/ by default, optional .github/agents/ mirror | .claude/agents/ (toggle) |
 | Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | .claude/commands/ (toggle) |
 | `.cursor/rules/*.mdc` | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
 | Config | .claude/settings.json | opencode.json | VS Code settings | Cursor Settings + toggle |
@@ -603,8 +603,8 @@ implicitly allowed tools  → permission: allow
 This enables cross-platform workspace compatibility without waiting for the Phase 4 installer.
 
 ```
-agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-specific fields)
-                       ├→ .github/agents/<name>.agent.md   (remap tools, drop tier/skills)
+agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (Claude Code + default Copilot path)
+                       ├→ .github/agents/<name>.agent.md   (optional Copilot compatibility mirror)
                        └→ .opencode/agents/<name>.md       (posture→permission, infer mode)
 
 .claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)

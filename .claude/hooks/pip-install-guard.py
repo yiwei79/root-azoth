@@ -49,6 +49,14 @@ _PIP_INSTALL = re.compile(r"^(?:python3?\s+-m\s+pip|pip3?)\s+install\b")
 _HEREDOC_START = re.compile(r"<<\s*['\"]?(\w+)['\"]?")
 
 
+def _command_string(payload: dict) -> str:
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return ""
+    command = tool_input.get("command")
+    return command if isinstance(command, str) else ""
+
+
 def _first_command(command: str) -> str:
     """Return the command with heredoc body content stripped.
 
@@ -109,11 +117,12 @@ def main() -> None:
         _allow()
         return
 
-    if payload.get("tool_name") != "Bash":
+    command_raw = _command_string(payload)
+    if not command_raw:
         _allow()
         return
 
-    command: str = _first_command(payload.get("tool_input", {}).get("command", ""))
+    command: str = _first_command(command_raw)
 
     if not _PIP_INSTALL.match(command):
         _allow()

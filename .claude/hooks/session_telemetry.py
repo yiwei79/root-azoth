@@ -19,6 +19,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from scope_gate_core import extract_target_path_str, normalized_write_action
+
 
 def telemetry_dir(repo_root: Path) -> Path:
     env = os.environ.get("AZOTH_TELEMETRY_DIR")
@@ -97,15 +99,8 @@ def record_pretooluse_write_edit(
 ) -> None:
     """Log one PreToolUse Write/Edit decision (P5-004)."""
     tool_name = str(payload.get("tool_name", "") or "")
-    raw_input = payload.get("tool_input")
-    tool_input = raw_input if isinstance(raw_input, dict) else {}
-    target = str(tool_input.get("file_path", "") or "")
-    if tool_name == "Write":
-        action = "write"
-    elif tool_name == "Edit":
-        action = "edit"
-    else:
-        action = tool_name.lower()
+    target = extract_target_path_str(payload)
+    action = normalized_write_action(payload) or tool_name.lower()
     rec: dict = {
         "session_id": session_id,
         "source": "pretooluse",

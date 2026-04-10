@@ -48,6 +48,7 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-010",
         "P1-011",
         "P1-012",
+        "P1-013",
     ):
         task = _find_task(road, tid)
         assert task is not None, (

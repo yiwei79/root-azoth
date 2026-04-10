@@ -285,7 +285,7 @@ versions:
 
   - id: v0.2.1
     status: active
-    current_patch: 4
+    current_patch: 5
     goal: "Run state foundation + pipeline quality + session policy"
     phase_scope: [1]
     themes: [A, B]
@@ -504,6 +504,22 @@ initiatives:
       session-orientation.txt fallback, and Rich UI access via integrated terminal.
     decision_ref: [D52, D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
+
+  - id: INI-PLT-003
+    title: "Explicit default orchestrator role across Claude Code and Copilot"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    task_ref: P1-013
+    summary: >
+      Claude Code supports a session-wide main agent, but Azoth does not currently set one,
+      so `/auto` and related pipelines run in the default session agent and only reach Azoth
+      archetypes through explicit subagent spawns. This initiative defines an explicit Azoth
+      orchestrator default for Claude Code and an equivalent default-agent orchestration role
+      for Copilot adapter surfaces so pipeline ownership is mechanical rather than implicit.
+    decision_ref: [D21, D23, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-013.yaml"
 
   # ── Theme E: efficiency ────────────────────────────────────────────────────
   - id: INI-EFF-001
