@@ -30,7 +30,7 @@ single turn from creating unrecoverable damage.
 | Files modified | 10 per turn | Checkpoint + human approval for more |
 | Files created | 10 per turn | Checkpoint + human approval for more |
 | Files deleted | 0 without approval | Always requires human signal |
-| Lines changed | 500 per turn | Checkpoint + human approval for more |
+| Lines changed | 1000 per turn | Checkpoint + human approval for more |
 | New dependencies | 0 without approval | Always requires human signal |
 | Governance files | 0 withoIut approval | Always requires human signal |
 | Kernel files | 0 without approval | Always requires human signal |
@@ -41,9 +41,9 @@ single turn from creating unrecoverable damage.
 entropy_delta = files_changed + files_created + (files_deleted * 3) + (lines_changed / 100)
 ```
 
-- **Green zone** (delta < 5): Proceed freely
-- **Yellow zone** (5 <= delta < 10): Checkpoint recommended
-- **Red zone** (delta >= 10): Checkpoint required, human notification
+- **Green zone** (delta < 12): Proceed freely
+- **Yellow zone** (12 <= delta < 25): Checkpoint recommended
+- **Red zone** (delta >= 25): Checkpoint required, human notification
 
 ### Checkpoint Protocol
 

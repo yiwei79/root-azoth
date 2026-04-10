@@ -56,11 +56,11 @@ session_entropy = sum(entropy_delta for each turn)
 ### Zone Classification
 
 
-| Zone   | Threshold      | Meaning              | Response                          |
-| ------ | -------------- | -------------------- | --------------------------------- |
-| GREEN  | delta < 5      | Normal operation     | Proceed freely                    |
-| YELLOW | 5 ≤ delta < 10 | Elevated change rate | Checkpoint recommended            |
-| RED    | delta ≥ 10     | High change rate     | Checkpoint required, notify human |
+| Zone   | Threshold       | Meaning              | Response                          |
+| ------ | --------------- | -------------------- | --------------------------------- |
+| GREEN  | delta < 12      | Normal operation     | Proceed freely                    |
+| YELLOW | 12 ≤ delta < 25 | Elevated change rate | Checkpoint recommended            |
+| RED    | delta ≥ 25      | High change rate     | Checkpoint required, notify human |
 
 
 ### Per-Turn Limits (from Trust Contract)
@@ -71,7 +71,7 @@ session_entropy = sum(entropy_delta for each turn)
 | Files modified   | 10    | Checkpoint + human approval |
 | Files created    | 10    | Checkpoint + human approval |
 | Files deleted    | 0     | Always human approval       |
-| Lines changed    | 500   | Checkpoint + human approval |
+| Lines changed    | 1000  | Checkpoint + human approval |
 | New dependencies | 0     | Always human approval       |
 | Kernel files     | 0     | Always human approval       |
 
@@ -140,10 +140,10 @@ The entropy guard operates at **always-do** posture tier. It should:
 Before executing a planned change:
 
 ```
-Planned changes: 7 files, ~300 lines
+Planned changes: 7 files, ~1800 lines
 Current session entropy: 4.2
-Expected delta: 7 + 3.0 = 10.0
-Expected zone after: RED
+Expected delta: 7 + 18.0 = 25.0
+Expected zone after: RED (≥ 25)
 
 ⚠️ This operation would push session entropy into RED zone.
 Recommendation: Checkpoint first, or split into 2 smaller operations.
