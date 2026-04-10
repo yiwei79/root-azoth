@@ -148,6 +148,11 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         except (OSError, ValueError):
             pass
 
+    # Allow writes to Claude Code's external memory dir (e.g. ~/.claude/…/memory/ — W3 in session-closeout).
+    # The scope gate governs repo changes; external memory is system maintenance, not repo drift.
+    if target is not None and target.is_relative_to(Path.home() / ".claude"):
+        return ScopeGateResult(allowed=True, skip_entropy=True)
+
     est_path = entropy_state_path(root)
 
     if not gate_path.exists():

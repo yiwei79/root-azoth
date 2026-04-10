@@ -13,12 +13,11 @@
       "Edit(kernel/**)",
       "Bash(rm -rf *)",
       "Bash(git push --force)",
-      "Bash(git reset --hard HEAD~)",
-      "Edit(.claude/settings.json)"
+      "Bash(git reset --hard HEAD~)"
     ]
   },
   "env": {
-    "AZOTH_VERSION": "0.1.6",
+    "AZOTH_VERSION": "0.1.7",
     "AZOTH_PHASE": "1",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "65"

@@ -313,3 +313,24 @@ def test_t18_scope_gate_thin_malformed_stdin_allow(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     out = json.loads(result.stdout)
     assert _decision(out) == "allow"
+
+
+def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> None:
+    """Writes to ~/.claude/… must be allowed even when scope gate is closed (W3 exemption)."""
+    import os as _os
+    gate_path = tmp_path / "scope-gate.json"
+    gate_path.write_text(
+        json.dumps({"approved": False, "expires_at": _future_expiry()}),
+        encoding="utf-8",
+    )
+    claude_target = str(Path.home() / ".claude" / "projects" / "test-project" / "memory" / "project_status.md")
+    output = _run("Write", gate_path, file_path=claude_target)
+    assert _decision(output) == "allow"
+
+
+def test_t20_write_to_claude_home_allowed_when_gate_absent(tmp_path: Path) -> None:
+    """Writes to ~/.claude/… must be allowed even when no scope gate file exists."""
+    gate_path = tmp_path / "scope-gate.json"  # does not exist
+    claude_target = str(Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md")
+    output = _run("Write", gate_path, file_path=claude_target)
+    assert _decision(output) == "allow"
