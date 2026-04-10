@@ -28,6 +28,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from run_ledger import load_active_run as load_active_ledger_run
+from run_ledger import load_open_sessions
+
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
 
@@ -211,6 +214,24 @@ def git_info() -> tuple[str, str]:
     return repo, branch
 
 
+def continuity_status(
+    scope: dict[str, Any], session_state: dict[str, Any], sessions: list[dict[str, Any]]
+) -> tuple[str, str] | None:
+    """Report whether registry, active scope, and session-state mirror agree."""
+    scope_session_id = str(scope.get("session_id") or "")
+    mirror_session_id = str(session_state.get("session_id") or "")
+    registry_session = next(
+        (entry for entry in sessions if entry.get("session_id") == scope_session_id), None
+    )
+
+    if scope_session_id and registry_session and mirror_session_id == scope_session_id:
+        return ("OK", scope_session_id)
+    if scope_session_id or mirror_session_id:
+        detail = f"scope={scope_session_id or '-'} / mirror={mirror_session_id or '-'}"
+        return ("MISMATCH", detail)
+    return None
+
+
 # ── Dashboard data + renderers ────────────────────────────────────────────────
 
 
@@ -219,13 +240,7 @@ _INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
 def load_active_run(root: Path) -> dict[str, Any] | None:
     """Return the last active entry from run-ledger.local.yaml, or None if absent."""
-    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
-    data = load_yaml(ledger_path)
-    runs = data.get("runs")
-    if not isinstance(runs, list):
-        return None
-    active = [r for r in runs if isinstance(r, dict) and r.get("status") == "active"]
-    return active[-1] if active else None
+    return load_active_ledger_run(root)
 
 
 def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
@@ -244,7 +259,9 @@ def gather_dashboard_state() -> dict[str, Any]:
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
+    session_state = load_yaml(ROOT / ".azoth" / "session-state.md")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
+    open_sessions = load_open_sessions(ROOT)
 
     repo, branch = git_info()
     today = datetime.now().strftime("%Y-%m-%d")
@@ -264,6 +281,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "backlog_data": backlog_data,
         "scope": scope,
         "pipeline_gate": pipeline_gate,
+        "session_state": session_state,
         "episodes": episodes,
         "repo": repo,
         "branch": branch,
@@ -276,6 +294,8 @@ def gather_dashboard_state() -> dict[str, Any]:
         "complete_ids": complete_ids,
         "top3": top3,
         "unphased_initiatives": unphased_initiatives,
+        "open_sessions": open_sessions,
+        "continuity": continuity_status(scope, session_state, open_sessions),
         "run_ledger": load_active_run(ROOT),
     }
 
@@ -303,6 +323,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     azoth = state["azoth"]
     scope = state["scope"]
     pipeline_gate = state["pipeline_gate"]
+    session_state = state["session_state"]
     episodes = state["episodes"]
     repo = state["repo"]
     branch = state["branch"]
@@ -313,6 +334,8 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    open_sessions = state.get("open_sessions", [])
+    continuity = state.get("continuity")
 
     current_phase = strip_phase
 
@@ -326,9 +349,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("")
     sep = "═" * 72
     lines.append(sep)
-    lines.append(
-        f"  AZOTH  ·  v{version}  ·  {phase_header}  ·  {repo}  ·  {branch}  ·  {today}"
-    )
+    lines.append(f"  AZOTH  ·  v{version}  ·  {phase_header}  ·  {repo}  ·  {branch}  ·  {today}")
     lines.append("  (plain layout — full orientation; Rich panels: run without --plain)")
     lines.append(sep)
     lines.append("")
@@ -397,6 +418,29 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
 
+    if continuity:
+        status, detail = continuity
+        lines.append(f"  Continuity: {status}  ({detail})")
+
+    if open_sessions:
+        lines.append("")
+        lines.append("  Sessions")
+        mirror_session_id = str(session_state.get("session_id") or "")
+        scope_session_id = str(scope.get("session_id") or "")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "?")
+            status = str(entry.get("status") or "?")
+            ide = str(entry.get("ide") or "?")
+            backlog_id = str(entry.get("backlog_id") or "?")
+            markers: list[str] = []
+            if session_id == scope_session_id:
+                markers.append("scope")
+            if session_id == mirror_session_id:
+                markers.append("mirror")
+            marker_text = f" [{'|'.join(markers)}]" if markers else ""
+            lines.append(f"    {session_id}{marker_text}  ({status}, {ide})")
+            lines.append(f"      {backlog_id} -> {(entry.get('next_action') or '')[:60]}")
+
     active_run = state.get("run_ledger")
     if active_run:
         run_id = active_run.get("run_id", "?")
@@ -455,6 +499,19 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:72]
         lines.append(f"  resume   → continue approved scope: {goal_truncated}")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != scope.get("session_id"):
+                lines.append(
+                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
+                )
+    elif open_sessions:
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id:
+                lines.append(
+                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
+                )
     lines.append("  next     → /next — scope card for next priority task")
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
@@ -480,6 +537,7 @@ def render_dashboard() -> None:
     azoth = state["azoth"]
     scope = state["scope"]
     pipeline_gate = state["pipeline_gate"]
+    session_state = state["session_state"]
     episodes = state["episodes"]
     repo = state["repo"]
     branch = state["branch"]
@@ -490,8 +548,9 @@ def render_dashboard() -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    open_sessions = state.get("open_sessions", [])
+    continuity = state.get("continuity")
 
-    # ── Panel 1: Header (box.HEAVY) ──────────────────────────────────────────
     header_text = Text(justify="center")
     header_text.append("AZOTH", style="bold white")
     header_text.append("  ·  ", style="dim white")
@@ -506,7 +565,6 @@ def render_dashboard() -> None:
     header_text.append(today, style="dim white")
     header_panel = Panel(header_text, box=box.HEAVY)
 
-    # ── Panel 2: Phases strip (box.MINIMAL) ──────────────────────────────────
     _phases = [
         (1, "Kernel"),
         (2, "Skills"),
@@ -517,19 +575,16 @@ def render_dashboard() -> None:
         (7, "Publish"),
         (8, "Next"),
     ]
-    current_phase = strip_phase
-
     phase_parts = []
     for num, name in _phases:
-        if num < current_phase:
+        if num < strip_phase:
             phase_parts.append(f"[green][{num}]:check_mark: {name}[/green]")
-        elif num == current_phase:
+        elif num == strip_phase:
             phase_parts.append(f"[bold yellow][{num}]:right_arrow: {name}[/bold yellow]")
         else:
             phase_parts.append(f"[dim][{num}]:white_circle: {name}[/dim]")
     phases_panel = Panel("  ".join(phase_parts), box=box.MINIMAL)
 
-    # ── Panel 3L: System health (box.ROUNDED) ────────────────────────────────
     layers = azoth.get("layers", {})
     _layer_map = [
         ("molecule", "L0", "Kernel"),
@@ -562,8 +617,6 @@ def render_dashboard() -> None:
         "",
     ]
 
-    # Backlog / top3 already computed in gather_dashboard_state()
-
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
         health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]")
@@ -581,6 +634,32 @@ def render_dashboard() -> None:
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
 
+    if continuity:
+        status, detail = continuity
+        style = "green" if status == "OK" else "yellow"
+        health_lines.append(f":link: [{style}]Continuity: {status}[/{style}]  [dim]{detail}[/dim]")
+
+    if open_sessions:
+        health_lines.append("")
+        health_lines.append("[bold]Sessions[/bold]")
+        mirror_session_id = str(session_state.get("session_id") or "")
+        scope_session_id = str(scope.get("session_id") or "")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "?")
+            status = str(entry.get("status") or "?")
+            ide = str(entry.get("ide") or "?")
+            backlog_id = str(entry.get("backlog_id") or "?")
+            markers: list[str] = []
+            if session_id == scope_session_id:
+                markers.append("scope")
+            if session_id == mirror_session_id:
+                markers.append("mirror")
+            marker_text = f" [{'|'.join(markers)}]" if markers else ""
+            health_lines.append(
+                f"  [bold cyan]{session_id}[/bold cyan]{marker_text}"
+                f"  [dim]({status}, {ide}, {backlog_id})[/dim]"
+            )
+
     active_run = state.get("run_ledger")
     if active_run:
         run_id = active_run.get("run_id", "?")
@@ -594,8 +673,6 @@ def render_dashboard() -> None:
     health_panel = Panel(
         "\n".join(health_lines), title="[bold]System Health[/bold]", box=box.ROUNDED
     )
-
-    # ── Panel 3R: Top backlog (box.ROUNDED) ──────────────────────────────────
 
     backlog_lines: list[str] = []
     for item in top3:
@@ -629,7 +706,6 @@ def render_dashboard() -> None:
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED
     )
 
-    # ── Panel 4: Last session (box.ROUNDED) ──────────────────────────────────
     if episodes:
         ep = episodes[-1]
         ep_id = ep.get("id", "?")
@@ -649,7 +725,6 @@ def render_dashboard() -> None:
         last_content = "[dim]No episodes recorded yet.[/dim]"
     last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
-    # ── Panel 5: START options (box.ROUNDED) ─────────────────────────────────
     options_lines: list[str] = []
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:60]
@@ -658,6 +733,21 @@ def render_dashboard() -> None:
             f"   Continue: [italic]{goal_truncated}[/italic]"
         )
         options_lines.append("")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != scope.get("session_id"):
+                options_lines.append(
+                    f"[bold cyan]next resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /next — reopen parked session with approval card"
+                )
+    elif open_sessions:
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id:
+                options_lines.append(
+                    f"[bold cyan]next resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /next — reopen parked session with approval card"
+                )
     options_lines += [
         "[bold cyan]next[/bold cyan]     :right_arrow: /next — open scope card for next priority task",
         "[bold cyan]intake[/bold cyan]   :right_arrow: /intake — process queued insights from inbox",
@@ -671,7 +761,6 @@ def render_dashboard() -> None:
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 
-    # ── Render all panels ─────────────────────────────────────────────────────
     console.print()
     console.print(header_panel)
     console.print(phases_panel)

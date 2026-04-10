@@ -74,14 +74,19 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 - Append the episode structured in step 4
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
-**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/scope-gate.json`
+**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
 
 - Update `bootloader-state.md` with session outcome (phase, what changed, open decisions)
+- When `.azoth/run-ledger.local.yaml` contains a `sessions:` registry, use the active
+  scope `session_id` as the default selected session. If a matching session entry exists,
+  update that entry first: set it to `parked` when follow-up work remains or `closed` when
+  the session is finished, refresh its `next_action`, and preserve `active_run_id` only when
+  it still points at resumable work.
 - Close the scope gate: write `.azoth/scope-gate.json` with `approved: false` and add
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
 - Cross-IDE handoff: if the session used **`.azoth/session-state.md`**, refresh it (active task,
-  files touched, next action, pending decisions); if unused, log `session-state skipped` in the
-  alignment summary.
+  files touched, next action, pending decisions) with the same `session_id` as the selected
+  registry entry; if unused, log `session-state skipped` in the alignment summary.
 - Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
 
 **W2 field checklist (BL-024)** — Before writing `bootloader-state.md`, align the **Current Phase** /

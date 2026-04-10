@@ -1040,6 +1040,29 @@ items:
       and one operating-model skill. Keep `.azoth/` as the authoritative state layer.
       Explicitly defer kernel templates, D46 deploy-target integration, and governed M1 parity.
 
+  - id: P1-015
+    title: "True multi-writer safety (write claims and lock enforcement)"
+    source: session-2026-04-11-multi-writer-safety
+    roadmap_ref: P1-015
+    target_layer: M1
+    delivery_pipeline: governed
+    status: active
+    target_version: v0.2.0
+    priority: 2
+    created_date: "2026-04-11"
+    decision_ref: [D21, D46, D50]
+    blocked_by: [P1-014]
+    priority_note: >
+      Safety-critical follow-on after multi-session continuity: the repo can now track many
+      sessions, but parallel writers are still advisory until write claims become mechanical.
+      Blocked on P1-014 so the Antigravity bootstrap surface is stable before cross-harness
+      writer enforcement is specified and wired.
+    description: >
+      Add explicit write claims or leases, conflict detection, and auditable handoff rules so
+      Copilot, Claude Code, Antigravity, and other harnesses cannot all act as concurrent repo
+      writers by convention alone. Promote the current many-session / one-active-scope model into
+      mechanical multi-writer safety; see .azoth/roadmap-specs/v0.2.0/P1-015.yaml and INI-RST-003.
+
   - id: P1-004
     title: "Control-plane surfacing in welcome (gates TTL + optional ledger)"
     source: dynamic-full-auto-plus

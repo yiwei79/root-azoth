@@ -21,7 +21,7 @@ EXAMPLE = ROOT / ".azoth" / "run-ledger.local.yaml.example"
 SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from run_ledger import load_active_run, validate_ledger  # noqa: E402
+from run_ledger import load_active_run, load_open_sessions, load_session, validate_ledger  # noqa: E402
 
 
 # ── 1. Schema file ─────────────────────────────────────────────────────────────
@@ -171,6 +171,39 @@ def test_validate_bad_created_at_exits_1(tmp_path: Path) -> None:
     assert "created_at" in result.stderr
 
 
+def test_validate_accepts_sessions_and_run_metadata() -> None:
+    data = {
+        "schema_version": 1,
+        "sessions": [
+            {
+                "session_id": "2026-04-10-p1-001-copilot-152000",
+                "backlog_id": "P1-001",
+                "goal": "Test goal",
+                "status": "parked",
+                "ide": "copilot",
+                "next_action": "resume this later",
+                "updated_at": "2026-04-10T15:20:00+00:00",
+                "active_run_id": "run-1",
+            }
+        ],
+        "runs": [
+            {
+                "run_id": "run-1",
+                "session_id": "2026-04-10-p1-001-copilot-152000",
+                "backlog_id": "P1-001",
+                "ide": "copilot",
+                "mode": "auto",
+                "goal": "Test goal",
+                "status": "paused",
+                "created_at": "2026-04-10T10:00:00+00:00",
+                "updated_at": "2026-04-10T10:30:00+00:00",
+                "next_action": "resume this later",
+            }
+        ],
+    }
+    assert validate_ledger(data) == []
+
+
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
 
 
@@ -268,6 +301,10 @@ def _append(ledger: Path, **kwargs: str) -> subprocess.CompletedProcess[str]:
         "--next-action",
         kwargs.get("next_action", "next step"),
     ]
+    for field in ("session_id", "backlog_id", "ide"):
+        value = kwargs.get(field)
+        if value is not None:
+            cmd += [f"--{field.replace('_', '-')}", value]
     for stage in kwargs.get("stages", []):
         cmd += ["--stage-completed", stage]
     if "wave" in kwargs:
@@ -336,6 +373,22 @@ def test_append_validates_after_mutation(tmp_path: Path) -> None:
     assert result.returncode == 1
 
 
+def test_append_writes_session_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    result = _append(
+        ledger,
+        run_id="run-meta",
+        session_id="2026-04-10-p1-001-copilot-152000",
+        backlog_id="P1-001",
+        ide="copilot",
+    )
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    assert data["runs"][0]["session_id"] == "2026-04-10-p1-001-copilot-152000"
+    assert data["runs"][0]["backlog_id"] == "P1-001"
+    assert data["runs"][0]["ide"] == "copilot"
+
+
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────
 
 
@@ -402,6 +455,79 @@ def test_load_active_run_returns_none_when_all_complete(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert load_active_run(tmp_path) is None
+
+
+def test_load_open_sessions_filters_closed_and_sorts_newest_first(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "closed-session",
+                        "backlog_id": "P1-099",
+                        "goal": "Closed",
+                        "status": "closed",
+                        "ide": "copilot",
+                        "next_action": "done",
+                        "updated_at": "2026-04-10T08:00:00+00:00",
+                    },
+                    {
+                        "session_id": "older-parked",
+                        "backlog_id": "P1-005",
+                        "goal": "Parked",
+                        "status": "parked",
+                        "ide": "claude-code",
+                        "next_action": "resume later",
+                        "updated_at": "2026-04-10T09:00:00+00:00",
+                    },
+                    {
+                        "session_id": "newer-active",
+                        "backlog_id": "P1-001",
+                        "goal": "Active",
+                        "status": "active",
+                        "ide": "copilot",
+                        "next_action": "continue now",
+                        "updated_at": "2026-04-10T10:00:00+00:00",
+                    },
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    sessions = load_open_sessions(tmp_path)
+    assert [entry["session_id"] for entry in sessions] == ["newer-active", "older-parked"]
+
+
+def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "target-session",
+                        "backlog_id": "P1-005",
+                        "goal": "Resume target",
+                        "status": "parked",
+                        "ide": "claude-code",
+                        "next_action": "resume via /next",
+                        "updated_at": "2026-04-10T09:00:00+00:00",
+                    }
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    session = load_session(tmp_path, "target-session")
+    assert session is not None
+    assert session["backlog_id"] == "P1-005"
 
 
 # ── 20–22. welcome.py plain renderer ──────────────────────────────────────────

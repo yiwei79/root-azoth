@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
 
 _STATUS_ENUM = {"active", "complete", "failed", "paused"}
+_SESSION_STATUS_ENUM = {"active", "parked", "closed"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
@@ -67,6 +68,18 @@ def _write_ledger(path: Path, data: dict) -> None:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
+def _load_ledger_for_helpers(root: Path) -> dict | None:
+    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
+    if not ledger_path.exists():
+        return None
+    try:
+        with ledger_path.open(encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
+
+
 # ── Validator ─────────────────────────────────────────────────────────────────
 
 
@@ -89,11 +102,71 @@ def validate_ledger(data: dict) -> list[str]:
         errors.append("runs must be a list")
         return errors
 
+    sessions = data.get("sessions")
+    if sessions is not None:
+        if not isinstance(sessions, list):
+            errors.append("sessions must be a list")
+        else:
+            for i, entry in enumerate(sessions):
+                prefix = f"sessions[{i}]"
+                if not isinstance(entry, dict):
+                    errors.append(f"{prefix} must be a mapping")
+                    continue
+
+                for field in ("session_id", "backlog_id", "goal", "ide", "next_action"):
+                    val = entry.get(field)
+                    if val is None:
+                        errors.append(f"{prefix}: missing required field '{field}'")
+                    elif not isinstance(val, str) or not val.strip():
+                        errors.append(f"{prefix}: '{field}' must be a non-empty string")
+
+                for field, max_len in (("session_id", 128), ("backlog_id", 64), ("ide", 64)):
+                    val = entry.get(field) or ""
+                    if isinstance(val, str) and len(val) > max_len:
+                        errors.append(f"{prefix}: {field} exceeds {max_len} characters")
+
+                status = entry.get("status")
+                if status is None:
+                    errors.append(f"{prefix}: missing required field 'status'")
+                elif status not in _SESSION_STATUS_ENUM:
+                    errors.append(
+                        f"{prefix}: status {status!r} not in {sorted(_SESSION_STATUS_ENUM)}"
+                    )
+
+                updated_at = entry.get("updated_at")
+                if updated_at is None:
+                    errors.append(f"{prefix}: missing required field 'updated_at'")
+                elif not isinstance(updated_at, str) or not _ISO8601_RE.match(updated_at):
+                    errors.append(
+                        f"{prefix}: 'updated_at' must match ISO-8601 (YYYY-MM-DDTHH:MM:SS…), got {updated_at!r}"
+                    )
+
+                for optional_ts in ("closed_at",):
+                    val = entry.get(optional_ts)
+                    if val is not None and (not isinstance(val, str) or not _ISO8601_RE.match(val)):
+                        errors.append(
+                            f"{prefix}: '{optional_ts}' must match ISO-8601 (YYYY-MM-DDTHH:MM:SS…), got {val!r}"
+                        )
+
+                active_run_id = entry.get("active_run_id")
+                if active_run_id is not None and (
+                    not isinstance(active_run_id, str) or not active_run_id.strip()
+                ):
+                    errors.append(f"{prefix}: active_run_id must be a non-empty string")
+
     for i, entry in enumerate(runs):
         prefix = f"runs[{i}]"
         if not isinstance(entry, dict):
             errors.append(f"{prefix} must be a mapping")
             continue
+
+        for field, max_len in (("session_id", 128), ("backlog_id", 64), ("ide", 64)):
+            val = entry.get(field)
+            if val is not None:
+                if not isinstance(val, str) or not val.strip():
+                    errors.append(f"{prefix}: '{field}' must be a non-empty string")
+                elif len(val) > max_len:
+                    errors.append(f"{prefix}: {field} exceeds {max_len} characters")
 
         # Required string fields
         for field in ("run_id", "mode", "goal", "next_action"):
@@ -189,21 +262,39 @@ def validate_ledger(data: dict) -> list[str]:
 
 def load_active_run(root: Path) -> dict | None:
     """Return the last active run entry from the ledger, or None if absent."""
-    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
-    if not ledger_path.exists():
-        return None
-    try:
-        with ledger_path.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-    except Exception:
-        return None
-    if not isinstance(data, dict):
+    data = _load_ledger_for_helpers(root)
+    if data is None:
         return None
     runs = data.get("runs")
     if not isinstance(runs, list):
         return None
     active = [r for r in runs if isinstance(r, dict) and r.get("status") == "active"]
     return active[-1] if active else None
+
+
+def load_sessions(root: Path) -> list[dict]:
+    """Return session registry entries from the ledger, newest first by updated_at."""
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        return []
+    sessions = data.get("sessions")
+    if not isinstance(sessions, list):
+        return []
+    valid_sessions = [entry for entry in sessions if isinstance(entry, dict)]
+    return sorted(valid_sessions, key=lambda entry: str(entry.get("updated_at", "")), reverse=True)
+
+
+def load_session(root: Path, session_id: str) -> dict | None:
+    """Return a single session registry entry by session_id, or None when absent."""
+    for entry in load_sessions(root):
+        if entry.get("session_id") == session_id:
+            return entry
+    return None
+
+
+def load_open_sessions(root: Path) -> list[dict]:
+    """Return active or parked sessions from the ledger, newest first."""
+    return [entry for entry in load_sessions(root) if entry.get("status") in {"active", "parked"}]
 
 
 # ── Subcommands ───────────────────────────────────────────────────────────────
@@ -274,6 +365,10 @@ def cmd_append(args: argparse.Namespace) -> None:
         existing["status"] = args.status
         existing["next_action"] = args.next_action
         existing["updated_at"] = now
+        for field in ("session_id", "backlog_id", "ide"):
+            value = getattr(args, field)
+            if value is not None:
+                existing[field] = value
         if args.stages_completed:
             sc = existing.setdefault("stages_completed", [])
             for s in args.stages_completed:
@@ -291,6 +386,10 @@ def cmd_append(args: argparse.Namespace) -> None:
             "updated_at": now,
             "next_action": args.next_action,
         }
+        for field in ("session_id", "backlog_id", "ide"):
+            value = getattr(args, field)
+            if value is not None:
+                entry[field] = value
         if args.stages_completed:
             entry["stages_completed"] = list(args.stages_completed)
         if wave_entry is not None:
@@ -331,6 +430,9 @@ def main() -> None:
 
     ap = subs.add_parser("append", help="Create or update a run entry.")
     ap.add_argument("--run-id", required=True, metavar="ID", help="Unique run identifier.")
+    ap.add_argument("--session-id", metavar="SESSION_ID", help="Optional linked session id.")
+    ap.add_argument("--backlog-id", metavar="BACKLOG_ID", help="Optional linked backlog id.")
+    ap.add_argument("--ide", metavar="IDE", help="Optional IDE or client label.")
     ap.add_argument("--mode", required=True, metavar="MODE", help="Pipeline mode/preset.")
     ap.add_argument("--goal", required=True, metavar="GOAL", help="Human-readable goal.")
     ap.add_argument(

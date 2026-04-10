@@ -3,11 +3,20 @@ description: "Show the next priority task from the roadmap and suggest how to pr
 azoth_effect: mixed
 ---
 
-# /next — What Should I Work On?
+# /next [resume <session_id>] — What Should I Work On?
 
 Read the backlog and roadmap, produce a scope card, and write scope-gate.json on approval.
 
 ## Steps
+
+0. **Optional resume lookup**: If the invocation includes `resume <session_id>`, read
+    `.azoth/run-ledger.local.yaml` and locate the matching entry under the optional
+    `sessions:` array.
+    - If found and `status` is `active` or `parked`, use its `backlog_id`, `goal`, and
+       `next_action` as additional context for the scope card.
+    - If missing, invalid, or `status` is `closed`, explain that the session cannot be resumed.
+    - Never rewrite `.azoth/scope-gate.json` directly from the resume lookup. Resume requests
+       still flow through the same human approval step below before any scope-gate write.
 
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
@@ -107,6 +116,8 @@ Type `skip` to skip primary and show next candidate.
 ## Rules
 
 - **Never auto-start work** — output the scope card and wait for `approved`
+- **Never auto-resume by rewriting scope** — `resume <session_id>` is read-only until the
+   human types `approved`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
 - **Skip completed items** — if all backlog items are complete, congratulate and show the
   next version entry from `roadmap.yaml versions:` as a preview

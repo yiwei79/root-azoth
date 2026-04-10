@@ -1,228 +1,25 @@
-# Bootloader State
+# Azoth Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-112 — Antigravity parity closeout)
+Last updated: 2026-04-11 (session-closeout ep-114 — multi-session continuity + P1-015 planning)
 
 ## Current Phase
 
-Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.14** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
-
-## Session outcome (ep-112) — Antigravity parity bootstrap + deploy-backed adapter
-
-- **Delivered:** Reframed Antigravity success to practical Copilot-level parity, added **P1-014** backlog/roadmap/spec wiring plus **INI-PLT-004/005**, built the workspace `.agents/` bootstrap surface, and then hardened the real adapter path by extending `scripts/azoth-deploy.py` plus the Antigravity rule template so canonical commands, skills, and rules project into Antigravity-native locations.
-- **Validated:** Focused pytest stayed green at **260 passed, 2 xfailed** across deploy behavior, skill surfaces, delivery wiring, and roadmap/spec parity; `scripts/kernel-integrity.py` remained clean.
-- **Decision capture:** For file-discovered platforms, start diagnosis with deploy-target coverage and native path population. Manual bootstrap mirrors are useful as a bridge, but they are not durable parity.
-- **Closeout:** **W1** ep-112 appended after the earlier **ep-110/ep-111** lessons; `azoth.yaml` `memory.episodes` synced to **112**; **W2** closed **P1-014** scope with `closed_at`; **session-state skipped** because `.azoth/session-state.md` was unused; **W3** Claude project memory mirrored the session snapshot; **W4** **`0.1.13 → 0.1.14`**, roadmap **`current_patch` `6 → 7`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.14`**.
-
-## Session outcome (ep-109) — Claude-only autocompact split
-
-- **Delivered:** Moved the strict Claude-only autocompact override (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=65`) out of the repo-shared `.claude/settings.json` and into `~/.claude/settings.json`, so Copilot no longer inherits the workspace threshold while Claude Code keeps the stricter compaction guard.
-- **Validated:** Both settings files parse cleanly; no kernel or command surfaces changed.
-- **Decision capture:** Keep repo-shared `.claude/settings.json` neutral when a runtime override is meant for Claude Code only; use the user-level Claude config for that split.
-- **Closeout:** **W1** ep-109 appended; `azoth.yaml` `memory.episodes` synced to **109**; a newer approved scope (`INV-ANTIGRAVITY-PARITY`) was left open by user request instead of being closed by this session; **W3** Claude project memory mirrored that state with a local-override preference note; **W4** **`0.1.12 → 0.1.13`**, roadmap **`current_patch` `5 → 6`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.13`**.
-
-## Session outcome (ep-108) — Claude/Copilot parity hardening + orchestrator-default planning
-
-- **Delivered:** Cross-platform parity fixes for VS Code-style write/edit and terminal payloads across scope, alignment, entropy, telemetry, and terminal filtering; Copilot deployment now defaults to **`.claude/agents/`** while keeping **`.github/prompts/`** and optional **`.github/agents/`** compatibility output; `/auto` no longer carries a hard architect binding; architecture/bootstrap/generated tables updated to reflect Claude-first Copilot agent discovery.
-- **Validated:** Focused pytest **158 passed** (hook/deploy/roadmap surfaces) + roadmap/dashboard **30 passed**; Ruff passed on touched Python files; `scripts/kernel-integrity.py` stayed clean.
-- **Decision capture:** Verified Claude Code does **not** currently default this repo to `architect` because `.claude/settings.json` has no `agent` field. Added **INI-PLT-003 / P1-013** to define an explicit main-session orchestrator contract for Claude Code and Copilot parity.
-- **Closeout:** **W1** ep-108 appended; **W2** scope re-closed, session-state refreshed, `azoth.yaml` `memory.episodes` synced to **108**; **W3** Claude project memory mirrored; **W4** **`0.1.11 → 0.1.12`**, roadmap **`current_patch` `4 → 5`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.12`**.
-
-## Session outcome (ep-107) — P1-011 token-efficiency optimization
-
-- **Delivered:** **P1-011 complete** — extracted `docs/GATE_PROTOCOL.md` and `skills/index.yaml` as canonical references, removed repeated Integration prose from skill surfaces, converted `agentic-eval` examples to pseudocode in canonical/runtime mirrors, tightened `/deliver` stage review wording, clarified DFA gate/eval loading, and preserved **E1-E6**, **0.85 /eval**, **0.90 /eval-swarm**, BL-011, BL-012, and review-independence behavior. Deploy mirrors refreshed; focused pytest **215 passed, 2 xfailed**.
-- **Closeout:** **W1** ep-107 appended; **W2** scope closed, P1-011 backlog marked complete, `azoth.yaml` `memory.episodes` synced to **107**; **W3** Claude project memory mirrored; **W4** **`0.1.10 → 0.1.11`**, roadmap **`current_patch` `3 → 4`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.11`**.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`/next`** → **P1-003** (pipeline composition linter) or **P1-005** (long-running session policy); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
-
-## Session outcome (ep-106) — P1-002 declarative swarm/eval-wave spec
-
-- **Delivered:** **P1-002 complete** — `pipelines/swarm-eval-wave.schema.yaml` (JSON Schema draft 2020-12: schema_version, constants, waves with if/then threshold enforcement), `pipelines/swarm-eval-wave.example.yaml` (waves A–D encoding e2e-swarm-eval-loop.md topology), `tests/test_swarm_wave_schema.py` (53 tests, all pass), `.claude/workflows/enterprise/e2e-swarm-eval-loop.md` (+1 reference line). Governance review returned `request-changes` (F4 schema_version const, F5 conditional threshold tests, F7 Wave D agent enum); human approved continuation; corrections applied at Planner level. Backlog P1-002 marked complete.
-- **Closeout:** **W1** ep-106; **W4** **`0.1.9 → 0.1.10`** (performed at Stage 7); **W2** scope already closed; **W3** Claude project memory.
-- **Next:** **P1-003** (Pipeline composition linter) or **P1-005** (Long-running session policy); **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
-
-## Session outcome (ep-105) — P1-001 run ledger delivery
-
-- **Delivered:** **P1-001 complete** — `pipelines/run-ledger.schema.yaml`, `.azoth/run-ledger.local.yaml.example`, `scripts/run_ledger.py` (validate/status/append CLI + `load_active_run()` helper), `scripts/welcome.py` active run line (Rich + plain), `docs/AZOTH_ARCHITECTURE.md` P1-001 pointer, `.gitignore` entry, `tests/test_run_ledger.py` (26 tests, all pass). Entropy gate hit twice at 1000-line cap; resolved by checkpoint commit + state reset. Backlog P1-001 marked complete.
-- **Closeout:** **W1** ep-105 (Stage 4); **W4** **`0.1.8 → 0.1.9`**, roadmap **`current_patch` `1 → 2`**; **W2** scope closed; **W3** Claude project memory.
-- **Next:** **P1-002** (Declarative swarm / eval-wave spec — M1/governed, requires `/deliver-full`); **`/intake`** — **4** JSONL in **`.azoth/inbox/`**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
-
-## Session outcome (ep-104) — session-closeout
-
-- **Delivered / refined:** **Roadmap bird's eye restructure** — `.azoth/roadmap.yaml`: v0.2.0 demoted to milestone container (no tasks); **v0.2.1** established as first working phase (4 tasks: P1-012, P1-001, P1-003, P1-005); all 13 remaining tasks migrated to phase-agnostic **initiatives** with 5 theme labels (A: run-state INI-RST-001/002, B: pipeline INI-PPL-001/002, C: memory INI-MEM-001–005, D: ux/platform INI-UX-001/INI-PLT-001/002, E: efficiency INI-EFF-001). `active_version` bumped `v0.2.0 → v0.2.1`. **3 test fixes:** roadmap parity test updated for initiatives lookup (`_find_task`); ruff unused import removed; `test_self_protection_in_deny` marked xfail (intentional governance change in 9c5ff4e). **W1** ep-104; **W4** **`0.1.7 → 0.1.8`**, roadmap **`current_patch` `0 → 1`**; **W2** scope closed; **W3** Claude project memory.
-- **Closeout:** pytest **949 passed, 3 xfailed**.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding `processed/`); **`/next`** → **P1-001** (v0.2.1 top priority); **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
-
-## Session outcome (ep-103) — session-closeout
-
-- **Delivered / refined:** **Roadmap schema v2** — `roadmap.yaml` `schema_version: 2` + `initiatives:` section (INI-MEM-001/002/003, INI-PLT-001, all `phase: null`). **SWARM_RESEARCH_DIGEST.yaml** — 4 mempalace research packs (RP-MEM-A/B/C, RP-PLT-A): verbatim-first storage, vector retrieval hybrid formula, temporal KG validity windows, platform parity lesson. **`scripts/roadmap_dashboard.py`** — `gather_initiatives()` + `render_initiatives_panel()`. **`scripts/welcome.py`** — `gather_unphased_initiatives()` + backlog fallback. **15 new tests** (RED-first). **Entropy governance** — `MAX_LINES 500→1000`, `ZONE_YELLOW 5.0→12.0`, `ZONE_RED 10.0→25.0` (user-approved); `kernel/TRUST_CONTRACT.md` updated + `.azoth/kernel-checksums.sha256` regenerated; 5 broken tests fixed. **AZOTH_ARCHITECTURE.md** checked — no stale threshold values. **W1** ep-103; **W4** **`0.1.6 → 0.1.7`**, roadmap **`current_patch` `7 → 8`**; **`azoth.yaml`** **`episodes: 103`**; **W2** scope closed; **W3** Claude project memory.
-- **Closeout:** pytest **948 passed, 2 xfailed**.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding `processed/`); **`/next`** → **P1-001**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. Triage INI-* initiatives into a future phase when P1 queue is shorter.
-
-## Session outcome (ep-102) — session-closeout
-
-- **Delivered / refined:** **P1-012 Slice A** — `skills/dynamic-full-auto/SKILL.md` friction map (D21/D23/D50), prerequisites, non-goals, Claude/Cursor happy paths, `/auto` comparison table vs write gates + `pipeline-gate` `pipeline` field; `.claude/commands/dynamic-full-auto.md` Cursor subsection; `docs/AZOTH_ARCHITECTURE.md` long-running cross-link to skill/P1-012. **`/auto`** staged delivery (architect→reviewer→planner→eval-swarm→builder). **Welcome /start** — `scripts/welcome.py` + `.claude/commands/start.md` add `roadmap`, `plan`, `remember`, `closeout` routes; **`azoth-deploy`** mirrors. **W1** **ep-102**; **W2** scope **`closed_at`**, **`session-state.md`**, bootloader (post-W4); **W3** Claude project memory (attempt); **W4** **`0.1.5 → 0.1.6`**, roadmap **`current_patch` `6 → 7`**; **`azoth.yaml`** **`episodes: 102`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.6`**.
-- **Closeout:** full **pytest** **928** passed (**5** skip, **2** xfail) before commit slice.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (root, excluding **`processed/`**); **`/next`** → **P1-001**; optional **P1-012 Slice B** mechanical; **`git push`** when ready.
-
-## Session outcome (ep-101) — session-closeout
-
-- **Delivered / refined:** **P1-010** — `tests/test_eval_pipeline_wiring.py` mirror-aware wiring checks for **`.github/prompts`** + **`.opencode/commands`** (auto, deliver, deliver-full, eval, eval-swarm, dynamic-full-auto). **P1-012** — backlog **priority 0**, `roadmap.yaml` task, **`P1-012.yaml`**, **`SWARM_RESEARCH_DIGEST.yaml`** `mapped_roadmap_tasks` + **`mapping_notes`**, **`skills/orientation/SKILL.md`** + **`CLAUDE.md`**, **`test_v020_roadmap_spec_decision_ref_parity`**. **`python3 scripts/azoth-deploy.py`** after orientation. **Branch** **`patch/v0.2.0-p1-012-dfa-e2e-friction`**. **W1** **ep-101**; **W2** bootloader + **`session-state.md`** + scope **`closed_at`**; **W3** Claude project memory (attempt); **W4** **`0.1.4 → 0.1.5`**, roadmap **`current_patch` `5 → 6`**; **`azoth.yaml`** **`episodes: 101`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.5`**.
-- **Closeout:** W1 → W4 → W2 (bootloader/scope/session after bump per BL-024 W2b intent); full **pytest** **928** passed (**5** skip, **2** xfail).
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** → **P1-012** (priority **0**); **`git push`** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready.
-
-## Session outcome (ep-100) — session-closeout
-
-- **Delivered / refined:** **Milestone-phase model** — `azoth.yaml` + `roadmap.yaml` (`current_phase` / `lifecycle_phase`), **P1-001…P1-011** specs/backlog/roadmap/digest, **`scripts/welcome.py`** strip vs header, **`version-bump.py` `--release`** → phase 1 + milestone + lifecycle + **T7** test updates, **D53** / **`docs/AZOTH_ARCHITECTURE.md`**, **CLAUDE** + **orientation**, **SWARM** `meta` + validate, **3× Task(explore)** Wave B, **pytest** green, **`azoth-deploy`**, **`.claude/settings.json`** **AZOTH_VERSION** + **AZOTH_PHASE** sync. **ep-099** swarm-orchestration drift captured earlier in session. **W1** **ep-100**; **W2** bootloader + **`session-state.md`** + scope **`closed_at`**; **W3** Claude memory (attempt); **W4** **`0.1.3 → 0.1.4`**, roadmap **`current_patch` `4 → 5`**; **`azoth.yaml`** **`episodes: 100`**.
-- **Closeout:** W1–W4 sequence; scope gate closed post-delivery.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** for **P1-001** or next backlog row; **`git push`** when ready.
-
-## Session outcome (ep-098) — session-closeout
-
-- **Delivered / refined:** **P8-011** token & inference efficiency — `P8-011.yaml`, backlog + roadmap task, **RP-E** + **inference_efficiency** theme in **`SWARM_RESEARCH_DIGEST.yaml`**; architecture **Long-running (P8-005)** + **Context & token budget (P8-011)**; **`/context-architect`** + **`/dynamic-full-auto`** commands; **`eval.md` E2**; **session-closeout** W2 **`.azoth/session-state.md`** bullet; **`swarm_research_digest.py`** optional **mapping_notes** / **contributing_packs** + **append-pack** IO tests; **v0.2.0** spec **decision_ref** tightening + **`test_v020_roadmap_spec_decision_ref_parity`**; anchor tests **P8-005** / **P8-011** / **closeout**; **orientation** queue **P8-001…P8-011**. **W1** **ep-098**; **W2** bootloader + scope **`closed_at`** refresh; **W3** Claude memory (attempt); **W4** **`0.1.2 → 0.1.3`**, roadmap **`current_patch` `3 → 4`**; **`azoth.yaml`** **`episodes: 98`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.3`**.
-- **Closeout:** Split git commits (digest tooling, `.azoth` slice, docs, skills, commands, deploy mirrors, closeout metadata).
-- **Next:** **`/intake`** for queued **`.azoth/inbox/*.jsonl`**; continue **P8-001** execution or **`/next`** new scope; **`git push`** when ready.
-
-## Session outcome (ep-097) — session-closeout
-
-- **Delivered / refined:** **`/auto`** with human-approved scope **OPS-HEALTH-PARITY** — explore swarm ×4, **`azoth-deploy`** idempotent run, **`CLAUDE.md`** **Version** **v0.1.1** alignment (pre-bump); verification swarm ×3; **architect → reviewer (approve) → planner (zero-build) → eval-swarm ×3 (≥0.9 PASS) → architect close**. **W1** **ep-097**; **W2** bootloader + scope **`closed_at`**; **W3** Claude memory mirror (attempt); **W4** **`0.1.1 → 0.1.2`**, roadmap **`current_patch` `2 → 3`**; **`azoth.yaml`** **`episodes: 97`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.2`**.
-- **Closeout:** W1–W4 complete.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); **`/next`** when new backlog rows exist; **`git push`** when ready.
-
-## Session outcome (ep-096) — session-closeout
-
-- **Delivered / refined:** **`git tag -a v0.1.0`** + **`git push`** branch **`phase-7-v0.0.7-publishing`** and tag **`v0.1.0`**. **W1** **ep-096**; **W2** bootloader + scope gate **`closed_at`** refresh; **W3** **`~/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md`** mirror; **W4** **`0.1.0 → 0.1.1`**, roadmap **`current_patch` `1 → 2`**; **`azoth.yaml`** **`episodes: 96`**; **`.claude/settings.json`** **`AZOTH_VERSION` `0.1.1`**.
-- **Closeout:** W1–W4 complete.
-- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding **`processed/`**); define **v0.2.0** roadmap when ready.
-
-## Session outcome (ep-095) — session-closeout
-
-- **Delivered / refined:** **`/eval-swarm`** Wave C on extract + license + governance (0.90); extract **FAIL** then **Wave D** (`.git/` guard, tests, `--out` help) + **re-eval PASS**; **follow-up** **`test_extract_removes_pre_existing_out_directory`**, module doc + **destructive `--out`** argparse text (**staging / rsync**). **`AZOTH_VERSION`** in **`.claude/settings.json`** synced **0.0.7.6** (**BL-018**).
-- **Closeout:** W1 **ep-095**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.5 → 0.0.7.6**; **M3** **episodes: 95**.
-- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`**; **`/intake`** for **3** queued inbox JSONL; **`/next`** for post–Phase 7 scope; merge **PR #6** when CI green.
-
-## Session outcome (ep-094) — session-closeout
-
-- **Delivered / refined:** **GitHub PR #6** metadata aligned with full Phase 7 branch; **ready for review**; **`@copilot`** review comment; **D32** inbox — `.azoth/inbox/cursor-review-2026-04-08.jsonl` (appended) + **`.azoth/inbox/pr-code-review-pr6-phase7-2026-04-08.jsonl`**. **`azoth_extract_product.py`** — defense-in-depth **never copy `.git/`** even if `exclude_paths` misconfigured; **`test_copy_tree_always_skips_dot_git`** + minimal-tree assertion; **`--out` help** documents rmtree behavior.
-- **Closeout:** W1 **ep-094**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.4 → 0.0.7.5**; **M3** **episodes: 94**.
-- **Next:** **`git push`** **`origin`** **`phase-7-v0.0.7-publishing`** (closeout commit + prior **35be673** if not pushed); **`/next`** for post–Phase 7 scope; **`/intake`** for **3** queued inbox JSONL; merge **PR #6** when CI green.
-
-## Session outcome (ep-093) — session-closeout
-
-- **Delivered / refined:** **P4-004** **complete** — public **`yiwei79/azoth`** populated via **`azoth_extract_product.py`** + staging rsync; **`sync-config.yaml`** excludes **`.git/`**; **PolyForm Noncommercial 1.0.0** `LICENSE` + docs/README alignment + public README license block; **`kernel/templates/README.public.azoth.md`** for future extracts.
-- **Closeout:** W1 **ep-093**; W2 bootloader + scope gate closed; W3 Claude memory (attempt); W4 patch **0.0.7.3 → 0.0.7.4**; **BL-018** settings **`AZOTH_VERSION`** synced; **M3** **episodes: 93**.
-- **Next:** **`git push`** **`origin`** (branch **`phase-7-v0.0.7-publishing`**); **`/next`** for post–Phase 7 scope; **`/intake`** if inbox queued; verify **public** GitHub Actions on **`main`**.
-
-## Session outcome (ep-092) — session-closeout
-
-- **Delivered / refined:** **`/eval-swarm`** command; **`/eval`** intelligent routing **E1–E6**; **`/auto`** Execution §6 + **`/deliver`** / **`/deliver-full`** eval–swarm wiring; **`tests/test_eval_pipeline_wiring.py`**; **`/intake`** — inbox empty (nothing to triage). **`python3 scripts/azoth-deploy.py`** after command edits.
-- **Closeout:** W1 **ep-092**; W2 bootloader + scope gate closed; W3 Claude memory (deferred in Cursor — mirror manually if needed); W4 patch **0.0.6.8 → 0.0.6.9**; **M3** **episodes: 92**.
-- **Next:** **`git push`** **`origin main`**; **`/next`** when backlog seeded; **`/promote`** for M2 candidates if any.
-
-## Session outcome (ep-090) — BL-024–BL-026
-
-- **Delivered:** **BL-024** — `/session-closeout` W2 field checklist + W2b (post-W4 refresh) in `.claude/commands/session-closeout.md`; **`azoth-deploy`** mirrors (Copilot/OpenCode prompts). **BL-025** — `tests/test_governance_never_auto_parity.py` (GOVERNANCE §5 Never-Auto vs `UNIVERSAL_NEVER_AUTO`). **BL-026** — `install.sh` Step 7 explicit four-file §4 order; `tests/test_install_sh_kernel_checksums.py`.
-- **Swarm:** parallel architect wave (prior session) + parallel **reviewer** verification wave on acceptance criteria.
-- **Next:** **`/next`** for next backlog row; **`/intake`** if inbox queued.
-
-## Session outcome (ep-088) — session-closeout
-
-- **Delivered / refined:** **`main`** merged **`patch/bl-023-azoth-deploy-parity`** (**`78be4fa`**) — backlog deliveries **BL-018**–**BL-023** on default branch (settings sync, pip/requirements-dev, runtime gate JSON policy, DAY0 + UTF-8 + session-state example, roadmap dashboard hardening, **D46** deploy parity tests). **`python3 scripts/azoth-deploy.py`** — 84 files reported written; **working tree clean** (mirrors already matched).
-- **Closeout:** W1 **ep-088**; W2 bootloader + session-state; W3 Claude memory (attempt); W4 patch **0.0.6.7 → 0.0.6.8**; **M3** **episodes: 88**.
-- **Next:** **`git push`** **`origin main`**; **`/next`** **BL-024** (bootloader alignment on closeout); **`/intake`** if new inbox lines.
-
-## Session outcome (ep-086) — session-closeout
-
-- **Delivered / refined:** **Copilot PR workflow** — `.github/pull_request_template.md`, `.github/copilot-instructions.md`, `tests/test_github_pr_template.py`. **Cursor review → inbox** — `skills/cursor-review-insights/SKILL.md`, `.claude/commands/review-insights.md`, `kernel/templates/platform-adapters/cursor/code-review-insights.mdc.template` → `.cursor/rules/code-review-insights.mdc`; **`.azoth/trusted-sources.yaml`** `cursor-review`; `README.md` / **`CLAUDE.md`** skill index; **`azoth.yaml`** skills **14**; **`tests/test_skills.py`**, **`tests/test_cursor_adapter_templates.py`**, **`tests/test_cursor_review_insights.py`**. **`azoth-deploy`** (84 files). PR **#5** created; Copilot inbox comment posted earlier in session.
-- **Closeout:** W1 **ep-086**; W2 bootloader + session-state; W3 Claude memory (attempt); W4 patch **0.0.6.6 → 0.0.6.7**; **M3** **episodes: 86**.
-- **Next:** **`/intake`** queued insights (inbox + any Copilot/Cursor JSONL); merge **PR #5** when CI green; continue **Phase 7** planning when ready.
-
-## Session outcome (ep-085) — session-closeout
-
-- **Delivered / refined:** **BL-017** **complete** — `scripts/kernel-integrity.py` (D2 on `kernel/*.md`; `--verify-checksums` for GOVERNANCE §4); **`.azoth/kernel-checksums.sha256`** committed; **`.gitignore`** documents golden manifest; **`.github/workflows/ci.yml`** (ruff stack, kernel-integrity, pytest); **`tests/test_kernel_integrity.py`**; **`tests/test_ruff_smoke.py`** includes new script; B2 xfail removed. **`azoth-deploy`** dry-run verified (80 files); live deploy no-op (already synced). Git **`084f722`**.
-- **Closeout:** W1 **ep-085**; W2 bootloader + scope gate **closed** (`approved: false`, `closed_at`); W3 Claude memory (attempt); W4 patch **0.0.6.5 → 0.0.6.6**; **M3** **episodes: 85**.
-- **Next:** **`/intake`** inbox (**5** JSONL in **`.azoth/inbox/`**, excluding **`processed/`**); plan **Phase 7** (**v0.0.7**) / **P4-003**–**P4-004** when ready; add backlog rows if **`/next`** should surface new work.
-
-## Session outcome (ep-084) — session-closeout
-
-- **Delivered / refined:** **P6-003** **complete** (governed `/auto`): `pipelines/architecture-proposal.schema.yaml`, `scripts/architecture_proposal_validate.py`, `/arch-proposal` (mixed, Cursor parity, Task + `prior_stage_summaries`), pytest suite, `.gitignore` + installers for `.azoth/proposals/`, architect cue, orientation, `azoth-deploy`. Reviewer **request-changes** cleared via human **revise-then-continue** + revision architect pass before planner. **P6-003-OPT** **complete** (standard): architect → reviewer **approve** → evaluator plan PASS → builder → evaluator post PASS; **`/next` step 8b** read-only proposal footer (scope-gate + `.azoth/proposals/*.yaml`); **`docs/AZOTH_ARCHITECTURE.md`** D25 + **`/arch-proposal`** row; **`docs/DECISIONS_INDEX.md`** D25 nuance; **`pyproject.toml`** `[tool.ruff]`; **`tests/test_next_arch_proposal_footer.py`**, **`tests/test_ruff_smoke.py`**; removed **stale expired** **`pipeline-gate.json`**.
-- **Closeout:** W1 **ep-084**; W2 bootloader + scope gate **closed** (`approved: false`, `closed_at`); W3 Claude **project_status.md** mirror; W4 patch **0.0.6.4 → 0.0.6.5**; **M3** **episodes: 84**.
-- **Next:** **`/next`** **BL-017**; **`/intake`** inbox (**5** JSONL in **`.azoth/inbox/`**, excluding **`processed/`**).
-
-## Session outcome (ep-083) — session-closeout
-
-- **Delivered / refined:** **P6-002** **complete** — L2 evidence **JSONL** (`pipelines/l2-evidence-record.schema.yaml`), **`scripts/l2_evidence_validate.py`**, **`l2_evidence_append.py`** (scope + pipeline gates), **pytest**, **`.gitignore`** for store; **skills** (prompt-engineer, agentic-eval, self-improve, auto-router, subagent-router), **`agents/tier3-meta/prompt-engineer.agent.md`** `pipeline_stages`, **`.claude/commands/eval.md`**; **`azoth-deploy`**. **Tests:** `test_phase_consistent` cross-checks **roadmap `current_phase`**; **`test_azoth_checkpoint`** `git init -b main` + skip. **Backlog:** **BL-017** (GOV-B2 **`scripts/kernel-integrity.py`**); xfail reason points to BL-017. **Skill frontmatter:** repaired **`## name:`** corruption on multiple **`SKILL.md`** files (was blocking deploy).
-- **Closeout:** W1 **ep-083**; W2 bootloader + scope/pipeline gates **closed**; W3 Claude memory (attempt); W4 patch **0.0.6.3 → 0.0.6.4**; **M3** **episodes: 83**.
-- **Next:** **`/next`** **P6-003** or **BL-017**; **`/intake`** inbox (**5** JSONL in **`.azoth/inbox/`**, excluding **`processed/`**).
-
-## Session outcome (ep-082) — session-closeout
-
-- **Delivered / refined:** **Roadmap** — **Phase 7** (**v0.0.7** backlog) holds **P4-003/P4-004** publishing; **v0.0.6** meta-only (**P6-001–003**). **version-bump.py** — `--phase` from **v0.0.6→v0.0.7**; **`--release`** requires **v0.0.7**; tests updated. **welcome.py** — phase strip **[7] Publish**. **Backlog** — **P6-001–003** seeded; **P6-001** **complete** (Agent Crafter meta-loop hardening: `agents/tier3-meta/agent-crafter.agent.md`, `docs/AZOTH_ARCHITECTURE.md`, `skills/subagent-router`, `tests/test_agents.py`, `azoth-deploy`). **Evaluator** — PASS threshold **0.85** (evaluator agent, `skills/agentic-eval`, `/eval`, patterns, `pipeline.template`). **subagent-router** — repaired broken YAML frontmatter (`## name:` → valid `---` block) that blocked **azoth-deploy**.
-- **Closeout:** W1 **ep-082**; W2 bootloader + scope/pipeline gates **closed**; W3 Claude memory (attempt); W4 **patch** bump.
-- **M3:** **ep-082** appended (`episodes: 82`).
-- **Next:** **`/next`** for **P6-002** or **P6-003**; **`/intake`** inbox (**5** JSONL in `.azoth/inbox/`, excluding **processed/**).
-
-## Session outcome (ep-081) — session-closeout
-
-- **Delivered / refined:** **P5→P6** phase advance (**D53**): `scripts/version-bump.py` **--phase** with **backlog→active** activation for next version slice; **v0.0.5** **complete** **final_patch** **14**; **v0.0.6** **active**; **azoth.yaml** **phase** **6**; legacy **current_phase** / **orientation** / **CLAUDE.md** / **tests** / **azoth-deploy**; scope gate opened then **closed** this closeout. **UX:** user meant **closeout** when saying **option 2** after a separate earlier **option 2** (phase close)—**ordinal reuse** across menus; captured **ep-081** + **`skills/self-improve`** note.
-- **Closeout:** W1 **ep-081**; W2 bootloader + scope gate **`closed_at`**; W3 Claude Code **project_status** mirror; W4 patch **0.0.6.1 → 0.0.6.2**.
-- **M3:** **ep-081** appended (`episodes: 81`).
-- **Next:** Seed **`.azoth/backlog.yaml`** from roadmap **P6-001…P6-003** / **P4-003** / **P4-004** so **`/next`** can run; **`/intake`** for inbox (**5** queued files, see closeout).
-
-## Session outcome (ep-080) — session-closeout
-
-- **Delivered / refined:** **P5-006** deferred to **v0.2.0** (post–**v0.1.0**): backlog `status: deferred` + `target_version`; roadmap **v0.2.0** bucket added; P5-006 removed from v0.0.5/v0.0.6 slices; `scripts/welcome.py` + **`/next`** exclude `deferred`; `tests/test_welcome.py::test_filter_excludes_deferred`; scope gate closed; session-state/bootloader pointers. Earlier in session: `/start`, `/next` + approval for P5-006, `/auto` declaration only (not executed).
-- **Closeout:** W1 **ep-080**; W2 bootloader + scope gate **`closed_at`** refresh; W3 Claude Code memory mirror (attempt); W4 patch **0.0.5.13 → 0.0.5.14**.
-- **M3:** **ep-080** appended (`episodes: 80`).
-- **Next:** v0.0.5 Phase 5 backlog has **no pending** items (P5-006 is deferred past v0.1.0). Plan **phase close / v0.0.6** work, **`/intake`** for inbox, or add new backlog. **`/next`** returns no candidates until new items.
-
-## Session outcome (ep-079) — session-closeout
-
-- **Delivered / refined:** **P5-005** (D15) — `scripts/azoth_checkpoint.py` (create / tag / list), `tests/test_azoth_checkpoint.py`, `kernel/TRUST_CONTRACT.md` §4 (human-invoked checkpoints), `.claude/hooks/entropy_check.py` RED recovery hint, `skills/entropy-guard` + `azoth-deploy`; backlog **P5-005** **complete**; deliver-full mid-session **0.0.5.11 → 0.0.5.12**; evaluator **PASS** 0.88; follow-ups — **lightweight tag** wording, `tag`/`list` tests, `tag` subparser `description=` for Python 3.9 `--help`.
-- **Closeout:** W1 **ep-079**; W2 bootloader + **scope gate closed** (`approved: false`, `closed_at`); W3 Claude Code memory mirror (attempt); W4 patch bump **0.0.5.12 → 0.0.5.13**.
-- **M3:** **ep-079** appended (`episodes: 79`).
-- **Next:** **`/next`** for **P5-006**; **`/intake`** for inbox queue.
-
-## Session outcome (ep-078) — session-closeout
-
-- **Delivered / refined:** P5-004 telemetry hardening (`session_telemetry.py` never-raise contract, `_safe_seq` / `_read_seq_state`); evaluator re-run **PASS** 0.91; follow-up docs — `kernel/GOVERNANCE.md` §6 outcome vocabulary, `docs/AZOTH_ARCHITECTURE.md` §9, `skills/entropy-guard`, module docstring; test `telemetry_seq` rewrite after corrupt read; `azoth-deploy`. Episodes **ep-076** (scope-goal binding), **ep-077** (initial P5-004 delivery) precede this closeout slice.
-- **Closeout:** W1 **ep-078**; W2 bootloader + **scope gate closed** (`approved: false`, `closed_at`); W3 Claude Code memory mirror (attempt); W4 patch bump **0.0.5.10 → 0.0.5.11**.
-- **M3:** **ep-078** appended (`episodes: 78`).
-- **Next:** **`/next`** for **P5-005** or **P5-006**; **`/intake`** for inbox queue.
-
-## Session outcome (ep-075) — session-closeout
-
-- **Delivered / refined:** P5-007 SessionStart path (`session_start_welcome.py`, settings, tests), welcome plain + file mirror, policy for **Bash Rich** (expand) and **Cursor integrated terminal** for full ANSI/Rich; `CLAUDE.md` rules 8–9; kernel/cursor templates; orientation skill; `start.md`; README; architecture/decisions index where touched; `azoth-deploy` parity.
-- **Closeout:** W1 **ep-075**; W2 bootloader + **scope gate closed** (`approved: false`, `closed_at`); W3 Claude Code memory mirror; W4 patch bump **0.0.5.9 → 0.0.5.10**.
-- **M3:** **ep-075** appended (`episodes: 75`).
-- **Next:** **`/next`** for new scope before governed M1 writes; **`/intake`** for inbox queue; Rich welcome: **Terminal** panel, not agent chat widget.
-
-## Session outcome (ep-074) — session-closeout
-
-- **Closeout:** Part A evaluation (Phase 5 alignment, tests, kernel untouched, decisions count 53); W1 **ep-074**; W2 bootloader refresh, scope gate remains **closed** (`approved: false`); W3 Claude Code memory — see log below; W4 **`0.0.5.8 → 0.0.5.9`**. Part D: **5** insight files queued in `.azoth/inbox/` (run **`/intake`**; do not triage during closeout).
-- **M3:** **ep-074** appended (`episodes: 74`).
-- **Next:** **`/next`** for **P5-007** or **P5-004**; **`/intake`** for inbox queue.
-
-## Session outcome (ep-073)
-
-- **Delivered:** P5-003 — `stage_summary_validate.py`, `alignment_summary_gate.py` (`evaluate_alignment_handoff`), orchestrator integration **after** scope allow **before** entropy; `.azoth/handoffs/` convention; `tests/test_p5_003_alignment_summary_gate.py` (gate + orchestrator + Edit edge cases + relative path + malformed stdin); `docs/AZOTH_ARCHITECTURE.md` (P5-003); `kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template` + deploy; **evaluator** rubric **PASS** 0.92. Backlog **P5-003** **complete**.
-- **Pipeline:** `/deliver-full` — Goal Clarification → Architect → Governance Review → Planner → Test Builder → Builder → Step 7 + `version-bump.py --patch`.
-- **M3:** **ep-073** appended.
-- **Scope gate:** **closed** (`approved: false`, `closed_at` set) — run **`/next`** before the next scoped write session.
-- **W4 (delivery):** `0.0.5.7 → 0.0.5.8`.
-
-## Session outcome (ep-072) — historical snapshot
-
-- **Delivered:** P5-002 — PreToolUse orchestrator (scope then entropy), entropy_state/check, tests; relative hook paths; AZOTH_ARCHITECTURE; **M2** pattern evaluator-subagent. Backlog **P5-002** **complete**.
-- **W4:** `0.0.5.6 → 0.0.5.7`.
+Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
+**Toolkit version:** **0.1.16** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 9` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
+
+## Session outcome (ep-114) — multi-session continuity + true multi-writer planning
+
+- **Delivered:** Added optional `sessions:` registry and run metadata support in the run-ledger schema/example plus helper APIs; updated `scripts/welcome.py` to surface continuity and parked sessions; hardened `/next resume <session_id>` and session-closeout continuity rules; added roadmap/backlog/spec wiring for **P1-015** as the governed follow-on for mechanical multi-writer safety.
+- **Validated:** Focused pytest stayed green at **75 passed** across run-ledger, welcome, and command-contract anchors; planning YAML parse passed for roadmap/backlog/spec; `scripts/kernel-integrity.py` stayed clean.
+- **Decision capture:** Keep the current runtime model at **many tracked sessions, one active writer projected through scope-gate**. True multi-writer safety is separate governed work and remains **blocked by P1-014**.
+- **Closeout:** **W1** **ep-114** appended; **W2** refreshed bootloader, scope-gate, and session handoff after the patch bump; **W3** Claude project memory mirrored the same snapshot; **W4** **`0.1.15 → 0.1.16`**, roadmap **`current_patch 8 → 9`**, and **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.16`**.
 
 ## Open decisions
 
-- **P1-013 design:** decide whether Azoth should introduce a dedicated `orchestrator` agent or reuse `architect` as the explicit main-session orchestrator in Claude Code.
-- **Copilot orchestrator parity:** decide whether the default orchestrator role should live primarily in prompt/instruction surfaces, adapter metadata, or both.
-- **Phase 7 wrap:** v0.1.0 readiness, extraction cadence, and public-repo hygiene (Actions on **`yiwei79/azoth`**).
-- **settings.json.template** deny list for `.azoth/kernel/**` (optional consumer hardening) still open in orientation.
-- **D43 remainder:** optional commit-format rules beyond Co-Authored-By (human sign-off before expansion).
+- Choose the first enforcement shape for **P1-015**: coarse repo-wide write lease first vs finer-grained file or worktree claims later.
+- Decide when to refresh generated command mirrors for the canonical `/next` and `/session-closeout` changes that were intentionally deferred in this slice.
+- Decide whether **P1-014** should be marked complete or stay active until the wider Antigravity deploy-target path is formalized.
 
 ## Next action
 
-**v0.2.0 / ep-108** — **`/intake`** **4** JSONL (inbox root); **`/next`** → **P1-003** (pipeline composition linter) while **P1-013** waits for an orchestrator-design decision; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. **P5-006** **deferred**.
+**`/intake`** — **4** JSONL remain queued in **`.azoth/inbox/`**; then **`/next`** to continue **P1-014** or open the next unblocked scope after the current gate closure.

@@ -285,7 +285,7 @@ versions:
 
   - id: v0.2.1
     status: active
-    current_patch: 7
+    current_patch: 9
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
     themes: [A, B, D]
@@ -300,6 +300,11 @@ versions:
         decision_ref: [D19, D21, D46, D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
         note: "Ad-hoc immediate override: repo-local .agents bootstrap for standard work"
+      - id: P1-015
+        title: "True multi-writer safety (write claims and lock enforcement)"
+        decision_ref: [D21, D46, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
+        note: "Governed concurrency safety slice; blocked on P1-014 platform bootstrap stabilization"
       - id: P1-012
         title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
         decision_ref: [D21, D23, D50]
@@ -358,6 +363,24 @@ initiatives:
       in the session cockpit. Depends on run ledger (P1-001 in v0.2.1).
     decision_ref: [D52, D50]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
+
+  - id: INI-RST-003
+    title: "True multi-writer safety (write claims and lock enforcement)"
+    category: run-state
+    theme: A
+    phase: null
+    priority: high
+    task_ref: P1-015
+    blocked_by: [P1-014]
+    summary: >
+      Add explicit write-claim and lock enforcement for concurrent sessions across
+      Copilot, Claude Code, Antigravity, and other harnesses. The current model can
+      track many sessions but projects only one active scope gate for writes; this
+      initiative defines the next step: session leases or finer-grained file claims,
+      conflict detection, handoff rules, and mechanical enforcement so parallel
+      writers are safe rather than advisory.
+    decision_ref: [D21, D46, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
 
   # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001
