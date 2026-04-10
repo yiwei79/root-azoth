@@ -1,0 +1,27 @@
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s3_evaluator
+agent: evaluator
+stage_kind: eval
+status: complete
+entropy: GREEN
+entropy_delta: 2
+gate_outcome: Builder should produce the final compatibility assessment with a clear distinction between practical adapter-based parity and exact Claude Code parity, and should avoid overclaiming hook or custom-agent support.
+session_id: 2026-04-10-inv-antigravity-parity
+done:
+  - Evaluated the research and planning outputs against the actual first-party evidence.
+  - Confirmed that practical compatibility is plausible while exact Claude Code parity is not demonstrated.
+  - Identified hook parity and custom-agent definitions as the main unresolved gaps.
+decisions:
+  - Treat the investigation outcome as a conditional pass.
+  - Keep the final recommendation adapter-oriented rather than zero-config-oriented.
+  - Preserve a strict distinction between confirmed, partial, and unsupported parity claims.
+open:
+  - Whether Antigravity permissions and strict mode are sufficient for Azoth governed workflows in practice still needs a prototype.
+  - Whether Azoth should add Antigravity to D46 deployment targets remains unproven until a prototype exists.
+artifact_refs:
+  - research_antigravity_parity/evaluator_assessment.md
+  - research_antigravity_parity/stage_summary_auto_s3_evaluator.yaml
+  - research_antigravity_parity/planner_adapter_plan.md
+  - research_antigravity_parity/findings_capability_matrix.md
+next: Produce a final compatibility assessment and go or conditional or no-go recommendation for the user.

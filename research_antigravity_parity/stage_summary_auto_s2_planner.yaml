@@ -1,0 +1,27 @@
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s2_planner
+agent: planner
+stage_kind: build
+status: complete
+entropy: GREEN
+entropy_delta: 2
+gate_outcome: Evaluator should judge whether the evidence supports practical compatibility, whether the custom-agent and hook gaps are acceptable, and whether the adapter plan separates direct mappings from approximations clearly enough.
+session_id: 2026-04-10-inv-antigravity-parity
+done:
+  - Converted the research findings into an Antigravity adapter strategy.
+  - Separated direct mappings from approximate mappings and identified the highest-risk gap.
+  - Defined a validation plan for proving practical compatibility before implementation work.
+decisions:
+  - Keep `.azoth/` as the authoritative repo-local state layer.
+  - Map Azoth commands to Antigravity workflows and Azoth skills to Antigravity skills.
+  - Treat programmable hook parity as approximate rather than direct.
+open:
+  - Determine whether the lack of direct custom-agent files is acceptable if archetypes are expressed through workflows, rules, and skills.
+  - Determine whether permissions plus strict mode are sufficient for Azoth governed workflows.
+  - Determine whether the Antigravity adapter belongs in D46 as a new deployment target.
+artifact_refs:
+  - research_antigravity_parity/planner_adapter_plan.md
+  - research_antigravity_parity/stage_summary_auto_s2_planner.yaml
+  - research_antigravity_parity/stage_summary_auto_s1_architect.yaml
+next: Evaluate the adapter plan against the evidence and decide go, conditional, or no-go for practical Antigravity parity.

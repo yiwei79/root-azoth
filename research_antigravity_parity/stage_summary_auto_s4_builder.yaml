@@ -1,0 +1,26 @@
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s4_builder
+agent: builder
+stage_kind: build
+status: complete
+entropy: GREEN
+entropy_delta: 2
+gate_outcome: Human should decide whether to treat Antigravity as a conditional-go platform and, if so, whether to start a minimal adapter prototype rather than claiming full native Claude parity.
+session_id: 2026-04-10-inv-antigravity-parity
+done:
+  - Produced the final compatibility assessment.
+  - Converted the evaluator result into a clear conditional-go recommendation.
+  - Defined the smallest prototype needed to validate the adapter path.
+decisions:
+  - Recommend Antigravity as a plausible Azoth platform only through a dedicated adapter.
+  - Do not claim exact Claude Code parity.
+  - Keep the prototype scope small and focused on workflow, rule, skill, and gate behavior.
+open:
+  - Whether D46 should gain an Antigravity deployment target depends on prototype results.
+  - Whether governed sessions can be made sufficiently strict without executable hooks remains to be proven operationally.
+artifact_refs:
+  - research_antigravity_parity/compatibility_assessment.md
+  - research_antigravity_parity/stage_summary_auto_s4_builder.yaml
+  - research_antigravity_parity/evaluator_assessment.md
+next: Present the final architect closeout and ask the human whether to stop at research or proceed to an adapter prototype scope.

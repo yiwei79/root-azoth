@@ -285,15 +285,21 @@ versions:
 
   - id: v0.2.1
     status: active
-    current_patch: 6
-    goal: "Run state foundation + pipeline quality + session policy"
+    current_patch: 7
+    goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
-    themes: [A, B]
+    themes: [A, B, D]
     note: >
       First working phase of v0.2.0 milestone. Unblocks durable run state (P1-001),
       closes DFA+ e2e friction gaps (P1-012 Slice B+), adds pipeline linting (P1-003),
-      documents long-running session policy (P1-005).
+      documents long-running session policy (P1-005), and now includes the ad-hoc
+      Antigravity bootstrap adapter slice (P1-014).
     tasks:
+      - id: P1-014
+        title: "Antigravity bootstrap adapter (rules + workflows + skill)"
+        decision_ref: [D19, D21, D46, D50]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
+        note: "Ad-hoc immediate override: repo-local .agents bootstrap for standard work"
       - id: P1-012
         title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
         decision_ref: [D21, D23, D50]
@@ -520,6 +526,37 @@ initiatives:
       for Copilot adapter surfaces so pipeline ownership is mechanical rather than implicit.
     decision_ref: [D21, D23, D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-013.yaml"
+
+  - id: INI-PLT-004
+    title: "Antigravity workspace bootstrap adapter"
+    category: platform
+    theme: D
+    phase: null
+    priority: high
+    task_ref: P1-014
+    summary: >
+      Bootstrap a practical Antigravity-native Azoth surface inside the repo using
+      `.agents/rules/`, `.agents/workflows/`, and `.agents/skills/`. Target standard
+      infrastructure work first, keep `.azoth/` authoritative, and defer kernel-template
+      deploy integration until the workspace bootstrap proves operational.
+    decision_ref: [D19, D21, D46, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
+
+  - id: INI-PLT-005
+    title: "Antigravity deploy target and install path"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    blocked_by: [P1-014]
+    summary: >
+      Extend the repo-local Antigravity bootstrap into a real install and deploy path:
+      add an Antigravity adapter surface to deployment mechanics, define optional global
+      install locations under `~/.gemini/GEMINI.md`, `~/.gemini/antigravity/global_workflows/`,
+      and `~/.gemini/antigravity/skills/`, and decide how workspace bootstrap and global
+      install should coexist. Keep this unphased until the workspace bootstrap proves
+      operational in practice.
+    decision_ref: [D19, D46]
 
   # ── Theme E: efficiency ────────────────────────────────────────────────────
   - id: INI-EFF-001

@@ -1019,6 +1019,27 @@ items:
     description: >
       Structural validation for pipelines/*.pipeline.yaml; P1-003.yaml.
 
+  - id: P1-014
+    title: "Antigravity bootstrap adapter (rules + workflows + skill)"
+    source: session-2026-04-10-antigravity-bootstrap
+    roadmap_ref: P1-014
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.2.0
+    priority: 1
+    created_date: "2026-04-10"
+    decision_ref: [D19, D21, D46, D50]
+    blocked_by: []
+    priority_note: >
+      Ad-hoc immediate override approved 2026-04-10: bootstrap Antigravity at practical,
+      Copilot-level parity for standard work before deeper deploy-target integration.
+    description: >
+      Repo-local Antigravity adapter under `.agents/` for standard infrastructure work:
+      one always-on Azoth rule, core workflows (`next`, `auto`, `deliver`, `session-closeout`),
+      and one operating-model skill. Keep `.azoth/` as the authoritative state layer.
+      Explicitly defer kernel templates, D46 deploy-target integration, and governed M1 parity.
+
   - id: P1-004
     title: "Control-plane surfacing in welcome (gates TTL + optional ledger)"
     source: dynamic-full-auto-plus

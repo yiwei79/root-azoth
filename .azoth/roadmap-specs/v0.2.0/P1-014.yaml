@@ -1,0 +1,47 @@
+# Roadmap task spec — v0.2.0
+id: P1-014
+roadmap_version: v0.2.0
+title: "Antigravity bootstrap adapter (rules + workflows + skill)"
+decision_ref: [D19, D21, D46, D50]
+
+intent: >
+  Bootstrap the smallest Antigravity-native Azoth surface that can support practical,
+  Copilot-level parity for standard infrastructure work in this repo.
+
+problem: >
+  Research confirms that Antigravity can host Azoth through rules, workflows, skills,
+  permissions, and repo-local state, but root-azoth currently has no workspace `.agents/`
+  surface. Without a bootstrap adapter, the platform remains theoretical rather than usable.
+
+scope:
+  - ".agents/rules/azoth-core.md"
+  - ".agents/workflows/next.md"
+  - ".agents/workflows/auto.md"
+  - ".agents/workflows/deliver.md"
+  - ".agents/workflows/session-closeout.md"
+  - ".agents/skills/azoth-operating-model/SKILL.md"
+  - Backlog and roadmap wiring for the ad-hoc override and active-session scope
+
+non_goals:
+  - "Adding kernel/templates/platform-adapters/antigravity/ in this slice"
+  - "Extending scripts/azoth-deploy.py with an Antigravity deploy target in this slice"
+  - Governed M1 or kernel delivery parity
+  - Direct Claude PreToolUse hook parity
+
+acceptance:
+  - Workspace-local Antigravity files exist under `.agents/` and mirror core Azoth behavior
+  - The always-on rule points Antigravity to `.azoth/` as the authoritative state layer
+  - Core workflows preserve recognizable `/next`, `/auto`, `/deliver`, and `/session-closeout` behavior for standard work
+  - The skill provides cold-start routing, scope discipline, and platform-boundary guidance
+  - The bootstrap explicitly refuses governed M1 or kernel work rather than pretending parity
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Phase 1 = repo-local bootstrap only; Phase 2 = D46 deploy-target integration;
+  Phase 3 = stricter governed-path validation once platform behavior is proven.

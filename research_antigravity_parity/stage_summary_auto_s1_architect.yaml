@@ -1,0 +1,28 @@
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_s1_architect
+agent: architect
+stage_kind: research
+status: complete
+entropy: GREEN
+entropy_delta: 3
+gate_outcome: Planner should turn the confirmed Antigravity surfaces into an adapter plan, isolate the hook-parity gap, and separate direct mappings from approximate behavioral substitutions.
+session_id: 2026-04-10-inv-antigravity-parity
+done:
+  - Identified Antigravity as Google's first-party local agentic development platform built on a VS Code foundation.
+  - Verified first-party customization surfaces for rules, workflows, skills, permissions, MCP, knowledge, strict mode, and sandboxing.
+  - Mapped confirmed and partial parity dimensions against Azoth's Claude Code assumptions.
+decisions:
+  - Treat Antigravity as a plausible compatible platform candidate rather than a speculative product.
+  - Treat direct file-surface reuse as unsupported until proven; plan around an adapter deployment into Antigravity-native paths.
+  - Treat programmable hook parity as the primary non-trivial gap.
+open:
+  - Determine the minimum Antigravity adapter surfaces Azoth needs to reach practical parity for commands, rules, and skills.
+  - Decide which Claude Code mechanical gates can be translated into Antigravity permissions, strict mode, or workflows and which remain approximate.
+  - Decide whether repo-local `.azoth/` state should remain the authoritative memory layer under an Antigravity adapter.
+artifact_refs:
+  - research_antigravity_parity/research_plan.md
+  - research_antigravity_parity/findings_identity_and_sources.md
+  - research_antigravity_parity/findings_capability_matrix.md
+  - research_antigravity_parity/stage_summary_auto_s1_architect.yaml
+next: Convert the research into a concrete adapter-oriented parity plan, with explicit direct mappings, partial mappings, and non-portable Claude-only behaviors.
