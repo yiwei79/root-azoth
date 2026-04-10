@@ -1,11 +1,18 @@
 # Bootloader State
 
-Last updated: 2026-04-10 (session-closeout ep-109 — Claude-only autocompact split + W4 bump)
+Last updated: 2026-04-10 (session-closeout ep-112 — Antigravity parity closeout)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.13** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **6** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.14** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-112) — Antigravity parity bootstrap + deploy-backed adapter
+
+- **Delivered:** Reframed Antigravity success to practical Copilot-level parity, added **P1-014** backlog/roadmap/spec wiring plus **INI-PLT-004/005**, built the workspace `.agents/` bootstrap surface, and then hardened the real adapter path by extending `scripts/azoth-deploy.py` plus the Antigravity rule template so canonical commands, skills, and rules project into Antigravity-native locations.
+- **Validated:** Focused pytest stayed green at **260 passed, 2 xfailed** across deploy behavior, skill surfaces, delivery wiring, and roadmap/spec parity; `scripts/kernel-integrity.py` remained clean.
+- **Decision capture:** For file-discovered platforms, start diagnosis with deploy-target coverage and native path population. Manual bootstrap mirrors are useful as a bridge, but they are not durable parity.
+- **Closeout:** **W1** ep-112 appended after the earlier **ep-110/ep-111** lessons; `azoth.yaml` `memory.episodes` synced to **112**; **W2** closed **P1-014** scope with `closed_at`; **session-state skipped** because `.azoth/session-state.md` was unused; **W3** Claude project memory mirrored the session snapshot; **W4** **`0.1.13 → 0.1.14`**, roadmap **`current_patch` `6 → 7`**; **`.claude/settings.json`** **`AZOTH_VERSION`** synced to **`0.1.14`**.
 
 ## Session outcome (ep-109) — Claude-only autocompact split
 
