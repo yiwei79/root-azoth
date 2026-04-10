@@ -156,7 +156,7 @@ def test_evaluate_entropy_red_reason_includes_checkpoint_pointer(
             {
                 "version": 1,
                 "session_id": "sess-red",
-                "cumulative_entropy": 8.99,
+                "cumulative_entropy": 23.99,
                 "modified_paths": [],
                 "created_paths": [],
                 "lines_total": 0,

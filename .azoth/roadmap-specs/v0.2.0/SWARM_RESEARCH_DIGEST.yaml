@@ -163,3 +163,70 @@ mapping_notes:
   P1-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
   P1-012: "Urgent DFA e2e friction — D21/D23/D50 blast radius: gates vs multi-wave mode, Task spawn, queen merge/handoff to /deliver|/auto; overlaps P1-001 ledger + P1-002 declarative waves."
   P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."
+  INI-MEM-001: "RP-MEM-A verbatim-first storage — compress-before-index regression (96.6%→84.2%); M3 must index on full signal."
+  INI-MEM-002: "RP-MEM-C temporal KG — valid_from/valid_to point-in-time queries; D42 HITL invalidation preserved, no auto-expiry."
+  INI-MEM-003: "RP-MEM-B hybrid retrieval — flat ChromaDB collection, fused_dist formula production-only (not just benchmark); optional SQLite-vec backend."
+  INI-PLT-001: "RP-PLT-A platform parity — production-vs-benchmark divergence lesson; memory ops must be consistent across Claude Code/Cursor/Copilot adapter paths."
+
+# ── mempalace deep-repo research packs (2026-04-09-roadmap-initiatives) ──────
+mempalace_research_packs:
+  - id: RP-MEM-A
+    topic: "mempalace verbatim-first storage architecture"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace ingest.py", path: "ingest.py", note: "Verbatim ChromaDB add() before any summarisation; no pre-compression step." }
+      - { title: "mempalace benchmarks/run_benchmark.py", path: "benchmarks/run_benchmark.py", note: "AAAK variant applies compression BEFORE ingestion — causes 96.6%→84.2% regression." }
+    findings:
+      - "Production ingest stores raw text verbatim in ChromaDB; embedding index built on full signal."
+      - "AAAK (compress-then-index) regression is architectural: lossy compression degrades the vector index before retrieval."
+      - "No LLM summarisation in the hot path — the source of the claimed 96.6% benchmark score."
+    implications_for_azoth:
+      - "M3 append-only JSONL must not pre-summarise before any future vector indexing (INI-MEM-001 policy)."
+      - "If a compression step is added, it must be post-index or separated from the retrieval path."
+
+  - id: RP-MEM-B
+    topic: "mempalace retrieval — hybrid formula vs production divergence"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace searcher.py", path: "searcher.py", note: "Production retrieval is pure vector (ChromaDB query); no hybrid formula." }
+      - { title: "mempalace benchmarks/run_benchmark.py", path: "benchmarks/run_benchmark.py", note: "Hybrid formula: fused_dist = dist * (1.0 - 0.30 * keyword_overlap) — benchmark-only." }
+    findings:
+      - "Production searcher.py uses pure vector (ChromaDB .query()); hybrid formula lives ONLY in benchmark scripts."
+      - "The 96.6% benchmark score reflects the hybrid formula, but production users get pure vector."
+      - "Palace metaphor (wing/room) is flat ChromaDB metadata string tags — no Python class hierarchy."
+    implications_for_azoth:
+      - "If Azoth adopts hybrid retrieval, it must ship in the production context-recall path, not only evaluation scripts (INI-MEM-003)."
+      - "Flat metadata tagging (no inheritance chain) is preferable for M3 episode classification."
+    risks:
+      - "Hybrid formula weight (0.30) is not validated outside the benchmark dataset — treat as a starting point, not a hard constant."
+
+  - id: RP-MEM-C
+    topic: "mempalace temporal validity KG (SQLite triple store)"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace kg/store.py", path: "kg/store.py", note: "SQLite triples with valid_from TEXT, valid_to TEXT; point-in-time query via AND clause." }
+      - { title: "mempalace kg/query.py", path: "kg/query.py", note: "Parametric timestamp query: AND (valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)." }
+    findings:
+      - "SQLite triple store (subject, predicate, object, valid_from, valid_to) decouples factual KG from ChromaDB episodic store."
+      - "NULL valid_from/valid_to means 'always valid' — clean handling of timeless facts."
+      - "KG does NOT contribute to the 96.6% benchmark score (benchmark tests ChromaDB recall only)."
+    implications_for_azoth:
+      - "M2 patterns.yaml can gain optional valid_from/valid_to metadata without breaking existing tooling (INI-MEM-002)."
+      - "D42 HITL requirement: temporal expiry must be set by humans, never auto-derived by the agent."
+    risks:
+      - "Adding temporal fields to M2 requires schema migration path — drift tests must be updated."
+
+  - id: RP-PLT-A
+    topic: "mempalace production-vs-benchmark divergence as platform parity lesson"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace searcher.py vs benchmarks/run_benchmark.py", note: "Hybrid formula present in benchmark runner but absent from production search path." }
+    findings:
+      - "Mempalace ships a benchmark that tests a feature (hybrid retrieval) not present in the production code path."
+      - "Users relying on the 96.6% figure are implicitly trusting benchmark conditions that don't match real usage."
+      - "The palace hierarchy (wing/room) has no Python class implementation — it's purely metadata tagging, not an OOP model."
+    implications_for_azoth:
+      - "Any Azoth memory feature must be validated in all production adapter paths (Claude Code, Cursor, Copilot) before the benchmark number is cited (INI-PLT-001)."
+      - "D46 deploy-mirror parity applies to memory operations, not just eval/prompt pipelines."
+    risks:
+      - "Adapter paths may silently degrade memory features that work in Claude Code (primary) but not in Cursor or Copilot."

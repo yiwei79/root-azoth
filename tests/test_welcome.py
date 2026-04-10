@@ -397,3 +397,128 @@ def test_plain_dashboard_includes_all_sections(
     assert "AZOTH" in out
     assert "AZOTH_SESSION_ORIENTATION_BEGIN" in out
     assert "AZOTH_SESSION_ORIENTATION_END" in out
+
+
+# ── gather_unphased_initiatives ───────────────────────────────────────────────
+
+
+def test_gather_unphased_initiatives_empty_when_no_initiatives() -> None:
+    assert welcome.gather_unphased_initiatives({}) == []
+    assert welcome.gather_unphased_initiatives({"versions": []}) == []
+
+
+def test_gather_unphased_initiatives_filters_phase_null_only() -> None:
+    data = {
+        "initiatives": [
+            {"id": "INI-MEM-001", "title": "Unphased A", "priority": "high", "phase": None},
+            {"id": "INI-MEM-002", "title": "Assigned", "priority": "high", "phase": "v0.3.0"},
+            {"id": "INI-PLT-001", "title": "Unphased B", "priority": "medium", "phase": None},
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    ids = [x["id"] for x in result]
+    assert "INI-MEM-001" in ids
+    assert "INI-PLT-001" in ids
+    assert "INI-MEM-002" not in ids
+
+
+def test_gather_unphased_initiatives_sorts_by_priority() -> None:
+    data = {
+        "initiatives": [
+            {"id": "C", "title": "Low", "priority": "low", "phase": None},
+            {"id": "A", "title": "High", "priority": "high", "phase": None},
+            {"id": "B", "title": "Medium", "priority": "medium", "phase": None},
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert [x["id"] for x in result] == ["A", "B", "C"]
+
+
+def test_gather_unphased_initiatives_skips_non_dict() -> None:
+    data = {
+        "initiatives": [
+            "plain-string",
+            {"id": "INI-MEM-001", "title": "Good", "priority": "high", "phase": None},
+            42,
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert len(result) == 1
+    assert result[0]["id"] == "INI-MEM-001"
+
+
+# ── welcome backlog-panel fallback to initiatives ─────────────────────────────
+
+
+def _setup_tmp_with_initiatives(tmp_path: Path) -> None:
+    """Create minimal repo layout with initiatives in roadmap.yaml but empty backlog."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.6\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "roadmap.yaml").write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "initiatives:\n"
+        "  - id: INI-MEM-001\n"
+        "    title: Verbatim storage\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    priority: high\n"
+        "  - id: INI-PLT-001\n"
+        "    title: Platform parity\n"
+        "    category: platform\n"
+        "    phase: null\n"
+        "    priority: medium\n"
+        "versions: []\n"
+    )
+
+
+def test_welcome_backlog_panel_shows_initiatives_when_top3_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Top Backlog panel shows unphased initiatives when backlog is empty."""
+    _setup_tmp_with_initiatives(tmp_path)
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "INI-MEM-001" in out
+    assert "INI-PLT-001" in out
+
+
+def test_welcome_plain_shows_initiatives_when_top3_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout Top Backlog section shows unphased initiatives when backlog empty."""
+    _setup_tmp_with_initiatives(tmp_path)
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "INI-MEM-001" in out
+    assert "INI-PLT-001" in out
+
+
+def test_welcome_plain_no_crash_when_no_initiatives_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout must not crash when roadmap.yaml has no 'initiatives' key."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.6\nphase: 1\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "roadmap.yaml").write_text(
+        "schema_version: 1\nactive_version: v0.2.0\nversions: []\n"
+    )
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())  # must not raise

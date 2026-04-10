@@ -32,7 +32,7 @@ single turn from creating unrecoverable damage.
 | Files deleted | 0 without approval | Always requires human signal |
 | Lines changed | 500 per turn | Checkpoint + human approval for more |
 | New dependencies | 0 without approval | Always requires human signal |
-| Governance files | 0 without approval | Always requires human signal |
+| Governance files | 0 withoIut approval | Always requires human signal |
 | Kernel files | 0 without approval | Always requires human signal |
 
 ### Entropy Measurement

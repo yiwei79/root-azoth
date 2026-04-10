@@ -214,6 +214,18 @@ def git_info() -> tuple[str, str]:
 # ── Dashboard data + renderers ────────────────────────────────────────────────
 
 
+_INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return phase-agnostic initiatives sorted by priority (high→medium→low). Skips non-dict entries."""
+    raw = roadmap_data.get("initiatives")
+    if not raw or not isinstance(raw, list):
+        return []
+    result = [item for item in raw if isinstance(item, dict) and item.get("phase") is None]
+    return sorted(result, key=lambda x: _INITIATIVE_PRIO.get(str(x.get("priority", "")), 9))
+
+
 def gather_dashboard_state() -> dict[str, Any]:
     """Load all dashboard inputs; shared by Rich and plain renderers."""
     azoth = load_yaml(ROOT / "azoth.yaml")
@@ -233,6 +245,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     items = backlog_data.get("items", [])
     complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
     top3 = filter_unblocked_items(items, complete_ids)[:3]
+    unphased_initiatives = gather_unphased_initiatives(roadmap_data)
 
     return {
         "azoth": azoth,
@@ -251,6 +264,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "items": items,
         "complete_ids": complete_ids,
         "top3": top3,
+        "unphased_initiatives": unphased_initiatives,
     }
 
 
@@ -385,8 +399,20 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             lines.append(f"    {layer} · {pipeline}")
             lines.append("")
     else:
-        lines.append("  (all backlog items complete)")
-        lines.append("")
+        ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if ini_fallback:
+            lines.append("  No active backlog items — unscheduled initiatives:")
+            lines.append("")
+            for ini in ini_fallback:
+                iid = ini.get("id", "?")
+                title = ini.get("title", "?")
+                prio = ini.get("priority", "?")
+                lines.append(f"  {iid}  [priority: {prio}]")
+                lines.append(f"    {title}")
+                lines.append("")
+        else:
+            lines.append("  (all backlog items complete)")
+            lines.append("")
 
     lines.append("── Last Session (M3) ──")
     if episodes:
@@ -555,7 +581,20 @@ def render_dashboard() -> None:
             f"  [dim]{layer} · {pipeline}[/dim]"
         )
     if not top3:
-        backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
+        ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if ini_fallback:
+            for ini in ini_fallback:
+                iid = ini.get("id", "?")
+                title = ini.get("title", "?")
+                prio = ini.get("priority", "?")
+                prio_col = {"high": "red", "medium": "yellow", "low": "dim"}.get(str(prio), "dim")
+                backlog_lines.append(
+                    f"[bold cyan]{iid}[/bold cyan]  [{prio_col}]{prio}[/{prio_col}]\n"
+                    f"  {title}\n"
+                    f"  [dim]initiative · unscheduled[/dim]"
+                )
+        else:
+            backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
     backlog_panel = Panel(
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED
     )

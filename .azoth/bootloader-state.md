@@ -1,11 +1,17 @@
 # Bootloader State
 
-Last updated: 2026-04-09 (session-closeout ep-102 — P1-012 Slice A DFA docs + welcome START + W4 bump)
+Last updated: 2026-04-09 (session-closeout ep-103 — roadmap schema v2 + initiatives + entropy thresholds + W4 bump)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`, `lifecycle_phase: 8` for welcome strip)  
-**Toolkit version:** **0.1.6** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **7** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+**Toolkit version:** **0.1.7** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0` · **current_patch:** **8** (`.azoth/roadmap.yaml`, D53). **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**; annotated tag **`v0.1.0`** on `284eb59`.
+
+## Session outcome (ep-103) — session-closeout
+
+- **Delivered / refined:** **Roadmap schema v2** — `roadmap.yaml` `schema_version: 2` + `initiatives:` section (INI-MEM-001/002/003, INI-PLT-001, all `phase: null`). **SWARM_RESEARCH_DIGEST.yaml** — 4 mempalace research packs (RP-MEM-A/B/C, RP-PLT-A): verbatim-first storage, vector retrieval hybrid formula, temporal KG validity windows, platform parity lesson. **`scripts/roadmap_dashboard.py`** — `gather_initiatives()` + `render_initiatives_panel()`. **`scripts/welcome.py`** — `gather_unphased_initiatives()` + backlog fallback. **15 new tests** (RED-first). **Entropy governance** — `MAX_LINES 500→1000`, `ZONE_YELLOW 5.0→12.0`, `ZONE_RED 10.0→25.0` (user-approved); `kernel/TRUST_CONTRACT.md` updated + `.azoth/kernel-checksums.sha256` regenerated; 5 broken tests fixed. **AZOTH_ARCHITECTURE.md** checked — no stale threshold values. **W1** ep-103; **W4** **`0.1.6 → 0.1.7`**, roadmap **`current_patch` `7 → 8`**; **`azoth.yaml`** **`episodes: 103`**; **W2** scope closed; **W3** Claude project memory.
+- **Closeout:** pytest **948 passed, 2 xfailed**.
+- **Next:** **`/intake`** — **4** JSONL in **`.azoth/inbox/`** (excluding `processed/`); **`/next`** → **P1-001**; **`git push`** **`patch/v0.2.0-p1-012-dfa-e2e-friction`** when ready. Triage INI-* initiatives into a future phase when P1 queue is shorter.
 
 ## Session outcome (ep-102) — session-closeout
 

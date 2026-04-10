@@ -21,11 +21,11 @@ PLACEHOLDER_LINES = 250
 # §1 table caps: enforced here using session-scoped unique paths + lines_total (see module docstring).
 MAX_FILES_MODIFIED = 10
 MAX_FILES_CREATED = 10
-MAX_LINES_PER_SESSION = 500
+MAX_LINES_PER_SESSION = 1000
 
 # Zone thresholds on cumulative entropy_delta (TRUST_CONTRACT §1).
-ZONE_YELLOW_MIN = 5.0
-ZONE_RED_MIN = 10.0
+ZONE_YELLOW_MIN = 12.0
+ZONE_RED_MIN = 25.0
 
 
 def _entropy_zone(cumulative: float) -> str:

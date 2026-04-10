@@ -257,3 +257,139 @@ def test_format_task_block_non_dict_entry_still_renders_valid() -> None:
     assert "Fine" in joined
     assert "expected mapping" in joined
     assert "str" in joined
+
+
+# ── initiatives: gather_initiatives ──────────────────────────────────────────
+
+
+def test_gather_initiatives_empty_when_no_key() -> None:
+    """data without 'initiatives' key returns empty dict."""
+    assert roadmap_dashboard.gather_initiatives({}) == {}
+    assert roadmap_dashboard.gather_initiatives({"versions": []}) == {}
+
+
+def test_gather_initiatives_groups_by_category() -> None:
+    data = {
+        "initiatives": [
+            {"id": "INI-MEM-001", "title": "Verbatim storage", "category": "memory"},
+            {"id": "INI-MEM-002", "title": "Temporal KG", "category": "memory"},
+            {"id": "INI-PLT-001", "title": "Platform parity", "category": "platform"},
+        ]
+    }
+    result = roadmap_dashboard.gather_initiatives(data)
+    assert set(result.keys()) == {"memory", "platform"}
+    assert len(result["memory"]) == 2
+    assert len(result["platform"]) == 1
+    assert result["memory"][0]["id"] == "INI-MEM-001"
+
+
+def test_gather_initiatives_skips_non_dict_entries() -> None:
+    data = {
+        "initiatives": [
+            "plain-string",
+            {"id": "INI-MEM-001", "title": "Good", "category": "memory"},
+            42,
+        ]
+    }
+    result = roadmap_dashboard.gather_initiatives(data)
+    assert list(result.keys()) == ["memory"]
+    assert len(result["memory"]) == 1
+
+
+def test_gather_initiatives_uncategorized_fallback() -> None:
+    data = {
+        "initiatives": [
+            {"id": "INI-XYZ-001", "title": "No category"},
+        ]
+    }
+    result = roadmap_dashboard.gather_initiatives(data)
+    assert "uncategorized" in result
+    assert result["uncategorized"][0]["id"] == "INI-XYZ-001"
+
+
+# ── initiatives: render_initiatives_panel ────────────────────────────────────
+
+
+def test_render_initiatives_panel_none_when_empty() -> None:
+    """render_initiatives_panel returns None for empty input."""
+    assert roadmap_dashboard.render_initiatives_panel({}) is None
+
+
+def test_render_initiatives_panel_contains_ids_and_titles() -> None:
+    import io
+
+    from rich.console import Console
+
+    by_category = {
+        "memory": [
+            {"id": "INI-MEM-001", "title": "Verbatim storage", "priority": "high"},
+        ],
+        "platform": [
+            {"id": "INI-PLT-001", "title": "Platform parity", "priority": "medium"},
+        ],
+    }
+    panel = roadmap_dashboard.render_initiatives_panel(by_category)
+    assert panel is not None
+    buf = io.StringIO()
+    c = Console(record=True, width=120, file=buf)
+    c.print(panel)
+    out = c.export_text()
+    assert "INI-MEM-001" in out
+    assert "Verbatim storage" in out
+    assert "INI-PLT-001" in out
+    assert "Platform parity" in out
+
+
+# ── initiatives: render_dashboard integration ─────────────────────────────────
+
+
+def test_render_dashboard_shows_initiatives_zone(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "versions:\n"
+        "  - id: v0.2.0\n"
+        "    status: active\n"
+        "    goal: Test milestone\n"
+        "    tasks: []\n"
+        "    completed_tasks: []\n"
+        "initiatives:\n"
+        "  - id: INI-MEM-001\n"
+        "    title: Verbatim storage\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    priority: high\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    c = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)
+    out = c.export_text()
+    assert "INI-MEM-001" in out
+
+
+def test_render_dashboard_no_crash_when_no_initiatives(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 1\n"
+        "active_version: v0.2.0\n"
+        "versions:\n"
+        "  - id: v0.2.0\n"
+        "    status: active\n"
+        "    goal: Test\n"
+        "    tasks: []\n"
+        "    completed_tasks: []\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    c = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)  # must not raise

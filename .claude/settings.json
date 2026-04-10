@@ -21,7 +21,7 @@
     "AZOTH_VERSION": "0.1.6",
     "AZOTH_PHASE": "1",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "65"
   },
   "hooks": {
     "PreToolUse": [

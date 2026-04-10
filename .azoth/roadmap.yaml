@@ -123,7 +123,7 @@ tasks:
     blocked_by: null
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
-schema_version: 1
+schema_version: 2
 active_version: v0.2.0
 
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
@@ -270,7 +270,7 @@ versions:
 
   - id: v0.2.0
     status: active
-    current_patch: 7
+    current_patch: 8
     goal: >
       Long-running, low-friction agentic work: durable run state and resume; declarative
       swarm/eval waves beside prose workflows; pipeline lint and wiring tests; memory-loop
@@ -352,3 +352,68 @@ versions:
         decision_ref: [D21, D23, D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
         note: "Urgent: mode fails smooth e2e due to gates, spawn, ledger, IDE parity in blast radius"
+
+# ── Initiatives (schema_version: 2) ──────────────────────────────────────────
+# Phase-agnostic goal items. phase: null until triage assigns a milestone.
+# Grouped by category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
+# Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+initiatives:
+  # ── memory ────────────────────────────────────────────────────────────────
+  - id: INI-MEM-001
+    title: "Verbatim-first M3 storage strategy"
+    category: memory
+    phase: null
+    priority: high
+    summary: >
+      Store raw episode context verbatim in M3 before any summarisation or compression.
+      Building the episodic index on full signal avoids the compress-before-index regression
+      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth M3
+      is currently append-only JSONL with no vector index; this initiative scopes the policy
+      and tooling to enforce verbatim storage as the baseline.
+    research_ref: "RP-MEM-A"
+    decision_ref: [D11, D45]
+
+  - id: INI-MEM-002
+    title: "Temporal validity windows for M2 patterns"
+    category: memory
+    phase: null
+    priority: medium
+    summary: >
+      Add optional `valid_from` / `valid_to` fields to M2 pattern entries with point-in-time
+      query support, replacing implicit recency-by-modification-date with explicit temporal
+      scoping. Inspired by mempalace's SQLite triple store
+      (`AND (valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)`).
+      D42 kernel immutability: invalidation of M2 patterns remains HITL-only; this initiative
+      adds temporal metadata, not auto-expiry.
+    research_ref: "RP-MEM-C"
+    decision_ref: [D11, D42]
+
+  - id: INI-MEM-003
+    title: "Vector retrieval layer for M3 context-recall"
+    category: memory
+    phase: null
+    priority: medium
+    summary: >
+      Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic recall,
+      complementing the current keyword/recency scan. Flat metadata tagging (no Python class
+      hierarchy) mirrors mempalace's single "mempalace_drawers" ChromaDB collection. Hybrid
+      retrieval formula (`fused_dist = dist * (1.0 - weight * keyword_overlap)`) should live
+      in production code, not only benchmark scripts. The optional flag keeps the JSONL path
+      as the zero-dependency default.
+    research_ref: "RP-MEM-B"
+    decision_ref: [D11, D45]
+
+  # ── platform ───────────────────────────────────────────────────────────────
+  - id: INI-PLT-001
+    title: "Memory operation platform parity"
+    category: platform
+    phase: null
+    priority: low
+    summary: >
+      Document and validate that M3 append, M2 promote, and context-recall operations produce
+      consistent, tested results across Claude Code, Cursor, and Copilot adapter paths.
+      Mempalace highlighted production-vs-benchmark divergence (hybrid retrieval only in
+      benchmark scripts, not searcher.py). Azoth must not ship memory features that work in
+      the development surface but silently degrade under adapter paths.
+    research_ref: "RP-PLT-A"
+    decision_ref: [D42, D46, D52]
