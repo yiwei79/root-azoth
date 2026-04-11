@@ -63,24 +63,80 @@ If any of the four dimensions is unclear, ask one focused clarifying question. D
 
 ## Declaration Ownership
 
-The Declaration is mandatory before any pipeline stage executes:
+The Declaration is mandatory before any pipeline stage executes. For `/auto`, present a
+**fused Declaration** combining scope card and pipeline composition in one approval:
 
 ```
 ## {Pipeline Name} — {goal}
 
 **Classification**: {scope} / {risk} / {complexity} / {knowledge}
+**Scope**: session: {session_id} | TTL: 2h | layer: {target_layer} | pipeline: auto
 
 **Composed Pipeline**:
-1. {stage} — {agent} — gate: {human|agent}
-2. {stage} — {agent} — gate: {human|agent}
+1. {stage} — {agent} — {subagent_type} — gate: {human|agent}
+2. {stage} — {agent} — {subagent_type} — gate: {human|agent}
 ...
 
 **Rationale**: {why this pipeline was chosen}
 
-Approve pipeline composition + subagent assignments? [yes / adjust / different-pipeline]
+Approve scope + pipeline? [yes / adjust / abort]
 ```
 
-Never start execution before the human approves the Declaration. Declaration changes mid-pipeline require re-approval.
+### Informational Declaration (lightweight path)
+
+When the composed pipeline condition matches a lightweight route (`scope == docs`,
+`complexity == simple AND risk == cosmetic`, `complexity == simple AND risk == additive`,
+`complexity == medium AND risk == additive AND knowledge == known-pattern`,
+`complexity == medium AND risk == additive`) **AND** `knowledge == known-pattern`
+**AND** `risk != governance-change` **AND** `scope != kernel`, present the Declaration
+as informational with auto-proceed. The human can type `stop` or `abort` to halt.
+
+For all other cases — `risk == governance-change`, `scope == kernel`,
+`knowledge == needs-research`, `knowledge == instruction-refinement`, `default` — use
+the full interactive Declaration with explicit `[yes / adjust / abort]` prompt.
+
+Never start execution before the human approves (or auto-proceed completes). Declaration
+changes mid-pipeline require re-approval.
+
+### Post-Approval Gate-Write
+
+After the human approves the fused Declaration (or informational Declaration auto-proceeds),
+write gate files in this exact order before the first pipeline stage:
+
+**Step 1 — Write `.azoth/scope-gate.json`** (always):
+```json
+{
+  "session_id": "<active session ID>",
+  "goal": "<$ARGUMENTS verbatim>",
+  "approved": true,
+  "approved_by": "human",
+  "expires_at": "<ISO 8601, UTC, now + 2 hours>",
+  "backlog_id": "<matched backlog item ID or 'ad-hoc'>",
+  "delivery_pipeline": "<auto | deliver | deliver-full>",
+  "target_layer": "<M1 | M2 | M3 | mineral — from classification>"
+}
+```
+
+**Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
+`delivery_pipeline == governed` OR `target_layer == M1`):
+```json
+{
+  "session_id": "<must match scope-gate.json>",
+  "pipeline": "auto",
+  "approved": true,
+  "expires_at": "<copy from scope-gate.json>",
+  "opened_at": "<ISO 8601, UTC, now>"
+}
+```
+
+**Step 3 — Verify:** Run `python3 scripts/check_gates.py --session-id <session_id>`.
+Must exit 0. If exit 1: stop and surface the error.
+
+**Step 4 — Proceed to first pipeline stage.**
+
+No separate `/next` step is required when using `/auto` with the fused Declaration. `/next`
+remains available for standalone scope declaration when a human wants to separate intent
+from pipeline composition.
 
 ## Pipeline Composition
 
