@@ -26,6 +26,7 @@ CANONICAL_CONDITIONS: list[str] = [
     "risk == governance-change",
     "scope == kernel",
     "knowledge == needs-research",
+    "knowledge == instruction-refinement",
     "scope == docs",
     "complexity == simple AND risk == cosmetic",
     "complexity == simple AND risk == additive",
@@ -125,6 +126,79 @@ def test_auto_router_rule_ordering() -> None:
 
 
 # ── Cross-file consistency ────────────────────────────────────────────────────
+
+
+def test_skill_instruction_refinement_rule() -> None:
+    """SKILL.md must contain an instruction-refinement routing row at priority 4.
+
+    Verifies:
+    - A row with condition `knowledge == instruction-refinement` exists
+    - It appears AFTER `knowledge == needs-research` and BEFORE `scope == docs`
+    - Its pipeline is the full pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+    """
+    assert SKILL_PATH.is_file(), (
+        f"Skill file not found: {SKILL_PATH}. "
+        "Builder must create skills/auto-router/SKILL.md before this test passes."
+    )
+
+    content = SKILL_PATH.read_text(encoding="utf-8")
+
+    # Condition must be present
+    condition = "knowledge == instruction-refinement"
+    assert condition in content, (
+        f"Routing table must contain condition {condition!r}"
+    )
+
+    # Ordering: after needs-research, before scope == docs
+    pos_needs_research = content.index("knowledge == needs-research")
+    pos_instruction_refinement = content.index("knowledge == instruction-refinement")
+    pos_scope_docs = content.index("scope == docs")
+    assert pos_needs_research < pos_instruction_refinement < pos_scope_docs, (
+        "instruction-refinement rule must appear AFTER needs-research and BEFORE scope == docs"
+    )
+
+    # Pipeline for this rule must be full pipeline
+    # Find the table row containing the condition and verify the pipeline
+    for line in content.splitlines():
+        if "knowledge == instruction-refinement" in line and "|" in line:
+            assert "architect, reviewer, planner, evaluator, builder, architect" in line, (
+                "instruction-refinement rule must use full pipeline "
+                "[architect, reviewer, planner, evaluator, builder, architect]"
+            )
+            break
+    else:
+        raise AssertionError(
+            "Could not find instruction-refinement as a table row in SKILL.md"
+        )
+
+
+def test_pipeline_instruction_refinement_rule() -> None:
+    """auto.pipeline.yaml must contain a composition rule for instruction-refinement.
+
+    Verifies:
+    - A rule with condition 'knowledge == instruction-refinement' exists
+    - Its pipeline list equals [architect, reviewer, planner, evaluator, builder, architect]
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    matching_rules = [
+        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
+    ]
+    assert len(matching_rules) == 1, (
+        "Expected exactly one composition rule with condition "
+        "'knowledge == instruction-refinement', "
+        f"found {len(matching_rules)}"
+    )
+
+    expected_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
+    assert matching_rules[0]["pipeline"] == expected_pipeline, (
+        f"instruction-refinement rule pipeline mismatch.\n"
+        f"  Expected: {expected_pipeline}\n"
+        f"  Got:      {matching_rules[0]['pipeline']}"
+    )
 
 
 def test_auto_router_cross_file_consistency() -> None:

@@ -64,7 +64,7 @@ classification:
   scope: kernel | skills | agents | pipelines | docs | mixed
   risk: governance-change | breaking-change | additive | cosmetic
   complexity: simple | medium | complex
-  knowledge: known-pattern | needs-research | novel
+  knowledge: known-pattern | needs-research | novel | instruction-refinement
 ```
 
 Apply D23 composition rules to select the pipeline preset, then present the composed pipeline to the human for approval.

@@ -17,7 +17,7 @@ classification:
   scope: kernel | skills | agents | pipelines | docs | mixed
   risk: governance-change | breaking-change | additive | cosmetic
   complexity: simple | medium | complex
-  knowledge: known-pattern | needs-research | novel
+  knowledge: known-pattern | needs-research | novel | instruction-refinement
 ```
 
 ## Pipeline Composition (D23)

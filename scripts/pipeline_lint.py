@@ -34,7 +34,7 @@ VALID_TOOLS = {"explore", "research", "research-orchestrator"}
 VALID_SCOPE = {"kernel", "skills", "agents", "pipelines", "docs", "mixed"}
 VALID_RISK = {"governance-change", "breaking-change", "additive", "cosmetic"}
 VALID_COMPLEXITY = {"simple", "medium", "complex"}
-VALID_KNOWLEDGE = {"known-pattern", "needs-research", "novel"}
+VALID_KNOWLEDGE = {"known-pattern", "needs-research", "novel", "instruction-refinement"}
 
 
 class ValidationError(Exception):

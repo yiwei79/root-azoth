@@ -420,3 +420,13 @@ class TestInvalidPipelines:
         del pipeline["composition_rules"]["rules"][0]["pipeline"]
         with pytest.raises(ValidationError, match="missing 'pipeline'"):
             validate_pipeline(pipeline)
+
+
+class TestInstructionRefinementKnowledge:
+    """P1-008: instruction-refinement must be a valid knowledge enum value."""
+
+    def test_instruction_refinement_knowledge_valid(self) -> None:
+        """A pipeline with knowledge=instruction-refinement must pass validation."""
+        pipeline = copy.deepcopy(AUTO_PIPELINE)
+        pipeline["composition_rules"]["classification"]["knowledge"] = "instruction-refinement"
+        validate_pipeline(pipeline)

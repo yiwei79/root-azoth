@@ -432,7 +432,7 @@ auto_pipeline:
     scope: kernel | skills | agents | pipelines | docs | mixed
     risk: governance-change | breaking-change | additive | cosmetic
     complexity: simple | medium | complex
-    knowledge: known-pattern | needs-research | novel
+    knowledge: known-pattern | needs-research | novel | instruction-refinement
 
   composition_rules:
     - if risk == governance-change: ALWAYS full pipeline
@@ -443,6 +443,8 @@ auto_pipeline:
         pipeline: [planner, test-builder, builder, architect-review]
     - if knowledge == needs-research:
         inject: research-phase into architect stage
+    - if knowledge == instruction-refinement:
+        inject: l2-evidence-review into architect stage
     - if scope == docs:
         pipeline: [architect, builder, architect-review]
     - default: full pipeline
