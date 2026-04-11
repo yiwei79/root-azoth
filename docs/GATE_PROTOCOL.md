@@ -76,3 +76,21 @@ Cursor does not run PreToolUse hooks. Simulate the same check manually before ev
 Write/Edit: read both gate files, confirm `approved: true` and unexpired `expires_at`,
 and confirm `session_id` consistency. See `.cursor/rules/claude-code-parity.mdc` for
 the behavioral parity rules.
+
+Cross-platform validation: run `python3 scripts/check_gates.py --session-id <session_id>`
+(optionally `--require-pipeline-gate` for governed work). This script validates both gate
+files and cross-checks session_id consistency. It imports from `scripts/scope_gate_check.py`
+and extends it with pipeline-gate and field-completeness checks.
+
+## Fused Declaration flow (`/auto`)
+
+When `/auto` is invoked, the orchestrator presents a **fused Declaration** combining
+scope card and pipeline composition in a single approval. On approval, the orchestrator
+writes `.azoth/scope-gate.json` (8 required fields: `session_id`, `goal`, `approved`,
+`approved_by`, `expires_at`, `backlog_id`, `delivery_pipeline`, `target_layer`) and
+optionally `.azoth/pipeline-gate.json` (for governed work). This replaces the separate
+`/next` → `/auto` two-step flow.
+
+The fused Declaration eliminates one human gate (scope approval) from the `/auto` happy
+path without reducing governance surface: all mandatory gates (kernel, governance, M2→M1,
+final delivery) remain unconditionally enforced.

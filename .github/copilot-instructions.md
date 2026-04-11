@@ -13,6 +13,7 @@ These notes apply to **coding assistance** and **pull request reviews** in this 
 - For those requests, **do not execute the work inline in main chat**. Switch to orchestrator behavior: classify the goal, read the relevant command/skill surfaces, compose the pipeline, present the Declaration, and wait for approval before execution.
 - If native slash-command routing does not fire, manually emulate the same behavior rather than falling back to generic “bias to action” execution.
 - When the `Task` tool is available, keep the orchestrator in main chat and use staged `Task`/subagent execution per `skills/subagent-router/SKILL.md`; **do not inline all pipeline stages in one assistant thread**.
+- **Cross-platform gate validation**: after writing `.azoth/scope-gate.json` (and optionally `.azoth/pipeline-gate.json`), verify with `python3 scripts/check_gates.py --session-id <session_id>`. This script validates both gate files, cross-checks session_id consistency, and ensures all required fields are present.
 - Normative sources for this behavior: `.claude/agents/orchestrator.md`, `.claude/commands/auto.md`, `.claude/commands/dynamic-full-auto.md`, `.claude/commands/deliver.md`, `.claude/commands/deliver-full.md`.
 
 ## Closeout memory parity

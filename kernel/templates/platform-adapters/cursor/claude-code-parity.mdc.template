@@ -22,6 +22,7 @@ Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit`
 2. **Before the first substantive Write/Edit** in a turn (simulated PreToolUse):
    - Read `.azoth/scope-gate.json`. If absent, or `approved` is not `true`, or `expires_at` is past → **do not write**; tell the human to run `/next` and approve a scope card.
    - If the scope is **governed** (`delivery_pipeline: governed` **or** `target_layer: M1`): read `.azoth/pipeline-gate.json`. It must exist, `approved: true`, `session_id` must match scope-gate, `expires_at` unexpired. Otherwise → **do not write**; execute **Stage 0** from `.claude/commands/deliver-full.md`, `.claude/commands/auto.md`, or `.claude/commands/deliver.md` (write `pipeline-gate.json` first), then continue.
+   - **Cross-platform shortcut**: Run `python3 scripts/check_gates.py --session-id <session_id>` (optionally `--require-pipeline-gate` for governed work) to validate both gate files and cross-check session_id consistency. This replaces the manual read-and-verify steps above when a shell is available.
    - For **Write** or **Edit** to `.azoth/handoffs/*.{yaml,yml}`: ensure the composed content is a **single-document BL-012** stage summary (structural rules in `pipelines/stage-summary.schema.yaml` / `.claude/hooks/stage_summary_validate.py`). Hooks enforce this in Claude Code; in Cursor, simulate the same check—invalid handoff content must not ship.
 
 2b. **Write-claim simulation** (Cursor/Copilot/OpenCode/Antigravity — mechanical in Claude Code only):
