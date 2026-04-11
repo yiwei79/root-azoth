@@ -270,3 +270,114 @@ class TestSkillConsistency:
         assert "L1" in content
         assert "L2" in content
         assert "L3" in content
+
+
+class TestP1007RecallGovernance:
+    """Guard the planned recall-governance doc updates for P1-007."""
+
+    ROADMAP_SPEC = REPO_ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "P1-007.yaml"
+    EXPECTED_SCOPE = [
+        "skills/context-recall/SKILL.md",
+        "skills/remember/SKILL.md",
+        ".azoth/roadmap-specs/v0.2.0/P1-007.yaml",
+        "tests/test_skills.py",
+    ]
+
+    @staticmethod
+    def _read_skill(skill_name: str) -> str:
+        return (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8").lower()
+
+    @classmethod
+    def _load_spec(cls) -> dict:
+        spec = yaml.safe_load(cls.ROADMAP_SPEC.read_text(encoding="utf-8"))
+        assert isinstance(spec, dict), "P1-007 roadmap spec must remain a YAML mapping"
+        return spec
+
+    @classmethod
+    def _load_acceptance(cls) -> str:
+        spec = cls._load_spec()
+        acceptance = spec.get("acceptance", [])
+        assert isinstance(acceptance, list), "P1-007 acceptance criteria must remain a YAML list"
+        normalized: list[str] = []
+        for item in acceptance:
+            if isinstance(item, str):
+                normalized.append(item)
+                continue
+            assert isinstance(item, dict), "P1-007 acceptance items must be strings or mappings"
+            normalized.extend(
+                f"{key} {value}" if value is not None else str(key) for key, value in item.items()
+            )
+        return " ".join(normalized).lower()
+
+    def test_p1007_scope_matches_approved_four_file_slice(self) -> None:
+        spec = self._load_spec()
+        assert spec.get("scope") == self.EXPECTED_SCOPE, (
+            "P1-007 scope must stay aligned to the approved four-file slice"
+        )
+
+    def test_p1007_delivery_uses_governed_m1_metadata(self) -> None:
+        delivery = self._load_spec().get("delivery")
+        assert isinstance(delivery, dict), "P1-007 delivery metadata must remain a YAML mapping"
+        assert delivery == {
+            "target_layer": "M1",
+            "delivery_pipeline": "governed",
+            "suggested_command": "/deliver-full",
+        }, "P1-007 delivery metadata must use governed M1 /deliver-full"
+
+    def test_context_recall_documents_tag_guidance_and_episode_conflicts(self) -> None:
+        content = self._read_skill("context-recall")
+        assert "tag vocabulary" in content, (
+            "P1-007 requires context-recall to document tag vocabulary guidance"
+        )
+        assert "contradiction" in content, (
+            "P1-007 requires context-recall to explain contradiction handling"
+        )
+        assert "stale" in content, "P1-007 requires context-recall to address stale episodes"
+        assert "archive" in content and "supersede" in content, (
+            "P1-007 requires an explicit archive-vs-supersede policy for recalled episodes"
+        )
+
+    def test_remember_documents_when_not_to_add_a_pattern(self) -> None:
+        content = self._read_skill("remember")
+        assert "when not to add a pattern" in content, (
+            "P1-007 requires remember to document when not to add a pattern"
+        )
+
+    def test_remember_documents_append_only_supersession_rules(self) -> None:
+        content = self._read_skill("remember")
+        assert "append-only" in content, (
+            "P1-007 requires remember to keep append-only episode guidance explicit"
+        )
+        assert "new episode linked to the older one" in content, (
+            "P1-007 requires contradictions to create a new episode linked to the older one"
+        )
+        for phrase in ("stale", "superseded", "contradicted"):
+            assert phrase in content, (
+                f"P1-007 requires remember to define the {phrase!r} status-tag guidance"
+            )
+
+    def test_p1007_acceptance_language_is_reflected_in_skill_docs(self) -> None:
+        acceptance = self._load_acceptance()
+        assert "tag vocabulary guidance" in acceptance
+        assert "when not to add a pattern" in acceptance
+        assert "archive vs supersede tags" in acceptance
+        assert "append-only supersession guidance" in acceptance
+        assert "new episode linked to the older one" in acceptance
+        assert "stale" in acceptance and "superseded" in acceptance and "contradicted" in acceptance
+
+        combined = "\n".join(
+            [self._read_skill("context-recall"), self._read_skill("remember")]
+        )
+        for phrase in (
+            "tag vocabulary",
+            "when not to add a pattern",
+            "append-only",
+            "new episode linked to the older one",
+            "contradiction",
+            "stale",
+            "archive",
+            "supersede",
+            "superseded",
+            "contradicted",
+        ):
+            assert phrase in combined, f"P1-007 doc set is missing acceptance phrase: {phrase}"

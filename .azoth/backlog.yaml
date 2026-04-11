@@ -1135,12 +1135,13 @@ items:
     title: "Elasticity: M2/M3 recall governance"
     source: dynamic-full-auto-plus
     roadmap_ref: P1-007
-    target_layer: infrastructure
-    delivery_pipeline: standard
-    status: active
+    target_layer: M1
+    delivery_pipeline: governed
+    status: complete
     target_version: v0.2.0
     priority: 7
     created_date: "2026-04-08"
+    completed_date: "2026-04-11"
     decision_ref: [D45]
     blocked_by: []
     description: >

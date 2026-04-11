@@ -15,8 +15,8 @@ problem: >
 scope:
   - skills/context-recall/SKILL.md
   - skills/remember/SKILL.md
-  - kernel/PROMOTION_RUBRIC.md pointers (doc-only if not M1-touching)
-  - Optional .azoth/trusted-sources or inbox protocol notes
+  - .azoth/roadmap-specs/v0.2.0/P1-007.yaml
+  - tests/test_skills.py
 
 non_goals:
   - Automated deletion of M3 without human triage
@@ -24,16 +24,19 @@ non_goals:
 
 acceptance:
   - Documented tag vocabulary guidance + "when not to add a pattern" section
+  - Explicit append-only supersession guidance: contradictions create a new episode linked to the older one
+  - Status-tag guidance for stale, superseded, and contradicted knowledge
   - Explicit contradiction/stale episode handling policy (archive vs supersede tags)
+  - Acceptance wording must remain reflected in skill docs: tag vocabulary guidance, when not to add a pattern, archive vs supersede tags, append-only supersession guidance, stale/superseded/contradicted status tags
   - If recall ranking logic is implemented in Python: new pytest required
   - If skill/markdown only: pytest tests/test_skills.py must still pass (no regressions)
 
 dependencies: []
 
 delivery:
-  target_layer: infrastructure
-  delivery_pipeline: standard
-  suggested_command: /deliver
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
 
 elasticity: >
   Favor rubric and skill text first; add mechanical grep-lint for forbidden pattern shapes later.

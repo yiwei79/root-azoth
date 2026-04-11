@@ -1,22 +1,22 @@
 # Azoth Bootloader State
 
-Last updated: 2026-04-11 (session-closeout ep-123 — orchestrator post-delivery patch + DFA binding verdict)
+Last updated: 2026-04-11 (session-closeout ep-124 — P1-007 governed recall-governance delivery)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.27** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 19` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
+**Toolkit version:** **0.1.29** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 21` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
 
-## Session outcome (ep-123) — orchestrator post-delivery patch + DFA binding verdict
+## Session outcome (ep-124) — P1-007 memory-governance delivery
 
-- **Reviewer audit of P1-013 deliverable** via governed `/auto` pipeline: found three actionable gaps in the just-delivered orchestrator agent (stale deferral language F1, description drift F2, missing BL-012 malformed-return handling F4).
-- **Builder patched all three** across `agents/tier1-core/orchestrator.agent.md`, `.claude/agents/orchestrator.md`, `.opencode/agents/orchestrator.md` — 49 tests pass, 0 regressions.
-- **DFA binding verdict confirmed:** Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not achievable. Main-session enforcement relies on command-level `agent:` frontmatter + CLAUDE.md surface. Full enforcement gap (F6) tracked as separate scope on this branch.
+- **P1-007 rerouted correctly** from infrastructure/standard `/auto` work into governed **M1** `/deliver-full` once review established that `skills/` changes are procedural content.
+- **Delivered the approved four-file slice** across `skills/context-recall/SKILL.md`, `skills/remember/SKILL.md`, `.azoth/roadmap-specs/v0.2.0/P1-007.yaml`, and `tests/test_skills.py`; backlog and approval evidence were aligned.
+- **Acceptance is now enforced in tests**: `tests/test_skills.py` checks exact governed metadata plus tag-vocabulary, contradiction/stale, append-only supersession, and “When Not to Add a Pattern” guidance; focused suite passes.
 
 ## Open decisions
 
-- F6: Whether to soft-bind orchestrator contract into CLAUDE.md or a SessionStart fragment to close the `/auto` main-session enforcement gap (separate scope card needed).
-- Whether Copilot runtime behavior for `agent: orchestrator` needs additional production verification beyond deploy/parity coverage.
+- Whether to convert P1-007’s prose-only memory-governance rules into later mechanical linting or runtime enforcement.
+- Which active backlog scope to open after `/intake`.
 
 ## Next action
 
