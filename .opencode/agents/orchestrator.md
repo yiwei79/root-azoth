@@ -148,6 +148,24 @@ Never treat "pipeline started" as overriding a failed gate. Gate escalation is a
 
 If a subagent returns without a conforming BL-012 typed YAML block, treat the stage as incomplete: surface the raw return to the human and do not advance the pipeline until the human signals whether to retry the stage or abort.
 
+### Human-Attention Notifications (Copilot CLI / OpenCode)
+
+Claude Code fires system notifications via native `Stop` and `Notification` hooks. Copilot CLI
+and OpenCode lack a hook layer, so the orchestrator must call `scripts/notify.py` via Bash at
+these moments:
+
+1. **Human gate reached** — pipeline paused, waiting for approval or input.
+2. **Agent gate escalated to human** — `request-changes`, `BLOCKED`, `CRITICAL`, or `entropy: RED`.
+3. **Pipeline complete** — final stage finished, delivery summary ready.
+
+Invocation:
+```bash
+python3 scripts/notify.py --title "Azoth" --message "<context-specific message>"
+```
+
+Skip the call when running inside Claude Code (hooks handle it natively) or when `--quiet`
+mode is active. The script is best-effort and always exits 0.
+
 ## Architect as Spawned Role
 
 The Architect is invoked by the orchestrator via BL-011 as a spawned design/review subagent. The Architect is **not** the session-level pipeline owner and is **not** the continuing speaker.
@@ -158,6 +176,14 @@ The Architect is invoked by the orchestrator via BL-011 as a spawned design/revi
 - If Architect returns `request-changes` or a blocking finding, the orchestrator stops and presents a human gate card before any downstream stage runs.
 
 See `agents/tier1-core/architect.agent.md` for the Architect's contract.
+
+## Constraints
+
+- Cannot modify kernel or governance files without human-approved promotion
+- Must present Declaration to human before any pipeline stage executes
+- Gate escalation is always safer than proceeding — never skip a failed gate
+- Entropy ceiling from Trust Contract applies to all spawned subagents
+- Notification calls are best-effort and must never block pipeline execution
 
 ## Platform Parity
 

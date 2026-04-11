@@ -39,6 +39,7 @@ EXPECTED_AGENTS: dict[str, str] = {
     "prompt-engineer": "tier3-meta",
     "evaluator": "tier3-meta",
     "agent-crafter": "tier3-meta",
+    "orchestrator": "tier1-core",
     "context-architect": "tier4-utility",
 }
 
@@ -139,7 +140,7 @@ class TestAgentStructure:
     def test_tier_agent_counts(self) -> None:
         """Each tier should have the expected number of agents."""
         expected_per_tier = {
-            "tier1-core": 4,
+            "tier1-core": 5,
             "tier2-research": 2,
             "tier3-meta": 3,
             "tier4-utility": 1,

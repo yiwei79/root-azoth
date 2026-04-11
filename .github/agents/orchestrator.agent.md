@@ -61,12 +61,23 @@ Approve scope + pipeline? [yes / adjust / abort]
 
 ### Informational Declaration (lightweight path)
 
-When the composed pipeline condition matches a lightweight route (`scope == docs`,
-`complexity == simple AND risk == cosmetic`, `complexity == simple AND risk == additive`,
-`complexity == medium AND risk == additive AND knowledge == known-pattern`,
-`complexity == medium AND risk == additive`) **AND** `knowledge == known-pattern`
-**AND** `risk != governance-change` **AND** `scope != kernel`, present the Declaration
-as informational with auto-proceed. The human can type `stop` or `abort` to halt.
+Present the Declaration as informational with auto-proceed when **all** of the following
+hold:
+
+1. `knowledge == known-pattern`
+2. `risk != governance-change`
+3. `scope != kernel`
+4. The composed pipeline condition matches a lightweight route:
+   - `scope == docs`
+   - `complexity == simple AND risk == cosmetic`
+   - `complexity == simple AND risk == additive`
+   - `complexity == medium AND risk == additive AND knowledge == known-pattern`
+
+> **Note**: Rule 9 (`complexity == medium AND risk == additive` without `known-pattern`)
+> always uses the full Declaration because it only fires when `knowledge != known-pattern`
+> (Rule 8 would have matched first otherwise). Constraint 1 above excludes it by definition.
+
+The human can type `stop` or `abort` to halt.
 
 For all other cases — `risk == governance-change`, `scope == kernel`,
 `knowledge == needs-research`, `knowledge == instruction-refinement`, `default` — use

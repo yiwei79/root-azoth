@@ -35,3 +35,10 @@ When asked to review a PR or when `@copilot` is tagged for review:
 
 - Python **3.11+**, `pathlib`, type hints on public functions.
 - Format / lint: `ruff format` + `ruff check` on touched Python files when applicable.
+
+## Copilot CLI notifications
+
+- When a human gate stops the pipeline or the agent finishes work and is waiting for input, call `python3 scripts/notify.py` via Bash to fire a system notification and sound alert.
+- Use `--title "Azoth"` and a context-specific `--message` (e.g. `"Pipeline gate — approval needed"`, `"Pipeline complete"`, `"Entropy RED — checkpoint required"`).
+- The script is best-effort (always exits 0) and handles macOS (`osascript` + `afplay`), Linux (`notify-send`), and Windows (PowerShell toast) automatically.
+- This mirrors the Claude Code `Stop` / `Notification` hooks that Copilot CLI lacks natively.

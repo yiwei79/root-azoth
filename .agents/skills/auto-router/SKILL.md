@@ -46,7 +46,9 @@ Rules are evaluated in the order below. **Stop at the first match.**
 | 5        | `scope == docs`                             | `[architect, builder, architect]`                               | Lightweight — docs carry low risk and need no review or evaluation   |
 | 6        | `complexity == simple AND risk == cosmetic` | `[planner, builder, architect]`                                 | Minimal pipeline — no review or evaluation needed                    |
 | 7        | `complexity == simple AND risk == additive` | `[planner, evaluator, builder, architect]`                      | Additive changes need evaluation even when simple                    |
-| 8        | `default`                                   | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — when in doubt, use maximum coverage                  |
+| 8        | `complexity == medium AND risk == additive AND knowledge == known-pattern` | `[planner, evaluator, builder, architect]`    | Medium additive known-pattern — reviewer eliminated; evaluator retains correctness gate |
+| 9        | `complexity == medium AND risk == additive` | `[architect, planner, evaluator, builder, architect]`           | Medium additive — architect scopes design; reviewer eliminated       |
+| 10       | `default`                                   | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — when in doubt, use maximum coverage                  |
 
 
 ### Rule Rationale
@@ -84,7 +86,19 @@ scopes the work; builder executes; architect closes.
 small utility functions) are low-complexity but add surface area. The evaluator
 is retained to verify correctness before the architect approves.
 
-**Rule 8 (default)** — Any goal that does not match conditions 1–7 uses the
+**Rule 8 (medium + additive + known-pattern)** — Medium-complexity additive work
+on known patterns (e.g., adding a new rule to an existing table, extending a
+tested utility) does not need governance review because Rules 1–4 have already
+filtered out governance-change, kernel, needs-research, and instruction-refinement.
+The reviewer is eliminated; the evaluator retains the correctness gate. No architect
+opening stage is needed because known-pattern work has a well-understood design.
+
+**Rule 9 (medium + additive)** — Medium-complexity additive work where the knowledge
+dimension is not known-pattern (e.g., novel but low-risk feature work). The architect
+opens the pipeline to scope the design, but the reviewer is eliminated because the
+risk is additive (no governance surface). The evaluator validates quality.
+
+**Rule 10 (default)** — Any goal that does not match conditions 1–9 uses the
 full pipeline. The default is conservative: prefer more oversight over less.
 
 
