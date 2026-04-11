@@ -41,6 +41,27 @@ this file unless it already exists from a prior step.
 If `pipeline-gate.json` already exists with the same `session_id`, update `opened_at`
 only.
 
+## Governed closeout approval evidence
+
+Before `scripts/do_closeout.py` performs any governed W1–W4 mutation, it must read
+`.azoth/final-delivery-approvals.jsonl` and find the **latest** matching record for the
+active `scope-gate.json.session_id` with:
+
+```json
+{
+  "session_id": "<must match scope-gate.session_id>",
+  "gate": "final-delivery",
+  "actor_type": "human",
+  "approved": true,
+  "decision": "approved"
+}
+```
+
+`approved: true` is mandatory; `decision: "approved"` is the canonical human-readable
+mirror field. The file is **consume-only** during closeout: read it, validate it, and
+leave it unchanged. Missing files, malformed JSONL, missing matching records, agent-only
+records, or a later denial for the same session must all fail closed before W1.
+
 ## Why this gate exists
 
 This stage wires **Claude Code's delivery pipeline** to mechanical enforcement: governed

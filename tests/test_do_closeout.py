@@ -1,0 +1,222 @@
+"""Tests for scripts/do_closeout.py governed closeout enforcement."""
+
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+import do_closeout  # noqa: E402
+
+
+def _future() -> str:
+    return (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+
+
+def _build_repo(
+    tmp_path: Path,
+    *,
+    delivery_pipeline: str = "governed",
+    session_id: str = "sess-123",
+    backlog_id: str = "BL-123",
+) -> Path:
+    (tmp_path / "azoth.yaml").write_text("memory:\n  episodes: 0\n", encoding="utf-8")
+    azoth_dir = tmp_path / ".azoth"
+    (azoth_dir / "memory").mkdir(parents=True)
+    (azoth_dir / "memory" / "episodes.jsonl").write_text("", encoding="utf-8")
+    (azoth_dir / "session-orientation.txt").write_text("cached\n", encoding="utf-8")
+
+    scope_gate = {
+        "approved": True,
+        "expires_at": _future(),
+        "session_id": session_id,
+        "goal": f"{backlog_id}: Governed closeout",
+        "backlog_id": backlog_id,
+        "delivery_pipeline": delivery_pipeline,
+    }
+    (azoth_dir / "scope-gate.json").write_text(json.dumps(scope_gate), encoding="utf-8")
+
+    (azoth_dir / "backlog.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "items:",
+                f'  - id: "{backlog_id}"',
+                "    status: active",
+                '    title: "Governed closeout"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return tmp_path
+def _write_approvals(repo_root: Path, *records: dict[str, object]) -> str:
+    text = "".join(json.dumps(record) + "\n" for record in records)
+    (repo_root / ".azoth" / "final-delivery-approvals.jsonl").write_text(text, encoding="utf-8")
+    return text
+
+
+def test_governed_closeout_requires_approval_evidence_before_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = _build_repo(tmp_path)
+    version_bump_calls: list[tuple[list[str], Path]] = []
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+
+    with pytest.raises(do_closeout.ApprovalEvidenceError):
+        do_closeout.run_closeout(repo_root)
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))["approved"] is True
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (repo_root / ".azoth" / "session-orientation.txt").exists()
+
+
+def test_governed_closeout_rejects_malformed_approval_log(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    (repo_root / ".azoth" / "final-delivery-approvals.jsonl").write_text(
+        '{"session_id":"sess-123","gate":"final-delivery"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(do_closeout.ApprovalEvidenceError, match="Invalid JSON"):
+        do_closeout.run_closeout(repo_root)
+
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+
+
+@pytest.mark.parametrize(
+    ("records", "expected_message"),
+    [
+        (
+            [
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "agent",
+                    "approved": True,
+                }
+            ],
+            "actor_type=human",
+        ),
+        (
+            [
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "approved": True,
+                },
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "approved": False,
+                    "decision": "denied",
+                },
+            ],
+            "actor_type=human and approved=true",
+        ),
+        (
+            [
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "approved": True,
+                },
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "decision": "approved",
+                },
+            ],
+            "actor_type=human and approved=true",
+        ),
+        (
+            [
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "approved": True,
+                },
+                {
+                    "session_id": "sess-123",
+                    "gate": "final-delivery",
+                    "actor_type": "human",
+                    "approved": False,
+                    "decision": "approved",
+                },
+            ],
+            "actor_type=human and approved=true",
+        ),
+    ],
+)
+def test_governed_closeout_fails_closed_on_invalid_latest_approval_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    records: list[dict[str, object]],
+    expected_message: str,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(repo_root, *records)
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(do_closeout.ApprovalEvidenceError, match=expected_message):
+        do_closeout.run_closeout(repo_root)
+
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_governed_closeout_accepts_matching_human_approval_without_consuming_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = _build_repo(tmp_path)
+    approvals_before = _write_approvals(
+        repo_root,
+        {
+            "session_id": "other-session",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+        },
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd, check))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+    do_closeout.run_closeout(repo_root)
+
+    episode_lines = (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    assert len(episode_lines) == 1
+    episode = json.loads(episode_lines[0])
+    assert episode["session_id"] == "sess-123"
+    assert episode["goal"] == "BL-123: Governed closeout"
+
+    scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
+    assert scope["approved"] is False
+    assert "closed_at" in scope
+    assert 'status: complete' in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (repo_root / ".azoth" / "final-delivery-approvals.jsonl").read_text(encoding="utf-8") == approvals_before
+    assert not (repo_root / ".azoth" / "session-orientation.txt").exists()
+    assert version_bump_calls == [
+        ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
+    ]

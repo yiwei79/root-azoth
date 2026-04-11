@@ -1,0 +1,1 @@
+{"session_id":"2026-04-11-p1-004-eval-hardening","pipeline":"deliver-full","gate":"final-delivery","actor_type":"human","approved":true,"decision":"approved","approved_at":"2026-04-11T14:28:30.871469+00:00","backlog_id":"P1-004","goal":"P1-004 post-eval hardening: deterministic pipeline TTL assertions + closeout human-gate enforcement"}

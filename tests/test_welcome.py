@@ -39,6 +39,10 @@ def _past() -> str:
     return (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
 
 
+def _fixed_now() -> datetime:
+    return datetime(2030, 4, 11, 12, 0, tzinfo=timezone.utc)
+
+
 # ── filter_unblocked_items ────────────────────────────────────────────────────
 
 
@@ -205,6 +209,55 @@ def test_ttl_boundary_exactly_zero() -> None:
 # ── TTL / EXPIRED in dashboard renders (P1-004 integration) ──────────────────
 
 
+def _render_pipeline_gate_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    pipeline_expires_at: str,
+    rich: bool,
+) -> str:
+    fixed_now = _fixed_now()
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    sid = "pipeline-gate-test"
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": (fixed_now + timedelta(hours=2)).isoformat(),
+                "goal": "P1-004: Pipe TTL",
+                "session_id": sid,
+                "delivery_pipeline": "governed",
+            }
+        )
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": sid,
+                "expires_at": pipeline_expires_at,
+                "pipeline": "deliver-full",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(welcome, "utc_now", lambda: fixed_now)
+
+    if rich:
+        welcome.render_dashboard()
+    else:
+        welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    return buf.getvalue()
+
+
 def test_plain_dashboard_shows_scope_ttl(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -335,33 +388,65 @@ def test_plain_dashboard_pipeline_gate_shows_ttl(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Plain layout shows TTL for governed pipeline gate."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() + timedelta(hours=1)).isoformat(),
+        rich=False,
+    )
+    assert "    Pipeline gate: OK  (deliver-full)  [1h 00m remaining]" in out
+
+
+def test_rich_dashboard_pipeline_gate_shows_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows TTL for governed pipeline gate."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() + timedelta(hours=1)).isoformat(),
+        rich=True,
+    )
+    assert "Pipeline gate: OK  deliver-full  1h 00m remaining" in out
+
+
+def test_plain_dashboard_pipeline_gate_shows_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows EXPIRED for a governed pipeline gate that has elapsed."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() - timedelta(minutes=1)).isoformat(),
+        rich=False,
+    )
+    assert "    Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)" in out
+    assert "Pipeline gate: OPEN" not in out
+
+
+def test_rich_dashboard_pipeline_gate_shows_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows EXPIRED for a governed pipeline gate that has elapsed."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() - timedelta(minutes=1)).isoformat(),
+        rich=True,
+    )
+    assert "Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)" in out
+    assert "Pipeline gate: OPEN" not in out
+
+
+def test_plain_dashboard_shows_active_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows the optional active-run summary when ledger state exists."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
     (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
     (azoth_dir / "memory").mkdir()
-    sid = "ttl-pipe-test"
-    (azoth_dir / "scope-gate.json").write_text(
-        json.dumps(
-            {
-                "approved": True,
-                "expires_at": _future(),
-                "goal": "P1-004: Pipe TTL",
-                "session_id": sid,
-                "delivery_pipeline": "governed",
-            }
-        )
-    )
-    (azoth_dir / "pipeline-gate.json").write_text(
-        json.dumps(
-            {
-                "approved": True,
-                "session_id": sid,
-                "expires_at": _future(),
-                "pipeline": "deliver-full",
-            }
-        )
-    )
 
     buf = io.StringIO()
     from rich.console import Console
@@ -369,10 +454,52 @@ def test_plain_dashboard_pipeline_gate_shows_ttl(
     monkeypatch.setattr(welcome, "ROOT", tmp_path)
     monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
     monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(
+        welcome,
+        "load_active_run",
+        lambda _root: {
+            "run_id": "run-123",
+            "mode": "deliver",
+            "next_action": "Finish stage 4 handoff",
+        },
+    )
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())
     out = buf.getvalue()
-    assert "Pipeline gate: OK" in out
-    assert "remaining" in out
+    assert "Active run" in out
+    assert "run-123" in out
+    assert "Finish stage 4 handoff" in out
+
+
+def test_rich_dashboard_shows_active_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows the optional active-run summary when ledger state exists."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(
+        welcome,
+        "load_active_run",
+        lambda _root: {
+            "run_id": "run-123",
+            "mode": "deliver",
+            "next_action": "Finish stage 4 handoff",
+        },
+    )
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Active run" in out
+    assert "run-123" in out
+    assert "Finish stage 4 handoff" in out
 
 
 # ── is_governed_scope / is_pipeline_gate_valid ────────────────────────────────

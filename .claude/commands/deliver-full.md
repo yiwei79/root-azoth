@@ -84,6 +84,11 @@ spawn body.
    - Compare implementation vs approved design
    - Final alignment summary
    - Gate: human (final approval)
+   - After the human explicitly approves delivery, append a read-only evidence record to
+     `.azoth/final-delivery-approvals.jsonl` before any governed closeout/W1–W4 step:
+     `{"session_id":"<session>","gate":"final-delivery","actor_type":"human","approved":true,"decision":"approved"}`
+   - `scripts/do_closeout.py` consumes that JSONL evidence read-only and must fail closed
+     if the latest matching session record is missing, non-human, malformed, or denied.
    - After human final approval passes: run `python scripts/version-bump.py --patch`
    - Log: `Stage 7 ✓ version bumped X → Y`
 

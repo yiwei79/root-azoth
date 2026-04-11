@@ -38,6 +38,10 @@ console = Console()
 # ── Data loaders ─────────────────────────────────────────────────────────────
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def load_yaml(path: Path) -> dict[str, Any]:
     """Load YAML file, returning empty dict if missing or unparseable."""
     if not path.exists():
@@ -153,7 +157,7 @@ def format_gate_ttl(
     if exp is None:
         return ""
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = utc_now()
     delta = exp - now
     total_seconds = int(delta.total_seconds())
     if total_seconds <= 0:
@@ -197,7 +201,12 @@ def header_phase_label(azoth: dict[str, Any], phase_display: Any) -> str:
     return f"Phase {phase_display}"
 
 
-def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
+def is_pipeline_gate_valid(
+    scope: dict[str, Any],
+    pg: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> bool:
     """True when pipeline-gate.json satisfies mechanical enforcement for this scope."""
     if not pg.get("approved"):
         return False
@@ -207,7 +216,9 @@ def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
     exp = _parse_expires_at_utc(str(pg.get("expires_at", "")))
     if exp is None:
         return False
-    return datetime.now(timezone.utc) < exp
+    if now is None:
+        now = utc_now()
+    return now < exp
 
 
 def is_scope_active(scope: dict[str, Any], complete_ids: set[str] | None = None) -> bool:
@@ -316,7 +327,8 @@ def gather_dashboard_state() -> dict[str, Any]:
     open_sessions = load_open_sessions(ROOT)
 
     repo, branch = git_info()
-    today = datetime.now().strftime("%Y-%m-%d")
+    now = utc_now()
+    today = now.strftime("%Y-%m-%d")
     version = azoth.get("version", "?")
     phase = azoth.get("phase", "?")
     strip_phase = resolve_strip_phase(azoth, roadmap_data)
@@ -337,6 +349,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "episodes": episodes,
         "repo": repo,
         "branch": branch,
+        "now": now,
         "today": today,
         "version": version,
         "phase": phase,
@@ -388,6 +401,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     top3 = state["top3"]
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
+    now = state.get("now")
 
     current_phase = strip_phase
 
@@ -455,23 +469,25 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        scope_ttl = format_gate_ttl(scope)
+        scope_ttl = format_gate_ttl(scope, now=now)
         ttl_suffix = f"  [{scope_ttl}]" if scope_ttl else ""
         lines.append(f"  Scope: ACTIVE  ({session_id}){ttl_suffix}")
         goal = scope.get("goal", "")
         if goal:
             lines.append(f"    Goal: {goal}")
         if is_governed_scope(scope):
-            if is_pipeline_gate_valid(scope, pipeline_gate):
+            pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
+            if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
                 pipe = pipeline_gate.get("pipeline", "?")
-                pg_ttl = format_gate_ttl(pipeline_gate)
-                pg_suffix = f"  [{pg_ttl}]" if pg_ttl else ""
+                pg_suffix = f"  [{pipeline_gate_ttl}]" if pipeline_gate_ttl else ""
                 lines.append(f"    Pipeline gate: OK  ({pipe}){pg_suffix}")
+            elif pipeline_gate_ttl == "EXPIRED":
+                lines.append("    Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)")
             else:
                 lines.append(
                     "    Pipeline gate: OPEN  (Stage 0 of /deliver-full, /auto, or /deliver)"
                 )
-    elif scope.get("expires_at") and format_gate_ttl(scope) == "EXPIRED":
+    elif scope.get("expires_at") and format_gate_ttl(scope, now=now) == "EXPIRED":
         lines.append("  Scope: EXPIRED  (run /next to open a new scope card)")
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
@@ -608,6 +624,7 @@ def render_dashboard() -> None:
     top3 = state["top3"]
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
+    now = state.get("now")
 
     header_text = Text(justify="center")
     header_text.append("AZOTH", style="bold white")
@@ -677,23 +694,28 @@ def render_dashboard() -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        scope_ttl = format_gate_ttl(scope)
+        scope_ttl = format_gate_ttl(scope, now=now)
         ttl_markup = f"  [dim]{scope_ttl}[/dim]" if scope_ttl else ""
         health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]{ttl_markup}")
         if is_governed_scope(scope):
-            if is_pipeline_gate_valid(scope, pipeline_gate):
+            pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
+            if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
                 pipe = pipeline_gate.get("pipeline", "?")
-                pg_ttl = format_gate_ttl(pipeline_gate)
-                pg_markup = f"  [dim]{pg_ttl}[/dim]" if pg_ttl else ""
+                pg_markup = f"  [dim]{pipeline_gate_ttl}[/dim]" if pipeline_gate_ttl else ""
                 health_lines.append(
                     f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]{pg_markup}"
+                )
+            elif pipeline_gate_ttl == "EXPIRED":
+                health_lines.append(
+                    "  :orange_circle: [yellow]Pipeline gate: EXPIRED[/yellow]  "
+                    "[dim](rerun Stage 0 to reopen)[/dim]"
                 )
             else:
                 health_lines.append(
                     "  :red_circle: [red]Pipeline gate: OPEN[/red]  "
                     "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
                 )
-    elif scope.get("expires_at") and format_gate_ttl(scope) == "EXPIRED":
+    elif scope.get("expires_at") and format_gate_ttl(scope, now=now) == "EXPIRED":
         health_lines.append(":orange_circle: [yellow]Scope: EXPIRED[/yellow]  [dim](run /next to open)[/dim]")
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
