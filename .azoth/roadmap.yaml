@@ -285,7 +285,7 @@ versions:
 
   - id: v0.2.0-p1
     status: active
-    current_patch: 30
+    current_patch: 31
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
     themes: [A, B, D]
