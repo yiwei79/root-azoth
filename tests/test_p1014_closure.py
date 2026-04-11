@@ -7,7 +7,6 @@ in the backlog, and that the core acceptance criteria hold structurally.
 from pathlib import Path
 from typing import Optional
 
-import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).parent.parent

@@ -26,116 +26,22 @@ PIPELINES_DIR = REPO_ROOT / "pipelines"
 SCHEMA_FILE = PIPELINES_DIR / "pipeline.schema.yaml"
 TEMPLATE_FILE = PIPELINES_DIR / "pipeline.template.yaml"
 
-VALID_PRESETS = {"full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"}
-VALID_GATE_TYPES = {"human", "agent"}
-VALID_AGENT_NAMES = {
-    "architect",
-    "planner",
-    "builder",
-    "reviewer",
-    "researcher",
-    "research-orchestrator",
-    "evaluator",
-    "prompt-engineer",
-    "agent-crafter",
-    "context-architect",
-}
-VALID_TOOLS = {"explore", "research", "research-orchestrator"}
-VALID_SCOPE = {"kernel", "skills", "agents", "pipelines", "docs", "mixed"}
-VALID_RISK = {"governance-change", "breaking-change", "additive", "cosmetic"}
-VALID_COMPLEXITY = {"simple", "medium", "complex"}
-VALID_KNOWLEDGE = {"known-pattern", "needs-research", "novel"}
+import sys
 
-
-# ── Validator ────────────────────────────────────────────────────────────────
-
-
-class ValidationError(Exception):
-    pass
-
-
-def validate_gate(gate: Any, stage_name: str) -> None:
-    if not isinstance(gate, dict):
-        raise ValidationError(f"stage '{stage_name}': gate must be a mapping")
-    for field in ("type", "action"):
-        if field not in gate:
-            raise ValidationError(f"stage '{stage_name}': gate missing required field '{field}'")
-    if gate["type"] not in VALID_GATE_TYPES:
-        raise ValidationError(
-            f"stage '{stage_name}': gate.type '{gate['type']}' not in {VALID_GATE_TYPES}"
-        )
-    if gate["type"] == "agent" and "agent" not in gate:
-        raise ValidationError(f"stage '{stage_name}': gate.type=agent requires gate.agent")
-    if gate["type"] == "human" and "agent" in gate:
-        raise ValidationError(f"stage '{stage_name}': gate.type=human must not have gate.agent")
-    if "agent" in gate and gate["agent"] not in VALID_AGENT_NAMES:
-        raise ValidationError(
-            f"stage '{stage_name}': gate.agent '{gate['agent']}' not in valid agent names"
-        )
-
-
-def validate_stage(stage: Any) -> None:
-    if not isinstance(stage, dict):
-        raise ValidationError("stage must be a mapping")
-    for field in ("name", "agent", "gate"):
-        if field not in stage:
-            raise ValidationError(f"stage missing required field '{field}'")
-    name = stage["name"]
-    if stage["agent"] not in VALID_AGENT_NAMES:
-        raise ValidationError(f"stage '{name}': agent '{stage['agent']}' not in valid agent names")
-    if "tools" in stage:
-        invalid = set(stage["tools"]) - VALID_TOOLS
-        if invalid:
-            raise ValidationError(f"stage '{name}': invalid tools {invalid}")
-    validate_gate(stage["gate"], name)
-
-
-def validate_composition_rules(rules: Any) -> None:
-    if not isinstance(rules, dict):
-        raise ValidationError("composition_rules must be a mapping")
-    if "classification" not in rules:
-        raise ValidationError("composition_rules missing 'classification'")
-    if "rules" not in rules:
-        raise ValidationError("composition_rules missing 'rules'")
-    clf = rules["classification"]
-    for field, valid in (
-        ("scope", VALID_SCOPE),
-        ("risk", VALID_RISK),
-        ("complexity", VALID_COMPLEXITY),
-        ("knowledge", VALID_KNOWLEDGE),
-    ):
-        if field not in clf:
-            raise ValidationError(f"composition_rules.classification missing '{field}'")
-        if clf[field] not in valid:
-            raise ValidationError(
-                f"composition_rules.classification.{field} '{clf[field]}' not in {valid}"
-            )
-    if not isinstance(rules["rules"], list) or len(rules["rules"]) == 0:
-        raise ValidationError("composition_rules.rules must be a non-empty list")
-    for i, rule in enumerate(rules["rules"]):
-        if "condition" not in rule:
-            raise ValidationError(f"composition_rules.rules[{i}] missing 'condition'")
-        if "pipeline" not in rule:
-            raise ValidationError(f"composition_rules.rules[{i}] missing 'pipeline'")
-
-
-def validate_pipeline(data: Any) -> None:
-    """Validate a parsed pipeline YAML structure against the schema constraints."""
-    if not isinstance(data, dict):
-        raise ValidationError("pipeline must be a YAML mapping")
-    for field in ("name", "description", "preset", "stages"):
-        if field not in data:
-            raise ValidationError(f"pipeline missing required field '{field}'")
-    if data["preset"] not in VALID_PRESETS:
-        raise ValidationError(f"preset '{data['preset']}' not in {VALID_PRESETS}")
-    if not isinstance(data["stages"], list) or len(data["stages"]) == 0:
-        raise ValidationError("stages must be a non-empty list")
-    for stage in data["stages"]:
-        validate_stage(stage)
-    if "composition_rules" in data:
-        if data["preset"] != "auto":
-            raise ValidationError("composition_rules is only valid when preset=auto")
-        validate_composition_rules(data["composition_rules"])
+# Import logic from scripts/pipeline_lint.py
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+from pipeline_lint import (  # noqa: E402
+    VALID_AGENT_NAMES,
+    VALID_COMPLEXITY,
+    VALID_GATE_TYPES,
+    VALID_KNOWLEDGE,
+    VALID_PRESETS,
+    VALID_RISK,
+    VALID_SCOPE,
+    VALID_TOOLS,
+    ValidationError,
+    validate_pipeline,
+)
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────

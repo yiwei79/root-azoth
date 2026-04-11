@@ -31,5 +31,8 @@ jobs:
           python3 scripts/kernel-integrity.py
           python3 scripts/kernel-integrity.py --verify-checksums
 
+      - name: Pipeline lint
+        run: python3 scripts/pipeline_lint.py
+
       - name: Pytest
         run: python3 -m pytest -q
