@@ -76,6 +76,8 @@ Gate types and required behavior:
 
 Never treat "pipeline started" as overriding a failed gate. Gate escalation is always safer than proceeding.
 
+If a subagent returns without a conforming BL-012 typed YAML block, treat the stage as incomplete: surface the raw return to the human and do not advance the pipeline until the human signals whether to retry the stage or abort.
+
 ## Architect as Spawned Role
 
 The Architect is invoked by the orchestrator via BL-011 as a spawned design/review subagent. The Architect is **not** the session-level pipeline owner and is **not** the continuing speaker.
@@ -92,6 +94,6 @@ See `agents/tier1-core/architect.agent.md` for the Architect's contract.
 This orchestrator is the default pipeline entry agent for:
 
 - **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `deliver.md`, and `deliver-full.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`.
-- **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code hard binding via `.claude/settings.json` is deferred (P1-013 follow-on slice); main-session Claude Code behavior falls back to reading this agent file.
+- **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not supported by the platform. Main-session behavior relies on command-level `agent:` frontmatter and the CLAUDE.md instruction surface. Closing the main-session enforcement gap fully is tracked as DFA e2e friction (branch: patch/v0.2.0-p1-012-dfa-e2e-friction).
 
 Drift between source command `agent:` fields and deployed surfaces is detected by `tests/test_azoth_deploy.py` T2–T5. Run `python scripts/azoth-deploy.py` to regenerate deployed surfaces after any source change.
