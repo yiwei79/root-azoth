@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Azoth: Session Welcome (Rich)",
+      "type": "shell",
+      "command": "python3 scripts/welcome.py",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run the Rich session dashboard (phases, health, backlog, last episode, routing menu)."
+    },
+    {
+      "label": "Azoth: Session Welcome (Plain)",
+      "type": "shell",
+      "command": "python3 scripts/welcome.py --plain",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Run the plain-text orientation snapshot (suitable for piping into chat)."
+    }
+  ]
+}
