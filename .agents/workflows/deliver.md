@@ -8,6 +8,25 @@ Lean delivery pipeline. Use when the work is pre-approved and additive
 Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes
 `.azoth/pipeline-gate.json`, set `"pipeline": "deliver"`.
 
+## Preconditions (Antigravity compliance — P1-016)
+
+Before executing pipeline stages, verify all preconditions. Output each check result visibly.
+
+```
+## Precondition Check — /deliver
+
+P1. Scope gate:    [run: python3 scripts/scope_gate_check.py]
+P2. Gate protocol: [✅ Stage 0 applied per GATE_PROTOCOL.md / ❌ BLOCKED — run Stage 0 first]
+P3. Entropy zone:  [GREEN / YELLOW — checkpoint recommended / RED — STOP]
+```
+
+If **any** precondition shows ❌ BLOCKED, **STOP** — do not proceed.
+
+> **Antigravity note:** Subagent isolation is not available. Pipeline stages run inline in
+> the same context. Agent gates (deliver_g1–g3) cannot enforce context-independence between
+> the reviewer and the implementation being reviewed. Document this limitation in alignment
+> summaries. See `docs/antigravity-compliance-matrix.md`.
+
 ## Pipeline
 
 ```

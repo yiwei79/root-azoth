@@ -8,6 +8,33 @@ governance, kernel, or operating rules.
 Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes
 `.azoth/pipeline-gate.json`, set `"pipeline": "deliver-full"`.
 
+## Preconditions (Antigravity compliance — P1-016)
+
+Before executing pipeline stages, verify all preconditions. Output each check result visibly.
+
+```
+## Precondition Check — /deliver-full
+
+P1. Scope gate:      [run: python3 scripts/scope_gate_check.py]
+P2. Gate protocol:   [✅ Stage 0 applied per GATE_PROTOCOL.md / ❌ BLOCKED]
+P3. Pipeline gate:   [✅ pipeline-gate.json written with pipeline: deliver-full / ❌ BLOCKED]
+P4. Entropy zone:    [GREEN / YELLOW — checkpoint recommended / RED — STOP]
+```
+
+If **any** precondition shows ❌ BLOCKED, **STOP** — do not proceed.
+
+> [!WARNING]
+> **Antigravity bootstrap boundary:** `/deliver-full` is designed for governed/M1 work that
+> requires mechanical enforcement (PreToolUse hooks, subagent isolation). Antigravity cannot
+> provide these guarantees. **Prefer Claude Code or Cursor for governed deliveries.**
+>
+> If `/deliver-full` is used on Antigravity anyway:
+> - Subagent isolation is unavailable — governance review (Stage 3) runs in the same context
+>   as the implementation stages, violating the review-independence trigger
+> - Pipeline-gate enforcement is instruction-only — no mechanical blocking of writes
+> - Document these degraded guarantees in the alignment summary
+> - See `docs/antigravity-compliance-matrix.md` for the full parity matrix
+
 ## Typed stage summary (BL-012)
 
 After each pipeline step completes (architect through builder), emit YAML per

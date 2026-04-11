@@ -3,6 +3,39 @@
 Run this command before ending any session. It evaluates work, captures episodes,
 and syncs changes — all in a single pass.
 
+## Preconditions (Antigravity compliance — P1-016)
+
+Before executing closeout, verify:
+
+```
+## Precondition Check — /session-closeout
+
+P1. Scope gate:    [read .azoth/scope-gate.json — session_id for W2 scope close]
+P2. Entropy zone:  [GREEN / YELLOW / RED — include in close summary]
+P3. Memory ready:  [✅ remember skill will structure W1 episode / ❌ manual episode structure]
+```
+
+### Memory system integration
+
+- **W1 (episode capture):** Use the `remember` skill to structure the episode. Follow the
+  episode schema in `skills/remember/SKILL.md` — do not skip auto-classification.
+- **W2 (scope-gate close):** Write `.azoth/scope-gate.json` with `approved: false` and
+  `closed_at` timestamp. If a write claim is held, release it via
+  `python3 scripts/run_ledger.py release-claim <session_id>`.
+- **W3 (platform memory):** On Antigravity, Claude-specific `~/.claude/projects/` memory
+  is out of scope. If Gemini Knowledge Items are available, update them; otherwise log
+  `W3 skipped (no Antigravity KI write path)`.
+- **W4 (version bump):** Run `python scripts/version-bump.py --patch` and clear stale
+  orientation cache.
+- **Next session prep:** Note that the next session should invoke `/start` with
+  `context-recall` to surface this session's episode.
+
+### Antigravity note
+
+> Pipeline stage isolation was not enforced during this session (inline execution).
+> Include this fact in the alignment summary if the session ran a multi-stage pipeline.
+> See `docs/antigravity-compliance-matrix.md`.
+
 ## Part A: Evaluate Session Outputs
 
 Apply `agentic-eval` style review to work produced this session.

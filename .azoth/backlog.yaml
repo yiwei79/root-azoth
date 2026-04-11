@@ -1213,7 +1213,9 @@ items:
     source: session-2026-04-11-p1-004-process-gap
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
+    completed_date: "2026-04-11"
+    delivered_version: "0.1.21"
     target_version: v0.2.0
     priority: 1
     created_date: "2026-04-11"
