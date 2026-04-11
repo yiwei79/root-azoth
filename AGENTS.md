@@ -15,8 +15,9 @@ The agents below are available across all supported AI coding tools
 
 | Agent | Role | Trust |
 |-------|------|-------|
-| architect | Design, constraints, alignment, pipeline orchestration | high |
+| architect | Design, constraints, alignment | high |
 | builder | Implementation, testing, code changes | high |
+| orchestrator | Pipeline entry, session orchestration, declaration ownership | high |
 | planner | Task decomposition, sequencing, test strategy | high |
 | reviewer | Quality, governance, safety critique | high |
 

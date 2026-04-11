@@ -526,3 +526,90 @@ def test_deployed_opencode_commands_match_transform() -> None:
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
+
+
+# ── P1-013: Orchestrator binding tests ──────────────────────────────────────
+
+_PIPELINE_CMD_NAMES = ("auto", "deliver", "deliver-full")
+
+_REQUIRED_ORCHESTRATOR_SECTIONS = (
+    "## Inline vs Orchestrate",
+    "## Goal Clarification",
+    "## Declaration Ownership",
+    "## Pipeline Composition",
+    "## Gate Handling",
+    "## Architect as Spawned Role",
+    "## Platform Parity",
+)
+
+
+def test_transform_command_copilot_preserves_orchestrator_agent_field() -> None:
+    """T1: transform_command_copilot passes through agent: orchestrator — GREEN immediately."""
+    cmd = {
+        "name": "auto",
+        "meta": {"description": "Auto pipeline", "agent": "orchestrator"},
+        "body": "# /auto $ARGUMENTS\n\nClassify and execute.\n",
+    }
+    out = transform_command_copilot(cmd)
+    meta, _ = parse_frontmatter(out)
+    assert meta.get("agent") == "orchestrator", (
+        "transform_command_copilot must preserve agent: orchestrator field"
+    )
+
+
+def test_copilot_pipeline_prompts_have_orchestrator_agent_binding() -> None:
+    """T2: deployed .github/prompts/{auto,deliver,deliver-full}.prompt.md must have agent: orchestrator."""
+    for name in _PIPELINE_CMD_NAMES:
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{name}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_opencode_pipeline_commands_have_orchestrator_agent_binding() -> None:
+    """T3: deployed .opencode/commands/{auto,deliver,deliver-full}.md must have agent: orchestrator."""
+    for name in _PIPELINE_CMD_NAMES:
+        dest = _REPO_ROOT / ".opencode" / "commands" / f"{name}.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_orchestrator_claude_agent_deployed_with_required_body_sections() -> None:
+    """T4: .claude/agents/orchestrator.md must exist with all 7 required body sections."""
+    dest = _REPO_ROOT / ".claude" / "agents" / "orchestrator.md"
+    assert dest.is_file(), (
+        "missing .claude/agents/orchestrator.md — run: python3 scripts/azoth-deploy.py"
+    )
+    content = dest.read_text(encoding="utf-8")
+    for section in _REQUIRED_ORCHESTRATOR_SECTIONS:
+        assert section in content, (
+            f"orchestrator.md missing required section: {section!r}"
+        )
+
+
+def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
+    """T5: pipeline prompt parity — .github/prompts/ matches transform output including agent: orchestrator."""
+    commands = load_commands(_REPO_ROOT)
+    pipeline_cmds = [c for c in commands if c["name"] in _PIPELINE_CMD_NAMES]
+    assert len(pipeline_cmds) == len(_PIPELINE_CMD_NAMES), (
+        f"expected all 3 pipeline commands, found {[c['name'] for c in pipeline_cmds]}"
+    )
+    for cmd in pipeline_cmds:
+        expected = transform_command_copilot(cmd)
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{cmd['name']}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Pipeline prompt drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )

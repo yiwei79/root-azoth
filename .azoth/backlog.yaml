@@ -1105,7 +1105,7 @@ items:
     roadmap_ref: P1-006
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
     target_version: v0.2.0
     priority: 6
     created_date: "2026-04-08"
@@ -1113,6 +1113,23 @@ items:
     blocked_by: []
     description: >
       W2 includes session-state.md; reinforcement_count semantics; explore swarm P1-006 targets.
+
+  - id: P1-017
+    title: "reinforcement_count automation (closeout + promote path)"
+    source: session-2026-04-11-p1-006-followup
+    roadmap_ref: P1-017
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: completed
+    target_version: v0.2.0
+    priority: 6
+    created_date: "2026-04-11"
+    decision_ref: [D11, D49, D51]
+    blocked_by: [P1-006]
+    description: >
+      Deferred from P1-006 docs slice: add explicit, human-confirmed reinforcement_count
+      increment mechanics in closeout/promote with exact prior-episode targeting,
+      per-session idempotency, and focused tests.
 
   - id: P1-007
     title: "Elasticity: M2/M3 recall governance"

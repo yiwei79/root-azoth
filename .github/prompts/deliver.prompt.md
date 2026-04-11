@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Lean pipeline for pre-approved, additive work
+agent: orchestrator
 ---
 
 # /deliver $ARGUMENTS

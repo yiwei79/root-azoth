@@ -1,22 +1,23 @@
 # Azoth Bootloader State
 
-Last updated: 2026-04-11 (session-closeout ep-121 — P1-005 auto parity closeout)
+Last updated: 2026-04-11 (session-closeout ep-122 — P1-006 + P1-013 governed closeout)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.24** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 16` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
+**Toolkit version:** **0.1.26** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 18` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
 
-## Session outcome (ep-121) — P1-005 / Copilot Stage 0 parity + retrospective /auto close
+## Session outcome (ep-122) — P1-006 memory hardening + P1-013 orchestrator default-entry split
 
-- **Fixed the source contract:** `/start` resume and `/next` post-approval guidance now state that scope approval declares intent only; pipeline selection still applies to standard scopes, and `/auto` with Stage 0 is the default when no pipeline was chosen.
-- **Resynced deployed mirrors:** regenerated Copilot, OpenCode, and agent workflow outputs with `scripts/azoth-deploy.py`, keeping adapter surfaces aligned with the updated source prompts; added `tests/test_start_next_pipeline_contract.py`.
-- **Closed P1-005 correctly:** marked the backlog item complete and reran it retrospectively through `/auto`; architect audit confirmed the docs deliverable was already satisfied, so the builder stage was skipped by design.
+- **Delivered P1-006 cleanly:** documented `reinforcement_count` increment semantics in `skills/remember/SKILL.md`, aligned all closeout template mirrors with `"reinforcement_count": 0`, added focused tests, and recorded the follow-up automation slice as **P1-017** rather than over-engineering the first delivery.
+- **Delivered P1-013 through governed `/auto`:** added `agents/tier1-core/orchestrator.agent.md`, removed architect/orchestrator role conflation, bound `/auto`, `/deliver`, and `/deliver-full` to `agent: orchestrator`, regenerated Copilot/OpenCode/Claude surfaces with `scripts/azoth-deploy.py`, and added deploy drift tests covering bindings plus parity.
+- **Closed the governed slice properly:** recorded final human approval for P1-013, marked the backlog item complete, and left the remaining Claude Code hard-binding work as an explicit follow-on rather than silently expanding scope.
 
 ## Open decisions
 
-- Promotion candidate only: consider promoting the pattern **"scope approval declares intent only; `/auto` Stage 0 remains required when no pipeline is selected"** if it is reinforced again.
+- Whether to hard-bind Claude Code main-session defaulting to `orchestrator` via `.claude/settings.json` in a follow-on slice.
+- Whether Copilot runtime behavior for `agent: orchestrator` needs additional production verification beyond deploy/parity coverage.
 
 ## Next action
 
-Run `/intake` first for the 4 queued inbox JSONL files, then `/next` to continue the next active v0.2.1 backlog item (likely P1-006).
+Run `/intake` first for the 4 queued inbox JSONL files, then `/next` to choose the next active backlog scope.

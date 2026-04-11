@@ -56,6 +56,14 @@ Experience → Capture Episode → Auto-Classify → Surface in Future → Propo
 }
 ```
 
+### When to increment reinforcement_count
+
+`reinforcement_count` starts at `0` on every new episode. Increment it by `1`
+each time a **subsequent** session surfaces the same lesson and it still holds
+true — i.e., when you would write the same lesson again but an identical or
+near-identical episode already exists. Do **not** increment on the initial
+capture; do **not** increment more than once per session.
+
 ### Capture Rules
 
 1. **One episode per session minimum** — the HARDEN phase always produces one

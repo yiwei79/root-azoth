@@ -2,6 +2,7 @@
 mode: agent
 description: Full pipeline with governance gates — for kernel, governance, or breaking
   changes
+agent: orchestrator
 ---
 
 # /deliver-full $ARGUMENTS
@@ -32,8 +33,8 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 
 - Policy source: `subagent-router` skill (trigger definitions and routing table)
 - Each agent gate (stages 3–6) mandates a fresh-context subagent invocation via `Agent(subagent_type=...)`
-- The Architect (orchestrator) remains the final speaker for all human gates
-- Subagents return findings; Architect disposes and escalates to human if needed
+- The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.
+- Subagents return findings; Orchestrator disposes and escalates to human if needed
 - **Orchestrator handoff:** Before each downstream `Agent`/`Task`, attach `inputs.prior_stage_summaries` with verbatim typed YAML from upstream stages (`subagent-router` §Orchestrator forward payload). Evaluator and review stages are not valid without this.
 - **Review escalation:** If Governance Review returns request-changes, CRITICAL/blocking findings, `entropy: RED`, or `status: needs-input`, **STOP** — do not run Planner until the human approves continuation (same human-gate pattern as `/auto` Execution §5).
 - **Eval / swarm routing:** When the pipeline reaches an **evaluator** stage or a **final `/eval`**

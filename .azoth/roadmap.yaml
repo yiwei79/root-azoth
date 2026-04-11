@@ -285,7 +285,7 @@ versions:
 
   - id: v0.2.1
     status: active
-    current_patch: 16
+    current_patch: 18
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
     themes: [A, B, D]
@@ -325,6 +325,11 @@ versions:
         decision_ref: [D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-005.yaml"
         note: "DYNAMIC-FULL-AUTO-style runs vs trust gates"
+      - id: P1-017
+        title: "reinforcement_count automation (closeout + promote path)"
+        decision_ref: [D11, D49, D51]
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
+        note: "Deferred from P1-006 docs slice: add explicit, human-confirmed increment mechanics"
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.
@@ -467,10 +472,9 @@ initiatives:
     priority: high
     task_ref: P1-006
     summary: >
-      W2 parity for memory loop; reinforcement_count semantics in M2 patterns;
-      session-state handoff integrity across closeout. Ensures /session-closeout
-      reliably writes M3, updates session-state.md, and increments reinforcement
-      counts without silent failures.
+      W2 parity for memory loop; documented reinforcement_count semantics;
+      session-state handoff integrity across closeout. Keeps memory docs and
+      closeout wording aligned without forcing premature runtime automation.
     decision_ref: [D11, D49, D51]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
 
@@ -488,6 +492,20 @@ initiatives:
       inherits vs builds fresh.
     decision_ref: [D45]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
+
+  - id: INI-MEM-006
+    title: "reinforcement_count automation (closeout + promote path)"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    task_ref: P1-017
+    summary: >
+      Add an explicit, human-confirmed automation path for reinforcement_count so
+      closeout/promote can increment prior episodes without fuzzy matching, silent
+      edits, or duplicate increments in the same session.
+    decision_ref: [D11, D49, D51]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
 
   # ── Theme D: ux / platform ─────────────────────────────────────────────────
   - id: INI-UX-001

@@ -1,6 +1,7 @@
 ---
 description: "Lean pipeline for pre-approved, additive work"
 azoth_effect: write
+agent: orchestrator
 ---
 
 # /deliver $ARGUMENTS

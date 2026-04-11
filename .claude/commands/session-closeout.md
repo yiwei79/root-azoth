@@ -56,7 +56,8 @@ Compress session into actionable signals.
      "goal": "session goal",
      "summary": "what happened",
      "lessons": ["lesson 1", "lesson 2"],
-     "tags": ["relevant-tags"]
+     "tags": ["relevant-tags"],
+     "reinforcement_count": 0
    }
    ```
 

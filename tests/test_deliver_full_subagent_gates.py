@@ -102,8 +102,8 @@ def test_orchestration_constraints_has_all_required_bullets() -> None:
     required = [
         "Policy source: `subagent-router` skill (trigger definitions and routing table)",
         "Each agent gate (stages 3\u20136) mandates a fresh-context subagent invocation via",
-        "The Architect (orchestrator) remains the final speaker for all human gates",
-        "Subagents return findings; Architect disposes and escalates to human if needed",
+        "The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.",
+        "Subagents return findings; Orchestrator disposes and escalates to human if needed",
         "No review stage shall execute inline with the stage it reviews",
         "runtime enforcement will be added in Phase 5 (P5-001, D43)",
         "Isolation constraint applies to agent-gated review stages (3\u20136)",
