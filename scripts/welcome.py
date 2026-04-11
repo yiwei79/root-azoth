@@ -101,6 +101,23 @@ def is_governed_scope(scope: dict[str, Any]) -> bool:
     return scope.get("delivery_pipeline") == "governed" or scope.get("target_layer") == "M1"
 
 
+def write_claim_status_line(scope: dict[str, Any] | None, claim: dict[str, Any] | None) -> str:
+    """Return a single-line write-claim status string for the System Health panel.
+
+    Returns a string containing 'HELD' when the claim is active and matches the scope session.
+    Returns a string containing 'none' when no claim is present.
+    """
+    if claim is None:
+        return "Write claim: none"
+    holder = claim.get("session_id", "")
+    scope_session = str((scope or {}).get("session_id") or "")
+    if scope_session and holder == scope_session:
+        expires = claim.get("expires_at", "?")
+        return f"Write claim: HELD by '{holder}'  expires {expires}"
+    expires = claim.get("expires_at", "?")
+    return f"Write claim: held by '{holder}' (foreign)  expires {expires}"
+
+
 def _parse_expires_at_utc(raw: str) -> datetime | None:
     """Parse ISO 8601 expires_at; normalize Z suffix for Python <3.11."""
     if not raw:

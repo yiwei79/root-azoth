@@ -24,6 +24,16 @@ Therefore you MUST **simulate** the same checks **before** any `Write` or `Edit`
    - If the scope is **governed** (`delivery_pipeline: governed` **or** `target_layer: M1`): read `.azoth/pipeline-gate.json`. It must exist, `approved: true`, `session_id` must match scope-gate, `expires_at` unexpired. Otherwise → **do not write**; execute **Stage 0** from `.claude/commands/deliver-full.md`, `.claude/commands/auto.md`, or `.claude/commands/deliver.md` (write `pipeline-gate.json` first), then continue.
    - For **Write** or **Edit** to `.azoth/handoffs/*.{yaml,yml}`: ensure the composed content is a **single-document BL-012** stage summary (structural rules in `pipelines/stage-summary.schema.yaml` / `.claude/hooks/stage_summary_validate.py`). Hooks enforce this in Claude Code; in Cursor, simulate the same check—invalid handoff content must not ship.
 
+2b. **Write-claim simulation** (Cursor/Copilot/OpenCode/Antigravity — mechanical in Claude Code only):
+   - Before writing, read `.azoth/run-ledger.local.yaml` and check the `write_claim` field.
+   - If `write_claim` is absent or `expires_at` is in the past → claim is free; proceed.
+   - If `write_claim.session_id` matches the current scope `session_id` → you hold the claim; proceed.
+   - If `write_claim.session_id` differs **and** `expires_at` is still in the future → **do not write**;
+     tell the human: "Write blocked — write claim held by `<session_id>` until `<expires_at>`.
+     Ask the other session to run `release-claim` or wait for expiry and run `resolve-stale`."
+   - In Claude Code this check is mechanical (PreToolUse hook `write_claim_check.py`);
+     in other harnesses it is a behavioral simulation requirement — treat it as non-optional.
+
 3. **Canonical workflows**: Follow slash-command definitions under **`.claude/commands/`** for `/auto`, `/deliver`, `/deliver-full`, `/next`, `/start`, `/session-closeout` — do not invent parallel workflows. Each command file declares `azoth_effect: read | write | mixed` in YAML frontmatter (`kernel/GOVERNANCE.md`). If `write` or `mixed`, assume **Write/Edit** may follow (after gates when applicable); treat `read` as analysis-only unless the human explicitly asks to implement.
 
 4. **M1 / governed backlog work**: Do **not** implement `target_layer: M1` or `delivery_pipeline: governed` items as a single long inline session. Use the **staged pipeline + subagent routing** in those commands and `skills/subagent-router/SKILL.md` (spawn contract, pipeline gate).
@@ -65,6 +75,7 @@ If **`Task` is unavailable** in the current Cursor session (UI/model limitation)
 
 - Scope gate valid for writes?
 - Pipeline gate valid if governed?
+- Write claim free or held by this session? (rule 2b — simulate `write_claim_check.py`)
 - Handoff YAML (`.azoth/handoffs/*.{yaml,yml}`) structurally valid BL-012 if writing there?
 - Invoked the right `.claude/commands/*` semantics?
 - Delivery stages run via **`Task`** with matching `subagent_type` (not inline role-play)?

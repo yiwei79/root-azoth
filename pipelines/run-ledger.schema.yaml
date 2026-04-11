@@ -24,6 +24,40 @@ properties:
     const: 1
     description: "Bump only on breaking changes; consumers reject unknown versions."
 
+  write_claim:
+    type: object
+    description: >
+      Optional coarse repo-wide write lease. At most one session may hold this claim
+      at a time; other sessions are denied until the claim is released or expires.
+      Stored in run-ledger.local.yaml (gitignored) so it survives context resets.
+    additionalProperties: false
+    required:
+      - session_id
+      - expires_at
+      - acquired_at
+    properties:
+      session_id:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: "Identifier of the session that holds the write lease."
+      expires_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        description: >
+          ISO-8601 timestamp when the claim expires. Mirrors scope-gate expiry;
+          resolve_stale_claims uses this for clock-only staleness detection.
+      acquired_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        description: "ISO-8601 timestamp when the claim was acquired."
+      harness:
+        type: string
+        description: >
+          Optional IDE/harness label (e.g. claude-code, cursor, copilot, opencode,
+          antigravity). Mechanical enforcement applies in Claude Code; other harnesses
+          simulate the check via behavioral parity rules.
+
   sessions:
     type: array
     description: >

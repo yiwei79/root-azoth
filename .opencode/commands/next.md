@@ -2,11 +2,20 @@
 description: Show the next priority task from the roadmap and suggest how to proceed
 ---
 
-# /next — What Should I Work On?
+# /next [resume <session_id>] — What Should I Work On?
 
 Read the backlog and roadmap, produce a scope card, and write scope-gate.json on approval.
 
 ## Steps
+
+0. **Optional resume lookup**: If the invocation includes `resume <session_id>`, read
+    `.azoth/run-ledger.local.yaml` and locate the matching entry under the optional
+    `sessions:` array.
+    - If found and `status` is `active` or `parked`, use its `backlog_id`, `goal`, and
+       `next_action` as additional context for the scope card.
+    - If missing, invalid, or `status` is `closed`, explain that the session cannot be resumed.
+    - Never rewrite `.azoth/scope-gate.json` directly from the resume lookup. Resume requests
+       still flow through the same human approval step below before any scope-gate write.
 
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
@@ -61,6 +70,20 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 9. **Wait for human signal**: Do NOT start work. If human types `approved`, proceed to step 10.
 10. **Write scope-gate.json**: Write `.azoth/scope-gate.json` with:
 
+10b. **Acquire write claim**: After writing `scope-gate.json`, acquire the write claim so
+    competing sessions are mechanically blocked. Call `acquire_write_claim` from `run_ledger.py`
+    or run:
+    ```
+    python3 scripts/run_ledger.py claim <session_id> <expires_at>
+    ```
+    This registers the write claim in `.azoth/run-ledger.local.yaml`. At session closeout,
+    release the claim via `release_write_claim` or:
+    ```
+    python3 scripts/run_ledger.py release-claim <session_id>
+    ```
+    If a competing session holds an unexpired claim, the PreToolUse hook will deny
+    Write/Edit until the claim is released or expires (and `resolve_stale_claims` clears it).
+
     ```json
     {
       "approved": true,
@@ -106,6 +129,8 @@ Type `skip` to skip primary and show next candidate.
 ## Rules
 
 - **Never auto-start work** — output the scope card and wait for `approved`
+- **Never auto-resume by rewriting scope** — `resume <session_id>` is read-only until the
+   human types `approved`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
 - **Skip completed items** — if all backlog items are complete, congratulate and show the
   next version entry from `roadmap.yaml versions:` as a preview

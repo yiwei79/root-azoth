@@ -71,6 +71,20 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 9. **Wait for human signal**: Do NOT start work. If human types `approved`, proceed to step 10.
 10. **Write scope-gate.json**: Write `.azoth/scope-gate.json` with:
 
+10b. **Acquire write claim**: After writing `scope-gate.json`, acquire the write claim so
+    competing sessions are mechanically blocked. Call `acquire_write_claim` from `run_ledger.py`
+    or run:
+    ```
+    python3 scripts/run_ledger.py claim <session_id> <expires_at>
+    ```
+    This registers the write claim in `.azoth/run-ledger.local.yaml`. At session closeout,
+    release the claim via `release_write_claim` or:
+    ```
+    python3 scripts/run_ledger.py release-claim <session_id>
+    ```
+    If a competing session holds an unexpired claim, the PreToolUse hook will deny
+    Write/Edit until the claim is released or expires (and `resolve_stale_claims` clears it).
+
     ```json
     {
       "approved": true,

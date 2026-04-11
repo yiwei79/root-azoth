@@ -254,7 +254,151 @@ def validate_ledger(data: dict) -> list[str]:
                             f"{bp}: disposition {bd!r} not in {sorted(_BRANCH_DISPOSITION_ENUM)}"
                         )
 
+    # write_claim (optional top-level field)
+    write_claim = data.get("write_claim")
+    if write_claim is not None:
+        if not isinstance(write_claim, dict):
+            errors.append("write_claim must be a mapping")
+        else:
+            for field in ("session_id", "acquired_at"):
+                val = write_claim.get(field)
+                if val is None:
+                    errors.append(f"write_claim: missing required field '{field}'")
+                elif not isinstance(val, str) or not val.strip():
+                    errors.append(f"write_claim: '{field}' must be a non-empty string")
+            # expires_at: required, must be valid ISO-8601
+            expires_val = write_claim.get("expires_at")
+            if expires_val is None:
+                errors.append("write_claim: missing required field 'expires_at'")
+            elif not isinstance(expires_val, str) or not _ISO8601_RE.match(expires_val):
+                errors.append(
+                    f"write_claim: 'expires_at' must match ISO-8601 (YYYY-MM-DDTHH:MM:SS…), "
+                    f"got {expires_val!r}"
+                )
+
     return errors
+
+
+# ── Write-claim helpers (P1-015) ──────────────────────────────────────────────
+
+
+def _ledger_path_from_root(root: Path) -> Path:
+    return root / ".azoth" / "run-ledger.local.yaml"
+
+
+def load_write_claim(root: Path) -> dict | None:
+    """Return the write_claim dict from the ledger, or None if absent."""
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        return None
+    claim = data.get("write_claim")
+    return claim if isinstance(claim, dict) else None
+
+
+def acquire_write_claim(
+    root: Path,
+    session_id: str,
+    expires_at: str,
+    harness: str | None = None,
+) -> tuple[bool, str]:
+    """Attempt to acquire the write claim for session_id.
+
+    Returns (True, session_id) on success.
+    Returns (False, reason) if an unexpired claim already exists for a different session.
+    """
+    ledger_path = _ledger_path_from_root(root)
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        data = {"schema_version": 1, "runs": []}
+
+    existing = data.get("write_claim")
+    if isinstance(existing, dict):
+        holder = existing.get("session_id", "")
+        if holder == session_id:
+            # Re-acquire: update expiry
+            existing["expires_at"] = expires_at
+            existing["acquired_at"] = utc_now_iso()
+            if harness is not None:
+                existing["harness"] = harness
+            _write_ledger(ledger_path, data)
+            return True, session_id
+        # Check if the existing claim is expired
+        raw_exp = existing.get("expires_at", "")
+        from datetime import datetime, timezone as _tz
+        try:
+            normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
+            exp_dt = datetime.fromisoformat(normalized)
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=_tz.utc)
+        except (ValueError, TypeError):
+            exp_dt = None
+        if exp_dt is not None and datetime.now(_tz.utc) < exp_dt:
+            return False, f"write claim held by '{holder}' until {raw_exp}"
+
+    # No unexpired foreign claim — acquire it
+    new_claim: dict = {
+        "session_id": session_id,
+        "expires_at": expires_at,
+        "acquired_at": utc_now_iso(),
+    }
+    if harness is not None:
+        new_claim["harness"] = harness
+    data["write_claim"] = new_claim
+    _write_ledger(ledger_path, data)
+    return True, session_id
+
+
+def release_write_claim(root: Path, session_id: str) -> bool:
+    """Release the write claim if the caller is the owner.
+
+    Returns True when the claim was owned by session_id and has been removed.
+    Returns False (no-op) when no claim exists or the caller is not the owner.
+    """
+    ledger_path = _ledger_path_from_root(root)
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        return False
+    existing = data.get("write_claim")
+    if not isinstance(existing, dict):
+        return False
+    if existing.get("session_id") != session_id:
+        return False
+    del data["write_claim"]
+    _write_ledger(ledger_path, data)
+    return True
+
+
+def resolve_stale_claims(root: Path) -> bool:
+    """Check the write claim against the clock; clear it if expired.
+
+    Returns True when a stale claim was found and cleared.
+    Returns False when no claim exists or the claim is unexpired.
+    Clock-only check — no external bypass signal (ADV-2).
+    """
+    ledger_path = _ledger_path_from_root(root)
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        return False
+    existing = data.get("write_claim")
+    if not isinstance(existing, dict):
+        return False
+    raw_exp = existing.get("expires_at", "")
+    from datetime import datetime, timezone as _tz
+    try:
+        normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
+        exp_dt = datetime.fromisoformat(normalized)
+        if exp_dt.tzinfo is None:
+            exp_dt = exp_dt.replace(tzinfo=_tz.utc)
+    except (ValueError, TypeError):
+        # Unparseable expiry — treat as expired
+        del data["write_claim"]
+        _write_ledger(ledger_path, data)
+        return True
+    if datetime.now(_tz.utc) >= exp_dt:
+        del data["write_claim"]
+        _write_ledger(ledger_path, data)
+        return True
+    return False
 
 
 # ── Business-logic helpers (testable without CLI) ─────────────────────────────
@@ -322,17 +466,57 @@ def cmd_status(args: argparse.Namespace) -> None:
     data = _load_ledger(path)
     runs = data.get("runs") or []
     active = [r for r in runs if isinstance(r, dict) and r.get("status") == "active"]
-    if not active:
+    if active:
+        run = active[-1]
+        run_id = run.get("run_id", "?")
+        mode = run.get("mode", "?")
+        next_action = (run.get("next_action") or "")[:80]
+        print(f"Active run  {run_id}  ({mode})  → {next_action}")
+        sc = run.get("stages_completed") or []
+        if sc:
+            print(f"  stages completed: {len(sc)}")
+    else:
         print("no active run")
-        sys.exit(0)
-    run = active[-1]
-    run_id = run.get("run_id", "?")
-    mode = run.get("mode", "?")
-    next_action = (run.get("next_action") or "")[:80]
-    print(f"Active run  {run_id}  ({mode})  → {next_action}")
-    sc = run.get("stages_completed") or []
-    if sc:
-        print(f"  stages completed: {len(sc)}")
+    # Write-claim info
+    write_claim = data.get("write_claim")
+    if isinstance(write_claim, dict):
+        holder = write_claim.get("session_id", "?")
+        expires = write_claim.get("expires_at", "?")
+        print(f"Write claim: HELD by '{holder}'  expires {expires}")
+    else:
+        print("Write claim: none")
+
+
+def cmd_claim(args: argparse.Namespace) -> None:
+    path: Path = args.ledger
+    root = path.parent.parent
+    ok, info = acquire_write_claim(root, args.session_id, args.expires_at, harness=args.harness)
+    if ok:
+        print(f"write claim acquired: {info}")
+    else:
+        print(f"write claim denied: {info}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_release_claim(args: argparse.Namespace) -> None:
+    path: Path = args.ledger
+    root = path.parent.parent
+    released = release_write_claim(root, args.session_id)
+    if released:
+        print(f"write claim released for session '{args.session_id}'")
+    else:
+        print(f"write claim not held by '{args.session_id}' — no-op", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_resolve_stale(args: argparse.Namespace) -> None:
+    path: Path = args.ledger
+    root = path.parent.parent
+    cleared = resolve_stale_claims(root)
+    if cleared:
+        print("stale write claim cleared")
+    else:
+        print("no stale claim found")
 
 
 def cmd_append(args: argparse.Namespace) -> None:
@@ -426,7 +610,18 @@ def main() -> None:
     subs = parser.add_subparsers(dest="command", required=True)
 
     subs.add_parser("validate", help="Validate ledger against schema; exit 1 on errors.")
-    subs.add_parser("status", help="Print current active run summary.")
+    subs.add_parser("status", help="Print current active run summary and write-claim info.")
+
+    # write-claim subcommands (P1-015)
+    cp = subs.add_parser("claim", help="Acquire the write claim for a session.")
+    cp.add_argument("session_id", metavar="SESSION_ID", help="Session identifier acquiring the claim.")
+    cp.add_argument("expires_at", metavar="EXPIRES_AT", help="ISO-8601 expiry timestamp.")
+    cp.add_argument("--harness", metavar="HARNESS", help="Optional IDE/harness label.", default=None)
+
+    rp = subs.add_parser("release-claim", help="Release the write claim for a session.")
+    rp.add_argument("session_id", metavar="SESSION_ID", help="Session identifier releasing the claim.")
+
+    subs.add_parser("resolve-stale", help="Clear an expired write claim (clock-only check).")
 
     ap = subs.add_parser("append", help="Create or update a run entry.")
     ap.add_argument("--run-id", required=True, metavar="ID", help="Unique run identifier.")
@@ -457,7 +652,14 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    {"validate": cmd_validate, "status": cmd_status, "append": cmd_append}[args.command](args)
+    {
+        "validate": cmd_validate,
+        "status": cmd_status,
+        "append": cmd_append,
+        "claim": cmd_claim,
+        "release-claim": cmd_release_claim,
+        "resolve-stale": cmd_resolve_stale,
+    }[args.command](args)
 
 
 if __name__ == "__main__":
