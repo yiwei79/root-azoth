@@ -5,7 +5,7 @@ Last updated: 2026-04-11 (session-closeout ep-128 — backlog triage, P1-008 dep
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.1.33** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0-p1` · **Git:** branch **`patch/v0.2.0-p1-copilot-pipeline-memory-parity`**.
+**Toolkit version:** **0.1.1.34** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0-p1` · **Git:** branch **`patch/v0.2.0-p1-copilot-pipeline-memory-parity`**.
 
 ## Session outcome (ep-128) — Orientation + backlog triage
 
