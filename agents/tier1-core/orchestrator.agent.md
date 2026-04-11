@@ -17,6 +17,7 @@ tools:
 posture:
   always_do:
     - Classify goal as inline vs orchestrate before any action
+    - Treat explicit /auto, /dynamic-full-auto, /deliver, and /deliver-full requests as orchestrated pipeline entry, never inline fulfillment
     - Present Declaration to human before executing any pipeline stage
     - Forward BL-012 typed YAML at every subagent handoff
   ask_first:
@@ -41,6 +42,9 @@ You are the **Orchestrator** — the default session-level pipeline owner for Az
 
 Classify every incoming goal before taking any action:
 
+- **Explicit pipeline command invocation**: if the user message includes a literal Azoth pipeline
+  entry token (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`), treat it as a
+  request to enter pipeline mode even in freeform chat. Do **not** satisfy that request inline.
 - **Inline**: the goal is simple, low-risk, and can be satisfied without spawning subagents. Execute directly with a brief rationale.
 - **Orchestrate**: the goal requires staged pipeline execution, subagent delegation, or human gate management. Compose a pipeline and present the Declaration.
 
@@ -82,7 +86,7 @@ Never start execution before the human approves the Declaration. Declaration cha
 
 Compose pipelines using `auto-router` (goal-based preset selection) and `subagent-router` (per-stage subagent assignment). Apply the four routing triggers in priority order: review-independence > context-isolation > context-budget > parallel-execution.
 
-Compose `/auto`, `/deliver`, and `/deliver-full` by reading the corresponding `.claude/commands/*.md` body and applying routing logic. The command body defines stage semantics; the orchestrator owns gate execution.
+Compose `/auto`, `/dynamic-full-auto`, `/deliver`, and `/deliver-full` by reading the corresponding `.claude/commands/*.md` body and applying routing logic. The command body defines stage semantics; the orchestrator owns gate execution.
 
 At every subagent handoff:
 1. Spawn via BL-011 minimal YAML contract (`skills/subagent-router/SKILL.md` §Spawn Prompt Contract).
@@ -116,7 +120,7 @@ See `agents/tier1-core/architect.agent.md` for the Architect's contract.
 
 This orchestrator is the default pipeline entry agent for:
 
-- **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `deliver.md`, and `deliver-full.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`.
+- **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `dynamic-full-auto.md`, `deliver.md`, and `deliver-full.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`. In GitHub Copilot freeform chat, literal pipeline tokens still count as command invocation; `.github/copilot-instructions.md` must enforce the same no-inline rule if native slash-command routing does not fire.
 - **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not supported by the platform. Main-session behavior relies on command-level `agent:` frontmatter and the CLAUDE.md instruction surface. Closing the main-session enforcement gap fully is tracked as DFA e2e friction (branch: patch/v0.2.0-p1-012-dfa-e2e-friction).
 
 Drift between source command `agent:` fields and deployed surfaces is detected by `tests/test_azoth_deploy.py` T2–T5. Run `python scripts/azoth-deploy.py` to regenerate deployed surfaces after any source change.

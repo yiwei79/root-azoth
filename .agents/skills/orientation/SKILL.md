@@ -11,7 +11,7 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0 slice**
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p1 working slice**
 (Phase 8 in `azoth.yaml`), and the **expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
@@ -93,8 +93,8 @@ used before BL-013.
 
 ### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `phase: 1` + `milestone: v0.2.0` + `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0`, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P1-014** (**priority 1**, Antigravity bootstrap) leads the active v0.2.0 queue; **P1-015** (**priority 2**, true multi-writer safety) is staged next but **blocked by P1-014**; **P1-003** remains the next unblocked general item after the completed **P1-001**, **P1-002**, **P1-011**, and **P1-012** slices. **P1-004 … P1-010** plus **P1-013** remain active; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 1`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p1` for the phase-1 working slice, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
+- **Execution queue:** `.azoth/backlog.yaml` — **P1-014** (**priority 1**, Antigravity bootstrap) leads the active v0.2.0-p1 queue; **P1-015** (**priority 2**, true multi-writer safety) is staged next but **blocked by P1-014**; **P1-003** remains the next unblocked general item after the completed **P1-001**, **P1-002**, **P1-011**, and **P1-012** slices. **P1-004 … P1-010** plus **P1-013** remain active; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids):**
   - **P1-014** — Antigravity bootstrap adapter: repo-local `.agents/` surface for standard work; bootstrap before deeper deploy-target integration.
   - **P1-015** — True multi-writer safety: explicit write claims, conflict detection, and cross-harness enforcement after the bootstrap surface stabilizes.

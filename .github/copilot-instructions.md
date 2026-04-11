@@ -7,6 +7,20 @@ These notes apply to **coding assistance** and **pull request reviews** in this 
 - Ground changes in [`docs/AZOTH_ARCHITECTURE.md`](../docs/AZOTH_ARCHITECTURE.md), [`kernel/TRUST_CONTRACT.md`](../kernel/TRUST_CONTRACT.md), and [`docs/DECISIONS_INDEX.md`](../docs/DECISIONS_INDEX.md) (e.g. D29, D32) where relevant.
 - **Kernel (`kernel/`)** is immutable without human-approved promotion and governed delivery — do not propose casual edits there.
 
+## Pipeline command handling
+
+- In GitHub Copilot chat and VS Code, treat literal Azoth pipeline tokens **`/auto`**, **`/dynamic-full-auto`**, **`/deliver`**, and **`/deliver-full`** anywhere in the user message as explicit pipeline-command invocations, even if they appear inside freeform prose.
+- For those requests, **do not execute the work inline in main chat**. Switch to orchestrator behavior: classify the goal, read the relevant command/skill surfaces, compose the pipeline, present the Declaration, and wait for approval before execution.
+- If native slash-command routing does not fire, manually emulate the same behavior rather than falling back to generic “bias to action” execution.
+- When the `Task` tool is available, keep the orchestrator in main chat and use staged `Task`/subagent execution per `skills/subagent-router/SKILL.md`; **do not inline all pipeline stages in one assistant thread**.
+- Normative sources for this behavior: `.claude/agents/orchestrator.md`, `.claude/commands/auto.md`, `.claude/commands/dynamic-full-auto.md`, `.claude/commands/deliver.md`, `.claude/commands/deliver-full.md`.
+
+## Closeout memory parity
+
+- During `/session-closeout`, treat `.azoth/*` memory/state files as the **authoritative** cross-tool record.
+- Also attempt W3 Claude-memory mirroring to `~/.claude/projects/<project-key>/memory/` so future Claude Code sessions can read Copilot-authored closeout state.
+- This mirror is **supplemental only**: Copilot should still read/write the repo-local Azoth memory surfaces first, and if W3 diverges from `.azoth/*`, the repo-local state wins.
+
 ## Pull request reviews
 
 When asked to review a PR or when `@copilot` is tagged for review:

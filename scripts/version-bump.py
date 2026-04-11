@@ -2,9 +2,13 @@
 """
 version-bump.py — D53 version bump automation.
 
-Maintains the 0.0.PHASE.PATCH version scheme across azoth.yaml and
-.azoth/roadmap.yaml using regex-based line replacement throughout.
-YAML comments and formatting are fully preserved.
+Maintains Azoth's delivery version across azoth.yaml and .azoth/roadmap.yaml
+using regex-based line replacement throughout. YAML comments and formatting are
+fully preserved.
+
+Version eras:
+  - Pre-release roadmap phases: 0.0.PHASE.PATCH
+  - Post-v0.1.0 milestone work toward v0.2.0: 0.1.MILESTONE_PHASE.PATCH
 
 Usage:
   python scripts/version-bump.py --patch   [--azoth-yaml PATH] [--roadmap-yaml PATH]
@@ -12,12 +16,13 @@ Usage:
   python scripts/version-bump.py --release [--azoth-yaml PATH] [--roadmap-yaml PATH]
 
 Flags:
-  --patch    0.0.N.M → 0.0.N.M+1  (every session delivery)
-  --phase    0.0.N.M → 0.0.N+1.1  (phase completion — empty pending_task_refs; next
-              slice status planned or backlog → active + current_patch 1)
-  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, azoth 0.1.0 + milestone v0.2.0
-           at milestone-local phase 1 + lifecycle_phase 8 (welcome strip), activate v0.2.0 @
-           current_patch 1
+  --patch    0.0.N.M → 0.0.N.M+1  or  0.1.P.M → 0.1.P.M+1  (every session delivery)
+  --phase    0.0.N.M → 0.0.N+1.1  or  0.1.P.M → 0.1.P+1.0
+              (phase completion — empty pending_task_refs; next slice status planned
+              or backlog → active + current_patch reset)
+  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, tag public release
+              v0.1.0, then move the repo onto milestone phase 1 as azoth 0.1.1.0
+              with active roadmap slice v0.2.0-p1
 
 --release is human-gated: updates azoth.yaml + .azoth/roadmap.yaml, prints the
 manual git-tag command. The human must inspect, run tests, tag, and push.
@@ -34,7 +39,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 _VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
-_VERSION3_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+_ACTIVE_POST_RELEASE_RE = re.compile(r"^v0\.2\.0-p(\d+)$")
 
 # ── File I/O helpers ──────────────────────────────────────────────────────────
 
@@ -58,18 +63,13 @@ def _parse_version(v: str) -> tuple[int, int, int, int]:
     return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
 
 
-def _parse_version_patchable(v: str) -> tuple[list[int], bool]:
-    """Parse azoth.yaml version for --patch: 4-part pre-1.0 or 3-part post-1.0 semver."""
-    s = v.strip()
-    m4 = _VERSION4_RE.match(s)
-    if m4:
-        return [int(m4.group(i)) for i in range(1, 5)], True
-    m3 = _VERSION3_RE.match(s)
-    if m3:
-        return [int(m3.group(i)) for i in range(1, 4)], False
-    _die(
-        f"version '{v}' must be \\d+.\\d+.\\d+.\\d+ (pre-release) or \\d+.\\d+.\\d+ (post-1.0 patch)"
-    )
+def _extract_post_release_phase(active_version: str) -> int | None:
+    """Return the milestone-local phase number when active_version is a v0.2.0-pN working slice."""
+    match = _ACTIVE_POST_RELEASE_RE.match(active_version.strip())
+    if not match:
+        return None
+    phase = int(match.group(1))
+    return phase if phase >= 1 else None
 
 
 # ── Regex helpers ─────────────────────────────────────────────────────────────
@@ -99,6 +99,35 @@ def _set_azoth_phase_line(text: str, new_phase: int, comment: str | None = None)
         line = f"phase: {new_phase}  # {comment}"
         return re.sub(r"^phase:\s*\d+.*$", line, text, flags=re.MULTILINE)
     return re.sub(r"^(phase:\s*)\d+", rf"\g<1>{new_phase}", text, flags=re.MULTILINE)
+
+
+def _set_roadmap_current_phase(text: str, new_phase: int) -> str:
+    """Replace the top-level current_phase line in roadmap.yaml."""
+    return re.sub(
+        r"^(current_phase:\s*)\d+",
+        rf"\g<1>{new_phase}",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
+
+def _set_roadmap_current_phase_title(text: str, new_phase: int) -> str:
+    """Update current_phase_title while preserving existing wording when possible."""
+    if re.search(r"\(milestone phase \d+\)", text):
+        return re.sub(
+            r"\(milestone phase \d+\)",
+            f"(milestone phase {new_phase})",
+            text,
+            count=1,
+        )
+    return re.sub(
+        r'^current_phase_title:\s*".*"\s*$',
+        f'current_phase_title: "v0.2.0 — milestone phase {new_phase}"',
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
 
 
 def _ensure_azoth_milestone_post_release(text: str) -> str:
@@ -246,6 +275,30 @@ def _get_current_patch_from_block(text: str, version_id: str) -> int:
     return int(m.group(1))
 
 
+def _activate_version_block(
+    text: str,
+    version_id: str,
+    *,
+    current_patch: int,
+) -> str:
+    """Activate a roadmap version block and set its current_patch."""
+    start, end = _find_block(text, version_id)
+    block = text[start:end]
+    new_block = re.sub(
+        r"^(    status: (?:planned|backlog|target)\n)",
+        f"    status: active\n    current_patch: {current_patch}\n",
+        block,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if new_block == block:
+        _die(
+            f"could not activate version block {version_id!r}: expected leading "
+            "'    status: planned', '    status: backlog', or '    status: target'"
+        )
+    return text[:start] + new_block + text[end:]
+
+
 # ── Error helper ──────────────────────────────────────────────────────────────
 
 
@@ -258,18 +311,23 @@ def _die(msg: str) -> None:
 
 
 def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
-    """Increment patch: 0.0.N.M → 0.0.N.M+1, or post-1.0 0.1.M → 0.1.M+1; roadmap current_patch +1."""
+    """Increment patch for the active delivery line and mirror roadmap current_patch."""
     azoth_text = _read(azoth_path)
     roadmap_text = _read(roadmap_path)
 
     raw_version = _extract_azoth_version(azoth_text)
-    parts, is_four = _parse_version_patchable(raw_version)
-    if is_four:
-        new_version = f"{parts[0]}.{parts[1]}.{parts[2]}.{parts[3] + 1}"
-    else:
-        new_version = f"{parts[0]}.{parts[1]}.{parts[2] + 1}"
-
     active_version = _extract_active_version(roadmap_text)
+    active_phase = _extract_post_release_phase(active_version)
+    major, minor, phase, patch = _parse_version(raw_version)
+    if active_phase is not None:
+        if (major, minor, phase) != (0, 1, active_phase):
+            _die(
+                f"version '{raw_version}' must match post-release phased format 0.1.{active_phase}.N "
+                f"while active_version is {active_version}"
+            )
+        new_version = f"0.1.{phase}.{patch + 1}"
+    else:
+        new_version = f"{major}.{minor}.{phase}.{patch + 1}"
 
     current_patch = _get_current_patch_from_block(roadmap_text, active_version)
     new_patch = current_patch + 1
@@ -287,7 +345,7 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
 
 
 def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
-    """Advance to next phase: 0.0.N.M → 0.0.N+1.1."""
+    """Advance to the next phase in either the pre-release or post-release era."""
     azoth_text = _read(azoth_path)
     roadmap_text = _read(roadmap_path)
 
@@ -295,6 +353,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     a, b, c, d = _parse_version(raw_version)
 
     active_version = _extract_active_version(roadmap_text)
+    active_post_release_phase = _extract_post_release_phase(active_version)
 
     # Guard: v0.0.7 is the last 0.0.x slice — use --release for 0.1.0
     if active_version == "v0.0.7":
@@ -306,10 +365,21 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
         refs_str = ", ".join(pending)
         _die(f"--phase refused: pending_task_refs is non-empty for {active_version}: {refs_str}")
 
-    # Compute next version identifiers
-    new_phase_num = c + 1
-    next_active_id = f"v0.0.{new_phase_num}"
-    new_azoth_version = f"{a}.{b}.{new_phase_num}.1"
+    if active_post_release_phase is not None:
+        if (a, b, c) != (0, 1, active_post_release_phase):
+            _die(
+                f"version '{raw_version}' must match post-release phased format 0.1.{active_post_release_phase}.N "
+                f"while active_version is {active_version}"
+            )
+        new_phase_num = active_post_release_phase + 1
+        next_active_id = f"v0.2.0-p{new_phase_num}"
+        new_azoth_version = f"0.1.{new_phase_num}.0"
+        next_current_patch = 0
+    else:
+        new_phase_num = c + 1
+        next_active_id = f"v0.0.{new_phase_num}"
+        new_azoth_version = f"{a}.{b}.{new_phase_num}.1"
+        next_current_patch = 1
 
     # Mutations on roadmap_text — applied in sequence
 
@@ -332,22 +402,17 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     # 3. Top-level active_version → next
     roadmap_text = _set_active_version(roadmap_text, next_active_id)
 
-    # 4. Activate new version block: planned|backlog → active + current_patch: 1
-    start, end = _find_block(roadmap_text, next_active_id)
-    block = roadmap_text[start:end]
-    new_block = re.sub(
-        r"^(    status: (?:planned|backlog)\n)",
-        "    status: active\n    current_patch: 1\n",
-        block,
-        count=1,
-        flags=re.MULTILINE,
+    # 4. Activate new version block.
+    roadmap_text = _activate_version_block(
+        roadmap_text,
+        next_active_id,
+        current_patch=next_current_patch,
     )
-    if new_block == block:
-        _die(
-            f"--phase refused: could not activate version block {next_active_id!r}: "
-            "expected leading '    status: planned' or '    status: backlog'"
-        )
-    roadmap_text = roadmap_text[:start] + new_block + roadmap_text[end:]
+
+    if active_post_release_phase is not None:
+        roadmap_text = _set_roadmap_current_phase(roadmap_text, new_phase_num)
+        roadmap_text = _set_roadmap_current_phase_title(roadmap_text, new_phase_num)
+        azoth_text = _set_azoth_phase_line(azoth_text, new_phase_num)
 
     # Write both files
     _write(azoth_path, _set_azoth_version(azoth_text, new_azoth_version))
@@ -357,7 +422,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
 
 def do_release(azoth_path: Path, roadmap_path: Path) -> None:
-    """Close v0.0.7 + v0.1.0, set azoth 0.1.0 + v0.2.0 milestone-local phase 1, activate v0.2.0.
+    """Close v0.0.7 + v0.1.0, then start milestone phase 1 as azoth 0.1.1.0 on v0.2.0-p1.
 
     Human-gated: prints the manual git-tag command; verify, tag, and push locally.
     """
@@ -397,16 +462,10 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     roadmap_text = _ensure_completed_date_in_block(roadmap_text, "v0.1.0", completed)
 
     # Roadmap header: milestone-local phase 1 for v0.2.0 + lifecycle strip marker
-    roadmap_text = re.sub(
-        r"^current_phase:\s*\d+\s*$",
-        "current_phase: 1",
-        roadmap_text,
-        count=1,
-        flags=re.MULTILINE,
-    )
+    roadmap_text = _set_roadmap_current_phase(roadmap_text, 1)
     roadmap_text = re.sub(
         r'^current_phase_title:\s*".*"\s*$',
-        'current_phase_title: "v0.2.0 — post-1.0 slice (milestone phase 1)"',
+        'current_phase_title: "v0.2.0 — milestone phase 1"',
         roadmap_text,
         count=1,
         flags=re.MULTILINE,
@@ -428,36 +487,28 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
             flags=re.MULTILINE,
         )
 
-    # Activate v0.2.0 (backlog → active + current_patch 1)
-    roadmap_text = _set_active_version(roadmap_text, "v0.2.0")
-    start, end = _find_block(roadmap_text, "v0.2.0")
-    block = roadmap_text[start:end]
-    new_block = re.sub(
-        r"^(    status: (?:planned|backlog)\n)",
-        "    status: active\n    current_patch: 1\n",
-        block,
-        count=1,
-        flags=re.MULTILINE,
+    # Mark the milestone container as the target release and activate the phase-1 working slice.
+    roadmap_text = _replace_in_block(
+        roadmap_text,
+        "v0.2.0",
+        r"^(\s+status:\s*)(?:planned|backlog|active)",
+        r"\g<1>target",
     )
-    if new_block == block:
-        _die(
-            "--release refused: v0.2.0 block must start with '    status: backlog' or "
-            "'    status: planned' to activate the post-1.0 slice"
-        )
-    roadmap_text = roadmap_text[:start] + new_block + roadmap_text[end:]
+    roadmap_text = _set_active_version(roadmap_text, "v0.2.0-p1")
+    roadmap_text = _activate_version_block(roadmap_text, "v0.2.0-p1", current_patch=0)
 
-    azoth_text = _set_azoth_version(azoth_text, "0.1.0")
+    azoth_text = _set_azoth_version(azoth_text, "0.1.1.0")
     azoth_text = _set_azoth_phase_line(
         azoth_text,
         1,
-        "Milestone v0.2.0 — local phase 1 (task ids P1-NNN); lifecycle_phase drives welcome strip",
+        "Milestone v0.2.0 — local phase 1; version uses 0.1.<phase>.<patch>",
     )
     azoth_text = _ensure_azoth_milestone_post_release(azoth_text)
 
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)
 
-    print(f"version bumped {raw_version} → 0.1.0 (release)")
+    print(f"version bumped {raw_version} → 0.1.1.0 (release)")
     print(
         'Next step (human): git tag -a v0.1.0 -m "Azoth v0.1.0 public release" '
         "&& git push origin v0.1.0"
@@ -473,9 +524,13 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--patch", action="store_true", help="Increment 4th version component")
-    group.add_argument("--phase", action="store_true", help="Advance to next phase")
-    group.add_argument("--release", action="store_true", help="Write 0.1.0 (requires v0.0.7)")
+    group.add_argument("--patch", action="store_true", help="Increment the delivery patch")
+    group.add_argument("--phase", action="store_true", help="Advance to the next development phase")
+    group.add_argument(
+        "--release",
+        action="store_true",
+        help="Tag v0.1.0, then move the repo onto 0.1.1.0 / v0.2.0-p1",
+    )
 
     parser.add_argument(
         "--azoth-yaml",

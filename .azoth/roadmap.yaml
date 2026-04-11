@@ -124,12 +124,12 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
-active_version: v0.2.1
+active_version: v0.2.0-p1
 
-# D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
-# - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.M → 0.1.M+1 + v0.2.0 current_patch +1
-# - phase: 0.0.N.M → 0.0.N+1.1 (not used after v0.0.7; use --release for 0.1.0)
-# - release: v0.0.7 active → close v0.0.7 + v0.1.0, azoth 0.1.0, milestone phase 1 + lifecycle 8, activate v0.2.0
+# D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.MILESTONE_PHASE.PATCH under v0.2.0)
+# - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.P.M → 0.1.P.M+1 + active v0.2.0-pP current_patch +1
+# - phase: 0.0.N.M → 0.0.N+1.1; post-1.0: 0.1.P.M → 0.1.P+1.0 + active_version v0.2.0-p(P+1)
+# - release: v0.0.7 active → close v0.0.7 + v0.1.0, tag public v0.1.0, then move repo to 0.1.1.0 and activate v0.2.0-p1
 # - git tag proposed at release only (user-confirmed, never auto-pushed)
 
 versions:
@@ -269,7 +269,7 @@ versions:
     note: "Version bumped to 0.1.0 when Phase 7 (v0.0.7) is complete. Git tag proposed."
 
   - id: v0.2.0
-    status: active
+    status: target
     goal: >
       Milestone: Long-running, low-friction agentic work: durable run state and resume;
       declarative swarm/eval waves beside prose workflows; pipeline lint and wiring tests;
@@ -278,14 +278,14 @@ versions:
       goals; token and inference efficiency (context budget, provider caching discipline,
       spawn hygiene).
     note: >
-      Milestone container for v0.2.x series. Working phases: v0.2.1+. All tasks staged as
+      Milestone container for v0.2.x series. Working phases: v0.2.0-p1+. All tasks staged as
       initiatives by theme (A: run-state, B: pipeline, C: memory, D: ux/platform,
       E: efficiency). Detailed specs: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Research digest:
       .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml (DYNAMIC-FULL-AUTO+).
 
-  - id: v0.2.1
+  - id: v0.2.0-p1
     status: active
-    current_patch: 21
+    current_patch: 30
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
     themes: [A, B, D]
@@ -350,7 +350,7 @@ initiatives:
     summary: >
       YAML/schema spec for declarative swarm and eval-wave definitions alongside
       e2e-swarm-eval-loop.md. Moves pipeline orchestration from prose workflows to
-      structured, lintable declarations. Depends on run ledger (P1-001 in v0.2.1).
+      structured, lintable declarations. Depends on run ledger (P1-001 in v0.2.0-p1).
     decision_ref: [D23, D28]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
 
@@ -365,7 +365,7 @@ initiatives:
     summary: >
       TTL visibility and active run summary in welcome dashboard when ledger exists.
       Surfaces scope gate expiry, pipeline gate status, and optional run ledger summary
-      in the session cockpit. Depends on run ledger (P1-001 in v0.2.1).
+      in the session cockpit. Depends on run ledger (P1-001 in v0.2.0-p1).
     decision_ref: [D52, D50]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
 

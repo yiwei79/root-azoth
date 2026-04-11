@@ -112,7 +112,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 1 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0` with milestone-local task ids **P1-001…P1-012** (**P1-012** Slice A delivered; **P1-001** leads the queue — see **`skills/orientation/SKILL.md`**). Expanded workflow lives in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
+**Current phase:** Phase 1 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p1` for the phase-1 working slice under the `v0.2.0` milestone, with milestone-local task ids **P1-001…P1-012** (**P1-012** Slice A delivered; **P1-001** leads the queue — see **`skills/orientation/SKILL.md`**). Expanded workflow lives in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
 
 ## Origin
 

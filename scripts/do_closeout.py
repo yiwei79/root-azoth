@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
+import yaml
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
 
@@ -52,11 +54,19 @@ def load_jsonl(path: pathlib.Path) -> list[dict[str, Any]]:
                     f"Invalid JSON in {path} line {line_number}: {exc.msg}"
                 ) from exc
             if not isinstance(record, dict):
-                raise ApprovalEvidenceError(
-                    f"Expected JSON object in {path} line {line_number}"
-                )
+                raise ApprovalEvidenceError(f"Expected JSON object in {path} line {line_number}")
             records.append(record)
     return records
+
+
+def load_yaml(path: pathlib.Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as handle:
+        data = yaml.safe_load(handle) or {}
+    if not isinstance(data, dict):
+        raise CloseoutError(f"Expected YAML mapping in {path}")
+    return data
 
 
 def is_governed_scope(scope: dict[str, Any]) -> bool:
@@ -235,6 +245,74 @@ def update_backlog(repo_root: pathlib.Path, backlog_id: str | None) -> None:
     print(f"W3: Updated backlog item {backlog_id} to status: complete")
 
 
+def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
+    resolved = repo_root.resolve()
+    normalized = resolved.as_posix()
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    project_key = "-" + normalized.lstrip("/").replace("/", "-")
+    return pathlib.Path.home() / ".claude" / "projects" / project_key / "memory"
+
+
+def _active_version_snapshot(repo_root: pathlib.Path) -> tuple[str, int | None]:
+    roadmap = load_yaml(repo_root / ".azoth" / "roadmap.yaml")
+    active_version = str(roadmap.get("active_version") or "unknown")
+    versions = roadmap.get("versions")
+    if not isinstance(versions, list):
+        return active_version, None
+    for version in versions:
+        if not isinstance(version, dict):
+            continue
+        if str(version.get("id") or "") != active_version:
+            continue
+        current_patch = version.get("current_patch")
+        return active_version, int(current_patch) if isinstance(current_patch, int) else None
+    return active_version, None
+
+
+def write_claude_memory_mirror(repo_root: pathlib.Path) -> None:
+    memory_dir = claude_project_memory_dir(repo_root)
+    memory_dir.mkdir(parents=True, exist_ok=True)
+
+    azoth_data = load_yaml(repo_root / "azoth.yaml")
+    active_version, current_patch = _active_version_snapshot(repo_root)
+    episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+    latest_episode = episodes[-1] if episodes else {}
+    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    next_backlog_step = "unknown"
+    for raw_line in backlog_text.splitlines():
+        stripped = raw_line.strip()
+        if stripped.startswith("- id:") or stripped.startswith("id:"):
+            next_backlog_step = stripped.split(":", 1)[1].strip().strip("\"'")
+            break
+
+    summary_lines = [
+        "# Project Status",
+        "",
+        f"- Last updated: {utc_now().strftime('%Y-%m-%dT%H:%M:%SZ')}",
+        f"- Workspace: {repo_root.resolve()}",
+        f"- Toolkit version: {azoth_data.get('version', 'unknown')}",
+        f"- Milestone phase: {azoth_data.get('phase', 'unknown')}",
+        f"- Roadmap active_version: {active_version}",
+        f"- Current patch: {current_patch if current_patch is not None else 'unknown'}",
+        f"- Last episode: {latest_episode.get('id', 'none')} — {latest_episode.get('summary', 'No episode recorded.')}",
+        f"- Last delivery goal: {latest_episode.get('goal', 'unknown')}",
+        f"- Next backlog step: {next_backlog_step}",
+        "- Open gaps: consult .azoth/bootloader-state.md and .azoth/session-state.md for live handoff details.",
+        "",
+        "Authoritative sources: .azoth/memory/episodes.jsonl, .azoth/bootloader-state.md, .azoth/scope-gate.json, azoth.yaml",
+    ]
+    (memory_dir / "project_status.md").write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+
+    memory_index = [
+        "# Memory Index",
+        "",
+        "- [Project Status](project_status.md) — mirrored from Azoth W1/W2/W4 closeout state.",
+    ]
+    (memory_dir / "MEMORY.md").write_text("\n".join(memory_index) + "\n", encoding="utf-8")
+    print(f"W3: Claude memory mirror updated at {memory_dir}")
+
+
 def run_version_bump(repo_root: pathlib.Path) -> None:
     print("W4: Running version-bump.py...")
     subprocess.run(
@@ -262,6 +340,7 @@ def run_closeout(repo_root: pathlib.Path = REPO_ROOT) -> None:
     update_episode_count(repo_root, episode_count)
     update_backlog(repo_root, gate_data.get("backlog_id"))
     run_version_bump(repo_root)
+    write_claude_memory_mirror(repo_root)
 
 
 def main() -> int:

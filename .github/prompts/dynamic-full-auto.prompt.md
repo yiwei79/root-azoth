@@ -2,6 +2,7 @@
 mode: agent
 description: 'DYNAMIC-FULL-AUTO+ session: adaptive research/explore swarms, digest,
   Checkpoint Γ, optional eval-swarm, then /auto-style delivery'
+agent: orchestrator
 ---
 
 # /dynamic-full-auto $ARGUMENTS

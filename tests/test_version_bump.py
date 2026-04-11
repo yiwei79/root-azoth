@@ -7,8 +7,8 @@ the script is implemented.
 Coverage:
 - --patch: increments 4th component in azoth.yaml and roadmap current_patch
 - --phase: resets patch, writes final_patch, advances active_version
-- --release: closes v0.0.7/v0.1.0, activates v0.2.0, azoth 0.1.0 + milestone phase 1 + lifecycle 8
-- --patch: post-1.0 accepts 0.1.M (three-part) semver
+- --release: closes v0.0.7/v0.1.0, activates v0.2.0-p1, azoth 0.1.1.0 + milestone phase 1 + lifecycle 8
+- --patch: post-1.0 uses 0.1.<phase>.<patch>
 - Guard rails: wrong version format, non-empty pending_task_refs, wrong phase
 - Comment preservation in both YAML files
 - Command reference presence in .claude/commands/ files
@@ -306,11 +306,11 @@ def test_phase_refused_at_v007(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T7 — --release writes version "0.1.0" to azoth.yaml when active_version is v0.0.7
+# T7 — --release writes version "0.1.1.0" to azoth.yaml when active_version is v0.0.7
 # ---------------------------------------------------------------------------
 
 
-def test_release_writes_semver_version(tmp_path: Path) -> None:
+def test_release_writes_phased_post_release_version(tmp_path: Path) -> None:
     base = tmp_path / "t7"
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
@@ -337,9 +337,14 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
 
               - id: v0.2.0
                 status: backlog
-                goal: "Post v0.1.0"
+                goal: "Milestone target"
                 phase_scope: []
-            """
+
+              - id: v0.2.0-p1
+                status: backlog
+                goal: "Milestone phase 1"
+                phase_scope: [1]
+             """
         ),
         encoding="utf-8",
     )
@@ -347,15 +352,15 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
     assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
 
     data = yaml.safe_load(azoth_p.read_text())
-    assert data["version"] == "0.1.0", (
-        f"Expected version 0.1.0 after --release, got {data['version']!r}"
+    assert data["version"] == "0.1.1.0", (
+        f"Expected version 0.1.1.0 after --release, got {data['version']!r}"
     )
     assert int(data["phase"]) == 1, f"Expected phase 1 after --release, got {data.get('phase')!r}"
     assert data.get("milestone") == "v0.2.0"
     assert int(data.get("lifecycle_phase", 0)) == 8
 
     rdata = yaml.safe_load(roadmap_p.read_text())
-    assert rdata["active_version"] == "v0.2.0"
+    assert rdata["active_version"] == "v0.2.0-p1"
     assert rdata["current_phase"] == 1
     assert int(rdata.get("lifecycle_phase", 0)) == 8
     v007 = next(x for x in rdata["versions"] if x["id"] == "v0.0.7")
@@ -364,8 +369,10 @@ def test_release_writes_semver_version(tmp_path: Path) -> None:
     v010 = next(x for x in rdata["versions"] if x["id"] == "v0.1.0")
     assert v010["status"] == "complete"
     v020 = next(x for x in rdata["versions"] if x["id"] == "v0.2.0")
-    assert v020["status"] == "active"
-    assert v020.get("current_patch") == 1
+    assert v020["status"] == "target"
+    v021 = next(x for x in rdata["versions"] if x["id"] == "v0.2.0-p1")
+    assert v021["status"] == "active"
+    assert v021.get("current_patch") == 0
 
 
 # ---------------------------------------------------------------------------
@@ -425,25 +432,25 @@ def test_patch_rejects_malformed_version(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T10b — Post-release three-part semver: 0.1.0 → 0.1.1 + roadmap current_patch
+# T10b — Post-release phased patch: 0.1.1.0 → 0.1.1.1 + roadmap current_patch
 # ---------------------------------------------------------------------------
 
 
-def test_patch_three_part_post_release(tmp_path: Path) -> None:
+def test_patch_post_release_phased_version(tmp_path: Path) -> None:
     base = tmp_path / "t10b"
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
     roadmap_p = base / "roadmap.yaml"
-    azoth_p.write_text("version: 0.1.0\n", encoding="utf-8")
+    azoth_p.write_text("version: 0.1.1.0\n", encoding="utf-8")
     roadmap_p.write_text(
         textwrap.dedent(
             """\
-            active_version: v0.2.0
+            active_version: v0.2.0-p1
 
             versions:
-              - id: v0.2.0
+              - id: v0.2.0-p1
                 status: active
-                current_patch: 1
+                current_patch: 0
                 goal: "Next"
             """
         ),
@@ -451,10 +458,65 @@ def test_patch_three_part_post_release(tmp_path: Path) -> None:
     )
     result = _run("--patch", azoth_p, roadmap_p)
     assert result.returncode == 0, result.stderr
-    assert yaml.safe_load(azoth_p.read_text())["version"] == "0.1.1"
+    assert yaml.safe_load(azoth_p.read_text())["version"] == "0.1.1.1"
     r = yaml.safe_load(roadmap_p.read_text())
-    v = next(x for x in r["versions"] if x["id"] == "v0.2.0")
-    assert v["current_patch"] == 2
+    v = next(x for x in r["versions"] if x["id"] == "v0.2.0-p1")
+    assert v["current_patch"] == 1
+
+
+# ---------------------------------------------------------------------------
+# T10c — Post-release phase bump: 0.1.1.4 → 0.1.2.0 and v0.2.0-p1 → v0.2.0-p2
+# ---------------------------------------------------------------------------
+
+
+def test_phase_advances_post_release_working_slice(tmp_path: Path) -> None:
+    base = tmp_path / "t10c"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    azoth_p.write_text("version: 0.1.1.4\nphase: 1\nmilestone: v0.2.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            current_phase: 1
+            current_phase_title: "v0.2.0 — milestone phase 1"
+            active_version: v0.2.0-p1
+
+            versions:
+              - id: v0.2.0
+                status: target
+                goal: "Milestone target"
+
+              - id: v0.2.0-p1
+                status: active
+                current_patch: 4
+                goal: "Milestone phase 1"
+                pending_task_refs: []
+
+              - id: v0.2.0-p2
+                status: backlog
+                goal: "Milestone phase 2"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run("--phase", azoth_p, roadmap_p)
+    assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
+
+    azoth_data = yaml.safe_load(azoth_p.read_text())
+    assert azoth_data["version"] == "0.1.2.0"
+    assert int(azoth_data["phase"]) == 2
+
+    roadmap_data = yaml.safe_load(roadmap_p.read_text())
+    assert roadmap_data["active_version"] == "v0.2.0-p2"
+    assert roadmap_data["current_phase"] == 2
+    v021 = next(v for v in roadmap_data["versions"] if v["id"] == "v0.2.0-p1")
+    assert v021["status"] == "complete"
+    assert v021["final_patch"] == 4
+    v022 = next(v for v in roadmap_data["versions"] if v["id"] == "v0.2.0-p2")
+    assert v022["status"] == "active"
+    assert v022["current_patch"] == 0
 
 
 # ---------------------------------------------------------------------------

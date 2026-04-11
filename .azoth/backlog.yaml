@@ -628,7 +628,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: deferred
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     deferred_from: "v0.0.5 Phase 5 — deprioritized past v0.1.0 public release track (2026-04-08)"
     priority: 7
     created_date: "2026-04-07"
@@ -955,7 +955,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 0
     created_date: "2026-04-09"
     completed_date: "2026-04-09"
@@ -979,7 +979,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 1
     created_date: "2026-04-08"
     decision_ref: [D21, D50]
@@ -995,7 +995,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     completed_date: "2026-04-10"
     priority: 2
     created_date: "2026-04-08"
@@ -1012,7 +1012,7 @@ items:
     delivery_pipeline: standard
     status: complete
     completed_date: "2026-04-11"
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 3
     created_date: "2026-04-08"
     decision_ref: [D28]
@@ -1028,7 +1028,7 @@ items:
     delivery_pipeline: standard
     status: complete
     completed_date: "2026-04-11"
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 1
     created_date: "2026-04-10"
     decision_ref: [D19, D21, D46, D50]
@@ -1050,8 +1050,8 @@ items:
     delivery_pipeline: governed
     status: complete
     completed_date: "2026-04-11"
-    delivered_version: "0.1.18"
-    target_version: v0.2.0
+    delivered_version: "0.1.1.18"
+    target_version: v0.2.0-p1
     priority: 2
     created_date: "2026-04-11"
     decision_ref: [D21, D46, D50]
@@ -1075,8 +1075,8 @@ items:
     delivery_pipeline: standard
     status: complete
     completed_date: "2026-04-11"
-    delivered_version: "0.1.21"
-    target_version: v0.2.0
+    delivered_version: "0.1.1.21"
+    target_version: v0.2.0-p1
     priority: 4
     created_date: "2026-04-08"
     decision_ref: [D52, D50]
@@ -1091,7 +1091,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 5
     created_date: "2026-04-08"
     decision_ref: [D50]
@@ -1106,7 +1106,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 6
     created_date: "2026-04-08"
     decision_ref: [D11, D49, D51]
@@ -1121,7 +1121,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: completed
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 6
     created_date: "2026-04-11"
     decision_ref: [D11, D49, D51]
@@ -1138,7 +1138,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 7
     created_date: "2026-04-08"
     completed_date: "2026-04-11"
@@ -1154,7 +1154,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: active
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 8
     created_date: "2026-04-08"
     decision_ref: [D23, D44]
@@ -1169,7 +1169,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 9
     created_date: "2026-04-08"
     decision_ref: [D52, D46]
@@ -1184,7 +1184,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: active
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 10
     created_date: "2026-04-08"
     decision_ref: [D46]
@@ -1199,7 +1199,7 @@ items:
     target_layer: infrastructure
     delivery_pipeline: standard
     status: complete
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     completed_date: "2026-04-10"
     priority: 11
     created_date: "2026-04-08"
@@ -1217,7 +1217,7 @@ items:
     target_layer: M1
     delivery_pipeline: governed
     status: active
-    target_version: v0.2.0
+    target_version: v0.2.0-p1
     priority: 12
     created_date: "2026-04-10"
     decision_ref: [D21, D23, D46]
@@ -1235,8 +1235,8 @@ items:
     delivery_pipeline: standard
     status: complete
     completed_date: "2026-04-11"
-    delivered_version: "0.1.21"
-    target_version: v0.2.0
+    delivered_version: "0.1.1.21"
+    target_version: v0.2.0-p1
     priority: 1
     created_date: "2026-04-11"
     decision_ref: [D21, D23, D28, D46, D50, D52]

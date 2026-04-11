@@ -378,10 +378,7 @@ def _write_minimal_command(root: Path) -> None:
     path = root / ".claude" / "commands" / "auto.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        "---\n"
-        "description: Auto pipeline\n"
-        "---\n\n"
-        "# /auto $ARGUMENTS\n",
+        "---\ndescription: Auto pipeline\n---\n\n# /auto $ARGUMENTS\n",
         encoding="utf-8",
     )
 
@@ -530,7 +527,7 @@ def test_deployed_opencode_commands_match_transform() -> None:
 
 # ── P1-013: Orchestrator binding tests ──────────────────────────────────────
 
-_PIPELINE_CMD_NAMES = ("auto", "deliver", "deliver-full")
+_PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
 
 _REQUIRED_ORCHESTRATOR_SECTIONS = (
     "## Inline vs Orchestrate",
@@ -558,7 +555,7 @@ def test_transform_command_copilot_preserves_orchestrator_agent_field() -> None:
 
 
 def test_copilot_pipeline_prompts_have_orchestrator_agent_binding() -> None:
-    """T2: deployed .github/prompts/{auto,deliver,deliver-full}.prompt.md must have agent: orchestrator."""
+    """T2: deployed pipeline prompts must have agent: orchestrator."""
     for name in _PIPELINE_CMD_NAMES:
         dest = _REPO_ROOT / ".github" / "prompts" / f"{name}.prompt.md"
         assert dest.is_file(), (
@@ -571,7 +568,7 @@ def test_copilot_pipeline_prompts_have_orchestrator_agent_binding() -> None:
 
 
 def test_opencode_pipeline_commands_have_orchestrator_agent_binding() -> None:
-    """T3: deployed .opencode/commands/{auto,deliver,deliver-full}.md must have agent: orchestrator."""
+    """T3: deployed pipeline commands must have agent: orchestrator."""
     for name in _PIPELINE_CMD_NAMES:
         dest = _REPO_ROOT / ".opencode" / "commands" / f"{name}.md"
         assert dest.is_file(), (
@@ -591,9 +588,7 @@ def test_orchestrator_claude_agent_deployed_with_required_body_sections() -> Non
     )
     content = dest.read_text(encoding="utf-8")
     for section in _REQUIRED_ORCHESTRATOR_SECTIONS:
-        assert section in content, (
-            f"orchestrator.md missing required section: {section!r}"
-        )
+        assert section in content, f"orchestrator.md missing required section: {section!r}"
 
 
 def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
@@ -601,7 +596,7 @@ def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
     commands = load_commands(_REPO_ROOT)
     pipeline_cmds = [c for c in commands if c["name"] in _PIPELINE_CMD_NAMES]
     assert len(pipeline_cmds) == len(_PIPELINE_CMD_NAMES), (
-        f"expected all 3 pipeline commands, found {[c['name'] for c in pipeline_cmds]}"
+        f"expected all {len(_PIPELINE_CMD_NAMES)} pipeline commands, found {[c['name'] for c in pipeline_cmds]}"
     )
     for cmd in pipeline_cmds:
         expected = transform_command_copilot(cmd)

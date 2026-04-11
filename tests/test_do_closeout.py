@@ -24,11 +24,26 @@ def _build_repo(
     session_id: str = "sess-123",
     backlog_id: str = "BL-123",
 ) -> Path:
-    (tmp_path / "azoth.yaml").write_text("memory:\n  episodes: 0\n", encoding="utf-8")
+    (tmp_path / "azoth.yaml").write_text(
+        "version: 0.1.1.29\nphase: 1\nmemory:\n  episodes: 0\n", encoding="utf-8"
+    )
     azoth_dir = tmp_path / ".azoth"
     (azoth_dir / "memory").mkdir(parents=True)
     (azoth_dir / "memory" / "episodes.jsonl").write_text("", encoding="utf-8")
     (azoth_dir / "session-orientation.txt").write_text("cached\n", encoding="utf-8")
+    (azoth_dir / "roadmap.yaml").write_text(
+        "\n".join(
+            [
+                "active_version: v0.2.0-p1",
+                "versions:",
+                "  - id: v0.2.0-p1",
+                "    status: active",
+                "    current_patch: 29",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
     scope_gate = {
         "approved": True,
@@ -54,13 +69,17 @@ def _build_repo(
         encoding="utf-8",
     )
     return tmp_path
+
+
 def _write_approvals(repo_root: Path, *records: dict[str, object]) -> str:
     text = "".join(json.dumps(record) + "\n" for record in records)
     (repo_root / ".azoth" / "final-delivery-approvals.jsonl").write_text(text, encoding="utf-8")
     return text
 
 
-def test_governed_closeout_requires_approval_evidence_before_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_governed_closeout_requires_approval_evidence_before_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     repo_root = _build_repo(tmp_path)
     version_bump_calls: list[tuple[list[str], Path]] = []
 
@@ -73,7 +92,12 @@ def test_governed_closeout_requires_approval_evidence_before_mutation(tmp_path: 
         do_closeout.run_closeout(repo_root)
     assert version_bump_calls == []
     assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
-    assert json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))["approved"] is True
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
     assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
     assert (repo_root / ".azoth" / "session-orientation.txt").exists()
 
@@ -179,8 +203,12 @@ def test_governed_closeout_fails_closed_on_invalid_latest_approval_record(
     assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
 
 
-def test_governed_closeout_accepts_matching_human_approval_without_consuming_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_governed_closeout_accepts_matching_human_approval_without_consuming_log(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     repo_root = _build_repo(tmp_path)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
     approvals_before = _write_approvals(
         repo_root,
         {
@@ -203,9 +231,15 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
         version_bump_calls.append((cmd, cwd, check))
 
     monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+    monkeypatch.setenv("HOME", str(fake_home))
     do_closeout.run_closeout(repo_root)
 
-    episode_lines = (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    episode_lines = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
     assert len(episode_lines) == 1
     episode = json.loads(episode_lines[0])
     assert episode["session_id"] == "sess-123"
@@ -214,9 +248,18 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
     assert scope["approved"] is False
     assert "closed_at" in scope
-    assert 'status: complete' in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
-    assert (repo_root / ".azoth" / "final-delivery-approvals.jsonl").read_text(encoding="utf-8") == approvals_before
+    assert "status: complete" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (repo_root / ".azoth" / "final-delivery-approvals.jsonl").read_text(
+        encoding="utf-8"
+    ) == approvals_before
     assert not (repo_root / ".azoth" / "session-orientation.txt").exists()
+    memory_dir = do_closeout.claude_project_memory_dir(repo_root)
+    project_status = (memory_dir / "project_status.md").read_text(encoding="utf-8")
+    memory_index = (memory_dir / "MEMORY.md").read_text(encoding="utf-8")
+    assert "Toolkit version: 0.1.1.29" in project_status
+    assert "Roadmap active_version: v0.2.0-p1" in project_status
+    assert "Last episode: ep-001" in project_status
+    assert "Project Status" in memory_index
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
     ]
