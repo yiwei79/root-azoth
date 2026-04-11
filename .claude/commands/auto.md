@@ -69,14 +69,20 @@ Before presenting the Declaration, evaluate the composed pipeline condition to c
 between the full interactive Declaration and the lightweight informational path:
 
 **Informational Declaration** (present as a compact card, auto-proceed unless human
-intervenes) — applies when the condition matches **any** of:
-- `scope == docs`
-- `complexity == simple AND risk == cosmetic`
-- `complexity == simple AND risk == additive`
-- `complexity == medium AND risk == additive AND knowledge == known-pattern`
-- `complexity == medium AND risk == additive`
+intervenes) — applies when **all** of the following hold:
 
-**AND** `knowledge == known-pattern` **AND** `risk != governance-change` **AND** `scope != kernel`
+1. `knowledge == known-pattern`
+2. `risk != governance-change`
+3. `scope != kernel`
+4. The composed pipeline condition matches a lightweight route:
+   - `scope == docs`
+   - `complexity == simple AND risk == cosmetic`
+   - `complexity == simple AND risk == additive`
+   - `complexity == medium AND risk == additive AND knowledge == known-pattern`
+
+> **Note**: Rule 9 (`complexity == medium AND risk == additive` without `known-pattern`)
+> always uses the full Declaration because it only fires when `knowledge != known-pattern`
+> (Rule 8 would have matched first otherwise). Constraint 1 above excludes it by definition.
 
 When all conditions are met, present the Informational Declaration:
 
@@ -99,6 +105,12 @@ Type `stop` or `abort` to halt. Otherwise auto-proceeding.
 **Full Declaration** (present with explicit yes/adjust/abort prompt) — all other cases,
 including `risk == governance-change`, `scope == kernel`, `knowledge == needs-research`,
 `knowledge == instruction-refinement`, and `default`.
+
+**L2 evidence monitoring**: After sessions using the informational auto-proceed path,
+capture any observations about missed or skipped informational cards in M3 episodes.
+Run `/intake` periodically to surface adoption patterns. If agents consistently fail
+to present the informational card, promote to M2 as a pattern requiring explicit
+enforcement.
 
 ## Execution
 

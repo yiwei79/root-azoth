@@ -36,7 +36,10 @@ Set `"pipeline"` to the delivery command you will actually run (`"auto"` | `"del
 `/deliver-full`.
 
 If the scope is **not** governed (standard additive work without M1 backlog), **omit**
-this file unless it already exists from a prior step.
+this file unless it already exists from a prior step. Note that `delivery_pipeline`
+values emitted by `/auto` scope-gate templates are `auto`, `deliver`, or `deliver-full`
+— not `governed`. The `governed` trigger applies to `/deliver-full` flows where
+`target_layer == M1`. Standard `/auto` runs rarely write pipeline-gate.json.
 
 If `pipeline-gate.json` already exists with the same `session_id`, update `opened_at`
 only.
