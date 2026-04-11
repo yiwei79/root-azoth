@@ -1,6 +1,12 @@
 ---
 name: orchestrator
 description: Pipeline entry, session orchestration, declaration ownership
+tools:
+- read
+- grep
+- glob
+- bash
+- task
 ---
 
 # Orchestrator

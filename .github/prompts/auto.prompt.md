@@ -42,30 +42,101 @@ and Orchestrator forward payload. Use `pipeline: auto`, a stable `stage_id` per 
 
 ## Declaration
 
-Present the composed pipeline to human:
+Present the composed pipeline to human as a **fused Declaration** combining scope card
+and pipeline composition in a single approval:
 
 ```
 ## Auto-Pipeline — {goal}
 
 **Classification**: {scope} / {risk} / {complexity} / {knowledge}
+**Scope**: session: {session_id} | TTL: 2h | layer: {target_layer} | pipeline: auto
 
 **Composed Pipeline**:
-1. {stage} — {agent} — gate: {human|agent}
-2. {stage} — {agent} — gate: {human|agent}
+1. {stage} — {agent} — {subagent_type} — gate: {human|agent}
+2. {stage} — {agent} — {subagent_type} — gate: {human|agent}
 ...
 
 **Rationale**: {why this pipeline was chosen}
 
-Approve pipeline composition + subagent assignments? [yes / adjust / different-pipeline]
+Approve scope + pipeline? [yes / adjust / abort]
+> On approval: orchestrator writes `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json`
+> (governed only). No separate /next step required for /auto.
 ```
+
+## Declaration Mode Selection
+
+Before presenting the Declaration, evaluate the composed pipeline condition to choose
+between the full interactive Declaration and the lightweight informational path:
+
+**Informational Declaration** (present as a compact card, auto-proceed unless human
+intervenes) — applies when the condition matches **any** of:
+- `scope == docs`
+- `complexity == simple AND risk == cosmetic`
+- `complexity == simple AND risk == additive`
+- `complexity == medium AND risk == additive AND knowledge == known-pattern`
+- `complexity == medium AND risk == additive`
+
+**AND** `knowledge == known-pattern` **AND** `risk != governance-change` **AND** `scope != kernel`
+
+When all conditions are met, present the Informational Declaration:
+
+```
+## Auto-Pipeline — {goal} [INFORMATIONAL]
+
+**Classification**: {scope} / {risk} / {complexity} / known-pattern
+**Scope**: session: {session_id} | TTL: 2h | layer: {target_layer} | pipeline: auto
+**Composed Pipeline**: {stages}
+**Rationale**: lightweight known-pattern path — auto-proceeding unless you intervene.
+
+Type `stop` or `abort` to halt. Otherwise auto-proceeding.
+```
+
+**Proceed logic:**
+- If the human's next message contains `stop`, `abort`, or `no` → halt, do not write scope-gate.json.
+- If the human's next message contains `proceed`, `yes`, `ok`, or any other signal → write scope-gate.json and continue.
+- If no explicit stop signal → treat as approval and continue.
+
+**Full Declaration** (present with explicit yes/adjust/abort prompt) — all other cases,
+including `risk == governance-change`, `scope == kernel`, `knowledge == needs-research`,
+`knowledge == instruction-refinement`, and `default`.
 
 ## Execution
 
 After human approval of the Declaration:
 
-1. **Pipeline gate (mechanical):** `Read` `docs/GATE_PROTOCOL.md` and apply its
-  scope-gate / pipeline-gate procedure. If this command writes `.azoth/pipeline-gate.json`,
-  set `"pipeline": "auto"`.
+1. **Post-Approval Gate-Write (fused):** After human approves the Declaration (or
+   informational Declaration auto-proceeds), write gate files in this exact order:
+
+   **Step 1 — Write `.azoth/scope-gate.json`** (always):
+   ```json
+   {
+     "session_id": "<active session ID>",
+     "goal": "<$ARGUMENTS verbatim>",
+     "approved": true,
+     "approved_by": "human",
+     "expires_at": "<ISO 8601, UTC, now + 2 hours>",
+     "backlog_id": "<matched backlog item ID or 'ad-hoc'>",
+     "delivery_pipeline": "<auto | deliver | deliver-full>",
+     "target_layer": "<M1 | M2 | M3 | mineral — from classification>"
+   }
+   ```
+
+   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
+   `delivery_pipeline == governed` OR `target_layer == M1`):
+   ```json
+   {
+     "session_id": "<must match scope-gate.json>",
+     "pipeline": "auto",
+     "approved": true,
+     "expires_at": "<copy from scope-gate.json>",
+     "opened_at": "<ISO 8601, UTC, now>"
+   }
+   ```
+
+   **Step 3 — Verify:** Run `python3 scripts/check_gates.py --session-id <session_id>`.
+   Must exit 0. If exit 1: stop and surface the error.
+
+   No separate `/next` step is required — the fused Declaration replaces it for `/auto`.
 2. Execute each stage in sequence — respect gate types (human gates stop and wait),
    monitor entropy, produce alignment summary at each stage boundary.
 3. **Typed stage summary (BL-012):** When a stage completes, the subagent MUST emit YAML
