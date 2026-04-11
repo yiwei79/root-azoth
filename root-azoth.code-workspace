@@ -4,5 +4,21 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"/^python3 scripts/welcome\\.py --plain 2>&1$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"mkdir": true,
+			"/^cd /Users/yiwei/GithubRepos/root-azoth && python3 -c \"\nimport yaml\nwith open\\('\\.azoth/roadmap\\.yaml'\\) as f:\n    roadmap = yaml\\.safe_load\\(f\\)\nprint\\('active_version:', roadmap\\.get\\('active_version'\\)\\)\nprint\\('current_phase:', roadmap\\.get\\('current_phase'\\)\\)\nprint\\('current_phase_title:', roadmap\\.get\\('current_phase_title'\\)\\)\nav = roadmap\\.get\\('active_version'\\)\nfor v in roadmap\\.get\\('versions', \\[\\]\\):\n    if v\\.get\\('version'\\) == av:\n        print\\('goal:', v\\.get\\('goal'\\)\\)\n        print\\('phase_scope:', v\\.get\\('phase_scope'\\)\\)\n        break\n\"\n$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^cd /Users/yiwei/GithubRepos/root-azoth && python3 -c \"\nimport yaml\n\nwith open\\('\\.azoth/backlog\\.yaml'\\) as f:\n    backlog = yaml\\.safe_load\\(f\\)\n\nitems = backlog\\.get\\('items', \\[\\]\\)\n# Filter: not complete, not deferred\ncandidates = \\[i for i in items if i\\.get\\('status'\\) not in \\('complete', 'deferred'\\)\\]\n\n# Check blocked_by\ncomplete_ids = \\{i\\['id'\\] for i in items if i\\.get\\('status'\\) == 'complete'\\}\ndef is_unblocked\\(item\\):\n    blocked = item\\.get\\('blocked_by'\\) or \\[\\]\n    return all\\(b in complete_ids for b in blocked\\)\n\nunblocked = \\[i for i in candidates if is_unblocked\\(i\\)\\]\nunblocked\\.sort\\(key=lambda x: x\\.get\\('priority', 999\\)\\)\n\nfor item in unblocked\\[:5\\]:\n    print\\(f\\\\\"  \\{item\\['id'\\]\\} \\| pri=\\{item\\.get\\('priority','\\?'\\)\\} \\| layer=\\{item\\.get\\('target_layer','\\?'\\)\\} \\| pipeline=\\{item\\.get\\('delivery_pipeline','\\?'\\)\\} \\| status=\\{item\\.get\\('status','\\?'\\)\\}\\\\\"\\)\n    print\\(f\\\\\"    title: \\{item\\.get\\('title',''\\)\\}\\\\\"\\)\n    print\\(f\\\\\"    blocked_by: \\{item\\.get\\('blocked_by'\\)\\}\\\\\"\\)\n    print\\(\\)\n\"\n$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
+		}
+	}
 }
