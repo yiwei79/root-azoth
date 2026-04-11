@@ -56,6 +56,12 @@ composition_rules:
     - condition: "complexity == simple AND risk == additive"
       pipeline: [planner, evaluator, builder, architect]
 
+    - condition: "complexity == medium AND risk == additive AND knowledge == known-pattern"
+      pipeline: [planner, evaluator, builder, architect]
+
+    - condition: "complexity == medium AND risk == additive"
+      pipeline: [architect, planner, evaluator, builder, architect]
+
     - condition: "default"
       pipeline: [architect, reviewer, planner, evaluator, builder, architect]
 

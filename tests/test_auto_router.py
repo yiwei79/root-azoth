@@ -30,6 +30,8 @@ CANONICAL_CONDITIONS: list[str] = [
     "scope == docs",
     "complexity == simple AND risk == cosmetic",
     "complexity == simple AND risk == additive",
+    "complexity == medium AND risk == additive AND knowledge == known-pattern",
+    "complexity == medium AND risk == additive",
     "default",
 ]
 
@@ -115,7 +117,16 @@ def test_auto_router_rule_ordering() -> None:
         )
 
     # Verify canonical order: position of condition[i] < position of condition[i+1]
-    positions = [content.index(cond) for cond in CANONICAL_CONDITIONS]
+    # Use backtick-delimited form to avoid substring matching (e.g., "medium AND additive"
+    # matching inside "medium AND additive AND known-pattern")
+    positions = []
+    for cond in CANONICAL_CONDITIONS:
+        delimited = f"`{cond}`"
+        pos = content.find(delimited)
+        if pos == -1:
+            # Fall back to undelimited (for "default" which may not be backtick-wrapped)
+            pos = content.index(cond)
+        positions.append(pos)
     for i in range(len(positions) - 1):
         assert positions[i] < positions[i + 1], (
             f"Rule ordering violation: "
