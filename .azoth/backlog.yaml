@@ -1010,7 +1010,8 @@ items:
     roadmap_ref: P1-003
     target_layer: infrastructure
     delivery_pipeline: standard
-    status: active
+    status: complete
+    completed_date: "2026-04-11"
     target_version: v0.2.0
     priority: 3
     created_date: "2026-04-08"
@@ -1206,6 +1207,66 @@ items:
       main thread on the product default and relies on explicit `Agent(subagent_type=...)`
       spawns for archetype behavior. Define an explicit Azoth orchestrator default for Claude
       Code and equivalent default-agent role semantics for Copilot adapters; see P1-013.yaml.
+
+  - id: P1-016
+    title: "Antigravity full Azoth behavioral compliance (pipelines, gates, entropy, memory, closeout)"
+    source: session-2026-04-11-p1-004-process-gap
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    status: active
+    target_version: v0.2.0
+    priority: 1
+    created_date: "2026-04-11"
+    decision_ref: [D21, D23, D28, D46, D50, D52]
+    blocked_by: []
+    priority_note: >
+      Urgent: discovered during P1-004 delivery on Antigravity — every pipeline's
+      stage discipline, gate enforcement, entropy tracking, memory writes, and
+      session closeout protocol was bypassed or degraded because Antigravity has
+      no equivalent of Claude Code's hook system (PreToolUse, PostToolUse,
+      SessionStart). The gap is systemic: it affects /auto, /deliver, /deliver-full,
+      /session-closeout, /eval, scope-gate enforcement, and write-claim safety.
+      Work went scope-card → code with zero governance stages despite the user
+      explicitly requesting the auto pipeline.
+    description: >
+      Antigravity's bootstrap adapter (P1-014) correctly mirrors Claude Code's
+      commands 1:1 as workflows and loads the azoth-core rule, but lacks any
+      mechanical enforcement of Azoth's designed behaviors. Claude Code enforces
+      these via hooks (settings.json PreToolUse/PostToolUse/SessionStart); Antigravity
+      has no hook system, so discipline is purely instruction-based and demonstrably
+      drifts under even normal use.
+      Gap areas — each must have a documented mitigation in the adapter:
+      (1) Pipeline stage discipline — /auto Stage 0 classification, pipeline composition,
+      and human approval were all skipped; /deliver and /deliver-full stage sequences
+      similarly unenforced. Mitigation: azoth-core rule must mandate reading and following
+      the workflow file before any code writes, with an explicit classification output
+      block and human approval gate before the build stage.
+      (2) Scope-gate enforcement — the azoth-core rule says "read scope-gate.json before
+      write work" but nothing mechanically blocks writes when the gate is missing/expired.
+      Mitigation: explicit workflow precondition checks; optional scripts/scope_gate_check.py.
+      (3) Pipeline-gate enforcement — governed pipelines (M1, /deliver-full) require
+      pipeline-gate.json but Antigravity never writes or checks it. Mitigation: workflow
+      steps must include gate write + validation.
+      (4) Entropy tracking — no per-turn file/line counting or zone escalation. Mitigation:
+      entropy-guard skill integration in workflows; periodic self-checks.
+      (5) Session closeout — W1-W4 checkpoint sequence is documented but do_closeout.py
+      was missing W3 (backlog update) and has no alignment with the full closeout workflow.
+      Mitigation: closeout workflow must follow the full W1-W4 sequence per session-closeout.md.
+      (6) Memory system — M3 episode capture, M2 pattern promotion, context-recall at
+      session start are all instruction-dependent with no trigger. Mitigation: /start
+      workflow must invoke context-recall; /session-closeout must invoke remember.
+      (7) Write-claim safety — P1-015's write claims have no enforcement path in Antigravity.
+      Mitigation: document as Antigravity limitation; add claim check to scope-gate workflow.
+      Deliverables: (a) updated .agents/rules/azoth-core.md with stronger precondition
+      language and explicit compliance checklist; (b) workflow files updated with mechanical
+      precondition steps (scope check, classification block, gate writes); (c) gap matrix
+      documenting Claude Code hook → Antigravity workflow mapping with honest "not enforceable"
+      markers where mechanical parity is impossible; (d) optional scripts for lightweight
+      gate/scope validation callable from workflows.
+      Acceptance: An Antigravity session following /auto must produce Stage 0 classification,
+      wait for human pipeline approval, execute stages in order, and produce a closeout with
+      W1-W4 steps — all without the operator needing to remember the protocol manually.
+
 
 # Completed items
 completed: []

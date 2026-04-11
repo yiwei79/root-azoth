@@ -132,6 +132,41 @@ def _parse_expires_at_utc(raw: str) -> datetime | None:
         return None
 
 
+def format_gate_ttl(
+    gate: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> str:
+    """Format remaining TTL for a scope-gate or pipeline-gate.
+
+    Returns one of:
+    - "EXPIRED" when expires_at is in the past
+    - "12h 34m remaining" style human-readable delta
+    - "" (empty string) when expires_at is absent or unparseable
+
+    The *now* parameter supports clock injection for deterministic tests.
+    """
+    raw = gate.get("expires_at")
+    if not raw:
+        return ""
+    exp = _parse_expires_at_utc(str(raw))
+    if exp is None:
+        return ""
+    if now is None:
+        now = datetime.now(timezone.utc)
+    delta = exp - now
+    total_seconds = int(delta.total_seconds())
+    if total_seconds <= 0:
+        return "EXPIRED"
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes = remainder // 60
+    if hours > 0:
+        return f"{hours}h {minutes:02d}m remaining"
+    if minutes > 0:
+        return f"{minutes}m remaining"
+    return "<1m remaining"
+
+
 def resolve_strip_phase(azoth: dict[str, Any], roadmap: dict[str, Any]) -> int:
     """Index for the 1–8 Kernel→Next strip. Milestone mode uses lifecycle_phase, not local phase."""
     if azoth.get("milestone"):
@@ -420,18 +455,24 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        lines.append(f"  Scope: ACTIVE  ({session_id})")
+        scope_ttl = format_gate_ttl(scope)
+        ttl_suffix = f"  [{scope_ttl}]" if scope_ttl else ""
+        lines.append(f"  Scope: ACTIVE  ({session_id}){ttl_suffix}")
         goal = scope.get("goal", "")
         if goal:
             lines.append(f"    Goal: {goal}")
         if is_governed_scope(scope):
             if is_pipeline_gate_valid(scope, pipeline_gate):
                 pipe = pipeline_gate.get("pipeline", "?")
-                lines.append(f"    Pipeline gate: OK  ({pipe})")
+                pg_ttl = format_gate_ttl(pipeline_gate)
+                pg_suffix = f"  [{pg_ttl}]" if pg_ttl else ""
+                lines.append(f"    Pipeline gate: OK  ({pipe}){pg_suffix}")
             else:
                 lines.append(
                     "    Pipeline gate: OPEN  (Stage 0 of /deliver-full, /auto, or /deliver)"
                 )
+    elif scope.get("expires_at") and format_gate_ttl(scope) == "EXPIRED":
+        lines.append("  Scope: EXPIRED  (run /next to open a new scope card)")
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
 
@@ -636,18 +677,24 @@ def render_dashboard() -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]")
+        scope_ttl = format_gate_ttl(scope)
+        ttl_markup = f"  [dim]{scope_ttl}[/dim]" if scope_ttl else ""
+        health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]{ttl_markup}")
         if is_governed_scope(scope):
             if is_pipeline_gate_valid(scope, pipeline_gate):
                 pipe = pipeline_gate.get("pipeline", "?")
+                pg_ttl = format_gate_ttl(pipeline_gate)
+                pg_markup = f"  [dim]{pg_ttl}[/dim]" if pg_ttl else ""
                 health_lines.append(
-                    f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]"
+                    f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]{pg_markup}"
                 )
             else:
                 health_lines.append(
                     "  :red_circle: [red]Pipeline gate: OPEN[/red]  "
                     "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
                 )
+    elif scope.get("expires_at") and format_gate_ttl(scope) == "EXPIRED":
+        health_lines.append(":orange_circle: [yellow]Scope: EXPIRED[/yellow]  [dim](run /next to open)[/dim]")
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
 

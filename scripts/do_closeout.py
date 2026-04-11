@@ -77,6 +77,42 @@ if az_path.exists():
 
 print("W2b: azoth.yaml episode count updated")
 
+# W3: update backlog.yaml
+backlog_id = gate_data.get("backlog_id")
+if backlog_id:
+    backlog_path = repo_root / ".azoth" / "backlog.yaml"
+    if backlog_path.exists():
+        with open(backlog_path, "r") as f:
+            lines = f.readlines()
+        
+        in_target = False
+        new_lines = []
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        updated = False
+        
+        for line in lines:
+            if line.startswith("  - id:"):
+                current_id = line.split(":", 1)[1].strip().strip('"\'')
+                in_target = (current_id == backlog_id)
+            
+            if in_target and line.lstrip().startswith("status:"):
+                indent = line[:len(line) - len(line.lstrip())]
+                new_lines.append(f"{indent}status: complete\n")
+                new_lines.append(f"{indent}completed_date: \"{date_str}\"\n")
+                updated = True
+                continue
+                
+            new_lines.append(line)
+            
+        if updated:
+            with open(backlog_path, "w") as f:
+                f.writelines(new_lines)
+            print(f"W3: Updated backlog item {backlog_id} to status: complete")
+        else:
+            print(f"W3: Backlog item {backlog_id} not found or no status updated")
+else:
+    print("W3: No backlog_id in scope gate, skipped backlog update")
+
 # W4: version bump
 print("W4: Running version-bump.py...")
 subprocess.run(["python3", "scripts/version-bump.py", "--patch"], cwd=repo_root, check=True)

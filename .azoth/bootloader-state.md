@@ -1,32 +1,24 @@
 # Azoth Bootloader State
 
-Last updated: 2026-04-11 (session-closeout ep-116 — P1-015 true multi-writer safety)
+Last updated: 2026-04-11 (session-closeout ep-118 — P1-004 TTL surfacing + P1-016 Antigravity compliance gap)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.18** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 11` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
+**Toolkit version:** **0.1.20** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.1` · `current_patch: 12` (`.azoth/roadmap.yaml`) · **Git:** branch **`patch/v0.2.0-p1-012-dfa-e2e-friction`**.
 
-## Session outcome (ep-116) — P1-015 true multi-writer safety
+## Session outcome (ep-118) — P1-004 + P1-016
 
-- **Delivered:** Full governed `deliver-full` pipeline for **P1-015** (true multi-writer safety — write claims and lock enforcement). Core deliverables:
-  - `scripts/run_ledger.py`: `acquire_write_claim`, `release_write_claim`, `resolve_stale_claims`, `load_write_claim` (+226 lines); `validate_ledger` extended; CLI subcommands `claim`, `release-claim`, `resolve-stale`; `cmd_status` shows claim holder/expiry.
-  - `.claude/hooks/write_claim_check.py`: `evaluate_write_claim(root, requesting_session) → WriteClaimResult`; fail-open on `ImportError`; reads `AZOTH_LEDGER_PATH` env for test isolation.
-  - `edit_pretooluse_orchestrator.py`: write-claim gate inserted after alignment, before entropy (scope→alignment→write-claim→entropy chain).
-  - `pipelines/run-ledger.schema.yaml`: optional `write_claim` block (session_id, expires_at, acquired_at, harness).
-  - Cross-harness parity: `.cursor/rules/claude-code-parity.mdc` + `kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template` both extended with rule 2b (write-claim simulation).
-  - `.claude/commands/next.md` + `.agents/workflows/next.md`: step 10b (acquire write claim after scope-gate write).
-  - `.claude/commands/session-closeout.md` + `.agents/workflows/session-closeout.md`: W2-claim (release write claim).
-  - `scripts/welcome.py`: `write_claim_status_line()` display.
-- **Validated:** 31 new tests (`tests/test_p1015_multi_writer.py`); 1079 total passing, 0 failures. Eval-swarm PASS 0.982 (E1/E2/E3/E4/E6 triggers fired, 0.90 threshold, Wave D fixes applied).
-- **Closed:** `P1-015` marked `status: complete`, `completed_date: 2026-04-11`, `delivered_version: 0.1.18` in `.azoth/backlog.yaml`.
-- **Closeout:** **W1** ep-116 appended; **W4** `0.1.17 → 0.1.18`, `current_patch 10 → 11` (done at Stage 7); **W2** backlog + bootloader + scope-gate refreshed; **W3** Claude project memory mirrored.
+- **Delivered P1-004:** Control-plane surfacing in welcome dashboard — `format_gate_ttl()` helper with clock injection, TTL remaining / EXPIRED state for scope-gate and pipeline-gate in both Rich and plain renderers. 14 new tests (56/56 passing).
+- **Created P1-016 (priority 1):** Antigravity full Azoth behavioral compliance — systemic gap documented across 7 areas (pipeline stage discipline, scope-gate enforcement, pipeline-gate enforcement, entropy tracking, session closeout, memory system, write-claim safety). Antigravity has no hook-level enforcement; compliance is instruction-only and drifts.
+- **Side fix:** `do_closeout.py` W3 step added (backlog-update on closeout); P1-003 manually marked complete.
+- **Process gap (logged):** User requested `/auto` pipeline but it was bypassed entirely — no Stage 0 classification, no pipeline composition, no staged execution. Retroactive planner/evaluator/architect close conducted after user flagged the violation.
 
 ## Open decisions
 
-- Choose timing for refreshing generated command mirrors for `/next` and `/session-closeout` canonical changes (deferred from prior slices).
-- Determine whether to implement finer-grained file- or worktree-scoped claims as a follow-on to the coarse repo-wide lease (architectural decision deferred per ADV backlog note).
+- P1-016 is priority 1: determine whether to implement as a single large slice or decompose into sub-items per gap area.
+- Choose timing for P1-016 vs remaining v0.2.1 tasks.
 
 ## Next action
 
-Run `/next` for the next unblocked P1 backlog item, or `/intake` to process **4** JSONL queued in **`.azoth/inbox/`**.
+Run `/next` for **P1-016** (priority 1, Antigravity compliance) or another P1 backlog item, or `/intake` to process **4** JSONL queued in **`.azoth/inbox/`**.

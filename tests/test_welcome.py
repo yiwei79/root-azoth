@@ -143,6 +143,238 @@ def test_scope_active_without_complete_ids() -> None:
     assert welcome.is_scope_active(scope) is True
 
 
+# ── format_gate_ttl (P1-004) ─────────────────────────────────────────────────
+
+
+def test_ttl_returns_empty_when_no_expires_at() -> None:
+    assert welcome.format_gate_ttl({}) == ""
+    assert welcome.format_gate_ttl({"approved": True}) == ""
+
+
+def test_ttl_returns_empty_for_unparseable_date() -> None:
+    assert welcome.format_gate_ttl({"expires_at": "not-a-date"}) == ""
+
+
+def test_ttl_returns_expired_when_past() -> None:
+    past = (datetime.now(timezone.utc) - timedelta(seconds=30)).isoformat()
+    assert welcome.format_gate_ttl({"expires_at": past}) == "EXPIRED"
+
+
+def test_ttl_returns_expired_with_injected_clock() -> None:
+    """Clock injection: fixed expires_at with now > expires."""
+    gate = {"expires_at": "2026-04-11T12:00:00+00:00"}
+    now = datetime(2026, 4, 11, 13, 0, 0, tzinfo=timezone.utc)
+    assert welcome.format_gate_ttl(gate, now=now) == "EXPIRED"
+
+
+def test_ttl_returns_hours_and_minutes_with_injected_clock() -> None:
+    """Clock injection: deterministic hours + minutes remaining."""
+    gate = {"expires_at": "2026-04-11T14:30:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "2h 30m remaining"
+
+
+def test_ttl_returns_minutes_only_when_under_one_hour() -> None:
+    gate = {"expires_at": "2026-04-11T12:45:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "45m remaining"
+
+
+def test_ttl_returns_less_than_one_minute() -> None:
+    gate = {"expires_at": "2026-04-11T12:00:30+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "<1m remaining"
+
+
+def test_ttl_handles_z_suffix() -> None:
+    gate = {"expires_at": "2026-04-11T14:00:00Z"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "2h 00m remaining"
+
+
+def test_ttl_boundary_exactly_zero() -> None:
+    gate = {"expires_at": "2026-04-11T12:00:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    assert welcome.format_gate_ttl(gate, now=now) == "EXPIRED"
+
+
+# ── TTL / EXPIRED in dashboard renders (P1-004 integration) ──────────────────
+
+
+def test_plain_dashboard_shows_scope_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows remaining TTL for an active scope gate."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-004: TTL test",
+                "session_id": "ttl-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Scope: ACTIVE" in out
+    assert "remaining" in out
+
+
+def test_plain_dashboard_shows_scope_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows EXPIRED when scope gate has expired."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _past(),
+                "goal": "P1-004: Expired test",
+                "session_id": "expired-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Scope: EXPIRED" in out
+
+
+def test_rich_dashboard_shows_scope_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows remaining TTL for an active scope gate."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-004: TTL test",
+                "session_id": "ttl-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Scope: ACTIVE" in out
+    assert "remaining" in out
+
+
+def test_rich_dashboard_shows_scope_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows EXPIRED when scope gate has expired."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _past(),
+                "goal": "P1-004: Expired test",
+                "session_id": "expired-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Scope: EXPIRED" in out
+
+
+def test_plain_dashboard_pipeline_gate_shows_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows TTL for governed pipeline gate."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    sid = "ttl-pipe-test"
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-004: Pipe TTL",
+                "session_id": sid,
+                "delivery_pipeline": "governed",
+            }
+        )
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": sid,
+                "expires_at": _future(),
+                "pipeline": "deliver-full",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Pipeline gate: OK" in out
+    assert "remaining" in out
+
+
 # ── is_governed_scope / is_pipeline_gate_valid ────────────────────────────────
 
 
