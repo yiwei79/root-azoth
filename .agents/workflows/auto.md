@@ -53,25 +53,6 @@ Present the composed pipeline to human:
 Approve pipeline composition + subagent assignments? [yes / adjust / different-pipeline]
 ```
 
-## Preconditions (Antigravity compliance — P1-016)
-
-Before executing any stage, verify all preconditions. Output each check result visibly.
-
-```
-## Precondition Check — /auto
-
-P1. Scope gate:   [run: python3 scripts/scope_gate_check.py]
-P2. Stage 0 done: [✅ Classification YAML block was output above / ❌ BLOCKED — run Stage 0 first]
-P3. Declaration:  [✅ Human approved pipeline composition / ❌ BLOCKED — present Declaration first]
-P4. Entropy zone: [GREEN / YELLOW — checkpoint recommended / RED — STOP]
-```
-
-If **any** precondition shows ❌ BLOCKED, **STOP** — do not proceed to Execution.
-
-> **Antigravity note:** Subagent isolation is not available. Pipeline stages run inline in
-> the same context. Review stages cannot be context-isolated from implementation stages.
-> Document this limitation in alignment summaries. See `docs/antigravity-compliance-matrix.md`.
-
 ## Execution
 
 After human approval of the Declaration:

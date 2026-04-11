@@ -34,21 +34,11 @@ Run at the beginning of any session to get a full project snapshot before decidi
    - **Last Session** — most recent episode summary
    - **START** — context-sensitive routing options
 
-2. **Invoke context-recall** (Antigravity compliance — P1-016)
-
-   After the welcome dashboard, invoke the `context-recall` skill to surface relevant
-   M3 episodes and M2 patterns before routing. This bridges the write-only memory sink
-   into actionable context for the goal domain.
-
-   - If scope gate exists with a goal, use that goal for tag extraction
-   - If no scope gate, use the top backlog item as the recall target
-   - If no relevant context found, proceed — context-recall outputs "No prior context found"
-
-3. **Read the user's selection and route accordingly**
+2. **Read the user's selection and route accordingly**
 
    | Input | Action |
    |-------|--------|
-   | `resume` | Scope gate is already active — proceed directly with the approved goal |
+   | `resume` | Scope gate is already active — resume the approved goal through the selected delivery pipeline; if none was explicitly selected, use `/auto` and run Stage 0 first (do not jump straight to implementation) |
    | `next` | Run `/next` to open a scope card for the next priority task |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |
@@ -61,7 +51,7 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
    **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.
 
-4. **If the dashboard script is missing or errors**, fall back to manual orientation:
+3. **If the dashboard script is missing or errors**, fall back to manual orientation:
    - Read `azoth.yaml` for version/phase/layer status
    - Read `.azoth/backlog.yaml` for pending work
    - Check `.azoth/scope-gate.json` for active scope

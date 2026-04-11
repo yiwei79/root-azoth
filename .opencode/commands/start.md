@@ -42,7 +42,7 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
    | Input | Action |
    |-------|--------|
-   | `resume` | Scope gate is already active — proceed directly with the approved goal |
+   | `resume` | Scope gate is already active — resume the approved goal through the selected delivery pipeline; if none was explicitly selected, use `/auto` and run Stage 0 first (do not jump straight to implementation) |
    | `next` | Run `/next` to open a scope card for the next priority task |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |

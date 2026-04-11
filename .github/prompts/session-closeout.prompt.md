@@ -120,11 +120,12 @@ toolkit summary with canonical sources (read from disk, not from memory):
   own memory system (M3 episodes) is surfaced during SURVEY phase
 - Log: `W3 ✓ memory updated — all checkpoints complete`
 
-**W4 — Bump patch version** → `python scripts/version-bump.py --patch`
+**W4 — Bump patch version and refresh orientation cache** → `python scripts/version-bump.py --patch`
 
 - Run `python scripts/version-bump.py --patch` from the repo root
 - This always fires — every closeout increments the patch version
-- Log: `W4 ✓ version bumped X → Y`
+- Delete `.azoth/session-orientation.txt` (if present) so that IDEs without a `SessionStart` hook do not surface stale orientation in the next session.
+- Log: `W4 ✓ version bumped X → Y, orientation cache cleared`
 
 ### On Failure
 

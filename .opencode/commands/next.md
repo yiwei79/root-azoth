@@ -97,13 +97,19 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     }
     ```
 
+    **Pipeline selection after scope approval (all scopes):** Writing `.azoth/scope-gate.json`
+    declares intent; it does **not** authorize direct implementation. After scope approval,
+    the next step is delivery pipeline selection. If the human did **not** explicitly choose a
+    pipeline, `/auto` is the default (D23) and must run **Stage 0 goal clarification**
+    before implementation begins.
+
     **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
     `target_layer: M1`, the PreToolUse hook **blocks Write/Edit** until
     `.azoth/pipeline-gate.json` exists (see `/deliver-full`, `/auto`, or `/deliver` **Stage 0**).
-    After scope approval, remind the human: for governed work, invoke the appropriate
-    pipeline command first; the orchestrator must run Stage 0 before other writes.
+    For standard scopes, Stage 0 / pipeline selection still applies even though
+    `pipeline-gate.json` is not required.
 
-    Confirm: "scope-gate.json written — Read/Plan unblocked; governed scopes still require pipeline-gate.json after Stage 0 of a delivery pipeline."
+    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. If none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
 
 ## Scope Card Format
 
