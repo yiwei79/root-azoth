@@ -87,6 +87,7 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     (src / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
     (src / "tests").mkdir()
     (src / "tests" / "t.py").write_text("# t", encoding="utf-8")
+    (src / "LICENSE").write_text("PolyForm Noncommercial 1.0.0\n", encoding="utf-8")
     (src / "CLAUDE.md").write_text("# old", encoding="utf-8")
     (src / "azoth.yaml").write_text(
         "name: x\nscope:\n  mode: scaffold\n  is_development_workshop: true\n",
@@ -112,6 +113,8 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     assert not any(rp.startswith(".azoth/") for rp in rels)
     assert not any(rp.startswith(".git/") for rp in rels)
     assert not any(rp.startswith("tests/") for rp in rels)
+    assert not any(rp.startswith("kernel/templates/") for rp in rels)
+    assert "LICENSE" in rels
     assert "skills/probe.md" in rels
 
     probe = (out / "skills" / "probe.md").read_text(encoding="utf-8")

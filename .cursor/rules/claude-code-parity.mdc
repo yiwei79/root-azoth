@@ -72,6 +72,23 @@ If **`Task` is unavailable** in the current Cursor session (UI/model limitation)
 - **PreToolUse hooks** (mechanical deny on `Write`/`Edit`) — **Claude Code only**; Cursor relies on behavioral parity above.
 - **Subagent isolation** — **Achievable in Cursor** when **`Task`** is used per stage with the correct `subagent_type` (same architecture as `Agent()`). Prefer Claude Code only when you need **binary** hook enforcement or a **non-Cursor** runtime.
 
+## Eval-swarm escalation (E1–E6)
+
+`/eval` uses single-evaluator scoring (threshold **0.85**). `/eval-swarm` escalates to multi-agent parallel evaluation (threshold **0.90**). Apply the same routing triggers as Claude Code (normative source: `.claude/commands/eval.md`):
+
+| Trigger | Condition | Route |
+|---------|-----------|-------|
+| E1 | ≥ 2 independent deliverables or branches to judge | `/eval-swarm` |
+| E2 | Composed pipeline evaluator stage after multi-file, governance-touching, or cross-layer changes | `/eval-swarm` |
+| E3 | `delivery_pipeline: governed` or `target_layer: M1` | `/eval-swarm` |
+| E4 | Entropy / blast radius approaches Trust Contract file ceiling, or touches kernel templates / commands / skills deploy paths | `/eval-swarm` |
+| E5 | Prior eval returned CONDITIONAL/FAIL or reviewer request-changes is open | `/eval-swarm` |
+| E6 | Explicit human signal ("parallel", "swarm") or stacked backlog IDs | `/eval-swarm` |
+
+**Rule:** If **any** of E1–E6 is true → `/eval-swarm`. If **none** → single `/eval` at 0.85.
+
+**Ambiguity:** prefer escalation — false positives cost compute; false negatives leak bias.
+
 ## Quick parity checklist
 
 - Scope gate valid for writes?
@@ -82,5 +99,6 @@ If **`Task` is unavailable** in the current Cursor session (UI/model limitation)
 - Delivery stages run via **`Task`** with matching `subagent_type` (not inline role-play)?
 - **Prior stage YAML forwarded** into the next `Task` where required (especially evaluator)?
 - **Review failed or request-changes** → stopped and human consulted before continuing?
+- Eval escalation (E1–E6) applied before single-eval fallback?
 - `azoth-deploy` after canonical source edits?
 - **`/session-closeout` W3** attempted or `W3 deferred` logged?
