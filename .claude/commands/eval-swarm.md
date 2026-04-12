@@ -1,6 +1,6 @@
 ---
 description: "Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave iteration"
-azoth_effect: read
+azoth_effect: mixed
 ---
 
 # /eval-swarm $ARGUMENTS
