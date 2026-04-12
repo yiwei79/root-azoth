@@ -82,6 +82,8 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 # ── Pure business-logic helpers (testable) ───────────────────────────────────
 
+_DONE_STATUSES: set[str] = {"complete", "completed", "deferred"}
+
 
 def filter_unblocked_items(
     items: list[dict[str, Any]], complete_ids: set[str]
@@ -92,7 +94,7 @@ def filter_unblocked_items(
     """
     result = []
     for item in items:
-        if item.get("status") in {"complete", "deferred"}:
+        if item.get("status") in _DONE_STATUSES:
             continue
         blocked_by = item.get("blocked_by") or []
         if all(bid in complete_ids for bid in blocked_by):
@@ -335,7 +337,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     phase_header = header_phase_label(azoth, phase)
 
     items = backlog_data.get("items", [])
-    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
+    complete_ids = {item["id"] for item in items if item.get("status") in {"complete", "completed"}}
     top3 = filter_unblocked_items(items, complete_ids)[:3]
     unphased_initiatives = gather_unphased_initiatives(roadmap_data)
 
@@ -696,7 +698,9 @@ def render_dashboard() -> None:
         session_id = scope.get("session_id", "")
         scope_ttl = format_gate_ttl(scope, now=now)
         ttl_markup = f"  [dim]{scope_ttl}[/dim]" if scope_ttl else ""
-        health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]{ttl_markup}")
+        health_lines.append(
+            f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]{ttl_markup}"
+        )
         if is_governed_scope(scope):
             pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
             if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
@@ -716,7 +720,9 @@ def render_dashboard() -> None:
                     "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
                 )
     elif scope.get("expires_at") and format_gate_ttl(scope, now=now) == "EXPIRED":
-        health_lines.append(":orange_circle: [yellow]Scope: EXPIRED[/yellow]  [dim](run /next to open)[/dim]")
+        health_lines.append(
+            ":orange_circle: [yellow]Scope: EXPIRED[/yellow]  [dim](run /next to open)[/dim]"
+        )
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
 

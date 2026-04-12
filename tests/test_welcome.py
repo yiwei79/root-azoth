@@ -52,6 +52,20 @@ def test_filter_excludes_complete() -> None:
     assert [x["id"] for x in result] == ["B"]
 
 
+def test_filter_excludes_completed_variant() -> None:
+    """Items with status 'completed' (past tense) are also filtered out."""
+    items = [_item("A", status="completed"), _item("B")]
+    result = welcome.filter_unblocked_items(items, {"A"})
+    assert [x["id"] for x in result] == ["B"]
+
+
+def test_completed_variant_counts_as_done_for_blockers() -> None:
+    """An item with status 'completed' should unblock dependents."""
+    items = [_item("A", status="completed"), _item("B", blocked_by=["A"])]
+    result = welcome.filter_unblocked_items(items, {"A"})
+    assert [x["id"] for x in result] == ["B"]
+
+
 def test_filter_excludes_deferred() -> None:
     items = [_item("A", status="deferred"), _item("B")]
     result = welcome.filter_unblocked_items(items, set())
@@ -258,9 +272,7 @@ def _render_pipeline_gate_output(
     return buf.getvalue()
 
 
-def test_plain_dashboard_shows_scope_ttl(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_plain_dashboard_shows_scope_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Plain layout shows remaining TTL for an active scope gate."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
     azoth_dir = tmp_path / ".azoth"
@@ -321,9 +333,7 @@ def test_plain_dashboard_shows_scope_expired(
     assert "Scope: EXPIRED" in out
 
 
-def test_rich_dashboard_shows_scope_ttl(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_rich_dashboard_shows_scope_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Rich layout shows remaining TTL for an active scope gate."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
     azoth_dir = tmp_path / ".azoth"
@@ -438,9 +448,7 @@ def test_rich_dashboard_pipeline_gate_shows_expired(
     assert "Pipeline gate: OPEN" not in out
 
 
-def test_plain_dashboard_shows_active_run(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_plain_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Plain layout shows the optional active-run summary when ledger state exists."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
     azoth_dir = tmp_path / ".azoth"
@@ -470,9 +478,7 @@ def test_plain_dashboard_shows_active_run(
     assert "Finish stage 4 handoff" in out
 
 
-def test_rich_dashboard_shows_active_run(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_rich_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Rich layout shows the optional active-run summary when ledger state exists."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
     azoth_dir = tmp_path / ".azoth"

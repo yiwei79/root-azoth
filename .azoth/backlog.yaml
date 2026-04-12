@@ -1061,7 +1061,7 @@ items:
   roadmap_ref: P1-017
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: completed
+  status: deferred
   target_version: v0.2.0-p1
   priority: 6
   created_date: '2026-04-11'
@@ -1115,7 +1115,7 @@ items:
   roadmap_ref: P1-009
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: completed
+  status: complete
   target_version: v0.2.0-p1
   priority: 9
   created_date: '2026-04-08'
@@ -1132,7 +1132,7 @@ items:
   roadmap_ref: P1-010
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: completed
+  status: complete
   target_version: v0.2.0-p1
   priority: 10
   created_date: '2026-04-08'
