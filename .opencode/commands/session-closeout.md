@@ -145,6 +145,29 @@ If a write checkpoint is denied or fails mid-sequence:
 3. Commit
 4. Report: commit SHA, files changed, test status
 
+### Worktree merge-back (C5)
+
+If this session is running in a **git worktree** (not the main working tree), merge the
+worktree branch back to the parent branch so work is not stranded:
+
+1. Run `git worktree list` — if only one entry, skip this section.
+2. Identify the **parent worktree** (the first entry in the list, or the worktree whose
+   branch this worktree was created from).
+3. In the **parent worktree directory**, run:
+   ```
+   git stash push -u -m "pre-worktree-merge"   # if dirty
+   git merge <worktree-branch> --no-edit
+   git stash pop                                 # if stashed
+   ```
+4. If merge conflicts arise: resolve them (prefer worktree version for session artifacts
+   like `bootloader-state.md`; keep both episodes if IDs collide by renumbering the newer
+   one). Commit the merge resolution.
+5. Report: `C5 ✓ worktree merged into <parent-branch>` or `C5 — single worktree, skipped`.
+
+**Episode ID collisions**: When parallel sessions (main + worktree) both append episodes
+with sequential IDs, collisions are expected. Always check the max existing ID before
+appending — or use `ep-{max+1}` to avoid merge conflicts.
+
 ## Part D: Surface Queued Insights
 
 Check the insight inbox and inform the human. Do NOT process insights during closeout.
