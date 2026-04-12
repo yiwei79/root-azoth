@@ -1112,6 +1112,9 @@ documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
 
 1. **Refresh scope before TTL expiry** — Run `/next` (or human-approved scope card) to write a new
    `.azoth/scope-gate.json` when the current `expires_at` is near; do not assume silent extension.
+   **Lightweight alternative:** the orchestrator may extend `expires_at` in-place (by 1 hour) when
+   a pipeline is mid-execution, provided it surfaces a TTL card to the human offering extend /
+   checkpoint / abort. This avoids full re-scoping mid-pipeline while preserving human-in-the-loop.
 2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
    rather than exceeding the per-turn file ceiling.
 3. **Run ledger (P1-001)** — Append wave outcomes to `.azoth/run-ledger.local.yaml` (gitignored)
