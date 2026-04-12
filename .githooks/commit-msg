@@ -1,0 +1,5 @@
+#!/bin/sh
+# Governance rule: strip Co-authored-by: Copilot trailers.
+# See CLAUDE.md Git Conventions: "NEVER add Co-Authored-By tags"
+sed -i.bak '/^Co-authored-by: Copilot/d' "$1"
+rm -f "$1.bak"

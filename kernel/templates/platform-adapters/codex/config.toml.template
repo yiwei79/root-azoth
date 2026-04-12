@@ -1,0 +1,31 @@
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+commit_attribution = ""
+project_doc_max_bytes = 65536
+project_root_markers = [".git", "AGENTS.md", "azoth.yaml"]
+
+developer_instructions = '''
+Azoth Codex parity mode:
+
+- Treat the Orchestrator (`agents/tier1-core/orchestrator.agent.md`) as the default session persona in freeform chat.
+- If the user message contains literal Azoth workflow tokens such as `/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`, `/start`, `/next`, `/plan`, `/eval`, `/session-closeout`, `/intake`, `/promote`, `/review-insights`, or `/roadmap`, treat that as a repository workflow request. Read the matching `.claude/commands/<name>.md` file and follow its contract instead of improvising.
+- Canonical Azoth skills live under `skills/`, and Codex-native skill discovery is available through `.agents/skills/`. Use the matching `SKILL.md` when the task names a skill or clearly matches its description.
+- On session start or before multi-step work, read `.azoth/memory/patterns.yaml`, `.azoth/bootloader-state.md`, and `.azoth/session-state.md` when present.
+- Before the first substantive write in a turn, validate `.azoth/scope-gate.json` and, for governed work, `.azoth/pipeline-gate.json`. Prefer `python3 scripts/check_gates.py --session-id <active session id>` when a scope session id exists.
+- Simulate write-claim discipline in hook-soft flows: read `.azoth/run-ledger.local.yaml` and do not write while another live session holds `write_claim`.
+- For governed delivery pipelines, keep the orchestrator in the main thread and use staged subagents with the generated custom agents in `.codex/agents/` or Codex built-ins when appropriate. Forward typed YAML stage summaries between stages per `skills/subagent-router/SKILL.md`; do not collapse a multi-stage governed pipeline into one inline reply when isolation is needed.
+- W1/W2/W4 under `.azoth/` are the authoritative cross-tool record. During `/session-closeout`, attempt W3 mirroring into `~/.claude/projects/.../memory/`; if blocked, log `W3 deferred` explicitly.
+- After changing canonical `agents/**/*.agent.md`, `skills/**/SKILL.md`, `.claude/commands/*.md`, or `kernel/templates/platform-adapters/codex/*`, run `python3 scripts/azoth-deploy.py`, then verify with `python3 scripts/azoth-deploy.py --check`.
+- Never add `Co-Authored-By` trailers.
+'''
+
+[features]
+codex_hooks = true
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[sandbox_workspace_write]
+network_access = false

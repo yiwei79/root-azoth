@@ -19,6 +19,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
+SKILL_INDEX = SKILLS_DIR / "index.yaml"
 
 EXPECTED_SKILLS = [
     "context-map",
@@ -34,6 +35,7 @@ EXPECTED_SKILLS = [
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
+    "dynamic-full-auto",
     "orientation",
 ]
 
@@ -54,6 +56,7 @@ NEW_SKILLS = [
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
+    "dynamic-full-auto",
     "orientation",
 ]
 
@@ -63,6 +66,9 @@ class TestSkillStructure:
 
     def test_skills_directory_exists(self) -> None:
         assert SKILLS_DIR.is_dir(), "skills/ directory must exist"
+
+    def test_skill_index_exists(self) -> None:
+        assert SKILL_INDEX.is_file(), "skills/index.yaml must exist"
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_skill_directory_exists(self, skill_name: str) -> None:
@@ -195,13 +201,6 @@ class TestSkillContent:
         )
 
     @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
-    def test_has_integration_section(self, skill_name: str) -> None:
-        content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
-        assert "## Integration" in content or "## integration" in content.lower(), (
-            f"{skill_name} SKILL.md should have an Integration section"
-        )
-
-    @pytest.mark.parametrize("skill_name", EXPECTED_SKILLS)
     def test_minimum_content_length(self, skill_name: str) -> None:
         content = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
         lines = content.strip().split("\n")
@@ -213,10 +212,31 @@ class TestSkillContent:
 class TestSkillConsistency:
     """Verify skills are consistent with architecture and each other."""
 
+    @staticmethod
+    def _load_skill_index() -> dict:
+        return yaml.safe_load(SKILL_INDEX.read_text(encoding="utf-8")) or {}
+
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 9, "Should have 9 new skills"
+        assert len(NEW_SKILLS) == 10, "Should have 10 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
+
+    def test_skill_index_lists_all_expected_skills(self) -> None:
+        index = self._load_skill_index()
+        listed = [entry["name"] for entry in index.get("skills", [])]
+        assert sorted(listed) == sorted(EXPECTED_SKILLS), (
+            "skills/index.yaml must list every canonical skill exactly once"
+        )
+
+    def test_skill_index_dependencies_reference_known_skills(self) -> None:
+        index = self._load_skill_index()
+        known = set(EXPECTED_SKILLS)
+        for entry in index.get("skills", []):
+            for dependency in entry.get("depends_on", []):
+                assert dependency in known, (
+                    f"skills/index.yaml dependency {dependency!r} for {entry['name']!r} "
+                    "must reference a known skill"
+                )
 
     def test_architecture_references_all_skills(self) -> None:
         """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""
@@ -250,3 +270,114 @@ class TestSkillConsistency:
         assert "L1" in content
         assert "L2" in content
         assert "L3" in content
+
+
+class TestP1007RecallGovernance:
+    """Guard the planned recall-governance doc updates for P1-007."""
+
+    ROADMAP_SPEC = REPO_ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "P1-007.yaml"
+    EXPECTED_SCOPE = [
+        "skills/context-recall/SKILL.md",
+        "skills/remember/SKILL.md",
+        ".azoth/roadmap-specs/v0.2.0/P1-007.yaml",
+        "tests/test_skills.py",
+    ]
+
+    @staticmethod
+    def _read_skill(skill_name: str) -> str:
+        return (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8").lower()
+
+    @classmethod
+    def _load_spec(cls) -> dict:
+        spec = yaml.safe_load(cls.ROADMAP_SPEC.read_text(encoding="utf-8"))
+        assert isinstance(spec, dict), "P1-007 roadmap spec must remain a YAML mapping"
+        return spec
+
+    @classmethod
+    def _load_acceptance(cls) -> str:
+        spec = cls._load_spec()
+        acceptance = spec.get("acceptance", [])
+        assert isinstance(acceptance, list), "P1-007 acceptance criteria must remain a YAML list"
+        normalized: list[str] = []
+        for item in acceptance:
+            if isinstance(item, str):
+                normalized.append(item)
+                continue
+            assert isinstance(item, dict), "P1-007 acceptance items must be strings or mappings"
+            normalized.extend(
+                f"{key} {value}" if value is not None else str(key) for key, value in item.items()
+            )
+        return " ".join(normalized).lower()
+
+    def test_p1007_scope_matches_approved_four_file_slice(self) -> None:
+        spec = self._load_spec()
+        assert spec.get("scope") == self.EXPECTED_SCOPE, (
+            "P1-007 scope must stay aligned to the approved four-file slice"
+        )
+
+    def test_p1007_delivery_uses_governed_m1_metadata(self) -> None:
+        delivery = self._load_spec().get("delivery")
+        assert isinstance(delivery, dict), "P1-007 delivery metadata must remain a YAML mapping"
+        assert delivery == {
+            "target_layer": "M1",
+            "delivery_pipeline": "governed",
+            "suggested_command": "/deliver-full",
+        }, "P1-007 delivery metadata must use governed M1 /deliver-full"
+
+    def test_context_recall_documents_tag_guidance_and_episode_conflicts(self) -> None:
+        content = self._read_skill("context-recall")
+        assert "tag vocabulary" in content, (
+            "P1-007 requires context-recall to document tag vocabulary guidance"
+        )
+        assert "contradiction" in content, (
+            "P1-007 requires context-recall to explain contradiction handling"
+        )
+        assert "stale" in content, "P1-007 requires context-recall to address stale episodes"
+        assert "archive" in content and "supersede" in content, (
+            "P1-007 requires an explicit archive-vs-supersede policy for recalled episodes"
+        )
+
+    def test_remember_documents_when_not_to_add_a_pattern(self) -> None:
+        content = self._read_skill("remember")
+        assert "when not to add a pattern" in content, (
+            "P1-007 requires remember to document when not to add a pattern"
+        )
+
+    def test_remember_documents_append_only_supersession_rules(self) -> None:
+        content = self._read_skill("remember")
+        assert "append-only" in content, (
+            "P1-007 requires remember to keep append-only episode guidance explicit"
+        )
+        assert "new episode linked to the older one" in content, (
+            "P1-007 requires contradictions to create a new episode linked to the older one"
+        )
+        for phrase in ("stale", "superseded", "contradicted"):
+            assert phrase in content, (
+                f"P1-007 requires remember to define the {phrase!r} status-tag guidance"
+            )
+
+    def test_p1007_acceptance_language_is_reflected_in_skill_docs(self) -> None:
+        acceptance = self._load_acceptance()
+        assert "tag vocabulary guidance" in acceptance
+        assert "when not to add a pattern" in acceptance
+        assert "archive vs supersede tags" in acceptance
+        assert "append-only supersession guidance" in acceptance
+        assert "new episode linked to the older one" in acceptance
+        assert "stale" in acceptance and "superseded" in acceptance and "contradicted" in acceptance
+
+        combined = "\n".join(
+            [self._read_skill("context-recall"), self._read_skill("remember")]
+        )
+        for phrase in (
+            "tag vocabulary",
+            "when not to add a pattern",
+            "append-only",
+            "new episode linked to the older one",
+            "contradiction",
+            "stale",
+            "archive",
+            "supersede",
+            "superseded",
+            "contradicted",
+        ):
+            assert phrase in combined, f"P1-007 doc set is missing acceptance phrase: {phrase}"

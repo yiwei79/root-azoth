@@ -1,0 +1,37 @@
+# Roadmap task spec — v0.2.0
+id: P1-004
+roadmap_version: v0.2.0
+title: "Control-plane surfacing in welcome (scope, pipeline, active run)"
+decision_ref: [D52, D50]
+
+intent: >
+  The session cockpit shows not only gates but time-to-expiry and optional active swarm/run
+  summary so long sessions fail visibly instead of silently.
+
+problem: >
+  Scope TTL can expire mid-work; operators only discover on failed hook or confusing errors.
+
+scope:
+  - scripts/welcome.py (plain + Rich)
+  - Optional read of P1-001 ledger file
+  - .claude/commands/start.md copy alignment if needed
+
+non_goals:
+  - Pushing notifications outside the terminal
+  - Auto-extending scope without human policy (document options only)
+
+acceptance:
+  - When scope-gate has expires_at, dashboard shows remaining time or EXPIRED
+  - When pipeline-gate governed, show same for pipeline gate
+  - pytest for time formatting or panel substring (stable clock injection)
+
+dependencies:
+  - P1-001
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Use TZ-aware parsing; avoid breaking welcome when gates missing (current behavior preserved).

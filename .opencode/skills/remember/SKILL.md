@@ -56,6 +56,14 @@ Experience → Capture Episode → Auto-Classify → Surface in Future → Propo
 }
 ```
 
+### When to increment reinforcement_count
+
+`reinforcement_count` starts at `0` on every new episode. Increment it by `1`
+each time a **subsequent** session surfaces the same lesson and it still holds
+true — i.e., when you would write the same lesson again but an identical or
+near-identical episode already exists. Do **not** increment on the initial
+capture; do **not** increment more than once per session.
+
 ### Capture Rules
 
 1. **One episode per session minimum** — the HARDEN phase always produces one
@@ -63,6 +71,24 @@ Experience → Capture Episode → Auto-Classify → Surface in Future → Propo
 3. **Be specific** — "tests helped catch a regression" not "testing is good"
 4. **Include the why** — decisions without reasoning are useless later
 5. **Tag for retrieval** — tags enable efficient future surfacing
+
+### Supersession and Contradiction Rules
+
+Append-only means correction happens by addition, not mutation.
+
+- If a lesson changes, create a **new episode linked to the older one**; never rewrite the old
+  episode to make history look cleaner than it was.
+- If new evidence contradicts an older lesson, capture a new episode and link it to the older one
+  via context such as `related_episode_id` or `supersedes_episode_id`.
+- Use explicit status tags so later recall can reason about episode state:
+  - `stale` — the lesson is historical background only because the workflow, toolchain, or repo
+    shape changed.
+  - `superseded` — a newer episode replaces the actionable guidance from an older one for the same
+    tag set.
+  - `contradicted` — evidence conflicts and there is not yet a clear winner, so both episodes stay
+    visible until more evidence or human review resolves it.
+- Contradictions do not authorize deletion. They create a new episode linked to the older one and
+  preserve both sides of the evidence trail.
 
 ### Episode Types
 
@@ -152,23 +178,20 @@ When a pattern has been reinforced across 2+ episodes:
 
 ---
 
-## Integration
+## When Not to Add a Pattern
 
-### With Bootloader
+Do not add a pattern to the promotion path just because an episode feels important.
+Prefer keeping the lesson in M3 only when any of the following are true:
 
-- **SURVEY**: Surface relevant episodes
-- **HARDEN**: Capture session episode, propose promotions
+- The lesson is based on a single event and has not been reinforced across sessions.
+- The behavior is highly repo-local, temporary, or tied to one branch, one incident, or one
+  short-lived tool version.
+- The lesson captures a personal preference rather than an objective, reusable rule.
+- The evidence set is contradictory or stale and needs more observation before promotion.
+- The tags are unstable or too specific, which would turn M2 into a junk drawer of narrow cases.
 
-### With Pipeline
-
-- **Stage 6 (Architect Review)**: Evaluator scores → episode captured
-- **Session Closeout**: Unified capture + classification + proposal
-
-### With Other Skills
-
-- `agentic-eval` → evaluation results become episode content
-- `entropy-guard` → entropy events become episode observations
-- `alignment-sync` → alignment summaries reference relevant episodes
+If unsure, keep the episode in M3, improve the tags, and wait for reinforcement before proposing
+promotion. Human approval remains the final gate for M2 changes.
 
 ---
 
@@ -182,5 +205,3 @@ When a pattern has been reinforced across 2+ episodes:
 | **Tag consistently**                     | Use a small, stable tag vocabulary                    |
 | **Don't force promotions**               | Let patterns prove themselves over 3+ sessions        |
 | **Review episodes periodically**         | Stale episodes decay — that's fine                    |
-
-

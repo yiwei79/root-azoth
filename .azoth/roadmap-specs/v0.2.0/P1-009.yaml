@@ -1,0 +1,36 @@
+# Roadmap task spec — v0.2.0
+id: P1-009
+roadmap_version: v0.2.0
+title: "Cursor session-open parity (orientation automation path)"
+decision_ref: [D52, D46]
+
+intent: >
+  Cursor users get a practical, documented path to near–Claude Code SessionStart behavior
+  (orientation without remembering terminal commands every time).
+
+problem: >
+  P5-007 only applies where hooks run; Cursor parity today is manual welcome.py + rules.
+
+scope:
+  - kernel/templates/platform-adapters/cursor/*.mdc.template or README
+  - Optional VS Code task / docs only (no proprietary Cursor API assumptions)
+  - scripts/welcome.py --plain already exists — wire documented workflow
+
+non_goals:
+  - Shipping a Cursor extension in this backlog item
+  - Breaking third-party rules toggle contract
+
+acceptance:
+  - Cursor adapter README section: recommended automation (task, snippet, or ritual)
+  - Parity table updated: SessionStart vs Cursor path
+  - No regression in azoth-deploy cursor rules
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Prefer documented rituals + optional .vscode/tasks.json if repo accepts it; extension later.

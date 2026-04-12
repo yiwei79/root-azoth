@@ -34,3 +34,19 @@ def test_copilot_instructions_reference_governance_d32() -> None:
     assert "GOVERNANCE.md" in text
     assert "D32" in text
     assert ".azoth/inbox" in text
+
+
+def test_copilot_instructions_enforce_pipeline_entry_behavior() -> None:
+    text = (REPO / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    for token in ("/auto", "/dynamic-full-auto", "/deliver", "/deliver-full"):
+        assert token in text, f"copilot instructions must mention explicit pipeline token {token}"
+    assert "do not execute the work inline in main chat" in text
+    assert "Task" in text
+    assert "orchestrator" in text.lower()
+
+
+def test_copilot_instructions_document_closeout_memory_mirror() -> None:
+    text = (REPO / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    assert "/session-closeout" in text
+    assert ".azoth" in text
+    assert "~/.claude/projects/<project-key>/memory/" in text

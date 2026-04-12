@@ -4,12 +4,26 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+_WRITE_TOOL_NAMES = {"write", "create_file", "createfile"}
+_EDIT_TOOL_NAMES = {
+    "edit",
+    "replace_string_in_file",
+    "replacestringinfile",
+    "insert_edit_into_file",
+    "inserteditintofile",
+    "editfiles",
+    "apply_patch",
+}
+_PATCH_TARGET_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: ([^\n]+)$", re.MULTILINE)
 
 _REMINDER = (
     "[scope-gate] Write/Edit blocked — no approved scope card found.\n"
@@ -41,6 +55,98 @@ class ScopeGateResult:
     deny_reason: str = ""
     scope_data: dict | None = None
     skip_entropy: bool = False
+
+
+def tool_input_dict(payload: dict) -> dict:
+    raw = payload.get("tool_input")
+    return raw if isinstance(raw, dict) else {}
+
+
+def _path_from_value(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    raw = value.strip()
+    if not raw:
+        return ""
+    if raw.startswith("file://"):
+        parsed = urlparse(raw)
+        return unquote(parsed.path)
+    return raw
+
+
+def _first_path_from_files(value: object) -> str:
+    if not isinstance(value, list):
+        return ""
+    for item in value:
+        if isinstance(item, str):
+            path_str = _path_from_value(item)
+            if path_str:
+                return path_str
+            continue
+        if not isinstance(item, dict):
+            continue
+        for key in ("file_path", "filePath", "path", "uri"):
+            path_str = _path_from_value(item.get(key))
+            if path_str:
+                return path_str
+    return ""
+
+
+def extract_target_path_str(payload: dict) -> str:
+    tool_input = tool_input_dict(payload)
+    for key in ("file_path", "filePath", "path", "uri"):
+        path_str = _path_from_value(tool_input.get(key))
+        if path_str:
+            return path_str
+
+    files_path = _first_path_from_files(tool_input.get("files"))
+    if files_path:
+        return files_path
+
+    for key in ("input", "patch"):
+        patch_text = tool_input.get(key)
+        if not isinstance(patch_text, str):
+            continue
+        match = _PATCH_TARGET_RE.search(patch_text)
+        if match:
+            return match.group(1).split(" -> ", 1)[0].strip()
+
+    return ""
+
+
+def extract_write_content(tool_input: dict) -> str | None:
+    for key in ("content", "text", "new_text", "newText"):
+        value = tool_input.get(key)
+        if isinstance(value, str):
+            return value
+    return None
+
+
+def extract_old_new_strings(tool_input: dict) -> tuple[str | None, str | None]:
+    old_s = tool_input.get("old_string")
+    if not isinstance(old_s, str):
+        old_s = tool_input.get("oldString") if isinstance(tool_input.get("oldString"), str) else None
+    new_s = tool_input.get("new_string")
+    if not isinstance(new_s, str):
+        new_s = tool_input.get("newString") if isinstance(tool_input.get("newString"), str) else None
+    return old_s, new_s
+
+
+def normalized_write_action(payload: dict) -> str | None:
+    tool_name = str(payload.get("tool_name", "") or "")
+    normalized = tool_name.replace("-", "_").strip().lower()
+    if normalized in _WRITE_TOOL_NAMES:
+        return "write"
+    if normalized in _EDIT_TOOL_NAMES:
+        return "edit"
+
+    tool_input = tool_input_dict(payload)
+    old_s, new_s = extract_old_new_strings(tool_input)
+    if old_s is not None and new_s is not None:
+        return "edit"
+    if extract_target_path_str(payload) and extract_write_content(tool_input) is not None:
+        return "write"
+    return None
 
 
 def parse_expires_at(raw: str) -> datetime | None:
@@ -134,11 +240,10 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     """Evaluate scope card and pipeline gate for a Write/Edit PreToolUse payload."""
     root = repo_root or REPO_ROOT
     gate_path, pg_path = resolve_gate_paths(root)
-    tool_name = payload.get("tool_name", "")
-    if tool_name not in {"Write", "Edit"}:
+    if normalized_write_action(payload) is None:
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
-    file_path_str = payload.get("tool_input", {}).get("file_path", "")
+    file_path_str = extract_target_path_str(payload)
     target = resolved_target(root, file_path_str)
 
     if target is not None:
@@ -147,6 +252,11 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
                 return ScopeGateResult(allowed=True, skip_entropy=True)
         except (OSError, ValueError):
             pass
+
+    # Allow writes to Claude Code's external memory dir (e.g. ~/.claude/…/memory/ — W3 in session-closeout).
+    # The scope gate governs repo changes; external memory is system maintenance, not repo drift.
+    if target is not None and target.is_relative_to(Path.home() / ".claude"):
+        return ScopeGateResult(allowed=True, skip_entropy=True)
 
     est_path = entropy_state_path(root)
 

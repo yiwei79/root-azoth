@@ -104,6 +104,7 @@ Systematic instruction improvement based on accumulated evidence.
 - Identifiable pattern (not a one-off)
 - Specific instruction or skill to improve
 - Evaluation criteria that can measure improvement
+- The instruction-refinement lane (`/auto` with `knowledge: instruction-refinement`) is available for automated pipeline composition (see §Auto-Pipeline Composition below)
 
 **P6-002 — structured evidence:** For pipeline-originated signals (evaluator scores, reviewer findings), prefer normalizing into `.azoth/memory/l2-refinement-evidence.jsonl` via `scripts/l2_evidence_append.py` under valid gates, then handing **prompt-engineer** filtered `Read` windows — see `skills/prompt-engineer/SKILL.md` §L2 evidence consumption.
 
@@ -197,6 +198,28 @@ What to look for in M3 episodes:
 
 ---
 
+## Auto-Pipeline Composition (instruction-refinement lane)
+
+When a human approves an L2 refinement proposal (Step 6 above), the
+orchestrator invokes `/auto` with `knowledge: instruction-refinement`.
+The auto-router (D23, Rule 4) composes a full pipeline with
+`l2-evidence-review` injected into the architect stage:
+
+```
+Approved L2 proposal
+  → /auto (knowledge: instruction-refinement)
+  → auto-router Rule 4 → full pipeline + l2-evidence-review inject
+  → Architect loads L2 evidence (M3 episodes + M2 patterns)
+  → Planner → Evaluator → Builder → Architect Review
+  → prompt-engineer receives evidence via l2_evidence_append.py
+```
+
+See `skills/auto-router/SKILL.md` Rule 4 for the l2-evidence-review phase
+definition and `skills/prompt-engineer/SKILL.md` §L2 evidence consumption
+for the downstream spawn contract.
+
+---
+
 ## Governance
 
 Self-improvement has strict governance:
@@ -209,30 +232,4 @@ Self-improvement has strict governance:
 
 ---
 
-## Integration
-
-### With Remember
-
-- Episodes are the raw data for improvement signals
-- Reinforcement counts indicate pattern strength
-
-### With Agentic-Eval
-
-- Evaluation scores are the measurement tool
-- Variant scoring uses eval patterns
-
-### With Prompt-Engineer
-
-- L2 refinements are instruction changes — prompt-engineer crafts them
-- Quality checklist applies to all variants
-
-### With Entropy Guard
-
-- Entropy patterns are a key improvement signal
-- Clustering of yellow/red zones indicates process issues
-
-### With Promotion Rubric
-
-- L2 refinements that prove durable become M2 → M1 promotion candidates
-- The rubric determines where improvements land
 

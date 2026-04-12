@@ -24,9 +24,9 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PIPELINES_DIR = REPO_ROOT / "pipelines"
 
-# Import validator from schema tests — single source of truth
-sys.path.insert(0, str(REPO_ROOT / "tests"))
-from test_pipeline_schema import validate_pipeline  # noqa: E402
+# Import validator from new standalone script
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+from pipeline_lint import validate_pipeline  # noqa: E402
 
 EXPECTED_PRESETS = {"full", "deliver", "hotfix", "docs", "research", "review", "refactor", "auto"}
 

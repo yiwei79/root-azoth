@@ -8,6 +8,7 @@ description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wa
 **Higher bar than `/eval`:** use this command when you need **end-to-end parallel swarm** quality gates — **overall ≥ 0.90** (not 0.85), **fresh evaluator context per wave**, and **minimal prompts** (artifact paths + acceptance criteria only) so judges are not biased by author narrative.
 
 **Baseline gate:** For **simple** single-artifact reviews with **no** escalation triggers, use **`/eval`** (PASS at **≥ 0.85**). **`/eval`** is **smart**: it instructs callers to **escalate here** when workflow/content matches the trigger table (see `.claude/commands/eval.md` § “When `/eval` escalates to swarm eval”).
+If `.claude/commands/` is not present in your install, use the equivalent prompt under `.github/prompts/` (or your platform-specific mirror).
 
 ## When to use `/eval-swarm`
 

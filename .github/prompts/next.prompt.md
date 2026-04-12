@@ -1,13 +1,23 @@
 ---
 mode: agent
 description: Show the next priority task from the roadmap and suggest how to proceed
+agent: orchestrator
 ---
 
-# /next — What Should I Work On?
+# /next [resume <session_id>] — What Should I Work On?
 
 Read the backlog and roadmap, produce a scope card, and write scope-gate.json on approval.
 
 ## Steps
+
+0. **Optional resume lookup**: If the invocation includes `resume <session_id>`, read
+    `.azoth/run-ledger.local.yaml` and locate the matching entry under the optional
+    `sessions:` array.
+    - If found and `status` is `active` or `parked`, use its `backlog_id`, `goal`, and
+       `next_action` as additional context for the scope card.
+    - If missing, invalid, or `status` is `closed`, explain that the session cannot be resumed.
+    - Never rewrite `.azoth/scope-gate.json` directly from the resume lookup. Resume requests
+       still flow through the same human approval step below before any scope-gate write.
 
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
@@ -62,6 +72,20 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 9. **Wait for human signal**: Do NOT start work. If human types `approved`, proceed to step 10.
 10. **Write scope-gate.json**: Write `.azoth/scope-gate.json` with:
 
+10b. **Acquire write claim**: After writing `scope-gate.json`, acquire the write claim so
+    competing sessions are mechanically blocked. Call `acquire_write_claim` from `run_ledger.py`
+    or run:
+    ```
+    python3 scripts/run_ledger.py claim <session_id> <expires_at>
+    ```
+    This registers the write claim in `.azoth/run-ledger.local.yaml`. At session closeout,
+    release the claim via `release_write_claim` or:
+    ```
+    python3 scripts/run_ledger.py release-claim <session_id>
+    ```
+    If a competing session holds an unexpired claim, the PreToolUse hook will deny
+    Write/Edit until the claim is released or expires (and `resolve_stale_claims` clears it).
+
     ```json
     {
       "approved": true,
@@ -75,13 +99,19 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     }
     ```
 
+    **Pipeline selection after scope approval (all scopes):** Writing `.azoth/scope-gate.json`
+    declares intent; it does **not** authorize direct implementation. After scope approval,
+    the next step is delivery pipeline selection. If the human did **not** explicitly choose a
+    pipeline, `/auto` is the default (D23) and must run **Stage 0 goal clarification**
+    before implementation begins.
+
     **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
     `target_layer: M1`, the PreToolUse hook **blocks Write/Edit** until
     `.azoth/pipeline-gate.json` exists (see `/deliver-full`, `/auto`, or `/deliver` **Stage 0**).
-    After scope approval, remind the human: for governed work, invoke the appropriate
-    pipeline command first; the orchestrator must run Stage 0 before other writes.
+    For standard scopes, Stage 0 / pipeline selection still applies even though
+    `pipeline-gate.json` is not required.
 
-    Confirm: "scope-gate.json written — Read/Plan unblocked; governed scopes still require pipeline-gate.json after Stage 0 of a delivery pipeline."
+    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. If none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
 
 ## Scope Card Format
 
@@ -107,6 +137,8 @@ Type `skip` to skip primary and show next candidate.
 ## Rules
 
 - **Never auto-start work** — output the scope card and wait for `approved`
+- **Never auto-resume by rewriting scope** — `resume <session_id>` is read-only until the
+   human types `approved`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
 - **Skip completed items** — if all backlog items are complete, congratulate and show the
   next version entry from `roadmap.yaml versions:` as a preview

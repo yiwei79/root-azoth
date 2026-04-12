@@ -4,20 +4,26 @@ azoth-deploy.py — Translate canonical Azoth sources into platform-specific dep
 
 Transforms:
   agents/**/*.agent.md  →  .claude/agents/<name>.md            (Claude Code)
-                        →  .github/agents/<name>.agent.md      (GitHub Copilot)
+                                                →  .github/agents/<name>.agent.md      (GitHub Copilot compatibility mirror)
                         →  .opencode/agents/<name>.md          (OpenCode)
+                        →  .codex/agents/<name>.toml           (Codex custom agents)
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
   skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+                        →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
                         →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
+  kernel/templates/platform-adapters/codex/*.template
+                        →  .codex/*                            (Codex project adapter files)
   (synthesized)         →  AGENTS.md                          (AAIF cross-platform broadcast)
 
 Usage:
   python scripts/azoth-deploy.py
   python scripts/azoth-deploy.py --dry-run
   python scripts/azoth-deploy.py --platforms claude copilot
+    python scripts/azoth-deploy.py --platforms copilot --copilot-agent-location claude
   python scripts/azoth-deploy.py --platforms cursor
+  python scripts/azoth-deploy.py --platforms codex
   python scripts/azoth-deploy.py --root /path/to/project
 
 Environment:
@@ -212,6 +218,19 @@ def _description(meta: dict[str, Any]) -> str:
     return str(meta.get("description") or meta.get("role") or meta.get("name", ""))
 
 
+def _toml_escape_basic(value: str) -> str:
+    """Escape a TOML basic string value for one-line fields."""
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _toml_multiline_literal(value: str) -> str:
+    """Render a TOML multiline literal string."""
+    if "'''" in value:
+        raise ValueError("TOML multiline literal strings cannot contain triple single quotes")
+    body = value.rstrip("\n")
+    return "'''\n" + body + "\n'''"
+
+
 def transform_agent_claude(agent: dict[str, Any]) -> str:
     """
     Claude Code agent format (.claude/agents/<name>.md).
@@ -228,7 +247,7 @@ def transform_agent_claude(agent: dict[str, Any]) -> str:
 
 def transform_agent_copilot(agent: dict[str, Any]) -> str:
     """
-    Copilot agent format (.github/agents/<name>.agent.md).
+    Copilot compatibility mirror format (.github/agents/<name>.agent.md).
     Frontmatter: name, description (required), tools (optional), model (optional).
     """
     meta = agent["meta"]
@@ -264,6 +283,22 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     return render_frontmatter(fm) + agent["body"]
 
 
+def transform_agent_codex(agent: dict[str, Any]) -> str:
+    """
+    Codex custom agent format (.codex/agents/<name>.toml).
+    Required fields: name, description, developer_instructions.
+    """
+    meta = agent["meta"]
+    lines = [
+        f'name = "{_toml_escape_basic(str(meta["name"]))}"',
+        f'description = "{_toml_escape_basic(_description(meta))}"',
+        "developer_instructions = " + _toml_multiline_literal(agent["body"]),
+    ]
+    if "model" in meta:
+        lines.append(f'model = "{_toml_escape_basic(str(meta["model"]))}"')
+    return "\n".join(lines) + "\n"
+
+
 # ── Command transformations ──────────────────────────────────────────────────
 
 
@@ -275,6 +310,8 @@ def transform_command_copilot(command: dict[str, Any]) -> str:
     fm: dict[str, Any] = {"mode": "agent"}
     if desc := command["meta"].get("description"):
         fm["description"] = desc
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
     return render_frontmatter(fm) + command["body"]
 
 
@@ -286,8 +323,19 @@ def transform_command_opencode(command: dict[str, Any]) -> str:
     fm: dict[str, Any] = {}
     if desc := command["meta"].get("description"):
         fm["description"] = desc
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
     if fm:
         return render_frontmatter(fm) + command["body"]
+    return command["body"]
+
+
+def transform_command_antigravity(command: dict[str, Any]) -> str:
+    """
+    Antigravity command format (.agents/workflows/<name>.md).
+    Antigravity invokes these as /<name>. Body passes through unchanged.
+    Frontmatter is stripped, as Antigravity rules and workflows are plain markdown.
+    """
     return command["body"]
 
 
@@ -354,9 +402,11 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "| Platform | Agents | Commands | Skills | IDE rules |",
         "|----------|--------|----------|--------|-----------|",
+        "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
-        "| GitHub Copilot | `.github/agents/` | `.github/prompts/` | `.github/skills/` | — |",
+        "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
+        "| Codex | `.codex/agents/*.toml` | literal Azoth tokens + `.claude/commands/` contract | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
@@ -367,6 +417,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
 # ── Cursor IDE rules (kernel templates → .cursor/rules/) ────────────────────
 
 CURSOR_ADAPTER_DIR = Path("kernel/templates/platform-adapters/cursor")
+CODEX_ADAPTER_DIR = Path("kernel/templates/platform-adapters/codex")
 
 
 def cursor_rules_dest_dir(root: Path) -> Path:
@@ -402,36 +453,92 @@ def iter_cursor_rule_deployments(root: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
-def deploy_cursor_rules(root: Path, dry_run: bool) -> int:
-    """Copy kernel Cursor templates into .cursor/rules/. Returns files written."""
+def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tuple[int, int]:
+    """Copy kernel Cursor templates into .cursor/rules/.
+
+    Returns (files_processed, stale_count).
+    """
     count = 0
+    stale = 0
     for template_path, dest_path in iter_cursor_rule_deployments(root):
         content = template_path.read_text(encoding="utf-8")
-        write_file(dest_path, content, root, dry_run)
+        if not write_file(dest_path, content, root, dry_run, check=check):
+            stale += 1
         count += 1
-    return count
+    return count, stale
+
+
+def iter_codex_adapter_deployments(root: Path) -> list[tuple[Path, Path]]:
+    """Map Codex adapter templates to their deployed .codex destinations."""
+    adapter = root / CODEX_ADAPTER_DIR
+    return [
+        (adapter / "config.toml.template", root / ".codex" / "config.toml"),
+        (adapter / "hooks.json.template", root / ".codex" / "hooks.json"),
+        (
+            adapter / "user_prompt_submit_router.py.template",
+            root / ".codex" / "hooks" / "user_prompt_submit_router.py",
+        ),
+    ]
+
+
+def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> tuple[int, int]:
+    """Copy kernel Codex templates into .codex/."""
+    count = 0
+    stale = 0
+    for template_path, dest_path in iter_codex_adapter_deployments(root):
+        if not template_path.is_file():
+            continue
+        content = template_path.read_text(encoding="utf-8")
+        if not write_file(dest_path, content, root, dry_run, check=check):
+            stale += 1
+        count += 1
+    return count, stale
 
 
 # ── File writing ─────────────────────────────────────────────────────────────
 
 
-def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
-    """Write content to path, printing the relative path. Creates parent dirs."""
+def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Write content to path, printing the relative path. Creates parent dirs.
+
+    In check mode, compares computed content against on-disk content without
+    writing.  Returns True when the file is (or would be) in sync.
+    """
     try:
         rel = path.relative_to(root)
     except ValueError:
         rel = path
+    if check:
+        if not path.is_file():
+            print(f"  [missing] {rel}")
+            return False
+        if path.read_text(encoding="utf-8") != content:
+            print(f"  [stale] {rel}")
+            return False
+        return True
     if dry_run:
         print(f"  [dry-run] {rel}")
-        return
+        return True
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     print(f"  {rel}")
+    return True
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity")
+COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
+
+
+def _deploy_claude_agents(platforms: set[str], copilot_agent_location: str) -> bool:
+    return "claude" in platforms or (
+        "copilot" in platforms and copilot_agent_location in {"claude", "both"}
+    )
+
+
+def _deploy_github_agents(platforms: set[str], copilot_agent_location: str) -> bool:
+    return "copilot" in platforms and copilot_agent_location in {"github", "both"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -444,10 +551,16 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("."),
         help="Project root directory (default: current directory)",
     )
-    parser.add_argument(
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be written without writing anything",
+    )
+    mode_group.add_argument(
+        "--check",
+        action="store_true",
+        help="Check that deployed files are in sync with sources (exit 1 if stale)",
     )
     parser.add_argument(
         "--platforms",
@@ -457,17 +570,34 @@ def main(argv: list[str] | None = None) -> int:
         metavar="PLATFORM",
         help=f"Platforms to target (default: all). Choices: {', '.join(ALL_PLATFORMS)}",
     )
+    parser.add_argument(
+        "--copilot-agent-location",
+        choices=COPILOT_AGENT_LOCATIONS,
+        default="claude",
+        help=(
+            "Where to deploy Copilot custom agents: 'claude' keeps Copilot agent discovery "
+            "Claude-first via .claude/agents/ while preserving .github/prompts/, 'github' "
+            "writes .github/agents/ only, and 'both' writes both agent locations. "
+            "Default: claude"
+        ),
+    )
     args = parser.parse_args(argv)
 
     root: Path = args.root.resolve()
     platforms: set[str] = set(args.platforms)
     dry_run: bool = args.dry_run
+    check: bool = args.check
+    copilot_agent_location: str = args.copilot_agent_location
 
     if not root.is_dir():
         print(f"error: root not found: {root}", file=sys.stderr)
         return 1
 
-    print(f"azoth-deploy  root={root}  platforms={sorted(platforms)}  dry-run={dry_run}\n")
+    extra = ""
+    if "copilot" in platforms:
+        extra = f"  copilot-agent-location={copilot_agent_location}"
+    mode_label = "check" if check else f"dry-run={dry_run}"
+    print(f"azoth-deploy  root={root}  platforms={sorted(platforms)}  {mode_label}{extra}\n")
 
     agents = load_agents(root)
     commands = load_commands(root)
@@ -476,42 +606,62 @@ def main(argv: list[str] | None = None) -> int:
     print(f"sources: {len(agents)} agents, {len(commands)} commands, {len(skills)} skills\n")
 
     count = 0
+    stale = 0
 
     # ── Agents ───────────────────────────────────────────────────────────────
     if agents:
         print("── agents ──────────────────────────────────────────────────────")
 
-        if "claude" in platforms:
+        if _deploy_claude_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".claude" / "agents" / f"{name}.md",
                     transform_agent_claude(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
-        if "copilot" in platforms:
+        if _deploy_github_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".github" / "agents" / f"{name}.agent.md",
                     transform_agent_copilot(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if "opencode" in platforms:
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".opencode" / "agents" / f"{name}.md",
                     transform_agent_opencode(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
+        if "codex" in platforms:
+            for agent in agents:
+                name = agent["meta"]["name"]
+                if not write_file(
+                    root / ".codex" / "agents" / f"{name}.toml",
+                    transform_agent_codex(agent),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         print()
@@ -522,44 +672,74 @@ def main(argv: list[str] | None = None) -> int:
 
         if "copilot" in platforms:
             for cmd in commands:
-                write_file(
+                if not write_file(
                     root / ".github" / "prompts" / f"{cmd['name']}.prompt.md",
                     transform_command_copilot(cmd),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if "opencode" in platforms:
             for cmd in commands:
-                write_file(
+                if not write_file(
                     root / ".opencode" / "commands" / f"{cmd['name']}.md",
                     transform_command_opencode(cmd),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
+        if "antigravity" in platforms:
+            for cmd in commands:
+                if not write_file(
+                    root / ".agents" / "workflows" / f"{cmd['name']}.md",
+                    transform_command_antigravity(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         print()
 
     # ── Skills ───────────────────────────────────────────────────────────────
-    if skills and "opencode" in platforms:
+    if skills and ("opencode" in platforms or "antigravity" in platforms or "codex" in platforms):
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
-            write_file(
-                root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
-                skill["raw"],
-                root,
-                dry_run,
-            )
-            count += 1
+            if "opencode" in platforms:
+                if not write_file(
+                    root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
+                    skill["raw"],
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+            if "antigravity" in platforms or "codex" in platforms:
+                if not write_file(
+                    root / ".agents" / "skills" / skill["name"] / "SKILL.md",
+                    skill["raw"],
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────
     if "cursor" in platforms:
         print("── cursor rules ────────────────────────────────────────────────")
-        n = deploy_cursor_rules(root, dry_run)
+        n, s = deploy_cursor_rules(root, dry_run, check=check)
         count += n
+        stale += s
         if n == 0:
             print(
                 f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
@@ -567,12 +747,55 @@ def main(argv: list[str] | None = None) -> int:
             )
         print()
 
+    # ── Codex adapter (kernel templates) ──────────────────────────────────────
+    if "codex" in platforms:
+        print("── codex adapter ───────────────────────────────────────────────")
+        n, s = deploy_codex_adapter(root, dry_run, check=check)
+        count += n
+        stale += s
+        if n == 0:
+            print(
+                f"  [warning] no template files under {CODEX_ADAPTER_DIR}",
+                file=sys.stderr,
+            )
+        print()
+
+    # ── Antigravity rules (kernel templates) ─────────────────────────────────
+    if "antigravity" in platforms:
+        print("── antigravity rules ───────────────────────────────────────────")
+        # Inline deploy_antigravity_rules logic here or define above
+        adapter = root / "kernel/templates/platform-adapters/antigravity"
+        if not adapter.is_dir():
+            print(f"  [warning] no format files under {adapter}", file=sys.stderr)
+        else:
+            n = 0
+            dest_dir = root / ".agents" / "rules"
+            for path in sorted(adapter.glob("*.md.template")):
+                out_name = path.name.removesuffix(".template")
+                dest = dest_dir / out_name
+                content = path.read_text(encoding="utf-8")
+                if not write_file(dest, content, root, dry_run, check=check):
+                    stale += 1
+                n += 1
+            count += n
+        print()
+
     # ── AGENTS.md ────────────────────────────────────────────────────────────
     if agents:
         print("── AGENTS.md ───────────────────────────────────────────────────")
-        write_file(root / "AGENTS.md", generate_agents_md(agents), root, dry_run)
+        if not write_file(
+            root / "AGENTS.md", generate_agents_md(agents), root, dry_run, check=check
+        ):
+            stale += 1
         count += 1
         print()
+
+    if check:
+        if stale > 0:
+            print(f"✗ {stale}/{count} file(s) out of sync. Run: python3 scripts/azoth-deploy.py")
+            return 1
+        print(f"done. All {count} file(s) in sync.")
+        return 0
 
     verb = "Would write" if dry_run else "Wrote"
     print(f"done. {verb} {count} files.")

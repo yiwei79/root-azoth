@@ -200,7 +200,7 @@ $defs:
             enum: [simple, medium, complex]
           knowledge:
             type: string
-            enum: [known-pattern, needs-research, novel]
+            enum: [known-pattern, needs-research, novel, instruction-refinement]
       rules:
         type: array
         minItems: 1

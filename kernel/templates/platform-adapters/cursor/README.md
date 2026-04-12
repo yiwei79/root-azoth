@@ -45,6 +45,56 @@ cp kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template .cu
 
 Re-run **`azoth-deploy`** (full default includes `cursor`) whenever these templates change.
 
+## Session-Open Automation (P1-009)
+
+Claude Code runs `scripts/welcome.py --plain` automatically on every session open via
+`hooks.SessionStart` (`.claude/settings.json`). Cursor hooks do not run. Use one of the
+paths below to replicate the orientation ritual.
+
+### SessionStart vs Cursor parity
+
+| Step | Claude Code | Cursor |
+|------|-------------|--------|
+| Welcome dashboard (Rich UI) | Automatic via `hooks.SessionStart` | Run in **Terminal panel**: `python3 scripts/welcome.py` |
+| Plain orientation (token-efficient) | Injected into model context; cached to `.azoth/session-orientation.txt` | Run: `python3 scripts/welcome.py --plain` or open `.azoth/session-orientation.txt` |
+| M2 patterns + bootloader loaded | Automatic (hook → inject) | `azoth-memory.mdc` prompts model to read them on first turn |
+| Session handoff capsule | Auto-read by hook | `azoth-memory.mdc` reads `.azoth/session-state.md` when present |
+| Scope-gate + pipeline-gate checks | PreToolUse hooks (mechanical) | `claude-code-parity.mdc` (behavioral simulation) |
+
+### Recommended ritual
+
+At the start of each Cursor session, open the **Terminal panel** and run:
+
+```bash
+python3 scripts/welcome.py
+```
+
+This prints the full Rich dashboard (phases, health, backlog, last episode, routing menu).
+Then type your intent into the chat.
+
+For **chat-injection** (model reads orientation facts without you copy-pasting), run the
+plain variant and direct the model to read the output:
+
+```bash
+python3 scripts/welcome.py --plain
+```
+
+### Optional: VS Code task automation
+
+A `.vscode/tasks.json` task lets you trigger the dashboard with **Terminal → Run Task**
+instead of typing the command manually — and the output stays visible in the Terminal panel
+throughout the session.
+
+The repo ships `.vscode/tasks.json` with two tasks:
+
+| Task label | Command | When to use |
+|------------|---------|-------------|
+| `Azoth: Session Welcome (Rich)` | `python3 scripts/welcome.py` | Start of session — full Rich dashboard in Terminal |
+| `Azoth: Session Welcome (Plain)` | `python3 scripts/welcome.py --plain` | When you want to pipe plain text into a chat message |
+
+Run via: **Terminal → Run Task → Azoth: Session Welcome (Rich)**
+Or bind a keyboard shortcut in Cursor's key bindings to `workbench.action.tasks.runTask`.
+
 ## Cross-IDE Session Handoff
 
 To hand off a session from Claude Code to Cursor (or vice versa):

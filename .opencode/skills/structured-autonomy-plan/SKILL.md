@@ -140,17 +140,9 @@ risks:
 - Estimated zone: {GREEN | YELLOW | RED}
 ```
 
----
-
-## Integration with Pipeline
-
-This skill is used primarily in **Stage 3 (Planning)** of the pipeline:
-
-1. Architect produces design brief → human approves
-2. **Planner invokes this skill** → produces structured plan
-3. Architect reviews plan quality (agent gate)
-4. Test Builder uses plan's test strategy as input
-5. Builder executes plan tasks in order
+In pipeline terms, this artifact is usually produced after architect approval and then
+consumed by the test-builder and builder stages, so file lists, dependencies, and
+validation steps must stay cold-start clear.
 
 ## Quality Criteria
 

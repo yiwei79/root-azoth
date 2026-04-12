@@ -73,6 +73,11 @@ def test_router_policy_source_present() -> None:
     )
 
 
+def test_stage0_references_gate_protocol() -> None:
+    """deliver.md should point to the shared mechanical gate protocol doc."""
+    assert "docs/GATE_PROTOCOL.md" in _CONTENT
+
+
 # ── Integration: file-scoped collateral guard ─────────────────────────────────
 
 

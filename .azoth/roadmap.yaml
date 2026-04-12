@@ -6,8 +6,9 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 8
-current_phase_title: "Next — roadmap TBD"
+current_phase: 2
+current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 2)"
+lifecycle_phase: 8
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
   - id: BL-002
@@ -122,13 +123,13 @@ tasks:
     blocked_by: null
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
-schema_version: 1
-active_version: v0.2.0
+schema_version: 2
+active_version: v0.2.0-p2
 
-# D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.x + roadmap v0.2.0 current_patch)
-# - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.M → 0.1.M+1 + v0.2.0 current_patch +1
-# - phase: 0.0.N.M → 0.0.N+1.1 (not used after v0.0.7; use --release for 0.1.0)
-# - release: v0.0.7 active → close v0.0.7 + v0.1.0, azoth 0.1.0, phase 8, activate v0.2.0
+# D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.MILESTONE_PHASE.PATCH under v0.2.0)
+# - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.P.M → 0.1.P.M+1 + active v0.2.0-pP current_patch +1
+# - phase: 0.0.N.M → 0.0.N+1.1; post-1.0: 0.1.P.M → 0.1.P+1.0 + active_version v0.2.0-p(P+1)
+# - release: v0.0.7 active → close v0.0.7 + v0.1.0, tag public v0.1.0, then move repo to 0.1.1.0 and activate v0.2.0-p1
 # - git tag proposed at release only (user-confirmed, never auto-pushed)
 
 versions:
@@ -268,15 +269,375 @@ versions:
     note: "Version bumped to 0.1.0 when Phase 7 (v0.0.7) is complete. Git tag proposed."
 
   - id: v0.2.0
-    status: active
-    current_patch: 3
-    goal: "Post–v0.1.0 — next roadmap TBD (phases & backlog to seed)"
-    phase_scope: []
+    status: target
+    goal: >
+      Milestone: Long-running, low-friction agentic work: durable run state and resume;
+      declarative swarm/eval waves beside prose workflows; pipeline lint and wiring tests;
+      memory-loop and recall elasticity without toolkit over-fit; calmer UX (narrow terminals,
+      gate visibility, Cursor orientation parity); optional L2/auto-router lane for refinement
+      goals; token and inference efficiency (context budget, provider caching discipline,
+      spawn hygiene).
     note: >
-      v0.1.0 release complete. Phases and backlog for this slice are undefined until you
-      promote the next planning episode. Existing placeholder: P5-006 (phone-friendly output).
+      Milestone container for v0.2.x series. Working phases: v0.2.0-p1+. All tasks staged as
+      initiatives by theme (A: run-state, B: pipeline, C: memory, D: ux/platform,
+      E: efficiency). Detailed specs: .azoth/roadmap-specs/v0.2.0/<id>.yaml. Research digest:
+      .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml (DYNAMIC-FULL-AUTO+).
+
+  - id: v0.2.0-p1
+    status: complete
+    final_patch: 45
+    goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
+    phase_scope: [1]
+    themes: [A, B, C, D]
+    note: >
+      First working phase of v0.2.0 milestone. 45 patches across 4 themes. Deferred to
+      v0.2.0-p2: P1-017 (reinforcement_count automation), P1-020 (verbatim-first M3),
+      P1-021 (memory platform parity) — hardening items, not blockers for Phase 2 work.
+    completed_tasks:
+      - {id: P1-001, title: "Swarm & pipeline run ledger + resume protocol", completed_date: "2026-04-10", decision_ref: [D21, D50]}
+      - {id: P1-002, title: "Declarative swarm / eval-wave specification", completed_date: "2026-04-10", decision_ref: [D23, D28]}
+      - {id: P1-003, title: "Pipeline composition linter", completed_date: "2026-04-11", decision_ref: [D28]}
+      - {id: P1-004, title: "Control-plane surfacing in welcome (gates + optional ledger)", completed_date: "2026-04-11", decision_ref: [D52, D50]}
+      - {id: P1-005, title: "Long-running session policy (docs + scope playbook)", completed_date: "2026-04-11", decision_ref: [D50]}
+      - {id: P1-006, title: "Memory loop hardening (reinforcement, closeout, session-state)", completed_date: "2026-04-11", decision_ref: [D11, D49, D51]}
+      - {id: P1-007, title: "Elasticity: M2/M3 recall governance", completed_date: "2026-04-11", decision_ref: [D45]}
+      - {id: P1-008, title: "auto-router L2 / self-improve lane", completed_date: "2026-04-12", decision_ref: [D23, D44]}
+      - {id: P1-009, title: "Cursor session-open parity", completed_date: "2026-04-11", decision_ref: [D52, D46]}
+      - {id: P1-010, title: "Eval / eval-swarm wiring drift hardening", completed_date: "2026-04-11", decision_ref: [D46]}
+      - {id: P1-011, title: "Token & inference efficiency (context budget, caching, spawn hygiene)", completed_date: "2026-04-10", decision_ref: [D21, D23, D44, D46]}
+      - {id: P1-012, title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)", completed_date: "2026-04-09", decision_ref: [D21, D23, D50]}
+      - {id: P1-013, title: "Explicit main-session orchestrator default (Claude Code + Copilot)", completed_date: "2026-04-12", decision_ref: [D21, D23, D46]}
+      - {id: P1-014, title: "Antigravity bootstrap adapter (rules + workflows + skill)", completed_date: "2026-04-11", decision_ref: [D19, D21, D46, D50]}
+      - {id: P1-015, title: "True multi-writer safety (write claims and lock enforcement)", completed_date: "2026-04-11", decision_ref: [D21, D46, D50]}
+      - {id: P1-016, title: "Antigravity full Azoth behavioral compliance", completed_date: "2026-04-11", decision_ref: [D21, D23, D28, D46, D50, D52]}
+      - {id: P1-018, title: "Mechanically enforce azoth-deploy after source agent changes", completed_date: "2026-04-12", decision_ref: [D46]}
+      - {id: P1-019, title: "Add ambiguous-case examples to CLAUDE.md rule 10", completed_date: "2026-04-12", decision_ref: [D23]}
+      - {id: BL-027, title: "Fix eval-swarm.md azoth_effect: read → mixed", completed_date: "2026-04-12"}
+      - {id: BL-028, title: "Exclude kernel/templates/ from product extraction", completed_date: "2026-04-12", decision_ref: [D35, D42]}
+      - {id: BL-029, title: "Add eval-swarm escalation routing to Cursor", completed_date: "2026-04-12", decision_ref: [D46, D52]}
+      - {id: BL-030, title: "Assert LICENSE in test_extract_minimal_tree fixture", completed_date: "2026-04-12", decision_ref: [D35]}
+      - {id: BL-031, title: "Fix Copilot adapter prompts dead-referencing .claude/ paths", completed_date: "2026-04-12", decision_ref: [D35, D36]}
+      - {id: BL-032, title: "Clarify --dry-run partial scope in azoth_extract_product.py", completed_date: "2026-04-12"}
+      - {id: BL-033, title: "Couple AZOTH_VERSION to azoth.yaml", completed_date: "2026-04-12", decision_ref: [D35]}
+    deferred_tasks:
+      - {id: P1-017, title: "reinforcement_count automation", deferred_to: "v0.2.0-p2", reason: "Hardening — no runtime blocker"}
+      - {id: P1-020, title: "Verbatim-first M3 storage strategy", deferred_to: "v0.2.0-p2", reason: "Policy + tooling — current M3 JSONL works"}
+      - {id: P1-021, title: "Memory operation platform parity", deferred_to: "v0.2.0-p2", reason: "Validation work — memory works per-platform"}
+    pending_task_refs: []
+
+  - id: v0.2.0-p2
+    status: active
+    current_patch: 0
+    goal: "Memory hardening + declarative swarm depth + platform parity polish"
+    phase_scope: [2]
+    themes: [A, C, D]
+    note: >
+      Second working phase of v0.2.0 milestone. Carries P1-017/P1-020/P1-021 from p1 plus
+      high-priority initiatives: INI-RST-001 (declarative swarm spec depth), INI-MEM-004
+      (memory loop hardening), INI-RST-003 (multi-writer safety next level). Medium-priority
+      initiatives (INI-PPL-001, INI-PPL-002, INI-MEM-002, INI-MEM-003, INI-MEM-005,
+      INI-PLT-002, INI-EFF-001) available for scheduling after triage.
     tasks:
-      - id: P5-006
-        title: "Phone-friendly output (narrow terminals)"
-        deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
-        note: "Welcome/dashboard and key CLI width; optional compact mode"
+      - id: P1-017
+        title: "reinforcement_count automation (closeout + promote path)"
+        decision_ref: [D11, D49, D51]
+        carried_from: "v0.2.0-p1"
+      - id: P1-020
+        title: "Verbatim-first M3 storage strategy"
+        decision_ref: [D11, D45]
+        initiative_ref: "INI-MEM-001"
+        carried_from: "v0.2.0-p1"
+      - id: P1-021
+        title: "Memory operation platform parity"
+        decision_ref: [D42, D46, D52]
+        initiative_ref: "INI-PLT-001"
+        carried_from: "v0.2.0-p1"
+
+# ── Initiatives (schema_version: 2) ──────────────────────────────────────────
+# Phase-agnostic goal items. phase: null until triage assigns a milestone.
+# Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
+# Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
+# Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+initiatives:
+
+  # ── Theme A: run-state ─────────────────────────────────────────────────────
+  - id: INI-RST-001
+    title: "Declarative swarm / eval-wave specification"
+    category: run-state
+    theme: A
+    phase: null
+    priority: high
+    task_ref: P1-002
+    blocked_by: [P1-001]
+    summary: >
+      YAML/schema spec for declarative swarm and eval-wave definitions alongside
+      e2e-swarm-eval-loop.md. Moves pipeline orchestration from prose workflows to
+      structured, lintable declarations. Depends on run ledger (P1-001 in v0.2.0-p1).
+    decision_ref: [D23, D28]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
+
+  - id: INI-RST-002
+    title: "Control-plane surfacing in welcome (gates + optional ledger)"
+    category: run-state
+    theme: A
+    phase: null
+    priority: medium
+    task_ref: P1-004
+    blocked_by: [P1-001]
+    summary: >
+      TTL visibility and active run summary in welcome dashboard when ledger exists.
+      Surfaces scope gate expiry, pipeline gate status, and optional run ledger summary
+      in the session cockpit. Depends on run ledger (P1-001 in v0.2.0-p1).
+    decision_ref: [D52, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
+
+  - id: INI-RST-003
+    title: "True multi-writer safety (write claims and lock enforcement)"
+    category: run-state
+    theme: A
+    phase: null
+    priority: high
+    task_ref: P1-015
+    blocked_by: [P1-014]
+    summary: >
+      Add explicit write-claim and lock enforcement for concurrent sessions across
+      Copilot, Claude Code, Antigravity, and other harnesses. The current model can
+      track many sessions but projects only one active scope gate for writes; this
+      initiative defines the next step: session leases or finer-grained file claims,
+      conflict detection, handoff rules, and mechanical enforcement so parallel
+      writers are safe rather than advisory.
+    decision_ref: [D21, D46, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
+
+  # ── Theme B: pipeline ──────────────────────────────────────────────────────
+  - id: INI-PPL-001
+    title: "auto-router L2 / self-improve lane"
+    category: pipeline
+    theme: B
+    phase: null
+    priority: medium
+    task_ref: P1-008
+    summary: >
+      Stage 0 composition_rules for refinement goals; optional L2 self-improve lane
+      in auto-router that routes low-risk refinement goals through a lighter pipeline
+      (no full planner/builder/evaluator chain). Reduces overhead for iterative work.
+    decision_ref: [D23, D44]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
+
+  - id: INI-PPL-002
+    title: "Eval / eval-swarm wiring drift hardening"
+    category: pipeline
+    theme: B
+    phase: null
+    priority: medium
+    task_ref: P1-010
+    summary: >
+      Tests and mirror surfaces for eval/eval-swarm stay aligned across
+      skills/agentic-eval, skills/eval-swarm, and pipeline presets. Drift detection
+      prevents silent divergence between the eval skill and its swarm escalation path.
+    decision_ref: [D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+
+  # ── Theme C: memory ────────────────────────────────────────────────────────
+  - id: INI-MEM-001
+    title: "Verbatim-first M3 storage strategy"
+    category: memory
+    theme: C
+    phase: v0.2.0-p1
+    task_ref: P1-020
+    priority: high
+    summary: >
+      Store raw episode context verbatim in M3 before any summarisation or compression.
+      Building the episodic index on full signal avoids the compress-before-index regression
+      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth M3
+      is currently append-only JSONL with no vector index; this initiative scopes the policy
+      and tooling to enforce verbatim storage as the baseline.
+    research_ref: "RP-MEM-A"
+    decision_ref: [D11, D45]
+
+  - id: INI-MEM-002
+    title: "Temporal validity windows for M2 patterns"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    summary: >
+      Add optional `valid_from` / `valid_to` fields to M2 pattern entries with point-in-time
+      query support, replacing implicit recency-by-modification-date with explicit temporal
+      scoping. Inspired by mempalace's SQLite triple store
+      (`AND (valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)`).
+      D42 kernel immutability: invalidation of M2 patterns remains HITL-only; this initiative
+      adds temporal metadata, not auto-expiry.
+    research_ref: "RP-MEM-C"
+    decision_ref: [D11, D42]
+
+  - id: INI-MEM-003
+    title: "Vector retrieval layer for M3 context-recall"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    summary: >
+      Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic recall,
+      complementing the current keyword/recency scan. Flat metadata tagging (no Python class
+      hierarchy) mirrors mempalace's single "mempalace_drawers" ChromaDB collection. Hybrid
+      retrieval formula (`fused_dist = dist * (1.0 - weight * keyword_overlap)`) should live
+      in production code, not only benchmark scripts. The optional flag keeps the JSONL path
+      as the zero-dependency default.
+    research_ref: "RP-MEM-B"
+    decision_ref: [D11, D45]
+
+  - id: INI-MEM-004
+    title: "Memory loop hardening (reinforcement, closeout, session-state)"
+    category: memory
+    theme: C
+    phase: null
+    priority: high
+    task_ref: P1-006
+    summary: >
+      W2 parity for memory loop; documented reinforcement_count semantics;
+      session-state handoff integrity across closeout. Keeps memory docs and
+      closeout wording aligned without forcing premature runtime automation.
+    decision_ref: [D11, D49, D51]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
+
+  - id: INI-MEM-005
+    title: "Elasticity: M2/M3 recall governance"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    task_ref: P1-007
+    summary: >
+      Tags, decay rules, contradiction handling, and consumer boundary governance for
+      M2/M3 recall. Prevents memory bloat and stale pattern surfacing without requiring
+      constant manual pruning. Consumer boundary: defines what a downstream azoth install
+      inherits vs builds fresh.
+    decision_ref: [D45]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
+
+  - id: INI-MEM-006
+    title: "reinforcement_count automation (closeout + promote path)"
+    category: memory
+    theme: C
+    phase: null
+    priority: medium
+    task_ref: P1-017
+    summary: >
+      Add an explicit, human-confirmed automation path for reinforcement_count so
+      closeout/promote can increment prior episodes without fuzzy matching, silent
+      edits, or duplicate increments in the same session.
+    decision_ref: [D11, D49, D51]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
+
+  # ── Theme D: ux / platform ─────────────────────────────────────────────────
+  - id: INI-UX-001
+    title: "Phone-friendly output (narrow terminals)"
+    category: ux
+    theme: D
+    phase: null
+    priority: low
+    task_ref: P5-006
+    deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
+    summary: >
+      Compact/width-aware layouts for welcome dashboard and roadmap panels in narrow
+      terminals (mobile SSH, phone-sized viewports). Graceful degradation when terminal
+      width < 80 columns without breaking structured output.
+    decision_ref: [D48, D52]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
+
+  - id: INI-PLT-001
+    title: "Memory operation platform parity"
+    category: platform
+    theme: D
+    phase: v0.2.0-p1
+    task_ref: P1-021
+    priority: medium
+    summary: >
+      Document and validate that M3 append, M2 promote, and context-recall operations produce
+      consistent, tested results across Claude Code, Cursor, and Copilot adapter paths.
+      Mempalace highlighted production-vs-benchmark divergence (hybrid retrieval only in
+      benchmark scripts, not searcher.py). Azoth must not ship memory features that work in
+      the development surface but silently degrade under adapter paths.
+    research_ref: "RP-PLT-A"
+    decision_ref: [D42, D46, D52]
+
+  - id: INI-PLT-002
+    title: "Cursor session-open parity"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    task_ref: P1-009
+    summary: >
+      Documented and validated automation path for Cursor session-open that reaches
+      parity with Claude Code's SessionStart hook. Covers azoth-memory.mdc rule loading,
+      session-orientation.txt fallback, and Rich UI access via integrated terminal.
+    decision_ref: [D52, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
+
+  - id: INI-PLT-003
+    title: "Explicit default orchestrator role across Claude Code and Copilot"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    task_ref: P1-013
+    summary: >
+      Claude Code supports a session-wide main agent, but Azoth does not currently set one,
+      so `/auto` and related pipelines run in the default session agent and only reach Azoth
+      archetypes through explicit subagent spawns. This initiative defines an explicit Azoth
+      orchestrator default for Claude Code and an equivalent default-agent orchestration role
+      for Copilot adapter surfaces so pipeline ownership is mechanical rather than implicit.
+    decision_ref: [D21, D23, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-013.yaml"
+    status: complete
+    completed_date: "2026-04-12"
+
+  - id: INI-PLT-004
+    title: "Antigravity workspace bootstrap adapter"
+    category: platform
+    theme: D
+    phase: null
+    priority: high
+    task_ref: P1-014
+    summary: >
+      Bootstrap a practical Antigravity-native Azoth surface inside the repo using
+      `.agents/rules/`, `.agents/workflows/`, and `.agents/skills/`. Target standard
+      infrastructure work first, keep `.azoth/` authoritative, and defer kernel-template
+      deploy integration until the workspace bootstrap proves operational.
+    decision_ref: [D19, D21, D46, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
+
+  - id: INI-PLT-005
+    title: "Antigravity deploy target and install path"
+    category: platform
+    theme: D
+    phase: null
+    priority: medium
+    blocked_by: [P1-014]
+    summary: >
+      Extend the repo-local Antigravity bootstrap into a real install and deploy path:
+      add an Antigravity adapter surface to deployment mechanics, define optional global
+      install locations under `~/.gemini/GEMINI.md`, `~/.gemini/antigravity/global_workflows/`,
+      and `~/.gemini/antigravity/skills/`, and decide how workspace bootstrap and global
+      install should coexist. Keep this unphased until the workspace bootstrap proves
+      operational in practice.
+    decision_ref: [D19, D46]
+
+  # ── Theme E: efficiency ────────────────────────────────────────────────────
+  - id: INI-EFF-001
+    title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
+    category: efficiency
+    theme: E
+    phase: null
+    priority: medium
+    task_ref: P1-011
+    summary: >
+      Context budget discipline (BL-012), deploy mirror pruning, provider caching
+      (prompt cache headers, cache-friendly prompt ordering), and spawn hygiene
+      (avoid cold subagent starts when warm context suffices). RP-E findings in
+      SWARM_RESEARCH_DIGEST.yaml. Goal: measurable token reduction per session without
+      sacrificing pipeline isolation.
+    decision_ref: [D21, D23, D44, D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"

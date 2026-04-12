@@ -2,6 +2,7 @@
 mode: agent
 description: Full pipeline with governance gates — for kernel, governance, or breaking
   changes
+agent: orchestrator
 ---
 
 # /deliver-full $ARGUMENTS
@@ -11,34 +12,16 @@ governance, kernel, or operating rules.
 
 ## Stage 0 — Pipeline gate (mechanical)
 
-**Before any other Write/Edit** to the repo in this run: `Read` `.azoth/scope-gate.json`.
-If `delivery_pipeline` is `governed` **or** `target_layer` is `M1`, `Write`
-`.azoth/pipeline-gate.json` so the PreToolUse hook allows subsequent edits:
-
-```json
-{
-  "session_id": "<must match scope-gate.session_id>",
-  "pipeline": "deliver-full",
-  "approved": true,
-  "expires_at": "<same as scope-gate.expires_at>",
-  "opened_at": "<ISO 8601 now, +00:00>"
-}
-```
-
-If the scope is **not** governed (standard additive work without M1 backlog), **omit** this
-file unless you already use it from a prior step. If `pipeline-gate.json` already exists with
-the same `session_id`, update `opened_at` only.
-
-This stage wires **Claude Code’s delivery pipeline** to mechanical enforcement: governed
-work cannot bypass `/deliver-full` (or `/auto` / `/deliver`) and inline-only implementation.
+Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes
+`.azoth/pipeline-gate.json`, set `"pipeline": "deliver-full"`.
 
 ## Typed stage summary (BL-012)
 
-After each pipeline step completes (architect through builder), the subagent MUST emit a YAML
-document conforming to `pipelines/stage-summary.schema.yaml` with `pipeline: deliver-full`
-and a stable `stage_id` (see `subagent-router` §Stage briefs: deliver-full). The
-orchestrator forwards this summary to the next stage. Optional markdown alignment
-(`alignment-sync`) is for human pull-review only.
+After each pipeline step completes (architect through builder), emit YAML per
+`skills/subagent-router/SKILL.md` §Stage summary output and `pipelines/stage-summary.schema.yaml`
+with `pipeline: deliver-full` and a stable `stage_id` (see `subagent-router` §Stage briefs:
+deliver-full). The orchestrator forwards this summary to the next stage; optional markdown
+alignment (`alignment-sync`) remains human-facing only.
 
 ## Pipeline (D21)
 
@@ -50,8 +33,8 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 
 - Policy source: `subagent-router` skill (trigger definitions and routing table)
 - Each agent gate (stages 3–6) mandates a fresh-context subagent invocation via `Agent(subagent_type=...)`
-- The Architect (orchestrator) remains the final speaker for all human gates
-- Subagents return findings; Architect disposes and escalates to human if needed
+- The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.
+- Subagents return findings; Orchestrator disposes and escalates to human if needed
 - **Orchestrator handoff:** Before each downstream `Agent`/`Task`, attach `inputs.prior_stage_summaries` with verbatim typed YAML from upstream stages (`subagent-router` §Orchestrator forward payload). Evaluator and review stages are not valid without this.
 - **Review escalation:** If Governance Review returns request-changes, CRITICAL/blocking findings, `entropy: RED`, or `status: needs-input`, **STOP** — do not run Planner until the human approves continuation (same human-gate pattern as `/auto` Execution §5).
 - **Eval / swarm routing:** When the pipeline reaches an **evaluator** stage or a **final `/eval`**
@@ -67,8 +50,9 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 
 For stages **3–6**, invoke subagents with **only** the YAML spawn template in
 `skills/subagent-router/SKILL.md` §Spawn Prompt Contract (≤ ~20 lines). Stage semantics,
-canonical D21 `role_hint` strings, and gate wording live in **§Stage briefs: deliver-full**
-in that skill — load via `Read` after spawn; do not paste them into the spawn body.
+canonical D21 `role_hint` strings, BL-012 handoffs, and gate wording live in that skill —
+load **§Stage briefs: deliver-full** via `Read` after spawn; do not paste them into the
+spawn body.
 
 | Step | Stage | `subagent_type` | `stage_id` | `trigger` |
 |------|-------|-----------------|------------|-----------|
@@ -102,6 +86,11 @@ in that skill — load via `Read` after spawn; do not paste them into the spawn 
    - Compare implementation vs approved design
    - Final alignment summary
    - Gate: human (final approval)
+   - After the human explicitly approves delivery, append a read-only evidence record to
+     `.azoth/final-delivery-approvals.jsonl` before any governed closeout/W1–W4 step:
+     `{"session_id":"<session>","gate":"final-delivery","actor_type":"human","approved":true,"decision":"approved"}`
+   - `scripts/do_closeout.py` consumes that JSONL evidence read-only and must fail closed
+     if the latest matching session record is missing, non-human, malformed, or denied.
    - After human final approval passes: run `python scripts/version-bump.py --patch`
    - Log: `Stage 7 ✓ version bumped X → Y`
 

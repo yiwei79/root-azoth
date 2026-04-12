@@ -28,11 +28,18 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from run_ledger import load_active_run as load_active_ledger_run
+from run_ledger import load_open_sessions
+
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -75,6 +82,8 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 # ── Pure business-logic helpers (testable) ───────────────────────────────────
 
+_DONE_STATUSES: set[str] = {"complete", "completed", "deferred"}
+
 
 def filter_unblocked_items(
     items: list[dict[str, Any]], complete_ids: set[str]
@@ -85,7 +94,7 @@ def filter_unblocked_items(
     """
     result = []
     for item in items:
-        if item.get("status") in {"complete", "deferred"}:
+        if item.get("status") in _DONE_STATUSES:
             continue
         blocked_by = item.get("blocked_by") or []
         if all(bid in complete_ids for bid in blocked_by):
@@ -96,6 +105,23 @@ def filter_unblocked_items(
 def is_governed_scope(scope: dict[str, Any]) -> bool:
     """True when scope-gate indicates M1 or governed delivery (matches PreToolUse hook)."""
     return scope.get("delivery_pipeline") == "governed" or scope.get("target_layer") == "M1"
+
+
+def write_claim_status_line(scope: dict[str, Any] | None, claim: dict[str, Any] | None) -> str:
+    """Return a single-line write-claim status string for the System Health panel.
+
+    Returns a string containing 'HELD' when the claim is active and matches the scope session.
+    Returns a string containing 'none' when no claim is present.
+    """
+    if claim is None:
+        return "Write claim: none"
+    holder = claim.get("session_id", "")
+    scope_session = str((scope or {}).get("session_id") or "")
+    if scope_session and holder == scope_session:
+        expires = claim.get("expires_at", "?")
+        return f"Write claim: HELD by '{holder}'  expires {expires}"
+    expires = claim.get("expires_at", "?")
+    return f"Write claim: held by '{holder}' (foreign)  expires {expires}"
 
 
 def _parse_expires_at_utc(raw: str) -> datetime | None:
@@ -112,7 +138,77 @@ def _parse_expires_at_utc(raw: str) -> datetime | None:
         return None
 
 
-def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
+def format_gate_ttl(
+    gate: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> str:
+    """Format remaining TTL for a scope-gate or pipeline-gate.
+
+    Returns one of:
+    - "EXPIRED" when expires_at is in the past
+    - "12h 34m remaining" style human-readable delta
+    - "" (empty string) when expires_at is absent or unparseable
+
+    The *now* parameter supports clock injection for deterministic tests.
+    """
+    raw = gate.get("expires_at")
+    if not raw:
+        return ""
+    exp = _parse_expires_at_utc(str(raw))
+    if exp is None:
+        return ""
+    if now is None:
+        now = utc_now()
+    delta = exp - now
+    total_seconds = int(delta.total_seconds())
+    if total_seconds <= 0:
+        return "EXPIRED"
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes = remainder // 60
+    if hours > 0:
+        return f"{hours}h {minutes:02d}m remaining"
+    if minutes > 0:
+        return f"{minutes}m remaining"
+    return "<1m remaining"
+
+
+def resolve_strip_phase(azoth: dict[str, Any], roadmap: dict[str, Any]) -> int:
+    """Index for the 1–8 Kernel→Next strip. Milestone mode uses lifecycle_phase, not local phase."""
+    if azoth.get("milestone"):
+        raw_lp = azoth.get("lifecycle_phase")
+        if raw_lp is not None:
+            try:
+                return int(raw_lp)
+            except (ValueError, TypeError):
+                pass
+        rlc = roadmap.get("lifecycle_phase")
+        if rlc is not None:
+            try:
+                return int(rlc)
+            except (ValueError, TypeError):
+                pass
+        return 0
+    raw = azoth.get("phase")
+    try:
+        return int(raw)  # type: ignore[arg-type]
+    except (ValueError, TypeError):
+        return 0
+
+
+def header_phase_label(azoth: dict[str, Any], phase_display: Any) -> str:
+    m = azoth.get("milestone")
+    if m:
+        return f"Phase {phase_display} · {m}"
+    return f"Phase {phase_display}"
+
+
+def is_pipeline_gate_valid(
+    scope: dict[str, Any],
+    pg: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> bool:
     """True when pipeline-gate.json satisfies mechanical enforcement for this scope."""
     if not pg.get("approved"):
         return False
@@ -122,7 +218,9 @@ def is_pipeline_gate_valid(scope: dict[str, Any], pg: dict[str, Any]) -> bool:
     exp = _parse_expires_at_utc(str(pg.get("expires_at", "")))
     if exp is None:
         return False
-    return datetime.now(timezone.utc) < exp
+    if now is None:
+        now = utc_now()
+    return now < exp
 
 
 def is_scope_active(scope: dict[str, Any], complete_ids: set[str] | None = None) -> bool:
@@ -181,40 +279,91 @@ def git_info() -> tuple[str, str]:
     return repo, branch
 
 
+def continuity_status(
+    scope: dict[str, Any], session_state: dict[str, Any], sessions: list[dict[str, Any]]
+) -> tuple[str, str] | None:
+    """Report whether registry, active scope, and session-state mirror agree."""
+    scope_session_id = str(scope.get("session_id") or "")
+    mirror_session_id = str(session_state.get("session_id") or "")
+    registry_session = next(
+        (entry for entry in sessions if entry.get("session_id") == scope_session_id), None
+    )
+
+    if scope_session_id and registry_session and mirror_session_id == scope_session_id:
+        return ("OK", scope_session_id)
+    if scope_session_id or mirror_session_id:
+        detail = f"scope={scope_session_id or '-'} / mirror={mirror_session_id or '-'}"
+        return ("MISMATCH", detail)
+    return None
+
+
 # ── Dashboard data + renderers ────────────────────────────────────────────────
+
+
+_INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def load_active_run(root: Path) -> dict[str, Any] | None:
+    """Return the last active entry from run-ledger.local.yaml, or None if absent."""
+    return load_active_ledger_run(root)
+
+
+def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return phase-agnostic initiatives sorted by priority (high→medium→low). Skips non-dict entries."""
+    raw = roadmap_data.get("initiatives")
+    if not raw or not isinstance(raw, list):
+        return []
+    result = [item for item in raw if isinstance(item, dict) and item.get("phase") is None]
+    return sorted(result, key=lambda x: _INITIATIVE_PRIO.get(str(x.get("priority", "")), 9))
 
 
 def gather_dashboard_state() -> dict[str, Any]:
     """Load all dashboard inputs; shared by Rich and plain renderers."""
     azoth = load_yaml(ROOT / "azoth.yaml")
+    roadmap_data = load_yaml(ROOT / ".azoth" / "roadmap.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
+    session_state = load_yaml(ROOT / ".azoth" / "session-state.md")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
+    open_sessions = load_open_sessions(ROOT)
 
     repo, branch = git_info()
-    today = datetime.now().strftime("%Y-%m-%d")
+    now = utc_now()
+    today = now.strftime("%Y-%m-%d")
     version = azoth.get("version", "?")
     phase = azoth.get("phase", "?")
+    strip_phase = resolve_strip_phase(azoth, roadmap_data)
+    phase_header = header_phase_label(azoth, phase)
 
     items = backlog_data.get("items", [])
-    complete_ids = {item["id"] for item in items if item.get("status") == "complete"}
+    complete_ids = {item["id"] for item in items if item.get("status") in {"complete", "completed"}}
     top3 = filter_unblocked_items(items, complete_ids)[:3]
+    unphased_initiatives = gather_unphased_initiatives(roadmap_data)
 
     return {
         "azoth": azoth,
+        "roadmap": roadmap_data,
         "backlog_data": backlog_data,
         "scope": scope,
         "pipeline_gate": pipeline_gate,
+        "session_state": session_state,
         "episodes": episodes,
         "repo": repo,
         "branch": branch,
+        "now": now,
         "today": today,
         "version": version,
         "phase": phase,
+        "strip_phase": strip_phase,
+        "phase_header": phase_header,
         "items": items,
         "complete_ids": complete_ids,
         "top3": top3,
+        "unphased_initiatives": unphased_initiatives,
+        "open_sessions": open_sessions,
+        "continuity": continuity_status(scope, session_state, open_sessions),
+        "run_ledger": load_active_run(ROOT),
     }
 
 
@@ -241,20 +390,22 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     azoth = state["azoth"]
     scope = state["scope"]
     pipeline_gate = state["pipeline_gate"]
+    session_state = state["session_state"]
     episodes = state["episodes"]
     repo = state["repo"]
     branch = state["branch"]
     today = state["today"]
     version = state["version"]
     phase = state["phase"]
+    strip_phase = int(state.get("strip_phase") or 0)
+    phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    open_sessions = state.get("open_sessions", [])
+    continuity = state.get("continuity")
+    now = state.get("now")
 
-    phase_num = phase
-    try:
-        current_phase = int(phase)
-    except (ValueError, TypeError):
-        current_phase = 0
+    current_phase = strip_phase
 
     lines: list[str] = []
     lines.append("# AZOTH_SESSION_ORIENTATION_BEGIN")
@@ -266,9 +417,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("")
     sep = "═" * 72
     lines.append(sep)
-    lines.append(
-        f"  AZOTH  ·  v{version}  ·  Phase {phase_num}  ·  {repo}  ·  {branch}  ·  {today}"
-    )
+    lines.append(f"  AZOTH  ·  v{version}  ·  {phase_header}  ·  {repo}  ·  {branch}  ·  {today}")
     lines.append("  (plain layout — full orientation; Rich panels: run without --plain)")
     lines.append(sep)
     lines.append("")
@@ -322,20 +471,58 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
 
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        lines.append(f"  Scope: ACTIVE  ({session_id})")
+        scope_ttl = format_gate_ttl(scope, now=now)
+        ttl_suffix = f"  [{scope_ttl}]" if scope_ttl else ""
+        lines.append(f"  Scope: ACTIVE  ({session_id}){ttl_suffix}")
         goal = scope.get("goal", "")
         if goal:
             lines.append(f"    Goal: {goal}")
         if is_governed_scope(scope):
-            if is_pipeline_gate_valid(scope, pipeline_gate):
+            pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
+            if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
                 pipe = pipeline_gate.get("pipeline", "?")
-                lines.append(f"    Pipeline gate: OK  ({pipe})")
+                pg_suffix = f"  [{pipeline_gate_ttl}]" if pipeline_gate_ttl else ""
+                lines.append(f"    Pipeline gate: OK  ({pipe}){pg_suffix}")
+            elif pipeline_gate_ttl == "EXPIRED":
+                lines.append("    Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)")
             else:
                 lines.append(
                     "    Pipeline gate: OPEN  (Stage 0 of /deliver-full, /auto, or /deliver)"
                 )
+    elif scope.get("expires_at") and format_gate_ttl(scope, now=now) == "EXPIRED":
+        lines.append("  Scope: EXPIRED  (run /next to open a new scope card)")
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
+
+    if continuity:
+        status, detail = continuity
+        lines.append(f"  Continuity: {status}  ({detail})")
+
+    if open_sessions:
+        lines.append("")
+        lines.append("  Sessions")
+        mirror_session_id = str(session_state.get("session_id") or "")
+        scope_session_id = str(scope.get("session_id") or "")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "?")
+            status = str(entry.get("status") or "?")
+            ide = str(entry.get("ide") or "?")
+            backlog_id = str(entry.get("backlog_id") or "?")
+            markers: list[str] = []
+            if session_id == scope_session_id:
+                markers.append("scope")
+            if session_id == mirror_session_id:
+                markers.append("mirror")
+            marker_text = f" [{'|'.join(markers)}]" if markers else ""
+            lines.append(f"    {session_id}{marker_text}  ({status}, {ide})")
+            lines.append(f"      {backlog_id} -> {(entry.get('next_action') or '')[:60]}")
+
+    active_run = state.get("run_ledger")
+    if active_run:
+        run_id = active_run.get("run_id", "?")
+        mode = active_run.get("mode", "?")
+        next_action = (active_run.get("next_action") or "")[:60]
+        lines.append(f"  \u25cf Active run  {run_id}  ({mode})  \u2192 {next_action}")
 
     lines.append("")
     lines.append("── Top Backlog (next unblocked) ──")
@@ -351,8 +538,20 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             lines.append(f"    {layer} · {pipeline}")
             lines.append("")
     else:
-        lines.append("  (all backlog items complete)")
-        lines.append("")
+        ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if ini_fallback:
+            lines.append("  No active backlog items — unscheduled initiatives:")
+            lines.append("")
+            for ini in ini_fallback:
+                iid = ini.get("id", "?")
+                title = ini.get("title", "?")
+                prio = ini.get("priority", "?")
+                lines.append(f"  {iid}  [priority: {prio}]")
+                lines.append(f"    {title}")
+                lines.append("")
+        else:
+            lines.append("  (all backlog items complete)")
+            lines.append("")
 
     lines.append("── Last Session (M3) ──")
     if episodes:
@@ -376,10 +575,27 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:72]
         lines.append(f"  resume   → continue approved scope: {goal_truncated}")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != scope.get("session_id"):
+                lines.append(
+                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
+                )
+    elif open_sessions:
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id:
+                lines.append(
+                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
+                )
     lines.append("  next     → /next — scope card for next priority task")
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
     lines.append("  eval     → /eval — quality gate")
+    lines.append("  roadmap  → /roadmap — versioned roadmap dashboard (D48)")
+    lines.append("  plan     → /plan — structured autonomy / planning")
+    lines.append("  remember → /remember — quick M3 capture (no full closeout)")
+    lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
     lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
     lines.append("")
     lines.append(sep)
@@ -397,22 +613,27 @@ def render_dashboard() -> None:
     azoth = state["azoth"]
     scope = state["scope"]
     pipeline_gate = state["pipeline_gate"]
+    session_state = state["session_state"]
     episodes = state["episodes"]
     repo = state["repo"]
     branch = state["branch"]
     today = state["today"]
     version = state["version"]
     phase = state["phase"]
+    strip_phase = int(state.get("strip_phase") or 0)
+    phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    open_sessions = state.get("open_sessions", [])
+    continuity = state.get("continuity")
+    now = state.get("now")
 
-    # ── Panel 1: Header (box.HEAVY) ──────────────────────────────────────────
     header_text = Text(justify="center")
     header_text.append("AZOTH", style="bold white")
     header_text.append("  ·  ", style="dim white")
     header_text.append(f"v{version}", style="bold cyan")
     header_text.append("  ·  ", style="dim white")
-    header_text.append(f"Phase {phase}", style="bold yellow")
+    header_text.append(phase_header, style="bold yellow")
     header_text.append("  ·  ", style="dim white")
     header_text.append(repo, style="bold white")
     header_text.append("  ·  ", style="dim white")
@@ -421,7 +642,6 @@ def render_dashboard() -> None:
     header_text.append(today, style="dim white")
     header_panel = Panel(header_text, box=box.HEAVY)
 
-    # ── Panel 2: Phases strip (box.MINIMAL) ──────────────────────────────────
     _phases = [
         (1, "Kernel"),
         (2, "Skills"),
@@ -432,22 +652,16 @@ def render_dashboard() -> None:
         (7, "Publish"),
         (8, "Next"),
     ]
-    try:
-        current_phase = int(phase)
-    except (ValueError, TypeError):
-        current_phase = 0
-
     phase_parts = []
     for num, name in _phases:
-        if num < current_phase:
+        if num < strip_phase:
             phase_parts.append(f"[green][{num}]:check_mark: {name}[/green]")
-        elif num == current_phase:
+        elif num == strip_phase:
             phase_parts.append(f"[bold yellow][{num}]:right_arrow: {name}[/bold yellow]")
         else:
             phase_parts.append(f"[dim][{num}]:white_circle: {name}[/dim]")
     phases_panel = Panel("  ".join(phase_parts), box=box.MINIMAL)
 
-    # ── Panel 3L: System health (box.ROUNDED) ────────────────────────────────
     layers = azoth.get("layers", {})
     _layer_map = [
         ("molecule", "L0", "Kernel"),
@@ -480,29 +694,77 @@ def render_dashboard() -> None:
         "",
     ]
 
-    # Backlog / top3 already computed in gather_dashboard_state()
-
     if is_scope_active(scope, complete_ids):
         session_id = scope.get("session_id", "")
-        health_lines.append(f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]")
+        scope_ttl = format_gate_ttl(scope, now=now)
+        ttl_markup = f"  [dim]{scope_ttl}[/dim]" if scope_ttl else ""
+        health_lines.append(
+            f":green_circle: [green]Scope: ACTIVE[/green]  [dim]{session_id}[/dim]{ttl_markup}"
+        )
         if is_governed_scope(scope):
-            if is_pipeline_gate_valid(scope, pipeline_gate):
+            pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
+            if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
                 pipe = pipeline_gate.get("pipeline", "?")
+                pg_markup = f"  [dim]{pipeline_gate_ttl}[/dim]" if pipeline_gate_ttl else ""
                 health_lines.append(
-                    f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]"
+                    f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]{pg_markup}"
+                )
+            elif pipeline_gate_ttl == "EXPIRED":
+                health_lines.append(
+                    "  :orange_circle: [yellow]Pipeline gate: EXPIRED[/yellow]  "
+                    "[dim](rerun Stage 0 to reopen)[/dim]"
                 )
             else:
                 health_lines.append(
                     "  :red_circle: [red]Pipeline gate: OPEN[/red]  "
                     "[dim](Stage 0 of /deliver-full, /auto, or /deliver)[/dim]"
                 )
+    elif scope.get("expires_at") and format_gate_ttl(scope, now=now) == "EXPIRED":
+        health_lines.append(
+            ":orange_circle: [yellow]Scope: EXPIRED[/yellow]  [dim](run /next to open)[/dim]"
+        )
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
+
+    if continuity:
+        status, detail = continuity
+        style = "green" if status == "OK" else "yellow"
+        health_lines.append(f":link: [{style}]Continuity: {status}[/{style}]  [dim]{detail}[/dim]")
+
+    if open_sessions:
+        health_lines.append("")
+        health_lines.append("[bold]Sessions[/bold]")
+        mirror_session_id = str(session_state.get("session_id") or "")
+        scope_session_id = str(scope.get("session_id") or "")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "?")
+            status = str(entry.get("status") or "?")
+            ide = str(entry.get("ide") or "?")
+            backlog_id = str(entry.get("backlog_id") or "?")
+            markers: list[str] = []
+            if session_id == scope_session_id:
+                markers.append("scope")
+            if session_id == mirror_session_id:
+                markers.append("mirror")
+            marker_text = f" [{'|'.join(markers)}]" if markers else ""
+            health_lines.append(
+                f"  [bold cyan]{session_id}[/bold cyan]{marker_text}"
+                f"  [dim]({status}, {ide}, {backlog_id})[/dim]"
+            )
+
+    active_run = state.get("run_ledger")
+    if active_run:
+        run_id = active_run.get("run_id", "?")
+        mode = active_run.get("mode", "?")
+        next_action = (active_run.get("next_action") or "")[:60]
+        health_lines.append(
+            f":blue_circle: [bold]Active run[/bold]  [cyan]{run_id}[/cyan]"
+            f"  [dim]({mode})[/dim]  \u2192 {next_action}"
+        )
+
     health_panel = Panel(
         "\n".join(health_lines), title="[bold]System Health[/bold]", box=box.ROUNDED
     )
-
-    # ── Panel 3R: Top backlog (box.ROUNDED) ──────────────────────────────────
 
     backlog_lines: list[str] = []
     for item in top3:
@@ -518,12 +780,24 @@ def render_dashboard() -> None:
             f"  [dim]{layer} · {pipeline}[/dim]"
         )
     if not top3:
-        backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
+        ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if ini_fallback:
+            for ini in ini_fallback:
+                iid = ini.get("id", "?")
+                title = ini.get("title", "?")
+                prio = ini.get("priority", "?")
+                prio_col = {"high": "red", "medium": "yellow", "low": "dim"}.get(str(prio), "dim")
+                backlog_lines.append(
+                    f"[bold cyan]{iid}[/bold cyan]  [{prio_col}]{prio}[/{prio_col}]\n"
+                    f"  {title}\n"
+                    f"  [dim]initiative · unscheduled[/dim]"
+                )
+        else:
+            backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
     backlog_panel = Panel(
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED
     )
 
-    # ── Panel 4: Last session (box.ROUNDED) ──────────────────────────────────
     if episodes:
         ep = episodes[-1]
         ep_id = ep.get("id", "?")
@@ -543,7 +817,6 @@ def render_dashboard() -> None:
         last_content = "[dim]No episodes recorded yet.[/dim]"
     last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
-    # ── Panel 5: START options (box.ROUNDED) ─────────────────────────────────
     options_lines: list[str] = []
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:60]
@@ -552,16 +825,34 @@ def render_dashboard() -> None:
             f"   Continue: [italic]{goal_truncated}[/italic]"
         )
         options_lines.append("")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != scope.get("session_id"):
+                options_lines.append(
+                    f"[bold cyan]next resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /next — reopen parked session with approval card"
+                )
+    elif open_sessions:
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id:
+                options_lines.append(
+                    f"[bold cyan]next resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /next — reopen parked session with approval card"
+                )
     options_lines += [
         "[bold cyan]next[/bold cyan]     :right_arrow: /next — open scope card for next priority task",
         "[bold cyan]intake[/bold cyan]   :right_arrow: /intake — process queued insights from inbox",
         "[bold cyan]promote[/bold cyan]  :right_arrow: /promote — review M2:right_arrow:M1 promotion candidates",
         "[bold cyan]eval[/bold cyan]     :right_arrow: /eval — run quality gate on current work",
+        "[bold cyan]roadmap[/bold cyan]  :right_arrow: /roadmap — versioned roadmap dashboard (D48)",
+        "[bold cyan]plan[/bold cyan]     :right_arrow: /plan — structured autonomy / planning",
+        "[bold cyan]remember[/bold cyan] :right_arrow: /remember — quick M3 capture (not full closeout)",
+        "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff",
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 
-    # ── Render all panels ─────────────────────────────────────────────────────
     console.print()
     console.print(header_panel)
     console.print(phases_panel)

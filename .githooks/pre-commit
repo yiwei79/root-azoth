@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Pre-commit hook: block commit if azoth-deploy mirrors are stale."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+SOURCE_PATTERNS = (
+    "agents/",
+    ".claude/commands/",
+    "skills/",
+    "kernel/templates/platform-adapters/",
+)
+
+
+def main() -> int:
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print("azoth-deploy: git not found, skipping mirror check", file=sys.stderr)
+        return 0
+    staged = result.stdout.strip().splitlines()
+
+    if not any(f.startswith(p) for f in staged for p in SOURCE_PATTERNS):
+        return 0
+
+    print("azoth-deploy: source files changed — checking mirror parity…")
+    repo_root = Path(__file__).resolve().parent.parent
+    rc = subprocess.run(
+        [sys.executable, str(repo_root / "scripts" / "azoth-deploy.py"), "--check"],
+        cwd=str(repo_root),
+    ).returncode
+
+    if rc != 0:
+        print("\n✗ Mirrors are stale. Run: python3 scripts/azoth-deploy.py")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

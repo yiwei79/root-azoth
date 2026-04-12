@@ -108,7 +108,7 @@ def test_a3_yellow_zone_allow_with_advisory(tmp_path: Path) -> None:
             {
                 "version": 1,
                 "session_id": "sess-yellow",
-                "cumulative_entropy": 4.9,
+                "cumulative_entropy": 11.0,
                 "modified_paths": [],
                 "created_paths": [],
                 "lines_total": 0,
@@ -149,7 +149,7 @@ def test_a4_red_zone_deny(tmp_path: Path) -> None:
             {
                 "version": 1,
                 "session_id": "sess-red",
-                "cumulative_entropy": 8.99,
+                "cumulative_entropy": 23.99,
                 "modified_paths": [],
                 "created_paths": [],
                 "lines_total": 0,
@@ -173,13 +173,33 @@ def test_a4_red_zone_deny(tmp_path: Path) -> None:
 
 
 def test_estimate_lines_placeholder_when_missing() -> None:
-    assert estimate_lines_changed("Write", {}) == PLACEHOLDER_LINES
-    assert estimate_lines_changed("Edit", {}) == PLACEHOLDER_LINES
+    assert estimate_lines_changed({"tool_name": "Write", "tool_input": {}}) == PLACEHOLDER_LINES
+    assert estimate_lines_changed({"tool_name": "Edit", "tool_input": {}}) == PLACEHOLDER_LINES
 
 
 def test_estimate_lines_write_content() -> None:
-    n = estimate_lines_changed("Write", {"content": "a\nb\nc"})
+    n = estimate_lines_changed({"tool_name": "Write", "tool_input": {"content": "a\nb\nc"}})
     assert n == 3
+
+
+def test_estimate_lines_create_file_content_vscode() -> None:
+    n = estimate_lines_changed(
+        {
+            "tool_name": "create_file",
+            "tool_input": {"filePath": "notes.txt", "content": "a\nb\nc\n"},
+        }
+    )
+    assert n == 3
+
+
+def test_estimate_lines_replace_string_vscode() -> None:
+    n = estimate_lines_changed(
+        {
+            "tool_name": "replace_string_in_file",
+            "tool_input": {"filePath": "notes.txt", "oldString": "a\nb", "newString": "c\nd"},
+        }
+    )
+    assert n == 4
 
 
 def test_t14_settings_json_single_pretool_command() -> None:
@@ -291,7 +311,7 @@ def test_r2_modified_files_cap_deny(tmp_path: Path) -> None:
 
 
 def test_r3_lines_total_cap_deny(tmp_path: Path) -> None:
-    """Session lines_total would exceed 500 after this Write."""
+    """Session lines_total would exceed 1000 after this Write."""
     gate_path = tmp_path / "scope-gate.json"
     est_path = tmp_path / "entropy-state.json"
     sid = "sess-lines"
@@ -313,7 +333,7 @@ def test_r3_lines_total_cap_deny(tmp_path: Path) -> None:
                 "cumulative_entropy": 0.0,
                 "modified_paths": [],
                 "created_paths": [],
-                "lines_total": 500,
+                "lines_total": 1000,
             }
         ),
         encoding="utf-8",

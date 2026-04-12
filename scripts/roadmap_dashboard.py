@@ -248,6 +248,64 @@ def render_version_panel(version: Any) -> Panel:
     )
 
 
+_PRIORITY_BADGE: dict[str, str] = {
+    "high": "[bold red]●[/]",
+    "medium": "[yellow]●[/]",
+    "low": "[dim]●[/]",
+}
+_CATEGORY_ORDER = ["memory", "governance", "ux", "infra", "platform"]
+
+
+def gather_initiatives(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Group unscheduled roadmap initiatives by category.
+
+    Skips non-dict entries, scheduled initiatives (phase != null), and completed ones.
+    Returns {} when absent.
+    """
+    raw = data.get("initiatives")
+    if not raw or not isinstance(raw, list):
+        return {}
+    by_category: dict[str, list[dict[str, Any]]] = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        if item.get("phase") is not None:
+            continue
+        if item.get("status") in ("complete", "completed"):
+            continue
+        cat = str(item.get("category", "uncategorized"))
+        by_category.setdefault(cat, []).append(item)
+    return by_category
+
+
+def render_initiatives_panel(
+    by_category: dict[str, list[dict[str, Any]]],
+) -> Panel | None:
+    """Render a Rich Panel of phase-agnostic initiatives grouped by category. None when empty."""
+    if not by_category:
+        return None
+    lines: list[str] = []
+    cats = sorted(
+        by_category.keys(),
+        key=lambda c: (_CATEGORY_ORDER.index(c) if c in _CATEGORY_ORDER else 99, c),
+    )
+    for cat in cats:
+        lines.append(f"[bold dim]{escape(cat.upper())}[/]")
+        for item in by_category[cat]:
+            iid = escape(str(item.get("id", "?")))
+            title = escape(str(item.get("title", "")))
+            badge = _PRIORITY_BADGE.get(str(item.get("priority", "")), "[dim]●[/]")
+            lines.append(f"  {badge} [cyan]{iid}[/]  {title}")
+        lines.append("")
+    body = "\n".join(lines).rstrip()
+    return Panel(
+        body,
+        title="[bold]Initiatives[/] [dim](phase: null — unscheduled)[/]",
+        border_style="dim",
+        box=box.ROUNDED,
+    )
+
+
 def render_dashboard(
     roadmap_path: Path | None = None,
     *,
@@ -272,6 +330,11 @@ def render_dashboard(
 
     out.print(render_header(data))
     out.print()
+
+    ini_panel = render_initiatives_panel(gather_initiatives(data))
+    if ini_panel is not None:
+        out.print(ini_panel)
+        out.print()
 
     versions_raw = data.get("versions")
     if versions_raw is None:

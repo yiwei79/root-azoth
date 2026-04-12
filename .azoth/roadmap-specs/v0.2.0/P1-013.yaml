@@ -1,0 +1,57 @@
+# Roadmap task spec — v0.2.0
+id: P1-013
+roadmap_version: v0.2.0
+title: "Explicit main-session orchestrator default (Claude Code + Copilot role parity)"
+decision_ref: [D21, D23, D46]
+
+intent: >
+  Make Azoth's pipeline entry behavior explicit instead of heuristic: Claude Code should have a
+  defined main-session orchestrator path, and Copilot's default chat agent should carry the same
+  orchestrator contract through adapter surfaces.
+
+problem: >
+  `/auto` works today because the main session agent interprets the command body and then spawns
+  subagents. Claude Code supports a session-wide main agent via `claude --agent` or the `agent`
+  field in `.claude/settings.json`, but Azoth does not currently set one. That leaves orchestrator
+  behavior implicit in Claude Code and adapter-specific in Copilot, weakening cross-platform parity
+  and making pipeline ownership ambiguous.
+
+scope:
+  - Decide whether Azoth should introduce a dedicated `orchestrator` agent, reuse `architect` as
+    the main-session agent, or split responsibilities explicitly between them
+  - >
+    Claude Code path: project-level default via `.claude/settings.json` `agent` or documented
+    launch semantics
+  - >
+    Copilot path: default-agent role via prompts/instructions/adapters without assuming custom
+    main-agent selection exists
+  - >
+    Validation/docs for `/auto`, `/deliver`, and `/deliver-full` entry behavior and orchestration
+    ownership
+
+non_goals:
+  - Rewriting worker archetypes (`planner`, `builder`, `reviewer`, `evaluator`)
+  - Changing D21 fresh-context subagent isolation rules
+  - Forcing `/auto` itself to hard-bind to one subagent when the main session already owns
+    orchestration
+
+acceptance:
+  - Architecture or planning docs state what the main session agent is in Claude Code and how
+    Copilot achieves equivalent orchestrator behavior
+  - If a dedicated orchestrator agent is added, its responsibilities vs `architect` are explicit
+    and covered by tests or drift checks
+  - Claude Code config or documented launch path makes the default orchestrator mechanical rather
+    than implicit
+  - Adapter tests/drift checks cover the default-agent orchestration contract across Claude and
+    Copilot surfaces
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Phase 1 = doc/decision slice clarifying default-agent semantics; Phase 2 = explicit Claude Code
+  default-agent configuration; Phase 3 = Copilot adapter role hardening and drift tests.

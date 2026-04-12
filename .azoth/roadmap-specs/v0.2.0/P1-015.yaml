@@ -1,0 +1,50 @@
+# Roadmap task spec — v0.2.0
+id: P1-015
+roadmap_version: v0.2.0
+title: "True multi-writer safety (write claims and lock enforcement)"
+decision_ref: [D21, D46, D50]
+
+intent: >
+  Move Azoth from “many tracked sessions, one advisory writer” to a mechanically safe
+  multi-writer model where concurrent harnesses coordinate through explicit write claims,
+  conflict detection, and audited handoff rules.
+
+problem: >
+  The current v0.2.x runtime can track multiple sessions and guide resume across Copilot,
+  Claude Code, and Antigravity, but write authority is still projected through a singleton
+  scope gate. That makes parallel research and planning safe, but parallel writers can still
+  race on scope ownership, closeout ordering, or repo edits unless the system introduces a
+  first-class write claim with mechanical enforcement.
+
+scope:
+  - ".azoth/run-ledger.local.yaml write-claim or lease extensions"
+  - "scripts/run_ledger.py claim, release, and conflict-detection helpers"
+  - ".claude/commands/next.md and session-closeout.md claim handoff rules"
+  - "scripts/welcome.py or equivalent control-plane surfacing for active write claims"
+  - "Cross-harness parity for Claude Code, Copilot, OpenCode, and Antigravity command surfaces"
+  - "Focused tests for competing writers, stale-claim recovery, and audited handoff"
+
+non_goals:
+  - "Full distributed locking across multiple repositories or machines"
+  - "Blindly allowing simultaneous writes to the same files"
+  - "Relaxing human approval requirements in /next or governed pipelines"
+  - "Kernel or Trust Contract edits without separate governed review"
+
+acceptance:
+  - "Exactly one active write claim can be held for a governed session at a time, regardless of harness"
+  - "A competing writer receives a mechanical deny or explicit claim-conflict path before edits begin"
+  - "Claim handoff is explicit, auditable, and tied to session_id rather than implicit harness state"
+  - "Stale or abandoned claims have a defined recovery path that does not silently bypass safety"
+  - "Cross-harness parity is documented and tested for Copilot, Claude Code, and Antigravity"
+
+dependencies: [P1-014]
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Phase 1 = repository-wide single active write claim across harnesses. Phase 2 = optional
+  finer-grained file or worktree claims if the coarse lease is too restrictive. Phase 3 =
+  stale-lease recovery and richer platform parity once the basic claim model proves stable.

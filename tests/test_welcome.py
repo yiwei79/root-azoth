@@ -39,11 +39,29 @@ def _past() -> str:
     return (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
 
 
+def _fixed_now() -> datetime:
+    return datetime(2030, 4, 11, 12, 0, tzinfo=timezone.utc)
+
+
 # ── filter_unblocked_items ────────────────────────────────────────────────────
 
 
 def test_filter_excludes_complete() -> None:
     items = [_item("A", status="complete"), _item("B")]
+    result = welcome.filter_unblocked_items(items, {"A"})
+    assert [x["id"] for x in result] == ["B"]
+
+
+def test_filter_excludes_completed_variant() -> None:
+    """Items with status 'completed' (past tense) are also filtered out."""
+    items = [_item("A", status="completed"), _item("B")]
+    result = welcome.filter_unblocked_items(items, {"A"})
+    assert [x["id"] for x in result] == ["B"]
+
+
+def test_completed_variant_counts_as_done_for_blockers() -> None:
+    """An item with status 'completed' should unblock dependents."""
+    items = [_item("A", status="completed"), _item("B", blocked_by=["A"])]
     result = welcome.filter_unblocked_items(items, {"A"})
     assert [x["id"] for x in result] == ["B"]
 
@@ -143,6 +161,353 @@ def test_scope_active_without_complete_ids() -> None:
     assert welcome.is_scope_active(scope) is True
 
 
+# ── format_gate_ttl (P1-004) ─────────────────────────────────────────────────
+
+
+def test_ttl_returns_empty_when_no_expires_at() -> None:
+    assert welcome.format_gate_ttl({}) == ""
+    assert welcome.format_gate_ttl({"approved": True}) == ""
+
+
+def test_ttl_returns_empty_for_unparseable_date() -> None:
+    assert welcome.format_gate_ttl({"expires_at": "not-a-date"}) == ""
+
+
+def test_ttl_returns_expired_when_past() -> None:
+    past = (datetime.now(timezone.utc) - timedelta(seconds=30)).isoformat()
+    assert welcome.format_gate_ttl({"expires_at": past}) == "EXPIRED"
+
+
+def test_ttl_returns_expired_with_injected_clock() -> None:
+    """Clock injection: fixed expires_at with now > expires."""
+    gate = {"expires_at": "2026-04-11T12:00:00+00:00"}
+    now = datetime(2026, 4, 11, 13, 0, 0, tzinfo=timezone.utc)
+    assert welcome.format_gate_ttl(gate, now=now) == "EXPIRED"
+
+
+def test_ttl_returns_hours_and_minutes_with_injected_clock() -> None:
+    """Clock injection: deterministic hours + minutes remaining."""
+    gate = {"expires_at": "2026-04-11T14:30:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "2h 30m remaining"
+
+
+def test_ttl_returns_minutes_only_when_under_one_hour() -> None:
+    gate = {"expires_at": "2026-04-11T12:45:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "45m remaining"
+
+
+def test_ttl_returns_less_than_one_minute() -> None:
+    gate = {"expires_at": "2026-04-11T12:00:30+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "<1m remaining"
+
+
+def test_ttl_handles_z_suffix() -> None:
+    gate = {"expires_at": "2026-04-11T14:00:00Z"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    result = welcome.format_gate_ttl(gate, now=now)
+    assert result == "2h 00m remaining"
+
+
+def test_ttl_boundary_exactly_zero() -> None:
+    gate = {"expires_at": "2026-04-11T12:00:00+00:00"}
+    now = datetime(2026, 4, 11, 12, 0, 0, tzinfo=timezone.utc)
+    assert welcome.format_gate_ttl(gate, now=now) == "EXPIRED"
+
+
+# ── TTL / EXPIRED in dashboard renders (P1-004 integration) ──────────────────
+
+
+def _render_pipeline_gate_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    pipeline_expires_at: str,
+    rich: bool,
+) -> str:
+    fixed_now = _fixed_now()
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    sid = "pipeline-gate-test"
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": (fixed_now + timedelta(hours=2)).isoformat(),
+                "goal": "P1-004: Pipe TTL",
+                "session_id": sid,
+                "delivery_pipeline": "governed",
+            }
+        )
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": sid,
+                "expires_at": pipeline_expires_at,
+                "pipeline": "deliver-full",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(welcome, "utc_now", lambda: fixed_now)
+
+    if rich:
+        welcome.render_dashboard()
+    else:
+        welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    return buf.getvalue()
+
+
+def test_plain_dashboard_shows_scope_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Plain layout shows remaining TTL for an active scope gate."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-004: TTL test",
+                "session_id": "ttl-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Scope: ACTIVE" in out
+    assert "remaining" in out
+
+
+def test_plain_dashboard_shows_scope_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows EXPIRED when scope gate has expired."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _past(),
+                "goal": "P1-004: Expired test",
+                "session_id": "expired-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Scope: EXPIRED" in out
+
+
+def test_rich_dashboard_shows_scope_ttl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rich layout shows remaining TTL for an active scope gate."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-004: TTL test",
+                "session_id": "ttl-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Scope: ACTIVE" in out
+    assert "remaining" in out
+
+
+def test_rich_dashboard_shows_scope_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows EXPIRED when scope gate has expired."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _past(),
+                "goal": "P1-004: Expired test",
+                "session_id": "expired-test",
+            }
+        )
+    )
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Scope: EXPIRED" in out
+
+
+def test_plain_dashboard_pipeline_gate_shows_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows TTL for governed pipeline gate."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() + timedelta(hours=1)).isoformat(),
+        rich=False,
+    )
+    assert "    Pipeline gate: OK  (deliver-full)  [1h 00m remaining]" in out
+
+
+def test_rich_dashboard_pipeline_gate_shows_ttl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows TTL for governed pipeline gate."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() + timedelta(hours=1)).isoformat(),
+        rich=True,
+    )
+    assert "Pipeline gate: OK  deliver-full  1h 00m remaining" in out
+
+
+def test_plain_dashboard_pipeline_gate_shows_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout shows EXPIRED for a governed pipeline gate that has elapsed."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() - timedelta(minutes=1)).isoformat(),
+        rich=False,
+    )
+    assert "    Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)" in out
+    assert "Pipeline gate: OPEN" not in out
+
+
+def test_rich_dashboard_pipeline_gate_shows_expired(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rich layout shows EXPIRED for a governed pipeline gate that has elapsed."""
+    out = _render_pipeline_gate_output(
+        tmp_path,
+        monkeypatch,
+        pipeline_expires_at=(_fixed_now() - timedelta(minutes=1)).isoformat(),
+        rich=True,
+    )
+    assert "Pipeline gate: EXPIRED  (rerun Stage 0 to reopen)" in out
+    assert "Pipeline gate: OPEN" not in out
+
+
+def test_plain_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Plain layout shows the optional active-run summary when ledger state exists."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(
+        welcome,
+        "load_active_run",
+        lambda _root: {
+            "run_id": "run-123",
+            "mode": "deliver",
+            "next_action": "Finish stage 4 handoff",
+        },
+    )
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Active run" in out
+    assert "run-123" in out
+    assert "Finish stage 4 handoff" in out
+
+
+def test_rich_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rich layout shows the optional active-run summary when ledger state exists."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "memory").mkdir()
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    monkeypatch.setattr(
+        welcome,
+        "load_active_run",
+        lambda _root: {
+            "run_id": "run-123",
+            "mode": "deliver",
+            "next_action": "Finish stage 4 handoff",
+        },
+    )
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "Active run" in out
+    assert "run-123" in out
+    assert "Finish stage 4 handoff" in out
+
+
 # ── is_governed_scope / is_pipeline_gate_valid ────────────────────────────────
 
 
@@ -179,6 +544,27 @@ def test_pipeline_gate_invalid_expired() -> None:
     scope = {"session_id": "s1", "approved": True, "expires_at": _future()}
     pg = {"approved": True, "session_id": "s1", "expires_at": _past()}
     assert welcome.is_pipeline_gate_valid(scope, pg) is False
+
+
+def test_resolve_strip_phase_milestone_uses_lifecycle() -> None:
+    azoth = {"phase": 1, "milestone": "v0.2.0", "lifecycle_phase": 8}
+    assert welcome.resolve_strip_phase(azoth, {}) == 8
+
+
+def test_resolve_strip_phase_milestone_falls_back_to_roadmap() -> None:
+    azoth = {"phase": 1, "milestone": "v0.2.0"}
+    roadmap = {"lifecycle_phase": 8}
+    assert welcome.resolve_strip_phase(azoth, roadmap) == 8
+
+
+def test_resolve_strip_phase_legacy_uses_azoth_phase() -> None:
+    azoth = {"phase": 3}
+    assert welcome.resolve_strip_phase(azoth, {}) == 3
+
+
+def test_header_phase_label_includes_milestone() -> None:
+    azoth = {"milestone": "v0.2.0"}
+    assert welcome.header_phase_label(azoth, 1) == "Phase 1 · v0.2.0"
 
 
 # ── render_dashboard smoke tests ──────────────────────────────────────────────
@@ -376,3 +762,216 @@ def test_plain_dashboard_includes_all_sections(
     assert "AZOTH" in out
     assert "AZOTH_SESSION_ORIENTATION_BEGIN" in out
     assert "AZOTH_SESSION_ORIENTATION_END" in out
+
+
+# ── gather_unphased_initiatives ───────────────────────────────────────────────
+
+
+def test_gather_unphased_initiatives_empty_when_no_initiatives() -> None:
+    assert welcome.gather_unphased_initiatives({}) == []
+    assert welcome.gather_unphased_initiatives({"versions": []}) == []
+
+
+def test_gather_unphased_initiatives_filters_phase_null_only() -> None:
+    data = {
+        "initiatives": [
+            {"id": "INI-MEM-001", "title": "Unphased A", "priority": "high", "phase": None},
+            {"id": "INI-MEM-002", "title": "Assigned", "priority": "high", "phase": "v0.3.0"},
+            {"id": "INI-PLT-001", "title": "Unphased B", "priority": "medium", "phase": None},
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    ids = [x["id"] for x in result]
+    assert "INI-MEM-001" in ids
+    assert "INI-PLT-001" in ids
+    assert "INI-MEM-002" not in ids
+
+
+def test_gather_unphased_initiatives_sorts_by_priority() -> None:
+    data = {
+        "initiatives": [
+            {"id": "C", "title": "Low", "priority": "low", "phase": None},
+            {"id": "A", "title": "High", "priority": "high", "phase": None},
+            {"id": "B", "title": "Medium", "priority": "medium", "phase": None},
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert [x["id"] for x in result] == ["A", "B", "C"]
+
+
+def test_gather_unphased_initiatives_skips_non_dict() -> None:
+    data = {
+        "initiatives": [
+            "plain-string",
+            {"id": "INI-MEM-001", "title": "Good", "priority": "high", "phase": None},
+            42,
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert len(result) == 1
+    assert result[0]["id"] == "INI-MEM-001"
+
+
+# ── welcome backlog-panel fallback to initiatives ─────────────────────────────
+
+
+def _setup_tmp_with_initiatives(tmp_path: Path) -> None:
+    """Create minimal repo layout with initiatives in roadmap.yaml but empty backlog."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.6\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "roadmap.yaml").write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "initiatives:\n"
+        "  - id: INI-MEM-001\n"
+        "    title: Verbatim storage\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    priority: high\n"
+        "  - id: INI-PLT-001\n"
+        "    title: Platform parity\n"
+        "    category: platform\n"
+        "    phase: null\n"
+        "    priority: medium\n"
+        "versions: []\n"
+    )
+
+
+def test_welcome_backlog_panel_shows_initiatives_when_top3_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Top Backlog panel shows unphased initiatives when backlog is empty."""
+    _setup_tmp_with_initiatives(tmp_path)
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+    out = buf.getvalue()
+    assert "INI-MEM-001" in out
+    assert "INI-PLT-001" in out
+
+
+def test_welcome_plain_shows_initiatives_when_top3_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout Top Backlog section shows unphased initiatives when backlog empty."""
+    _setup_tmp_with_initiatives(tmp_path)
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "INI-MEM-001" in out
+    assert "INI-PLT-001" in out
+
+
+def test_welcome_plain_no_crash_when_no_initiatives_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plain layout must not crash when roadmap.yaml has no 'initiatives' key."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.6\nphase: 1\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "roadmap.yaml").write_text(
+        "schema_version: 1\nactive_version: v0.2.0\nversions: []\n"
+    )
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())  # must not raise
+
+
+def test_welcome_plain_shows_next_resume_for_parked_sessions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\n"
+        "sessions:\n"
+        "  - session_id: sid-parked\n"
+        "    backlog_id: P1-005\n"
+        "    goal: Resume me\n"
+        "    status: parked\n"
+        "    ide: copilot\n"
+        "    next_action: Resume this parked session\n"
+        "    updated_at: 2026-04-10T10:00:00+00:00\n"
+        "runs: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "next resume sid-parked" in out
+    assert "resume   → continue approved scope" not in out
+
+
+def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future(),
+                "goal": "P1-001: Test goal",
+                "session_id": "sid-match",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth_dir / "session-state.md").write_text(
+        "session_id: sid-match\n"
+        "state: active\n"
+        "last_ide: copilot\n"
+        "timestamp: 2026-04-10T10:00:00+00:00\n"
+        "active_task: Test\n"
+        "active_files: []\n"
+        "pending_decisions: []\n"
+        "approved_scope: sid-match\n"
+        "next_action: Resume\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\n"
+        "sessions:\n"
+        "  - session_id: sid-match\n"
+        "    backlog_id: P1-001\n"
+        "    goal: Test goal\n"
+        "    status: active\n"
+        "    ide: copilot\n"
+        "    next_action: Continue\n"
+        "    updated_at: 2026-04-10T10:00:00+00:00\n"
+        "runs: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Continuity: OK  (sid-match)" in out
+    assert "Sessions" in out
+    assert "sid-match" in out

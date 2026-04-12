@@ -1,0 +1,232 @@
+# DYNAMIC-FULL-AUTO+ — online research swarm aggregate (queen merge)
+# Skill: skills/dynamic-full-auto/SKILL.md · Tool: scripts/swarm_research_digest.py validate
+# Append packs: swarm_research_digest.py append-pack THIS_FILE --pack <pack.yaml>
+# Generated: orchestrator session; packs RP-A..RP-E from researcher + roadmap updates.
+schema_version: 1
+roadmap_version: v0.2.0
+
+meta:
+  session_id: "2026-04-09-p1-010-orchestration"
+  prior_session_id: "2026-04-09-dynamic-full-auto-v020-milestone"
+  wave_a: "skipped — known-pattern (no new external packs)"
+  wave_b: "orchestrator pass — eval.md / deliver.md / deploy mirrors; declare /deliver pipeline + test matrix"
+  wave_b2: "2026-04-08T23:19Z bare /dynamic-full-auto — scope-gate valid P1-010; digest merge + Γ only; no new explore Tasks"
+  checkpoint_gamma: "scope infrastructure · risk additive · complexity simple · knowledge known-pattern → auto-router rule 6 → /deliver"
+
+consensus_themes:
+  - id: durability
+    contributing_packs: [RP-A]
+    summary: >
+      Durable execution separates persisted checkpoints/event history from replay semantics;
+      side effects need idempotency keys and explicit activity boundaries (Temporal, LangGraph, Dapr).
+      Maps to Azoth D21 (subagent/Task isolation) and D50 (scope-gate as session checkpoint).
+  - id: declarative_orchestration
+    contributing_packs: [RP-A, RP-B]
+    summary: >
+      Tool-based handoffs + declarative YAML workflows (vendor agent frameworks) complement
+      prose commands; canonical data reduces drift if linked from markdown (D23, D28 — P1-002).
+  - id: multi_eval_independence
+    contributing_packs: [RP-C]
+    summary: >
+      Correlated LLM errors weaken naive majority vote; prefer diverse judges, structured
+      disagreement, audit-style aggregation over raw consensus (aligns with BL-012 handoffs, D46 mirrors).
+  - id: memory_elasticity
+    contributing_packs: [RP-D]
+    summary: >
+      Relevance filter + utility/decay/access signals beat pure semantic retrieval; Azoth’s
+      recency + reinforcement_count aligns partially; outcome-linked utility needs HITL (D11, D45 — P1-007).
+  - id: inference_efficiency
+    contributing_packs: [RP-E]
+    summary: >
+      Provider prompt caching rewards static prefixes + minimal volatile suffix; BL-012 stage
+      boundaries are compaction points; parallel eval and speculative tools trade cost, latency,
+      and safety (D21, D23, D44, D46 — P1-011).
+
+research_packs:
+  - id: RP-A
+    topic: "Durable execution, checkpointing, idempotency"
+    sources:
+      - { title: "LangGraph Persistence", url: "https://docs.langchain.com/oss/python/langgraph/persistence" }
+      - { title: "Temporal Activity Definition", url: "https://docs.temporal.io/activity-definition" }
+      - { title: "Dapr Workflow features", url: "https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts" }
+      - { title: "Temporal Idempotency and Durable Execution", url: "https://temporal.io/blog/idempotency-and-durable-execution" }
+    implications_for_azoth:
+      - "Treat gate JSON transitions as checkpoint records with correlation ids (session_id, stage)."
+      - "Idempotency keys for scripts/hooks that mutate repo or call network APIs."
+      - "Partial completion in machine-readable handoffs (BL-012) before monolithic retries."
+      - "Optional consumer bridges to full engines; core stays gate-driven files."
+    risks:
+      - "Replay re-invokes LLM/API calls → cost and divergence."
+      - "At-least-once side effects without atomic completion records."
+
+  - id: RP-B
+    topic: "Supervisor, tool handoffs, declarative workflows"
+    sources:
+      - { title: "OpenAI Agents Python Handoffs", url: "https://openai.github.io/openai-agents-python/handoffs/" }
+      - { title: "OpenAI Agents JS multi-agent", url: "https://openai.github.io/openai-agents-js/guides/multi-agent/" }
+      - { title: "AutoGen Handoffs", url: "https://microsoft.github.io/autogen/dev/user-guide/core-user-guide/design-patterns/handoffs.html" }
+      - { title: "Microsoft Agent Framework declarative workflows", url: "https://learn.microsoft.com/en-us/agent-framework/user-guide/workflows/declarative-workflows/advanced-patterns" }
+      - { title: "Databricks Supervisor Agent", url: "https://docs.databricks.com/aws/en/generative-ai/agent-bricks/multi-agent-supervisor" }
+      - { title: "LangGraph workflows and agents", url: "https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/" }
+    implications_for_azoth:
+      - "YAML wave tables (P1-002) as canonical alongside e2e-swarm-eval-loop.md."
+      - "BL-012 remains boundary artifact; wave rows reference stage_id / spawn contract."
+      - "Map orchestrator→manager, Task spawn→handoff, typed YAML→validated payload."
+    risks:
+      - "Dual maintenance YAML vs prose; schema_version for churn."
+      - "YAML must not imply unsupported CI runtime execution."
+
+  - id: RP-C
+    topic: "Multi-agent evaluation, consensus limits"
+    sources:
+      - { title: "CollabEval arXiv", url: "https://arxiv.org/abs/2603.00993" }
+      - { title: "Correlated Errors in LLMs arXiv", url: "https://arxiv.org/abs/2506.07962" }
+      - { title: "AgentAuditor arXiv", url: "https://arxiv.org/abs/2602.09341" }
+      - { title: "D3 arXiv", url: "https://arxiv.org/abs/2410.04663" }
+      - { title: "AEMA arXiv", url: "https://arxiv.org/abs/2601.11903" }
+      - { title: "CARE arXiv", url: "https://arxiv.org/abs/2603.00039" }
+    implications_for_azoth:
+      - "eval-swarm agreement is weak without diverse judges / independence."
+      - "Keep rationales and disagreement in stage summaries vs collapsing to one vote."
+      - "Governed pipelines: audit trail of rubric versions and outputs (AEMA-style)."
+    risks:
+      - "Preprints and arXiv-only sources — verify methods, samples, and replication before kernel-hard rules."
+      - "False confidence from correlated unanimous wrong answers."
+      - "Token/latency cost of audit and debate patterns."
+
+  - id: RP-D
+    topic: "Episodic memory utility, decay, stale retrieval"
+    sources:
+      - { title: "MemRL arXiv", url: "https://arxiv.org/abs/2601.03192" }
+      - { title: "RetroAgent arXiv", url: "https://arxiv.org/abs/2603.08561" }
+      - { title: "FadeMem arXiv", url: "https://arxiv.org/abs/2601.18642" }
+      - { title: "Oblivion arXiv", url: "https://arxiv.org/abs/2604.00131" }
+      - { title: "GSW episodic RAG arXiv", url: "https://arxiv.org/abs/2511.07587" }
+      - { title: "RA-DT arXiv", url: "https://arxiv.org/abs/2410.07071" }
+    implications_for_azoth:
+      - "context-recall: optional second-stage rerank or decay weights; gated read when M2 strong match."
+      - "reinforcement_count as human/process strengthening; automation needs HITL policy."
+    risks:
+      - "Utility overfits narrow tasks; reward hacking on proxies."
+      - "Preprints — verify claims before kernel-hard rules."
+
+  - id: RP-E
+    topic: "Token, latency, and context efficiency for agentic stacks"
+    sources:
+      - { title: "OpenAI prompt caching", url: "https://platform.openai.com/docs/guides/prompt-caching" }
+      - { title: "Anthropic prompt caching", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" }
+      - { title: "Anthropic tool use with prompt caching", url: "https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/tool-use-with-prompt-caching" }
+      - { title: "Gemini context caching", url: "https://ai.google.dev/gemini-api/docs/caching" }
+      - { title: "ACON context compression (arXiv)", url: "https://arxiv.org/abs/2510.00615" }
+      - { title: "Context Folding (OpenReview)", url: "https://openreview.net/forum?id=JaLXQnA2wi" }
+      - { title: "JetBrains efficient context for coding agents", url: "https://blog.jetbrains.com/research/2025/12/efficient-context-management/" }
+      - { title: "PASTE speculative tool execution (arXiv)", url: "https://arxiv.org/abs/2603.18897" }
+      - { title: "OpenAI Batch API", url: "https://platform.openai.com/docs/guides/batch" }
+    implications_for_azoth:
+      - "BL-012 summaries as canonical compaction; keep orchestrator prompts thin at stage boundaries."
+      - "subagent-router BL-011 minimal spawns align with static-prefix caching."
+      - "azoth-deploy deterministic mirrors help repeated identical long prefixes across platforms."
+      - "Document interactive /eval-swarm vs batch offline eval for cost/latency tradeoffs."
+      - "Speculative parallel tools need idempotency review before any automation — not default."
+    risks:
+      - "Over-compression drops decision-critical detail; validate with failure replay."
+      - "Tool/thinking toggles invalidate caches — feature flags can silently destroy savings."
+      - "Cached KV retention and ZDR — policy-specific data posture."
+      - "Preprints (ACON, PASTE, folding) — verify before kernel-hard rules."
+
+explore_swarm_summary:
+  wave: "B + synthesis"
+  findings:
+    - "backlog.yaml lacked P1-* rows before pre-fill; welcome lacked TTL/EXPIRED and run-ledger surfacing (P1-004)."
+    - ".claude/workflows/enterprise/e2e-swarm-eval-loop.md plus pipelines/*.pipeline.yaml and test_eval_pipeline_wiring anchor P1-002/003/010."
+    - "session-closeout W2 checklist should name session-state.md explicitly (P1-006)."
+    - "Second pass: mapped task list ordered ledger-first (P1-001) then declarative waves (P1-002), linter (P1-003), welcome TTL (P1-004)."
+    - "Researcher + context-architect pass: add P1-011 roadmap/backlog/spec + RP-E (caching, ACON/folding, JetBrains observation cost, PASTE, Batch API)."
+    - "P1-010 orchestration (2026-04-09): extend test_eval_pipeline_wiring with mirror-aware checks — for each of auto/deliver/deliver-full/eval/eval-swarm/dynamic-full-auto, assert E1–E6 + eval-swarm + eval.md cross-refs exist in BOTH .github/prompts/*.prompt.md AND .opencode/commands/*.md; failure messages must name rel path."
+    - "PRE_DELIVERY_EVAL for implementation wave: E2 true (evaluator in /deliver rule-6 pipeline); E4 borderline (multi-file test only) — default baseline /eval at 0.85 unless human demands /eval-swarm."
+    - "No pipeline-gate.json for this scope (delivery_pipeline standard, target_layer infrastructure)."
+    - "Continuation: approved scope still P1-010 until expires_at; implementation not started in orchestrator thread — next action remains /deliver with Task-isolated stages."
+
+mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P1-012, P5-006]
+
+mapping_notes:
+  P1-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
+  P1-002: "RP-B declarative workflows — YAML wave rows beside e2e-swarm-eval-loop.md prose."
+  P1-003: "Structural safety for pipelines/*.pipeline.yaml — typos caught before /auto runtime."
+  P1-004: "Explore: TTL visibility; depends on stable ledger shape from P1-001."
+  P1-005: "D50 long runs vs short TTL — playbook in architecture + dynamic-full-auto skill cross-link."
+  P1-006: "Explore finding: W2 vs session-state.md; reinforcement semantics (D11, D49, D51)."
+  P1-007: "RP-D memory elasticity — M2/M3 recall governance without auto-delete."
+  P1-008: "D23/D44 — Stage 0 lane for instruction refinement via auto-router."
+  P1-009: "D52/D46 — Cursor SessionStart parity documentation path."
+  P1-010: "D46 — eval/eval-swarm wiring tests across deploy mirrors."
+  P1-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
+  P1-012: "Urgent DFA e2e friction — D21/D23/D50 blast radius: gates vs multi-wave mode, Task spawn, queen merge/handoff to /deliver|/auto; overlaps P1-001 ledger + P1-002 declarative waves."
+  P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."
+  INI-MEM-001: "RP-MEM-A verbatim-first storage — compress-before-index regression (96.6%→84.2%); M3 must index on full signal."
+  INI-MEM-002: "RP-MEM-C temporal KG — valid_from/valid_to point-in-time queries; D42 HITL invalidation preserved, no auto-expiry."
+  INI-MEM-003: "RP-MEM-B hybrid retrieval — flat ChromaDB collection, fused_dist formula production-only (not just benchmark); optional SQLite-vec backend."
+  INI-PLT-001: "RP-PLT-A platform parity — production-vs-benchmark divergence lesson; memory ops must be consistent across Claude Code/Cursor/Copilot adapter paths."
+
+# ── mempalace deep-repo research packs (2026-04-09-roadmap-initiatives) ──────
+mempalace_research_packs:
+  - id: RP-MEM-A
+    topic: "mempalace verbatim-first storage architecture"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace ingest.py", path: "ingest.py", note: "Verbatim ChromaDB add() before any summarisation; no pre-compression step." }
+      - { title: "mempalace benchmarks/run_benchmark.py", path: "benchmarks/run_benchmark.py", note: "AAAK variant applies compression BEFORE ingestion — causes 96.6%→84.2% regression." }
+    findings:
+      - "Production ingest stores raw text verbatim in ChromaDB; embedding index built on full signal."
+      - "AAAK (compress-then-index) regression is architectural: lossy compression degrades the vector index before retrieval."
+      - "No LLM summarisation in the hot path — the source of the claimed 96.6% benchmark score."
+    implications_for_azoth:
+      - "M3 append-only JSONL must not pre-summarise before any future vector indexing (INI-MEM-001 policy)."
+      - "If a compression step is added, it must be post-index or separated from the retrieval path."
+
+  - id: RP-MEM-B
+    topic: "mempalace retrieval — hybrid formula vs production divergence"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace searcher.py", path: "searcher.py", note: "Production retrieval is pure vector (ChromaDB query); no hybrid formula." }
+      - { title: "mempalace benchmarks/run_benchmark.py", path: "benchmarks/run_benchmark.py", note: "Hybrid formula: fused_dist = dist * (1.0 - 0.30 * keyword_overlap) — benchmark-only." }
+    findings:
+      - "Production searcher.py uses pure vector (ChromaDB .query()); hybrid formula lives ONLY in benchmark scripts."
+      - "The 96.6% benchmark score reflects the hybrid formula, but production users get pure vector."
+      - "Palace metaphor (wing/room) is flat ChromaDB metadata string tags — no Python class hierarchy."
+    implications_for_azoth:
+      - "If Azoth adopts hybrid retrieval, it must ship in the production context-recall path, not only evaluation scripts (INI-MEM-003)."
+      - "Flat metadata tagging (no inheritance chain) is preferable for M3 episode classification."
+    risks:
+      - "Hybrid formula weight (0.30) is not validated outside the benchmark dataset — treat as a starting point, not a hard constant."
+
+  - id: RP-MEM-C
+    topic: "mempalace temporal validity KG (SQLite triple store)"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace kg/store.py", path: "kg/store.py", note: "SQLite triples with valid_from TEXT, valid_to TEXT; point-in-time query via AND clause." }
+      - { title: "mempalace kg/query.py", path: "kg/query.py", note: "Parametric timestamp query: AND (valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)." }
+    findings:
+      - "SQLite triple store (subject, predicate, object, valid_from, valid_to) decouples factual KG from ChromaDB episodic store."
+      - "NULL valid_from/valid_to means 'always valid' — clean handling of timeless facts."
+      - "KG does NOT contribute to the 96.6% benchmark score (benchmark tests ChromaDB recall only)."
+    implications_for_azoth:
+      - "M2 patterns.yaml can gain optional valid_from/valid_to metadata without breaking existing tooling (INI-MEM-002)."
+      - "D42 HITL requirement: temporal expiry must be set by humans, never auto-derived by the agent."
+    risks:
+      - "Adding temporal fields to M2 requires schema migration path — drift tests must be updated."
+
+  - id: RP-PLT-A
+    topic: "mempalace production-vs-benchmark divergence as platform parity lesson"
+    session_id: "2026-04-09-roadmap-initiatives"
+    sources:
+      - { title: "mempalace searcher.py vs benchmarks/run_benchmark.py", note: "Hybrid formula present in benchmark runner but absent from production search path." }
+    findings:
+      - "Mempalace ships a benchmark that tests a feature (hybrid retrieval) not present in the production code path."
+      - "Users relying on the 96.6% figure are implicitly trusting benchmark conditions that don't match real usage."
+      - "The palace hierarchy (wing/room) has no Python class implementation — it's purely metadata tagging, not an OOP model."
+    implications_for_azoth:
+      - "Any Azoth memory feature must be validated in all production adapter paths (Claude Code, Cursor, Copilot) before the benchmark number is cited (INI-PLT-001)."
+      - "D46 deploy-mirror parity applies to memory operations, not just eval/prompt pipelines."
+    risks:
+      - "Adapter paths may silently degrade memory features that work in Claude Code (primary) but not in Cursor or Copilot."

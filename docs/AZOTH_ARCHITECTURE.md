@@ -285,9 +285,11 @@ orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/
 | `/session-closeout` | Lifecycle | Unified eval + close + sync |
 | `/remember` | Lifecycle | Capture cross-session learning |
 | `/auto` | Pipeline | Auto-compose and execute pipeline (default) |
+| `/dynamic-full-auto` | Pipeline | DYNAMIC-FULL-AUTO+ discovery swarms, digest, Γ, then delivery handoff |
 | `/deliver` | Pipeline | Lean pipeline (pre-approved work) |
 | `/deliver-full` | Pipeline | Full pipeline with governance gates |
 | `/plan` | Pipeline | Structured planning without execution |
+| `/context-architect` | Pipeline | Dependency map and blast radius (read-only) |
 | `/eval` | Quality | Governance quality gate |
 | `/test` | Quality | Unit test generation |
 | `/promote` | Governance | Review promotion candidates |
@@ -430,7 +432,7 @@ auto_pipeline:
     scope: kernel | skills | agents | pipelines | docs | mixed
     risk: governance-change | breaking-change | additive | cosmetic
     complexity: simple | medium | complex
-    knowledge: known-pattern | needs-research | novel
+    knowledge: known-pattern | needs-research | novel | instruction-refinement
 
   composition_rules:
     - if risk == governance-change: ALWAYS full pipeline
@@ -441,6 +443,8 @@ auto_pipeline:
         pipeline: [planner, test-builder, builder, architect-review]
     - if knowledge == needs-research:
         inject: research-phase into architect stage
+    - if knowledge == instruction-refinement:
+        inject: l2-evidence-review into architect stage
     - if scope == docs:
         pipeline: [architect, builder, architect-review]
     - default: full pipeline
@@ -494,7 +498,7 @@ Every pipeline gate must declare its type:
 CLAUDE.md (universal)
     ├── Claude Code ──── primary, full features
     ├── OpenCode ─────── reads CLAUDE.md natively (free compatibility)
-    ├── GitHub Copilot ── reads CLAUDE.md + .github/ adapter files
+  ├── GitHub Copilot ── reads CLAUDE.md + .github/prompts/ and can discover .claude/agents/
     └── AGENTS.md ──────── AAIF standard (Copilot, OpenCode, Codex, Cursor, Gemini)
 ```
 
@@ -512,7 +516,7 @@ azoth init / azoth-deploy.py
   ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
   ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
-  ├─ Copilot detected?     → .github/ (agents/, prompts/, copilot-instructions.md)
+  ├─ Copilot detected?     → .github/ (prompts/, copilot-instructions.md) + .claude/agents/ by default
   └─ Cursor (always in dev-sync) → .cursor/rules/*.mdc (from kernel/templates/platform-adapters/cursor/)
 ```
 
@@ -523,7 +527,7 @@ azoth init / azoth-deploy.py
 | CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via toggle |
 | AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
 | Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ .claude + repo (toggle) |
-| Agents | .claude/agents/ | .opencode/agents/ | .github/agents/ | .claude/agents/ (toggle) |
+| Agents | .claude/agents/ | .opencode/agents/ | .claude/agents/ by default, optional .github/agents/ mirror | .claude/agents/ (toggle) |
 | Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | .claude/commands/ (toggle) |
 | `.cursor/rules/*.mdc` | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
 | Config | .claude/settings.json | opencode.json | VS Code settings | Cursor Settings + toggle |
@@ -542,6 +546,8 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 | **PreToolUse hooks** (`.claude/settings.json`) | Executed on every tool call | **Not executed** — Cursor does not run Claude Code’s hook binary |
 | Scope / pipeline gate enforcement | **Mechanical** (deny Write/Edit) | **Behavioral** — enforced by always-applied **`.cursor/rules/*.mdc`** instructing the model to read `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json` and refuse writes when invalid |
 | **Subagent isolation (D21)** | `Agent(subagent_type=...)` | **`Task`** with matching `subagent_type` (Azoth archetypes) — orchestrator stays in main chat; **must not** inline all pipeline stages when `Task` is available (see `claude-code-parity.mdc`) |
+
+**GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
 
 **PreToolUse hook commands** in `.claude/settings.json` should use **paths relative to the repository root** (for example `python3 .claude/hooks/edit_pretooluse_orchestrator.py`) so clones and CI do not embed machine-specific absolute paths. Claude Code runs hooks with the **project workspace as the current working directory**. If a hook fails to resolve, use an absolute path only for local debugging.
 
@@ -565,12 +571,12 @@ Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D
 |------------|----------------|-------------|--------|----------|----------------|
 | **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ (same repo path) |
 | **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json` | ✅ | ✅ | ✅ | ✅ (same repo paths) |
-| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | N/A |
+| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | ⚠️ **attempt mirror write** so later Claude Code sessions can read the latest Copilot-authored closeout |
 | **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
 
 **Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule).
 
-**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists only so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**). **OpenCode** and **GitHub Copilot** do not consume `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or a Cursor session with access.
+**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**), and **GitHub Copilot** should also best-effort mirror W3 during closeout so Claude Code can read Copilot-authored session state later. **OpenCode** and **GitHub Copilot** still do not **consume** `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or another host with access.
 
 ### Platform File Format Differences
 
@@ -601,8 +607,8 @@ implicitly allowed tools  → permission: allow
 This enables cross-platform workspace compatibility without waiting for the Phase 4 installer.
 
 ```
-agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (strip Azoth-specific fields)
-                       ├→ .github/agents/<name>.agent.md   (remap tools, drop tier/skills)
+agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (Claude Code + default Copilot path)
+                       ├→ .github/agents/<name>.agent.md   (optional Copilot compatibility mirror)
                        └→ .opencode/agents/<name>.md       (posture→permission, infer mode)
 
 .claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)
@@ -794,6 +800,8 @@ azoth/
     ├── telemetry/
     └── sync-log.jsonl
 ```
+
+**Developer preflight (P1-003):** When `scripts/pipeline_lint.py` exists, run it on `pipelines/*.pipeline.yaml` before relying on composed `/auto` output; CI/pytest should cover happy-path and one malformed fixture once the linter lands.
 
 ---
 
@@ -1093,6 +1101,64 @@ hook (P3-008) reads this file before allowing Write/Edit.
 **Validator rule:** A scope card mixing M1-targeted items with runtime tasks
 is rejected. M1 changes require a dedicated session.
 
+### Long-running sessions (P1-005)
+
+Multi-hour or multi-wave work (including DYNAMIC-FULL-AUTO+ discovery and `/eval-swarm`) must stay
+compatible with **short-lived scope and pipeline gates** (D50) and the Trust Contract entropy ceiling.
+Operator-visible friction (discovery narrative vs gates, Claude Code vs Cursor, digest handoffs) is
+documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
+
+**Checklist**
+
+1. **Refresh scope before TTL expiry** — Run `/next` (or human-approved scope card) to write a new
+   `.azoth/scope-gate.json` when the current `expires_at` is near; do not assume silent extension.
+   **Lightweight alternative:** the orchestrator may extend `expires_at` in-place (by 1 hour) when
+   a pipeline is mid-execution, provided it surfaces a TTL card to the human offering extend /
+   checkpoint / abort. This avoids full re-scoping mid-pipeline while preserving human-in-the-loop.
+2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
+   rather than exceeding the per-turn file ceiling.
+3. **Run ledger (P1-001)** — Append wave outcomes to `.azoth/run-ledger.local.yaml` (gitignored)
+   after each wave or stage; use `python3 scripts/run_ledger.py status` to resume without replaying prose. Schema: `pipelines/run-ledger.schema.yaml`.
+4. **Digest merges** — After swarm append to `SWARM_RESEARCH_DIGEST.yaml`, run
+   `python3 scripts/swarm_research_digest.py validate` on that path before commit.
+5. **Never disable hooks** — Long runs do not bypass PreToolUse scope-gate or pipeline-gate; adjust
+   scope instead.
+
+**Risks:** Expired gates mid-run cause mechanical Write/Edit denies; stale scope cards mis-label M1
+vs infrastructure work; unbounded parallel Task fan-out violates swarm Iron Laws (see
+`.agents/skills/swarm-coordination/SKILL.md`).
+
+### Context & token budget (P1-011)
+
+**Goal:** Lower median tokens and latency per session **without** weakening D50 gates, **BL-012**
+typed handoffs, or **`/eval-swarm`** quality bars.
+
+**Principles (toolkit-level):**
+
+1. **Compaction at stage boundaries** — Prefer machine-readable **`pipelines/stage-summary.schema.yaml`**
+   payloads (`prior_stage_summaries`) over pasting full subagent prose into the orchestrator thread
+   (extends completed **BL-012**).
+
+2. **Static prefix, volatile suffix** — For provider **prompt caching**, keep **stable** system
+   instructions, tool definitions, and rubrics **early**; put **session-specific** state (scope
+   cards, file lists that churn every turn) **late**. Small tool or parameter toggles can
+   **invalidate** large cached prefixes — document this when changing hooks or command bodies.
+
+3. **Spawn hygiene** — Follow **`skills/subagent-router/SKILL.md`** **BL-011**: minimal YAML spawn +
+   **`Read`** targets instead of embedding the whole pipeline table in every **Task**.
+
+4. **Parallel eval economics** — **`/eval-swarm`** multiplies tokens vs a single evaluator; use it
+   when **E1–E6** triggers fire (**`.claude/commands/eval.md`**). For **offline** scoring, vendor
+   **batch** APIs trade latency for cost — not a substitute for interactive gates.
+
+5. **Deploy stability** — **`scripts/azoth-deploy.py`** (**D46**) should keep mirrored command/agent
+   text **deterministic** so repeated installs share long identical prefixes where the API layer
+   repeats scaffold text.
+
+**Research aggregate:** `.azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml` pack **RP-E**
+(sources: OpenAI / Anthropic / Gemini caching docs; ACON arXiv:2510.00615; Context Folding OpenReview;
+JetBrains context-efficiency blog; PASTE arXiv:2603.18897; OpenAI Batch API).
+
 ### D51: Formalized M2→M1 Promotion Path
 
 D11 noted "M2→M1 pending" as a partial status. D51 formalizes it.
@@ -1124,7 +1190,7 @@ m2_candidate=true flag      set at intake                           target_layer
 | D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
-| D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH scheme; PATCH per delivery, PHASE per phase completion |
+| D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH pre-release, then 0.1.MILESTONE_PHASE.PATCH while shipping toward v0.2.0 |
 
 ---
 
@@ -1146,7 +1212,9 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
                                               + git tag proposed (user-confirmed)
 ```
 
-### Version Format: `0.0.PHASE.PATCH`
+### Version Format
+
+#### Pre-release roadmap phases: `0.0.PHASE.PATCH`
 
 ```
 0.0.PHASE.PATCH
@@ -1168,20 +1236,24 @@ Phase milestone complete (all phase items)   → minor bump:  0.x.y → 0.x+1.0
 | v0.0.6 | Phase 6: Meta-recursive | 6 |
 | v0.0.7 | Phase 7: Publishing & public product | 7 |
 | **v0.1.0** | **Public azoth release — full roadmap complete (Phases 1–7)** | — |
-| v0.2.0 | Post–v0.1.0 slice — next roadmap TBD (phases/backlog to seed) | 8 (placeholder) |
+| v0.2.0 | Milestone target / container | Holds the roadmap specs, initiatives, and eventual release target |
+| v0.2.0-p1 | Milestone phase 1 working slice | Active phase-1 queue under the v0.2.0 milestone |
 
 ### Bump Rules
 
-- **PATCH** (`0.0.N.XX+1`): every delivery session — /deliver-full, /deliver, or any
-  session that produces artifacts. Counter resets to `.1` on each phase bump.
-- **PATCH (post–1.0)** (`0.1.M+1`): after `--release`, `azoth.yaml` uses three-part semver;
-  `--patch` increments the third component; `roadmap.yaml` `active_version` (e.g. v0.2.0)
-  `current_patch` still advances per delivery session.
-- **PHASE** (`0.0.N+1`): phase completion; PHASE number equals the current phase (3→4→5→6→7).
-  PATCH counter resets to `.1`.
-- **Release** (`--release` from `v0.0.7` active): writes `0.1.0`, closes v0.0.7 + v0.1.0 roadmap
-  blocks, sets legacy `current_phase: 8`, activates **v0.2.0** @ `current_patch: 1`. Git tag
-  proposed — user-confirmed, never auto-pushed.
+- **PATCH** (`0.0.N.XX+1`): every delivery session in the pre-release roadmap. Counter resets
+  to `.1` on each pre-release phase bump.
+- **PATCH (post–v0.1.0)** (`0.1.P.M+1`): after `--release`, `azoth.yaml` stays four-part and
+  `--patch` increments the fourth component; `roadmap.yaml` mirrors that in the active
+  working slice `current_patch` (for example `v0.2.0-p1` phase 1 ↔ `0.1.1.M`).
+- **PHASE** (`0.0.N+1` or `0.1.P+1.0`): phase completion. Pre-release phases continue the
+  `0.0.*` line; post-release milestone work advances the milestone-local phase number and
+  resets PATCH to `.0`.
+- **Release** (`--release` from `v0.0.7` active): closes v0.0.7 + v0.1.0 roadmap blocks,
+  proposes the public git tag **`v0.1.0`**, then moves the repo onto **`0.1.1.0`** with
+  **`current_phase: 1`**, **`milestone: v0.2.0`**, **`lifecycle_phase: 8`**, milestone
+  target block **`v0.2.0`**, and active working slice **`v0.2.0-p1`** at `current_patch: 0`.
+  Git tag proposed — user-confirmed, never auto-pushed.
 
 The PATCH counter provides agents with a reliable time-series signal: higher PATCH = later
 in the phase. PHASE provides coarser orientation. Together they encode "where in development
@@ -1191,8 +1263,9 @@ are we" without requiring agents to read git history.
 
 - `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
   writes `azoth.yaml` and updates `roadmap.yaml` `active_version` + `current_patch` fields.
-  `--release` closes the v0.0.7 slice, marks v0.1.0 complete, activates v0.2.0, sets phase 8,
-  writes `0.1.0`, and proposes a git tag.
+  `--release` closes the v0.0.7 slice, marks v0.1.0 complete, sets the v0.2.0 milestone
+  container to `target`, activates `v0.2.0-p1`, sets milestone-local `phase: 1` +
+  `milestone` + `lifecycle_phase: 8`, writes `0.1.1.0`, and proposes the public v0.1.0 tag.
 - `/session-closeout` integration — final step calls `version-bump.py --patch` after
   confirming at least one artifact was written this session.
 - `/deliver-full` integration — calls `version-bump.py --patch` after builder stage
@@ -1203,9 +1276,11 @@ are we" without requiring agents to read git history.
 - Version bumps are never silent — `version-bump.py` prints the old → new transition
 - Git tags are proposed at `--release` only; patch/phase bumps update files only
 - `azoth.yaml` `version` is the authoritative time-series field for agents
-- `roadmap.yaml` `active_version` + `current_patch` mirror it for roadmap context
+- `roadmap.yaml` `active_version` + `current_patch` mirror it for roadmap context; after v0.1.0
+  they track the active **working slice** (`v0.2.0-p1`, `v0.2.0-p2`, …), not the milestone container
 - On `--phase` bump: `version-bump.py` writes `final_patch: N` to the completing version
   entry in `roadmap.yaml` before advancing `active_version` — preserves the full time-series
   history for completed phases
-- `target_version` in `backlog.yaml` uses the delivery-phase version (e.g. `v0.0.3`),
-  not a future release target — completed items record where they actually landed
+- `target_version` in `backlog.yaml` uses the delivery-phase version (e.g. `v0.0.3` or
+  post-v0.1.0 `v0.2.0-p1`), not the milestone container or a future release target — completed
+  items record where they actually landed

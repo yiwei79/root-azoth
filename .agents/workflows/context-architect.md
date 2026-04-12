@@ -1,0 +1,33 @@
+# /context-architect $ARGUMENTS
+
+Read-only **context mapping** for `$ARGUMENTS` (goal, paths, or feature). Produces a structured dependency / blast-radius view so planners, builders, and humans can scope work without executing changes.
+
+## Canonical role model
+
+Load **`agents/tier4-utility/context-architect.agent.md`** for posture, context-map output shape, and materiality rules.
+
+## Skills
+
+- **`skills/context-map/SKILL.md`** — how to build the map
+- **`skills/subagent-router/SKILL.md`** — when this work is a **pipeline stage**, use **BL-011** spawn (`subagent_type: context-architect`, `trigger: context-isolation` or **review-independence** as appropriate)
+
+## Process
+
+1. Parse `$ARGUMENTS` into explicit **targets** (files, directories, or symbolic feature names).
+2. Trace **imports**, **config references**, **tests**, **deploy mirrors** (`azoth-deploy` surfaces), and **cross-layer** edges (`kernel/` vs `skills/` vs `.claude/`).
+3. Emit the **Context Map** template from the agent file (Targets, Dependencies, Blast Radius, Test Coverage, Patterns, Suggested Sequence).
+4. Assign a **zone** (green / yellow / red) from blast radius and governance touch (`kernel/`, governed M1, hooks).
+5. **Stop** at analysis unless the human explicitly asks for a follow-on `/plan` or `/auto`.
+
+## Output contract
+
+Use the agent’s markdown template verbatim in structure; keep prose proportional to materiality (agent **Materiality Test**).
+
+## Rules
+
+- **Do not** Write/Edit the repo under this command unless the human promotes to a delivery command with valid gates.
+- If targets are ambiguous, list assumptions and the smallest next **Read**/`glob` step — do not invent files.
+
+## Arguments
+
+Scope: **$ARGUMENTS**

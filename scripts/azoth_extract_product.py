@@ -48,11 +48,29 @@ DEFAULT_CLAUDE_SUBSTITUTIONS: dict[str, str] = {
     "TEST_DIR": "tests",
     "FORMATTER": "ruff format + ruff check",
     "TEST_FRAMEWORK": "pytest",
-    "AZOTH_VERSION": "0.1.0",
+    "AZOTH_VERSION": "0.1.0",  # fallback; overridden at extract time by _read_azoth_version
     "INSTALLED_SKILLS": "see skills/",
     "INSTALLED_AGENTS": "see agents/",
     "INSTALLED_PIPELINES": "see pipelines/",
 }
+
+
+def _read_azoth_version(source_root: Path) -> str:
+    """Read the version field from azoth.yaml in the source tree."""
+    azoth_path = source_root / "azoth.yaml"
+    if not azoth_path.is_file():
+        return DEFAULT_CLAUDE_SUBSTITUTIONS["AZOTH_VERSION"]
+    data = yaml.safe_load(azoth_path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and "version" in data:
+        return str(data["version"])
+    return DEFAULT_CLAUDE_SUBSTITUTIONS["AZOTH_VERSION"]
+
+
+def _build_claude_substitutions(source_root: Path) -> dict[str, str]:
+    """Build CLAUDE.md substitutions with AZOTH_VERSION read from azoth.yaml."""
+    subs = dict(DEFAULT_CLAUDE_SUBSTITUTIONS)
+    subs["AZOTH_VERSION"] = _read_azoth_version(source_root)
+    return subs
 
 README_SUBSTITUTIONS: dict[str, str] = {
     "PRODUCT_NAME": "Azoth",
@@ -207,11 +225,12 @@ def apply_transforms(
                 raise RuntimeError("regenerate-from-template requires template: str")
             if src_name != "CLAUDE.md":
                 raise RuntimeError(f"unsupported regenerate-from-template source: {src_name!r}")
+            subs = _build_claude_substitutions(source_root)
             apply_regenerate_claude(
                 source_root,
                 dest_root,
                 tpl,
-                DEFAULT_CLAUDE_SUBSTITUTIONS,
+                subs,
                 dry_run=dry_run,
             )
         elif action == "set-scope-mode":

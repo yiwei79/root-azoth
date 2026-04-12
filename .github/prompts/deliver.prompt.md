@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Lean pipeline for pre-approved, additive work
+agent: orchestrator
 ---
 
 # /deliver $ARGUMENTS
@@ -10,10 +11,8 @@ Lean delivery pipeline. Use when the work is pre-approved and additive
 
 ## Stage 0 — Pipeline gate (mechanical)
 
-**Before any other Write/Edit** to the repo: `Read` `.azoth/scope-gate.json`. If
-`delivery_pipeline` is `governed` **or** `target_layer` is `M1`, `Write`
-`.azoth/pipeline-gate.json` with `"pipeline": "deliver"` (other fields identical to
-`/deliver-full` Stage 0). If scope is not governed, omit unless already present.
+Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes
+`.azoth/pipeline-gate.json`, set `"pipeline": "deliver"`.
 
 ## Pipeline
 
@@ -25,7 +24,8 @@ Planner → Test Builder → Builder → Architect Review
 
 For each **agent gate** below, invoke `Agent(subagent_type=architect)` using **only** the
 YAML template in `skills/subagent-router/SKILL.md` §Spawn Prompt Contract. Canonical gate
-lines and triggers live in **§Stage briefs: deliver** — load via `Read` after spawn.
+lines and triggers live in **§Stage briefs: deliver** — load via `Read` after spawn, and use
+the same skill's BL-012 sections for typed stage summaries and forward payloads.
 
 | Gate | `stage_id` | `trigger` |
 |------|------------|-----------|
@@ -47,15 +47,15 @@ lines and triggers live in **§Stage briefs: deliver** — load via `Read` after
 
 4. **Architect Review**
    - Compare implementation against plan; verify entropy stayed bounded; produce final alignment summary
-   - Gate: human (final approval)
+   - Gate: Agent(subagent_type=architect) — trigger: review-independence — architect review (`stage_id: deliver_g3`)
+   - Gate: human (final approval after architect review)
 
 ## Typed stage summary (BL-012)
 
-After each numbered stage completes, the subagent MUST emit a YAML document conforming to
-`pipelines/stage-summary.schema.yaml` with `pipeline: deliver` before the next stage runs.
-Use `stage_kind`: research | build | eval | audit per the schema. Markdown alignment
-(skill `alignment-sync`) remains optional for humans; the typed YAML is the orchestrator
-handoff.
+After each numbered stage completes, emit YAML per `skills/subagent-router/SKILL.md`
+§Stage summary output and `pipelines/stage-summary.schema.yaml` with `pipeline: deliver`
+before the next stage runs. Markdown alignment (skill `alignment-sync`) remains optional
+for humans; the typed YAML is the orchestrator handoff.
 
 ## Orchestration Constraints
 

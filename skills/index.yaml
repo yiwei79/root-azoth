@@ -1,0 +1,79 @@
+# Azoth skill index — replaces per-skill prose Integration sections
+# Each entry: name, description (1 line), depends_on (list of skill names or empty)
+skills:
+  - name: context-recall
+    description: Read M3 episodes and M2 patterns by goal tags before architect planning or SURVEY session start (D45 memory read path).
+    depends_on:
+      - remember
+
+  - name: stage6-rubric
+    description: Architect gate for `/deliver-full` Stage 6/7 — PASS/FAIL structured content (agents, skills, pipeline YAML) before human approval (D44).
+    depends_on: []
+
+  - name: alignment-sync
+    description: Produce pull-based alignment summaries (phone-friendly) at pipeline stage boundaries, human gates, entropy zone shifts, session closeout, or on demand.
+    depends_on:
+      - entropy-guard
+      - remember
+
+  - name: agentic-eval
+    description: Evaluate and refine agent outputs using rubrics, reflection loops, and evaluator-optimizer pipelines (code, reports, analysis).
+    depends_on: []
+
+  - name: auto-router
+    description: Map Stage 0 classification to the ordered stage list for `/auto` (D23); use after goal classification, before human approval of the composed pipeline.
+    depends_on:
+      - subagent-router
+
+  - name: context-map
+    description: Map blast radius and dependency graphs before multi-file or cross-cutting work; assess risk and pre-stage dependencies at the start of a pipeline stage or unfamiliar area.
+    depends_on: []
+
+  - name: cursor-review-insights
+    description: Cursor IDE blindspot review — structured bug-hunting and code review that emits D32 insights to .azoth/inbox/ (trusted source cursor-review).
+    depends_on:
+      - agentic-eval
+
+  - name: prompt-engineer
+    description: Refine SKILL.md, agent definitions, and slash commands for clarity and reliability; apply L2 optimization loops from evaluation evidence.
+    depends_on:
+      - agentic-eval
+      - self-improve
+
+  - name: remember
+    description: Append structured episodes to `.azoth/memory/episodes.jsonl` and classify lessons for M3→M2 promotion; use at session closeout or when capturing durable decisions or patterns.
+    depends_on:
+      - context-recall
+
+  - name: self-improve
+    description: Run L1–L2 reflexion — mine episodes for friction, propose evidence-backed instruction changes, and iterate auto-refinement on skills or agent text.
+    depends_on:
+      - remember
+      - agentic-eval
+      - prompt-engineer
+      - entropy-guard
+
+  - name: structured-autonomy-plan
+    description: Convert architect briefs into deterministic task plans with explicit test strategy and validation gates for handoff to the builder stage or a future session.
+    depends_on: []
+
+  - name: subagent-router
+    description: Assign `subagent_type` and isolation triggers to `/auto`, `/deliver`, and `/deliver-full` stages; defines the spawn-prompt contract (BL-011) and forward payload for typed summaries.
+    depends_on: []
+
+  - name: dynamic-full-auto
+    description: DYNAMIC-FULL-AUTO+ with queen-controlled adaptive routing — situational extra waves, pivots, post-digest re-classification, optional `/eval-swarm`, merge to SWARM_RESEARCH_DIGEST.yaml.
+    depends_on:
+      - auto-router
+      - subagent-router
+      - orientation
+
+  - name: orientation
+    description: Load the v0.2.0 slice roadmap, backlog alignment, per-task specs, and expanded workflow when planning or editing `.azoth/roadmap.yaml` / backlog.
+    depends_on: []
+
+  - name: entropy-guard
+    description: Track session entropy, blast radius, and Trust Contract ceilings during pipelines; decide when to checkpoint or escalate before thresholds are exceeded.
+    depends_on:
+      - alignment-sync
+      - remember

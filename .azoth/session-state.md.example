@@ -1,6 +1,8 @@
 # Azoth Session State — Cross-IDE Handoff Capsule
 # Written by /session-closeout. Read by .cursor/rules/azoth-memory.mdc on Cursor session start.
+# Mirrors the currently focused session only; parked sessions live in .azoth/run-ledger.local.yaml.
 
+session_id: ""
 state: empty
 last_ide: ""
 timestamp: ""

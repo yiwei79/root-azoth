@@ -1,5 +1,6 @@
 ---
 description: Session welcome dashboard — orient, then route to your next action
+agent: orchestrator
 ---
 
 # /start
@@ -42,12 +43,18 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
    | Input | Action |
    |-------|--------|
-   | `resume` | Scope gate is already active — proceed directly with the approved goal |
+   | `resume` | Scope gate is already active — resume the approved goal through the selected delivery pipeline; if none was explicitly selected, use `/auto` and run Stage 0 first (do not jump straight to implementation) |
    | `next` | Run `/next` to open a scope card for the next priority task |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |
    | `eval` | Run `/eval` — quality gate (**0.85** baseline); **escalates to `/eval-swarm`** when workflow/content triggers multi-branch or high-stakes review (see `eval.md`) |
+   | `roadmap` | Run `/roadmap` — D48 versioned roadmap dashboard (`scripts/roadmap_dashboard.py`) |
+   | `plan` | Run `/plan` — structured autonomy / planning |
+   | `remember` | Run `/remember` — quick M3 episode capture without full closeout |
+   | `closeout` | Run `/session-closeout` — W1–W4 batch, version bump when applicable, `.azoth/session-state.md` handoff |
    | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset |
+
+   **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.
 
 3. **If the dashboard script is missing or errors**, fall back to manual orientation:
    - Read `azoth.yaml` for version/phase/layer status

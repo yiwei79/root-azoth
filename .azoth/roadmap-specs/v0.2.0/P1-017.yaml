@@ -1,0 +1,51 @@
+# Roadmap task spec — v0.2.0
+id: P1-017
+roadmap_version: v0.2.0
+title: "reinforcement_count automation (closeout + promote path)"
+decision_ref: [D11, D49, D51]
+
+intent: >
+  Turn the documented P1-006 rule into an explicit, human-confirmed automation path
+  so reinforcement_count stops being inert in runtime flows without expanding into
+  fuzzy memory heuristics.
+
+problem: >
+  P1-006 documented reinforcement_count semantics, but the runtime still initializes
+  new episodes at 0 and never increments prior episodes mechanically. /promote reads
+  reinforcement signals, and do_closeout.py writes reinforcement_count: 0, but no
+  audited path exists to increment a prior episode when the same lesson recurs.
+
+scope:
+  - scripts/do_closeout.py
+  - .claude/commands/promote.md
+  - Shared helper under scripts/ if needed for exact-id reinforcement updates
+  - Focused pytest coverage for explicit prior-episode selection and idempotency
+
+non_goals:
+  - Fuzzy semantic matching across episodes
+  - Auto-promoting M3→M2 without human
+  - Broad episode schema rewrites or non-reinforcement edits to M3 history
+
+acceptance:
+  - Human-confirmed path exists to increment a prior episode's reinforcement_count from closeout and/or promote
+  - Increment targets an explicitly selected prior episode (exact id), not heuristic matching
+  - A prior episode cannot be incremented more than once per session
+  - Newly captured episodes still start with reinforcement_count: 0
+  - pytest coverage proves idempotency and guards against accidental double increments
+
+dependencies: [P1-006]
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Start with exact-id, human-confirmed updates only. Do not add semantic similarity
+  matching, background episode linking, or autonomous reinforcement heuristics in
+  the first automation slice.
+
+research_notes: >
+  Treat reinforcement_count as a narrow, audited metadata exception to the append-only
+  M3 flow, not as a general license to edit episodes. The first slice should optimize
+  for explicitness and idempotency over convenience.

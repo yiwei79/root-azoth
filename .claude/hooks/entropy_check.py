@@ -13,7 +13,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from entropy_state import load_state, reset_if_session_changed, save_state
-from scope_gate_core import REPO_ROOT, entropy_state_path, resolved_target
+from scope_gate_core import (
+    REPO_ROOT,
+    entropy_state_path,
+    extract_old_new_strings,
+    extract_target_path_str,
+    extract_write_content,
+    normalized_write_action,
+    resolved_target,
+    tool_input_dict,
+)
 
 # When tool_input lacks content strings, use conservative placeholder (planner r3).
 PLACEHOLDER_LINES = 250
@@ -21,11 +30,11 @@ PLACEHOLDER_LINES = 250
 # §1 table caps: enforced here using session-scoped unique paths + lines_total (see module docstring).
 MAX_FILES_MODIFIED = 10
 MAX_FILES_CREATED = 10
-MAX_LINES_PER_SESSION = 500
+MAX_LINES_PER_SESSION = 1000
 
 # Zone thresholds on cumulative entropy_delta (TRUST_CONTRACT §1).
-ZONE_YELLOW_MIN = 5.0
-ZONE_RED_MIN = 10.0
+ZONE_YELLOW_MIN = 12.0
+ZONE_RED_MIN = 25.0
 
 
 def _entropy_zone(cumulative: float) -> str:
@@ -46,16 +55,17 @@ class EntropyCheckResult:
     entropy_zone: str | None = None
 
 
-def estimate_lines_changed(tool_name: str, tool_input: dict) -> int:
-    """Best-effort line count from Claude Write/Edit tool_input; placeholder if missing."""
-    if tool_name == "Write":
-        content = tool_input.get("content")
+def estimate_lines_changed(payload: dict) -> int:
+    """Best-effort line count from Claude or VS Code write/edit payloads."""
+    action = normalized_write_action(payload)
+    tool_input = tool_input_dict(payload)
+    if action == "write":
+        content = extract_write_content(tool_input)
         if isinstance(content, str) and content.strip():
             return max(1, len(content.splitlines()))
         return PLACEHOLDER_LINES
-    if tool_name == "Edit":
-        old_s = tool_input.get("old_string")
-        new_s = tool_input.get("new_string")
+    if action == "edit":
+        old_s, new_s = extract_old_new_strings(tool_input)
         if isinstance(old_s, str) and isinstance(new_s, str) and (old_s or new_s):
             return max(1, len(old_s.splitlines()) + len(new_s.splitlines()))
         return PLACEHOLDER_LINES
@@ -81,9 +91,10 @@ def evaluate_entropy(
     """
     root = repo_root or REPO_ROOT
     state_path = entropy_state_path(root)
-    tool_name = payload.get("tool_name", "")
-    tool_input = payload.get("tool_input") or {}
-    file_path_str = tool_input.get("file_path", "")
+    action = normalized_write_action(payload)
+    if action is None:
+        return EntropyCheckResult(allowed=True)
+    file_path_str = extract_target_path_str(payload)
     target = resolved_target(root, file_path_str)
 
     sid = str(scope_data.get("session_id", "") or "default")
@@ -100,7 +111,7 @@ def evaluate_entropy(
         existed = False
 
     path_key = _norm_path(target)
-    lines_this = estimate_lines_changed(tool_name, tool_input)
+    lines_this = estimate_lines_changed(payload)
 
     modified = set(state.modified_paths)
     created = set(state.created_paths)

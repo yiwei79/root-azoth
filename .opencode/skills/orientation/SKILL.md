@@ -1,9 +1,9 @@
 ---
 name: orientation
 description: |
-  Load the v0.1.0 phase roadmap, backlog vs roadmap alignment, and expanded development
-  workflow when planning or editing `.azoth/roadmap.yaml` / backlog — not for routine
-  implementation work.
+  Load the v0.2.0 slice roadmap, backlog alignment, per-task specs under
+  `.azoth/roadmap-specs/v0.2.0/`, and expanded workflow when planning or editing
+  `.azoth/roadmap.yaml` / backlog — not for routine implementation work.
 ---
 
 # Orientation
@@ -11,9 +11,9 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **full phase roadmap** (Phases 1–7 toward v0.1.0) and the **expanded
-development workflow** so agents load it only when planning, roadmap edits, or phase
-alignment—not on every session.
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p1 working slice**
+(Phase 8 in `azoth.yaml`), and the **expanded development workflow** so agents load it
+only when planning, roadmap edits, or phase alignment—not on every session.
 
 ## When to Use
 
@@ -91,15 +91,33 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Phase 8: Next — roadmap TBD 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `phase: 8`; `.azoth/roadmap.yaml` `active_version: v0.2.0` (slice active, `current_patch` for delivery sessions).
-- **Intent:** Define the next versioned roadmap (phases, `versions[]`, backlog rows) when insights and priorities settle. Placeholder work already parked under v0.2.0 includes **P5-006** (phone-friendly output), **deferred** in backlog.
+- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 1`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p1` for the phase-1 working slice, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
+- **Execution queue:** `.azoth/backlog.yaml` — **P1-014** (**priority 1**, Antigravity bootstrap) leads the active v0.2.0-p1 queue; **P1-015** (**priority 2**, true multi-writer safety) is staged next but **blocked by P1-014**; **P1-003** remains the next unblocked general item after the completed **P1-001**, **P1-002**, **P1-011**, and **P1-012** slices. **P1-004 … P1-010** remain active; **P1-013** is complete (P1-013 closed); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Workstreams (roadmap task ids):**
+  - **P1-014** — Antigravity bootstrap adapter: repo-local `.agents/` surface for standard work; bootstrap before deeper deploy-target integration.
+  - **P1-015** — True multi-writer safety: explicit write claims, conflict detection, and cross-harness enforcement after the bootstrap surface stabilizes.
+  - **P1-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
+  - **P1-002** — Declarative eval/swarm wave YAML + schema (depends on P1-001 backlog completion).
+  - **P1-003** — Pipeline composition linter (`pipelines/*.pipeline.yaml`).
+  - **P1-004** — Welcome control plane: gate TTL / EXPIRED + optional ledger line (depends on P1-001).
+  - **P1-005** — Long-running session playbook vs D50 gates (docs).
+  - **P1-006** — Memory loop: W2/session-state alignment, `reinforcement_count` semantics (governed).
+  - **P1-007** — Recall elasticity: tags, decay/contradiction policy, consumer boundary.
+  - **P1-008** — `auto-router` L2 / self-improve lane (governed).
+  - **P1-009** — Cursor session-open parity vs P5-007 SessionStart.
+  - **P1-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
+  - **P1-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
+  - **P1-012** — **Complete** (ep-102): DFA+ friction map + honest IDE paths in `skills/dynamic-full-auto/SKILL.md` (Slice A); optional Slice B mechanical deferred.
+  - **P1-013** — **Complete** (P1-013): Explicit main-session orchestrator default — CLAUDE.md rule 10 + Copilot "Default agent persona" section closes the main-session enforcement gap for Claude Code and Copilot; instruction-surface approach supersedes deferred `.claude/settings.json` hard binding.
+  - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
 
-## Integration
+## Planning Sources
 
-- **Canonical phase source for planning:** this file + `azoth.yaml` `phase` + `.azoth/roadmap.yaml` `active_version`.
+- **Canonical phase source for planning:** this file + `azoth.yaml` (`phase` = milestone-local, `lifecycle_phase` = welcome strip) + `.azoth/roadmap.yaml` `active_version` + matching `current_phase` / `lifecycle_phase`.
 - **Root `CLAUDE.md`:** always-loaded; points here for roadmap and expanded workflow.
 - **Session cockpit (D52):** Rich dashboard and routing via `/start` → `scripts/welcome.py` (BL-007). On **Claude Code**, **P5-007** adds automatic plain orientation at session open via **SessionStart** + `**.azoth/session-orientation.txt`** mirror; see rule 9. **Cursor:** run `welcome.py` in the **integrated terminal** for the full Rich UI; **Bash** in chat + expand is an alternative. **Other IDEs without hooks:** `/start` or terminal `welcome.py`; do not assume hook injection.
+- **DYNAMIC-FULL-AUTO+:** `skills/dynamic-full-auto/SKILL.md` — parallel research + explore swarms, queen merge to **`SWARM_RESEARCH_DIGEST.yaml`**, helper `scripts/swarm_research_digest.py` (`init` / `append-pack` / `validate`). Use before gated `/auto` delivery, not as a substitute for scope/pipeline gates.
 - **Maintenance:** When phase checklists change, update **this skill**, not the root file,
 unless the change is a one-line “current phase” pointer in `CLAUDE.md`.

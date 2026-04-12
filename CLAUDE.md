@@ -20,7 +20,7 @@ alignment point.
 
 **Version**: v0.1.2
 **Primary platform**: Claude Code (CLI + VS Code extension)
-**Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
+**Also compatible**: Codex (via `.codex/` + `.agents/` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
 
 ## Project Routing
@@ -70,7 +70,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 5. **Claude Code primary**. `.claude/` is the development surface. Other platforms via adapters.
 6. **Architecture-first**. Read `docs/AZOTH_ARCHITECTURE.md` before making structural changes.
 7. **Effect labels**. Every `.claude/commands/*.md` file declares `azoth_effect: read | write | mixed` in its frontmatter (`kernel/GOVERNANCE.md`). If a prompt can trigger **Write/Edit** (build path), it must be clearly marked — never hide implementation behind read-only wording.
-8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
+8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
 9. **SessionStart orientation (Claude Code):** `hooks.SessionStart` runs **`.claude/hooks/session_start_welcome.py`**, which invokes **`welcome.py --plain`** with correct repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and **injects** the same text into model context. Treat that as the **single mechanical source**; avoid duplicating the full blob with **`Read`** unless the user needs verbatim output in chat.
    - **Default (token-efficient):** Use the injected SessionStart text as-is. Short proactive routing (e.g. “try `/next` for P5-004”) is **OK** without re-pasting the entire dashboard.
    - **Verbatim in chat:** When the user asks for the **full** snapshot, **verbatim** orientation, or **paste the file**, then **`Read` `.azoth/session-orientation.txt`** and put the **entire file** in one fenced code block — **or** quote the injected block exactly. **Do not** answer those requests with only a bullet summary.
@@ -78,15 +78,22 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
    - **Cursor — Rich UI:** SessionStart does not run. For the **full Rich dashboard** as the UI was designed, run `python3 scripts/welcome.py` in Cursor’s **integrated terminal** (renders ANSI/Rich correctly). **Bash** in chat is an alternative—**expand** tool output if collapsed. Plain snapshot: **`Read`** `.azoth/session-orientation.txt` (if present) or `welcome.py --plain`.
    - **Token efficiency:** Prefer **injected** SessionStart text for the model when nothing new is needed; avoid redundant Bash runs when the same facts are already in context unless the user wants the Rich view.
 
+10. **Orchestrator as default session persona (Claude Code and Copilot):** In freeform chat — any message that is not a pipeline slash command and does not arrive via a BL-011 spawn contract — treat the **Orchestrator** (`agents/tier1-core/orchestrator.agent.md`) as the active session persona: classify goal intent, apply pipeline conventions, and manage scope before responding.
+   - **Yield to `agent:` frontmatter:** When a slash command (e.g. `/auto`, `/deliver`, `/deliver-full`) is invoked, the command's `agent:` field governs the active persona. Do not re-impose orchestrator classification on top of an already-bound command handler.
+   - **Yield to BL-011 spawn contracts:** When this session was spawned by an upstream orchestrator via a BL-011 contract, the `role_hint` in that contract governs (e.g. `planner`, `builder`, `evaluator`). Suppress orchestrator persona and fulfil the assigned subagent role instead.
+   - **No overhead on direct coding requests:** If the user's intent is unambiguously a direct coding or implementation request (e.g. "fix this function", "explain this error", "write a unit test"), skip pipeline classification and respond directly. The orchestrator persona governs goal-level navigation and pipeline entry — not routine code assistance.
+   - **Gray-zone requests (ambiguous scope):** When intent falls between clearly direct and clearly multi-stage — e.g. "improve this function" (one-line rename or cross-file refactor?), or "update the auth module" (targeted patch or unknown blast radius?) — apply the Goal Clarification protocol: ask one focused question to resolve scope before acting. Default to **Orchestrate** if scope remains unclear after one clarification. See `agents/tier1-core/orchestrator.agent.md` §Goal Clarification.
+   - **Normative source:** `agents/tier1-core/orchestrator.agent.md`; platform binding details in `docs/platform-guides/orchestrator-default-entry.md`.
+
 ### Development Workflow
 
-1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work.
+1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work (including **Long-running sessions (P1-005)** when scope may span waves or TTL).
 2. For **phase / roadmap / sprint alignment**, read `skills/orientation/SKILL.md` (lazy-loaded).
 3. Work within approved scope; validate against D1–D53; capture durable lessons in `.azoth/memory/episodes.jsonl`.
 
 ### Skill index (drift checks)
 
-`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `orientation`
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `dynamic-full-auto`, `orientation`
 
 ### Coding Standards
 
@@ -112,7 +119,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 8 (next roadmap TBD); **v0.1.0** shipped (Phases 1–7 complete). **Next slice:** roadmap `active_version: v0.2.0` — seed phases/backlog when ready. Expanded workflow, earlier phase detail, and the historical release checklist live in **`skills/orientation/SKILL.md`** (load on demand for planning and roadmap edits).
+**Current phase:** Phase 2 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p2` for the phase-2 working slice under the `v0.2.0` milestone. Phase 1 (v0.2.0-p1) complete with 45 patches (25 tasks delivered). Phase 2 focus: memory hardening (P1-017, P1-020, P1-021 carried), declarative swarm depth, platform parity polish. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
 
 ## Origin
 

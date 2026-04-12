@@ -40,6 +40,21 @@ Invoke this skill in the following contexts:
 - **Explicit recall** — when the human or orchestrator says "recall context for X"
   or "what do we know about Y from prior sessions."
 
+## Tag Vocabulary Guidance
+
+Recall quality depends on a small, stable tag vocabulary. Prefer 3-5 reusable noun
+phrases that map to actual retrieval needs rather than ad hoc prose copied from the
+current prompt.
+
+- Prefer durable artifact/domain tags such as `context-recall`, `memory`, `pipeline`,
+  `deliver-full`, or a concrete file/skill name.
+- Reuse existing tags when an episode already names the same topic; do not create near
+  synonyms like `recall`, `context-recall-skill`, and `memory-read-path` for one idea.
+- Keep tags broad enough to match future sessions, but not so broad that every episode
+  matches everything.
+- If a goal includes a new term, pair it with at least one established tag so recall can
+  bridge old and new vocabulary.
+
 ## Scoring Algorithm
 
 Execute the following steps in order. The result is a ranked list of top 1-3
@@ -75,10 +90,35 @@ Step 3 — Score M2 patterns
 Step 4 — Tiebreaker
   When two candidates share equal scores, the most recent timestamp wins.
 
-Step 5 — Surface top 1-3
+Step 5 — Contradiction, stale, and supersession handling
+  Before final output, review the top candidates for conflict:
+  - contradiction: two recalled items recommend incompatible actions
+  - stale: an older item no longer reflects the current toolchain, governance, or repo shape
+  - supersede: a newer item explicitly replaces an older lesson for the same tag set
+
+  Policy:
+  - Keep M3 append-only; never rewrite old episodes during recall.
+  - If a newer candidate replaces an older one, treat the older item as archive context and
+    mark the newer lesson as the one that supersedes it.
+  - If two items contradict each other and no clear winner exists, surface both and flag the
+    contradiction instead of collapsing them into a fake consensus.
+  - If an item is only historical background, label it archive/stale and rank it below the
+    fresher lesson even if the tag overlap is similar.
+
+Step 6 — Surface top 1-3
   Collect all scored candidates (episodes + patterns), sort descending by score,
   return the top 1-3. If no candidates score above 0, return empty (no forced output).
 ```
+
+## Conflict Handling Notes
+
+Use explicit recall notes when a recalled item is risky to apply as-is.
+
+- **Contradiction** — say which items disagree and what decision axis changed.
+- **Stale episode** — call out why the lesson may be stale (old workflow, renamed file,
+  replaced governance rule, outdated install path).
+- **Archive vs supersede** — archived items remain readable background; supersede means a
+  newer lesson should be preferred for action under the same tags.
 
 ## Output Format
 
@@ -91,6 +131,7 @@ Surface results using this format. Omit sections with no matches.
 
 1. [ep-NNN] ({date}) — {type}: {one-line summary}
    Lessons: {first lesson from lessons array}
+   Status: active | archive | superseded | contradiction
 
 2. [pattern: {pattern-id}] — {trigger phrase}: {one-line summary}
    Apply: {how_to_apply — first sentence only}
@@ -103,25 +144,3 @@ If no episodes or patterns score above zero, output:
 
 No prior context found for: {goal-summary}
 ```
-
-## Integration
-
-### With `remember` skill
-
-`remember` is the write path for M3 episodes. `context-recall` is the canonical
-read path. They are complementary: `remember` captures at session close;
-`context-recall` surfaces at session open. Do not use the Episode Surfacing section
-in `remember` directly — invoke `context-recall` instead for consistency.
-
-### With `full.pipeline.yaml`
-
-`context-recall` is an optional tool in the `architect-design` stage. Invoke it
-before reading the codebase to prime the architect with relevant prior session
-knowledge.
-
-### With `.azoth/memory/`
-
-Reads from:
-- `.azoth/memory/episodes.jsonl` — M3 append-only episode log
-- `.azoth/memory/patterns.yaml` — M2 human-approved patterns (read-only; absence
-  handled gracefully)

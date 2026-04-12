@@ -111,7 +111,7 @@ Create template files used by `azoth init`:
 Templates for platform-specific files:
 - claude/ — .claude/commands/, .claude/agents/ templates
 - opencode/ — .opencode/agent/, opencode.jsonc templates
-- copilot/ — .github/agents/, .github/prompts/ templates
+- copilot/ — .github/prompts/ templates, plus optional .github/agents/ compatibility mirror
 
 ### Step 1.7: Installer Scripts
 Create install.sh (macOS/Linux primary) and install.ps1 (Windows).

@@ -35,7 +35,7 @@ Mechanical extraction uses `sync-config.yaml` and product profiles (see architec
 
 For people working **in this repo**:
 
-1. **Prerequisites:** Python **3.11+**, `git`, [Claude Code](https://claude.com/claude-code) (primary). Optional: OpenCode, Copilot adapters.
+1. **Prerequisites:** Python **3.11+**, `git`, [Claude Code](https://claude.com/claude-code) (primary). Optional: Codex, OpenCode, Copilot adapters.
 2. **Install Python deps** used by tooling (e.g. Rich for the welcome dashboard):
   `pip install -r requirements-dev.txt` (from repo root; or your project venv).
   This form satisfies **pip-install-guard** in Claude Code Bash.
@@ -63,7 +63,7 @@ cd /path/to/your-app
 bash /path/to/root-azoth/install.sh
 ```
 
-The installer detects your AI toolchain (Claude Code, OpenCode, Copilot, etc.), lays down templates, and wires the bootloader. If you have not bootstrapped before, see `**[docs/DAY0_TUTORIAL.md](docs/DAY0_TUTORIAL.md)**`.
+The installer detects your AI toolchain (Claude Code, Codex, OpenCode, Copilot, etc.), lays down templates, and wires the bootloader. If you have not bootstrapped before, see `**[docs/DAY0_TUTORIAL.md](docs/DAY0_TUTORIAL.md)**`.
 
 **Windows:** use `install.ps1` the same way (from PowerShell, with paths adjusted), or `python3 scripts/azoth_init.py --project -y` from a checkout of this repo.
 
@@ -88,7 +88,7 @@ The installer detects your AI toolchain (Claude Code, OpenCode, Copilot, etc.), 
 
 ## Contributing
 
-Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, or slash commands, run `**python3 scripts/azoth-deploy.py**` so OpenCode, Copilot, and Cursor stays stay aligned.
+Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, slash commands, or Codex adapter files, run `**python3 scripts/azoth-deploy.py**` so Codex, OpenCode, Copilot, and Cursor stay aligned.
 
 **Pull requests:** Opening a PR loads [`.github/pull_request_template.md`](.github/pull_request_template.md) — including a **one-liner** to request **GitHub Copilot** review so findings land as **D32 inbox JSONL** (see [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) §7) for **`/intake`**, not ad-hoc drive-by edits. Repository Copilot context: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 

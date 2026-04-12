@@ -36,6 +36,7 @@ def test_stage0_pipeline_gate_section_present() -> None:
     """Mechanical layer: Stage 0 must document pipeline-gate.json for governed scopes."""
     assert "## Stage 0 — Pipeline gate (mechanical)" in _CONTENT
     assert "pipeline-gate.json" in _CONTENT
+    assert "docs/GATE_PROTOCOL.md" in _CONTENT
 
 
 def test_stage_ids_in_deliver_full_table() -> None:
@@ -101,8 +102,8 @@ def test_orchestration_constraints_has_all_required_bullets() -> None:
     required = [
         "Policy source: `subagent-router` skill (trigger definitions and routing table)",
         "Each agent gate (stages 3\u20136) mandates a fresh-context subagent invocation via",
-        "The Architect (orchestrator) remains the final speaker for all human gates",
-        "Subagents return findings; Architect disposes and escalates to human if needed",
+        "The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.",
+        "Subagents return findings; Orchestrator disposes and escalates to human if needed",
         "No review stage shall execute inline with the stage it reviews",
         "runtime enforcement will be added in Phase 5 (P5-001, D43)",
         "Isolation constraint applies to agent-gated review stages (3\u20136)",

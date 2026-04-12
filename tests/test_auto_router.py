@@ -19,15 +19,19 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = REPO_ROOT / "skills" / "auto-router" / "SKILL.md"
 PIPELINE_PATH = REPO_ROOT / "pipelines" / "auto.pipeline.yaml"
+SKILL_INDEX_PATH = REPO_ROOT / "skills" / "index.yaml"
 
 # Canonical condition strings in required top-to-bottom order.
 CANONICAL_CONDITIONS: list[str] = [
     "risk == governance-change",
     "scope == kernel",
     "knowledge == needs-research",
+    "knowledge == instruction-refinement",
     "scope == docs",
     "complexity == simple AND risk == cosmetic",
     "complexity == simple AND risk == additive",
+    "complexity == medium AND risk == additive AND knowledge == known-pattern",
+    "complexity == medium AND risk == additive",
     "default",
 ]
 
@@ -75,10 +79,17 @@ def test_auto_router_skill_structure() -> None:
     )
 
     # Required sections
-    for section in ("## Overview", "## When to Use", "## Integration"):
+    for section in ("## Overview", "## When to Use"):
         assert section in content, (
             f"Required section '{section}' is missing from skills/auto-router/SKILL.md"
         )
+
+    index = yaml.safe_load(SKILL_INDEX_PATH.read_text(encoding="utf-8")) or {}
+    entries = {entry["name"]: entry for entry in index.get("skills", [])}
+    assert "auto-router" in entries, "skills/index.yaml must include auto-router"
+    assert entries["auto-router"].get("depends_on") == ["subagent-router"], (
+        "skills/index.yaml must record auto-router's dependency on subagent-router"
+    )
 
     # Minimum content length
     line_count = len(content.splitlines())
@@ -106,7 +117,16 @@ def test_auto_router_rule_ordering() -> None:
         )
 
     # Verify canonical order: position of condition[i] < position of condition[i+1]
-    positions = [content.index(cond) for cond in CANONICAL_CONDITIONS]
+    # Use backtick-delimited form to avoid substring matching (e.g., "medium AND additive"
+    # matching inside "medium AND additive AND known-pattern")
+    positions = []
+    for cond in CANONICAL_CONDITIONS:
+        delimited = f"`{cond}`"
+        pos = content.find(delimited)
+        if pos == -1:
+            # Fall back to undelimited (for "default" which may not be backtick-wrapped)
+            pos = content.index(cond)
+        positions.append(pos)
     for i in range(len(positions) - 1):
         assert positions[i] < positions[i + 1], (
             f"Rule ordering violation: "
@@ -117,6 +137,79 @@ def test_auto_router_rule_ordering() -> None:
 
 
 # ── Cross-file consistency ────────────────────────────────────────────────────
+
+
+def test_skill_instruction_refinement_rule() -> None:
+    """SKILL.md must contain an instruction-refinement routing row at priority 4.
+
+    Verifies:
+    - A row with condition `knowledge == instruction-refinement` exists
+    - It appears AFTER `knowledge == needs-research` and BEFORE `scope == docs`
+    - Its pipeline is the full pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+    """
+    assert SKILL_PATH.is_file(), (
+        f"Skill file not found: {SKILL_PATH}. "
+        "Builder must create skills/auto-router/SKILL.md before this test passes."
+    )
+
+    content = SKILL_PATH.read_text(encoding="utf-8")
+
+    # Condition must be present
+    condition = "knowledge == instruction-refinement"
+    assert condition in content, (
+        f"Routing table must contain condition {condition!r}"
+    )
+
+    # Ordering: after needs-research, before scope == docs
+    pos_needs_research = content.index("knowledge == needs-research")
+    pos_instruction_refinement = content.index("knowledge == instruction-refinement")
+    pos_scope_docs = content.index("scope == docs")
+    assert pos_needs_research < pos_instruction_refinement < pos_scope_docs, (
+        "instruction-refinement rule must appear AFTER needs-research and BEFORE scope == docs"
+    )
+
+    # Pipeline for this rule must be full pipeline
+    # Find the table row containing the condition and verify the pipeline
+    for line in content.splitlines():
+        if "knowledge == instruction-refinement" in line and "|" in line:
+            assert "architect, reviewer, planner, evaluator, builder, architect" in line, (
+                "instruction-refinement rule must use full pipeline "
+                "[architect, reviewer, planner, evaluator, builder, architect]"
+            )
+            break
+    else:
+        raise AssertionError(
+            "Could not find instruction-refinement as a table row in SKILL.md"
+        )
+
+
+def test_pipeline_instruction_refinement_rule() -> None:
+    """auto.pipeline.yaml must contain a composition rule for instruction-refinement.
+
+    Verifies:
+    - A rule with condition 'knowledge == instruction-refinement' exists
+    - Its pipeline list equals [architect, reviewer, planner, evaluator, builder, architect]
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    matching_rules = [
+        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
+    ]
+    assert len(matching_rules) == 1, (
+        "Expected exactly one composition rule with condition "
+        "'knowledge == instruction-refinement', "
+        f"found {len(matching_rules)}"
+    )
+
+    expected_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
+    assert matching_rules[0]["pipeline"] == expected_pipeline, (
+        f"instruction-refinement rule pipeline mismatch.\n"
+        f"  Expected: {expected_pipeline}\n"
+        f"  Got:      {matching_rules[0]['pipeline']}"
+    )
 
 
 def test_auto_router_cross_file_consistency() -> None:
@@ -139,3 +232,121 @@ def test_auto_router_cross_file_consistency() -> None:
             f"Condition {condition!r} missing from "
             f"pipelines/auto.pipeline.yaml — skill and pipeline are out of sync"
         )
+
+
+# ── P1-008: inject field and l2-evidence-review phase ────────────────────────
+
+
+def test_pipeline_instruction_refinement_inject_field() -> None:
+    """auto.pipeline.yaml instruction-refinement rule must have an inject field.
+
+    Verifies:
+    - The rule with condition 'knowledge == instruction-refinement' has an 'inject' key
+    - The inject value references 'l2-evidence-review' and 'architect'
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    matching_rules = [
+        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
+    ]
+    assert len(matching_rules) == 1, (
+        "Expected exactly one rule with condition 'knowledge == instruction-refinement'"
+    )
+    rule = matching_rules[0]
+
+    assert "inject" in rule, (
+        "instruction-refinement rule is missing 'inject' field in auto.pipeline.yaml. "
+        'Add: inject: "l2-evidence-review into architect"'
+    )
+    inject_value = rule["inject"]
+    assert "l2-evidence-review" in inject_value, (
+        f"inject value must reference 'l2-evidence-review'; got: {inject_value!r}"
+    )
+    assert "architect" in inject_value, (
+        f"inject value must reference 'architect' (the target stage); got: {inject_value!r}"
+    )
+
+
+def test_skill_l2_evidence_review_phase_defined() -> None:
+    """SKILL.md Rule 4 rationale must provide an actionable definition of l2-evidence-review.
+
+    The definition must specify:
+    - What it reads: M3 episodes (tagged instruction-refinement) from memory
+    - What it loads: M2 patterns
+    - Its trigger point: before planning (runs before architect produces a brief)
+    """
+    assert SKILL_PATH.is_file(), f"Skill file not found: {SKILL_PATH}"
+
+    content = SKILL_PATH.read_text(encoding="utf-8")
+
+    assert "l2-evidence-review" in content, (
+        "SKILL.md must contain 'l2-evidence-review' in Rule 4 rationale"
+    )
+    assert "M3" in content or "episodes" in content.lower(), (
+        "Rule 4 rationale must reference M3 episodes as the source of L2 evidence"
+    )
+    assert "M2" in content or "pattern" in content.lower(), (
+        "Rule 4 rationale must reference M2 patterns"
+    )
+    assert (
+        "before planning" in content
+        or "before the architect" in content
+        or "before architect" in content
+    ), (
+        "Rule 4 rationale must state l2-evidence-review runs before planning begins"
+    )
+
+    rule4_start = content.find("**Rule 4")
+    rule5_start = content.find("**Rule 5")
+    if rule4_start != -1 and rule5_start != -1:
+        rule4_block = content[rule4_start:rule5_start]
+        sentence_count = rule4_block.count(". ") + rule4_block.count(".\n")
+        assert sentence_count >= 3, (
+            f"Rule 4 rationale block must have at least 3 sentences (it defines a phase); "
+            f"found {sentence_count}. Expand the definition."
+        )
+
+
+def test_pipeline_inject_field_consistency() -> None:
+    """Both inject-bearing rules in auto.pipeline.yaml must have consistent inject fields.
+
+    Verifies:
+    - 'knowledge == needs-research' rule has inject referencing 'research-phase' and 'architect'
+    - 'knowledge == instruction-refinement' rule has inject referencing 'l2-evidence-review'
+      and 'architect'
+    - The two inject values are distinct
+    - Both target the 'architect' stage (architectural consistency)
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    by_condition = {r["condition"]: r for r in rules}
+
+    nr_rule = by_condition.get("knowledge == needs-research", {})
+    assert "inject" in nr_rule, (
+        "'knowledge == needs-research' rule must have inject field (regression guard)"
+    )
+    assert "research-phase" in nr_rule["inject"], (
+        f"needs-research inject must reference 'research-phase'; got {nr_rule['inject']!r}"
+    )
+
+    ir_rule = by_condition.get("knowledge == instruction-refinement", {})
+    assert "inject" in ir_rule, (
+        "'knowledge == instruction-refinement' rule must have inject field"
+    )
+    assert "l2-evidence-review" in ir_rule["inject"], (
+        f"instruction-refinement inject must reference 'l2-evidence-review'; "
+        f"got {ir_rule['inject']!r}"
+    )
+
+    assert nr_rule["inject"] != ir_rule["inject"], (
+        "inject values for needs-research and instruction-refinement must be distinct"
+    )
+    assert "architect" in nr_rule["inject"] and "architect" in ir_rule["inject"], (
+        "Both inject directives must target the 'architect' stage"
+    )

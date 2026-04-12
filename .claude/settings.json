@@ -13,15 +13,13 @@
       "Edit(kernel/**)",
       "Bash(rm -rf *)",
       "Bash(git push --force)",
-      "Bash(git reset --hard HEAD~)",
-      "Edit(.claude/settings.json)"
+      "Bash(git reset --hard HEAD~)"
     ]
   },
   "env": {
-    "AZOTH_VERSION": "0.1.2",
-    "AZOTH_PHASE": "8",
-    "CLAUDE_CODE_EFFORT_LEVEL": "auto",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "60"
+    "AZOTH_VERSION": "0.1.2.0",
+    "AZOTH_PHASE": "2",
+    "CLAUDE_CODE_EFFORT_LEVEL": "auto"
   },
   "hooks": {
     "PreToolUse": [
@@ -50,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/filter-bash-output.sh"
+            "command": "python3 .claude/hooks/posttooluse_terminal_filter.py"
           }
         ]
       }

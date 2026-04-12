@@ -30,7 +30,7 @@ composition_rules:
     scope: mixed           # kernel | skills | agents | pipelines | docs | mixed
     risk: additive         # governance-change | breaking-change | additive | cosmetic
     complexity: medium     # simple | medium | complex
-    knowledge: known-pattern  # known-pattern | needs-research | novel
+    knowledge: known-pattern  # known-pattern | needs-research | novel | instruction-refinement
 
   # Rules are evaluated top-to-bottom. First match wins.
   rules:
@@ -44,6 +44,10 @@ composition_rules:
       pipeline: [architect, planner, evaluator, builder, architect]
       inject: "research-phase into architect"
 
+    - condition: "knowledge == instruction-refinement"
+      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+      inject: "l2-evidence-review into architect"
+
     - condition: "scope == docs"
       pipeline: [architect, builder, architect]
 
@@ -52,6 +56,12 @@ composition_rules:
 
     - condition: "complexity == simple AND risk == additive"
       pipeline: [planner, evaluator, builder, architect]
+
+    - condition: "complexity == medium AND risk == additive AND knowledge == known-pattern"
+      pipeline: [planner, evaluator, builder, architect]
+
+    - condition: "complexity == medium AND risk == additive"
+      pipeline: [architect, planner, evaluator, builder, architect]
 
     - condition: "default"
       pipeline: [architect, reviewer, planner, evaluator, builder, architect]

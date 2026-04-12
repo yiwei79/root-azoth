@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Auto-compose and execute a pipeline based on goal classification
+agent: orchestrator
 ---
 
 # /auto $ARGUMENTS
@@ -16,7 +17,7 @@ classification:
   scope: kernel | skills | agents | pipelines | docs | mixed
   risk: governance-change | breaking-change | additive | cosmetic
   complexity: simple | medium | complex
-  knowledge: known-pattern | needs-research | novel
+  knowledge: known-pattern | needs-research | novel | instruction-refinement
 ```
 
 ## Pipeline Composition (D23)
@@ -34,47 +35,125 @@ Add `subagent_type` and `trigger` columns to the composed pipeline table in the 
 
 ## Spawn invocation (BL-011)
 
-During **Execution**, each stage that invokes a subagent MUST use the YAML spawn template
-in `skills/subagent-router/SKILL.md` §Spawn Prompt Contract (≤ ~20 lines). Use
-`pipeline: auto`, a stable `stage_id` per row (see §Stage briefs: auto), and `Read` of
-`skills/subagent-router/SKILL.md` / archetype files after spawn — do not paste the
-composed pipeline table or CLAUDE.md into the subagent spawn.
+During **Execution**, each stage that invokes a subagent MUST use the minimal YAML
+contract in `skills/subagent-router/SKILL.md` §§Spawn Prompt Contract, Stage summary output,
+and Orchestrator forward payload. Use `pipeline: auto`, a stable `stage_id` per row (see
+§Stage briefs: auto), and keep the spawn body to the compact YAML plus required handoff data.
 
 ## Declaration
 
-Present the composed pipeline to human:
+Present the composed pipeline to human as a **fused Declaration** combining scope card
+and pipeline composition in a single approval:
 
 ```
 ## Auto-Pipeline — {goal}
 
 **Classification**: {scope} / {risk} / {complexity} / {knowledge}
+**Scope**: session: {session_id} | TTL: 2h | layer: {target_layer} | pipeline: auto
 
 **Composed Pipeline**:
-1. {stage} — {agent} — gate: {human|agent}
-2. {stage} — {agent} — gate: {human|agent}
+1. {stage} — {agent} — {subagent_type} — gate: {human|agent}
+2. {stage} — {agent} — {subagent_type} — gate: {human|agent}
 ...
 
 **Rationale**: {why this pipeline was chosen}
 
-Approve pipeline composition + subagent assignments? [yes / adjust / different-pipeline]
+Approve scope + pipeline? [yes / adjust / abort]
+> On approval: orchestrator writes `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json`
+> (governed only). No separate /next step required for /auto.
 ```
+
+## Declaration Mode Selection
+
+Before presenting the Declaration, evaluate the composed pipeline condition to choose
+between the full interactive Declaration and the lightweight informational path:
+
+**Informational Declaration** (present as a compact card, auto-proceed unless human
+intervenes) — applies when **all** of the following hold:
+
+1. `knowledge == known-pattern`
+2. `risk != governance-change`
+3. `scope != kernel`
+4. The composed pipeline condition matches a lightweight route:
+   - `scope == docs`
+   - `complexity == simple AND risk == cosmetic`
+   - `complexity == simple AND risk == additive`
+   - `complexity == medium AND risk == additive AND knowledge == known-pattern`
+
+> **Note**: Rule 9 (`complexity == medium AND risk == additive` without `known-pattern`)
+> always uses the full Declaration because it only fires when `knowledge != known-pattern`
+> (Rule 8 would have matched first otherwise). Constraint 1 above excludes it by definition.
+
+When all conditions are met, present the Informational Declaration:
+
+```
+## Auto-Pipeline — {goal} [INFORMATIONAL]
+
+**Classification**: {scope} / {risk} / {complexity} / known-pattern
+**Scope**: session: {session_id} | TTL: 2h | layer: {target_layer} | pipeline: auto
+**Composed Pipeline**: {stages}
+**Rationale**: lightweight known-pattern path — auto-proceeding unless you intervene.
+
+Type `stop` or `abort` to halt. Otherwise auto-proceeding.
+```
+
+**Proceed logic:**
+- If the human's next message contains `stop`, `abort`, or `no` → halt, do not write scope-gate.json.
+- If the human's next message contains `proceed`, `yes`, `ok`, or any other signal → write scope-gate.json and continue.
+- If no explicit stop signal → treat as approval and continue.
+
+**Full Declaration** (present with explicit yes/adjust/abort prompt) — all other cases,
+including `risk == governance-change`, `scope == kernel`, `knowledge == needs-research`,
+`knowledge == instruction-refinement`, and `default`.
+
+**L2 evidence monitoring**: After sessions using the informational auto-proceed path,
+capture any observations about missed or skipped informational cards in M3 episodes.
+Run `/intake` periodically to surface adoption patterns. If agents consistently fail
+to present the informational card, promote to M2 as a pattern requiring explicit
+enforcement.
 
 ## Execution
 
 After human approval of the Declaration:
 
-1. **Pipeline gate (mechanical):** Before the first Write/Edit in this execution phase,
-   `Read` `.azoth/scope-gate.json`. If `delivery_pipeline` is `governed` **or**
-   `target_layer` is `M1`, `Write` `.azoth/pipeline-gate.json` with `"pipeline": "auto"`
-   (same `session_id`, `approved`, `expires_at`, `opened_at` shape as `/deliver-full` Stage 0).
+1. **Post-Approval Gate-Write (fused):** After human approves the Declaration (or
+   informational Declaration auto-proceeds), write gate files in this exact order:
+
+   **Step 1 — Write `.azoth/scope-gate.json`** (always):
+   ```json
+   {
+     "session_id": "<active session ID>",
+     "goal": "<$ARGUMENTS verbatim>",
+     "approved": true,
+     "approved_by": "human",
+     "expires_at": "<ISO 8601, UTC, now + 2 hours>",
+     "backlog_id": "<matched backlog item ID or 'ad-hoc'>",
+     "delivery_pipeline": "<auto | deliver | deliver-full>",
+     "target_layer": "<M1 | M2 | M3 | mineral — from classification>"
+   }
+   ```
+
+   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
+   `delivery_pipeline == governed` OR `target_layer == M1`):
+   ```json
+   {
+     "session_id": "<must match scope-gate.json>",
+     "pipeline": "auto",
+     "approved": true,
+     "expires_at": "<copy from scope-gate.json>",
+     "opened_at": "<ISO 8601, UTC, now>"
+   }
+   ```
+
+   **Step 3 — Verify:** Run `python3 scripts/check_gates.py --session-id <session_id>`.
+   Must exit 0. If exit 1: stop and surface the error.
+
+   No separate `/next` step is required — the fused Declaration replaces it for `/auto`.
 2. Execute each stage in sequence — respect gate types (human gates stop and wait),
    monitor entropy, produce alignment summary at each stage boundary.
-3. **Typed stage summary (BL-012):** When a stage completes (before the next stage consumes
-   context), the subagent MUST emit a YAML document that conforms to
-   `pipelines/stage-summary.schema.yaml` (`stage_id` must match the spawn for that stage).
-   The orchestrator passes that document forward as the machine-readable handoff. Optional
-   markdown alignment (`alignment-sync` skill) is for human pull-review only — it does not
-   replace the typed summary for inter-stage context.
+3. **Typed stage summary (BL-012):** When a stage completes, the subagent MUST emit YAML
+  that conforms to `pipelines/stage-summary.schema.yaml`; `stage_id` must match the spawn
+  and the orchestrator treats that YAML as the machine-readable handoff.
 4. **Orchestrator handoff (mandatory):** Before spawning the **next** subagent (`Task` /
    `Agent`), the orchestrator MUST attach every **upstream typed stage summary** the next
    stage needs under `inputs.prior_stage_summaries` per `skills/subagent-router/SKILL.md`

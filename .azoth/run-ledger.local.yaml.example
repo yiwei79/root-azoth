@@ -1,0 +1,91 @@
+# Azoth Run Ledger — example file (tracked; the real ledger is gitignored)
+# Path: .azoth/run-ledger.local.yaml
+# Schema: pipelines/run-ledger.schema.yaml
+#
+# Purpose: durable machine-readable state for multi-wave /eval-swarm and long /auto runs.
+# A new chat session reads this file to resume without replaying full orchestrator prose.
+# Write with: python3 scripts/run_ledger.py append --run-id <id> --mode <mode> ...
+# Query with: python3 scripts/run_ledger.py status
+# Validate:   python3 scripts/run_ledger.py validate
+
+schema_version: 1
+
+sessions:
+
+  # Example 1: the currently focused session (projected into scope-gate.json)
+  - session_id: "2026-04-10-p1-001-copilot-152000"
+    backlog_id: "P1-001"
+    goal: "P1-001: Swarm & pipeline run ledger + resume protocol"
+    status: active
+    ide: copilot
+    next_action: >
+      Continue the active eval-swarm review run and update the session handoff mirror
+      before closing scope.
+    updated_at: "2026-04-10T15:20:00+00:00"
+    active_run_id: "2026-04-10-p1-001-eval-swarm"
+
+  # Example 2: a parked session for later resumption via /next resume <session_id>
+  - session_id: "2026-04-10-p1-005-claude-code-091500"
+    backlog_id: "P1-005"
+    goal: "P1-005: Long-running session policy and resume playbook"
+    status: parked
+    ide: claude-code
+    next_action: >
+      Re-open the parked documentation slice with /next resume
+      2026-04-10-p1-005-claude-code-091500, review the scope card, then continue.
+    updated_at: "2026-04-10T11:45:00+00:00"
+    active_run_id: "2026-04-10-p1-005-auto"
+
+runs:
+
+  # Example 1: a parked /auto run linked to a parked session
+  - run_id: "2026-04-10-p1-005-auto"
+    session_id: "2026-04-10-p1-005-claude-code-091500"
+    backlog_id: "P1-005"
+    ide: claude-code
+    mode: auto
+    goal: "P1-005: Long-running session policy and resume playbook"
+    status: paused
+    created_at: "2026-04-10T09:15:00+00:00"
+    updated_at: "2026-04-10T11:45:00+00:00"
+    next_action: >
+      Resume the parked docs slice, finish the playbook examples, and refresh the
+      session-state mirror before closeout.
+    stages_completed:
+      - planning
+      - architecture-brief
+    waves: []
+    branches: []
+
+  # Example 2: an active /eval-swarm run linked to the focused session
+  - run_id: "2026-04-10-p1-001-eval-swarm"
+    session_id: "2026-04-10-p1-001-copilot-152000"
+    backlog_id: "P1-001"
+    ide: copilot
+    mode: eval-swarm
+    goal: "P1-001: Swarm & pipeline run ledger + resume protocol — post-delivery eval"
+    status: active
+    created_at: "2026-04-10T14:00:00+00:00"
+    updated_at: "2026-04-10T15:20:00+00:00"
+    next_action: >
+      Wave 2 pending — wave 1 consensus 0.83 below 0.85 threshold.
+      Resume: spawn 3 evaluator subagents with wave-2 prompts from
+      skills/eval-swarm/SKILL.md; aggregate scores; if consensus >= 0.85 proceed
+      to queen merge, otherwise wave 3.
+    stages_completed:
+      - wave-1-eval
+    waves:
+      - wave: 1
+        scores: [0.82, 0.85, 0.83]
+        consensus: 0.833
+        status: fail
+    branches:
+      - branch_id: "evaluator-1"
+        score: 0.82
+        disposition: merged
+      - branch_id: "evaluator-2"
+        score: 0.85
+        disposition: merged
+      - branch_id: "evaluator-3"
+        score: 0.83
+        disposition: merged

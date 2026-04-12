@@ -1,13 +1,8 @@
 ---
 name: agentic-eval
 description: |
-  Patterns and techniques for evaluating and improving AI agent outputs. Use this skill when:
-  - Implementing self-critique and reflection loops
-  - Building evaluator-optimizer pipelines for quality-critical generation
-  - Creating test-driven code refinement workflows
-  - Designing rubric-based or LLM-as-judge evaluation systems
-  - Adding iterative improvement to agent outputs (code, reports, analysis)
-  - Measuring and improving agent response quality
+  Evaluate and refine agent outputs using rubrics, reflection loops, and evaluator-optimizer
+  pipelines (code, reports, analysis). Not for one-off formatting or trivial copy edits.
 ---
 
 # Agentic Evaluation Patterns
@@ -34,31 +29,45 @@ Generate → Evaluate → Critique → Refine → Output
 
 ---
 
+## L2 evidence records (P6-002)
+
+When a governed session should feed **prompt-engineer** later, normalize evaluator/reviewer output into one JSON object per `pipelines/l2-evidence-record.schema.yaml` and append via `scripts/l2_evidence_append.py` (never raw Write to the JSONL path).
+
+| Source | `evidence_kind` | `payload` hints |
+|--------|-----------------|-----------------|
+| Evaluator rubric / numeric score | `eval_summary` | `overall_score`, `threshold`, per-dimension scores, `rubric_refs` |
+| Reviewer disposition + findings | `reviewer_gate` | `disposition`, `findings` (list), `severity` |
+| M3 episode pointer | `episode_ref` | `episode_id`, `tags` |
+| Human `/eval` structured output | `manual_eval` | criteria scores, `recommended_action` |
+
+Set `source_pipeline` and `source_stage_id` to the active pipeline and stage; set `source_agent` to the archetype that produced the evidence; set `target_surfaces` to the `skills/` / `agents/` / command paths the refinement should consider.
+
+## Operational Use
+
+- **Pipeline gates:** score stage outputs against the design brief, tests, governance rules,
+  and entropy before the next stage proceeds.
+- **Session closeout:** review artifacts against session goals and capture durable gaps,
+  risks, or evidence for follow-up.
+
+---
+
 ## Pattern 1: Basic Reflection
 
 Agent evaluates and improves its own output through self-critique.
 
-```python
-def reflect_and_refine(task: str, criteria: list[str], max_iterations: int = 3) -> str:
-    """Generate with reflection loop."""
-    output = llm(f"Complete this task:\n{task}")
-    
-    for i in range(max_iterations):
-        critique = llm(f"""
-        Evaluate this output against criteria: {criteria}
-        Output: {output}
-        Rate each: PASS/FAIL with feedback as JSON.
-        """)
-        
-        critique_data = json.loads(critique)
-        all_pass = all(c["status"] == "PASS" for c in critique_data.values())
-        if all_pass:
-            return output
-        
-        failed = {k: v["feedback"] for k, v in critique_data.items() if v["status"] == "FAIL"}
-        output = llm(f"Improve to address: {failed}\nOriginal: {output}")
-    
-    return output
+```text
+FUNCTION reflect_and_refine(task, criteria, max_iterations = 3):
+    output = GENERATE(task)
+
+    REPEAT up to max_iterations:
+        critique = EVALUATE(output against criteria, return structured JSON)
+        IF every criterion passes:
+            RETURN output
+
+        failed_feedback = COLLECT feedback for failing criteria
+        output = REVISE(output to address failed_feedback)
+
+    RETURN output
 ```
 
 **Key insight**: Use structured JSON output for reliable parsing of critique results.
@@ -69,32 +78,32 @@ def reflect_and_refine(task: str, criteria: list[str], max_iterations: int = 3) 
 
 Separate generation and evaluation into distinct components.
 
-```python
-class EvaluatorOptimizer:
-    def __init__(self, score_threshold: float = 0.85):
-        self.score_threshold = score_threshold
-    
-    def generate(self, task: str) -> str:
-        return llm(f"Complete: {task}")
-    
-    def evaluate(self, output: str, task: str) -> dict:
-        return json.loads(llm(f"""
-        Evaluate output for task: {task}
-        Output: {output}
-        Return JSON: {{"overall_score": 0-1, "dimensions": {{"accuracy": ..., "clarity": ...}}}}
-        """))
-    
-    def optimize(self, output: str, feedback: dict) -> str:
-        return llm(f"Improve based on feedback: {feedback}\nOutput: {output}")
-    
-    def run(self, task: str, max_iterations: int = 3) -> str:
-        output = self.generate(task)
-        for _ in range(max_iterations):
-            evaluation = self.evaluate(output, task)
-            if evaluation["overall_score"] >= self.score_threshold:
-                break
-            output = self.optimize(output, evaluation)
-        return output
+```text
+COMPONENT EvaluatorOptimizer:
+    threshold = 0.85
+
+    GENERATE(task):
+        RETURN candidate output
+
+    EVALUATE(output, task):
+        RETURN structured scores:
+            overall_score
+            dimensions:
+                accuracy
+                clarity
+                completeness
+
+    OPTIMIZE(output, feedback):
+        RETURN revised output
+
+    RUN(task, max_iterations = 3):
+        output = GENERATE(task)
+        REPEAT up to max_iterations:
+            evaluation = EVALUATE(output, task)
+            IF evaluation.overall_score >= threshold:
+                STOP
+            output = OPTIMIZE(output, evaluation)
+        RETURN output
 ```
 
 ---
@@ -103,18 +112,19 @@ class EvaluatorOptimizer:
 
 Test-driven refinement loop for code generation.
 
-```python
-class CodeReflector:
-    def reflect_and_fix(self, spec: str, max_iterations: int = 3) -> str:
-        code = llm(f"Write Python code for: {spec}")
-        tests = llm(f"Generate pytest tests for: {spec}\nCode: {code}")
-        
-        for _ in range(max_iterations):
-            result = run_tests(code, tests)
-            if result["success"]:
-                return code
-            code = llm(f"Fix error: {result['error']}\nCode: {code}")
-        return code
+```text
+COMPONENT CodeReflector:
+    REFLECT_AND_FIX(spec, max_iterations = 3):
+        code = GENERATE code for spec
+        tests = GENERATE tests for spec and current code
+
+        REPEAT up to max_iterations:
+            result = RUN tests
+            IF result.success:
+                RETURN code
+            code = REVISE(code using failing test output)
+
+        RETURN code
 ```
 
 ---
@@ -125,64 +135,37 @@ class CodeReflector:
 
 Evaluate whether output achieves the expected result.
 
-```python
-def evaluate_outcome(task: str, output: str, expected: str) -> str:
-    return llm(f"Does output achieve expected outcome? Task: {task}, Expected: {expected}, Output: {output}")
+```text
+FUNCTION evaluate_outcome(task, output, expected):
+    ASK judge whether output satisfies the expected result for the task
+    RETURN outcome assessment
 ```
 
 ### LLM-as-Judge
 
 Use LLM to compare and rank outputs.
 
-```python
-def llm_judge(output_a: str, output_b: str, criteria: str) -> str:
-    return llm(f"Compare outputs A and B for {criteria}. Which is better and why?")
+```text
+FUNCTION llm_judge(output_a, output_b, criteria):
+    ASK judge to compare both outputs against criteria
+    RETURN winner plus reasoning
 ```
 
 ### Rubric-Based
 
 Score outputs against weighted dimensions.
 
-```python
-RUBRIC = {
-    "accuracy": {"weight": 0.4},
-    "clarity": {"weight": 0.3},
-    "completeness": {"weight": 0.3}
-}
+```text
+RUBRIC:
+    accuracy: weight 0.4
+    clarity: weight 0.3
+    completeness: weight 0.3
 
-def evaluate_with_rubric(output: str, rubric: dict) -> float:
-    scores = json.loads(llm(f"Rate 1-5 for each dimension: {list(rubric.keys())}\nOutput: {output}"))
-    return sum(scores[d] * rubric[d]["weight"] for d in rubric) / 5
+FUNCTION evaluate_with_rubric(output, rubric):
+    scores = ASK judge for a 1-5 score on each rubric dimension
+    weighted_total = SUM(scores[dimension] * rubric[dimension].weight for each dimension)
+    RETURN weighted_total / 5
 ```
-
----
-
-## Integration
-
-### Pipeline Gate Evaluation
-
-Use agentic-eval at pipeline gates to validate stage outputs:
-
-```yaml
-gate:
-  type: agent
-  action: agentic-eval
-  criteria:
-    - Output matches design brief
-    - Tests pass
-    - No governance violations
-    - Entropy within bounds
-  threshold: 0.85
-```
-
-### Session Closeout Evaluation
-
-Apply eval before closing a session:
-
-1. Review artifacts produced this session
-2. Score against session goals
-3. Identify gaps or risks
-4. Record evaluation in M3 episode
 
 ---
 

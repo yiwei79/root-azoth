@@ -140,3 +140,53 @@ def test_scope_deny_logs_without_session_id(telemetry_env: Path) -> None:
     j = json.loads(log.read_text(encoding="utf-8").strip().splitlines()[0])
     assert j["outcome"] == "denied"
     assert j["denial_stage"] == "scope"
+
+
+def test_vscode_create_file_payload_logs_target_and_action(telemetry_env: Path) -> None:
+    import sys
+
+    if str(_HOOKS) not in sys.path:
+        sys.path.insert(0, str(_HOOKS))
+    from session_telemetry import record_pretooluse_write_edit
+
+    fake_root = telemetry_env
+    record_pretooluse_write_edit(
+        fake_root,
+        payload={
+            "tool_name": "create_file",
+            "tool_input": {"filePath": "notes.txt", "content": "hello\n"},
+        },
+        session_id="sess-vscode-create",
+        outcome="allowed",
+    )
+    log = telemetry_env / "session-log.jsonl"
+    j = json.loads(log.read_text(encoding="utf-8").strip().splitlines()[0])
+    assert j["action"] == "write"
+    assert j["target"] == "notes.txt"
+
+
+def test_vscode_replace_string_payload_logs_target_and_action(telemetry_env: Path) -> None:
+    import sys
+
+    if str(_HOOKS) not in sys.path:
+        sys.path.insert(0, str(_HOOKS))
+    from session_telemetry import record_pretooluse_write_edit
+
+    fake_root = telemetry_env
+    record_pretooluse_write_edit(
+        fake_root,
+        payload={
+            "tool_name": "replace_string_in_file",
+            "tool_input": {
+                "filePath": "notes.txt",
+                "oldString": "a",
+                "newString": "b",
+            },
+        },
+        session_id="sess-vscode-edit",
+        outcome="allowed",
+    )
+    log = telemetry_env / "session-log.jsonl"
+    j = json.loads(log.read_text(encoding="utf-8").strip().splitlines()[0])
+    assert j["action"] == "edit"
+    assert j["target"] == "notes.txt"

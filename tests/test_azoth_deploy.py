@@ -6,6 +6,7 @@ Covers:
 - posture_to_permissions: tier baseline, keyword narrowing, word-boundary regression
 - transform_agent_claude: correct fields, Azoth fields stripped
 - transform_agent_copilot: name/description required, tools/model optional
+- transform_agent_codex: TOML custom-agent output
 - transform_agent_opencode: no name field, mode from tier, permission object
 - transform_command_copilot: mode:agent added
 - transform_command_opencode: description preserved, body unchanged
@@ -21,6 +22,11 @@ from pathlib import Path
 
 import pytest
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 test env
+    import tomli as tomllib
+
 # Load the script as a module without executing main()
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "azoth-deploy.py"
 _spec = importlib.util.spec_from_file_location("azoth_deploy", _SCRIPT)
@@ -35,12 +41,19 @@ effective_posture_for_permissions = _mod.effective_posture_for_permissions
 UNIVERSAL_NEVER_AUTO = _mod.UNIVERSAL_NEVER_AUTO
 transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
+transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
 transform_command_opencode = _mod.transform_command_opencode
+iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
+deploy_codex_adapter = _mod.deploy_codex_adapter
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
+load_agents = _mod.load_agents
 load_commands = _mod.load_commands
+load_skills = _mod.load_skills
+write_file = _mod.write_file
+main = _mod.main
 
 
 # ── parse_frontmatter ────────────────────────────────────────────────────────
@@ -237,6 +250,34 @@ def test_copilot_agent_no_tools_omitted() -> None:
     assert "tools" not in meta
 
 
+# ── transform_agent_codex ─────────────────────────────────────────────────────
+
+
+def test_codex_agent_required_fields() -> None:
+    out = transform_agent_codex(_ARCHITECT)
+    data = tomllib.loads(out)
+    assert data["name"] == "architect"
+    assert data["description"] == "Design, constraints, alignment"
+    assert "developer_instructions" in data
+
+
+def test_codex_agent_body_preserved() -> None:
+    out = transform_agent_codex(_ARCHITECT)
+    data = tomllib.loads(out)
+    assert "You are the Architect." in data["developer_instructions"]
+
+
+def test_codex_agent_model_optional() -> None:
+    out_no_model = transform_agent_codex(_ARCHITECT)
+    data_no_model = tomllib.loads(out_no_model)
+    assert "model" not in data_no_model
+
+    agent_with_model = {**_ARCHITECT, "meta": {**_ARCHITECT["meta"], "model": "gpt-5.4"}}
+    out_with_model = transform_agent_codex(agent_with_model)
+    data_with_model = tomllib.loads(out_with_model)
+    assert data_with_model["model"] == "gpt-5.4"
+
+
 # ── transform_agent_opencode ─────────────────────────────────────────────────
 
 
@@ -310,6 +351,17 @@ def test_copilot_prompt_description_preserved() -> None:
     assert meta["description"] == "Capture a cross-session learning"
 
 
+def test_copilot_prompt_preserves_agent_binding() -> None:
+    out = transform_command_copilot(
+        {
+            **_REMEMBER_CMD,
+            "meta": {**_REMEMBER_CMD["meta"], "agent": "architect"},
+        }
+    )
+    meta, _ = parse_frontmatter(out)
+    assert meta["agent"] == "architect"
+
+
 def test_copilot_prompt_body_preserved() -> None:
     out = transform_command_copilot(_REMEMBER_CMD)
     assert "Capture a durable lesson." in out
@@ -329,6 +381,17 @@ def test_opencode_command_body_preserved() -> None:
     assert "$ARGUMENTS" in out
 
 
+def test_opencode_command_preserves_agent_binding() -> None:
+    out = transform_command_opencode(
+        {
+            **_REMEMBER_CMD,
+            "meta": {**_REMEMBER_CMD["meta"], "agent": "architect"},
+        }
+    )
+    meta, _ = parse_frontmatter(out)
+    assert meta["agent"] == "architect"
+
+
 def test_opencode_command_no_description_no_frontmatter() -> None:
     cmd = {"name": "bare", "meta": {}, "body": "# bare\nDo the thing.\n"}
     out = transform_command_opencode(cmd)
@@ -336,7 +399,171 @@ def test_opencode_command_no_description_no_frontmatter() -> None:
     assert "Do the thing." in out
 
 
+def _write_minimal_agent(root: Path) -> None:
+    path = root / "agents" / "tier1-core" / "architect.agent.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "name: architect\n"
+        "description: Design authority\n"
+        "role: Design authority\n"
+        "tier: 1\n"
+        "---\n\n"
+        "# Architect\n",
+        encoding="utf-8",
+    )
+
+
+def _write_minimal_command(root: Path) -> None:
+    path = root / ".claude" / "commands" / "auto.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\ndescription: Auto pipeline\n---\n\n# /auto $ARGUMENTS\n",
+        encoding="utf-8",
+    )
+
+
+def _write_minimal_skill(root: Path) -> None:
+    path = root / "skills" / "context-map" / "SKILL.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\nname: context-map\ndescription: Map context.\n---\n\nUse this skill.\n",
+        encoding="utf-8",
+    )
+
+
+def _write_codex_templates(root: Path) -> None:
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True, exist_ok=True)
+    (adapter / "config.toml.template").write_text(
+        'approval_policy = "on-request"\n',
+        encoding="utf-8",
+    )
+    (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
+    (adapter / "user_prompt_submit_router.py.template").write_text(
+        "#!/usr/bin/env python3\n",
+        encoding="utf-8",
+    )
+
+
+def test_main_copilot_default_agent_location_is_claude(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert not (tmp_path / ".github" / "agents" / "architect.agent.md").exists()
+    assert (tmp_path / ".github" / "prompts" / "auto.prompt.md").is_file()
+
+
+def test_main_copilot_agent_location_claude_preserves_prompts(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+            "--copilot-agent-location",
+            "claude",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert not (tmp_path / ".github" / "agents" / "architect.agent.md").exists()
+    assert (tmp_path / ".github" / "prompts" / "auto.prompt.md").is_file()
+
+
+def test_main_copilot_agent_location_both_writes_both_agent_formats(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "copilot",
+            "--copilot-agent-location",
+            "both",
+        ]
+    )
+
+    assert rc == 0
+    assert (tmp_path / ".claude" / "agents" / "architect.md").is_file()
+    assert (tmp_path / ".github" / "agents" / "architect.agent.md").is_file()
+
+
+def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_skill(tmp_path)
+    _write_codex_templates(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "codex"])
+
+    assert rc == 0
+    assert (tmp_path / ".codex" / "agents" / "architect.toml").is_file()
+    assert (tmp_path / ".agents" / "skills" / "context-map" / "SKILL.md").is_file()
+    assert (tmp_path / ".codex" / "config.toml").is_file()
+    assert (tmp_path / ".codex" / "hooks.json").is_file()
+    assert (tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py").is_file()
+
+
 # ── Cursor rule deployment ────────────────────────────────────────────────────
+
+
+def test_iter_codex_adapter_deployments_maps_templates() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        (adapter / "config.toml.template").write_text('approval_policy = "on-request"\n', encoding="utf-8")
+        (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        pairs = iter_codex_adapter_deployments(root)
+        assert len(pairs) == 3
+        dests = {p[1].as_posix() for p in pairs}
+        assert root.joinpath(".codex", "config.toml").as_posix() in dests
+        assert root.joinpath(".codex", "hooks.json").as_posix() in dests
+        assert root.joinpath(".codex", "hooks", "user_prompt_submit_router.py").as_posix() in dests
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_writes_matching_content() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        hooks = "{\"hooks\": {}}\n"
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+        assert n == 3
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(
+            encoding="utf-8"
+        ) == router
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def test_iter_cursor_rule_deployments_maps_templates() -> None:
@@ -372,7 +599,7 @@ def test_deploy_cursor_rules_writes_matching_content(
         src = "---\nalwaysApply: true\n---\n\n# Rule\n"
         (adapter / "test-rule.mdc.template").write_text(src, encoding="utf-8")
         monkeypatch.setenv("AZOTH_CURSOR_RULES_DIR", str(rules_out))
-        n = deploy_cursor_rules(root, dry_run=False)
+        n, _ = deploy_cursor_rules(root, dry_run=False)
         assert n == 1
         out = rules_out / "test-rule.mdc"
         assert out.read_text(encoding="utf-8") == src
@@ -416,3 +643,254 @@ def test_deployed_opencode_commands_match_transform() -> None:
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
+
+
+def test_deployed_codex_agents_match_transform() -> None:
+    """`.codex/agents/*.toml` must match `transform_agent_codex` output."""
+    agents = load_agents(_REPO_ROOT)
+    assert agents, "expected agents/**/*.agent.md"
+    for agent in agents:
+        expected = transform_agent_codex(agent)
+        dest = _REPO_ROOT / ".codex" / "agents" / f"{agent['meta']['name']}.toml"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Codex agent drift for {agent['meta']['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_skill_mirror_matches_canonical() -> None:
+    """`.agents/skills/<name>/SKILL.md` must mirror canonical repo skills for Codex discovery."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
+    for skill in skills:
+        dest = _REPO_ROOT / ".agents" / "skills" / skill["name"] / "SKILL.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert dest.read_text(encoding="utf-8") == skill["raw"], (
+            f"Codex skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+# ── P1-013: Orchestrator binding tests ──────────────────────────────────────
+
+_PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
+
+_SESSION_ENTRY_CMD_NAMES = ("start", "next")
+
+_REQUIRED_ORCHESTRATOR_SECTIONS = (
+    "## Inline vs Orchestrate",
+    "## Goal Clarification",
+    "## Declaration Ownership",
+    "## Pipeline Composition",
+    "## Mid-Pipeline Adaptation",
+    "## Model Tiering",
+    "## Token Budget",
+    "## Session Lifecycle",
+    "## Memory Integration",
+    "## Gate Handling",
+    "## Architect as Spawned Role",
+    "## Error Recovery",
+    "## Platform Parity",
+)
+
+
+def test_transform_command_copilot_preserves_orchestrator_agent_field() -> None:
+    """T1: transform_command_copilot passes through agent: orchestrator — GREEN immediately."""
+    cmd = {
+        "name": "auto",
+        "meta": {"description": "Auto pipeline", "agent": "orchestrator"},
+        "body": "# /auto $ARGUMENTS\n\nClassify and execute.\n",
+    }
+    out = transform_command_copilot(cmd)
+    meta, _ = parse_frontmatter(out)
+    assert meta.get("agent") == "orchestrator", (
+        "transform_command_copilot must preserve agent: orchestrator field"
+    )
+
+
+def test_copilot_pipeline_prompts_have_orchestrator_agent_binding() -> None:
+    """T2: deployed pipeline prompts must have agent: orchestrator."""
+    for name in _PIPELINE_CMD_NAMES:
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{name}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_opencode_pipeline_commands_have_orchestrator_agent_binding() -> None:
+    """T3: deployed pipeline commands must have agent: orchestrator."""
+    for name in _PIPELINE_CMD_NAMES:
+        dest = _REPO_ROOT / ".opencode" / "commands" / f"{name}.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_orchestrator_claude_agent_deployed_with_required_body_sections() -> None:
+    """T4: .claude/agents/orchestrator.md must exist with all 7 required body sections."""
+    dest = _REPO_ROOT / ".claude" / "agents" / "orchestrator.md"
+    assert dest.is_file(), (
+        "missing .claude/agents/orchestrator.md — run: python3 scripts/azoth-deploy.py"
+    )
+    content = dest.read_text(encoding="utf-8")
+    for section in _REQUIRED_ORCHESTRATOR_SECTIONS:
+        assert section in content, f"orchestrator.md missing required section: {section!r}"
+
+
+def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
+    """T5: pipeline prompt parity — .github/prompts/ matches transform output including agent: orchestrator."""
+    commands = load_commands(_REPO_ROOT)
+    pipeline_cmds = [c for c in commands if c["name"] in _PIPELINE_CMD_NAMES]
+    assert len(pipeline_cmds) == len(_PIPELINE_CMD_NAMES), (
+        f"expected all {len(_PIPELINE_CMD_NAMES)} pipeline commands, found {[c['name'] for c in pipeline_cmds]}"
+    )
+    for cmd in pipeline_cmds:
+        expected = transform_command_copilot(cmd)
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{cmd['name']}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Pipeline prompt drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_source_session_entry_commands_have_orchestrator_agent_field() -> None:
+    """T6: source .claude/commands/start.md and next.md must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        src = _REPO_ROOT / ".claude" / "commands" / f"{name}.md"
+        assert src.is_file(), f"missing source command {name}.md"
+        meta, _ = parse_frontmatter(src.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{name}.md: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_copilot_session_entry_prompts_have_orchestrator_agent_binding() -> None:
+    """T7: deployed session-entry prompts must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{name}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_opencode_session_entry_commands_have_orchestrator_agent_binding() -> None:
+    """T8: deployed session-entry commands must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        dest = _REPO_ROOT / ".opencode" / "commands" / f"{name}.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_orchestrator_archetype_has_intelligence_sections() -> None:
+    """T9: orchestrator archetype must contain all required intelligence sections."""
+    src = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+    assert src.is_file(), "missing agents/tier1-core/orchestrator.agent.md"
+    content = src.read_text(encoding="utf-8")
+    for section in _REQUIRED_ORCHESTRATOR_SECTIONS:
+        assert section in content, f"orchestrator.agent.md missing required section: {section!r}"
+
+
+def test_orchestrator_archetype_line_count_ceiling() -> None:
+    """T10: orchestrator archetype must be ≤ 400 lines."""
+    src = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+    assert src.is_file(), "missing agents/tier1-core/orchestrator.agent.md"
+    lines = src.read_text(encoding="utf-8").splitlines()
+    assert len(lines) <= 400, (
+        f"orchestrator.agent.md is {len(lines)} lines, exceeds 400-line ceiling"
+    )
+
+
+# ── --check mode ──────────────────────────────────────────────────────────────
+
+
+def test_check_mode_clean_returns_zero(tmp_path: Path) -> None:
+    """Deploy then --check → exit 0 (everything in sync)."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 0
+
+
+def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
+    """Deploy, mutate a mirror file, then --check → exit 1."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    # Corrupt a deployed file
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert agent_mirror.is_file()
+    agent_mirror.write_text("corrupted content", encoding="utf-8")
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_missing_returns_one(tmp_path: Path) -> None:
+    """Deploy, delete a mirror file, then --check → exit 1."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    # Remove a deployed file
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert agent_mirror.is_file()
+    agent_mirror.unlink()
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_and_dry_run_mutually_exclusive() -> None:
+    """--check and --dry-run together → SystemExit(2) from argparse."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--check", "--dry-run"])
+    assert exc_info.value.code == 2
+
+
+def test_check_mode_does_not_write(tmp_path: Path) -> None:
+    """Running --check on a missing file must NOT create it."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    # Run check without prior deploy — files should be missing
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert not agent_mirror.exists()
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+    # The file must still not exist
+    assert not agent_mirror.exists()

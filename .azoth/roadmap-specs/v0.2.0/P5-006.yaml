@@ -1,0 +1,44 @@
+# Roadmap task spec — v0.2.0 (DYNAMIC-FULL-AUTO+ seed)
+id: P5-006
+roadmap_version: v0.2.0
+title: "Phone-friendly output (narrow terminals)"
+decision_ref: [D48, D52]
+
+intent: >
+  Toolkit operators on mobile SSH, split panes, or narrow terminals can read welcome,
+  roadmap dashboard, and key CLI output without broken panels or truncated critical state.
+
+problem: >
+  Rich multi-column layouts assume wide viewports; deferred from Phase 5 as lower ROI
+  than trust hooks — still a real UX gap for "calm, long-running" workflows anywhere.
+
+scope:
+  - scripts/welcome.py
+  - scripts/roadmap_dashboard.py
+  - docs/AZOTH_ARCHITECTURE.md or skills/orientation/SKILL.md (narrow-layout notes only)
+  - no kernel/ mutation unless separately scoped
+
+non_goals:
+  - Full mobile app or web UI for Azoth
+  - Replacing Rich with a different TUI stack in one shot
+  - Changing hook semantics in Claude Code
+
+acceptance:
+  - Terminal width detection drives a documented compact layout path (e.g. <80 / <100 cols)
+  - Top backlog + scope/pipeline lines remain readable at 72 columns in plain and Rich modes
+  - pytest covers at least one narrow-width code path or snapshot of layout branch
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Prefer feature-detecting width; avoid hard-coding one vendor terminal. Optional env
+  AZOTH_COMPACT=1 override for scripting/CI.
+
+research_notes: >
+  Industry practice: branch layout by column count; compact mode drops non-essential
+  columns; clear errors and stable exit codes for automation (2026 CLI UX guides).

@@ -75,6 +75,7 @@ product_extraction:
     - ".claude/settings.json"      # Scaffold dev settings
     - ".claude/settings.local.json"
     - ".github/"                   # Scaffold CI/CD; public repo gets its own minimal CI (P4-004)
+    - "kernel/templates/"           # Raw scaffold .template files — consumers get rendered copies via install (D42)
     - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
     - "tests/"                     # Scaffold tests (product gets its own)
     - "workspace/"

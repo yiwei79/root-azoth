@@ -1,0 +1,39 @@
+# Roadmap task spec — v0.2.0
+id: P1-005
+roadmap_version: v0.2.0
+title: "Long-running session policy (scope TTL, async-friendly docs)"
+decision_ref: [D50]
+
+intent: >
+  Documented patterns for DYNAMIC-FULL-AUTO-style runs: how to refresh scope, chunk work,
+  and use ledger without fighting D50 gates — reducing surprise friction.
+
+problem: >
+  Trust model uses short-lived gates for safety; long autonomous runs need explicit playbook
+  or they hit mechanical denies in Claude Code.
+
+scope:
+  - docs/AZOTH_ARCHITECTURE.md or skills/subagent-router notes (additive)
+  - Optional template text for /next scope card reminders
+  - No kernel immutability changes without separate promotion
+
+non_goals:
+  - Disabling scope-gate hook in consumer installs
+  - Infinite TTL by default
+
+acceptance:
+  - docs/AZOTH_ARCHITECTURE.md contains heading "### Long-running sessions (P1-005)" with steps, TTL refresh, entropy, ledger pointer
+  - CLAUDE.md Development Workflow or orientation pointer mentions that section (one line)
+  - Reviewer-evaluable checklist in same section (scope refresh, /next, optional P1-001 ledger)
+  - skills/dynamic-full-auto/SKILL.md cross-links the architecture section (one line)
+  - pytest tests/test_p1_005_long_running_architecture.py passes (anchors the heading)
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Keep policy toolkit-agnostic; consumer projects may choose stricter TTL in their own gates.

@@ -56,7 +56,8 @@ Compress session into actionable signals.
      "goal": "session goal",
      "summary": "what happened",
      "lessons": ["lesson 1", "lesson 2"],
-     "tags": ["relevant-tags"]
+     "tags": ["relevant-tags"],
+     "reinforcement_count": 0
    }
    ```
 
@@ -74,12 +75,28 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 - Append the episode structured in step 4
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
-**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/scope-gate.json`
+**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
 
 - Update `bootloader-state.md` with session outcome (phase, what changed, open decisions)
+- When `.azoth/run-ledger.local.yaml` contains a `sessions:` registry, use the active
+  scope `session_id` as the default selected session. If a matching session entry exists,
+  update that entry first: set it to `parked` when follow-up work remains or `closed` when
+  the session is finished, refresh its `next_action`, and preserve `active_run_id` only when
+  it still points at resumable work.
+- **W2-claim — Release write claim**: If a write claim is held by this session in
+  `.azoth/run-ledger.local.yaml`, release it now. Call `release_write_claim` from
+  `run_ledger.py` or run:
+  ```
+  python3 scripts/run_ledger.py release-claim <session_id>
+  ```
+  This unblocks competing sessions. If already absent (claim was never acquired or already
+  released), this step is a no-op.
 - Close the scope gate: write `.azoth/scope-gate.json` with `approved: false` and add
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
-- Log: `W2 ✓ bootloader-state.md updated, scope gate closed — proceeding to W3`
+- Cross-IDE handoff: if the session used **`.azoth/session-state.md`**, refresh it (active task,
+  files touched, next action, pending decisions) with the same `session_id` as the selected
+  registry entry; if unused, log `session-state skipped` in the alignment summary.
+- Log: `W2 ✓ bootloader-state.md updated, write claim released, scope gate closed — proceeding to W3`
 
 **W2 field checklist (BL-024)** — Before writing `bootloader-state.md`, align the **Current Phase** /
 toolkit summary with canonical sources (read from disk, not from memory):
@@ -95,7 +112,7 @@ toolkit summary with canonical sources (read from disk, not from memory):
 
 **W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
 
-- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). Copilot/OpenCode do not read `~/.claude/`; parity for them is **committed W1/W2** (and `azoth.yaml`).
+- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). Copilot/OpenCode do not **consume** `~/.claude/`; parity for them is still **committed W1/W2** (and `azoth.yaml`). **Copilot should nevertheless attempt W3 on closeout** so later Claude Code sessions can read the latest Copilot-authored state.
 - **Resolve the path (do not skip this step):** Claude Code stores per-project memory under `~/.claude/projects/`, where **`<project-key>`** is the absolute workspace path with the leading `/` removed and every `/` replaced by `-` (example: `/Users/you/work/root-azoth` → `-Users-you-work-root-azoth`). Full example: `~/.claude/projects/-Users-you-work-root-azoth/memory/`.
 - **Why W3 is often missed:** these files live **outside the repo**; Cursor assistants may lack access or treat W3 as “human-only.” If denied, retry with full permissions or complete W3 manually — do not close the session without updating memory or explicitly logging W3 failed.
 - **Minimum writes:** `project_status.md` (phase, version, roadmap patch, last episode, last delivery, next backlog step, open gaps) and **`MEMORY.md`** index line for Project Status. Add or refresh `feedback_*.md` when a durable preference changed.
@@ -104,11 +121,12 @@ toolkit summary with canonical sources (read from disk, not from memory):
   own memory system (M3 episodes) is surfaced during SURVEY phase
 - Log: `W3 ✓ memory updated — all checkpoints complete`
 
-**W4 — Bump patch version** → `python scripts/version-bump.py --patch`
+**W4 — Bump patch version and refresh orientation cache** → `python scripts/version-bump.py --patch`
 
 - Run `python scripts/version-bump.py --patch` from the repo root
 - This always fires — every closeout increments the patch version
-- Log: `W4 ✓ version bumped X → Y`
+- Delete `.azoth/session-orientation.txt` (if present) so that IDEs without a `SessionStart` hook do not surface stale orientation in the next session.
+- Log: `W4 ✓ version bumped X → Y, orientation cache cleared`
 
 ### On Failure
 
@@ -127,6 +145,29 @@ If a write checkpoint is denied or fails mid-sequence:
 2. Generate conventional-commit message summarizing the session
 3. Commit
 4. Report: commit SHA, files changed, test status
+
+### Worktree merge-back (C5)
+
+If this session is running in a **git worktree** (not the main working tree), merge the
+worktree branch back to the parent branch so work is not stranded:
+
+1. Run `git worktree list` — if only one entry, skip this section.
+2. Identify the **parent worktree** (the first entry in the list, or the worktree whose
+   branch this worktree was created from).
+3. In the **parent worktree directory**, run:
+   ```
+   git stash push -u -m "pre-worktree-merge"   # if dirty
+   git merge <worktree-branch> --no-edit
+   git stash pop                                 # if stashed
+   ```
+4. If merge conflicts arise: resolve them (prefer worktree version for session artifacts
+   like `bootloader-state.md`; keep both episodes if IDs collide by renumbering the newer
+   one). Commit the merge resolution.
+5. Report: `C5 ✓ worktree merged into <parent-branch>` or `C5 — single worktree, skipped`.
+
+**Episode ID collisions**: When parallel sessions (main + worktree) both append episodes
+with sequential IDs, collisions are expected. Always check the max existing ID before
+appending — or use `ep-{max+1}` to avoid merge conflicts.
 
 ## Part D: Surface Queued Insights
 

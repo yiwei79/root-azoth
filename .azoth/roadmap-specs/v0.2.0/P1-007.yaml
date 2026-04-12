@@ -1,0 +1,46 @@
+# Roadmap task spec — v0.2.0
+id: P1-007
+roadmap_version: v0.2.0
+title: "Elasticity: M2/M3 recall governance (tags, decay, contradictions)"
+decision_ref: [D45]
+
+intent: >
+  context-recall and promotion paths resist wrong-lesson retrieval and toolkit over-fit while
+  keeping human approval as the final gate.
+
+problem: >
+  Tag drift and stale M3 episodes can dominate recall; highly specific M2 patterns may not
+  generalize to consumer installs.
+
+scope:
+  - skills/context-recall/SKILL.md
+  - skills/remember/SKILL.md
+  - .azoth/roadmap-specs/v0.2.0/P1-007.yaml
+  - tests/test_skills.py
+
+non_goals:
+  - Automated deletion of M3 without human triage
+  - Vector DB for memory in-repo
+
+acceptance:
+  - Documented tag vocabulary guidance + "when not to add a pattern" section
+  - Explicit append-only supersession guidance: contradictions create a new episode linked to the older one
+  - Status-tag guidance for stale, superseded, and contradicted knowledge
+  - Explicit contradiction/stale episode handling policy (archive vs supersede tags)
+  - Acceptance wording must remain reflected in skill docs: tag vocabulary guidance, when not to add a pattern, archive vs supersede tags, append-only supersession guidance, stale/superseded/contradicted status tags
+  - If recall ranking logic is implemented in Python: new pytest required
+  - If skill/markdown only: pytest tests/test_skills.py must still pass (no regressions)
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Favor rubric and skill text first; add mechanical grep-lint for forbidden pattern shapes later.
+
+research_notes: >
+  Correlated LLM errors weaken naive majority vote; Azoth uses independent reviewer context
+  + human promote — aligns with anti-consensus auditing literature for eval, not memory voting.
