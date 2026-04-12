@@ -1,5 +1,6 @@
 ---
 description: Git checkpoint and sync — mechanical save point
+agent: orchestrator
 ---
 
 # /worktree-sync

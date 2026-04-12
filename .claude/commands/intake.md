@@ -1,6 +1,7 @@
 ---
 description: "Process queued insights from .azoth/inbox/ through the governed intake protocol"
 azoth_effect: write
+agent: orchestrator
 ---
 
 # /intake

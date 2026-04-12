@@ -2,6 +2,7 @@
 mode: agent
 description: L3 human-gated architecture proposal artifact — structured YAML under
   .azoth/proposals/
+agent: orchestrator
 ---
 
 # /arch-proposal $ARGUMENTS

@@ -1,5 +1,6 @@
 ---
 description: Map dependencies, blast radius, and change sequencing before implementation
+agent: orchestrator
 ---
 
 # /context-architect $ARGUMENTS

@@ -124,8 +124,10 @@ def test_checkpoint_help_documents_apply_vs_pop() -> None:
         text=True,
         check=True,
     )
-    assert "git stash apply" in r.stdout
-    assert "git stash pop" in r.stdout
+    # Normalize whitespace to handle argparse line-wrapping under narrow TTY widths
+    normalized = re.sub(r"\s+", " ", r.stdout)
+    assert "git stash apply" in normalized
+    assert "git stash pop" in normalized
 
 
 def test_checkpoint_tag_help_says_lightweight() -> None:

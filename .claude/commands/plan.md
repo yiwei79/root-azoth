@@ -1,6 +1,7 @@
 ---
 description: "Structured planning without execution"
 azoth_effect: read
+agent: orchestrator
 ---
 
 # /plan $ARGUMENTS

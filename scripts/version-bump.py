@@ -48,6 +48,21 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _sync_settings_version(new_version: str) -> None:
+    """Update AZOTH_VERSION in .claude/settings.json if the file exists."""
+    settings_path = ROOT / ".claude" / "settings.json"
+    if not settings_path.is_file():
+        return
+    text = settings_path.read_text(encoding="utf-8")
+    updated = re.sub(
+        r'"AZOTH_VERSION":\s*"[^"]*"',
+        f'"AZOTH_VERSION": "{new_version}"',
+        text,
+    )
+    if updated != text:
+        settings_path.write_text(updated, encoding="utf-8")
+
+
 def _write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
@@ -341,6 +356,7 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_version))
     _write(roadmap_path, new_roadmap)
 
+    _sync_settings_version(new_version)
     print(f"version bumped {raw_version} → {new_version}")
 
 
@@ -418,6 +434,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_azoth_version))
     _write(roadmap_path, roadmap_text)
 
+    _sync_settings_version(new_azoth_version)
     print(f"version bumped {raw_version} → {new_azoth_version} (phase advance)")
 
 
@@ -508,6 +525,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)
 
+    _sync_settings_version("0.1.1.0")
     print(f"version bumped {raw_version} → 0.1.1.0 (release)")
     print(
         'Next step (human): git tag -a v0.1.0 -m "Azoth v0.1.0 public release" '

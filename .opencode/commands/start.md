@@ -39,6 +39,11 @@ Run at the beginning of any session to get a full project snapshot before decidi
    - **Last Session** — most recent episode summary
    - **START** — context-sensitive routing options
 
+1. **Surface relevant memory** (context-recall)
+
+   Before routing, invoke `context-recall` to surface relevant M3 episodes and M2
+   patterns for the session. This primes planning with historical context.
+
 2. **Read the user's selection and route accordingly**
 
    | Input | Action |

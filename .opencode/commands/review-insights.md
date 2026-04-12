@@ -1,5 +1,6 @@
 ---
 description: Run Cursor-oriented blindspot review and write D32 insights to .azoth/inbox/
+agent: orchestrator
 ---
 
 # /review-insights

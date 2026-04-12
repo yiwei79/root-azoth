@@ -3,6 +3,13 @@
 Run this command before ending any session. It evaluates work, captures episodes,
 and syncs changes — all in a single pass.
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify session scope was maintained throughout (check `.azoth/scope-gate.json`).
+- Ensure all write work stayed within approved scope and entropy bounds.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Part A: Evaluate Session Outputs
 
 Apply `agentic-eval` style review to work produced this session.

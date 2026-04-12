@@ -824,6 +824,35 @@ def test_orchestrator_archetype_line_count_ceiling() -> None:
     )
 
 
+def test_all_source_commands_have_orchestrator_agent_binding() -> None:
+    """T11: every .claude/commands/*.md must have agent: orchestrator to prevent
+    Copilot agent reset when invoking any Azoth command."""
+    cmd_dir = _REPO_ROOT / ".claude" / "commands"
+    assert cmd_dir.is_dir(), "missing .claude/commands/"
+    missing = []
+    for path in sorted(cmd_dir.glob("*.md")):
+        meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if meta.get("agent") != "orchestrator":
+            missing.append(path.name)
+    assert not missing, (
+        f"source commands missing agent: orchestrator: {missing}"
+    )
+
+
+def test_all_copilot_prompts_have_orchestrator_agent_binding() -> None:
+    """T12: every .github/prompts/*.prompt.md must have agent: orchestrator."""
+    prompt_dir = _REPO_ROOT / ".github" / "prompts"
+    assert prompt_dir.is_dir(), "missing .github/prompts/"
+    missing = []
+    for path in sorted(prompt_dir.glob("*.prompt.md")):
+        meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if meta.get("agent") != "orchestrator":
+            missing.append(path.name)
+    assert not missing, (
+        f"Copilot prompts missing agent: orchestrator: {missing}"
+    )
+
+
 # ── --check mode ──────────────────────────────────────────────────────────────
 
 

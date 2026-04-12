@@ -3,6 +3,13 @@
 Lean delivery pipeline. Use when the work is pre-approved and additive
 (no governance changes, no kernel modifications).
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify `.azoth/scope-gate.json` exists and is approved before write work.
+- Do NOT use this pipeline for kernel or governance changes — use `/deliver-full`.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Stage 0 — Pipeline gate (mechanical)
 
 Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes

@@ -7,6 +7,13 @@ agent: orchestrator
 
 The default pipeline. Classify the goal and compose the optimal pipeline.
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify `.azoth/scope-gate.json` exists and is approved before write work.
+- If `target_layer: M1` or governance surface detected, redirect to `/deliver-full`.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Stage 0: Goal Classification
 
 Classify `$ARGUMENTS` along four dimensions:

@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Review promotion candidates from M3 episodes to M2 patterns
+agent: orchestrator
 ---
 
 # /promote $ARGUMENTS

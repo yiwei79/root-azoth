@@ -1445,4 +1445,87 @@ items:
     Document and validate that M3 append, M2 promote, and context-recall operations
     produce consistent results across Claude Code, Cursor, and Copilot adapter paths.
     Initiative ref: INI-PLT-001.
+- id: BL-034
+  title: "Fix missing Compliance Checklist in .agents/rules/azoth-core.md"
+  source: "37645235-1a96-447b-a373-2c85bf246aa3"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  completed_date: '2026-04-13'
+  target_version: v0.2.0-p2
+  priority: 8
+  created_date: '2026-04-13'
+  description: >
+    Add ## Compliance Checklist section to .agents/rules/azoth-core.md with
+    Antigravity platform constraints to fix test_p1_016_antigravity_compliance
+    failure.
+- id: BL-035
+  title: "Add unit tests for stage_summary_validate.py and posttooluse_terminal_filter.py"
+  source: "881fd566-6399-4aa9-ace6-5c50ef0a5d63"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 15
+  created_date: '2026-04-13'
+  description: >
+    Add focused unit tests for stage_summary_validate.py (valid/invalid YAML
+    fixtures) and posttooluse_terminal_filter.py (regex match/miss cases).
+    Batch with next hook work.
+- id: BL-036
+  title: "Fix test_checkpoint_help argparse wrapping fragility"
+  source: PRC-P5T-001
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  completed_date: '2026-04-13'
+  target_version: v0.2.0-p2
+  priority: 8
+  created_date: '2026-04-13'
+  description: >
+    Normalize whitespace in test_azoth_checkpoint.py:120-128 before asserting
+    'git stash pop' substring to prevent argparse terminal-width wrapping
+    failures in CI (no TTY).
+- id: BL-037
+  title: "Align TRUST_CONTRACT §1 'per turn' with session-scoped enforcement"
+  source: PRC-P5T-002
+  target_layer: M1
+  delivery_pipeline: governed
+  status: active
+  target_version: v0.2.0-p2
+  priority: 10
+  created_date: '2026-04-13'
+  decision_ref:
+  - D3
+  description: >
+    Update kernel/TRUST_CONTRACT.md §1 table and narrative to reflect that
+    entropy caps are session-scoped (keyed to scope-gate session_id), not
+    per-turn. Requires human gate (kernel file).
+- id: BL-038
+  title: "Expand CI ruff linting to all Python files"
+  source: PRC-P5T-003
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 9
+  created_date: '2026-04-13'
+  description: >
+    Expand .github/workflows/ci.yml ruff step from 5 specific files to
+    ruff check scripts/ tests/ .claude/hooks/. Fix the 20 pre-existing
+    errors or add per-file ignores.
+- id: BL-039
+  title: "Add empty-path guard in kernel-integrity.py checksum parser"
+  source: PRC-P5T-005
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  completed_date: '2026-04-13'
+  target_version: v0.2.0-p2
+  priority: 14
+  created_date: '2026-04-13'
+  description: >
+    Add 'if not key: continue' guard after computing key in
+    _parse_checksum_lines to reject malformed checksum lines with empty
+    paths. Add test for the edge case.
 completed: []

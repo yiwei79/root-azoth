@@ -1,6 +1,7 @@
 ---
 description: Governance quality gate — evaluate artifacts; auto-escalates to swarm
   eval when warranted
+agent: orchestrator
 ---
 
 # /eval $ARGUMENTS
