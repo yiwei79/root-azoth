@@ -213,3 +213,28 @@ def test_bad_pipeline_rejected(tmp_path: Path) -> None:
     )
     assert r.returncode != 0
     assert "extraction_pipeline" in r.stderr
+
+
+def test_dry_run_banner_states_step1_only(tmp_path: Path) -> None:
+    """BL-032: --dry-run output must clearly state it only runs step 1."""
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--dry-run", "--source", str(REPO), "--out", str(tmp_path / "unused")],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "step 1 only" in r.stdout
+    assert "done (dry-run)" in r.stdout
+
+
+def test_azoth_version_coupled_to_azoth_yaml() -> None:
+    """BL-033: AZOTH_VERSION used in extract must match azoth.yaml version."""
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    spec = spec_from_file_location("azoth_extract_product", SCRIPT)
+    mod = module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    live_version = mod._read_azoth_version(REPO)
+    azoth_data = yaml.safe_load((REPO / "azoth.yaml").read_text(encoding="utf-8"))
+    assert live_version == str(azoth_data["version"])

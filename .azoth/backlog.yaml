@@ -1352,7 +1352,8 @@ items:
   source: PRC-ES-002
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
+  completed_date: '2026-04-12'
   target_version: v0.2.0-p1
   priority: 5
   created_date: '2026-04-12'
@@ -1371,10 +1372,11 @@ items:
   source: 2c84f86c
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 6
   created_date: '2026-04-12'
+  completed_date: '2026-04-12'
   blocked_by: []
   description: >
     azoth_extract_product.py --dry-run only executes step 1 (copy_tree); transforms,
@@ -1387,10 +1389,11 @@ items:
   source: 96da4411
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 7
   created_date: '2026-04-12'
+  completed_date: '2026-04-12'
   decision_ref:
   - D35
   blocked_by: []

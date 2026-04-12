@@ -23,6 +23,7 @@ Evaluate this list from the **current goal, scope card, pipeline preset, and art
 | E6 | **Explicit human or scope signal** (“parallel”, “swarm”, multiple **prior_stage_summaries**, or stacked backlog IDs in the goal) | Intent is already multi-branch. |
 
 **Rule:** If **any** of **E1–E6** is **true** → run **`/eval-swarm`** (see `.claude/commands/eval-swarm.md` + `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`). If **none** are true → a **single** evaluator pass at **0.85** is appropriate.
+If `.claude/commands/` is not present in your install, use the equivalent prompt under `.github/prompts/` (or your platform-specific mirror).
 
 **Orchestrator (agents):** When the composed pipeline reaches an evaluation step, **compute triggers from the table** using the same inputs the human would see (scope-gate, pipeline table, file list, prior stage summaries). If escalated, spawn **one message** with **N** parallel `Task` evaluators (`subagent_type: evaluator`, `readonly: true`, `threshold: 0.9`) per independent branch — **not** one collapsed eval in the orchestrator thread. If not escalated, a **single** `Task(evaluator)` (or equivalent) at **0.85** is valid.
 

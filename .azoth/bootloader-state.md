@@ -1,25 +1,26 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.1.43 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
+v0.1.1.45 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
 
 ## Last Session
-- **Session**: 2026-04-12-bl-027
-- **Platform**: GitHub Copilot CLI (GPT-5.4)
-- **Delivered**: BL-027 — fix `eval-swarm.md` `azoth_effect: read` → `mixed`
-- **Pipeline**: auto (governed M1)
-- **Eval**: eval-swarm pass; average score 0.926; final architect review approved
-- **Episodes**: ep-157
-- **Version bump**: 0.1.1.42 → 0.1.1.43
+- **Session**: 2026-04-12-bl-031
+- **Platform**: GitHub Copilot (Claude Opus 4.6)
+- **Delivered**: BL-031, BL-032, BL-033 — Copilot adapter fallback, dry-run test, AZOTH_VERSION coupling
+- **Pipeline**: auto (infrastructure, standard)
+- **Eval**: agentic-eval pass; weighted score 0.94
+- **Episodes**: ep-161
+- **Version bump**: 0.1.1.44 → 0.1.1.45
 
 ## Key Changes This Session
-1. `.claude/commands/eval-swarm.md`: corrected frontmatter to `azoth_effect: mixed` to match the command's governed write-capable path.
-2. Governed `/auto` delivery confirmed the blast radius was one source command file and one line; no kernel or additional command surfaces changed.
-3. `scripts/azoth-deploy.py` transform inspection confirmed `azoth_effect` is stripped from command mirrors, so deploy regeneration was intentionally skipped for this fix.
+1. `.claude/commands/eval.md` + `eval-swarm.md`: added fallback guidance line for installs without `.claude/commands/` (BL-031).
+2. `scripts/azoth_extract_product.py`: added `_read_azoth_version()` and `_build_claude_substitutions()` to read AZOTH_VERSION from `azoth.yaml` at extract time instead of hardcoded `"0.1.0"` (BL-033).
+3. `tests/test_azoth_extract_product.py`: added `test_dry_run_banner_states_step1_only` (BL-032) and `test_azoth_version_coupled_to_azoth_yaml` (BL-033).
+4. `azoth-deploy.py` mirrors regenerated for eval/eval-swarm across all platforms.
+5. Backlog: BL-031/032/033 marked complete; no active items remain.
 
 ## Open Decisions
-- Optional follow-up: clarify `eval-swarm.md` body wording around "read-only for repo files" so it reads more cleanly beside the `mixed` frontmatter.
-- BL-028 is now the top backlog item and remains unscopeed.
+- None — backlog queue is empty. Next session should run `/intake` or add new items.
 
 ## Next Action
-- Run `/next` to scope BL-028: exclude `kernel/templates/` from product extraction (infrastructure, standard).
+- Run `/next` to populate new backlog items or `/intake` if insights arrive.
