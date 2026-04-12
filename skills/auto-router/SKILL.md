@@ -69,10 +69,13 @@ pipeline because research outputs need quality validation.
 
 **Rule 4 (instruction-refinement)** — When the knowledge dimension indicates
 instruction-refinement, the goal involves improving existing instruction surfaces
-(skills, agent definitions, commands) using accumulated L2 evidence. The full
-pipeline ensures reviewer validation and evaluator quality gates on instruction
-changes. An l2-evidence-review phase is injected into the architect stage so
-evidence is analyzed before planning begins.
+(skills, agent definitions, commands) using accumulated L2 evidence. This rule
+is typically triggered after the self-improve skill proposes an L2 refinement
+(via `l2_evidence_append.py` gated write) or when a human directly invokes
+`/auto` for instruction refinement. The full pipeline ensures reviewer
+validation and evaluator quality gates on instruction changes. An
+l2-evidence-review phase is injected into the architect stage so evidence is
+analyzed before planning begins.
 
 The **l2-evidence-review** phase is defined as the following sequence of steps,
 executed by the Architect at the start of the stage, before any planning brief
