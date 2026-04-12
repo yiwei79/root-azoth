@@ -1270,4 +1270,134 @@ items:
   source: eval-swarm-2026-04-12-p1-013
   created_date: '2026-04-12'
   blocked_by: []
+- id: BL-027
+  title: "Fix eval-swarm.md azoth_effect: read → mixed (governance rule 7 violation)"
+  source: PRC-ES-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: active
+  target_version: v0.2.0-p1
+  priority: 1
+  created_date: '2026-04-12'
+  decision_ref:
+  - D23
+  - D50
+  blocked_by: []
+  description: >
+    eval-swarm.md frontmatter declares azoth_effect: read but Wave D orchestrates
+    builder/planner Tasks that write files — an active governance rule 7 violation.
+    Fix: change to azoth_effect: mixed, sync .github/prompts/eval-swarm.prompt.md,
+    re-run azoth-deploy.py to propagate to all platform mirrors.
+
+- id: BL-028
+  title: "Exclude kernel/templates/ from product extraction (D42 compliance)"
+  source: PRC-P4-001
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 2
+  created_date: '2026-04-12'
+  decision_ref:
+  - D35
+  - D42
+  blocked_by: []
+  description: >
+    kernel/templates/ is not in sync-config.yaml exclude_paths, so raw scaffold
+    templates (CLAUDE.md.template, settings.json.template, platform-adapter templates)
+    ship verbatim to consumers. D42 states consumers get .azoth/kernel/ via install,
+    not raw templates. Fix: add kernel/templates/ to exclude_paths; add test asserting
+    absence from extracted output tree.
+
+- id: BL-029
+  title: "Add eval-swarm escalation routing to Cursor claude-code-parity rules (platform parity)"
+  source: PRC-ES-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 3
+  created_date: '2026-04-12'
+  decision_ref:
+  - D46
+  - D52
+  blocked_by: []
+  description: >
+    E1-E6 eval routing and /eval-swarm are deployed to Claude Code, Copilot, and
+    OpenCode but not Cursor. Add eval-swarm escalation guidance (E1-E6 trigger table
+    summary, threshold comparison) to kernel/templates/platform-adapters/cursor/
+    claude-code-parity.mdc.template; regenerate with azoth-deploy.py --platforms cursor.
+    Aligns with P1-021 memory platform parity work.
+
+- id: BL-030
+  title: "Assert LICENSE in test_extract_minimal_tree fixture (P4 shipping gate)"
+  source: PRC-P4-003
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 4
+  created_date: '2026-04-12'
+  decision_ref:
+  - D35
+  blocked_by: []
+  description: >
+    test_extract_minimal_tree does not set up or assert the LICENSE file in the
+    extracted tree. PolyForm Noncommercial license is a critical P4 shipping
+    requirement. Add a LICENSE stub to the test fixture and assert 'LICENSE' in rels
+    to guard against regressions silently excluding it from the consumer product.
+
+- id: BL-031
+  title: "Fix Copilot adapter prompts dead-referencing .claude/ paths"
+  source: PRC-ES-002
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 5
+  created_date: '2026-04-12'
+  decision_ref:
+  - D35
+  - D36
+  blocked_by: []
+  description: >
+    .github/prompts/eval.prompt.md and eval-swarm.prompt.md hard-reference
+    .claude/commands/eval.md — dead paths in consumer installs without .claude/.
+    Add prose note near cross-refs: 'If .claude/commands/ is not present, refer to
+    the skill in .github/prompts/ or your platform equivalent.'
+
+- id: BL-032
+  title: "Clarify --dry-run partial scope in azoth_extract_product.py"
+  source: 2c84f86c
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 6
+  created_date: '2026-04-12'
+  blocked_by: []
+  description: >
+    azoth_extract_product.py --dry-run only executes step 1 (copy_tree); transforms,
+    sanitize, and emit_public_assets are skipped. This misleads operators expecting a
+    full dry-run preview. Fix: update --help and stderr banner to clearly state
+    'dry-run: step 1 (copy) only'. Optional: implement no-write traversal for steps 2-4.
+
+- id: BL-033
+  title: "Couple AZOTH_VERSION in DEFAULT_CLAUDE_SUBSTITUTIONS to azoth.yaml"
+  source: 96da4411
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p1
+  priority: 7
+  created_date: '2026-04-12'
+  decision_ref:
+  - D35
+  blocked_by: []
+  description: >
+    DEFAULT_CLAUDE_SUBSTITUTIONS['AZOTH_VERSION'] is a hardcoded string literal
+    that can drift from azoth.yaml without coupling. Consumers receiving an extracted
+    product would see a stale version in their emitted CLAUDE.md. Fix: read
+    AZOTH_VERSION from azoth.yaml at extract time, or add a test asserting equality
+    with azoth.yaml toolkit version field.
 completed: []

@@ -285,51 +285,43 @@ versions:
 
   - id: v0.2.0-p1
     status: active
-    current_patch: 41
+    current_patch: 42
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
-    themes: [A, B, D]
+    themes: [A, B, C, D]
     note: >
-      First working phase of v0.2.0 milestone. Unblocks durable run state (P1-001),
-      closes DFA+ e2e friction gaps (P1-012 Slice B+), adds pipeline linting (P1-003),
-      documents long-running session policy (P1-005), and now includes the ad-hoc
-      Antigravity bootstrap adapter slice (P1-014).
+      First working phase of v0.2.0 milestone. Delivered: run ledger (P1-001), pipeline
+      linter (P1-003), session policy (P1-005), Antigravity bootstrap (P1-014), multi-writer
+      safety (P1-015). Remaining: DFA+ e2e friction Slice B (P1-012), verbatim-first M3
+      storage (P1-020), memory operation platform parity (P1-021).
+    completed_tasks:
+      - {id: P1-001, title: "Swarm & pipeline run ledger + resume protocol", completed_date: "2026-04-10", decision_ref: [D21, D50]}
+      - {id: P1-003, title: "Pipeline composition linter", completed_date: "2026-04-11", decision_ref: [D28]}
+      - {id: P1-005, title: "Long-running session policy (docs + scope playbook)", completed_date: "2026-04-11", decision_ref: [D50]}
+      - {id: P1-014, title: "Antigravity bootstrap adapter (rules + workflows + skill)", completed_date: "2026-04-11", decision_ref: [D19, D21, D46, D50]}
+      - {id: P1-015, title: "True multi-writer safety (write claims and lock enforcement)", completed_date: "2026-04-11", decision_ref: [D21, D46, D50]}
     tasks:
-      - id: P1-014
-        title: "Antigravity bootstrap adapter (rules + workflows + skill)"
-        decision_ref: [D19, D21, D46, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
-        note: "Ad-hoc immediate override: repo-local .agents bootstrap for standard work"
-      - id: P1-015
-        title: "True multi-writer safety (write claims and lock enforcement)"
-        decision_ref: [D21, D46, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
-        note: "Governed concurrency safety slice; blocked on P1-014 platform bootstrap stabilization"
       - id: P1-012
         title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
         decision_ref: [D21, D23, D50]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
         note: "Slice A done; complete e2e gates, spawn, ledger, IDE parity"
-      - id: P1-001
-        title: "Swarm & pipeline run ledger + resume protocol"
-        decision_ref: [D21, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-001.yaml"
-        note: "Durable .azoth run state; optional welcome surfacing"
-      - id: P1-003
-        title: "Pipeline composition linter"
-        decision_ref: [D28]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-003.yaml"
-        note: "Structural validation for pipelines/*.pipeline.yaml"
-      - id: P1-005
-        title: "Long-running session policy (docs + scope playbook)"
-        decision_ref: [D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-005.yaml"
-        note: "DYNAMIC-FULL-AUTO-style runs vs trust gates"
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
+        status: deferred
         decision_ref: [D11, D49, D51]
         spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
         note: "Deferred from P1-006 docs slice: add explicit, human-confirmed increment mechanics"
+      - id: P1-020
+        title: "Verbatim-first M3 storage strategy"
+        decision_ref: [D11, D45]
+        initiative_ref: "INI-MEM-001"
+        note: "Store raw episode context verbatim before any summarisation; enforce as M3 baseline policy"
+      - id: P1-021
+        title: "Memory operation platform parity"
+        decision_ref: [D42, D46, D52]
+        initiative_ref: "INI-PLT-001"
+        note: "Consistent M3 append, M2 promote, context-recall across Claude Code, Cursor, Copilot"
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.
@@ -421,7 +413,8 @@ initiatives:
     title: "Verbatim-first M3 storage strategy"
     category: memory
     theme: C
-    phase: null
+    phase: v0.2.0-p1
+    task_ref: P1-020
     priority: high
     summary: >
       Store raw episode context verbatim in M3 before any summarisation or compression.
@@ -527,8 +520,9 @@ initiatives:
     title: "Memory operation platform parity"
     category: platform
     theme: D
-    phase: null
-    priority: low
+    phase: v0.2.0-p1
+    task_ref: P1-021
+    priority: medium
     summary: >
       Document and validate that M3 append, M2 promote, and context-recall operations produce
       consistent, tested results across Claude Code, Cursor, and Copilot adapter paths.

@@ -257,13 +257,21 @@ _CATEGORY_ORDER = ["memory", "governance", "ux", "infra", "platform"]
 
 
 def gather_initiatives(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    """Group roadmap initiatives by category. Skips non-dict entries. Returns {} when absent."""
+    """Group unscheduled roadmap initiatives by category.
+
+    Skips non-dict entries, scheduled initiatives (phase != null), and completed ones.
+    Returns {} when absent.
+    """
     raw = data.get("initiatives")
     if not raw or not isinstance(raw, list):
         return {}
     by_category: dict[str, list[dict[str, Any]]] = {}
     for item in raw:
         if not isinstance(item, dict):
+            continue
+        if item.get("phase") is not None:
+            continue
+        if item.get("status") in ("complete", "completed"):
             continue
         cat = str(item.get("category", "uncategorized"))
         by_category.setdefault(cat, []).append(item)

@@ -12,11 +12,12 @@ SPECS_DIR = REPO / ".azoth" / "roadmap-specs" / "v0.2.0"
 
 
 def _find_task(road: dict, tid: str) -> dict | None:
-    """Find a task by id in active version tasks or initiatives (by task_ref)."""
+    """Find a task by id in active version tasks, completed_tasks, or initiatives (by task_ref)."""
     av = road["active_version"]
     for block in road["versions"]:
         if block.get("id") == av:
-            for t in block.get("tasks") or []:
+            all_tasks = (block.get("tasks") or []) + (block.get("completed_tasks") or [])
+            for t in all_tasks:
                 if t.get("id") == tid:
                     return t
     for ini in road.get("initiatives") or []:
