@@ -1,0 +1,42 @@
+# Roadmap task spec — v0.2.0
+id: P1-018
+roadmap_version: v0.2.0
+title: "Mechanically enforce azoth-deploy after source agent changes"
+decision_ref: [D46]
+
+intent: >
+  Prevent silent deploy-mirror drift when source files (agents/, .claude/commands/, skills/,
+  kernel/templates/platform-adapters/) are modified without re-running azoth-deploy.py.
+
+problem: >
+  Builder agents and human developers forget to run azoth-deploy.py after modifying source
+  files, causing deployed mirrors to diverge from canonical sources. CI tests catch it
+  but only after push — no pre-commit enforcement exists.
+
+scope:
+  - scripts/azoth-deploy.py (--check mode)
+  - .githooks/pre-commit (new)
+  - agents/tier1-core/builder.agent.md (VERIFY instruction)
+  - tests/test_azoth_deploy.py (--check tests)
+  - tests/test_pre_commit_hook.py (new)
+
+non_goals:
+  - CI workflow changes (existing pytest already catches drift)
+  - Modifying kernel/ files
+
+acceptance:
+  - azoth-deploy.py --check exits 0 on clean tree, 1 on stale tree
+  - --check and --dry-run are mutually exclusive
+  - Pre-commit hook detects source file changes and blocks commit if stale
+  - Builder agent instructions mention running azoth-deploy.py
+  - pytest green for all new tests
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+
+elasticity: >
+  Hook may evolve to support --fix (auto-run deploy) in future iterations.

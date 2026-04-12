@@ -73,6 +73,7 @@ When invoked by the Architect in a staged workflow:
    - Write new tests covering the happy path and at least one edge case.
    - Check for lint/type errors after editing.
    - If tests are unavailable, describe the verification you performed.
+   - If you changed files under `agents/`, `.claude/commands/`, `skills/`, or `kernel/templates/platform-adapters/`, run `python3 scripts/azoth-deploy.py` to regenerate platform mirrors, then verify parity with `python3 scripts/azoth-deploy.py --check`.
 
 5. DELIVER
    - Summarize what you changed and why in 2-3 sentences.

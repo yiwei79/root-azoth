@@ -1243,7 +1243,7 @@ items:
     requirement. Add azoth-deploy as a mandatory builder-stage post-action in the planner structured-autonomy-plan when any
     file under agents/ or .claude/commands/ is in the change set. Consider a pre-commit hook or CI check that fails if deployed
     mirrors diverge from source.
-  status: active
+  status: complete
   priority: 14
   target_layer: infrastructure
   target_version: v0.2.0-p1

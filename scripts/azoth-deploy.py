@@ -417,31 +417,49 @@ def iter_cursor_rule_deployments(root: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
-def deploy_cursor_rules(root: Path, dry_run: bool) -> int:
-    """Copy kernel Cursor templates into .cursor/rules/. Returns files written."""
+def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tuple[int, int]:
+    """Copy kernel Cursor templates into .cursor/rules/.
+
+    Returns (files_processed, stale_count).
+    """
     count = 0
+    stale = 0
     for template_path, dest_path in iter_cursor_rule_deployments(root):
         content = template_path.read_text(encoding="utf-8")
-        write_file(dest_path, content, root, dry_run)
+        if not write_file(dest_path, content, root, dry_run, check=check):
+            stale += 1
         count += 1
-    return count
+    return count, stale
 
 
 # ── File writing ─────────────────────────────────────────────────────────────
 
 
-def write_file(path: Path, content: str, root: Path, dry_run: bool) -> None:
-    """Write content to path, printing the relative path. Creates parent dirs."""
+def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Write content to path, printing the relative path. Creates parent dirs.
+
+    In check mode, compares computed content against on-disk content without
+    writing.  Returns True when the file is (or would be) in sync.
+    """
     try:
         rel = path.relative_to(root)
     except ValueError:
         rel = path
+    if check:
+        if not path.is_file():
+            print(f"  [missing] {rel}")
+            return False
+        if path.read_text(encoding="utf-8") != content:
+            print(f"  [stale] {rel}")
+            return False
+        return True
     if dry_run:
         print(f"  [dry-run] {rel}")
-        return
+        return True
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     print(f"  {rel}")
+    return True
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
@@ -470,10 +488,16 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("."),
         help="Project root directory (default: current directory)",
     )
-    parser.add_argument(
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be written without writing anything",
+    )
+    mode_group.add_argument(
+        "--check",
+        action="store_true",
+        help="Check that deployed files are in sync with sources (exit 1 if stale)",
     )
     parser.add_argument(
         "--platforms",
@@ -499,6 +523,7 @@ def main(argv: list[str] | None = None) -> int:
     root: Path = args.root.resolve()
     platforms: set[str] = set(args.platforms)
     dry_run: bool = args.dry_run
+    check: bool = args.check
     copilot_agent_location: str = args.copilot_agent_location
 
     if not root.is_dir():
@@ -508,9 +533,8 @@ def main(argv: list[str] | None = None) -> int:
     extra = ""
     if "copilot" in platforms:
         extra = f"  copilot-agent-location={copilot_agent_location}"
-    print(
-        f"azoth-deploy  root={root}  platforms={sorted(platforms)}  dry-run={dry_run}{extra}\n"
-    )
+    mode_label = "check" if check else f"dry-run={dry_run}"
+    print(f"azoth-deploy  root={root}  platforms={sorted(platforms)}  {mode_label}{extra}\n")
 
     agents = load_agents(root)
     commands = load_commands(root)
@@ -519,6 +543,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"sources: {len(agents)} agents, {len(commands)} commands, {len(skills)} skills\n")
 
     count = 0
+    stale = 0
 
     # ── Agents ───────────────────────────────────────────────────────────────
     if agents:
@@ -527,34 +552,40 @@ def main(argv: list[str] | None = None) -> int:
         if _deploy_claude_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".claude" / "agents" / f"{name}.md",
                     transform_agent_claude(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if _deploy_github_agents(platforms, copilot_agent_location):
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".github" / "agents" / f"{name}.agent.md",
                     transform_agent_copilot(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if "opencode" in platforms:
             for agent in agents:
                 name = agent["meta"]["name"]
-                write_file(
+                if not write_file(
                     root / ".opencode" / "agents" / f"{name}.md",
                     transform_agent_opencode(agent),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         print()
@@ -565,32 +596,38 @@ def main(argv: list[str] | None = None) -> int:
 
         if "copilot" in platforms:
             for cmd in commands:
-                write_file(
+                if not write_file(
                     root / ".github" / "prompts" / f"{cmd['name']}.prompt.md",
                     transform_command_copilot(cmd),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if "opencode" in platforms:
             for cmd in commands:
-                write_file(
+                if not write_file(
                     root / ".opencode" / "commands" / f"{cmd['name']}.md",
                     transform_command_opencode(cmd),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         if "antigravity" in platforms:
             for cmd in commands:
-                write_file(
+                if not write_file(
                     root / ".agents" / "workflows" / f"{cmd['name']}.md",
                     transform_command_antigravity(cmd),
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
 
         print()
@@ -600,28 +637,33 @@ def main(argv: list[str] | None = None) -> int:
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
             if "opencode" in platforms:
-                write_file(
+                if not write_file(
                     root / ".opencode" / "skills" / skill["name"] / "SKILL.md",
                     skill["raw"],
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
             if "antigravity" in platforms:
-                write_file(
+                if not write_file(
                     root / ".agents" / "skills" / skill["name"] / "SKILL.md",
                     skill["raw"],
                     root,
                     dry_run,
-                )
+                    check=check,
+                ):
+                    stale += 1
                 count += 1
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────
     if "cursor" in platforms:
         print("── cursor rules ────────────────────────────────────────────────")
-        n = deploy_cursor_rules(root, dry_run)
+        n, s = deploy_cursor_rules(root, dry_run, check=check)
         count += n
+        stale += s
         if n == 0:
             print(
                 f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
@@ -643,7 +685,8 @@ def main(argv: list[str] | None = None) -> int:
                 out_name = path.name.removesuffix(".template")
                 dest = dest_dir / out_name
                 content = path.read_text(encoding="utf-8")
-                write_file(dest, content, root, dry_run)
+                if not write_file(dest, content, root, dry_run, check=check):
+                    stale += 1
                 n += 1
             count += n
         print()
@@ -651,9 +694,19 @@ def main(argv: list[str] | None = None) -> int:
     # ── AGENTS.md ────────────────────────────────────────────────────────────
     if agents:
         print("── AGENTS.md ───────────────────────────────────────────────────")
-        write_file(root / "AGENTS.md", generate_agents_md(agents), root, dry_run)
+        if not write_file(
+            root / "AGENTS.md", generate_agents_md(agents), root, dry_run, check=check
+        ):
+            stale += 1
         count += 1
         print()
+
+    if check:
+        if stale > 0:
+            print(f"✗ {stale}/{count} file(s) out of sync. Run: python3 scripts/azoth-deploy.py")
+            return 1
+        print(f"done. All {count} file(s) in sync.")
+        return 0
 
     verb = "Would write" if dry_run else "Wrote"
     print(f"done. {verb} {count} files.")

@@ -41,6 +41,7 @@ transform_command_opencode = _mod.transform_command_opencode
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
 load_commands = _mod.load_commands
+write_file = _mod.write_file
 main = _mod.main
 
 
@@ -479,7 +480,7 @@ def test_deploy_cursor_rules_writes_matching_content(
         src = "---\nalwaysApply: true\n---\n\n# Rule\n"
         (adapter / "test-rule.mdc.template").write_text(src, encoding="utf-8")
         monkeypatch.setenv("AZOTH_CURSOR_RULES_DIR", str(rules_out))
-        n = deploy_cursor_rules(root, dry_run=False)
+        n, _ = deploy_cursor_rules(root, dry_run=False)
         assert n == 1
         out = rules_out / "test-rule.mdc"
         assert out.read_text(encoding="utf-8") == src
@@ -672,3 +673,75 @@ def test_orchestrator_archetype_line_count_ceiling() -> None:
     assert len(lines) <= 400, (
         f"orchestrator.agent.md is {len(lines)} lines, exceeds 400-line ceiling"
     )
+
+
+# ── --check mode ──────────────────────────────────────────────────────────────
+
+
+def test_check_mode_clean_returns_zero(tmp_path: Path) -> None:
+    """Deploy then --check → exit 0 (everything in sync)."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 0
+
+
+def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
+    """Deploy, mutate a mirror file, then --check → exit 1."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    # Corrupt a deployed file
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert agent_mirror.is_file()
+    agent_mirror.write_text("corrupted content", encoding="utf-8")
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_missing_returns_one(tmp_path: Path) -> None:
+    """Deploy, delete a mirror file, then --check → exit 1."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot"])
+    assert rc == 0
+
+    # Remove a deployed file
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert agent_mirror.is_file()
+    agent_mirror.unlink()
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_and_dry_run_mutually_exclusive() -> None:
+    """--check and --dry-run together → SystemExit(2) from argparse."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--check", "--dry-run"])
+    assert exc_info.value.code == 2
+
+
+def test_check_mode_does_not_write(tmp_path: Path) -> None:
+    """Running --check on a missing file must NOT create it."""
+    _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
+
+    # Run check without prior deploy — files should be missing
+    agent_mirror = tmp_path / ".claude" / "agents" / "architect.md"
+    assert not agent_mirror.exists()
+
+    rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+    # The file must still not exist
+    assert not agent_mirror.exists()
