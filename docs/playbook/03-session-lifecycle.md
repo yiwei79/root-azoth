@@ -84,6 +84,22 @@ Before any work begins, a **scope gate** records what was approved:
 This file (`.azoth/scope-gate.json`) acts as a **lock** — agents can only
 write code when the scope gate is approved and unexpired.
 
+### TTL Management (v2)
+
+The scope gate has a **2-hour TTL**. The orchestrator now manages this actively:
+
+```
+  TTL Status           Action
+  ──────────           ──────
+  > 15 min remaining   Keep going normally.
+  < 15 min remaining   TTL card: extend / checkpoint / abort.
+  Expired              Pipeline halts. Re-scope with /next.
+```
+
+**In-place extension**: the orchestrator can extend TTL by 1 hour mid-pipeline
+without full re-scoping — it updates `expires_at` directly and surfaces a card
+so you always know.
+
 ### Agent Stages Run
 
 Each stage runs in sequence with typed handoffs:

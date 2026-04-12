@@ -100,12 +100,13 @@ everything in **one card**:
 │                                                        │
 │  Classification: skills / additive / simple / known    │
 │  Scope: session: abc123 | TTL: 2h | layer: mineral    │
+│  Model tier: standard                                  │
 │                                                        │
 │  Composed Pipeline:                                    │
-│    1. planner    — Sonnet  — gate: agent               │
-│    2. evaluator  — Sonnet  — gate: agent               │
-│    3. builder    — Sonnet  — gate: agent               │
-│    4. architect  — Sonnet  — gate: agent (review)      │
+│    1. planner    — standard — gate: agent              │
+│    2. evaluator  — standard — gate: agent              │
+│    3. builder    — standard — gate: agent              │
+│    4. architect  — standard — gate: agent (review)     │
 │                                                        │
 │  Approve scope + pipeline? [yes / adjust / abort]      │
 └────────────────────────────────────────────────────────┘
@@ -144,6 +145,26 @@ After approval, agents run in sequence. Each agent:
 ```
 
 **If any gate fails**, the pipeline stops and escalates to you.
+
+### Mid-Pipeline Adaptation (v2)
+
+The orchestrator no longer rigidly follows the original pipeline. After each
+stage, it checks for **deviation signals**:
+
+```
+  After Stage N completes:
+  ┌─────────────────────────────────────────────────────────┐
+  │ ✓ Complexity upgraded?    → Re-scope Card to human      │
+  │ ✓ Kernel surface found?   → Halt, present human gate    │
+  │ ✓ Entropy spiking?        → Offer: narrow / split / go  │
+  │ ✓ Eval < 0.80?            → Insert architect review     │
+  │ ✓ Tests missing?          → Insert builder test stage    │
+  └─────────────────────────────────────────────────────────┘
+```
+
+If a deviation is found, the orchestrator can **insert**, **skip**, or
+**reorder** stages — then surfaces the change to you for approval.
+The pipeline adapts to what it discovers, not just what was planned.
 
 ### Step 5 — Done
 
@@ -230,9 +251,13 @@ For complex, exploratory work where you don't know the solution yet:
 ```
 
 DFA uses **model tiering** for cost efficiency:
-- **Opus**: architect synthesis, final review (heavy reasoning)
-- **Sonnet**: research, planning, evaluation, building (standard)
-- **Haiku**: explore swarms (fast codebase scanning)
+- **Premium**: architect synthesis, governance review (heavy reasoning)
+- **Standard**: research, planning, evaluation, building (default)
+- **Fast**: explore swarms, docs, cosmetic fixes (quick scanning)
+
+> Model tiering now applies to **all** pipelines, not just DFA. The
+> orchestrator sets `model_tier: premium | standard | fast` on every spawn
+> based on risk and complexity. See the orchestrator's Model Tiering section.
 
 ---
 

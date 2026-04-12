@@ -38,12 +38,13 @@ combining scope and pipeline:
 │                                                            │
 │  Classification: skills / additive / medium / known-pattern│
 │  Scope: session: a1b2c3 | TTL: 2h | layer: mineral        │
+│  Model tier: standard                                      │
 │                                                            │
 │  Composed Pipeline:                                        │
-│    1. planner    — Sonnet — gate: agent                    │
-│    2. evaluator  — Sonnet — gate: agent                    │
-│    3. builder    — Sonnet — gate: agent                    │
-│    4. architect  — Sonnet — gate: agent (review)           │
+│    1. planner    — standard — gate: agent                  │
+│    2. evaluator  — standard — gate: agent                  │
+│    3. builder    — standard — gate: agent                  │
+│    4. architect  — standard — gate: agent (review)         │
 │                                                            │
 │  Rationale: medium + additive + known-pattern (Rule 8)     │
 │             — reviewer skipped, evaluator retains quality.  │
@@ -178,3 +179,17 @@ Azoth: Launching discovery swarms...
 3. **Use `/dynamic-full-auto`** when you're exploring, not building
 4. **Always `/session-closeout`** — it's how Azoth learns and improves
 5. **Trust the gates** — they catch problems before they become expensive
+
+## What's New (Orchestrator v2)
+
+| Feature | What it does |
+|---------|-------------|
+| **Decision table** | Clear inline vs pipeline routing — no ambiguity on what gets a pipeline |
+| **Mid-pipeline adaptation** | Orchestrator detects deviations and can insert/skip/reorder stages |
+| **Model tiering** | `premium` / `standard` / `fast` on every spawn — cost matches complexity |
+| **Token budget** | Tracks context consumption, auto-compresses at 80%, checkpoints at 95% |
+| **TTL management** | Active TTL monitoring with in-place extension (no full re-scope mid-pipeline) |
+| **Memory consultation** | Checks M3 episodes before classification — suggests prior pipelines for similar goals |
+| **Error recovery** | Retry policy + circuit breaker (3 failures → halt + diagnostic card) |
+| **Evaluator dispatch** | E1-E6 triggers decide single eval (0.85) vs swarm eval (0.90) automatically |
+| **Agent binding** | `/start` and `/next` now keep orchestrator agent context across all platforms |
