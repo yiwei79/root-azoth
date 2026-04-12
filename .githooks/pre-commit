@@ -16,11 +16,15 @@ SOURCE_PATTERNS = (
 
 
 def main() -> int:
-    result = subprocess.run(
-        ["git", "diff", "--cached", "--name-only"],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print("azoth-deploy: git not found, skipping mirror check", file=sys.stderr)
+        return 0
     staged = result.stdout.strip().splitlines()
 
     if not any(f.startswith(p) for f in staged for p in SOURCE_PATTERNS):

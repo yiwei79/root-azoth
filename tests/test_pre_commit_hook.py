@@ -9,6 +9,10 @@ Covers:
 
 from __future__ import annotations
 
+import subprocess
+from typing import Any
+
+import pytest
 import importlib.util
 from pathlib import Path
 
@@ -55,3 +59,61 @@ def test_all_patterns_match() -> None:
     for pattern in SOURCE_PATTERNS:
         path = representatives[pattern]
         assert _matches(path), f"Pattern {pattern!r} should match {path!r}"
+
+
+# ── main() integration tests (mocked subprocess) ─────────────────────────────
+
+
+def test_main_no_source_files_returns_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When no staged files match source patterns, main() returns 0 without invoking deploy."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="README.md\nscripts/foo.py\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert _mod.main() == 0
+    assert len(calls) == 1  # only git diff, no deploy check
+
+
+def test_main_source_file_deploy_clean_returns_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When staged source files exist and deploy --check passes, main() returns 0."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        if "diff" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="agents/foo.agent.md\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert _mod.main() == 0
+    assert len(calls) == 2  # git diff + deploy check
+
+
+def test_main_source_file_deploy_stale_returns_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When staged source files exist and deploy --check fails, main() returns 1."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        if "diff" in cmd:
+            return subprocess.CompletedProcess(
+                cmd, 0, stdout=".claude/commands/auto.md\n", stderr=""
+            )
+        return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert _mod.main() == 1
+    assert len(calls) == 2
+
+
+def test_main_git_not_found_returns_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When git is not found, main() returns 0 gracefully (skip check)."""
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        raise FileNotFoundError("git not found")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert _mod.main() == 0
