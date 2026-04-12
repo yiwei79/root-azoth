@@ -1259,7 +1259,8 @@ items:
   description: Rule 10 inline fallback clause uses only trivially-clear examples (fix this function, explain this error).
     Add 1-2 examples of ambiguous requests with explicit guidance for the gray zone between orchestrate and inline. Reference
     the orchestrator Goal Clarification protocol for the ask-one-question pattern.
-  status: active
+  status: complete
+  completed_date: '2026-04-12'
   priority: 15
   target_layer: infrastructure
   target_version: v0.2.0-p1
