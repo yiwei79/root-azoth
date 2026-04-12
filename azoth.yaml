@@ -45,6 +45,7 @@ platforms:
   claude_code: primary
   opencode: compatible  # Reads CLAUDE.md natively
   copilot: adapter      # Via .github/ files
+  codex: adapter        # Via .codex/ + .agents/ files
 
 # Sync source (set when configured)
 sync:

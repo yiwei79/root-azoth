@@ -6,11 +6,15 @@ Transforms:
   agents/**/*.agent.md  →  .claude/agents/<name>.md            (Claude Code)
                                                 →  .github/agents/<name>.agent.md      (GitHub Copilot compatibility mirror)
                         →  .opencode/agents/<name>.md          (OpenCode)
+                        →  .codex/agents/<name>.toml           (Codex custom agents)
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
   skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+                        →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
                         →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
+  kernel/templates/platform-adapters/codex/*.template
+                        →  .codex/*                            (Codex project adapter files)
   (synthesized)         →  AGENTS.md                          (AAIF cross-platform broadcast)
 
 Usage:
@@ -19,6 +23,7 @@ Usage:
   python scripts/azoth-deploy.py --platforms claude copilot
     python scripts/azoth-deploy.py --platforms copilot --copilot-agent-location claude
   python scripts/azoth-deploy.py --platforms cursor
+  python scripts/azoth-deploy.py --platforms codex
   python scripts/azoth-deploy.py --root /path/to/project
 
 Environment:
@@ -213,6 +218,19 @@ def _description(meta: dict[str, Any]) -> str:
     return str(meta.get("description") or meta.get("role") or meta.get("name", ""))
 
 
+def _toml_escape_basic(value: str) -> str:
+    """Escape a TOML basic string value for one-line fields."""
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _toml_multiline_literal(value: str) -> str:
+    """Render a TOML multiline literal string."""
+    if "'''" in value:
+        raise ValueError("TOML multiline literal strings cannot contain triple single quotes")
+    body = value.rstrip("\n")
+    return "'''\n" + body + "\n'''"
+
+
 def transform_agent_claude(agent: dict[str, Any]) -> str:
     """
     Claude Code agent format (.claude/agents/<name>.md).
@@ -263,6 +281,22 @@ def transform_agent_opencode(agent: dict[str, Any]) -> str:
     fm["permission"] = posture_to_permissions(tier, effective)
 
     return render_frontmatter(fm) + agent["body"]
+
+
+def transform_agent_codex(agent: dict[str, Any]) -> str:
+    """
+    Codex custom agent format (.codex/agents/<name>.toml).
+    Required fields: name, description, developer_instructions.
+    """
+    meta = agent["meta"]
+    lines = [
+        f'name = "{_toml_escape_basic(str(meta["name"]))}"',
+        f'description = "{_toml_escape_basic(_description(meta))}"',
+        "developer_instructions = " + _toml_multiline_literal(agent["body"]),
+    ]
+    if "model" in meta:
+        lines.append(f'model = "{_toml_escape_basic(str(meta["model"]))}"')
+    return "\n".join(lines) + "\n"
 
 
 # ── Command transformations ──────────────────────────────────────────────────
@@ -372,6 +406,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
+        "| Codex | `.codex/agents/*.toml` | literal Azoth tokens + `.claude/commands/` contract | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
@@ -382,6 +417,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
 # ── Cursor IDE rules (kernel templates → .cursor/rules/) ────────────────────
 
 CURSOR_ADAPTER_DIR = Path("kernel/templates/platform-adapters/cursor")
+CODEX_ADAPTER_DIR = Path("kernel/templates/platform-adapters/codex")
 
 
 def cursor_rules_dest_dir(root: Path) -> Path:
@@ -432,6 +468,33 @@ def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tu
     return count, stale
 
 
+def iter_codex_adapter_deployments(root: Path) -> list[tuple[Path, Path]]:
+    """Map Codex adapter templates to their deployed .codex destinations."""
+    adapter = root / CODEX_ADAPTER_DIR
+    return [
+        (adapter / "config.toml.template", root / ".codex" / "config.toml"),
+        (adapter / "hooks.json.template", root / ".codex" / "hooks.json"),
+        (
+            adapter / "user_prompt_submit_router.py.template",
+            root / ".codex" / "hooks" / "user_prompt_submit_router.py",
+        ),
+    ]
+
+
+def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> tuple[int, int]:
+    """Copy kernel Codex templates into .codex/."""
+    count = 0
+    stale = 0
+    for template_path, dest_path in iter_codex_adapter_deployments(root):
+        if not template_path.is_file():
+            continue
+        content = template_path.read_text(encoding="utf-8")
+        if not write_file(dest_path, content, root, dry_run, check=check):
+            stale += 1
+        count += 1
+    return count, stale
+
+
 # ── File writing ─────────────────────────────────────────────────────────────
 
 
@@ -464,7 +527,7 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bo
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "antigravity")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity")
 COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
 
 
@@ -588,6 +651,19 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
 
+        if "codex" in platforms:
+            for agent in agents:
+                name = agent["meta"]["name"]
+                if not write_file(
+                    root / ".codex" / "agents" / f"{name}.toml",
+                    transform_agent_codex(agent),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
         print()
 
     # ── Commands ─────────────────────────────────────────────────────────────
@@ -633,7 +709,7 @@ def main(argv: list[str] | None = None) -> int:
         print()
 
     # ── Skills ───────────────────────────────────────────────────────────────
-    if skills and ("opencode" in platforms or "antigravity" in platforms):
+    if skills and ("opencode" in platforms or "antigravity" in platforms or "codex" in platforms):
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
             if "opencode" in platforms:
@@ -646,7 +722,7 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     stale += 1
                 count += 1
-            if "antigravity" in platforms:
+            if "antigravity" in platforms or "codex" in platforms:
                 if not write_file(
                     root / ".agents" / "skills" / skill["name"] / "SKILL.md",
                     skill["raw"],
@@ -667,6 +743,19 @@ def main(argv: list[str] | None = None) -> int:
         if n == 0:
             print(
                 f"  [warning] no *.mdc.template files under {CURSOR_ADAPTER_DIR}",
+                file=sys.stderr,
+            )
+        print()
+
+    # ── Codex adapter (kernel templates) ──────────────────────────────────────
+    if "codex" in platforms:
+        print("── codex adapter ───────────────────────────────────────────────")
+        n, s = deploy_codex_adapter(root, dry_run, check=check)
+        count += n
+        stale += s
+        if n == 0:
+            print(
+                f"  [warning] no template files under {CODEX_ADAPTER_DIR}",
                 file=sys.stderr,
             )
         print()

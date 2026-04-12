@@ -6,6 +6,7 @@ Covers:
 - posture_to_permissions: tier baseline, keyword narrowing, word-boundary regression
 - transform_agent_claude: correct fields, Azoth fields stripped
 - transform_agent_copilot: name/description required, tools/model optional
+- transform_agent_codex: TOML custom-agent output
 - transform_agent_opencode: no name field, mode from tier, permission object
 - transform_command_copilot: mode:agent added
 - transform_command_opencode: description preserved, body unchanged
@@ -21,6 +22,11 @@ from pathlib import Path
 
 import pytest
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 test env
+    import tomli as tomllib
+
 # Load the script as a module without executing main()
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "azoth-deploy.py"
 _spec = importlib.util.spec_from_file_location("azoth_deploy", _SCRIPT)
@@ -35,12 +41,17 @@ effective_posture_for_permissions = _mod.effective_posture_for_permissions
 UNIVERSAL_NEVER_AUTO = _mod.UNIVERSAL_NEVER_AUTO
 transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
+transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
 transform_command_opencode = _mod.transform_command_opencode
+iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
+deploy_codex_adapter = _mod.deploy_codex_adapter
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
+load_agents = _mod.load_agents
 load_commands = _mod.load_commands
+load_skills = _mod.load_skills
 write_file = _mod.write_file
 main = _mod.main
 
@@ -239,6 +250,34 @@ def test_copilot_agent_no_tools_omitted() -> None:
     assert "tools" not in meta
 
 
+# ── transform_agent_codex ─────────────────────────────────────────────────────
+
+
+def test_codex_agent_required_fields() -> None:
+    out = transform_agent_codex(_ARCHITECT)
+    data = tomllib.loads(out)
+    assert data["name"] == "architect"
+    assert data["description"] == "Design, constraints, alignment"
+    assert "developer_instructions" in data
+
+
+def test_codex_agent_body_preserved() -> None:
+    out = transform_agent_codex(_ARCHITECT)
+    data = tomllib.loads(out)
+    assert "You are the Architect." in data["developer_instructions"]
+
+
+def test_codex_agent_model_optional() -> None:
+    out_no_model = transform_agent_codex(_ARCHITECT)
+    data_no_model = tomllib.loads(out_no_model)
+    assert "model" not in data_no_model
+
+    agent_with_model = {**_ARCHITECT, "meta": {**_ARCHITECT["meta"], "model": "gpt-5.4"}}
+    out_with_model = transform_agent_codex(agent_with_model)
+    data_with_model = tomllib.loads(out_with_model)
+    assert data_with_model["model"] == "gpt-5.4"
+
+
 # ── transform_agent_opencode ─────────────────────────────────────────────────
 
 
@@ -384,6 +423,29 @@ def _write_minimal_command(root: Path) -> None:
     )
 
 
+def _write_minimal_skill(root: Path) -> None:
+    path = root / "skills" / "context-map" / "SKILL.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\nname: context-map\ndescription: Map context.\n---\n\nUse this skill.\n",
+        encoding="utf-8",
+    )
+
+
+def _write_codex_templates(root: Path) -> None:
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True, exist_ok=True)
+    (adapter / "config.toml.template").write_text(
+        'approval_policy = "on-request"\n',
+        encoding="utf-8",
+    )
+    (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
+    (adapter / "user_prompt_submit_router.py.template").write_text(
+        "#!/usr/bin/env python3\n",
+        encoding="utf-8",
+    )
+
+
 def test_main_copilot_default_agent_location_is_claude(tmp_path: Path) -> None:
     _write_minimal_agent(tmp_path)
     _write_minimal_command(tmp_path)
@@ -444,7 +506,64 @@ def test_main_copilot_agent_location_both_writes_both_agent_formats(tmp_path: Pa
     assert (tmp_path / ".github" / "agents" / "architect.agent.md").is_file()
 
 
+def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
+    _write_minimal_agent(tmp_path)
+    _write_minimal_skill(tmp_path)
+    _write_codex_templates(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "codex"])
+
+    assert rc == 0
+    assert (tmp_path / ".codex" / "agents" / "architect.toml").is_file()
+    assert (tmp_path / ".agents" / "skills" / "context-map" / "SKILL.md").is_file()
+    assert (tmp_path / ".codex" / "config.toml").is_file()
+    assert (tmp_path / ".codex" / "hooks.json").is_file()
+    assert (tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py").is_file()
+
+
 # ── Cursor rule deployment ────────────────────────────────────────────────────
+
+
+def test_iter_codex_adapter_deployments_maps_templates() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        (adapter / "config.toml.template").write_text('approval_policy = "on-request"\n', encoding="utf-8")
+        (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        pairs = iter_codex_adapter_deployments(root)
+        assert len(pairs) == 3
+        dests = {p[1].as_posix() for p in pairs}
+        assert root.joinpath(".codex", "config.toml").as_posix() in dests
+        assert root.joinpath(".codex", "hooks.json").as_posix() in dests
+        assert root.joinpath(".codex", "hooks", "user_prompt_submit_router.py").as_posix() in dests
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_writes_matching_content() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        hooks = "{\"hooks\": {}}\n"
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+        assert n == 3
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(
+            encoding="utf-8"
+        ) == router
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def test_iter_cursor_rule_deployments_maps_templates() -> None:
@@ -523,6 +642,36 @@ def test_deployed_opencode_commands_match_transform() -> None:
         actual = dest.read_text(encoding="utf-8")
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_agents_match_transform() -> None:
+    """`.codex/agents/*.toml` must match `transform_agent_codex` output."""
+    agents = load_agents(_REPO_ROOT)
+    assert agents, "expected agents/**/*.agent.md"
+    for agent in agents:
+        expected = transform_agent_codex(agent)
+        dest = _REPO_ROOT / ".codex" / "agents" / f"{agent['meta']['name']}.toml"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Codex agent drift for {agent['meta']['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_skill_mirror_matches_canonical() -> None:
+    """`.agents/skills/<name>/SKILL.md` must mirror canonical repo skills for Codex discovery."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
+    for skill in skills:
+        dest = _REPO_ROOT / ".agents" / "skills" / skill["name"] / "SKILL.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert dest.read_text(encoding="utf-8") == skill["raw"], (
+            f"Codex skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
         )
 
 

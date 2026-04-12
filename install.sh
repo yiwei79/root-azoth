@@ -60,6 +60,11 @@ if [ -f "opencode.jsonc" ] || [ -d ".opencode" ] || command -v opencode &>/dev/n
     info "Detected: OpenCode"
 fi
 
+if [ -d ".codex" ] || command -v codex &>/dev/null; then
+    PLATFORMS="${PLATFORMS}codex "
+    info "Detected: Codex"
+fi
+
 if [ -d ".github" ] || [ -f ".github/copilot-instructions.md" ]; then
     PLATFORMS="${PLATFORMS}copilot "
     info "Detected: GitHub Copilot"
@@ -187,6 +192,15 @@ for platform in $PLATFORMS; do
                 "$SCRIPT_DIR/kernel/templates/platform-adapters/opencode/opencode.jsonc.template" > "opencode.jsonc"
             ok "OpenCode configured (.opencode/, opencode.jsonc)"
             ;;
+        codex)
+            info "Setting up Codex..."
+            mkdir -p ".codex/agents" ".codex/hooks"
+            cp "$SCRIPT_DIR/kernel/templates/platform-adapters/codex/config.toml.template" ".codex/config.toml"
+            cp "$SCRIPT_DIR/kernel/templates/platform-adapters/codex/hooks.json.template" ".codex/hooks.json"
+            cp "$SCRIPT_DIR/kernel/templates/platform-adapters/codex/user_prompt_submit_router.py.template" \
+                ".codex/hooks/user_prompt_submit_router.py"
+            ok "Codex configured (.codex/)"
+            ;;
         copilot)
             info "Setting up GitHub Copilot..."
             mkdir -p ".github/agents" ".github/prompts"
@@ -202,6 +216,10 @@ if [ "$INSTALL_SKILLS" = true ] && [ -d "$SCRIPT_DIR/skills" ]; then
     info "Installing skills..."
     mkdir -p "skills"
     cp -r "$SCRIPT_DIR/skills/"* "skills/" 2>/dev/null || warn "No skills found to install"
+    if [[ " $PLATFORMS " == *" codex "* ]]; then
+        mkdir -p ".agents/skills"
+        cp -r "$SCRIPT_DIR/skills/"* ".agents/skills/" 2>/dev/null || warn "No Codex skills found to install"
+    fi
     ok "Skills installed"
 elif [ "$INSTALL_SKILLS" = true ]; then
     warn "Skills directory not found in Azoth source (Phase 2 not yet built)"

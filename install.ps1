@@ -53,6 +53,11 @@ if ((Test-Path "opencode.jsonc") -or (Test-Path ".opencode") -or (Get-Command op
     Info "Detected: OpenCode"
 }
 
+if ((Test-Path ".codex") -or (Get-Command codex -ErrorAction SilentlyContinue)) {
+    $PLATFORMS += "codex"
+    Info "Detected: Codex"
+}
+
 if ((Test-Path ".github") -or (Test-Path ".github\copilot-instructions.md")) {
     $PLATFORMS += "copilot"
     Info "Detected: GitHub Copilot"
@@ -176,6 +181,15 @@ foreach ($platform in $PLATFORMS) {
             $ocTemplate | Set-Content "opencode.jsonc" -NoNewline
             Ok "OpenCode configured (.opencode\, opencode.jsonc)"
         }
+        "codex" {
+            Info "Setting up Codex..."
+            New-Item -ItemType Directory -Force -Path ".codex\agents" | Out-Null
+            New-Item -ItemType Directory -Force -Path ".codex\hooks" | Out-Null
+            Copy-Item "$SCRIPT_DIR\kernel\templates\platform-adapters\codex\config.toml.template" ".codex\config.toml"
+            Copy-Item "$SCRIPT_DIR\kernel\templates\platform-adapters\codex\hooks.json.template" ".codex\hooks.json"
+            Copy-Item "$SCRIPT_DIR\kernel\templates\platform-adapters\codex\user_prompt_submit_router.py.template" ".codex\hooks\user_prompt_submit_router.py"
+            Ok "Codex configured (.codex\)"
+        }
         "copilot" {
             Info "Setting up GitHub Copilot..."
             New-Item -ItemType Directory -Force -Path ".github\agents" | Out-Null
@@ -193,6 +207,10 @@ if ($INSTALL_SKILLS -and (Test-Path "$SCRIPT_DIR\skills")) {
     Info "Installing skills..."
     New-Item -ItemType Directory -Force -Path "skills" | Out-Null
     Copy-Item "$SCRIPT_DIR\skills\*" "skills\" -Recurse -ErrorAction SilentlyContinue
+    if ($PLATFORMS -contains "codex") {
+        New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
+        Copy-Item "$SCRIPT_DIR\skills\*" ".agents\skills\" -Recurse -ErrorAction SilentlyContinue
+    }
     Ok "Skills installed"
 } elseif ($INSTALL_SKILLS) {
     Warn "Skills directory not found in Azoth source (Phase 2 not yet built)"

@@ -20,7 +20,7 @@ alignment point.
 
 **Version**: v0.1.6
 **Primary platform**: Claude Code (CLI + VS Code extension)
-**Also compatible**: OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
+**Also compatible**: Codex (via `.codex/` + `.agents/` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
 
 ## Project Routing
