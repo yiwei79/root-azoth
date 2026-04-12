@@ -1,33 +1,28 @@
 # Azoth Bootloader State
 
-Last updated: 2026-04-12 (session-closeout ep-131 — orchestrator v2, agent binding fix, playbook update)
-
 ## Current Phase
+v0.1.1.37 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
 
-Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.1.36** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0-p1`, `current_patch: 36` · **Git:** branch **`patch/v0.2.0-p1-copilot-pipeline-memory-parity`**.
+## Last Session
+- **Session**: 2026-04-12-p1-013-orchestrator-default
+- **Platform**: Copilot CLI (Opus 4.6)
+- **Delivered**: P1-013 — Explicit main-session orchestrator default (Claude Code + Copilot role parity)
+- **Pipeline**: deliver-full (7-stage governed)
+- **Eval**: eval-swarm PASS (0.961 aggregate, 0.90 bar)
+- **Episodes**: ep-133 (delivery), ep-134 (self-improvement meta-observations)
+- **Version bump**: 0.1.1.36 → 0.1.1.37
 
-## Session outcome (ep-131) — Orchestrator v2 + Agent Binding Fix (Copilot worktree)
+## Key Changes This Session
+1. CLAUDE.md rule 10: Orchestrator as default session persona with yield + inline-fallback clauses
+2. .github/copilot-instructions.md: Default agent persona section with scope note
+3. agents/tier1-core/orchestrator.agent.md: Stale DFA e2e friction branch ref → P1-013 resolved
+4. docs/platform-guides/orchestrator-default-entry.md: §Deferred Work superseded by P1-013
+5. Backlog + roadmap closed P1-013; added P1-018, P1-019 from eval-swarm
 
-- **Agent reset fix**: Added `agent: orchestrator` to `start.md` and `next.md` source commands. Deployed to Copilot, OpenCode, Cursor. Tests T6-T8 verify binding.
-- **Orchestrator v2 intelligence upgrade**: 6 new sections (Mid-Pipeline Adaptation, Model Tiering, Token Budget, Session Lifecycle, Memory Integration, Error Recovery). Extended Inline vs Orchestrate (decision table), Gate Handling (E1-E6 evaluator dispatch), Platform Parity (Cursor + start/next). 390/400 lines, tests T9-T10.
-- **Advisory findings resolved**: model_tier in BL-011 template (subagent-router), TTL extension documented in AZOTH_ARCHITECTURE.md P1-005.
-- **Playbook updated**: All 4 guides refreshed for v2 features — model tiering, mid-pipeline adaptation, TTL management, What's New table.
-- 4 commits, 23 files changed, 774 insertions. Evaluator score: 0.93. Architect: APPROVED.
+## Open Decisions
+- None from this session
 
-## Previous session (ep-130) — P1-009 + P1-010
-
-- P1-009 Cursor session-open parity. P1-010 eval wiring confirmed green. 1 commit, 3 files.
-
-## Previous session (ep-129) — Pipeline UX, playbook, co-author hook
-
-- S1-S4 pipeline UX, playbook (4 guides), co-author governance hook, Copilot notify utility. 12 commits, 41 files.
-
-## Open decisions
-
-- P1-008 kernel gap: `kernel/BOOTLOADER.md` L87 knowledge enum needs kernel-authorized session.
-- Whether to fold W2 handoff duties into `scripts/do_closeout.py`.
-
-## Next action
-
-Run `/next` → P1-013 (Explicit main-session orchestrator default — M1 governed) or P1-008 (auto-router L2 / self-improve — M1 governed). Both require a governed delivery session.
+## Next Action
+- P1-018: Mechanically enforce azoth-deploy after source agent changes (priority 14, infrastructure/standard)
+- P1-019: Add ambiguous-case examples to CLAUDE.md rule 10 (priority 15, infrastructure/standard)
+- P1-008: auto-router L2 / self-improve lane (priority 13, M1/governed — timing: let auto-router rules bake first)
