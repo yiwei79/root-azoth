@@ -74,6 +74,23 @@ pipeline ensures reviewer validation and evaluator quality gates on instruction
 changes. An l2-evidence-review phase is injected into the architect stage so
 evidence is analyzed before planning begins.
 
+The **l2-evidence-review** phase is defined as the following sequence of steps,
+executed by the Architect at the start of the stage, before any planning brief
+is produced:
+
+1. **Read M3 episodes** — load `.azoth/memory/episodes.jsonl` and filter for
+   entries tagged `instruction-refinement`; extract friction signals, failed
+   patterns, and improvement candidates recorded in prior sessions.
+2. **Load M2 patterns** — scan `.azoth/memory/patterns.yaml` (or equivalent
+   promoted patterns store) for any patterns that bear on the target instruction
+   surface; note convergence or divergence with the current surface.
+3. **Surface L2 evidence** — produce a concise evidence summary (≤ 10 bullet
+   points) listing: candidate instructions to change, supporting episode count,
+   and severity (friction / regression / gap).
+4. **Anchor the architect brief** — the evidence summary is attached as the
+   first section of the architect's planning output so the reviewer and planner
+   receive grounded L2 context, not a blank-slate design.
+
 **Rule 5 (docs)** — Documentation changes are low-risk by definition. An
 abbreviated pipeline eliminates unnecessary review and evaluation overhead
 while preserving the architect-close gate.

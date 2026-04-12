@@ -46,6 +46,7 @@ composition_rules:
 
     - condition: "knowledge == instruction-refinement"
       pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+      inject: "l2-evidence-review into architect"
 
     - condition: "scope == docs"
       pipeline: [architect, builder, architect]

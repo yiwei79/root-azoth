@@ -232,3 +232,121 @@ def test_auto_router_cross_file_consistency() -> None:
             f"Condition {condition!r} missing from "
             f"pipelines/auto.pipeline.yaml — skill and pipeline are out of sync"
         )
+
+
+# ── P1-008: inject field and l2-evidence-review phase ────────────────────────
+
+
+def test_pipeline_instruction_refinement_inject_field() -> None:
+    """auto.pipeline.yaml instruction-refinement rule must have an inject field.
+
+    Verifies:
+    - The rule with condition 'knowledge == instruction-refinement' has an 'inject' key
+    - The inject value references 'l2-evidence-review' and 'architect'
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    matching_rules = [
+        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
+    ]
+    assert len(matching_rules) == 1, (
+        "Expected exactly one rule with condition 'knowledge == instruction-refinement'"
+    )
+    rule = matching_rules[0]
+
+    assert "inject" in rule, (
+        "instruction-refinement rule is missing 'inject' field in auto.pipeline.yaml. "
+        'Add: inject: "l2-evidence-review into architect"'
+    )
+    inject_value = rule["inject"]
+    assert "l2-evidence-review" in inject_value, (
+        f"inject value must reference 'l2-evidence-review'; got: {inject_value!r}"
+    )
+    assert "architect" in inject_value, (
+        f"inject value must reference 'architect' (the target stage); got: {inject_value!r}"
+    )
+
+
+def test_skill_l2_evidence_review_phase_defined() -> None:
+    """SKILL.md Rule 4 rationale must provide an actionable definition of l2-evidence-review.
+
+    The definition must specify:
+    - What it reads: M3 episodes (tagged instruction-refinement) from memory
+    - What it loads: M2 patterns
+    - Its trigger point: before planning (runs before architect produces a brief)
+    """
+    assert SKILL_PATH.is_file(), f"Skill file not found: {SKILL_PATH}"
+
+    content = SKILL_PATH.read_text(encoding="utf-8")
+
+    assert "l2-evidence-review" in content, (
+        "SKILL.md must contain 'l2-evidence-review' in Rule 4 rationale"
+    )
+    assert "M3" in content or "episodes" in content.lower(), (
+        "Rule 4 rationale must reference M3 episodes as the source of L2 evidence"
+    )
+    assert "M2" in content or "pattern" in content.lower(), (
+        "Rule 4 rationale must reference M2 patterns"
+    )
+    assert (
+        "before planning" in content
+        or "before the architect" in content
+        or "before architect" in content
+    ), (
+        "Rule 4 rationale must state l2-evidence-review runs before planning begins"
+    )
+
+    rule4_start = content.find("**Rule 4")
+    rule5_start = content.find("**Rule 5")
+    if rule4_start != -1 and rule5_start != -1:
+        rule4_block = content[rule4_start:rule5_start]
+        sentence_count = rule4_block.count(". ") + rule4_block.count(".\n")
+        assert sentence_count >= 3, (
+            f"Rule 4 rationale block must have at least 3 sentences (it defines a phase); "
+            f"found {sentence_count}. Expand the definition."
+        )
+
+
+def test_pipeline_inject_field_consistency() -> None:
+    """Both inject-bearing rules in auto.pipeline.yaml must have consistent inject fields.
+
+    Verifies:
+    - 'knowledge == needs-research' rule has inject referencing 'research-phase' and 'architect'
+    - 'knowledge == instruction-refinement' rule has inject referencing 'l2-evidence-review'
+      and 'architect'
+    - The two inject values are distinct
+    - Both target the 'architect' stage (architectural consistency)
+    """
+    assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
+
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    rules = data.get("composition_rules", {}).get("rules", [])
+
+    by_condition = {r["condition"]: r for r in rules}
+
+    nr_rule = by_condition.get("knowledge == needs-research", {})
+    assert "inject" in nr_rule, (
+        "'knowledge == needs-research' rule must have inject field (regression guard)"
+    )
+    assert "research-phase" in nr_rule["inject"], (
+        f"needs-research inject must reference 'research-phase'; got {nr_rule['inject']!r}"
+    )
+
+    ir_rule = by_condition.get("knowledge == instruction-refinement", {})
+    assert "inject" in ir_rule, (
+        "'knowledge == instruction-refinement' rule must have inject field"
+    )
+    assert "l2-evidence-review" in ir_rule["inject"], (
+        f"instruction-refinement inject must reference 'l2-evidence-review'; "
+        f"got {ir_rule['inject']!r}"
+    )
+
+    assert nr_rule["inject"] != ir_rule["inject"], (
+        "inject values for needs-research and instruction-refinement must be distinct"
+    )
+    assert "architect" in nr_rule["inject"] and "architect" in ir_rule["inject"], (
+        "Both inject directives must target the 'architect' stage"
+    )
