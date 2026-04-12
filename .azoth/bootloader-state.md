@@ -1,17 +1,23 @@
 # Azoth Bootloader State
 
-Last updated: 2026-04-11 (session-closeout ep-130 — Cursor session-open parity + eval wiring confirmed)
+Last updated: 2026-04-12 (session-closeout ep-131 — orchestrator v2, agent binding fix, playbook update)
 
 ## Current Phase
 
 Milestone **v0.2.0** — **milestone-local phase 1** (`azoth.yaml` `phase: 1`; welcome strip `lifecycle_phase: 8`)  
-**Toolkit version:** **0.1.1.36** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0-p1` · **Git:** branch **`patch/v0.2.0-p1-copilot-pipeline-memory-parity`**.
+**Toolkit version:** **0.1.1.36** (`azoth.yaml`) · **Roadmap:** `active_version: v0.2.0-p1`, `current_patch: 36` · **Git:** branch **`patch/v0.2.0-p1-copilot-pipeline-memory-parity`**.
 
-## Session outcome (ep-130) — P1-009 + P1-010 (Copilot)
+## Session outcome (ep-131) — Orchestrator v2 + Agent Binding Fix (Copilot worktree)
 
-- **P1-009 Cursor session-open parity** — Added `Session-Open Automation` section to `kernel/templates/platform-adapters/cursor/README.md` with SessionStart vs Cursor parity table, recommended ritual, and VS Code task docs. Added `.vscode/tasks.json` with `Azoth: Session Welcome (Rich)` and `(Plain)` tasks.
-- **P1-010 Eval/eval-swarm wiring drift hardening** — Confirmed 18/18 eval wiring tests + 6 deploy-mirror tests pass; no code changes required. Closed.
-- 1 commit, 3 files changed.
+- **Agent reset fix**: Added `agent: orchestrator` to `start.md` and `next.md` source commands. Deployed to Copilot, OpenCode, Cursor. Tests T6-T8 verify binding.
+- **Orchestrator v2 intelligence upgrade**: 6 new sections (Mid-Pipeline Adaptation, Model Tiering, Token Budget, Session Lifecycle, Memory Integration, Error Recovery). Extended Inline vs Orchestrate (decision table), Gate Handling (E1-E6 evaluator dispatch), Platform Parity (Cursor + start/next). 390/400 lines, tests T9-T10.
+- **Advisory findings resolved**: model_tier in BL-011 template (subagent-router), TTL extension documented in AZOTH_ARCHITECTURE.md P1-005.
+- **Playbook updated**: All 4 guides refreshed for v2 features — model tiering, mid-pipeline adaptation, TTL management, What's New table.
+- 4 commits, 23 files changed, 774 insertions. Evaluator score: 0.93. Architect: APPROVED.
+
+## Previous session (ep-130) — P1-009 + P1-010
+
+- P1-009 Cursor session-open parity. P1-010 eval wiring confirmed green. 1 commit, 3 files.
 
 ## Previous session (ep-129) — Pipeline UX, playbook, co-author hook
 

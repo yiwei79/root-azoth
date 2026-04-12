@@ -1,6 +1,7 @@
 ---
 description: "Session welcome dashboard — orient, then route to your next action"
 azoth_effect: read
+agent: orchestrator
 ---
 
 # /start

@@ -1,5 +1,6 @@
 ---
 description: Session welcome dashboard — orient, then route to your next action
+agent: orchestrator
 ---
 
 # /start

@@ -1,5 +1,6 @@
 ---
 description: Show the next priority task from the roadmap and suggest how to proceed
+agent: orchestrator
 ---
 
 # /next [resume <session_id>] — What Should I Work On?

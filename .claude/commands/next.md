@@ -1,6 +1,7 @@
 ---
 description: "Show the next priority task from the roadmap and suggest how to proceed"
 azoth_effect: mixed
+agent: orchestrator
 ---
 
 # /next [resume <session_id>] — What Should I Work On?

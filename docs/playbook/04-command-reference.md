@@ -60,6 +60,7 @@
 
 ### `/start`
 **Session welcome dashboard.** Shows repo state, backlog, and routing options.
+**Agent**: orchestrator (preserved across all platforms).
 
 ```
 /start
@@ -71,6 +72,7 @@ Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom g
 
 ### `/next`
 **Scope card builder.** Picks the highest-priority backlog item and opens a scope gate.
+**Agent**: orchestrator (preserved across all platforms).
 
 ```
 /next

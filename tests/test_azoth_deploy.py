@@ -529,13 +529,21 @@ def test_deployed_opencode_commands_match_transform() -> None:
 
 _PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
 
+_SESSION_ENTRY_CMD_NAMES = ("start", "next")
+
 _REQUIRED_ORCHESTRATOR_SECTIONS = (
     "## Inline vs Orchestrate",
     "## Goal Clarification",
     "## Declaration Ownership",
     "## Pipeline Composition",
+    "## Mid-Pipeline Adaptation",
+    "## Model Tiering",
+    "## Token Budget",
+    "## Session Lifecycle",
+    "## Memory Integration",
     "## Gate Handling",
     "## Architect as Spawned Role",
+    "## Error Recovery",
     "## Platform Parity",
 )
 
@@ -608,3 +616,59 @@ def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
         assert actual == expected, (
             f"Pipeline prompt drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
+
+
+def test_source_session_entry_commands_have_orchestrator_agent_field() -> None:
+    """T6: source .claude/commands/start.md and next.md must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        src = _REPO_ROOT / ".claude" / "commands" / f"{name}.md"
+        assert src.is_file(), f"missing source command {name}.md"
+        meta, _ = parse_frontmatter(src.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{name}.md: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_copilot_session_entry_prompts_have_orchestrator_agent_binding() -> None:
+    """T7: deployed session-entry prompts must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        dest = _REPO_ROOT / ".github" / "prompts" / f"{name}.prompt.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_opencode_session_entry_commands_have_orchestrator_agent_binding() -> None:
+    """T8: deployed session-entry commands must have agent: orchestrator."""
+    for name in _SESSION_ENTRY_CMD_NAMES:
+        dest = _REPO_ROOT / ".opencode" / "commands" / f"{name}.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        meta, _ = parse_frontmatter(dest.read_text(encoding="utf-8"))
+        assert meta.get("agent") == "orchestrator", (
+            f"{dest.name}: expected agent: orchestrator, got {meta.get('agent')!r}"
+        )
+
+
+def test_orchestrator_archetype_has_intelligence_sections() -> None:
+    """T9: orchestrator archetype must contain all required intelligence sections."""
+    src = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+    assert src.is_file(), "missing agents/tier1-core/orchestrator.agent.md"
+    content = src.read_text(encoding="utf-8")
+    for section in _REQUIRED_ORCHESTRATOR_SECTIONS:
+        assert section in content, f"orchestrator.agent.md missing required section: {section!r}"
+
+
+def test_orchestrator_archetype_line_count_ceiling() -> None:
+    """T10: orchestrator archetype must be ≤ 400 lines."""
+    src = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+    assert src.is_file(), "missing agents/tier1-core/orchestrator.agent.md"
+    lines = src.read_text(encoding="utf-8").splitlines()
+    assert len(lines) <= 400, (
+        f"orchestrator.agent.md is {len(lines)} lines, exceeds 400-line ceiling"
+    )

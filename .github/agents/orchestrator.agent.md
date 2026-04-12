@@ -1,12 +1,8 @@
 ---
 name: orchestrator
 description: Pipeline entry, session orchestration, declaration ownership
-tools:
-- read
-- grep
-- glob
-- bash
-- task
+tools:vscode, execute, read, agent, edit, search, web, 'playwright/*', vscode.mermaid-chat-features/renderMermaidDiagram, github.vscode-pull-request-github/issue_fetch, github.vscode-pull-request-github/labels_fetch, github.vscode-pull-request-github/notification_fetch, github.vscode-pull-request-github/doSearch, github.vscode-pull-request-github/activePullRequest, github.vscode-pull-request-github/pullRequestStatusChecks, github.vscode-pull-request-github/openPullRequest, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, ms-toolsai.jupyter/configureNotebook, ms-toolsai.jupyter/listNotebookPackages, ms-toolsai.jupyter/installNotebookPackages, ms-vscode.cpp-devtools/GetSymbolReferences_CppTools, ms-vscode.cpp-devtools/GetSymbolInfo_CppTools, ms-vscode.cpp-devtools/GetSymbolCallHierarchy_CppTools, todo
+[read]
 ---
 
 # Orchestrator

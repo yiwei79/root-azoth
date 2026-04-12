@@ -113,6 +113,7 @@ pipeline: deliver-full | deliver | auto
 stage_id: <string>   # e.g. deliver_full_s3 — see §Stage briefs
 subagent_type: <architect|planner|builder|reviewer|evaluator|...>
 trigger: <review-independence|context-isolation|context-budget|parallel-execution>
+model_tier: premium | standard | fast  # optional — set by orchestrator, resolved by router
 goal: |
   <one paragraph: what the user asked for>
 inputs:
@@ -121,6 +122,10 @@ inputs:
 
 Optional: one line `role_hint:` repeating the canonical D21 audit string for that stage
 (see §Stage briefs) so logs stay grep-friendly.
+
+**`model_tier` resolution**: the orchestrator sets `model_tier` based on risk and complexity
+(see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
+model identifier at spawn time. If omitted, defaults to `standard`.
 
 ### Orchestrator forward payload (mandatory)
 
