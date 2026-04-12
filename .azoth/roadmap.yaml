@@ -6,8 +6,8 @@
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 1
-current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 1)"
+current_phase: 2
+current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 2)"
 lifecycle_phase: 8
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -124,7 +124,7 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
-active_version: v0.2.0-p1
+active_version: v0.2.0-p2
 
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.MILESTONE_PHASE.PATCH under v0.2.0)
 # - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.P.M → 0.1.P.M+1 + active v0.2.0-pP current_patch +1
@@ -284,44 +284,74 @@ versions:
       .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml (DYNAMIC-FULL-AUTO+).
 
   - id: v0.2.0-p1
-    status: active
-    current_patch: 45
+    status: complete
+    final_patch: 45
     goal: "Run state foundation + pipeline quality + session policy + platform bootstrap"
     phase_scope: [1]
     themes: [A, B, C, D]
     note: >
-      First working phase of v0.2.0 milestone. Delivered: run ledger (P1-001), pipeline
-      linter (P1-003), session policy (P1-005), Antigravity bootstrap (P1-014), multi-writer
-      safety (P1-015). Remaining: DFA+ e2e friction Slice B (P1-012), verbatim-first M3
-      storage (P1-020), memory operation platform parity (P1-021).
+      First working phase of v0.2.0 milestone. 45 patches across 4 themes. Deferred to
+      v0.2.0-p2: P1-017 (reinforcement_count automation), P1-020 (verbatim-first M3),
+      P1-021 (memory platform parity) — hardening items, not blockers for Phase 2 work.
     completed_tasks:
       - {id: P1-001, title: "Swarm & pipeline run ledger + resume protocol", completed_date: "2026-04-10", decision_ref: [D21, D50]}
+      - {id: P1-002, title: "Declarative swarm / eval-wave specification", completed_date: "2026-04-10", decision_ref: [D23, D28]}
       - {id: P1-003, title: "Pipeline composition linter", completed_date: "2026-04-11", decision_ref: [D28]}
+      - {id: P1-004, title: "Control-plane surfacing in welcome (gates + optional ledger)", completed_date: "2026-04-11", decision_ref: [D52, D50]}
       - {id: P1-005, title: "Long-running session policy (docs + scope playbook)", completed_date: "2026-04-11", decision_ref: [D50]}
+      - {id: P1-006, title: "Memory loop hardening (reinforcement, closeout, session-state)", completed_date: "2026-04-11", decision_ref: [D11, D49, D51]}
+      - {id: P1-007, title: "Elasticity: M2/M3 recall governance", completed_date: "2026-04-11", decision_ref: [D45]}
+      - {id: P1-008, title: "auto-router L2 / self-improve lane", completed_date: "2026-04-12", decision_ref: [D23, D44]}
+      - {id: P1-009, title: "Cursor session-open parity", completed_date: "2026-04-11", decision_ref: [D52, D46]}
+      - {id: P1-010, title: "Eval / eval-swarm wiring drift hardening", completed_date: "2026-04-11", decision_ref: [D46]}
+      - {id: P1-011, title: "Token & inference efficiency (context budget, caching, spawn hygiene)", completed_date: "2026-04-10", decision_ref: [D21, D23, D44, D46]}
+      - {id: P1-012, title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)", completed_date: "2026-04-09", decision_ref: [D21, D23, D50]}
+      - {id: P1-013, title: "Explicit main-session orchestrator default (Claude Code + Copilot)", completed_date: "2026-04-12", decision_ref: [D21, D23, D46]}
       - {id: P1-014, title: "Antigravity bootstrap adapter (rules + workflows + skill)", completed_date: "2026-04-11", decision_ref: [D19, D21, D46, D50]}
       - {id: P1-015, title: "True multi-writer safety (write claims and lock enforcement)", completed_date: "2026-04-11", decision_ref: [D21, D46, D50]}
+      - {id: P1-016, title: "Antigravity full Azoth behavioral compliance", completed_date: "2026-04-11", decision_ref: [D21, D23, D28, D46, D50, D52]}
+      - {id: P1-018, title: "Mechanically enforce azoth-deploy after source agent changes", completed_date: "2026-04-12", decision_ref: [D46]}
+      - {id: P1-019, title: "Add ambiguous-case examples to CLAUDE.md rule 10", completed_date: "2026-04-12", decision_ref: [D23]}
+      - {id: BL-027, title: "Fix eval-swarm.md azoth_effect: read → mixed", completed_date: "2026-04-12"}
+      - {id: BL-028, title: "Exclude kernel/templates/ from product extraction", completed_date: "2026-04-12", decision_ref: [D35, D42]}
+      - {id: BL-029, title: "Add eval-swarm escalation routing to Cursor", completed_date: "2026-04-12", decision_ref: [D46, D52]}
+      - {id: BL-030, title: "Assert LICENSE in test_extract_minimal_tree fixture", completed_date: "2026-04-12", decision_ref: [D35]}
+      - {id: BL-031, title: "Fix Copilot adapter prompts dead-referencing .claude/ paths", completed_date: "2026-04-12", decision_ref: [D35, D36]}
+      - {id: BL-032, title: "Clarify --dry-run partial scope in azoth_extract_product.py", completed_date: "2026-04-12"}
+      - {id: BL-033, title: "Couple AZOTH_VERSION to azoth.yaml", completed_date: "2026-04-12", decision_ref: [D35]}
+    deferred_tasks:
+      - {id: P1-017, title: "reinforcement_count automation", deferred_to: "v0.2.0-p2", reason: "Hardening — no runtime blocker"}
+      - {id: P1-020, title: "Verbatim-first M3 storage strategy", deferred_to: "v0.2.0-p2", reason: "Policy + tooling — current M3 JSONL works"}
+      - {id: P1-021, title: "Memory operation platform parity", deferred_to: "v0.2.0-p2", reason: "Validation work — memory works per-platform"}
+    pending_task_refs: []
+
+  - id: v0.2.0-p2
+    status: active
+    current_patch: 0
+    goal: "Memory hardening + declarative swarm depth + platform parity polish"
+    phase_scope: [2]
+    themes: [A, C, D]
+    note: >
+      Second working phase of v0.2.0 milestone. Carries P1-017/P1-020/P1-021 from p1 plus
+      high-priority initiatives: INI-RST-001 (declarative swarm spec depth), INI-MEM-004
+      (memory loop hardening), INI-RST-003 (multi-writer safety next level). Medium-priority
+      initiatives (INI-PPL-001, INI-PPL-002, INI-MEM-002, INI-MEM-003, INI-MEM-005,
+      INI-PLT-002, INI-EFF-001) available for scheduling after triage.
     tasks:
-      - id: P1-012
-        title: "DYNAMIC-FULL-AUTO+ end-to-end friction (goal → delivery)"
-        decision_ref: [D21, D23, D50]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-012.yaml"
-        note: "Slice A done; complete e2e gates, spawn, ledger, IDE parity"
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
-        status: deferred
         decision_ref: [D11, D49, D51]
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
-        note: "Deferred from P1-006 docs slice: add explicit, human-confirmed increment mechanics"
+        carried_from: "v0.2.0-p1"
       - id: P1-020
         title: "Verbatim-first M3 storage strategy"
         decision_ref: [D11, D45]
         initiative_ref: "INI-MEM-001"
-        note: "Store raw episode context verbatim before any summarisation; enforce as M3 baseline policy"
+        carried_from: "v0.2.0-p1"
       - id: P1-021
         title: "Memory operation platform parity"
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
-        note: "Consistent M3 append, M2 promote, context-recall across Claude Code, Cursor, Copilot"
+        carried_from: "v0.2.0-p1"
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.

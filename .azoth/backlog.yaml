@@ -1062,7 +1062,8 @@ items:
   target_layer: infrastructure
   delivery_pipeline: standard
   status: deferred
-  target_version: v0.2.0-p1
+  target_version: v0.2.0-p2
+  deferred_from: v0.2.0-p1
   priority: 6
   created_date: '2026-04-11'
   decision_ref:
@@ -1403,4 +1404,45 @@ items:
     product would see a stale version in their emitted CLAUDE.md. Fix: read
     AZOTH_VERSION from azoth.yaml at extract time, or add a test asserting equality
     with azoth.yaml toolkit version field.
+
+- id: P1-020
+  title: "Verbatim-first M3 storage strategy"
+  source: dynamic-full-auto-plus
+  roadmap_ref: P1-020
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: deferred
+  target_version: v0.2.0-p2
+  deferred_from: v0.2.0-p1
+  priority: 2
+  created_date: '2026-04-12'
+  decision_ref:
+  - D11
+  - D45
+  blocked_by: []
+  description: >
+    Store raw episode context verbatim in M3 before any summarisation or compression.
+    Enforce verbatim storage as the M3 baseline policy. Current M3 append-only JSONL
+    works; this adds policy enforcement and tooling. Initiative ref: INI-MEM-001.
+
+- id: P1-021
+  title: "Memory operation platform parity"
+  source: dynamic-full-auto-plus
+  roadmap_ref: P1-021
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: deferred
+  target_version: v0.2.0-p2
+  deferred_from: v0.2.0-p1
+  priority: 3
+  created_date: '2026-04-12'
+  decision_ref:
+  - D42
+  - D46
+  - D52
+  blocked_by: []
+  description: >
+    Document and validate that M3 append, M2 promote, and context-recall operations
+    produce consistent results across Claude Code, Cursor, and Copilot adapter paths.
+    Initiative ref: INI-PLT-001.
 completed: []

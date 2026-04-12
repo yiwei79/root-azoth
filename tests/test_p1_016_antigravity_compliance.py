@@ -7,7 +7,6 @@ workflow files, gap matrix documentation, and scope_gate_check.py script.
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest

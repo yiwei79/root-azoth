@@ -14,8 +14,8 @@ Validates:
 from __future__ import annotations
 
 import copy
+import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -26,19 +26,11 @@ PIPELINES_DIR = REPO_ROOT / "pipelines"
 SCHEMA_FILE = PIPELINES_DIR / "pipeline.schema.yaml"
 TEMPLATE_FILE = PIPELINES_DIR / "pipeline.template.yaml"
 
-import sys
-
 # Import logic from scripts/pipeline_lint.py
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from pipeline_lint import (  # noqa: E402
     VALID_AGENT_NAMES,
-    VALID_COMPLEXITY,
-    VALID_GATE_TYPES,
-    VALID_KNOWLEDGE,
     VALID_PRESETS,
-    VALID_RISK,
-    VALID_SCOPE,
-    VALID_TOOLS,
     ValidationError,
     validate_pipeline,
 )
