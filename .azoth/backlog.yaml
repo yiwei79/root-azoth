@@ -1275,7 +1275,7 @@ items:
   source: PRC-ES-001
   target_layer: M1
   delivery_pipeline: governed
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 1
   created_date: '2026-04-12'
@@ -1294,7 +1294,7 @@ items:
   source: PRC-P4-001
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 2
   created_date: '2026-04-12'
@@ -1314,7 +1314,7 @@ items:
   source: PRC-ES-004
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 3
   created_date: '2026-04-12'
@@ -1334,7 +1334,7 @@ items:
   source: PRC-P4-003
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p1
   priority: 4
   created_date: '2026-04-12'
