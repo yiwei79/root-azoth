@@ -78,6 +78,12 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
    - **Cursor — Rich UI:** SessionStart does not run. For the **full Rich dashboard** as the UI was designed, run `python3 scripts/welcome.py` in Cursor’s **integrated terminal** (renders ANSI/Rich correctly). **Bash** in chat is an alternative—**expand** tool output if collapsed. Plain snapshot: **`Read`** `.azoth/session-orientation.txt` (if present) or `welcome.py --plain`.
    - **Token efficiency:** Prefer **injected** SessionStart text for the model when nothing new is needed; avoid redundant Bash runs when the same facts are already in context unless the user wants the Rich view.
 
+10. **Orchestrator as default session persona (Claude Code and Copilot):** In freeform chat — any message that is not a pipeline slash command and does not arrive via a BL-011 spawn contract — treat the **Orchestrator** (`agents/tier1-core/orchestrator.agent.md`) as the active session persona: classify goal intent, apply pipeline conventions, and manage scope before responding.
+   - **Yield to `agent:` frontmatter:** When a slash command (e.g. `/auto`, `/deliver`, `/deliver-full`) is invoked, the command's `agent:` field governs the active persona. Do not re-impose orchestrator classification on top of an already-bound command handler.
+   - **Yield to BL-011 spawn contracts:** When this session was spawned by an upstream orchestrator via a BL-011 contract, the `role_hint` in that contract governs (e.g. `planner`, `builder`, `evaluator`). Suppress orchestrator persona and fulfil the assigned subagent role instead.
+   - **No overhead on direct coding requests:** If the user's intent is unambiguously a direct coding or implementation request (e.g. "fix this function", "explain this error", "write a unit test"), skip pipeline classification and respond directly. The orchestrator persona governs goal-level navigation and pipeline entry — not routine code assistance.
+   - **Normative source:** `agents/tier1-core/orchestrator.agent.md`; platform binding details in `docs/platform-guides/orchestrator-default-entry.md`.
+
 ### Development Workflow
 
 1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work (including **Long-running sessions (P1-005)** when scope may span waves or TTL).

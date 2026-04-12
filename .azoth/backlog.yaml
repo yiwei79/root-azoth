@@ -1216,7 +1216,8 @@ items:
     roadmap_ref: P1-013
     target_layer: M1
     delivery_pipeline: governed
-    status: active
+    status: complete
+    completed_date: "2026-04-12"
     target_version: v0.2.0-p1
     priority: 12
     created_date: "2026-04-10"

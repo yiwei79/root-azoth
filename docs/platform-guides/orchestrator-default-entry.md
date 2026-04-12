@@ -55,11 +55,11 @@ Run `python scripts/azoth-deploy.py` to regenerate deployed surfaces after any s
 
 - **Option A (dedicated orchestrator)** was selected over reusing architect as the main-session agent because the roles have different continuation semantics: orchestrators are the continuing speaker, architects are spawned and return.
 - **Copilot/OpenCode binding** is additive (`agent:` field in frontmatter) — no existing behavior is broken if the runtime ignores an unknown field.
-- **Claude Code hard binding** is deferred because `.claude/settings.json` mutation affects all sessions globally; the conservative approach is to document the fallback and address it in a follow-on slice.
+- **Claude Code hard binding** was initially deferred because `.claude/settings.json` mutation affects all sessions globally. P1-013 superseded this deferral by closing the enforcement gap via the CLAUDE.md instruction surface (rule 10) rather than platform config mutation.
 
 ## Deferred Work
 
-- Claude Code main-session hard binding via `.claude/settings.json` (follow-on slice, not P1-013 scope).
+- **Claude Code main-session hard binding via `.claude/settings.json`**: superseded by P1-013. The instruction-surface approach (CLAUDE.md rule 10 + Copilot instructions "Default agent persona" section) closes the main-session enforcement gap without `.claude/settings.json` mutation. Hard binding via a platform `defaultAgent` key remains an option if the platform adds stable support for it in future.
 - Copilot agent runtime binding behavior in production is unverified — additive field, no action needed in this slice.
 
 ## References

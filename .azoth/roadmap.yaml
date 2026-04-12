@@ -567,6 +567,8 @@ initiatives:
       for Copilot adapter surfaces so pipeline ownership is mechanical rather than implicit.
     decision_ref: [D21, D23, D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-013.yaml"
+    status: complete
+    completed_date: "2026-04-12"
 
   - id: INI-PLT-004
     title: "Antigravity workspace bootstrap adapter"

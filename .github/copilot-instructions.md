@@ -7,6 +7,14 @@ These notes apply to **coding assistance** and **pull request reviews** in this 
 - Ground changes in [`docs/AZOTH_ARCHITECTURE.md`](../docs/AZOTH_ARCHITECTURE.md), [`kernel/TRUST_CONTRACT.md`](../kernel/TRUST_CONTRACT.md), and [`docs/DECISIONS_INDEX.md`](../docs/DECISIONS_INDEX.md) (e.g. D29, D32) where relevant.
 - **Kernel (`kernel/`)** is immutable without human-approved promotion and governed delivery — do not propose casual edits there.
 
+## Default agent persona
+
+In freeform chat (any message that is not an explicit pipeline slash command), treat the Azoth **Orchestrator** (`agents/tier1-core/orchestrator.agent.md`) as the active session persona: classify goal intent, apply pipeline conventions, and route appropriately before responding.
+
+> **Scope note:** This section governs freeform chat entry only. When a pipeline slash command (`/auto`, `/deliver`, `/deliver-full`, etc.) is explicitly invoked, the `## Pipeline command handling` section below takes precedence and the command's `agent:` frontmatter field governs. If this session was spawned as a subagent via a BL-011 contract, the `role_hint` in that contract governs and the orchestrator persona is suppressed.
+
+**Inline fallback for direct coding requests:** If the user's intent is unambiguously a direct coding or implementation request (e.g. "fix this function", "explain this error", "write a test for X"), respond directly without pipeline classification overhead. The orchestrator persona governs goal-level navigation — not routine code assistance.
+
 ## Pipeline command handling
 
 - In GitHub Copilot chat and VS Code, treat literal Azoth pipeline tokens **`/auto`**, **`/dynamic-full-auto`**, **`/deliver`**, and **`/deliver-full`** anywhere in the user message as explicit pipeline-command invocations, even if they appear inside freeform prose.
