@@ -1,29 +1,26 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.1.38 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
+v0.1.1.39 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
 
 ## Last Session
-- **Session**: 03a2d0a0-f4aa-41f1-8540-ab127cb00311
+- **Session**: copilot-2026-04-12T10-52-23
 - **Platform**: Copilot CLI (Opus 4.6)
-- **Delivered**: Welcome dashboard bugfix (status enum mismatch) + P1-018 (azoth-deploy enforcement)
-- **Pipeline**: inline (bugfix) + dynamic-full-auto → auto + eval-swarm (P1-018)
-- **Eval**: eval-swarm PASS (0.95 average, 0.90 bar, 3 evaluators)
-- **Episodes**: ep-135 (bugfix), ep-136 (P1-018 delivery), ep-137 (session closeout)
-- **Version bump**: 0.1.1.37 → 0.1.1.38
+- **Delivered**: P1-008 completion — l2-evidence-review inject field + 4-step phase definition + 3 new tests
+- **Pipeline**: deliver-full (adapted: orchestrator skipped reviewer/architect-design stages)
+- **Eval**: eval-swarm 3/3 PASS (avg 0.965, threshold 0.90)
+- **Episodes**: ep-138 (P1-008 delivery)
+- **Version bump**: 0.1.1.38 → 0.1.1.39
 
 ## Key Changes This Session
-1. scripts/welcome.py: _DONE_STATUSES defensive set — accepts both 'complete' and 'completed'
-2. .azoth/backlog.yaml: P1-009/P1-010 → complete, P1-017 → deferred
-3. scripts/azoth-deploy.py: --check mode (read-only parity comparison, exit 1 if stale)
-4. .githooks/pre-commit: Python hook blocks commit when source files changed without deploy
-5. agents/tier1-core/builder.agent.md: VERIFY instruction for azoth-deploy
-6. tests: +11 new tests (2 welcome, 5 check-mode, 4 pre-commit integration)
-7. .azoth/roadmap-specs/v0.2.0/P1-018.yaml: task spec
+1. pipelines/auto.pipeline.yaml: inject field added to instruction-refinement rule
+2. skills/auto-router/SKILL.md: Rule 4 rationale expanded with 4-step l2-evidence-review phase
+3. tests/test_auto_router.py: 3 new tests (inject field, phase definition, inject consistency)
+4. Platform mirrors: .opencode/skills + .agents/skills synced by azoth-deploy
 
 ## Open Decisions
 - None from this session
 
 ## Next Action
 - P1-019: Add ambiguous-case examples to CLAUDE.md rule 10 (priority 15, infrastructure/standard)
-- P1-008: auto-router L2 / self-improve lane (priority 13, M1/governed — timing: let rules bake)
+- Mark P1-008 status → complete in backlog
