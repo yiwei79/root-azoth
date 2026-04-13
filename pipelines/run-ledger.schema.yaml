@@ -227,6 +227,8 @@ $defs:
           $ref: "#/$defs/branch_entry"
         description: "Swarm branch outcomes. Empty for single-branch runs."
 
+  # Cross-reference: wave_entry.stage_id + wave_label link to swarm-eval-wave.schema.yaml wave_def.stage_id
+  # and wave_def.wave respectively. These fields are optional (F3: advisory, not enforcement — BL-034).
   wave_entry:
     type: object
     additionalProperties: false
@@ -251,6 +253,19 @@ $defs:
         type: string
         enum: [pass, fail, partial]
         description: "pass = threshold met; fail = below threshold; partial = incomplete."
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+        description: >
+          Cross-reference anchor to the swarm-wave spec stage_id (swarm-eval-wave.schema.yaml).
+          Optional — omit for non-swarm runs or runs predating BL-034.
+      wave_label:
+        type: string
+        enum: [A, B, C, D]
+        description: >
+          Human-readable wave label matching the swarm-wave spec (A=first, B=second, etc.).
+          Advisory/informational only — the Python ledger validator is permissive and does
+          not enforce this enum at runtime (F3). Omit for non-swarm runs.
 
   branch_entry:
     type: object

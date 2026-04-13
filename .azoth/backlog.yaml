@@ -1531,4 +1531,27 @@ items:
     Add 'if not key: continue' guard after computing key in
     _parse_checksum_lines to reject malformed checksum lines with empty
     paths. Add test for the edge case.
-completed: []
+- id: BL-040
+  title: "Declarative swarm / eval-wave specification — depth pass"
+  source: ini-rst-001
+  roadmap_ref: INI-RST-001
+  initiative_ref: INI-RST-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  completed_date: '2026-04-13'
+  target_version: v0.2.0-p2
+  priority: 1
+  created_date: '2026-04-13'
+  decision_ref:
+  - D23
+  - D28
+  blocked_by: []
+  description: >
+    Schema file + at least one example wave YAML under pipelines/ validated by pytest.
+    e2e-swarm-eval-loop.md links the canonical data path. Moves swarm/eval-wave
+    orchestration from prose-only workflows to structured, lintable YAML declarations.
+    Acceptance: (1) pipelines/run-ledger.schema.yaml stage_id+wave_label cross-ref,
+    (2) pipelines/swarm-build-review.example.yaml (2-wave A+B example), (3) pytest
+    test_swarm_wave_schema.py TestBuildReviewExample 4/4 pass, (4) e2e-swarm-eval-loop.md
+    links canonical data path. Initiative ref: INI-RST-001.completed: []
