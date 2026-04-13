@@ -80,12 +80,6 @@ If any write is denied or fails, stop and follow the **On Failure** guidance bel
 **W1 — Append episode** → `.azoth/memory/episodes.jsonl`
 
 - Append the episode structured in step 4
-- If the session changed a **platform adapter**, **command surface**, or **parity behavior**, the episode must name:
-  - the platform affected
-  - the **discoverable primary surface** users should use
-  - any fallback routing kept for compatibility
-  - any remaining mechanical limits
-- **Codex-specific closeout note:** when the session touched Codex parity, state whether the change affected generated `.agents/skills/azoth-*` wrappers, literal-token fallback, `.codex/config.toml` / `.codex/hooks.json`, or the current Bash-only hook boundary.
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
 **W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
@@ -125,7 +119,7 @@ toolkit summary with canonical sources (read from disk, not from memory):
 
 **W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
 
-- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot, Codex). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). OpenCode, Copilot, and Codex do not **consume** `~/.claude/`; parity for them is still **committed W1/W2** (and `azoth.yaml`). **Copilot should nevertheless attempt W3 on closeout** so later Claude Code sessions can read the latest Copilot-authored state.
+- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). Copilot/OpenCode do not **consume** `~/.claude/`; parity for them is still **committed W1/W2** (and `azoth.yaml`). **Copilot should nevertheless attempt W3 on closeout** so later Claude Code sessions can read the latest Copilot-authored state.
 - **Resolve the path (do not skip this step):** Claude Code stores per-project memory under `~/.claude/projects/`, where **`<project-key>`** is the absolute workspace path with the leading `/` removed and every `/` replaced by `-` (example: `/Users/you/work/root-azoth` → `-Users-you-work-root-azoth`). Full example: `~/.claude/projects/-Users-you-work-root-azoth/memory/`.
 - **Why W3 is often missed:** these files live **outside the repo**; Cursor assistants may lack access or treat W3 as “human-only.” If denied, retry with full permissions or complete W3 manually — do not close the session without updating memory or explicitly logging W3 failed.
 - **Minimum writes:** `project_status.md` (phase, version, roadmap patch, last episode, last delivery, next backlog step, open gaps) and **`MEMORY.md`** index line for Project Status. Add or refresh `feedback_*.md` when a durable preference changed.
