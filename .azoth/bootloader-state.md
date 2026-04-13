@@ -1,25 +1,24 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.2.8 · Phase 2 — v0.2.0 · memory hardening · declarative swarm · platform parity (milestone phase 2) · active_version: v0.2.0-p2
+v0.1.2.9 · Phase 2 — v0.2.0 · memory hardening · declarative swarm · platform parity (milestone phase 2) · active_version: v0.2.0-p2
 
 ## Last Session
-- **Session**: 2026-04-13-bl-037
-- **Platform**: GitHub Copilot (Claude Opus 4.6)
-- **Delivered**: BL-037 (governed: align TRUST_CONTRACT §1 'per turn' → 'per session' across 7 source files + 145 deployed surfaces)
-- **Pipeline**: auto-full (S0-S6, governed, evaluator 0.94)
-- **Episodes**: ep-176
-- **Version bump**: 0.1.2.6 → 0.1.2.8
+- **Session**: 2026-04-13-codex-eval-hardening
+- **Platform**: Codex
+- **Delivered**: Codex parity hardening follow-up — fallback router now resolves repo-root command docs, fires only for intentional leading slash invocations, and handoff/orientation surfaces now describe `/skills` and `$azoth-*` as the primary Codex entry.
+- **Pipeline**: ad-hoc repair loop from `/eval-swarm` findings, then `/session-closeout`
+- **Episodes**: ep-177, ep-178, ep-179
+- **Version bump**: 0.1.2.8 → 0.1.2.9
 
 ## Key Changes This Session
-1. BL-037 (M1/governed): Changed 'per turn' → 'per session' in kernel/TRUST_CONTRACT.md §1 (header, narrative, table cells). Fixed 'withoIut' typo. Fixed 500→1000 mismatch in reviewer/builder agents.
-2. Updated docs/AZOTH_ARCHITECTURE.md (3 locations), agents (reviewer + builder), skills/entropy-guard, .claude/hooks/entropy_check.py docstring, scripts/azoth-deploy.py template string.
-3. Ran azoth-deploy.py to regenerate 145 deployed surfaces across .claude/, .github/, .opencode/, .codex/, AGENTS.md.
-4. Added M2 pattern: pipeline-declaration-before-execution (user preference for upfront pipeline declaration).
-5. Test suite: 1337 pass, 0 regressions.
+1. Fixed the Codex fallback router at `kernel/templates/platform-adapters/codex/user_prompt_submit_router.py.template` so it resolves `.claude/commands/*.md` from the repository root rather than the process `cwd`. This removes the broken-below-subdirectory behavior seen in the swarm audit.
+2. Narrowed fallback routing to intentional leading slash commands only. Mention-only prose like “Explain the difference between /auto and /deliver” no longer hijacks into workflow execution context. Added regression coverage for both bugs in `tests/test_codex_adapter_templates.py`.
+3. Refreshed cross-IDE parity surfaces so Codex is explicit and current in the opening architecture framing, W3 closeout contract, welcome/orientation text, README quickstart, and the live session handoff capsule.
+4. Prepared split commits so canonical sources, deployed mirrors, and closeout/version artifacts can land as separate reviewable units.
 
 ## Open Decisions
-- None blocking.
+- If Codex later adds documented repo-defined command registration, replace the current wrapper-skill-first guidance with the official native path and simplify the fallback router accordingly.
 
 ## Next Action
-- `/next` to pick next v0.2.0-p2 deliverable or check backlog for new active items.
+- In Codex, use `/skills` or `$azoth-next` / `$azoth-auto` as the primary entry. When Codex adapter files or command wrappers change, rerun `python3 scripts/azoth-deploy.py` and the Codex router parity tests before claiming compatibility.

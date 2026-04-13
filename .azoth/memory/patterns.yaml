@@ -247,3 +247,35 @@ patterns:
       Informational declarations (auto-proceed) are acceptable only for the
       lightest pipelines (docs, simple cosmetic). When in doubt, use the full
       interactive Declaration.
+
+  - id: platform-command-parity-prefers-native-discoverability
+    approved: true
+    approved_date: "2026-04-13"
+    reinforced_by: [ep-026, ep-150, ep-177, ep-178]
+    trigger: adding or auditing Azoth support for a harness that lacks native repo command registration or uses a different command UX
+    summary: >
+      Platform parity must project Azoth workflows into the target platform's
+      discoverable native surface first. Invisible fallback routing is not
+      enough. For Codex, the correct primary surface is generated
+      `.agents/skills/azoth-*` wrappers plus `agents/openai.yaml` UI metadata
+      exposed through `/skills`; literal `/auto`-style prompt tokens are
+      compatibility fallback only.
+    why_it_matters: >
+      ep-026 established that platform compatibility is a projection problem,
+      not a copy-files problem. ep-150 showed that parity audits fail when one
+      deployed platform surface is omitted. ep-177 confirmed the first Codex
+      adapter pass had functional routing but still felt "not compatible at all"
+      because no discoverable command surface existed. Users judge parity
+      through the platform UX they can actually see, not through hidden fallback
+      behavior.
+    how_to_apply: >
+      When adding or auditing a platform adapter, separate two questions:
+      (1) what is the platform's documented discoverable surface for workflows,
+      and (2) what fallback routing exists if that surface is absent? Implement
+      both, but document the discoverable surface as primary. For Codex:
+      regenerate `.agents/skills/azoth-*`, `.codex/config.toml`, and
+      `.codex/hooks.json` via `python3 scripts/azoth-deploy.py`; tell users to
+      use `/skills` or `$azoth-auto` / `$azoth-next`; keep any literal-token
+      fallback narrow, repo-root aware, and limited to intentional leading
+      invocations; never claim native repo-defined slash-command support unless
+      Codex officially adds it.
