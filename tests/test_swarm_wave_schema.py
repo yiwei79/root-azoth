@@ -62,18 +62,14 @@ def validate_constants(data: Any) -> None:
             f"constants.eval_threshold must be a number, got {type(threshold).__name__}"
         )
     if not (0.0 <= float(threshold) <= 1.0):
-        raise ValidationError(
-            f"constants.eval_threshold {threshold} out of range [0.0, 1.0]"
-        )
+        raise ValidationError(f"constants.eval_threshold {threshold} out of range [0.0, 1.0]")
     rounds = data["max_iteration_rounds"]
     if not isinstance(rounds, int):
         raise ValidationError(
             f"constants.max_iteration_rounds must be an integer, got {type(rounds).__name__}"
         )
     if rounds < 1:
-        raise ValidationError(
-            f"constants.max_iteration_rounds {rounds} must be >= 1"
-        )
+        raise ValidationError(f"constants.max_iteration_rounds {rounds} must be >= 1")
 
 
 def validate_wave_def(wave: Any) -> None:
@@ -104,9 +100,7 @@ def validate_wave_def(wave: Any) -> None:
             f"wave max_parallel must be an integer, got {type(max_parallel).__name__}"
         )
     if not (1 <= max_parallel <= 7):
-        raise ValidationError(
-            f"wave max_parallel {max_parallel} out of bounds [1, 7]"
-        )
+        raise ValidationError(f"wave max_parallel {max_parallel} out of bounds [1, 7]")
     # F5a: evaluator agent requires threshold
     if agent == "evaluator" and "threshold" not in wave:
         raise ValidationError(
@@ -122,9 +116,7 @@ def validate_swarm_wave(data: Any) -> None:
     if "schema_version" not in data:
         raise ValidationError("swarm-eval-wave missing required field 'schema_version'")
     if data["schema_version"] != 1:
-        raise ValidationError(
-            f"schema_version must be 1, got {data['schema_version']!r}"
-        )
+        raise ValidationError(f"schema_version must be 1, got {data['schema_version']!r}")
     if "description" not in data:
         raise ValidationError("swarm-eval-wave missing required field 'description'")
     if "constants" not in data:
@@ -194,9 +186,7 @@ class TestSchemaFile:
 
     def test_schema_has_schema_version_field(self) -> None:
         data = yaml.safe_load(SCHEMA_FILE.read_text())
-        assert "schema_version" in data["properties"], (
-            "Schema properties missing 'schema_version'"
-        )
+        assert "schema_version" in data["properties"], "Schema properties missing 'schema_version'"
 
     def test_schema_version_is_const_1(self) -> None:
         data = yaml.safe_load(SCHEMA_FILE.read_text())
@@ -297,9 +287,7 @@ class TestExampleFile:
 
     def test_example_has_four_waves(self) -> None:
         data = yaml.safe_load(EXAMPLE_FILE.read_text())
-        assert len(data["waves"]) == 4, (
-            f"Example must have 4 waves, got {len(data['waves'])}"
-        )
+        assert len(data["waves"]) == 4, f"Example must have 4 waves, got {len(data['waves'])}"
 
     def test_example_wave_ids_are_unique(self) -> None:
         data = yaml.safe_load(EXAMPLE_FILE.read_text())

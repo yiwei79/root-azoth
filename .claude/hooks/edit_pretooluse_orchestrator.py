@@ -92,7 +92,10 @@ def main() -> None:
     except Exception as _wc_exc:
         # Write-claim check must not crash the orchestrator; fail open.
         # Record the warning so silent failures are visible in telemetry.
-        print(f"[write-claim] WARNING: unexpected error in write_claim_check: {_wc_exc}", file=sys.stderr)
+        print(
+            f"[write-claim] WARNING: unexpected error in write_claim_check: {_wc_exc}",
+            file=sys.stderr,
+        )
 
     if result.skip_entropy:
         record_pretooluse_write_edit(

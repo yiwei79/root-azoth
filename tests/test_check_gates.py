@@ -136,9 +136,7 @@ def test_cli_exits_0_with_valid_scope_gate(tmp_path: Path) -> None:
         "delivery_pipeline": "auto",
         "target_layer": "M3",
     }
-    (azoth_dir / "scope-gate.json").write_text(
-        json.dumps(gate), encoding="utf-8"
-    )
+    (azoth_dir / "scope-gate.json").write_text(json.dumps(gate), encoding="utf-8")
 
     for name in ("check_gates.py", "scope_gate_check.py"):
         (scripts_dir / name).write_text(
@@ -172,9 +170,7 @@ def test_cli_exits_1_with_missing_fields(tmp_path: Path) -> None:
         "delivery_pipeline": "auto",
         "target_layer": "M3",
     }
-    (azoth_dir / "scope-gate.json").write_text(
-        json.dumps(gate), encoding="utf-8"
-    )
+    (azoth_dir / "scope-gate.json").write_text(json.dumps(gate), encoding="utf-8")
 
     for name in ("check_gates.py", "scope_gate_check.py"):
         (scripts_dir / name).write_text(
@@ -210,9 +206,7 @@ def test_cli_require_pipeline_gate_flag(tmp_path: Path) -> None:
         "delivery_pipeline": "auto",
         "target_layer": "M3",
     }
-    (azoth_dir / "scope-gate.json").write_text(
-        json.dumps(gate), encoding="utf-8"
-    )
+    (azoth_dir / "scope-gate.json").write_text(json.dumps(gate), encoding="utf-8")
 
     for name in ("check_gates.py", "scope_gate_check.py"):
         (scripts_dir / name).write_text(

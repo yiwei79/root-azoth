@@ -22,24 +22,28 @@ from typing import Optional, Tuple
 from scope_gate_check import check_scope_gate, find_scope_gate
 
 
-SCOPE_GATE_REQUIRED_FIELDS = frozenset({
-    "session_id",
-    "goal",
-    "approved",
-    "approved_by",
-    "expires_at",
-    "backlog_id",
-    "delivery_pipeline",
-    "target_layer",
-})
+SCOPE_GATE_REQUIRED_FIELDS = frozenset(
+    {
+        "session_id",
+        "goal",
+        "approved",
+        "approved_by",
+        "expires_at",
+        "backlog_id",
+        "delivery_pipeline",
+        "target_layer",
+    }
+)
 
-PIPELINE_GATE_REQUIRED_FIELDS = frozenset({
-    "session_id",
-    "pipeline",
-    "approved",
-    "expires_at",
-    "opened_at",
-})
+PIPELINE_GATE_REQUIRED_FIELDS = frozenset(
+    {
+        "session_id",
+        "pipeline",
+        "approved",
+        "expires_at",
+        "opened_at",
+    }
+)
 
 
 def find_pipeline_gate() -> Path:

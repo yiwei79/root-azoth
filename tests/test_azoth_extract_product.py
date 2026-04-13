@@ -218,7 +218,15 @@ def test_bad_pipeline_rejected(tmp_path: Path) -> None:
 def test_dry_run_banner_states_step1_only(tmp_path: Path) -> None:
     """BL-032: --dry-run output must clearly state it only runs step 1."""
     r = subprocess.run(
-        [sys.executable, str(SCRIPT), "--dry-run", "--source", str(REPO), "--out", str(tmp_path / "unused")],
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--dry-run",
+            "--source",
+            str(REPO),
+            "--out",
+            str(tmp_path / "unused"),
+        ],
         capture_output=True,
         text=True,
     )

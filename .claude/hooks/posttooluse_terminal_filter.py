@@ -65,9 +65,8 @@ def _filter_output(text: str) -> str:
             break
 
     if selected:
-        return (
-            f"[Output filtered: {line_count} lines -> errors/warnings only]\n"
-            + "\n".join(selected[:_MAX_EMITTED_LINES])
+        return f"[Output filtered: {line_count} lines -> errors/warnings only]\n" + "\n".join(
+            selected[:_MAX_EMITTED_LINES]
         )
 
     tail = "\n".join(lines[-10:])

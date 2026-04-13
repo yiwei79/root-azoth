@@ -72,6 +72,7 @@ def _build_claude_substitutions(source_root: Path) -> dict[str, str]:
     subs["AZOTH_VERSION"] = _read_azoth_version(source_root)
     return subs
 
+
 README_SUBSTITUTIONS: dict[str, str] = {
     "PRODUCT_NAME": "Azoth",
     "DESCRIPTION": "Portable agentic toolkit: skills, agents, pipelines, and governance patterns.",

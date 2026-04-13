@@ -1464,7 +1464,8 @@ items:
   source: "881fd566-6399-4aa9-ace6-5c50ef0a5d63"
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
+  completed_date: '2026-04-13'
   target_version: v0.2.0-p2
   priority: 15
   created_date: '2026-04-13'
@@ -1506,7 +1507,8 @@ items:
   source: PRC-P5T-003
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
+  completed_date: '2026-04-13'
   target_version: v0.2.0-p2
   priority: 9
   created_date: '2026-04-13'

@@ -30,7 +30,10 @@ def test_live_codex_adapter_mirrors_templates() -> None:
     mapping = {
         "config.toml.template": REPO / ".codex" / "config.toml",
         "hooks.json.template": REPO / ".codex" / "hooks.json",
-        "user_prompt_submit_router.py.template": REPO / ".codex" / "hooks" / "user_prompt_submit_router.py",
+        "user_prompt_submit_router.py.template": REPO
+        / ".codex"
+        / "hooks"
+        / "user_prompt_submit_router.py",
     }
     for template_name, deployed in mapping.items():
         template = CODEX_DIR / template_name
