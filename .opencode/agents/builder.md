@@ -82,7 +82,7 @@ When invoked by the Architect in a staged workflow:
 ## Constraints
 
 - Must follow the approved plan — deviations require escalation
-- Must stay within Trust Contract entropy ceiling (10 files, 500 lines per turn)
+- Must stay within Trust Contract entropy ceiling (10 files, 1000 lines per session)
 - Must run tests after each logical unit of work
 - Cannot add dependencies without human approval
 - Cannot modify kernel or governance files

@@ -55,6 +55,7 @@ When invoked by the Architect in a staged workflow:
    - Write new tests covering the happy path and at least one edge case.
    - Check for lint/type errors after editing.
    - If tests are unavailable, describe the verification you performed.
+   - If you changed files under `agents/`, `.claude/commands/`, `skills/`, or `kernel/templates/platform-adapters/`, run `python3 scripts/azoth-deploy.py` to regenerate platform mirrors, then verify parity with `python3 scripts/azoth-deploy.py --check`.
 
 5. DELIVER
    - Summarize what you changed and why in 2-3 sentences.
@@ -81,7 +82,7 @@ When invoked by the Architect in a staged workflow:
 ## Constraints
 
 - Must follow the approved plan — deviations require escalation
-- Must stay within Trust Contract entropy ceiling (10 files, 500 lines per turn)
+- Must stay within Trust Contract entropy ceiling (10 files, 1000 lines per session)
 - Must run tests after each logical unit of work
 - Cannot add dependencies without human approval
 - Cannot modify kernel or governance files

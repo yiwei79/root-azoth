@@ -35,7 +35,7 @@ Action → Measure Delta → Accumulate → Check Zone → Respond
 
 ## Entropy Calculation
 
-### Per-Turn Delta
+### Per-Session Delta
 
 ```
 entropy_delta = files_changed + files_created + (files_deleted * 3) + (lines_changed / 100)
@@ -63,7 +63,7 @@ session_entropy = sum(entropy_delta for each turn)
 | RED    | delta ≥ 25      | High change rate     | Checkpoint required, notify human |
 
 
-### Per-Turn Limits (from Trust Contract)
+### Per-Session Limits (from Trust Contract)
 
 
 | Resource         | Limit | On Exceed                   |

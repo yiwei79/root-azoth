@@ -219,3 +219,31 @@ patterns:
       artifacts under review; forward prior_stage_summaries when the skill requires upstream
       context. After one evaluator return, stop unless the human says to re-run eval or a
       new artifact materially changes the scope.
+
+  - id: pipeline-declaration-before-execution
+    approved: true
+    approved_date: "2026-04-13"
+    reinforced_by: [ep-176]
+    trigger: any pipeline invocation (/auto, /deliver, /deliver-full, /dynamic-full-auto) or multi-stage goal
+    summary: >
+      Always declare and present the full pipeline design for human approval before
+      proceeding to any stage. The Declaration is the contract; execution follows
+      approval. Goal is end-to-end "vibe coding" with predictable behavior — no
+      surprise stages, no implicit scope changes, no extra worrying elements. The
+      human should be able to see exactly what will happen, approve it, and then
+      trust that the pipeline executes as declared without deviation.
+    why_it_matters: >
+      Predictability is the foundation of trust in autonomous pipelines. If the
+      agent starts executing stages before the human has approved the pipeline
+      design, it introduces anxiety about what's happening, which defeats the
+      purpose of the trust contract. The human wants to "vibe code" — focus on
+      the goal, not monitor every move. That requires upfront clarity about the
+      plan, not mid-flight surprises.
+    how_to_apply: >
+      Before any pipeline stage runs: (1) classify the goal, (2) compose the
+      pipeline stages with agents, gates, and skills, (3) present the full
+      Declaration to the human with [approve / adjust / abort], (4) wait for
+      explicit approval. Only then write gate files and begin execution.
+      Informational declarations (auto-proceed) are acceptable only for the
+      lightest pipelines (docs, simple cosmetic). When in doubt, use the full
+      interactive Declaration.

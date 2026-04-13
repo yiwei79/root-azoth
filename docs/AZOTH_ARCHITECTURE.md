@@ -91,7 +91,7 @@ The absolute minimum that makes Azoth Azoth. ~10 files, ~2000 lines total.
 The formal contract that enables "walk away without anxiety":
 
 1. **Entropy Ceiling**: Every agent action has a bounded blast radius
-   - File changes: max N files per turn without human approval
+   - File changes: max N files per session without human approval
    - Governance files: NEVER without human approval
    - New dependencies: NEVER without human approval
 
@@ -551,7 +551,7 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **PreToolUse hook commands** in `.claude/settings.json` should use **paths relative to the repository root** (for example `python3 .claude/hooks/edit_pretooluse_orchestrator.py`) so clones and CI do not embed machine-specific absolute paths. Claude Code runs hooks with the **project workspace as the current working directory**. If a hook fails to resolve, use an absolute path only for local debugging.
 
-**Entropy (Write/Edit, P5-002):** `kernel/TRUST_CONTRACT.md` §1 states per-*turn* limits for agents. The **PreToolUse** entropy hook runs **once per tool call**, not per LLM turn. In this toolkit, **cumulative entropy_delta** and file/line caps are **session-scoped**, keyed to `scope-gate.json` `session_id`, and reset when the scope card changes—mechanical alignment with an approved scope, not a literal per-tool-call interpretation of the §1 table alone.
+**Entropy (Write/Edit, P5-002):** `kernel/TRUST_CONTRACT.md` §1 defines **session-scoped** limits for agents. The **PreToolUse** entropy hook runs **once per tool call** and accumulates counters within the active `scope-gate.json` `session_id`, resetting when the scope card changes—mechanical alignment with an approved scope.
 
 **Alignment summary (Write/Edit, P5-003):** `kernel/TRUST_CONTRACT.md` §2 defines the human-facing Alignment Summary. For **machine-comparable** handoffs, pipeline stages emit typed YAML per **BL-012** (`pipelines/stage-summary.schema.yaml`). The **PreToolUse orchestrator** (`.claude/hooks/edit_pretooluse_orchestrator.py`) runs **after** the scope gate and **before** entropy: for **Write** and **Edit** targeting `.azoth/handoffs/**/*.yaml|yml`, it validates **one YAML document** per call using shared structural checks (`.claude/hooks/stage_summary_validate.py`). Invalid **handoff content** → deny with `[alignment-summary]`; **malformed JSON on stdin** remains fail-open (same rationale as scope/entropy hooks). **Edit** resolves `old_string`/`new_string` to candidate text (single match), then applies the same validation as **Write**.
 
@@ -1116,7 +1116,7 @@ documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
    a pipeline is mid-execution, provided it surfaces a TTL card to the human offering extend /
    checkpoint / abort. This avoids full re-scoping mid-pipeline while preserving human-in-the-loop.
 2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
-   rather than exceeding the per-turn file ceiling.
+   rather than exceeding the per-session file ceiling.
 3. **Run ledger (P1-001)** — Append wave outcomes to `.azoth/run-ledger.local.yaml` (gitignored)
    after each wave or stage; use `python3 scripts/run_ledger.py status` to resume without replaying prose. Schema: `pipelines/run-ledger.schema.yaml`.
 4. **Digest merges** — After swarm append to `SWARM_RESEARCH_DIGEST.yaml`, run

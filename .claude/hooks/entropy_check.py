@@ -1,10 +1,9 @@
 """
 Entropy delta and TRUST_CONTRACT §1 zones for PreToolUse (see kernel/TRUST_CONTRACT.md §1).
 
-§1 describes per-turn limits for *agents*. This hook runs on each Write/Edit *tool call*.
-Accumulation is *session-scoped*: counters and cumulative_entropy_delta align to
-scope-gate.json session_id and reset when the scope identity changes (see also
-docs/AZOTH_ARCHITECTURE.md — Cursor parity / PreToolUse entropy).
+§1 defines session-scoped limits. This hook enforces them on each Write/Edit tool call.
+Accumulation is keyed to scope-gate.json session_id and resets when the scope card
+changes (see also docs/AZOTH_ARCHITECTURE.md — Cursor parity / PreToolUse entropy).
 """
 
 from __future__ import annotations

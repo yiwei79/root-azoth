@@ -393,7 +393,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "All agents operate under the Azoth Trust Contract:",
         "",
-        "- **Entropy ceiling**: max 10 files changed per turn",
+        "- **Entropy ceiling**: max 10 files changed per session",
         "- **Human gates**: kernel / governance changes always require human approval",
         "- **Posture tiers**: `always_do` / `ask_first` / `never_auto`",
         "  (see `kernel/TRUST_CONTRACT.md`)",
