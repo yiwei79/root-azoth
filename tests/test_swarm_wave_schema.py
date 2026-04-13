@@ -535,3 +535,33 @@ class TestInvalidSwarmWave:
         doc["constants"]["eval_threshold"] = 1.5
         with pytest.raises(ValidationError, match="out of range"):
             validate_swarm_wave(doc)
+
+
+# ── Build-review example file tests (BL-034) ─────────────────────────────────
+
+BUILD_REVIEW_EXAMPLE_FILE = PIPELINES_DIR / "swarm-build-review.example.yaml"
+
+
+class TestBuildReviewExample:
+    def test_build_review_example_exists(self) -> None:
+        assert BUILD_REVIEW_EXAMPLE_FILE.exists(), (
+            f"Build-review example not found: {BUILD_REVIEW_EXAMPLE_FILE}"
+        )
+
+    def test_build_review_example_passes_full_validation(self) -> None:
+        """swarm-build-review.example.yaml validates against swarm-eval-wave schema rules."""
+        data = yaml.safe_load(BUILD_REVIEW_EXAMPLE_FILE.read_text())
+        validate_swarm_wave(data)  # must not raise
+
+    def test_build_review_example_has_exactly_two_waves(self) -> None:
+        data = yaml.safe_load(BUILD_REVIEW_EXAMPLE_FILE.read_text())
+        assert len(data["waves"]) == 2, (
+            f"Build-review example must have 2 waves, got {len(data['waves'])}"
+        )
+
+    def test_build_review_example_wave_labels_are_a_and_b(self) -> None:
+        data = yaml.safe_load(BUILD_REVIEW_EXAMPLE_FILE.read_text())
+        labels = {w["wave"] for w in data["waves"]}
+        assert labels == {"A", "B"}, (
+            f"Build-review example wave labels must be {{A, B}}, got {labels}"
+        )

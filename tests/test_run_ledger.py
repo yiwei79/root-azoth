@@ -13,6 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -628,3 +629,91 @@ def test_gitignore_contains_run_ledger_entry() -> None:
     gitignore = ROOT / ".gitignore"
     assert gitignore.exists()
     assert "run-ledger.local.yaml" in gitignore.read_text(encoding="utf-8")
+
+
+# ── 26–28. BL-034: stage_id + wave_label fields ───────────────────────────────
+
+
+def test_wave_entry_with_stage_id_and_wave_label_passes_validate() -> None:
+    """F4a: wave_entry with stage_id + wave_label passes validate_ledger()."""
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "bl034-run-1",
+                "mode": "eval-swarm",
+                "goal": "BL-034 depth test",
+                "status": "active",
+                "created_at": "2026-04-13T10:00:00+00:00",
+                "updated_at": "2026-04-13T10:30:00+00:00",
+                "next_action": "resume at wave 2",
+                "waves": [
+                    {
+                        "wave": 1,
+                        "status": "pass",
+                        "stage_id": "wave_a_build",
+                        "wave_label": "A",
+                    }
+                ],
+            }
+        ],
+    }
+    assert validate_ledger(data) == []
+
+
+def test_wave_entry_stage_id_and_wave_label_round_trip(tmp_path: Path) -> None:
+    """F4b: CLI append with stage_id + wave_label in --wave JSON round-trips clean."""
+    import json as _json
+    ledger = tmp_path / "ledger.yaml"
+    wave_json = _json.dumps(
+        {
+            "wave": 1,
+            "status": "pass",
+            "stage_id": "wave_a_build",
+            "wave_label": "A",
+        }
+    )
+    result = _append(ledger, run_id="bl034-roundtrip", wave=wave_json)
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    wave_entry = data["runs"][0]["waves"][0]
+    assert wave_entry["stage_id"] == "wave_a_build"
+    assert wave_entry["wave_label"] == "A"
+    errors = validate_ledger(data)
+    assert errors == [], f"Round-trip ledger has validation errors: {errors}"
+
+
+def test_wave_entry_wave_label_outside_a_b_c_d_is_stored_gracefully(
+    tmp_path: Path,
+) -> None:
+    """F4c: wave_label outside [A,B,C,D] is stored by Python layer without exception.
+
+    The Python validate_ledger() does not enforce wave_label enum (F3 — permissive
+    validator). The JSON Schema is the authoritative constraint source for tooling.
+    """
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "bl034-bad-label",
+                "mode": "eval-swarm",
+                "goal": "boundary test",
+                "status": "active",
+                "created_at": "2026-04-13T10:00:00+00:00",
+                "updated_at": "2026-04-13T10:30:00+00:00",
+                "next_action": "test step",
+                "waves": [
+                    {
+                        "wave": 1,
+                        "status": "pass",
+                        "wave_label": "Z",
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        result = validate_ledger(data)
+        assert isinstance(result, list)
+    except Exception as exc:  # noqa: BLE001
+        pytest.fail(f"validate_ledger() raised unexpectedly for out-of-enum wave_label: {exc}")

@@ -106,3 +106,4 @@ acceptance:
 - `.claude/commands/eval-swarm.md` — **0.90** swarm eval process
 - `.agents/skills/swarm-coordination/SKILL.md` — parallelism and Iron Laws
 - `pipelines/swarm-eval-wave.example.yaml` — canonical wave-topology data validated against `pipelines/swarm-eval-wave.schema.yaml`
+- `pipelines/swarm-build-review.example.yaml` — two-wave (A+B only) preset for build+review runs that do not require eval/fix waves (BL-034)

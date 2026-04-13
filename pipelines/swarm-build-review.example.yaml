@@ -1,0 +1,23 @@
+# swarm-build-review.example.yaml
+# Two-wave swarm: parallel implementation (Wave A) followed by parallel review (Wave B).
+# Use when eval/fix iterations are not required — e.g. known-pattern tasks with human-gated review.
+# Validated against pipelines/swarm-eval-wave.schema.yaml (BL-034).
+schema_version: 1
+description: >
+  Two-wave build-then-review swarm. Wave A spawns parallel builder agents; Wave B spawns
+  parallel reviewer agents to critique the merged output. No evaluator threshold required.
+  Suitable for additive changes where a separate eval wave would be overhead.
+constants:
+  eval_threshold: 0.9
+  max_iteration_rounds: 1
+waves:
+  - stage_id: wave_a_build
+    wave: A
+    agent: builder
+    max_parallel: 5
+    optional: true
+  - stage_id: wave_b_review
+    wave: B
+    agent: reviewer
+    max_parallel: 5
+    optional: true
