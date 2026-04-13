@@ -1,24 +1,27 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.2.9 · Phase 2 — v0.2.0 · memory hardening · declarative swarm · platform parity (milestone phase 2) · active_version: v0.2.0-p2
+v0.1.2.10 · Phase 2 — v0.2.0 · memory hardening · declarative swarm · platform parity (milestone phase 2) · active_version: v0.2.0-p2
 
 ## Last Session
-- **Session**: 2026-04-13-codex-eval-hardening
-- **Platform**: Codex
-- **Delivered**: Codex parity hardening follow-up — fallback router now resolves repo-root command docs, fires only for intentional leading slash invocations, and handoff/orientation surfaces now describe `/skills` and `$azoth-*` as the primary Codex entry.
-- **Pipeline**: ad-hoc repair loop from `/eval-swarm` findings, then `/session-closeout`
-- **Episodes**: ep-177, ep-178, ep-179
-- **Version bump**: 0.1.2.8 → 0.1.2.9
+- **Session**: 2026-04-13-promote-session
+- **Platform**: GitHub Copilot (VS Code)
+- **Delivered**: /promote pass — 6 M2 patterns promoted from M3 (patterns.yaml 11→17), BL-042 added for D42 sync-config.yaml kernel/templates/ gap.
+- **Pipeline**: /start → /intake (empty) → /promote → /session-closeout
+- **Episodes**: ep-181
+- **Version bump**: 0.1.2.9 → 0.1.2.10
 
 ## Key Changes This Session
-1. Fixed the Codex fallback router at `kernel/templates/platform-adapters/codex/user_prompt_submit_router.py.template` so it resolves `.claude/commands/*.md` from the repository root rather than the process `cwd`. This removes the broken-below-subdirectory behavior seen in the swarm audit.
-2. Narrowed fallback routing to intentional leading slash commands only. Mention-only prose like “Explain the difference between /auto and /deliver” no longer hijacks into workflow execution context. Added regression coverage for both bugs in `tests/test_codex_adapter_templates.py`.
-3. Refreshed cross-IDE parity surfaces so Codex is explicit and current in the opening architecture framing, W3 closeout contract, welcome/orientation text, README quickstart, and the live session handoff capsule.
-4. Prepared split commits so canonical sources, deployed mirrors, and closeout/version artifacts can land as separate reviewable units.
+1. Promoted 6 M3 episodes to M2 patterns: blast-radius-includes-all-downstream-surfaces, status-enum-defensive-set-check, adaptive-stage-skip-three-condition-rule, scaffold-only-paths-require-explicit-product-exclusion, backlog-status-update-is-mandatory-at-closeout, w3-mirror-required-from-all-platforms.
+2. Added BL-042 to backlog.yaml: kernel/templates/ missing from sync-config.yaml exclude_paths is a D42 governance gap that must be fixed before public product extraction (D35/D38).
+3. Deferred ep-173 (tool-availability-check-before-write-protocols) — single evidence point, fails Promotion Rubric D (3+ sessions). Keep m2_candidate for next reinforcement.
+4. Codex parity changes from prior sessions (session-closeout.md, test_azoth_deploy.py) batched into this commit.
 
 ## Open Decisions
-- If Codex later adds documented repo-defined command registration, replace the current wrapper-skill-first guidance with the official native path and simplify the fallback router accordingly.
+- ep-173 (tool-availability check) held at not-yet — revisit after 2 more reinforcements.
+- BL-042 ready for standard delivery session when scope allows.
+- If Codex later adds documented repo-defined command registration, replace wrapper-skill-first guidance with the official native path.
 
 ## Next Action
-- In Codex, use `/skills` or `$azoth-next` / `$azoth-auto` as the primary entry. When Codex adapter files or command wrappers change, rerun `python3 scripts/azoth-deploy.py` and the Codex router parity tests before claiming compatibility.
+- BL-041 (INI-MEM-004: harden memory-loop parity for promote + closeout) is the top active backlog item — governed delivery via /deliver-full.
+- BL-042 (sync-config.yaml kernel/templates/ exclusion) is priority 3 — standard delivery.
