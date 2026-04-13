@@ -1554,4 +1554,27 @@ items:
     Acceptance: (1) pipelines/run-ledger.schema.yaml stage_id+wave_label cross-ref,
     (2) pipelines/swarm-build-review.example.yaml (2-wave A+B example), (3) pytest
     test_swarm_wave_schema.py TestBuildReviewExample 4/4 pass, (4) e2e-swarm-eval-loop.md
-    links canonical data path. Initiative ref: INI-RST-001.completed: []
+    links canonical data path. Initiative ref: INI-RST-001.
+- id: BL-041
+  title: "INI-MEM-004: Harden memory-loop parity for promote + closeout"
+  source: dynamic-full-auto-plus
+  roadmap_ref: P1-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: active
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-13'
+  decision_ref:
+  - D11
+  - D49
+  - D51
+  blocked_by: []
+  description: >
+    Governed follow-up under INI-MEM-004: tighten parity between /promote,
+    /session-closeout, and memory skill surfaces for reinforcement_count
+    semantics and session-state handoff wording. Add focused behavior tests
+    for exact-target/idempotent reinforcement mechanics where the runtime
+    owns them. Keep kernel/PROMOTION_RUBRIC.md unchanged in this slice and
+    leave broader automation expansion to P1-017.
+completed: []
