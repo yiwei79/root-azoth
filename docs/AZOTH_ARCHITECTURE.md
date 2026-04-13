@@ -11,7 +11,7 @@ Extract proven governance patterns, bootloader philosophy, and self-improvement
 loops from a production agentic framework into a standalone, portable,
 "drop-and-start" personal toolkit that:
 
-- Works natively with Claude Code (primary) and is compatible with OpenCode + GitHub Copilot
+- Works natively with Claude Code (primary), exposes discoverable `/skills`-based parity in Codex, and remains compatible with OpenCode + GitHub Copilot
 - Embodies "be water" philosophy: minimal invariant kernel → emergent structure
 - Enables trusted autonomous agent swarms with single human alignment point
 - Self-improves from experience (L1 → L2 → L3 maturity ladder)
@@ -515,6 +515,7 @@ Azoth's kernel stays platform-agnostic.
 azoth init / azoth-deploy.py
   ├─ ALWAYS: CLAUDE.md, AGENTS.md, kernel/, skills/, .azoth/
   ├─ Claude Code detected? → .claude/ (commands, agents, settings)
+  ├─ Codex detected?       → .codex/ (agents, config, hooks) + `.agents/skills/azoth-*` command wrappers
   ├─ OpenCode detected?    → .opencode/ (agents/, commands/, opencode.json)
   ├─ Copilot detected?     → .github/ (prompts/, copilot-instructions.md) + .claude/agents/ by default
   └─ Cursor (always in dev-sync) → .cursor/rules/*.mdc (from kernel/templates/platform-adapters/cursor/)
@@ -522,17 +523,17 @@ azoth init / azoth-deploy.py
 
 ### Compatibility Matrix
 
-| Component | Claude Code | OpenCode | Copilot | Cursor |
-|-----------|-------------|----------|---------|--------|
-| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via toggle |
-| AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
-| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ .claude + repo (toggle) |
-| Agents | .claude/agents/ | .opencode/agents/ | .claude/agents/ by default, optional .github/agents/ mirror | .claude/agents/ (toggle) |
-| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | .claude/commands/ (toggle) |
-| `.cursor/rules/*.mdc` | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
-| Config | .claude/settings.json | opencode.json | VS Code settings | Cursor Settings + toggle |
-| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ❌ (use `.mdc` parity rules) |
-| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP | VS Code MCP |
+| Component | Claude Code | OpenCode | Copilot | Codex | Cursor |
+|-----------|-------------|----------|---------|-------|--------|
+| CLAUDE.md | ✅ Primary | ✅ Native | ✅ Reads | ✅ via AGENTS/config context | ✅ via toggle |
+| AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
+| Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ `.agents/skills/` + `azoth-*` wrappers | ✅ .claude + repo (toggle) |
+| Agents | .claude/agents/ | .opencode/agents/ | .claude/agents/ by default, optional .github/agents/ mirror | `.codex/agents/*.toml` | .claude/agents/ (toggle) |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | `/skills` wrappers (`azoth-*`) + literal-token fallback | .claude/commands/ (toggle) |
+| `.cursor/rules/*.mdc` | — | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
+| Config | .claude/settings.json | opencode.json | VS Code settings | `.codex/config.toml` | Cursor Settings + toggle |
+| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ⚠️ Hook-soft (`SessionStart`, `UserPromptSubmit`, Bash Pre/PostToolUse) | ❌ (use `.mdc` parity rules) |
+| MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP | `.codex/config.toml` / plugins / MCP | VS Code MCP |
 
 ### Cursor IDE (Claude) and Claude Code parity
 
@@ -548,6 +549,8 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 | **Subagent isolation (D21)** | `Agent(subagent_type=...)` | **`Task`** with matching `subagent_type` (Azoth archetypes) — orchestrator stays in main chat; **must not** inline all pipeline stages when `Task` is available (see `claude-code-parity.mdc`) |
 
 **GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
+
+**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, `.codex/hooks/user_prompt_submit_router.py`, and `.codex/agents/*.toml` provide strong workflow parity, but Claude-style `Write/Edit` interception is still unavailable outside Bash hooks.
 
 **PreToolUse hook commands** in `.claude/settings.json` should use **paths relative to the repository root** (for example `python3 .claude/hooks/edit_pretooluse_orchestrator.py`) so clones and CI do not embed machine-specific absolute paths. Claude Code runs hooks with the **project workspace as the current working directory**. If a hook fails to resolve, use an absolute path only for local debugging.
 
@@ -609,12 +612,17 @@ This enables cross-platform workspace compatibility without waiting for the Phas
 ```
 agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (Claude Code + default Copilot path)
                        ├→ .github/agents/<name>.agent.md   (optional Copilot compatibility mirror)
-                       └→ .opencode/agents/<name>.md       (posture→permission, infer mode)
+                       ├→ .opencode/agents/<name>.md       (posture→permission, infer mode)
+                       └→ .codex/agents/<name>.toml        (Codex custom agents)
 
 .claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)
-                       └→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
+                       ├→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
+                       └→ .agents/skills/azoth-<name>/     (Codex command-wrapper skills + UI metadata)
 
-skills/**/ ────────────→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+skills/**/ ────────────┬→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+                       └→ .agents/skills/<name>/SKILL.md    (Codex / Antigravity shared skill path)
+kernel/templates/platform-adapters/codex/*.template
+                       → .codex/*                            (Codex project adapter files)
 kernel/templates/platform-adapters/cursor/*.mdc.template
                        → .cursor/rules/<name>.mdc           (Cursor always-on rules)
                          AGENTS.md                          (generated broadcast layer)
@@ -869,7 +877,7 @@ azoth/
 | D43 | Commit-time governance enforcement hooks | Git `commit-msg` hook + `scripts/git_commit_policy.py` reject `Co-Authored-By:` trailers; `scripts/azoth_install_git_hooks.py` sets `core.hooksPath` — VCS-time complement to BL-002 PreToolUse scope-gate (write-time); further format rules optional |
 | D44 | Pipeline Stage 6 quality rubric for structured content | Stage 6 (Architect Review) must score generated structured content against minimum depth thresholds before passing the delivery gate — prevents shallow first-pass output |
 | D45 | Context-sensitive memory retrieval | Grep-by-tags read interface for M3/M2; dual trigger at SURVEY + Stage 0; implemented as Layer 1 skill (`context-recall`), not kernel |
-| D46 | Dev-sync script: workspace self-installation to platform directories | `scripts/azoth-deploy.py` translates canonical agents/skills/commands into Claude Code, Copilot, OpenCode platform-specific files + AGENTS.md broadcast layer |
+| D46 | Dev-sync script: workspace self-installation to platform directories | `scripts/azoth-deploy.py` translates canonical agents/skills/commands into Claude Code, Copilot, OpenCode, Codex platform-specific files + AGENTS.md broadcast layer |
 | D47 | Persistent backlog system: `.azoth/backlog.yaml` | Operational work queue; items carry `target_layer` (M1/M2/M3/infrastructure) and `delivery_pipeline` (governed/standard); active items cannot be silently dropped — deferral requires `target_version` |
 | D48 | Versioned roadmap: `.azoth/ROADMAP.yaml` | Supersedes D39; multi-version structure (active/planned/backlog/complete); tasks reference backlog items; CLAUDE.md becomes rendered summary; explicit deferral with reason |
 | D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |

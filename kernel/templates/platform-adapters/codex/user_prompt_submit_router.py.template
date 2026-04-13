@@ -8,12 +8,9 @@ import re
 import sys
 from pathlib import Path
 
-COMMAND_RE = re.compile(
-    r"(?<!\S)/("
-    r"deliver-full|dynamic-full-auto|session-closeout|review-insights|roadmap|"
-    r"deliver|start|next|plan|eval|intake|promote|auto"
-    r")\b"
-)
+ROOT = Path(__file__).resolve().parents[2]
+COMMAND_DIR = ROOT / ".claude" / "commands"
+LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b")
 
 PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
 
@@ -42,18 +39,18 @@ def main() -> int:
     if not isinstance(prompt, str) or not prompt.strip():
         return 0
 
-    match = COMMAND_RE.search(prompt)
-    if not match:
+    match = LEADING_COMMAND_RE.match(prompt)
+    if match is None:
         return 0
 
     name = match.group(1)
-    command_path = Path(".claude") / "commands" / f"{name}.md"
+    command_path = COMMAND_DIR / f"{name}.md"
     if not command_path.is_file():
         return 0
 
     guidance = [
         f"Azoth workflow token detected: `/{name}`.",
-        f"Read `{command_path.as_posix()}` and follow that repository command contract instead of improvising.",
+        f"Read `{command_path.relative_to(ROOT).as_posix()}` and follow that repository command contract instead of improvising.",
     ]
 
     if name in PIPELINE_COMMANDS:

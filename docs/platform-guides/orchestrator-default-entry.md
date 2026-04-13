@@ -8,7 +8,7 @@ P1-013 makes Azoth's pipeline entry behavior explicit rather than heuristic. The
 
 | Role | Responsibility | Invocation |
 |------|---------------|-----------|
-| Orchestrator | Session-level pipeline owner; Declaration ownership; gate management; subagent routing; BL-012 handoffs | Default entry via `agent: orchestrator` on pipeline commands |
+| Orchestrator | Session-level pipeline owner; Declaration ownership; gate management; subagent routing; BL-012 handoffs | Default entry via `agent: orchestrator` on pipeline commands, plus Codex `azoth-*` command-wrapper skills |
 | Architect | Spawned design/review subagent; architecture briefs; review disposition | Spawned by Orchestrator via BL-011 (`Agent(subagent_type=architect)`) |
 
 The Architect returns findings to the Orchestrator. The Orchestrator is always the continuing speaker; the Architect is never the final speaker after returning.
@@ -23,6 +23,17 @@ Pipeline commands (`.claude/commands/auto.md`, `deliver.md`, `deliver-full.md`) 
 - `.opencode/commands/auto.md`, `deliver.md`, `deliver-full.md` (OpenCode)
 
 When Copilot or OpenCode loads a prompt/command with `agent: orchestrator`, the orchestrator agent file (`.claude/agents/orchestrator.md`) governs the session.
+
+### Codex
+
+Codex does not document repo-defined custom slash-command registration. `scripts/azoth-deploy.py` therefore projects canonical Azoth command docs into discoverable Codex wrapper skills under `.agents/skills/azoth-*`, each with `agents/openai.yaml` UI metadata so `/skills` exposes entries such as `/auto`, `/deliver`, `/next`, and `/start`.
+
+Codex entry has two layers:
+
+- **Primary**: use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc.
+- **Fallback**: literal `/auto`-style prompt text is routed by `.codex/hooks/user_prompt_submit_router.py` when the matching `.claude/commands/<name>.md` exists.
+
+The orchestrator remains the session-level pipeline owner in Codex, but parity is **skill-routed** and **hook-soft**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/orchestrator.toml` provide strong workflow guidance, while non-Bash tool enforcement remains behavioral rather than Claude-style mechanical interception.
 
 ### Claude Code
 
@@ -41,6 +52,8 @@ Five tests in `tests/test_azoth_deploy.py` enforce the orchestrator binding cont
 | `test_deployed_copilot_prompts_match_transform_with_orchestrator` | Parity: deployed pipeline prompts match `transform_command_copilot` output |
 
 Run `python scripts/azoth-deploy.py` to regenerate deployed surfaces after any source change.
+
+Codex command-surface parity is covered separately by deploy drift tests for generated wrapper skills and metadata, including `test_deployed_codex_command_skill_wrappers_match_transform`.
 
 ## Why Test-Based Drift Detection Is Sufficient
 

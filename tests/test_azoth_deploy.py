@@ -10,6 +10,7 @@ Covers:
 - transform_agent_opencode: no name field, mode from tier, permission object
 - transform_command_copilot: mode:agent added
 - transform_command_opencode: description preserved, body unchanged
+- transform_command_codex_skill: explicit Codex command-wrapper skills
 - deployed command parity: .github/prompts + .opencode/commands match transforms (D46, BL-023)
 """
 
@@ -21,6 +22,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+import yaml
 
 try:
     import tomllib
@@ -45,6 +47,9 @@ transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
 transform_command_opencode = _mod.transform_command_opencode
+transform_command_codex_skill = _mod.transform_command_codex_skill
+transform_command_codex_skill_metadata = _mod.transform_command_codex_skill_metadata
+codex_command_skill_name = _mod.codex_command_skill_name
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
 deploy_codex_adapter = _mod.deploy_codex_adapter
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
@@ -399,6 +404,41 @@ def test_opencode_command_no_description_no_frontmatter() -> None:
     assert "Do the thing." in out
 
 
+# ── transform_command_codex_skill ────────────────────────────────────────────
+
+
+def test_codex_command_skill_frontmatter_and_body() -> None:
+    out = transform_command_codex_skill(_REMEMBER_CMD)
+    meta, body = parse_frontmatter(out)
+    assert meta["name"] == "azoth-remember"
+    assert "Explicit Codex entrypoint" in meta["description"]
+    assert ".claude/commands/remember.md" in body
+    assert "$azoth-remember" in body
+
+
+def test_codex_command_skill_preserves_agent_and_effect_contract() -> None:
+    out = transform_command_codex_skill(
+        {
+            **_REMEMBER_CMD,
+            "meta": {
+                **_REMEMBER_CMD["meta"],
+                "agent": "architect",
+                "azoth_effect": "write",
+            },
+        }
+    )
+    _, body = parse_frontmatter(out)
+    assert "`agent: architect`" in body
+    assert "`azoth_effect: write`" in body
+
+
+def test_codex_command_skill_metadata_ui_fields() -> None:
+    data = yaml.safe_load(transform_command_codex_skill_metadata(_REMEMBER_CMD))
+    assert data["interface"]["display_name"] == "/remember"
+    assert data["interface"]["default_prompt"] == "$azoth-remember "
+    assert data["policy"]["allow_implicit_invocation"] is False
+
+
 def _write_minimal_agent(root: Path) -> None:
     path = root / "agents" / "tier1-core" / "architect.agent.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -508,6 +548,7 @@ def test_main_copilot_agent_location_both_writes_both_agent_formats(tmp_path: Pa
 
 def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
     _write_minimal_agent(tmp_path)
+    _write_minimal_command(tmp_path)
     _write_minimal_skill(tmp_path)
     _write_codex_templates(tmp_path)
 
@@ -516,6 +557,8 @@ def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
     assert rc == 0
     assert (tmp_path / ".codex" / "agents" / "architect.toml").is_file()
     assert (tmp_path / ".agents" / "skills" / "context-map" / "SKILL.md").is_file()
+    assert (tmp_path / ".agents" / "skills" / "azoth-auto" / "SKILL.md").is_file()
+    assert (tmp_path / ".agents" / "skills" / "azoth-auto" / "agents" / "openai.yaml").is_file()
     assert (tmp_path / ".codex" / "config.toml").is_file()
     assert (tmp_path / ".codex" / "hooks.json").is_file()
     assert (tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py").is_file()
@@ -676,6 +719,28 @@ def test_deployed_codex_skill_mirror_matches_canonical() -> None:
         )
         assert dest.read_text(encoding="utf-8") == skill["raw"], (
             f"Codex skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_command_skill_wrappers_match_transform() -> None:
+    """Codex command-wrapper skills must match the generated transform output."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        skill_dir = _REPO_ROOT / ".agents" / "skills" / codex_command_skill_name(cmd)
+        skill_doc = skill_dir / "SKILL.md"
+        skill_meta = skill_dir / "agents" / "openai.yaml"
+        assert skill_doc.is_file(), (
+            f"missing {skill_doc.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert skill_meta.is_file(), (
+            f"missing {skill_meta.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert skill_doc.read_text(encoding="utf-8") == transform_command_codex_skill(cmd), (
+            f"Codex command skill drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+        assert skill_meta.read_text(encoding="utf-8") == transform_command_codex_skill_metadata(cmd), (
+            f"Codex command metadata drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
 
 

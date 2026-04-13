@@ -61,3 +61,54 @@ def test_codex_router_adds_context_for_auto_token() -> None:
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/auto" in ctx
     assert ".claude/commands/auto.md" in ctx
+
+
+def test_codex_router_adds_context_for_any_existing_command_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    proc = subprocess.run(
+        [sys.executable, str(router)],
+        input=json.dumps({"prompt": "/remember capture this lesson"}),
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=REPO,
+    )
+    assert proc.returncode == 0
+    payload = json.loads(proc.stdout)
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/remember" in ctx
+    assert ".claude/commands/remember.md" in ctx
+
+
+def test_codex_router_adds_context_from_non_root_cwd() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    proc = subprocess.run(
+        [sys.executable, str(router)],
+        input=json.dumps({"prompt": "/auto investigate drift"}),
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=REPO / "tests",
+    )
+    assert proc.returncode == 0
+    payload = json.loads(proc.stdout)
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/auto" in ctx
+    assert ".claude/commands/auto.md" in ctx
+
+
+def test_codex_router_ignores_mention_only_command_tokens() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    proc = subprocess.run(
+        [sys.executable, str(router)],
+        input=json.dumps({"prompt": "Explain the difference between /auto and /deliver in Azoth."}),
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=REPO,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == ""

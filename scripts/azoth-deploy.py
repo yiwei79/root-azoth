@@ -9,6 +9,7 @@ Transforms:
                         →  .codex/agents/<name>.toml           (Codex custom agents)
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
+                        →  .agents/skills/azoth-<name>/...     (Codex explicit command-wrapper skills)
   skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
                         →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
@@ -67,6 +68,11 @@ def render_frontmatter(data: dict[str, Any]) -> str:
         + yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
         + "---\n\n"
     )
+
+
+def render_yaml_document(data: dict[str, Any]) -> str:
+    """Render a plain YAML document with stable formatting."""
+    return yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 # ── Posture → OpenCode permission mapping ────────────────────────────────────
@@ -339,6 +345,82 @@ def transform_command_antigravity(command: dict[str, Any]) -> str:
     return command["body"]
 
 
+def codex_command_skill_name(command: dict[str, Any]) -> str:
+    """Stable Codex skill name for an Azoth command wrapper."""
+    return f"azoth-{command['name']}"
+
+
+def transform_command_codex_skill(command: dict[str, Any]) -> str:
+    """
+    Codex skill wrapper for Azoth commands.
+
+    Codex does not document repo-defined slash-command registration, so each
+    Azoth command gets an explicit skill wrapper for `/skills` / `$skill`
+    discovery while keeping the `.claude/commands/*.md` file as the source of
+    truth for execution semantics.
+    """
+    name = command["name"]
+    skill_name = codex_command_skill_name(command)
+    description = str(
+        command["meta"].get("description")
+        or f"Explicit Codex wrapper for Azoth's `/{name}` workflow."
+    )
+    fm = {
+        "name": skill_name,
+        "description": (
+            f"Explicit Codex entrypoint for Azoth's `/{name}` workflow. "
+            f"Use when the user wants to run `/{name}` in Codex via `/skills` or `${skill_name}`."
+        ),
+    }
+
+    lines = [
+        f"Use this skill as the Codex-visible entrypoint for Azoth's `/{name}` workflow.",
+        "",
+        "Codex does not register repository-defined slash commands in its built-in `/` command picker.",
+        f"This skill is the explicit Codex-native equivalent of typing `/{name}`.",
+        "",
+        "Execution contract:",
+        f"- Read `.claude/commands/{name}.md` and follow it as the source of truth.",
+        f"- Treat the rest of the user's prompt after `${skill_name}` as `$ARGUMENTS`.",
+        "- Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.",
+    ]
+    if agent := command["meta"].get("agent"):
+        lines.append(f"- Preserve the command's `agent: {agent}` binding.")
+    if effect := command["meta"].get("azoth_effect"):
+        lines.append(f"- Respect the command's `azoth_effect: {effect}` contract.")
+    lines.extend(
+        [
+            f"- If the user typed literal `/{name}` in prompt text instead, apply the same workflow contract.",
+            "",
+            "Command metadata:",
+            f"- Source path: `.claude/commands/{name}.md`",
+            f"- Description: {description}",
+        ]
+    )
+    return render_frontmatter(fm) + "\n".join(lines) + "\n"
+
+
+def transform_command_codex_skill_metadata(command: dict[str, Any]) -> str:
+    """Optional Codex UI metadata for Azoth command-wrapper skills."""
+    name = command["name"]
+    skill_name = codex_command_skill_name(command)
+    description = str(
+        command["meta"].get("description")
+        or f"Azoth `/{name}` workflow"
+    )
+    data = {
+        "interface": {
+            "display_name": f"/{name}",
+            "short_description": description,
+            "default_prompt": f"${skill_name} ",
+        },
+        "policy": {
+            "allow_implicit_invocation": False,
+        },
+    }
+    return render_yaml_document(data)
+
+
 # ── AGENTS.md generation ─────────────────────────────────────────────────────
 
 _TIER_LABELS: dict[int, str] = {1: "Core", 2: "Research", 3: "Meta", 4: "Utility"}
@@ -406,7 +488,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
-        "| Codex | `.codex/agents/*.toml` | literal Azoth tokens + `.claude/commands/` contract | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
+        "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
@@ -699,6 +781,28 @@ def main(argv: list[str] | None = None) -> int:
                 if not write_file(
                     root / ".agents" / "workflows" / f"{cmd['name']}.md",
                     transform_command_antigravity(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
+        if "codex" in platforms:
+            for cmd in commands:
+                skill_dir = root / ".agents" / "skills" / codex_command_skill_name(cmd)
+                if not write_file(
+                    skill_dir / "SKILL.md",
+                    transform_command_codex_skill(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+                if not write_file(
+                    skill_dir / "agents" / "openai.yaml",
+                    transform_command_codex_skill_metadata(cmd),
                     root,
                     dry_run,
                     check=check,
