@@ -1,0 +1,6 @@
+interface:
+  display_name: /plan
+  short_description: Structured planning without execution
+  default_prompt: '$azoth-plan '
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: /sync
+  short_description: Extract patterns from a source framework into Azoth
+  default_prompt: '$azoth-sync '
+policy:
+  allow_implicit_invocation: false

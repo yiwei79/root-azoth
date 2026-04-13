@@ -1,0 +1,6 @@
+interface:
+  display_name: /remember
+  short_description: Capture a cross-session learning as a structured episode
+  default_prompt: '$azoth-remember '
+policy:
+  allow_implicit_invocation: false

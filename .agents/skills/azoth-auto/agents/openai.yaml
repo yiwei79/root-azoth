@@ -1,0 +1,6 @@
+interface:
+  display_name: /auto
+  short_description: Auto-compose and execute a pipeline based on goal classification
+  default_prompt: '$azoth-auto '
+policy:
+  allow_implicit_invocation: false

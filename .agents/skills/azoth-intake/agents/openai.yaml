@@ -1,0 +1,7 @@
+interface:
+  display_name: /intake
+  short_description: Process queued insights from .azoth/inbox/ through the governed
+    intake protocol
+  default_prompt: '$azoth-intake '
+policy:
+  allow_implicit_invocation: false

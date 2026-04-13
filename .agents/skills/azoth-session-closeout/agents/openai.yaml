@@ -1,0 +1,6 @@
+interface:
+  display_name: /session-closeout
+  short_description: Unified eval + close + sync — run at the end of every session
+  default_prompt: '$azoth-session-closeout '
+policy:
+  allow_implicit_invocation: false

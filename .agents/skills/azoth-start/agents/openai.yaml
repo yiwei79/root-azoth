@@ -1,0 +1,6 @@
+interface:
+  display_name: /start
+  short_description: Session welcome dashboard — orient, then route to your next action
+  default_prompt: '$azoth-start '
+policy:
+  allow_implicit_invocation: false

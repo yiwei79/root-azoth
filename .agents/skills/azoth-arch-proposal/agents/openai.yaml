@@ -1,0 +1,7 @@
+interface:
+  display_name: /arch-proposal
+  short_description: L3 human-gated architecture proposal artifact — structured YAML
+    under .azoth/proposals/
+  default_prompt: '$azoth-arch-proposal '
+policy:
+  allow_implicit_invocation: false

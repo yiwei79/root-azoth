@@ -1,0 +1,6 @@
+interface:
+  display_name: /roadmap
+  short_description: Roadmap dashboard — versioned phases (D48) and upcoming work
+  default_prompt: '$azoth-roadmap '
+policy:
+  allow_implicit_invocation: false

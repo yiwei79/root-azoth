@@ -1,0 +1,7 @@
+interface:
+  display_name: /bootstrap
+  short_description: Day 0 bootstrap — create the Azoth kernel from the architecture
+    plan
+  default_prompt: '$azoth-bootstrap '
+policy:
+  allow_implicit_invocation: false

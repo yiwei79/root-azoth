@@ -1,0 +1,7 @@
+interface:
+  display_name: /deliver-full
+  short_description: Full pipeline with governance gates — for kernel, governance,
+    or breaking changes
+  default_prompt: '$azoth-deliver-full '
+policy:
+  allow_implicit_invocation: false
