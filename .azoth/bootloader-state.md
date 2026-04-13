@@ -1,26 +1,27 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.1.45 · Phase 1 — v0.2.0 · swarm · memory · UX (milestone phase 1) · active_version: v0.2.0-p1
+v0.1.2.1 · Phase 2 — v0.2.0 · declarative swarm depth · memory hardening · active_version: v0.2.0-p2 · patch 1
 
 ## Last Session
-- **Session**: 2026-04-12-bl-031
-- **Platform**: GitHub Copilot (Claude Opus 4.6)
-- **Delivered**: BL-031, BL-032, BL-033 — Copilot adapter fallback, dry-run test, AZOTH_VERSION coupling
-- **Pipeline**: auto (infrastructure, standard)
-- **Eval**: agentic-eval pass; weighted score 0.94
-- **Episodes**: ep-161
-- **Version bump**: 0.1.1.44 → 0.1.1.45
+- **Session**: 2026-04-13-ini-rst-001
+- **Platform**: Claude Code
+- **Delivered**: BL-034 — Declarative swarm / eval-wave specification depth pass (INI-RST-001)
+- **Pipeline**: deliver-full (governed, M1, 7-stage)
+- **Eval**: agentic-eval pass; all 90 new + pre-existing tests green
+- **Episodes**: ep-162
+- **Version bump**: 0.1.2.0 → 0.1.2.1
 
 ## Key Changes This Session
-1. `.claude/commands/eval.md` + `eval-swarm.md`: added fallback guidance line for installs without `.claude/commands/` (BL-031).
-2. `scripts/azoth_extract_product.py`: added `_read_azoth_version()` and `_build_claude_substitutions()` to read AZOTH_VERSION from `azoth.yaml` at extract time instead of hardcoded `"0.1.0"` (BL-033).
-3. `tests/test_azoth_extract_product.py`: added `test_dry_run_banner_states_step1_only` (BL-032) and `test_azoth_version_coupled_to_azoth_yaml` (BL-033).
-4. `azoth-deploy.py` mirrors regenerated for eval/eval-swarm across all platforms.
-5. Backlog: BL-031/032/033 marked complete; no active items remain.
+1. `pipelines/run-ledger.schema.yaml`: added optional `stage_id` (string, pattern-validated) + `wave_label` (enum [A,B,C,D], advisory) to `wave_entry.$defs`; added cross-reference design comment linking to `swarm-eval-wave.schema.yaml` (T1, BL-034).
+2. `pipelines/swarm-build-review.example.yaml`: new 2-wave (A=builder, B=reviewer) example; validates against swarm-eval-wave.schema.yaml; Iron Law compliant (max_parallel:5) (T2, BL-034).
+3. `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`: added reference bullet for `swarm-build-review.example.yaml` in References section (T5, BL-034).
+4. `tests/test_swarm_wave_schema.py`: `TestBuildReviewExample` class with 4 tests; all green.
+5. `tests/test_run_ledger.py`: 3 new tests for optional wave_entry fields + `import pytest` fix.
+6. `.azoth/backlog.yaml`: BL-034 added and complete.
 
 ## Open Decisions
-- None — backlog queue is empty. Next session should run `/intake` or add new items.
+- None blocking. INI-RST-001 delivered. BL-034 complete.
 
 ## Next Action
-- Run `/next` to populate new backlog items or `/intake` if insights arrive.
+- Run `/next` to schedule next v0.2.0-p2 task (P1-017 reinforcement_count automation, P1-020 verbatim-first M3, P1-021 memory parity).
