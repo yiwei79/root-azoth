@@ -10,7 +10,7 @@ Codex is **source-compatible, hook-soft, skill-routed** (D46).
 |----------|-------|
 | Instruction file | `CLAUDE.md` (read as project doc) + `AGENTS.md` (AAIF standard) |
 | Config | `.codex/config.toml` |
-| Hooks | `.codex/hooks.json` — advisory only (`additionalContext`, not `decision: block`) |
+| Hooks | `.codex/hooks.json` — advisory only (`additionalContext`, not `decision: block`); no PreToolUse (incompatible protocol) |
 | Agents | `.codex/agents/*.toml` (11 agents, all 4 tiers) |
 | Commands | `.agents/skills/azoth-*/SKILL.md` via `/skills`; literal tokens as fallback |
 | Skills | `.agents/skills/` (shared Codex/Antigravity path) |
@@ -64,16 +64,20 @@ deny Write/Edit tool calls. Enforcement relies on three complementary layers:
 
 ## Hooks
 
-`.codex/hooks.json` configures 5 hook types with 7 hooks:
+`.codex/hooks.json` configures 4 hook types with 5 hooks:
 
 | Hook Type | Script | Purpose | Timeout |
 |-----------|--------|---------|---------|
 | SessionStart | `.claude/hooks/session_start_welcome.py` | Load Azoth orientation dashboard | 120s |
 | UserPromptSubmit | `.codex/hooks/user_prompt_submit_router.py` | Route literal Azoth tokens to command files | — |
-| PreToolUse (Bash) | `.claude/hooks/pip-install-guard.py` | Check pip install policy | — |
 | PostToolUse (Bash) | `.claude/hooks/posttooluse_terminal_filter.py` | Filter terminal output | — |
 | Stop | `scripts/kernel-integrity.py` | Validate kernel integrity at session end | 10s |
 | Stop | `scripts/notify.py` | System notification when session waits | 30s |
+
+> **Note**: PreToolUse hooks are omitted. Claude Code's `pip-install-guard.py` uses
+> `permissionDecision: allow/deny` which Codex doesn't support — Codex PreToolUse hooks
+> only accept `additionalContext` injection. The pip install policy is enforced via
+> `developer_instructions` in `config.toml` instead.
 
 ## Agents
 
