@@ -1,4 +1,4 @@
-approval_policy = "auto-edit"
+approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 commit_attribution = ""
 project_doc_max_bytes = 65536
