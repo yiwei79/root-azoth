@@ -664,6 +664,7 @@ def test_wave_entry_with_stage_id_and_wave_label_passes_validate() -> None:
 def test_wave_entry_stage_id_and_wave_label_round_trip(tmp_path: Path) -> None:
     """F4b: CLI append with stage_id + wave_label in --wave JSON round-trips clean."""
     import json as _json
+
     ledger = tmp_path / "ledger.yaml"
     wave_json = _json.dumps(
         {
