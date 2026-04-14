@@ -325,6 +325,7 @@ def acquire_write_claim(
         # Check if the existing claim is expired
         raw_exp = existing.get("expires_at", "")
         from datetime import datetime, timezone as _tz
+
         try:
             normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
             exp_dt = datetime.fromisoformat(normalized)
@@ -384,6 +385,7 @@ def resolve_stale_claims(root: Path) -> bool:
         return False
     raw_exp = existing.get("expires_at", "")
     from datetime import datetime, timezone as _tz
+
     try:
         normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
         exp_dt = datetime.fromisoformat(normalized)
@@ -614,12 +616,18 @@ def main() -> None:
 
     # write-claim subcommands (P1-015)
     cp = subs.add_parser("claim", help="Acquire the write claim for a session.")
-    cp.add_argument("session_id", metavar="SESSION_ID", help="Session identifier acquiring the claim.")
+    cp.add_argument(
+        "session_id", metavar="SESSION_ID", help="Session identifier acquiring the claim."
+    )
     cp.add_argument("expires_at", metavar="EXPIRES_AT", help="ISO-8601 expiry timestamp.")
-    cp.add_argument("--harness", metavar="HARNESS", help="Optional IDE/harness label.", default=None)
+    cp.add_argument(
+        "--harness", metavar="HARNESS", help="Optional IDE/harness label.", default=None
+    )
 
     rp = subs.add_parser("release-claim", help="Release the write claim for a session.")
-    rp.add_argument("session_id", metavar="SESSION_ID", help="Session identifier releasing the claim.")
+    rp.add_argument(
+        "session_id", metavar="SESSION_ID", help="Session identifier releasing the claim."
+    )
 
     subs.add_parser("resolve-stale", help="Clear an expired write claim (clock-only check).")
 

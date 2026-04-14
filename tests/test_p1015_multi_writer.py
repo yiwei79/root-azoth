@@ -169,14 +169,10 @@ def test_p1015_only_one_active_claim(tmp_path: Path) -> None:
     """After a successful acquire, a second acquire for a different session is denied."""
     _make_ledger(tmp_path)
     # First acquire succeeds
-    ok, _ = acquire_write_claim(
-        tmp_path, "sess-a", _future_expiry()
-    )
+    ok, _ = acquire_write_claim(tmp_path, "sess-a", _future_expiry())
     assert ok, "First acquire must succeed on empty ledger"
     # Second acquire from a different session must be denied
-    denied, reason = acquire_write_claim(
-        tmp_path, "sess-b", _future_expiry()
-    )
+    denied, reason = acquire_write_claim(tmp_path, "sess-b", _future_expiry())
     assert not denied, "Second acquire must fail when claim is already held"
     assert reason, "Denial must include a non-empty reason"
 
@@ -324,9 +320,9 @@ def test_p1015_next_command_acquires_claim(tmp_path: Path) -> None:
     """next.md must document step 10b — acquire write claim before writing scope-gate."""
     text = NEXT_COMMAND_PATH.read_text(encoding="utf-8")
     # The updated next.md must reference the write-claim acquisition step
-    assert "write_claim" in text.lower() or "write claim" in text.lower() or "claim" in text.lower(), (
-        "next.md must document write-claim acquisition (step 10b)"
-    )
+    assert (
+        "write_claim" in text.lower() or "write claim" in text.lower() or "claim" in text.lower()
+    ), "next.md must document write-claim acquisition (step 10b)"
 
 
 def test_p1015_agents_next_parity(tmp_path: Path) -> None:
@@ -406,9 +402,7 @@ def test_p1015_session_closeout_releases_claim(tmp_path: Path) -> None:
     """session-closeout.md must document that W2-claim releases the write claim."""
     text = SESSION_CLOSEOUT_PATH.read_text(encoding="utf-8")
     # The updated session-closeout.md must mention releasing the write claim in W2
-    assert "claim" in text.lower(), (
-        "session-closeout.md W2 must document releasing the write claim"
-    )
+    assert "claim" in text.lower(), "session-closeout.md W2 must document releasing the write claim"
 
 
 # ── AC5 — Cross-harness parity documented and tested ─────────────────────────

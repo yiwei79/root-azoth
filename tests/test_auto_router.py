@@ -156,9 +156,7 @@ def test_skill_instruction_refinement_rule() -> None:
 
     # Condition must be present
     condition = "knowledge == instruction-refinement"
-    assert condition in content, (
-        f"Routing table must contain condition {condition!r}"
-    )
+    assert condition in content, f"Routing table must contain condition {condition!r}"
 
     # Ordering: after needs-research, before scope == docs
     pos_needs_research = content.index("knowledge == needs-research")
@@ -178,9 +176,7 @@ def test_skill_instruction_refinement_rule() -> None:
             )
             break
     else:
-        raise AssertionError(
-            "Could not find instruction-refinement as a table row in SKILL.md"
-        )
+        raise AssertionError("Could not find instruction-refinement as a table row in SKILL.md")
 
 
 def test_pipeline_instruction_refinement_rule() -> None:
@@ -295,9 +291,7 @@ def test_skill_l2_evidence_review_phase_defined() -> None:
         "before planning" in content
         or "before the architect" in content
         or "before architect" in content
-    ), (
-        "Rule 4 rationale must state l2-evidence-review runs before planning begins"
-    )
+    ), "Rule 4 rationale must state l2-evidence-review runs before planning begins"
 
     rule4_start = content.find("**Rule 4")
     rule5_start = content.find("**Rule 5")
@@ -336,9 +330,7 @@ def test_pipeline_inject_field_consistency() -> None:
     )
 
     ir_rule = by_condition.get("knowledge == instruction-refinement", {})
-    assert "inject" in ir_rule, (
-        "'knowledge == instruction-refinement' rule must have inject field"
-    )
+    assert "inject" in ir_rule, "'knowledge == instruction-refinement' rule must have inject field"
     assert "l2-evidence-review" in ir_rule["inject"], (
         f"instruction-refinement inject must reference 'l2-evidence-review'; "
         f"got {ir_rule['inject']!r}"

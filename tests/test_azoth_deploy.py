@@ -439,7 +439,7 @@ def _write_codex_templates(root: Path) -> None:
         'approval_policy = "on-request"\n',
         encoding="utf-8",
     )
-    (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
+    (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
     (adapter / "user_prompt_submit_router.py.template").write_text(
         "#!/usr/bin/env python3\n",
         encoding="utf-8",
@@ -530,9 +530,13 @@ def test_iter_codex_adapter_deployments_maps_templates() -> None:
     adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
     adapter.mkdir(parents=True)
     try:
-        (adapter / "config.toml.template").write_text('approval_policy = "on-request"\n', encoding="utf-8")
-        (adapter / "hooks.json.template").write_text("{\"hooks\": {}}\n", encoding="utf-8")
-        (adapter / "user_prompt_submit_router.py.template").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        (adapter / "config.toml.template").write_text(
+            'approval_policy = "on-request"\n', encoding="utf-8"
+        )
+        (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(
+            "#!/usr/bin/env python3\n", encoding="utf-8"
+        )
         pairs = iter_codex_adapter_deployments(root)
         assert len(pairs) == 3
         dests = {p[1].as_posix() for p in pairs}
@@ -550,7 +554,7 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
-        hooks = "{\"hooks\": {}}\n"
+        hooks = '{"hooks": {}}\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")

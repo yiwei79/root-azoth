@@ -4,6 +4,7 @@ P1-014 backlog closure tests.
 Verifies that the Antigravity bootstrap adapter delivery is recorded as complete
 in the backlog, and that the core acceptance criteria hold structurally.
 """
+
 from pathlib import Path
 from typing import Optional
 
@@ -21,9 +22,7 @@ def _load_backlog() -> dict:
 
 
 def _find_item(backlog: dict, item_id: str) -> Optional[dict]:
-    return next(
-        (i for i in backlog.get("items", []) if i["id"] == item_id), None
-    )
+    return next((i for i in backlog.get("items", []) if i["id"] == item_id), None)
 
 
 def test_p1014_status_is_complete() -> None:
@@ -31,9 +30,7 @@ def test_p1014_status_is_complete() -> None:
     backlog = _load_backlog()
     item = _find_item(backlog, "P1-014")
     assert item is not None, "P1-014 not found in backlog"
-    assert item["status"] == "complete", (
-        f"Expected status 'complete', got '{item['status']}'"
-    )
+    assert item["status"] == "complete", f"Expected status 'complete', got '{item['status']}'"
 
 
 def test_p1014_completed_date_present() -> None:
@@ -52,9 +49,7 @@ def test_p1015_unblocked_by_p1014_complete() -> None:
     p1015 = _find_item(backlog, "P1-015")
     assert p1014 is not None, "P1-014 not found"
     assert p1015 is not None, "P1-015 not found"
-    assert "P1-014" in (p1015.get("blocked_by") or []), (
-        "P1-015 should list P1-014 in blocked_by"
-    )
+    assert "P1-014" in (p1015.get("blocked_by") or []), "P1-015 should list P1-014 in blocked_by"
     assert p1014["status"] == "complete", (
         "P1-014 must be complete for P1-015 to be considered unblocked"
     )
@@ -66,9 +61,7 @@ def test_azoth_operating_model_skill_references_azoth_state() -> None:
     assert ".azoth/" in content, (
         "Operating model skill must reference .azoth/ as the authoritative state layer (AC4)"
     )
-    assert "scope" in content.lower(), (
-        "Operating model skill must address scope discipline (AC4)"
-    )
+    assert "scope" in content.lower(), "Operating model skill must address scope discipline (AC4)"
     assert "boundary" in content.lower() or "bootstrap" in content.lower(), (
         "Operating model skill must address platform-boundary guidance (AC4)"
     )
@@ -77,9 +70,7 @@ def test_azoth_operating_model_skill_references_azoth_state() -> None:
 def test_azoth_core_rule_refuses_governed_work() -> None:
     """AC5: Always-on rule must explicitly refuse kernel/M1/governed work."""
     content = RULE_PATH.read_text()
-    assert "kernel" in content.lower(), (
-        "azoth-core.md must reference kernel boundary (AC5)"
-    )
+    assert "kernel" in content.lower(), "azoth-core.md must reference kernel boundary (AC5)"
     assert "M1" in content or "governed" in content.lower(), (
         "azoth-core.md must refuse governed M1 work (AC5)"
     )

@@ -365,9 +365,7 @@ class TestP1007RecallGovernance:
         assert "new episode linked to the older one" in acceptance
         assert "stale" in acceptance and "superseded" in acceptance and "contradicted" in acceptance
 
-        combined = "\n".join(
-            [self._read_skill("context-recall"), self._read_skill("remember")]
-        )
+        combined = "\n".join([self._read_skill("context-recall"), self._read_skill("remember")])
         for phrase in (
             "tag vocabulary",
             "when not to add a pattern",

@@ -72,7 +72,9 @@ def _mirror_paths(stem: str) -> tuple[str, str]:
     return (_copilot_prompt(stem), _opencode_cmd(stem))
 
 
-@pytest.mark.parametrize("stem", ["eval", "eval-swarm", "auto", "deliver", "deliver-full", "dynamic-full-auto"])
+@pytest.mark.parametrize(
+    "stem", ["eval", "eval-swarm", "auto", "deliver", "deliver-full", "dynamic-full-auto"]
+)
 def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
     """D46: Copilot + OpenCode deploy targets keep eval / eval-swarm routing (P1-010)."""
     copilot_rel, opencode_rel = _mirror_paths(stem)
@@ -89,14 +91,14 @@ def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
             ):
                 assert needle in text, f"{rel}: missing {needle!r}"
         elif stem == "eval-swarm":
-            assert (
-                "eval.md" in text.lower() or "/eval`" in text
-            ), f"{rel}: must reference eval.md for baseline routing"
+            assert "eval.md" in text.lower() or "/eval`" in text, (
+                f"{rel}: must reference eval.md for baseline routing"
+            )
         elif stem == "auto":
             assert "E1–E6" in text or "E1-E6" in text, f"{rel}: missing E1–E6 routing marker"
-            assert (
-                "eval-swarm" in text.lower() or "/eval-swarm" in text
-            ), f"{rel}: missing eval-swarm reference"
+            assert "eval-swarm" in text.lower() or "/eval-swarm" in text, (
+                f"{rel}: missing eval-swarm reference"
+            )
             assert "Evaluator stage" in text, f"{rel}: missing Evaluator stage wiring"
         elif stem in ("deliver", "deliver-full"):
             assert "Eval / swarm routing" in text, f"{rel}: missing Eval / swarm routing bullet"
@@ -105,6 +107,6 @@ def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
             assert stem == "dynamic-full-auto"
             assert "E1–E6" in text or "E1-E6" in text, f"{rel}: missing E1–E6 (eval.md routing)"
             assert ".claude/commands/eval.md" in text, f"{rel}: missing normative eval.md pointer"
-            assert (
-                "eval-swarm" in text.lower() or "/eval-swarm" in text
-            ), f"{rel}: missing eval-swarm reference"
+            assert "eval-swarm" in text.lower() or "/eval-swarm" in text, (
+                f"{rel}: missing eval-swarm reference"
+            )
