@@ -23,5 +23,5 @@ v0.1.2.10 · Phase 2 — v0.2.0 · memory hardening · declarative swarm · plat
 - If Codex later adds documented repo-defined command registration, replace wrapper-skill-first guidance with the official native path.
 
 ## Next Action
-- BL-041 (INI-MEM-004: harden memory-loop parity for promote + closeout) is the top active backlog item — governed delivery via /deliver-full.
+- BL-041 (INI-MEM-004: harden memory-loop parity for promote + closeout) is the top active backlog item — standard delivery via /deliver, aligned to P1-017 exact-id reinforcement automation.
 - BL-042 (sync-config.yaml kernel/templates/ exclusion) is priority 3 — standard delivery.

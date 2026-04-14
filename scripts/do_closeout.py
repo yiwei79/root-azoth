@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import yaml
+from reinforcement_count import ReinforcementError, increment_reinforcement_count
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
@@ -22,6 +23,10 @@ class CloseoutError(RuntimeError):
 
 class ApprovalEvidenceError(CloseoutError):
     """Raised when governed closeout lacks valid final-delivery approval evidence."""
+
+
+class ReinforcementValidationError(CloseoutError):
+    """Raised when requested reinforcement targets are not safe to apply."""
 
 
 def utc_now() -> datetime:
@@ -173,6 +178,24 @@ def append_episode(repo_root: pathlib.Path, scope: dict[str, Any], timestamp: st
 
     print(f"W1: Appended episode {new_id} to {episodes_path}")
     return new_id
+
+
+def validate_reinforcement_targets(
+    repo_root: pathlib.Path,
+    reinforce_episode_ids: list[str],
+) -> None:
+    if not reinforce_episode_ids:
+        return
+
+    episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+    existing_ids = {str(episode.get("id") or "") for episode in episodes}
+    missing_ids = [episode_id for episode_id in reinforce_episode_ids if episode_id not in existing_ids]
+    if missing_ids:
+        quoted_ids = ", ".join(repr(episode_id) for episode_id in missing_ids)
+        raise ReinforcementValidationError(
+            "Closeout blocked: unknown reinforce episode id(s): "
+            f"{quoted_ids}. Confirm exact existing episode ids before running closeout."
+        )
 
 
 def close_scope_gate(repo_root: pathlib.Path, timestamp: str) -> dict[str, Any]:
@@ -329,12 +352,36 @@ def run_version_bump(repo_root: pathlib.Path) -> None:
         print("W4: session-orientation.txt not found (skipped)")
 
 
-def run_closeout(repo_root: pathlib.Path = REPO_ROOT) -> None:
+def run_closeout(
+    repo_root: pathlib.Path = REPO_ROOT,
+    *,
+    reinforce_episode_ids: list[str] | None = None,
+) -> None:
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
     enforce_governed_closeout_approval(repo_root, scope)
+    reinforce_episode_ids = reinforce_episode_ids or []
+    validate_reinforcement_targets(repo_root, reinforce_episode_ids)
 
     timestamp = utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    session_id = str(scope.get("session_id") or "unknown-session")
     append_episode(repo_root, scope, timestamp)
+    for episode_id in reinforce_episode_ids:
+        try:
+            result = increment_reinforcement_count(
+                repo_root,
+                episode_id,
+                session_id,
+                source="closeout",
+            )
+        except ReinforcementError as exc:
+            raise CloseoutError(
+                f"Closeout blocked: failed to apply reinforcement update for {episode_id}: {exc}"
+            ) from exc
+        status = "incremented" if result.changed else "already reinforced this session"
+        print(
+            f"W1b: reinforcement {status} for {result.episode_id} "
+            f"(count={result.reinforcement_count})"
+        )
     gate_data = close_scope_gate(repo_root, timestamp)
     episode_count = len(load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl"))
     update_episode_count(repo_root, episode_count)
@@ -344,8 +391,20 @@ def run_closeout(repo_root: pathlib.Path = REPO_ROOT) -> None:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Apply the documented W1–W4 closeout sequence.")
+    parser.add_argument(
+        "--reinforce-episode",
+        action="append",
+        dest="reinforce_episode_ids",
+        default=[],
+        help="Exact prior episode id confirmed by the human for one reinforcement_count increment.",
+    )
+    args = parser.parse_args()
+
     try:
-        run_closeout()
+        run_closeout(reinforce_episode_ids=args.reinforce_episode_ids)
     except CloseoutError as exc:
         print(str(exc), file=sys.stderr)
         return 1

@@ -1558,10 +1558,12 @@ items:
 - id: BL-041
   title: "INI-MEM-004: Harden memory-loop parity for promote + closeout"
   source: dynamic-full-auto-plus
-  roadmap_ref: P1-006
-  target_layer: M1
-  delivery_pipeline: governed
-  status: active
+  roadmap_ref: P1-017
+  initiative_ref: INI-MEM-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  completed_date: '2026-04-14'
   target_version: v0.2.0-p2
   priority: 4
   created_date: '2026-04-13'
@@ -1571,12 +1573,11 @@ items:
   - D51
   blocked_by: []
   description: >
-    Governed follow-up under INI-MEM-004: tighten parity between /promote,
-    /session-closeout, and memory skill surfaces for reinforcement_count
-    semantics and session-state handoff wording. Add focused behavior tests
-    for exact-target/idempotent reinforcement mechanics where the runtime
-    owns them. Keep kernel/PROMOTION_RUBRIC.md unchanged in this slice and
-    leave broader automation expansion to P1-017.
+    Standard follow-up under INI-MEM-004 aligned to P1-017: add an explicit,
+    human-confirmed reinforcement_count update path on the promote and/or
+    closeout runtime surfaces, with exact-id targeting and per-session
+    idempotency tests. Keep kernel/PROMOTION_RUBRIC.md unchanged in this
+    slice and preserve new-episode initialization at reinforcement_count: 0.
 
 - id: BL-042
   title: "Add kernel/templates/ to sync-config.yaml exclude_paths (D42 gap)"

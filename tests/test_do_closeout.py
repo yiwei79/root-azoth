@@ -263,3 +263,99 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
     ]
+
+
+def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
+    episodes_path.write_text(
+        json.dumps(
+            {
+                "id": "ep-010",
+                "session_id": "older-session",
+                "reinforcement_count": 0,
+                "context": {},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    scope_before = (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8")
+    backlog_before = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    episodes_before = episodes_path.read_text(encoding="utf-8")
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd, check))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+
+    with pytest.raises(do_closeout.ReinforcementValidationError, match="unknown reinforce"):
+        do_closeout.run_closeout(repo_root, reinforce_episode_ids=["ep-010", "ep-999"])
+
+    assert version_bump_calls == []
+    assert episodes_path.read_text(encoding="utf-8") == episodes_before
+    assert (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8") == scope_before
+    assert (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8") == backlog_before
+    assert (repo_root / ".azoth" / "session-orientation.txt").exists()
+
+
+def test_governed_closeout_can_reinforce_exact_prior_episode_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = _build_repo(tmp_path)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    (repo_root / ".azoth" / "memory" / "episodes.jsonl").write_text(
+        json.dumps(
+            {
+                "id": "ep-010",
+                "session_id": "older-session",
+                "goal": "Prior lesson",
+                "summary": "Older reinforced lesson.",
+                "reinforcement_count": 0,
+                "context": {},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root, reinforce_episode_ids=["ep-010", "ep-010"])
+
+    episodes = [
+        json.loads(line)
+        for line in (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    ]
+    prior = episodes[0]
+    new_episode = episodes[1]
+
+    assert prior["reinforcement_count"] == 1
+    assert prior["context"]["reinforced_by_sessions"] == ["sess-123"]
+    assert new_episode["reinforcement_count"] == 0
