@@ -1602,4 +1602,115 @@ items:
     add kernel/templates/ to exclude_paths in sync-config.yaml and audit for
     any other scaffold-only directories missing from the exclusion list
     (research_*/, .azoth/ runtime state) before the public azoth extraction (D35/D38).
+- id: BL-043
+  title: "Expand context-recall step in start.md with concrete invocation path"
+  source: CUR-PR8-003
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 8
+  created_date: '2026-04-14'
+  description: >
+    The context-recall step added to .claude/commands/start.md names the skill
+    but provides no invocation path. Expand the step to specify: invoke via
+    skills/context-recall/SKILL.md, extract 3-5 tags from the session goal,
+    and surface top 1-3 results before routing. Link to SKILL.md for the full
+    scoring algorithm.
+- id: BL-044
+  title: "Add Codex-specific W3 note to session-closeout.md (parity with Copilot)"
+  source: CDX-PR8-001
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 5
+  created_date: '2026-04-14'
+  decision_ref:
+  - D46
+  - D52
+  description: >
+    session-closeout.md W3 section documents Copilot fallback behavior but has
+    no equivalent Codex-specific guidance. Add a Codex W3 note parallel to the
+    Copilot note: state that Codex sessions should attempt W3 via file write to
+    ~/.claude/projects/<project-key>/memory/, log 'W3 deferred' if the path is
+    outside the sandbox, and confirm that committed W1/W2 remain authoritative.
+- id: BL-045
+  title: "Resolve agent frontmatter advisory-vs-structural propagation in azoth-deploy.py"
+  source: CDX-PR8-003
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 9
+  created_date: '2026-04-14'
+  decision_ref:
+  - D46
+  description: >
+    transform_command_codex_skill() in scripts/azoth-deploy.py writes agent: value
+    as body prose only, not into the fm dict / SKILL.md frontmatter. Determine
+    whether Codex skill frontmatter supports an agent field; if so, add it to the
+    fm dict. If not, add an explicit comment in the transform function documenting
+    the advisory-only propagation so future maintainers do not expect structural
+    enforcement.
+- id: BL-046
+  title: "Remove orphan azoth-operating-model Codex wrapper + add reverse-orphan check"
+  source: CDX-PR8-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 11
+  created_date: '2026-04-14'
+  description: >
+    .agents/skills/azoth-operating-model/ exists with no traceable source command
+    or skill. Delete the orphan directory. Add a reverse-orphan check to
+    scripts/azoth-deploy.py --check that flags deployed Codex wrappers with no
+    corresponding source in .claude/commands/ or skills/.
+- id: BL-047
+  title: "Verify and resolve network_access=true on phase/v0.2.0-p2 branch"
+  source: CDX-PR8-005
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-14'
+  description: >
+    A stash-pop commit on phase/v0.2.0-p2 contains network_access=true in
+    .codex/config.toml. This change was not in the PR-8 diff and may have been
+    included unintentionally. Human must verify intent: if unintentional, revert
+    on the branch; if intentional, add an explicit security rationale in the
+    commit message referencing the Codex sandbox policy before any further merge.
+- id: BL-048
+  title: "Sync entropy limit (1000 lines/session) to canonical tier1-core agent archetypes"
+  source: COP-PR8-002
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-14'
+  decision_ref:
+  - D3
+  description: >
+    .claude/agents/builder.md and reviewer.md were updated to '1000 lines per session'
+    but agents/tier1-core/builder.agent.md and reviewer.agent.md still read '500 lines
+    per turn'. Apply the same wording update to both canonical archetypes, then run
+    python3 scripts/azoth-deploy.py to regenerate platform mirrors and verify parity.
+- id: BL-049
+  title: "Extend version-bump.py to update AZOTH_VERSION in .claude/settings.json"
+  source: COP-PR8-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 7
+  created_date: '2026-04-14'
+  description: >
+    AZOTH_VERSION in .claude/settings.json, version in azoth.yaml, and the version
+    declaration in CLAUDE.md currently diverge (0.1.2.9 vs 0.1.2.1 vs v0.1.2).
+    Extend scripts/version-bump.py to update the AZOTH_VERSION env var in
+    .claude/settings.json as part of every bump, preventing future manual drift.
+    Align all three sources to the current canonical value in the same commit.
 completed: []
