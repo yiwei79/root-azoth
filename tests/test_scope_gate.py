@@ -405,7 +405,9 @@ def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> No
         json.dumps({"approved": False, "expires_at": _future_expiry()}),
         encoding="utf-8",
     )
-    claude_target = str(Path.home() / ".claude" / "projects" / "test-project" / "memory" / "project_status.md")
+    claude_target = str(
+        Path.home() / ".claude" / "projects" / "test-project" / "memory" / "project_status.md"
+    )
     output = _run("Write", gate_path, file_path=claude_target)
     assert _decision(output) == "allow"
 
@@ -413,6 +415,8 @@ def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> No
 def test_t20_write_to_claude_home_allowed_when_gate_absent(tmp_path: Path) -> None:
     """Writes to ~/.claude/… must be allowed even when no scope gate file exists."""
     gate_path = tmp_path / "scope-gate.json"  # does not exist
-    claude_target = str(Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md")
+    claude_target = str(
+        Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md"
+    )
     output = _run("Write", gate_path, file_path=claude_target)
     assert _decision(output) == "allow"

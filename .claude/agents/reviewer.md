@@ -26,7 +26,7 @@ When invoked by the Architect as part of a staged pipeline:
 When reviewing code or architecture:
 
 1. **Check governance compliance** — verify kernel immutability rules, gate typing (human vs agent), and Trust Contract bounds.
-2. **Verify entropy bounds** — confirm changes stay within per-turn limits (10 files, 500 lines). Flag yellow/red zone changes.
+2. **Verify entropy bounds** — confirm changes stay within per-session limits (10 files, 1000 lines). Flag yellow/red zone changes.
 3. **Scan for policy violations** — check for hardcoded credentials, missing error handling, security anti-patterns.
 4. **Evaluate quality** using rubric-based assessment with explicit scoring:
 

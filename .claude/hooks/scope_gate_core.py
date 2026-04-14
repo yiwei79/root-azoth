@@ -125,10 +125,14 @@ def extract_write_content(tool_input: dict) -> str | None:
 def extract_old_new_strings(tool_input: dict) -> tuple[str | None, str | None]:
     old_s = tool_input.get("old_string")
     if not isinstance(old_s, str):
-        old_s = tool_input.get("oldString") if isinstance(tool_input.get("oldString"), str) else None
+        old_s = (
+            tool_input.get("oldString") if isinstance(tool_input.get("oldString"), str) else None
+        )
     new_s = tool_input.get("new_string")
     if not isinstance(new_s, str):
-        new_s = tool_input.get("newString") if isinstance(tool_input.get("newString"), str) else None
+        new_s = (
+            tool_input.get("newString") if isinstance(tool_input.get("newString"), str) else None
+        )
     return old_s, new_s
 
 

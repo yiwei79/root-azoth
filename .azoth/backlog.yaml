@@ -1445,4 +1445,27 @@ items:
     Document and validate that M3 append, M2 promote, and context-recall operations
     produce consistent results across Claude Code, Cursor, and Copilot adapter paths.
     Initiative ref: INI-PLT-001.
+- id: BL-034
+  title: "Declarative swarm / eval-wave specification — depth pass"
+  source: ini-rst-001
+  roadmap_ref: INI-RST-001
+  initiative_ref: INI-RST-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: open
+  target_version: v0.2.0-p2
+  priority: 1
+  created_date: '2026-04-13'
+  decision_ref:
+  - D23
+  - D28
+  blocked_by: []
+  description: >
+    Schema file + at least one example wave YAML under pipelines/ validated by pytest.
+    e2e-swarm-eval-loop.md links the canonical data path. Moves swarm/eval-wave
+    orchestration from prose-only workflows to structured, lintable YAML declarations.
+    Acceptance: (1) pipelines/swarm-wave.schema.yaml, (2) pipelines/swarm-eval-wave.example.yaml,
+    (3) pytest test_swarm_wave_schema.py loads + validates, (4) e2e-swarm-eval-loop.md
+    links canonical data path. Initiative ref: INI-RST-001. Spec: .azoth/roadmap-specs/v0.2.0/P1-002.yaml.
+
 completed: []

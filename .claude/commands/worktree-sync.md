@@ -1,6 +1,7 @@
 ---
 description: "Git checkpoint and sync — mechanical save point"
 azoth_effect: write
+agent: orchestrator
 ---
 
 # /worktree-sync

@@ -9,6 +9,13 @@ agent: orchestrator
 Full delivery pipeline with governance review. Use when the work changes
 governance, kernel, or operating rules.
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify `.azoth/scope-gate.json` exists and is approved before write work.
+- This pipeline requires governance review — human gates are mandatory.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Stage 0 — Pipeline gate (mechanical)
 
 Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes

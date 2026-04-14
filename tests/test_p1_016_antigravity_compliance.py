@@ -74,9 +74,7 @@ class TestWorkflowPreconditions:
     def test_preconditions_section_exists(self, workflow):
         name, content = workflow
         expected = self.WORKFLOWS[name]
-        assert (
-            expected in content
-        ), f"{name} missing '{expected}' section"
+        assert expected in content, f"{name} missing '{expected}' section"
 
     def test_p1_016_reference(self, workflow):
         name, content = workflow
@@ -84,9 +82,9 @@ class TestWorkflowPreconditions:
 
     def test_compliance_matrix_reference(self, workflow):
         name, content = workflow
-        assert (
-            "antigravity-compliance-matrix" in content
-        ), f"{name} missing compliance matrix reference"
+        assert "antigravity-compliance-matrix" in content, (
+            f"{name} missing compliance matrix reference"
+        )
 
 
 class TestStartWorkflow:
@@ -105,9 +103,7 @@ class TestStartWorkflow:
         # context-recall step should appear before the routing table
         recall_pos = self.content.index("context-recall")
         routing_pos = self.content.index("Read the user's selection")
-        assert recall_pos < routing_pos, (
-            "context-recall should appear before the routing table"
-        )
+        assert recall_pos < routing_pos, "context-recall should appear before the routing table"
 
 
 class TestComplianceMatrix:
@@ -159,9 +155,7 @@ class TestScopeGateCheckScript:
         }
         azoth_dir = tmp_path / ".azoth"
         azoth_dir.mkdir()
-        (azoth_dir / "scope-gate.json").write_text(
-            json.dumps(gate), encoding="utf-8"
-        )
+        (azoth_dir / "scope-gate.json").write_text(json.dumps(gate), encoding="utf-8")
 
         # Run the script with the tmp_path as a fake repo root
         result = subprocess.run(
@@ -187,7 +181,11 @@ class TestScopeGateCheckScript:
         # Script walks up from its own location (scripts/ → repo root),
         # so it finds the real repo's gate. We verify it at least runs.
         assert result.returncode in (0, 1)
-        assert "scope" in result.stdout.lower() or "scope" in result.stderr.lower() or result.returncode in (0, 1)
+        assert (
+            "scope" in result.stdout.lower()
+            or "scope" in result.stderr.lower()
+            or result.returncode in (0, 1)
+        )
 
     def test_script_syntax_valid(self):
         """Verify the script has valid Python syntax."""
