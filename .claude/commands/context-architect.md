@@ -1,6 +1,7 @@
 ---
 description: "Map dependencies, blast radius, and change sequencing before implementation"
 azoth_effect: read
+agent: orchestrator
 ---
 
 # /context-architect $ARGUMENTS
