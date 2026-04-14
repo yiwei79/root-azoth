@@ -72,12 +72,67 @@ deny Write/Edit tool calls. Enforcement relies on three complementary layers:
 | UserPromptSubmit | `.codex/hooks/user_prompt_submit_router.py` | Route literal Azoth tokens to command files | — |
 | PostToolUse (Bash) | `.claude/hooks/posttooluse_terminal_filter.py` | Filter terminal output | — |
 | Stop | `scripts/kernel-integrity.py` | Validate kernel integrity at session end | 10s |
-| Stop | `scripts/notify.py` | System notification when session waits | 30s |
+| Stop | `scripts/notify.py --quiet` | System notification when session waits | 30s |
 
 > **Note**: PreToolUse hooks are omitted. Claude Code's `pip-install-guard.py` uses
 > `permissionDecision: allow/deny` which Codex doesn't support — Codex PreToolUse hooks
 > only accept `additionalContext` injection. The pip install policy is enforced via
 > `developer_instructions` in `config.toml` instead.
+
+### Codex Hook Protocol Rules
+
+Codex hooks have **strict stdout requirements** that differ from Claude Code. Any hook
+script wired into `.codex/hooks.json` must follow these rules:
+
+**Rule 1 — No `permissionDecision` responses.** Codex does not support
+`permissionDecision: allow|deny`. Only `additionalContext` injection is available.
+Scripts that return `permissionDecision` (e.g. `pip-install-guard.py`,
+`edit_pretooluse_orchestrator.py`) must NOT be wired into Codex hooks.
+
+**Rule 2 — No non-JSON stdout in Stop hooks.** Codex Stop hooks parse stdout as JSON.
+Any human-readable text (emoji, status messages, print statements) causes
+`"invalid stop hook JSON output"`. Use `--quiet` to suppress stdout, or ensure the
+script emits valid JSON or nothing.
+
+**Rule 3 — `additionalContext` is the only injection mechanism.** PostToolUse and
+UserPromptSubmit hooks can inject context via:
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "<HookType>",
+    "additionalContext": "injected text"
+  }
+}
+```
+This is advisory — it adds to the model's context, not a blocking gate.
+
+**Rule 4 — SessionStart hooks emit plain text.** SessionStart stdout becomes part of
+the session context. Plain text is safe. JSON wrapping is not required.
+
+**Rule 5 — Fail-open on malformed stdin.** If the hook receives invalid JSON on stdin,
+exit 0 with empty stdout. Never crash on unexpected input.
+
+### Hook Protocol Compatibility Matrix
+
+| Protocol | Claude Code | Codex | Safe to share? |
+|----------|-------------|-------|----------------|
+| `permissionDecision: allow\|deny` | ✅ Mechanical deny | ❌ Unsupported | No — Claude Code only |
+| `additionalContext` injection | ✅ Works | ✅ Works | Yes |
+| Plain text stdout (SessionStart) | ✅ Context | ✅ Context | Yes |
+| Plain text stdout (Stop) | ✅ Ignored | ❌ Parsed as JSON | No — use `--quiet` |
+| Empty stdout + exit code | ✅ Works | ✅ Works | Yes |
+| JSON stdout (Stop) | ✅ Works | ✅ Works | Yes |
+
+### Adding a New Hook to Codex
+
+Before wiring any script into `.codex/hooks.json`:
+
+1. Check the script's stdout output — does it print human-readable text?
+2. Check for `permissionDecision` in the script — if present, it's Claude Code only.
+3. For Stop hooks: ensure the script emits valid JSON or nothing to stdout.
+4. For shared scripts: add `--quiet` flag or platform detection if stdout differs.
+5. After adding, run `python3 scripts/azoth-deploy.py --check` to verify sync.
+6. Test in a live Codex session before committing.
 
 ## Agents
 

@@ -35,6 +35,7 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -577,6 +578,105 @@ def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> t
     return count, stale
 
 
+# ── Codex hook compatibility lint ────────────────────────────────────────────
+
+# Scripts known to use Claude Code-only permissionDecision protocol.
+_CODEX_UNSAFE_SCRIPTS: set[str] = {
+    "pip-install-guard.py",
+    "edit_pretooluse_orchestrator.py",
+    "scope-gate.py",
+}
+
+
+def lint_codex_hooks(root: Path) -> list[str]:
+    """Check .codex/hooks.json for Codex hook protocol violations.
+
+    Returns a list of warning strings (empty = clean).
+
+    Checks:
+    1. PreToolUse hooks must not use permissionDecision-based scripts.
+    2. Stop hook scripts must not print non-JSON text to stdout (need --quiet).
+    3. Scripts using permissionDecision must not be wired into any Codex hook type.
+    """
+    hooks_path = root / ".codex" / "hooks.json"
+    if not hooks_path.is_file():
+        return []
+
+    try:
+        data = json.loads(hooks_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return ["  [error] .codex/hooks.json is not valid JSON"]
+
+    hooks_section = data.get("hooks", {})
+    warnings: list[str] = []
+
+    for hook_type, hook_groups in hooks_section.items():
+        if not isinstance(hook_groups, list):
+            continue
+        for group in hook_groups:
+            hook_list = group.get("hooks", [])
+            if not isinstance(hook_list, list):
+                continue
+            for hook in hook_list:
+                cmd = hook.get("command", "")
+                if not isinstance(cmd, str):
+                    continue
+
+                # Check 1: known permissionDecision scripts in any Codex hook
+                for unsafe in _CODEX_UNSAFE_SCRIPTS:
+                    if unsafe in cmd:
+                        warnings.append(
+                            f"  [codex-hook] {hook_type}: {unsafe} uses permissionDecision "
+                            f"protocol (Claude Code only) — will error in Codex"
+                        )
+
+                # Check 2: Stop hooks without --quiet for scripts that print to stdout
+                if hook_type == "Stop" and "notify.py" in cmd and "--quiet" not in cmd:
+                    warnings.append(
+                        "  [codex-hook] Stop: notify.py prints to stdout without --quiet "
+                        "— Codex parses Stop stdout as JSON"
+                    )
+
+                # Check 3: any hook referencing scripts with permissionDecision output
+                if hook_type == "PreToolUse":
+                    # Resolve the script path and check for permissionDecision
+                    resolved = _resolve_hook_script(root, cmd)
+                    if resolved and resolved.is_file():
+                        content = resolved.read_text(encoding="utf-8", errors="replace")
+                        if "permissionDecision" in content:
+                            warnings.append(
+                                f"  [codex-hook] PreToolUse: {resolved.name} contains "
+                                f"permissionDecision — unsupported in Codex"
+                            )
+
+    return warnings
+
+
+def _resolve_hook_script(root: Path, cmd: str) -> Path | None:
+    """Best-effort resolve a hook command string to a script Path."""
+    # Handle: python3 "$(git rev-parse --show-toplevel)/path/to/script.py"
+    # Extract the path after the last git-root marker
+    if "$(git rev-parse --show-toplevel)" in cmd:
+        # Extract relative path from the git-root-relative command
+        parts = cmd.split("$(git rev-parse --show-toplevel)")
+        if len(parts) >= 2:
+            rel = parts[-1].strip().strip('"').strip("'").lstrip("/")
+            # Strip trailing arguments
+            rel = rel.split('" ')[0].split("' ")[0]
+            if " --" in rel:
+                rel = rel.split(" --")[0].strip()
+            return root / rel
+    # Handle: python3 path/to/script.py
+    tokens = cmd.split()
+    for token in reversed(tokens):
+        token = token.strip('"').strip("'")
+        if token.endswith(".py"):
+            candidate = root / token
+            if candidate.is_file():
+                return candidate
+    return None
+
+
 # ── File writing ─────────────────────────────────────────────────────────────
 
 
@@ -862,6 +962,11 @@ def main(argv: list[str] | None = None) -> int:
                 f"  [warning] no template files under {CODEX_ADAPTER_DIR}",
                 file=sys.stderr,
             )
+        # Lint Codex hooks for protocol compatibility
+        hook_warnings = lint_codex_hooks(root)
+        for w in hook_warnings:
+            print(w, file=sys.stderr)
+            stale += 1
         print()
 
     # ── Antigravity rules (kernel templates) ─────────────────────────────────
