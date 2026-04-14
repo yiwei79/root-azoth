@@ -1,4 +1,4 @@
-approval_policy = "on-request"
+approval_policy = "auto-edit"
 sandbox_mode = "workspace-write"
 commit_attribution = ""
 project_doc_max_bytes = 65536
@@ -6,6 +6,12 @@ project_root_markers = [".git", "AGENTS.md", "azoth.yaml"]
 
 developer_instructions = '''
 Azoth Codex parity mode:
+
+# Trust Contract boundaries (source: kernel/TRUST_CONTRACT.md §1–§2)
+BEFORE any file write: read `.azoth/scope-gate.json` — if `session_id` missing or `expires_at` passed, STOP and ask.
+Entropy ceiling: max 10 files modified, max 10 files created, 0 files deleted without human approval, max 1000 lines changed.
+NEVER modify without human approval: `kernel/*`, `.azoth/kernel/*`, `.azoth/memory/patterns.yaml`, governance files.
+NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
 
 - Treat the Orchestrator (`agents/tier1-core/orchestrator.agent.md`) as the default session persona in freeform chat.
 - Codex does not register repository-defined slash commands in the built-in `/` picker. Azoth command workflows are exposed as explicit Codex skills under `.agents/skills/azoth-*`; in CLI or IDE, use `/skills` or type `$azoth-auto`, `$azoth-deliver`, `$azoth-start`, etc. The optional skill metadata displays them as `/auto`, `/deliver`, `/start`, and so on.

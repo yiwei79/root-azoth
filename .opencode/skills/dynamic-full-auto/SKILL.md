@@ -250,6 +250,15 @@ summaries inside governed pipelines.
 5. **Checkpoint Γ + delivery** — Same logical flow as Claude Code; **`pipeline-gate.json`** must set `"pipeline"` to match the **next** delivery command (`"auto"` \| `"deliver"` \| `"deliver-full"`).
 6. **`/next`** — Use before gated implementation if scope is missing or expired; do not invent parallel workflows — see `.claude/commands/next.md`.
 
+## Happy path — Codex
+
+1. Codex is **hook-soft**: PreToolUse hooks are **advisory** (`additionalContext` injection), not mechanical (`decision: block`). Scope-gate and entropy enforcement rely on `developer_instructions` in `.codex/config.toml`.
+2. **Network is disabled** in `workspace-write` sandbox (`network_access = false`). **Wave A researcher tasks cannot fetch external URLs.** Research must use pre-seeded context, local files, or be delegated to a platform with network access (Claude Code, Copilot).
+3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 6, max_depth: 1`) enables parallel researcher/explore tasks within the sandbox, but without external fetches.
+4. **Digest writes** — Same scope-gate contract: validate `.azoth/scope-gate.json` before any write, including `append-pack` to the digest.
+5. **Checkpoint Γ + delivery** — Same logical flow; `pipeline-gate.json` must match the delivery command.
+6. **Stop hook** — `scripts/kernel-integrity.py` runs at session end to flag kernel drift.
+
 ## Lazy Eval Loading
 
 Do not pre-load `.claude/commands/eval.md`, `.claude/commands/eval-swarm.md`, or

@@ -53,6 +53,16 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/kernel-integrity.py\"",
+            "timeout": 10,
+            "statusMessage": "Validating kernel integrity"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/notify.py\" --title \"Azoth\" --message \"Codex session waiting for input\"",
             "timeout": 30,
             "statusMessage": "Sending Azoth notification"
