@@ -1672,16 +1672,20 @@ items:
   source: CDX-PR8-005
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-14'
+  completed_date: '2026-04-15'
   description: >
     A stash-pop commit on phase/v0.2.0-p2 contains network_access=true in
     .codex/config.toml. This change was not in the PR-8 diff and may have been
     included unintentionally. Human must verify intent: if unintentional, revert
     on the branch; if intentional, add an explicit security rationale in the
     commit message referencing the Codex sandbox policy before any further merge.
+    Verification completed 2026-04-15: current branch state is
+    .codex/config.toml network_access=false (set in commit 2438519), so no
+    revert was required.
 - id: BL-048
   title: "Sync entropy limit (1000 lines/session) to canonical tier1-core agent archetypes"
   source: COP-PR8-002
