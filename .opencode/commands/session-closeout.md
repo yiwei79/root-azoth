@@ -184,34 +184,38 @@ appending — or use `ep-{max+1}` to avoid merge conflicts.
 
 ### C6 — PR review requests (Copilot · Cursor · Codex)
 
-After creating a PR, request code review from Copilot, Cursor, and Codex and write their
-insights to `.azoth/inbox/` for later `/intake` processing.
+After creating a PR, request code review from Copilot, Cursor, and Codex. Write
+review findings to `.azoth/inbox/` only after a platform returns an actual
+insight.
 
 **Trigger**: run this step immediately after `gh pr create` returns a PR URL.
 
-1. Write three inbox stub files — one per platform — using this naming scheme:
+1. Use this inbox naming scheme for any platform that returns a finding:
    `pr-review-<platform>-pr<number>-<YYYY-MM-DD>.jsonl`
-   Example for PR #9 created 2026-04-15:
-   - `.azoth/inbox/pr-review-copilot-pr9-2026-04-15.jsonl`
-   - `.azoth/inbox/pr-review-cursor-pr9-2026-04-15.jsonl`
-   - `.azoth/inbox/pr-review-codex-pr9-2026-04-15.jsonl`
+   Example: `.azoth/inbox/pr-review-copilot-pr9-2026-04-15.jsonl`
 
-2. Each stub file is a single JSON line seeding the review request context:
+2. Do **not** commit pending/request stubs to `.azoth/inbox/`. Every inbox JSONL
+   line must already satisfy the D32 insight schema (`kernel/GOVERNANCE.md` §7).
+   If a platform review is still pending, track that state in the PR thread or a
+   checklist — not in `.azoth/inbox/`.
+
+3. When a review returns a real finding, append one JSON line per finding using
+   the D32 schema. Example:
    ```json
-   {"source": "<platform>", "pr": <number>, "date": "<YYYY-MM-DD>", "type": "code-review-request", "repo": "<owner/repo>", "title": "<pr title>", "review": null, "status": "pending"}
+   {"id":"COP-PR9-001","source":"copilot-review","source_type":"agent","timestamp":"2026-04-15T10:36:25Z","category":"bug","severity":"medium","target":".claude/commands/session-closeout.md:193-205","summary":"C6 instructed the agent to write non-D32 review-request stubs into .azoth/inbox/, which fails inbox schema validation.","evidence":"The example JSON contains request metadata rather than the 12 required D32 fields; tests/test_inbox.py validates every .jsonl file in .azoth/inbox/ against D32.","recommended_action":"Only write inbox files after a review produces a real finding, and serialize each finding as D32 JSONL.","auto_applicable":false,"requires_human_gate":false}
    ```
 
-3. Collect the actual review:
-   - **Copilot**: open the PR on GitHub and request a Copilot review; paste the response back into the stub file replacing `"review": null` with the insight text.
-   - **Cursor**: open the diff/branch in Cursor, ask for a review, write the response into the stub.
-   - **Codex**: run in a Codex workspace, ask to review the PR changes, write the response.
+4. Collect the actual review:
+   - **Copilot**: open the PR on GitHub, request a Copilot review, and transcribe each actionable finding into D32 JSONL.
+   - **Cursor**: open the diff/branch in Cursor, ask for a review, and transcribe each actionable finding into D32 JSONL.
+   - **Codex**: run in a Codex workspace, ask to review the PR changes, and transcribe each actionable finding into D32 JSONL.
 
-4. Once all three stubs have `"review"` populated, run `/intake` to triage them through the governed protocol.
+5. Only platforms that returned findings need inbox files. If a review reports no
+   issues, leave no inbox artifact for that platform.
 
-5. Report: `C6 ✓ inbox stubs written for PR #<N> — Copilot / Cursor / Codex reviews pending`
+6. Run `/intake` after the review findings are written to `.azoth/inbox/`.
 
-> **If collecting reviews now is not possible** (e.g. rate limits, platform unavailable),
-> write the stubs with `"status": "pending"` and collect asynchronously before the next `/intake`.
+7. Report: `C6 ✓ review findings written to .azoth/inbox/ in D32 format`
 
 ## Part D: Surface Queued Insights
 
