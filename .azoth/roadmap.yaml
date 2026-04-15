@@ -327,7 +327,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 15
+    current_patch: 16
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]

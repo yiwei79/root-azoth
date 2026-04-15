@@ -83,8 +83,12 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     (src / "skills" / "probe.md").write_text("x SupplyGrowth y\n", encoding="utf-8")
     (src / ".azoth").mkdir()
     (src / ".azoth" / "secret.yaml").write_text("nope", encoding="utf-8")
+    (src / ".claude" / "hooks").mkdir(parents=True)
+    (src / ".claude" / "hooks" / "secret_hook.py").write_text("print('nope')\n", encoding="utf-8")
     (src / ".git").mkdir()
     (src / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (src / "research_antigravity_parity").mkdir()
+    (src / "research_antigravity_parity" / "notes.md").write_text("internal research\n", encoding="utf-8")
     (src / "tests").mkdir()
     (src / "tests" / "t.py").write_text("# t", encoding="utf-8")
     (src / "LICENSE").write_text("PolyForm Noncommercial 1.0.0\n", encoding="utf-8")
@@ -111,7 +115,9 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
 
     rels = {p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()}
     assert not any(rp.startswith(".azoth/") for rp in rels)
+    assert not any(rp.startswith(".claude/hooks/") for rp in rels)
     assert not any(rp.startswith(".git/") for rp in rels)
+    assert not any(rp.startswith("research_antigravity_parity/") for rp in rels)
     assert not any(rp.startswith("tests/") for rp in rels)
     assert not any(rp.startswith("kernel/templates/") for rp in rels)
     assert "LICENSE" in rels
