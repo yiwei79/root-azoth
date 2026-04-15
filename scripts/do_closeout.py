@@ -189,7 +189,9 @@ def validate_reinforcement_targets(
 
     episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
     existing_ids = {str(episode.get("id") or "") for episode in episodes}
-    missing_ids = [episode_id for episode_id in reinforce_episode_ids if episode_id not in existing_ids]
+    missing_ids = [
+        episode_id for episode_id in reinforce_episode_ids if episode_id not in existing_ids
+    ]
     if missing_ids:
         quoted_ids = ", ".join(repr(episode_id) for episode_id in missing_ids)
         raise ReinforcementValidationError(

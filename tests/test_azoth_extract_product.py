@@ -88,7 +88,9 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     (src / ".git").mkdir()
     (src / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
     (src / "research_antigravity_parity").mkdir()
-    (src / "research_antigravity_parity" / "notes.md").write_text("internal research\n", encoding="utf-8")
+    (src / "research_antigravity_parity" / "notes.md").write_text(
+        "internal research\n", encoding="utf-8"
+    )
     (src / "tests").mkdir()
     (src / "tests" / "t.py").write_text("# t", encoding="utf-8")
     (src / "LICENSE").write_text("PolyForm Noncommercial 1.0.0\n", encoding="utf-8")

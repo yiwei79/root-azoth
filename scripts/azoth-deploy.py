@@ -413,10 +413,7 @@ def transform_command_codex_skill_metadata(command: dict[str, Any]) -> str:
     """Optional Codex UI metadata for Azoth command-wrapper skills."""
     name = command["name"]
     skill_name = codex_command_skill_name(command)
-    description = str(
-        command["meta"].get("description")
-        or f"Azoth `/{name}` workflow"
-    )
+    description = str(command["meta"].get("description") or f"Azoth `/{name}` workflow")
     data = {
         "interface": {
             "display_name": f"/{name}",

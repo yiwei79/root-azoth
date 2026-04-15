@@ -313,7 +313,9 @@ def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(
     assert (repo_root / ".azoth" / "session-orientation.txt").exists()
 
 
-def test_governed_closeout_can_reinforce_exact_prior_episode_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_governed_closeout_can_reinforce_exact_prior_episode_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     repo_root = _build_repo(tmp_path)
     fake_home = tmp_path / "home"
     fake_home.mkdir()
