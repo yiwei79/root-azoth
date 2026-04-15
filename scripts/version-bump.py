@@ -48,9 +48,13 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _sync_settings_version(new_version: str) -> None:
-    """Update AZOTH_VERSION in .claude/settings.json if the file exists."""
-    settings_path = ROOT / ".claude" / "settings.json"
+def _settings_path_for(azoth_path: Path) -> Path:
+    """Return the settings path paired with the selected azoth.yaml root."""
+    return azoth_path.resolve().parent / ".claude" / "settings.json"
+
+
+def _sync_settings_version(new_version: str, *, settings_path: Path) -> None:
+    """Update AZOTH_VERSION in the paired .claude/settings.json if it exists."""
     if not settings_path.is_file():
         return
     text = settings_path.read_text(encoding="utf-8")
@@ -356,7 +360,7 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_version))
     _write(roadmap_path, new_roadmap)
 
-    _sync_settings_version(new_version)
+    _sync_settings_version(new_version, settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → {new_version}")
 
 
@@ -434,7 +438,7 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_azoth_version))
     _write(roadmap_path, roadmap_text)
 
-    _sync_settings_version(new_azoth_version)
+    _sync_settings_version(new_azoth_version, settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → {new_azoth_version} (phase advance)")
 
 
@@ -525,7 +529,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)
 
-    _sync_settings_version("0.1.1.0")
+    _sync_settings_version("0.1.1.0", settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → 0.1.1.0 (release)")
     print(
         'Next step (human): git tag -a v0.1.0 -m "Azoth v0.1.0 public release" '

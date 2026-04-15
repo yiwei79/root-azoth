@@ -42,8 +42,11 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
 1. **Surface relevant memory** (context-recall)
 
-   Before routing, invoke `context-recall` to surface relevant M3 episodes and M2
-   patterns for the session. This primes planning with historical context.
+   Before routing, invoke `context-recall` via `skills/context-recall/SKILL.md`.
+   Extract 3-5 goal tags for the current session, use the skill's scoring flow to
+   surface the top 1-3 relevant M3 episodes and M2 patterns, then route with that
+   context in view. See `skills/context-recall/SKILL.md` for the full scoring
+   algorithm and output format.
 
 2. **Read the user's selection and route accordingly**
 

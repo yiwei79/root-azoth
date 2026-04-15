@@ -4,11 +4,11 @@
 0.1.2.20 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 20
 
 ## Last Session
-- **Session**: 2026-04-15-adhoc-closeout-efficiency
-- **Goal**: Ad-hoc: evaluate session-closeout efficiency, repeated actions, architecture-wide behavior, and token usage
+- **Session**: 2026-04-15-bl-043
+- **Goal**: BL-043: Expand context-recall step in start.md with concrete invocation path
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-208 (success)
+- **Episode**: ep-209 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

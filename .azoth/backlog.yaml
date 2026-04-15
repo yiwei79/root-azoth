@@ -1607,10 +1607,11 @@ items:
   source: CUR-PR8-003
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 8
   created_date: '2026-04-14'
+  completed_date: '2026-04-15'
   description: >
     The context-recall step added to .claude/commands/start.md names the skill
     but provides no invocation path. Expand the step to specify: invoke via
@@ -1714,10 +1715,11 @@ items:
   source: COP-PR8-004
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 7
   created_date: '2026-04-14'
+  completed_date: '2026-04-15'
   description: >
     AZOTH_VERSION in .claude/settings.json, version in azoth.yaml, and the version
     declaration in CLAUDE.md currently diverge (0.1.2.9 vs 0.1.2.1 vs v0.1.2).

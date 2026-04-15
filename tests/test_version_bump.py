@@ -16,6 +16,7 @@ Coverage:
 
 from __future__ import annotations
 
+import json
 import subprocess
 import textwrap
 from pathlib import Path
@@ -94,6 +95,7 @@ def _make_env(
 
     azoth_p.write_text(azoth_content)
     roadmap_p.write_text(roadmap_content)
+    _write_settings(base, azoth_version)
 
     return azoth_p, roadmap_p
 
@@ -112,6 +114,25 @@ def _run(flag: str, azoth_p: Path, roadmap_p: Path) -> subprocess.CompletedProce
         capture_output=True,
         text=True,
     )
+
+
+def _write_settings(base: Path, version: str, phase: str = "3") -> Path:
+    settings_path = base / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    settings_path.write_text(
+        json.dumps(
+            {
+                "env": {
+                    "AZOTH_VERSION": version,
+                    "AZOTH_PHASE": phase,
+                }
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return settings_path
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +166,16 @@ def test_patch_updates_roadmap_current_patch(tmp_path: Path) -> None:
     assert v003["current_patch"] == 6, (
         f"Expected current_patch=6 after --patch, got {v003['current_patch']!r}"
     )
+
+
+def test_patch_updates_sibling_settings_version(tmp_path: Path) -> None:
+    base = tmp_path / "t2b"
+    azoth_p, roadmap_p = _make_env(base, azoth_version="0.0.3.5", current_patch=5)
+    result = _run("--patch", azoth_p, roadmap_p)
+    assert result.returncode == 0, result.stderr
+
+    settings = json.loads((base / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    assert settings["env"]["AZOTH_VERSION"] == "0.0.3.6"
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +237,22 @@ def test_phase_advances_version(tmp_path: Path) -> None:
     assert v004.get("current_patch") == 1, (
         f"Expected current_patch=1 on new active version v0.0.4, got {v004.get('current_patch')!r}"
     )
+
+
+def test_phase_updates_sibling_settings_version(tmp_path: Path) -> None:
+    base = tmp_path / "t4c"
+    azoth_p, roadmap_p = _make_env(
+        base,
+        azoth_version="0.0.3.5",
+        active_version="v0.0.3",
+        current_patch=5,
+        pending_task_refs=[],
+    )
+    result = _run("--phase", azoth_p, roadmap_p)
+    assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
+
+    settings = json.loads((base / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    assert settings["env"]["AZOTH_VERSION"] == "0.0.4.1"
 
 
 # ---------------------------------------------------------------------------
@@ -315,6 +362,7 @@ def test_release_writes_phased_post_release_version(tmp_path: Path) -> None:
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
     roadmap_p = base / "roadmap.yaml"
+    _write_settings(base, "0.0.7.4", phase="7")
     azoth_p.write_text("version: 0.0.7.4\nphase: 7\n", encoding="utf-8")
     roadmap_p.write_text(
         textwrap.dedent(
@@ -373,6 +421,9 @@ def test_release_writes_phased_post_release_version(tmp_path: Path) -> None:
     v021 = next(x for x in rdata["versions"] if x["id"] == "v0.2.0-p1")
     assert v021["status"] == "active"
     assert v021.get("current_patch") == 0
+
+    settings = json.loads((base / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    assert settings["env"]["AZOTH_VERSION"] == "0.1.1.0"
 
 
 # ---------------------------------------------------------------------------
