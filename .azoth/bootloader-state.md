@@ -1,29 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.2.19 · Phase 2 — v0.2.0 · swarm · memory · UX (milestone phase 2) · active_version: v0.2.0-p2 · current_patch: 19
+0.1.2.20 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 20
 
 ## Last Session
-- **Session**: 2026-04-15-bl-044
-- **Platform**: Claude Code (worktree: keen-bhaskara)
-- **Delivered**: BL-044 (Codex W3 closeout note in session-closeout.md) + BL-045 (agent frontmatter advisory comment in azoth-deploy.py). All 176 platform mirrors regenerated. 69 tests green.
-- **Pipeline**: standard delivery
-- **Episodes**: ep-206 (success)
-- **Version bump**: 0.1.2.18 → 0.1.2.19
+- **Session**: 2026-04-15-adhoc-closeout-efficiency
+- **Goal**: Ad-hoc: evaluate session-closeout efficiency, repeated actions, architecture-wide behavior, and token usage
+- **Pipeline**: auto
+- **Outcome**: closed
+- **Episode**: ep-208 (success)
 
 ## Key Changes This Session
-1. `.claude/commands/session-closeout.md`: added Codex W3 note parallel to Copilot note — Codex should attempt W3 on closeout, log 'W3 deferred' if sandbox blocks ~/.claude/ access.
-2. `scripts/azoth-deploy.py`: added comment in `transform_command_codex_skill()` explaining why `agent:` is absent from SKILL.md frontmatter (no recognized Codex metadata field, D46; preserved as advisory body prose).
-3. `.github/prompts/session-closeout.prompt.md`, `.opencode/commands/session-closeout.md`, `.agents/workflows/session-closeout.md`: regenerated mirrors.
-4. `.azoth/backlog.yaml`: BL-044 and BL-045 marked `complete`.
-5. `.azoth/memory/episodes.jsonl`: appended ep-206.
-6. `.azoth/scope-gate.json`: closed.
-7. `azoth.yaml`, `.azoth/roadmap.yaml`: bumped to 0.1.2.19.
+1. W1 appended the closeout episode.
+2. W2 closed the scope gate and refreshed repo-local handoff state.
+3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.
 
 ## Open Decisions
-- BL-049: likely needs re-scoping (version-bump.py --patch already updates `.claude/settings.json` AZOTH_VERSION).
-- BL-043: expand context-recall step in start.md with concrete invocation path.
-- RP-F/RP-G: digest append (codex-sandbox-security + codex-hook-parity packs) from prior DFA+ audit still pending — low priority, informational only.
+- BL-044 is now the next active backlog item for v0.2.0-p2.
+- BL-049 likely needs revalidation because version-bump.py already updates AZOTH_VERSION.
 
 ## Next Action
-- Run `/next` for next backlog priority (BL-043 context-recall or BL-049 re-scoping).
+- Run `/next` to select the next scoped task.
