@@ -57,7 +57,7 @@ Run at the beginning of any session to get a full project snapshot before decidi
    | `roadmap` | Run `/roadmap` — D48 versioned roadmap dashboard (`scripts/roadmap_dashboard.py`) |
    | `plan` | Run `/plan` — structured autonomy / planning |
    | `remember` | Run `/remember` — quick M3 episode capture without full closeout |
-   | `closeout` | Run `/session-closeout` — W1–W4 batch, version bump when applicable, `.azoth/session-state.md` handoff |
+   | `closeout` | Run `/session-closeout` — W1–W4 batch, always-fire patch bump, `.azoth/session-state.md` handoff |
    | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset |
 
    **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.

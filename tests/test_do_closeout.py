@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import do_closeout  # noqa: E402
@@ -23,6 +24,9 @@ def _build_repo(
     delivery_pipeline: str = "governed",
     session_id: str = "sess-123",
     backlog_id: str = "BL-123",
+    include_session_state: bool = False,
+    include_sessions_registry: bool = True,
+    include_resumable_run: bool = False,
 ) -> Path:
     (tmp_path / "azoth.yaml").write_text(
         "version: 0.1.1.29\nphase: 1\nmemory:\n  episodes: 0\n", encoding="utf-8"
@@ -68,6 +72,67 @@ def _build_repo(
         ),
         encoding="utf-8",
     )
+    run_ledger: dict[str, object] = {
+        "schema_version": 1,
+        "runs": [],
+        "write_claim": {
+            "session_id": session_id,
+            "expires_at": _future(),
+            "acquired_at": "2026-04-15T00:00:00+00:00",
+        },
+    }
+    if include_sessions_registry:
+        session_entry: dict[str, object] = {
+            "session_id": session_id,
+            "backlog_id": backlog_id,
+            "goal": f"{backlog_id}: Governed closeout",
+            "status": "active",
+            "ide": "codex",
+            "next_action": "Continue current scope",
+            "updated_at": "2026-04-15T00:00:00+00:00",
+        }
+        if include_resumable_run:
+            session_entry["active_run_id"] = "run-123"
+            run_ledger["runs"] = [
+                {
+                    "run_id": "run-123",
+                    "session_id": session_id,
+                    "backlog_id": backlog_id,
+                    "ide": "codex",
+                    "mode": "auto",
+                    "goal": f"{backlog_id}: Governed closeout",
+                    "status": "paused",
+                    "created_at": "2026-04-15T00:00:00+00:00",
+                    "updated_at": "2026-04-15T00:00:00+00:00",
+                    "next_action": "Resume wave 2 review.",
+                    "stages_completed": ["planner"],
+                    "waves": [],
+                    "branches": [],
+                }
+            ]
+        run_ledger["sessions"] = [session_entry]
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(run_ledger, sort_keys=False),
+        encoding="utf-8",
+    )
+    if include_session_state:
+        (azoth_dir / "session-state.md").write_text(
+            yaml.safe_dump(
+                {
+                    "session_id": session_id,
+                    "state": "active",
+                    "last_ide": "codex",
+                    "timestamp": "2026-04-15T00:00:00+00:00",
+                    "active_task": "In progress",
+                    "active_files": [],
+                    "pending_decisions": [],
+                    "approved_scope": f"{backlog_id}: Governed closeout",
+                    "next_action": "Continue current scope",
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
     return tmp_path
 
 
@@ -99,6 +164,9 @@ def test_governed_closeout_requires_approval_evidence_before_mutation(
         is True
     )
     assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert "write_claim:" in (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(
+        encoding="utf-8"
+    )
     assert (repo_root / ".azoth" / "session-orientation.txt").exists()
 
 
@@ -206,7 +274,7 @@ def test_governed_closeout_fails_closed_on_invalid_latest_approval_record(
 def test_governed_closeout_accepts_matching_human_approval_without_consuming_log(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    repo_root = _build_repo(tmp_path)
+    repo_root = _build_repo(tmp_path, include_session_state=True)
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     approvals_before = _write_approvals(
@@ -244,21 +312,42 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     episode = json.loads(episode_lines[0])
     assert episode["session_id"] == "sess-123"
     assert episode["goal"] == "BL-123: Governed closeout"
+    assert ".azoth/backlog.yaml" not in episode["context"]["files_changed"]
+    assert ".azoth/run-ledger.local.yaml" in episode["context"]["files_changed"]
+    assert ".azoth/bootloader-state.md" in episode["context"]["files_changed"]
+    assert ".azoth/session-state.md" in episode["context"]["files_changed"]
 
     scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
     assert scope["approved"] is False
     assert "closed_at" in scope
-    assert "status: complete" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    assert "write_claim" not in ledger
+    session_entry = ledger["sessions"][0]
+    assert session_entry["status"] == "closed"
+    assert session_entry["next_action"] == do_closeout.default_next_action()
+    assert "updated_at" in session_entry
+    assert "closed_at" in session_entry
+    assert "active_run_id" not in session_entry
     assert (repo_root / ".azoth" / "final-delivery-approvals.jsonl").read_text(
         encoding="utf-8"
     ) == approvals_before
     assert not (repo_root / ".azoth" / "session-orientation.txt").exists()
+    session_state = (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    assert "state: closed" in session_state
+    assert "last_ide: codex" in session_state
+    assert f"next_action: {do_closeout.default_next_action()}" in session_state
+    bootloader_state = (repo_root / ".azoth" / "bootloader-state.md").read_text(encoding="utf-8")
+    assert "sess-123" in bootloader_state
+    assert "ep-001" in bootloader_state
+    assert do_closeout.default_next_action() in bootloader_state
     memory_dir = do_closeout.claude_project_memory_dir(repo_root)
     project_status = (memory_dir / "project_status.md").read_text(encoding="utf-8")
     memory_index = (memory_dir / "MEMORY.md").read_text(encoding="utf-8")
     assert "Toolkit version: 0.1.1.29" in project_status
     assert "Roadmap active_version: v0.2.0-p1" in project_status
     assert "Last episode: ep-001" in project_status
+    assert f"Next action: {do_closeout.default_next_action()}" in project_status
     assert "Project Status" in memory_index
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
@@ -310,6 +399,9 @@ def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(
     assert episodes_path.read_text(encoding="utf-8") == episodes_before
     assert (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8") == scope_before
     assert (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8") == backlog_before
+    assert "write_claim:" in (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(
+        encoding="utf-8"
+    )
     assert (repo_root / ".azoth" / "session-orientation.txt").exists()
 
 
@@ -361,3 +453,114 @@ def test_governed_closeout_can_reinforce_exact_prior_episode_once(
     assert prior["reinforcement_count"] == 1
     assert prior["context"]["reinforced_by_sessions"] == ["sess-123"]
     assert new_episode["reinforcement_count"] == 0
+
+
+def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    expected_next_action = "Resume wave 2 review."
+    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    session_entry = ledger["sessions"][0]
+    assert session_entry["status"] == "parked"
+    assert session_entry["active_run_id"] == "run-123"
+    assert session_entry["next_action"] == expected_next_action
+    assert "closed_at" not in session_entry
+
+    session_state = (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    assert f"next_action: {expected_next_action}" in session_state
+
+    bootloader_state = (repo_root / ".azoth" / "bootloader-state.md").read_text(encoding="utf-8")
+    assert expected_next_action in bootloader_state
+
+    memory_dir = do_closeout.claude_project_memory_dir(repo_root)
+    project_status = (memory_dir / "project_status.md").read_text(encoding="utf-8")
+    assert f"Next action: {expected_next_action}" in project_status
+
+
+def test_governed_closeout_skips_session_state_when_file_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=False)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    assert not (repo_root / ".azoth" / "session-state.md").exists()
+    assert (repo_root / ".azoth" / "bootloader-state.md").exists()
+
+    episode_lines = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
+    episode = json.loads(episode_lines[0])
+    assert ".azoth/session-state.md" not in episode["context"]["files_changed"]
+
+
+def test_governed_closeout_runs_w3_before_w4(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    order: list[str] = []
+
+    def _fake_w3(*args: object, **kwargs: object) -> None:
+        order.append("W3")
+
+    def _fake_w4(*args: object, **kwargs: object) -> None:
+        order.append("W4")
+
+    monkeypatch.setattr(do_closeout, "write_claude_memory_mirror", _fake_w3)
+    monkeypatch.setattr(do_closeout, "run_version_bump", _fake_w4)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    assert order == ["W3", "W4"]

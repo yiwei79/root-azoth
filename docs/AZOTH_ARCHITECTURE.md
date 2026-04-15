@@ -585,13 +585,15 @@ Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D
 | Checkpoint | What it writes | Claude Code | Cursor | OpenCode | GitHub Copilot |
 |------------|----------------|-------------|--------|----------|----------------|
 | **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ (same repo path) |
-| **W2** | `.azoth/bootloader-state.md`, `.azoth/scope-gate.json` | ✅ | ✅ | ✅ | ✅ (same repo paths) |
+| **W2** | `.azoth/bootloader-state.md`, `.azoth/run-ledger.local.yaml`, `.azoth/scope-gate.json` (`.azoth/session-state.md` when present) | ✅ | ✅ | ✅ | ✅ (same repo paths) |
 | **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | ⚠️ **attempt mirror write** so later Claude Code sessions can read the latest Copilot-authored closeout |
 | **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
 
 **Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule).
 
 **Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**), and **GitHub Copilot** should also best-effort mirror W3 during closeout so Claude Code can read Copilot-authored session state later. **OpenCode** and **GitHub Copilot** still do not **consume** `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or another host with access.
+
+**Governed closeout rule:** before `scripts/do_closeout.py` performs any W1–W4 mutation for a governed scope or `target_layer: M1`, it must validate the latest matching human `final-delivery` approval for the active `session_id` in `.azoth/final-delivery-approvals.jsonl`. Approval evidence is consume-only during closeout: read it, validate it, and leave it unchanged. Missing, malformed, missing-match, or denied records fail closed before W1.
 
 ### Platform File Format Differences
 
@@ -1286,8 +1288,8 @@ are we" without requiring agents to read git history.
   `--release` closes the v0.0.7 slice, marks v0.1.0 complete, sets the v0.2.0 milestone
   container to `target`, activates `v0.2.0-p1`, sets milestone-local `phase: 1` +
   `milestone` + `lifecycle_phase: 8`, writes `0.1.1.0`, and proposes the public v0.1.0 tag.
-- `/session-closeout` integration — final step calls `version-bump.py --patch` after
-  confirming at least one artifact was written this session.
+- `/session-closeout` integration — final step always calls `version-bump.py --patch`
+  after W3 so every successful closeout advances the patch version.
 - `/deliver-full` integration — calls `version-bump.py --patch` after builder stage
   completes successfully.
 

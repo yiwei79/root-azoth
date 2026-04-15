@@ -12,6 +12,7 @@ from typing import Any
 
 import yaml
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
+from run_ledger import release_write_claim
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
@@ -72,6 +73,16 @@ def load_yaml(path: pathlib.Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise CloseoutError(f"Expected YAML mapping in {path}")
     return data
+
+
+def write_yaml(path: pathlib.Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        yaml.safe_dump(data, handle, sort_keys=False)
+
+
+def default_next_action() -> str:
+    return "Run `/next` to select the next scoped task."
 
 
 def is_governed_scope(scope: dict[str, Any]) -> bool:
@@ -146,7 +157,13 @@ def _next_episode_id(episodes: list[dict[str, Any]]) -> str:
     return f"ep-{last_num + 1:03d}"
 
 
-def append_episode(repo_root: pathlib.Path, scope: dict[str, Any], timestamp: str) -> str:
+def append_episode(
+    repo_root: pathlib.Path,
+    scope: dict[str, Any],
+    timestamp: str,
+    *,
+    files_changed: list[str],
+) -> tuple[str, dict[str, Any], int]:
     episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
     episodes = load_jsonl(episodes_path)
     new_id = _next_episode_id(episodes)
@@ -162,14 +179,7 @@ def append_episode(repo_root: pathlib.Path, scope: dict[str, Any], timestamp: st
         "tags": ["closeout", "session-closeout"],
         "reinforcement_count": 0,
         "m2_candidate": False,
-        "context": {
-            "files_changed": [
-                ".azoth/memory/episodes.jsonl",
-                ".azoth/scope-gate.json",
-                "azoth.yaml",
-                ".azoth/backlog.yaml",
-            ]
-        },
+        "context": {"files_changed": files_changed},
     }
 
     episodes_path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,7 +187,7 @@ def append_episode(repo_root: pathlib.Path, scope: dict[str, Any], timestamp: st
         handle.write(json.dumps(new_episode) + "\n")
 
     print(f"W1: Appended episode {new_id} to {episodes_path}")
-    return new_id
+    return new_id, new_episode, len(episodes) + 1
 
 
 def validate_reinforcement_targets(
@@ -211,6 +221,93 @@ def close_scope_gate(repo_root: pathlib.Path, timestamp: str) -> dict[str, Any]:
     return gate_data
 
 
+def _resumable_run_for_session(
+    ledger: dict[str, Any],
+    *,
+    session_id: str,
+    preferred_run_id: str | None = None,
+) -> dict[str, Any] | None:
+    runs = ledger.get("runs")
+    if not isinstance(runs, list):
+        return None
+
+    resumable = [
+        run
+        for run in runs
+        if isinstance(run, dict)
+        and str(run.get("session_id") or "") == session_id
+        and str(run.get("status") or "") in {"active", "paused"}
+    ]
+    if not resumable:
+        return None
+    if preferred_run_id:
+        for run in reversed(resumable):
+            if str(run.get("run_id") or "") == preferred_run_id:
+                return run
+    return resumable[-1]
+
+
+def update_session_registry(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    timestamp: str,
+) -> tuple[str, str, str]:
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    if not ledger_path.exists():
+        return default_next_action(), "closed", "W2: session registry not present (skipped)"
+
+    ledger = load_yaml(ledger_path)
+    sessions = ledger.get("sessions")
+    if not isinstance(sessions, list):
+        return default_next_action(), "closed", "W2: session registry not present (skipped)"
+
+    session_id = str(scope.get("session_id") or "")
+    matching_session = next(
+        (
+            entry
+            for entry in sessions
+            if isinstance(entry, dict) and str(entry.get("session_id") or "") == session_id
+        ),
+        None,
+    )
+    if matching_session is None:
+        return (
+            default_next_action(),
+            "closed",
+            f"W2: session registry entry not found for '{session_id}'",
+        )
+
+    preferred_run_id = str(matching_session.get("active_run_id") or "") or None
+    resumable_run = _resumable_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
+    if resumable_run is not None:
+        next_action = str(
+            resumable_run.get("next_action")
+            or matching_session.get("next_action")
+            or default_next_action()
+        )
+        matching_session["status"] = "parked"
+        matching_session["next_action"] = next_action
+        matching_session["active_run_id"] = str(resumable_run.get("run_id") or preferred_run_id or "")
+        matching_session.pop("closed_at", None)
+        session_status = "parked"
+    else:
+        next_action = default_next_action()
+        matching_session["status"] = "closed"
+        matching_session["next_action"] = next_action
+        matching_session.pop("active_run_id", None)
+        matching_session["closed_at"] = timestamp
+        session_status = "closed"
+
+    matching_session["updated_at"] = timestamp
+    write_yaml(ledger_path, ledger)
+    return next_action, session_status, f"W2: session registry updated ({session_status})"
+
+
 def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
     azoth_path = repo_root / "azoth.yaml"
     if not azoth_path.exists():
@@ -227,47 +324,6 @@ def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
                 handle.write(line)
 
     print("W2b: azoth.yaml episode count updated")
-
-
-def update_backlog(repo_root: pathlib.Path, backlog_id: str | None) -> None:
-    if not backlog_id:
-        print("W3: No backlog_id in scope gate, skipped backlog update")
-        return
-
-    backlog_path = repo_root / ".azoth" / "backlog.yaml"
-    if not backlog_path.exists():
-        print("W3: backlog.yaml not found, skipped backlog update")
-        return
-
-    with open(backlog_path, "r", encoding="utf-8") as handle:
-        lines = handle.readlines()
-
-    in_target = False
-    updated = False
-    date_str = utc_now().strftime("%Y-%m-%d")
-    new_lines: list[str] = []
-
-    for line in lines:
-        if line.startswith("  - id:"):
-            current_id = line.split(":", 1)[1].strip().strip("\"'")
-            in_target = current_id == backlog_id
-
-        if in_target and line.lstrip().startswith("status:"):
-            indent = line[: len(line) - len(line.lstrip())]
-            new_lines.append(f"{indent}status: complete\n")
-            new_lines.append(f'{indent}completed_date: "{date_str}"\n')
-            updated = True
-            continue
-
-        new_lines.append(line)
-
-    if not updated:
-        print(f"W3: Backlog item {backlog_id} not found or no status updated")
-        return
-
-    with open(backlog_path, "w", encoding="utf-8") as handle:
-        handle.writelines(new_lines)
-    print(f"W3: Updated backlog item {backlog_id} to status: complete")
 
 
 def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
@@ -295,21 +351,113 @@ def _active_version_snapshot(repo_root: pathlib.Path) -> tuple[str, int | None]:
     return active_version, None
 
 
-def write_claude_memory_mirror(repo_root: pathlib.Path) -> None:
+def update_bootloader_state(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    latest_episode: dict[str, Any],
+    next_action: str,
+    session_status: str,
+    pending_decisions: list[str],
+) -> None:
+    azoth_data = load_yaml(repo_root / "azoth.yaml")
+    active_version, current_patch = _active_version_snapshot(repo_root)
+    version = azoth_data.get("version", "unknown")
+    phase = azoth_data.get("phase", "unknown")
+    goal = str(scope.get("goal") or "Session closeout")
+    pipeline = str(scope.get("delivery_pipeline") or "standard")
+
+    lines = [
+        "# Azoth Bootloader State",
+        "",
+        "## Current Phase",
+        (
+            f"{version} · Phase {phase} · active_version: {active_version} · current_patch: "
+            f"{current_patch if current_patch is not None else 'unknown'}"
+        ),
+        "",
+        "## Last Session",
+        f"- **Session**: {scope.get('session_id', 'unknown-session')}",
+        f"- **Goal**: {goal}",
+        f"- **Pipeline**: {pipeline}",
+        f"- **Outcome**: {session_status}",
+        f"- **Episode**: {latest_episode.get('id', 'unknown')} ({latest_episode.get('type', 'unknown')})",
+        "",
+        "## Key Changes This Session",
+        "1. W1 appended the closeout episode.",
+        "2. W2 closed the scope gate and refreshed repo-local handoff state.",
+        "3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.",
+        "",
+        "## Open Decisions",
+    ]
+    if pending_decisions:
+        lines.extend(f"- {decision}" for decision in pending_decisions)
+    else:
+        lines.append("- None.")
+    lines.extend(
+        [
+            "",
+            "## Next Action",
+            f"- {next_action}",
+            "",
+        ]
+    )
+
+    (repo_root / ".azoth" / "bootloader-state.md").write_text(
+        "\n".join(lines),
+        encoding="utf-8",
+    )
+    print("W2: bootloader-state.md refreshed")
+
+
+def update_session_state(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    timestamp: str,
+    active_files: list[str],
+    next_action: str,
+    existing_session_state: dict[str, Any],
+    selected_ide: str | None = None,
+) -> str:
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    if not session_state_path.exists():
+        return "W2: session-state.md not present (skipped)"
+
+    goal = str(scope.get("goal") or "Session closeout")
+    pending_decisions = existing_session_state.get("pending_decisions")
+    if not isinstance(pending_decisions, list):
+        pending_decisions = []
+    session_state = {
+        "session_id": str(scope.get("session_id") or "unknown-session"),
+        "state": "closed",
+        "last_ide": str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
+        "timestamp": timestamp,
+        "active_task": f"Closed — {goal}",
+        "active_files": active_files,
+        "pending_decisions": pending_decisions,
+        "approved_scope": f"Completed: {goal}",
+        "next_action": next_action,
+    }
+    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
+    return "W2: session-state.md refreshed"
+
+
+def write_claude_memory_mirror(
+    repo_root: pathlib.Path,
+    *,
+    latest_episode: dict[str, Any] | None = None,
+    next_action: str | None = None,
+) -> None:
     memory_dir = claude_project_memory_dir(repo_root)
     memory_dir.mkdir(parents=True, exist_ok=True)
 
     azoth_data = load_yaml(repo_root / "azoth.yaml")
     active_version, current_patch = _active_version_snapshot(repo_root)
-    episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
-    latest_episode = episodes[-1] if episodes else {}
-    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
-    next_backlog_step = "unknown"
-    for raw_line in backlog_text.splitlines():
-        stripped = raw_line.strip()
-        if stripped.startswith("- id:") or stripped.startswith("id:"):
-            next_backlog_step = stripped.split(":", 1)[1].strip().strip("\"'")
-            break
+    if latest_episode is None:
+        episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        latest_episode = episodes[-1] if episodes else {}
+    next_step = next_action or default_next_action()
 
     summary_lines = [
         "# Project Status",
@@ -322,7 +470,7 @@ def write_claude_memory_mirror(repo_root: pathlib.Path) -> None:
         f"- Current patch: {current_patch if current_patch is not None else 'unknown'}",
         f"- Last episode: {latest_episode.get('id', 'none')} — {latest_episode.get('summary', 'No episode recorded.')}",
         f"- Last delivery goal: {latest_episode.get('goal', 'unknown')}",
-        f"- Next backlog step: {next_backlog_step}",
+        f"- Next action: {next_step}",
         "- Open gaps: consult .azoth/bootloader-state.md and .azoth/session-state.md for live handoff details.",
         "",
         "Authoritative sources: .azoth/memory/episodes.jsonl, .azoth/bootloader-state.md, .azoth/scope-gate.json, azoth.yaml",
@@ -366,7 +514,26 @@ def run_closeout(
 
     timestamp = utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     session_id = str(scope.get("session_id") or "unknown-session")
-    append_episode(repo_root, scope, timestamp)
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    existing_session_state = load_yaml(session_state_path)
+    authoritative_files = [
+        ".azoth/memory/episodes.jsonl",
+        ".azoth/bootloader-state.md",
+        ".azoth/scope-gate.json",
+        "azoth.yaml",
+    ]
+    if ledger_path.exists():
+        authoritative_files.append(".azoth/run-ledger.local.yaml")
+    if session_state_path.exists():
+        authoritative_files.append(".azoth/session-state.md")
+
+    _episode_id, latest_episode, episode_count = append_episode(
+        repo_root,
+        scope,
+        timestamp,
+        files_changed=authoritative_files,
+    )
     for episode_id in reinforce_episode_ids:
         try:
             result = increment_reinforcement_count(
@@ -384,12 +551,62 @@ def run_closeout(
             f"W1b: reinforcement {status} for {result.episode_id} "
             f"(count={result.reinforcement_count})"
         )
-    gate_data = close_scope_gate(repo_root, timestamp)
-    episode_count = len(load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl"))
+    close_scope_gate(repo_root, timestamp)
+    next_action, session_status, registry_note = update_session_registry(
+        repo_root,
+        scope=scope,
+        timestamp=timestamp,
+    )
+    print(registry_note)
+    if release_write_claim(repo_root, session_id):
+        print(f"W2: write claim released for session '{session_id}'")
+    else:
+        print(f"W2: write claim not held by '{session_id}' — no-op")
+    selected_ide = str(existing_session_state.get("last_ide") or "")
+    if ledger_path.exists():
+        ledger_after_registry = load_yaml(ledger_path)
+        sessions = ledger_after_registry.get("sessions")
+        if isinstance(sessions, list):
+            matching_session = next(
+                (
+                    entry
+                    for entry in sessions
+                    if isinstance(entry, dict) and str(entry.get("session_id") or "") == session_id
+                ),
+                None,
+            )
+            if isinstance(matching_session, dict):
+                selected_ide = str(matching_session.get("ide") or selected_ide)
+    active_files = authoritative_files.copy()
+    session_state_note = update_session_state(
+        repo_root,
+        scope=scope,
+        timestamp=timestamp,
+        active_files=active_files,
+        next_action=next_action,
+        existing_session_state=existing_session_state,
+        selected_ide=selected_ide or None,
+    )
+    print(session_state_note)
+    update_bootloader_state(
+        repo_root,
+        scope=scope,
+        latest_episode=latest_episode,
+        next_action=next_action,
+        session_status=session_status,
+        pending_decisions=(
+            existing_session_state.get("pending_decisions")
+            if isinstance(existing_session_state.get("pending_decisions"), list)
+            else []
+        ),
+    )
     update_episode_count(repo_root, episode_count)
-    update_backlog(repo_root, gate_data.get("backlog_id"))
+    write_claude_memory_mirror(
+        repo_root,
+        latest_episode=latest_episode,
+        next_action=next_action,
+    )
     run_version_bump(repo_root)
-    write_claude_memory_mirror(repo_root)
 
 
 def main() -> int:
