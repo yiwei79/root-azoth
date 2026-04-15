@@ -1622,7 +1622,7 @@ items:
   source: CDX-PR8-001
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 5
   created_date: '2026-04-14'
@@ -1640,7 +1640,7 @@ items:
   source: CDX-PR8-003
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 9
   created_date: '2026-04-14'
