@@ -125,7 +125,7 @@ toolkit summary with canonical sources (read from disk, not from memory):
 
 **W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
 
-- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot, Codex). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). OpenCode, Copilot, and Codex do not **consume** `~/.claude/`; parity for them is still **committed W1/W2** (and `azoth.yaml`). **Copilot should nevertheless attempt W3 on closeout** so later Claude Code sessions can read the latest Copilot-authored state.
+- **Design (cross-IDE parity):** W1/W2 in `.azoth/` are **authoritative** for every platform (Claude Code, Cursor, OpenCode, Copilot, Codex). W3 **mirrors** that same snapshot for Claude Code’s native project memory (`project_status.md` aligns with `bootloader-state.md` + last episode). **Never** treat `~/.claude/.../memory/` as the only record — see **`docs/AZOTH_ARCHITECTURE.md`** (Cross-IDE session memory parity). OpenCode, Copilot, and Codex do not **consume** `~/.claude/`; parity for them is still **committed W1/W2** (and `azoth.yaml`). **Copilot should nevertheless attempt W3 on closeout** so later Claude Code sessions can read the latest Copilot-authored state. **Codex should also attempt W3 on closeout.** If write access to `~/.claude/projects/<project-key>/memory/` is blocked by the sandbox, log `W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout in Claude Code` and complete W1/W2/W4. Do not silently skip W3.
 - **Resolve the path (do not skip this step):** Claude Code stores per-project memory under `~/.claude/projects/`, where **`<project-key>`** is the absolute workspace path with the leading `/` removed and every `/` replaced by `-` (example: `/Users/you/work/root-azoth` → `-Users-you-work-root-azoth`). Full example: `~/.claude/projects/-Users-you-work-root-azoth/memory/`.
 - **Why W3 is often missed:** these files live **outside the repo**; Cursor assistants may lack access or treat W3 as “human-only.” If denied, retry with full permissions or complete W3 manually — do not close the session without updating memory or explicitly logging W3 failed.
 - **Minimum writes:** `project_status.md` (phase, version, roadmap patch, last episode, last delivery, next backlog step, open gaps) and **`MEMORY.md`** index line for Project Status. Add or refresh `feedback_*.md` when a durable preference changed.
@@ -181,6 +181,41 @@ worktree branch back to the parent branch so work is not stranded:
 **Episode ID collisions**: When parallel sessions (main + worktree) both append episodes
 with sequential IDs, collisions are expected. Always check the max existing ID before
 appending — or use `ep-{max+1}` to avoid merge conflicts.
+
+### C6 — PR review requests (Copilot · Cursor · Codex)
+
+After creating a PR, request code review from Copilot, Cursor, and Codex. Write
+review findings to `.azoth/inbox/` only after a platform returns an actual
+insight.
+
+**Trigger**: run this step immediately after `gh pr create` returns a PR URL.
+
+1. Use this inbox naming scheme for any platform that returns a finding:
+   `pr-review-<platform>-pr<number>-<YYYY-MM-DD>.jsonl`
+   Example: `.azoth/inbox/pr-review-copilot-pr9-2026-04-15.jsonl`
+
+2. Do **not** commit pending/request stubs to `.azoth/inbox/`. Every inbox JSONL
+   line must already satisfy the D32 insight schema (`kernel/GOVERNANCE.md` §7).
+   If a platform review is still pending, track that state in the PR thread or a
+   checklist — not in `.azoth/inbox/`.
+
+3. When a review returns a real finding, append one JSON line per finding using
+   the D32 schema. Example:
+   ```json
+   {"id":"COP-PR9-001","source":"copilot-review","source_type":"agent","timestamp":"2026-04-15T10:36:25Z","category":"bug","severity":"medium","target":".claude/commands/session-closeout.md:193-205","summary":"C6 instructed the agent to write non-D32 review-request stubs into .azoth/inbox/, which fails inbox schema validation.","evidence":"The example JSON contains request metadata rather than the 12 required D32 fields; tests/test_inbox.py validates every .jsonl file in .azoth/inbox/ against D32.","recommended_action":"Only write inbox files after a review produces a real finding, and serialize each finding as D32 JSONL.","auto_applicable":false,"requires_human_gate":false}
+   ```
+
+4. Collect the actual review:
+   - **Copilot**: open the PR on GitHub, request a Copilot review, and transcribe each actionable finding into D32 JSONL.
+   - **Cursor**: open the diff/branch in Cursor, ask for a review, and transcribe each actionable finding into D32 JSONL.
+   - **Codex**: run in a Codex workspace, ask to review the PR changes, and transcribe each actionable finding into D32 JSONL.
+
+5. Only platforms that returned findings need inbox files. If a review reports no
+   issues, leave no inbox artifact for that platform.
+
+6. Run `/intake` after the review findings are written to `.azoth/inbox/`.
+
+7. Report: `C6 ✓ review findings written to .azoth/inbox/ in D32 format`
 
 ## Part D: Surface Queued Insights
 

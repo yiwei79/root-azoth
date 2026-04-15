@@ -372,6 +372,14 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
             f"Explicit Codex entrypoint for Azoth's `/{name}` workflow. "
             f"Use when the user wants to run `/{name}` in Codex via `/skills` or `${skill_name}`."
         ),
+        # NOTE: `agent:` is intentionally absent from this frontmatter dict.
+        # Codex skill metadata (SKILL.md frontmatter + openai.yaml) has no recognized
+        # `agent:` routing field — there is no platform mechanism to bind a skill
+        # invocation to a named agent via TOML/YAML metadata. The `agent:` binding from
+        # the source command's frontmatter is preserved as advisory body prose below
+        # (see `lines.append(f"- Preserve the command's `agent: {agent}` binding.")`),
+        # so the model receives it as instructional context even though Codex cannot
+        # enforce it mechanically (hook-soft platform, D46).
     }
 
     lines = [
@@ -405,10 +413,7 @@ def transform_command_codex_skill_metadata(command: dict[str, Any]) -> str:
     """Optional Codex UI metadata for Azoth command-wrapper skills."""
     name = command["name"]
     skill_name = codex_command_skill_name(command)
-    description = str(
-        command["meta"].get("description")
-        or f"Azoth `/{name}` workflow"
-    )
+    description = str(command["meta"].get("description") or f"Azoth `/{name}` workflow")
     data = {
         "interface": {
             "display_name": f"/{name}",

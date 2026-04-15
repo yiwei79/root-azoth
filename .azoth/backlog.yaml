@@ -1622,7 +1622,7 @@ items:
   source: CDX-PR8-001
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 5
   created_date: '2026-04-14'
@@ -1640,7 +1640,7 @@ items:
   source: CDX-PR8-003
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 9
   created_date: '2026-04-14'
@@ -1691,17 +1691,24 @@ items:
   source: COP-PR8-002
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 4
   created_date: '2026-04-14'
+  completed_date: '2026-04-15'
   decision_ref:
   - D3
   description: >
-    .claude/agents/builder.md and reviewer.md were updated to '1000 lines per session'
-    but agents/tier1-core/builder.agent.md and reviewer.agent.md still read '500 lines
-    per turn'. Apply the same wording update to both canonical archetypes, then run
-    python3 scripts/azoth-deploy.py to regenerate platform mirrors and verify parity.
+    Verification completed 2026-04-15: the reported mismatch was already resolved
+    before this stage. The canonical builder archetype at
+    agents/tier1-core/builder.agent.md:103 and the Claude mirror at
+    .claude/agents/builder.md:80 both state the Trust Contract entropy ceiling as
+    '10 files, 1000 lines per session', and the reviewer archetype/mirror remain in
+    parity for the general entropy-ceiling governance wording at
+    agents/tier1-core/reviewer.agent.md:71 and .claude/agents/reviewer.md:48.
+    python3 scripts/azoth-deploy.py --check passed with all 176 files in sync. No
+    files under agents/ or .claude/agents/ were modified; only this backlog entry
+    was updated to record the verified already-satisfied state.
 - id: BL-049
   title: "Extend version-bump.py to update AZOTH_VERSION in .claude/settings.json"
   source: COP-PR8-004
@@ -1717,4 +1724,20 @@ items:
     Extend scripts/version-bump.py to update the AZOTH_VERSION env var in
     .claude/settings.json as part of every bump, preventing future manual drift.
     Align all three sources to the current canonical value in the same commit.
+- id: BL-050
+  title: "Document PR review convention (Copilot/Cursor/Codex → inbox) in session-closeout.md"
+  source: human-convention-2026-04-15
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-15'
+  description: >
+    Convention established 2026-04-15: after every PR creation, request code reviews from
+    Copilot, Cursor, and Codex and write their insights to .azoth/inbox/ as .jsonl files
+    for later /intake processing. Deliverables: (1) add a C6 step to Part C of
+    session-closeout.md documenting the convention and inbox file-naming scheme;
+    (2) write three PR #9 inbox stub files (one per platform) so the reviews land in
+    the right place when collected.
 completed: []
