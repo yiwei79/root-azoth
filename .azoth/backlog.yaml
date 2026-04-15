@@ -1724,4 +1724,20 @@ items:
     Extend scripts/version-bump.py to update the AZOTH_VERSION env var in
     .claude/settings.json as part of every bump, preventing future manual drift.
     Align all three sources to the current canonical value in the same commit.
+- id: BL-050
+  title: "Document PR review convention (Copilot/Cursor/Codex → inbox) in session-closeout.md"
+  source: human-convention-2026-04-15
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-15'
+  description: >
+    Convention established 2026-04-15: after every PR creation, request code reviews from
+    Copilot, Cursor, and Codex and write their insights to .azoth/inbox/ as .jsonl files
+    for later /intake processing. Deliverables: (1) add a C6 step to Part C of
+    session-closeout.md documenting the convention and inbox file-naming scheme;
+    (2) write three PR #9 inbox stub files (one per platform) so the reviews land in
+    the right place when collected.
 completed: []

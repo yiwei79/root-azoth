@@ -183,6 +183,37 @@ worktree branch back to the parent branch so work is not stranded:
 with sequential IDs, collisions are expected. Always check the max existing ID before
 appending — or use `ep-{max+1}` to avoid merge conflicts.
 
+### C6 — PR review requests (Copilot · Cursor · Codex)
+
+After creating a PR, request code review from Copilot, Cursor, and Codex and write their
+insights to `.azoth/inbox/` for later `/intake` processing.
+
+**Trigger**: run this step immediately after `gh pr create` returns a PR URL.
+
+1. Write three inbox stub files — one per platform — using this naming scheme:
+   `pr-review-<platform>-pr<number>-<YYYY-MM-DD>.jsonl`
+   Example for PR #9 created 2026-04-15:
+   - `.azoth/inbox/pr-review-copilot-pr9-2026-04-15.jsonl`
+   - `.azoth/inbox/pr-review-cursor-pr9-2026-04-15.jsonl`
+   - `.azoth/inbox/pr-review-codex-pr9-2026-04-15.jsonl`
+
+2. Each stub file is a single JSON line seeding the review request context:
+   ```json
+   {"source": "<platform>", "pr": <number>, "date": "<YYYY-MM-DD>", "type": "code-review-request", "repo": "<owner/repo>", "title": "<pr title>", "review": null, "status": "pending"}
+   ```
+
+3. Collect the actual review:
+   - **Copilot**: open the PR on GitHub and request a Copilot review; paste the response back into the stub file replacing `"review": null` with the insight text.
+   - **Cursor**: open the diff/branch in Cursor, ask for a review, write the response into the stub.
+   - **Codex**: run in a Codex workspace, ask to review the PR changes, write the response.
+
+4. Once all three stubs have `"review"` populated, run `/intake` to triage them through the governed protocol.
+
+5. Report: `C6 ✓ inbox stubs written for PR #<N> — Copilot / Cursor / Codex reviews pending`
+
+> **If collecting reviews now is not possible** (e.g. rate limits, platform unavailable),
+> write the stubs with `"status": "pending"` and collect asynchronously before the next `/intake`.
+
 ## Part D: Surface Queued Insights
 
 Check the insight inbox and inform the human. Do NOT process insights during closeout.
