@@ -10,8 +10,8 @@ Transforms:
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
                         →  .agents/skills/azoth-<name>/...     (Codex explicit command-wrapper skills)
-  skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
-                        →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
+    skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+                                                →  .agents/skills/<name>/SKILL.md     (Codex / Gemini / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
                         →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
   kernel/templates/platform-adapters/codex/*.template
@@ -38,6 +38,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -455,6 +456,35 @@ def transform_command_gemini(command: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+_SHARED_SKILL_NAME_MAP: dict[str, str] = {
+    "remember": "azoth-memory-capture",
+    "structured-autonomy-plan": "azoth-structured-autonomy-plan",
+}
+
+
+def shared_skill_name(skill_name: str) -> str:
+    """Return the deployed name for a skill on the shared `.agents/skills/` surface."""
+    return _SHARED_SKILL_NAME_MAP.get(skill_name, skill_name)
+
+
+def transform_shared_skill(skill: dict[str, Any]) -> str:
+    """Render a skill for the shared `.agents/skills/` surface.
+
+    Some generic canonical skill names collide with user-global Gemini skill
+    catalogs. The shared surface uses collision-safe deployed names while the
+    source repository keeps the canonical skill directory and semantics.
+    """
+    deployed_name = shared_skill_name(skill["name"])
+    if deployed_name == skill["name"]:
+        return skill["raw"]
+    meta = dict(skill["meta"])
+    meta["name"] = deployed_name
+    description = str(meta.get("description") or "").strip()
+    prefix = f"Shared-surface deployment name for Azoth's `{skill['name']}` skill."
+    meta["description"] = f"{prefix} {description}".strip()
+    return render_frontmatter(meta) + skill["body"]
+
+
 def codex_command_skill_name(command: dict[str, Any]) -> str:
     """Stable Codex skill name for an Azoth command wrapper."""
     return f"azoth-{command['name']}"
@@ -601,7 +631,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "|----------|--------|----------|--------|-----------|",
         "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
-        "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.gemini/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
+        "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
         "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
@@ -820,6 +850,92 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bo
     path.write_text(content, encoding="utf-8")
     print(f"  {rel}")
     return True
+
+
+def remove_file(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated file no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_dir():
+        return False
+    path.unlink()
+    parent = path.parent
+    while parent != root and parent.exists():
+        try:
+            parent.rmdir()
+        except OSError:
+            break
+        parent = parent.parent
+    print(f"  [remove] {rel}")
+    return True
+
+
+def remove_tree(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated directory tree no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+    print(f"  [remove] {rel}")
+    return True
+
+
+def prune_agents_skill_surface(
+    root: Path,
+    expected_skill_names: set[str],
+    dry_run: bool,
+    *,
+    check: bool = False,
+) -> tuple[int, int]:
+    """Retire stale non-Azoth skills from the shared `.agents/skills/` surface.
+
+    The shared Gemini/Codex/Antigravity skill surface is Azoth-managed. Canonical
+    skills live under `skills/`, while `azoth-*` folders are reserved for wrapper
+    skills and bootstrap-specific entries. Everything else is treated as stale.
+    """
+    skills_root = root / ".agents" / "skills"
+    if not skills_root.is_dir():
+        return 0, 0
+    count = 0
+    stale = 0
+    for skill_dir in sorted(skills_root.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        name = skill_dir.name
+        if name in expected_skill_names or name.startswith("azoth-"):
+            continue
+        if not remove_tree(skill_dir, root, dry_run, check=check):
+            stale += 1
+        count += 1
+    return count, stale
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
@@ -1066,10 +1182,10 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     stale += 1
                 count += 1
-            if "antigravity" in platforms or "codex" in platforms:
+            if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
                 if not write_file(
-                    root / ".agents" / "skills" / skill["name"] / "SKILL.md",
-                    skill["raw"],
+                    root / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md",
+                    transform_shared_skill(skill),
                     root,
                     dry_run,
                     check=check,
@@ -1077,15 +1193,23 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
             if "gemini" in platforms:
-                if not write_file(
+                if not remove_file(
                     root / ".gemini" / "skills" / skill["name"] / "SKILL.md",
-                    skill["raw"],
                     root,
                     dry_run,
                     check=check,
                 ):
                     stale += 1
                 count += 1
+        if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
+            n, s = prune_agents_skill_surface(
+                root,
+                {shared_skill_name(skill["name"]) for skill in skills},
+                dry_run,
+                check=check,
+            )
+            count += n
+            stale += s
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────

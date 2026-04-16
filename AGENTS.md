@@ -59,7 +59,7 @@ All agents operate under the Azoth Trust Contract:
 |----------|--------|----------|--------|-----------|
 | Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |
 | Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |
-| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.gemini/skills/` | `GEMINI.md` + `.gemini/settings.json` |
+| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |
 | GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |
 | OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |
 | Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |

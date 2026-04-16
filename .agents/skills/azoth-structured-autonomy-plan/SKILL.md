@@ -1,8 +1,10 @@
 ---
-name: structured-autonomy-plan
-description: |
-  Convert architect briefs into deterministic task plans with explicit test strategy and
-  validation gates for handoff to the builder stage or a future session.
+name: azoth-structured-autonomy-plan
+description: 'Shared-surface deployment name for Azoth''s `structured-autonomy-plan`
+  skill. Convert architect briefs into deterministic task plans with explicit test
+  strategy and
+
+  validation gates for handoff to the builder stage or a future session.'
 ---
 
 # Structured Autonomy Plan

@@ -77,7 +77,10 @@ All agents operate under the Azoth Trust Contract (`kernel/TRUST_CONTRACT.md`):
 This project uses Gemini CLI custom agents (`.gemini/agents/`) and custom
 commands (`.gemini/commands/`) deployed by `scripts/azoth-deploy.py`.
 
-Skills are available at `.gemini/skills/` via the Agent Skills standard.
+Skills are available at `.agents/skills/`, the shared workspace skill surface
+used across Gemini-family integrations. Azoth intentionally avoids mirroring
+the same skills into `.gemini/skills/` to prevent duplicate discovery and
+workspace-local conflict warnings.
 
 ### Available Commands
 

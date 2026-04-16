@@ -1,8 +1,10 @@
 ---
-name: remember
-description: |
-  Append structured episodes to `.azoth/memory/episodes.jsonl` and classify lessons for
-  M3→M2 promotion; use at session closeout or when capturing durable decisions or patterns.
+name: azoth-memory-capture
+description: 'Shared-surface deployment name for Azoth''s `remember` skill. Append
+  structured episodes to `.azoth/memory/episodes.jsonl` and classify lessons for
+
+  M3→M2 promotion; use at session closeout or when capturing durable decisions or
+  patterns.'
 ---
 
 # Remember
