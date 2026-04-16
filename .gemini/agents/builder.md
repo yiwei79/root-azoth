@@ -5,9 +5,7 @@ kind: local
 tools:
 - replace
 - write_file
-- write
 - run_shell_command
-- test-runner
 max_turns: 30
 timeout_mins: 10
 ---

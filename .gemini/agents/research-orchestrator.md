@@ -3,9 +3,8 @@ name: research-orchestrator
 description: Coordinates research swarm
 kind: local
 tools:
-- researcher
-- web-search
-- web-fetch
+- google_web_search
+- web_fetch
 max_turns: 30
 timeout_mins: 10
 ---

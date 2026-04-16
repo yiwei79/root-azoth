@@ -7,7 +7,7 @@ tools:
 - read_many_files
 - grep_search
 - glob
-- ls
+- list_directory
 model: haiku
 max_turns: 30
 timeout_mins: 10

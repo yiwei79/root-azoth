@@ -311,6 +311,15 @@ def transform_agent_gemini(agent: dict[str, Any]) -> str:
     Gemini CLI agent format (.gemini/agents/<name>.md).
     YAML frontmatter: name, description, kind (local), tools, model, max_turns.
     Body becomes the agent's system prompt.
+
+    Tool name mapping strategy:
+    - Azoth generic names (read, bash, ...) → Gemini CLI canonical names
+    - Subagent references (researcher, evaluator, ...) → dropped; Gemini CLI
+      subagents cannot call other subagents — multi-agent coordination must
+      happen at the top-level session via @agent-name syntax.
+    - Claude-Code-specific or Azoth-internal aliases (task, explore, research)
+      → dropped (no Gemini equivalent).
+    - If no valid tools remain after filtering → fall back to ["*"].
     """
     meta = agent["meta"]
     fm: dict[str, Any] = {
@@ -319,15 +328,39 @@ def transform_agent_gemini(agent: dict[str, Any]) -> str:
         "kind": "local",
     }
     # Map Azoth generic tool names to Gemini CLI canonical tool names.
+    # Empty list = drop the tool (no Gemini equivalent or not valid for subagents).
     _TOOL_MAP: dict[str, list[str]] = {
+        # File system
         "read": ["read_file", "read_many_files"],
         "grep": ["grep_search"],
         "glob": ["glob"],
+        "ls": ["list_directory"],
+        "edit": ["replace"],
+        "write": ["write_file"],
+        # Shell
         "bash": ["run_shell_command"],
-        "task": [],  # Subagent tools are auto-available; no explicit tool name.
-        "edit": ["replace", "write_file"],
+        "test-runner": ["run_shell_command"],
+        # Web
         "web": ["google_web_search", "web_fetch"],
-        "search": ["grep_search", "glob"],
+        "web-search": ["google_web_search"],
+        "web-fetch": ["web_fetch"],
+        "search": ["grep_search"],
+        # Claude Code-specific / Azoth-internal → drop
+        "task": [],
+        "explore": [],
+        "research": [],
+        # Subagent references → drop (Gemini subagents cannot call other subagents;
+        # orchestration happens at the main session level via @agent-name syntax)
+        "researcher": [],
+        "evaluator": [],
+        "prompt-engineer": [],
+        "research-orchestrator": [],
+        "architect": [],
+        "planner": [],
+        "builder": [],
+        "reviewer": [],
+        "agent-crafter": [],
+        "context-architect": [],
     }
     if tools := meta.get("tools"):
         gemini_tools: list[str] = []

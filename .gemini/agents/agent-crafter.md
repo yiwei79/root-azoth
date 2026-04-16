@@ -7,9 +7,6 @@ tools:
 - read_many_files
 - replace
 - write_file
-- write
-- evaluator
-- prompt-engineer
 max_turns: 30
 timeout_mins: 10
 ---

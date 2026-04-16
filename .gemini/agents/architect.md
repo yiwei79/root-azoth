@@ -3,9 +3,7 @@ name: architect
 description: Design, constraints, alignment
 kind: local
 tools:
-- explore
-- research
-- research-orchestrator
+- '*'
 max_turns: 30
 timeout_mins: 10
 ---

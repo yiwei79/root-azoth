@@ -3,8 +3,8 @@ name: researcher
 description: Multi-source research with citations
 kind: local
 tools:
-- web-search
-- web-fetch
+- google_web_search
+- web_fetch
 - read_file
 - read_many_files
 - grep_search
