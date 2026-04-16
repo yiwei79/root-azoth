@@ -1202,7 +1202,7 @@ any insight                 reinforced >=2x                         governance-g
 m2_candidate=true flag      set at intake                           target_layer: M1
 ```
 
-### Architecture Decisions (D47–D53)
+### Architecture Decisions (D47–D54)
 
 | # | Decision | Rationale |
 |---|----------|-----------|
@@ -1213,6 +1213,7 @@ m2_candidate=true flag      set at intake                           target_layer
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
 | D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH pre-release, then 0.1.MILESTONE_PHASE.PATCH while shipping toward v0.2.0 |
+| D54 | Branch model + worktree policy | Two permanent branches (`main`, `phase/vN-pN`); short-lived feature/patch branches deleted on merge; zero-worktree default to avoid scope-gate + run-ledger conflicts |
 
 ---
 
@@ -1306,3 +1307,77 @@ are we" without requiring agents to read git history.
 - `target_version` in `backlog.yaml` uses the delivery-phase version (e.g. `v0.0.3` or
   post-v0.1.0 `v0.2.0-p1`), not the milestone container or a future release target — completed
   items record where they actually landed
+
+---
+
+## 21. Branch Model + Worktree Policy (D54)
+
+### Problem
+
+Multi-platform parity work (Gemini, Codex, Copilot) and overlapping sessions generate
+parallel branches that accumulate silently. Azoth's scope gate, run-ledger write claim,
+and `azoth-deploy.py` mirror enforcement are all repo-root-relative — multiple worktrees
+create mechanical conflicts. Without codified rules, branch hygiene becomes reactive
+cleanup work rather than a maintained invariant.
+
+### Decision
+
+#### Branch Structure
+
+Two permanent branches exist at all times:
+
+```
+main                    ← stable releases only; tagged on squash-merge from phase branch
+phase/v0.2.0-pN         ← active integration branch; all session work lands here
+  └── patch/<bl-id>     ← one per backlog item (e.g. patch/bl-046); deleted on merge
+  └── feat/<slug>       ← ad-hoc feature work (e.g. feat/gemini-cli-adapter); deleted on merge
+```
+
+- `main` never receives direct commits — only squash-merges from a completed phase branch.
+- One phase branch is active at a time. When a phase closes: merge → `main`, tag, delete
+  the phase branch, open `phase/v0.2.0-p(N+1)`.
+- Feature/patch branches are opened on scope approval and deleted within the same session
+  or the next. They must never outlive a phase.
+
+#### Worktree Default: Zero
+
+The scope gate (`.azoth/scope-gate.json`), run-ledger write claim
+(`.azoth/run-ledger.local.yaml`), and deploy hook mirror enforcement share the repo root.
+Running two worktrees simultaneously will produce claim conflicts and stale-mirror false
+positives.
+
+| Scenario | Policy |
+|----------|--------|
+| Normal BL work | Single checkout; switch branches with `git checkout` |
+| Parallel exploration | `git stash` + branch switch — no worktree |
+| Genuinely parallel builds | Worktree allowed; register a separate run-ledger write claim per worktree path; close before `/session-closeout` |
+
+Worktrees are tracked in `.claude/worktrees/`; the `/worktree-sync` skill handles
+checkpointing. If a worktree is open at closeout, `worktree-sync` must be invoked first.
+
+#### Merge Hygiene
+
+- Merge feature/patch branches into the phase branch with `--no-ff` (preserves history).
+- Run `python3 scripts/azoth-deploy.py` before committing after any merge — the pre-commit
+  hook enforces parity, but running it manually avoids the abort-fix-recommit cycle.
+- After every merge run `git branch --merged <phase-branch>` and delete anything listed
+  except `main` and the phase branch.
+
+#### State File Conflict Resolution Order
+
+State files (`.azoth/`, `azoth.yaml`, `.claude/settings.json`) always conflict on parallel
+branches. Canonical resolution:
+
+1. **Version numbers** — keep the higher value (destination branch wins).
+2. **Backlog / decisions state** — keep HEAD (destination branch is authoritative).
+3. **`episodes.jsonl`** — append-merge all new episodes from both sides, sorted by ID.
+4. **`bootloader-state.md`** — keep HEAD; add a merge note capturing session context from
+   the incoming branch if relevant.
+
+### Implementation
+
+- `CLAUDE.md` §Git Conventions (Branch Model, Worktree Policy, Merge Hygiene) — the
+  machine-readable source agents read at session start.
+- `.claude/worktrees/` registry + `/worktree-sync` skill — worktree lifecycle tracking.
+- `scripts/run_ledger.py claim / release-claim` — write claim enforcement for parallel
+  worktrees (BL-011 compliant).

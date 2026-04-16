@@ -118,6 +118,54 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
   archetypes, skills, pipeline schemas), match the depth and richness of the source on the
   first pass. Simplified stubs that require a second enrichment pass are a quality failure.
 
+#### Branch Model (D54)
+
+Two permanent branches; all other branches are short-lived:
+
+```
+main                  ← stable releases only (tagged on squash-merge from phase branch)
+phase/v0.2.0-p2       ← active integration branch; receives all merges for current phase
+  └── patch/<bl-id>   ← one branch per backlog item; deleted immediately after merge
+  └── feat/<slug>     ← ad-hoc feature work; deleted immediately after merge
+```
+
+Rules:
+- **Never commit directly to `main`** — it only receives squash-merges from a completed
+  phase branch, accompanied by a version tag.
+- **One active phase branch at a time** — when a phase closes, the phase branch merges to
+  `main` and is deleted; the next phase opens a new `phase/v0.2.0-pN` branch.
+- **Short-lived feature/patch branches** — open on scope approval, merge (or squash) within
+  the same session or next, delete immediately. Never let stale branches accumulate.
+- **Merge with `--no-ff`** into the phase branch to preserve feature history.
+- **Tag phases** with `git tag v0.2.0-p2-close` before the squash to `main` (user-confirmed,
+  never auto-pushed).
+
+#### Worktree Policy (D54)
+
+The scope gate, run-ledger write claim, and deploy hooks are all repo-root-relative —
+multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
+
+- **Normal BL work**: single checkout, switch branches with `git checkout`.
+- **Parallel exploratory sessions**: `git stash` + branch switch, not a worktree.
+- **Genuinely parallel builds** (e.g. testing platform X while implementing Y): a worktree
+  is acceptable — register a separate write claim per worktree path in
+  `.azoth/run-ledger.local.yaml`; close the worktree before `/session-closeout`.
+- **Worktrees must be closed before closeout** — the `/worktree-sync` skill handles the
+  checkpoint; the `.claude/worktrees/` registry tracks open ones.
+
+#### Merge Hygiene (D54)
+
+- **Run `azoth-deploy.py` before committing after any merge** — the pre-commit hook
+  enforces mirror parity; running it manually avoids the abort-fix-recommit cycle.
+- **State file conflict resolution order** (`.azoth/`, `azoth.yaml`, `.claude/settings.json`):
+  1. Version numbers: keep the higher value (HEAD wins on the destination branch).
+  2. Backlog/decisions state: keep HEAD (destination branch has the authoritative record).
+  3. `episodes.jsonl`: append-merge all new episodes from both sides, sorted by ID.
+  4. `bootloader-state.md`: keep HEAD; add a merge note if session context from the
+     incoming branch is worth recording.
+- **Stale branch audit**: after any merge, run `git branch --merged <phase-branch>` and
+  delete anything that appears (except `main` and the phase branch itself).
+
 ## Orientation & roadmap
 
 **Current phase:** Phase 2 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p2` for the phase-2 working slice under the `v0.2.0` milestone. Phase 1 (v0.2.0-p1) complete with 45 patches (25 tasks delivered). Phase 2 focus: memory hardening (P1-017, P1-020, P1-021 carried), declarative swarm depth, platform parity polish. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
