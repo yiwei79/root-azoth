@@ -61,6 +61,23 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 - If Codex parity changed, say whether the change affected generated `.agents/skills/azoth-*` wrappers, literal-token fallback, `.codex/config.toml` / `.codex/hooks.json`, or the current Bash-only hook boundary.
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
+**W1b — Optional reinforcement_count update** → `scripts/reinforcement_count.py` or `scripts/do_closeout.py`
+
+- Ask whether any prior episode's lesson explicitly recurred during this session.
+- If yes, require the human to confirm the exact episode id — never infer it from tags or prose.
+- Use the active `session_id` from `.azoth/scope-gate.json`; do not invent or reuse a prior session id.
+- Run exactly one of:
+  ```bash
+  python3 scripts/reinforcement_count.py <ep-id> --session-id <active-session-id> --source closeout
+  ```
+  or:
+  ```bash
+  python3 scripts/do_closeout.py --reinforce-episode <ep-id>
+  ```
+- Never increment the same prior episode more than once per session.
+- If no recurrence is confirmed, skip W1b silently — it is always optional.
+- Log: `W1b ✓ reinforcement_count incremented for {ep-id} — proceeding to W2` (or `W1b skipped — proceeding to W2`)
+
 **W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
 
 - Update `bootloader-state.md` with session outcome (phase, what changed, open decisions).
