@@ -1,0 +1,11 @@
+{
+  "context": {
+    "fileName": ["GEMINI.md", "AGENTS.md"]
+  },
+  "tools": {
+    "sandbox": false
+  },
+  "agents": {
+    "overrides": {}
+  }
+}
