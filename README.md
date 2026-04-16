@@ -77,6 +77,7 @@ The installer detects your AI toolchain (Claude Code, Codex, OpenCode, Copilot, 
 | Need                                                  | Location                                                                                                              |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Architecture & decisions                              | `[docs/AZOTH_ARCHITECTURE.md](docs/AZOTH_ARCHITECTURE.md)`                                                            |
+| Gemini onboarding                                      | `[docs/platform-guides/gemini-guide.md](docs/platform-guides/gemini-guide.md)`                                        |
 | Path duality (scaffold `kernel/` vs `.azoth/kernel/`) | Architecture **§18** (D42)                                                                                            |
 | Boot sequence (Activate → Survey → Operate → Harden)  | `[kernel/BOOTLOADER.md](kernel/BOOTLOADER.md)` (this repo) · `**BOOTLOADER.md`** under `.azoth/kernel/` after install |
 | Trust, entropy, alignment                             | `[kernel/TRUST_CONTRACT.md](kernel/TRUST_CONTRACT.md)` · or `.azoth/kernel/TRUST_CONTRACT.md` when installed          |
