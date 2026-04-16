@@ -44,6 +44,7 @@ transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
+transform_command_gemini = _mod.transform_command_gemini
 transform_command_opencode = _mod.transform_command_opencode
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
 deploy_codex_adapter = _mod.deploy_codex_adapter
@@ -52,6 +53,7 @@ deploy_cursor_rules = _mod.deploy_cursor_rules
 load_agents = _mod.load_agents
 load_commands = _mod.load_commands
 load_skills = _mod.load_skills
+gemini_command_name = _mod.gemini_command_name
 shared_skill_name = _mod.shared_skill_name
 transform_shared_skill = _mod.transform_shared_skill
 write_file = _mod.write_file
@@ -648,6 +650,37 @@ def test_deployed_opencode_commands_match_transform() -> None:
         actual = dest.read_text(encoding="utf-8")
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_gemini_commands_match_transform() -> None:
+    """`.gemini/commands/*.toml` must match the Gemini transform with stable names."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        expected = transform_command_gemini(cmd)
+        deployed_name = gemini_command_name(cmd["name"])
+        dest = _REPO_ROOT / ".gemini" / "commands" / f"{deployed_name}.toml"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Gemini command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_gemini_removes_legacy_conflicting_command_names() -> None:
+    """Gemini command remaps must retire the old conflicting filenames."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        deployed_name = gemini_command_name(cmd["name"])
+        if deployed_name == cmd["name"]:
+            continue
+        legacy_dest = _REPO_ROOT / ".gemini" / "commands" / f"{cmd['name']}.toml"
+        assert not legacy_dest.exists(), (
+            f"legacy Gemini command still present at {legacy_dest.relative_to(_REPO_ROOT)}"
         )
 
 

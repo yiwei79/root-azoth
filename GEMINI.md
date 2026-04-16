@@ -82,8 +82,6 @@ used across Gemini-family integrations. Azoth intentionally avoids mirroring
 the same skills into `.gemini/skills/` to prevent duplicate discovery and
 workspace-local conflict warnings.
 
-New to Gemini in this repo? Start with `docs/platform-guides/gemini-guide.md`.
-
 ### Available Commands
 
 Use `/help` to see all commands, or invoke Azoth workflows directly:

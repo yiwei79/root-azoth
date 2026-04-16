@@ -445,7 +445,7 @@ def transform_command_gemini(command: dict[str, Any]) -> str:
     available but not used here — commands rely on the model following the
     prompt instructions to read files.
     """
-    name = command["name"]
+    name = gemini_command_name(command["name"])
     desc = str(command["meta"].get("description") or f"Azoth /{name} workflow")
     body = command["body"]
     lines = [
@@ -454,6 +454,25 @@ def transform_command_gemini(command: dict[str, Any]) -> str:
         "prompt = " + _toml_multiline_literal(body),
     ]
     return "\n".join(lines) + "\n"
+
+
+_GEMINI_COMMAND_NAME_MAP: dict[str, str] = {
+    "dynamic-full-auto": "workspace.dynamic-full-auto",
+    "plan": "workspace.plan",
+    "remember": "workspace.remember",
+}
+
+
+def gemini_command_name(command_name: str) -> str:
+    """Return the deployed Gemini command name.
+
+    Gemini CLI merges workspace commands with built-ins and discovered skill
+    commands. A small set of Azoth commands collide consistently in live
+    sessions, so the Gemini-specific surface deploys stable names that avoid
+    runtime renaming while keeping canonical Azoth command names unchanged in
+    `.claude/commands/` and other platform adapters.
+    """
+    return _GEMINI_COMMAND_NAME_MAP.get(command_name, command_name)
 
 
 _SHARED_SKILL_NAME_MAP: dict[str, str] = {
@@ -1156,8 +1175,9 @@ def main(argv: list[str] | None = None) -> int:
 
         if "gemini" in platforms:
             for cmd in commands:
+                deployed_name = gemini_command_name(cmd["name"])
                 if not write_file(
-                    root / ".gemini" / "commands" / f"{cmd['name']}.toml",
+                    root / ".gemini" / "commands" / f"{deployed_name}.toml",
                     transform_command_gemini(cmd),
                     root,
                     dry_run,
@@ -1165,6 +1185,15 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     stale += 1
                 count += 1
+                if deployed_name != cmd["name"]:
+                    if not remove_file(
+                        root / ".gemini" / "commands" / f"{cmd['name']}.toml",
+                        root,
+                        dry_run,
+                        check=check,
+                    ):
+                        stale += 1
+                    count += 1
 
         print()
 

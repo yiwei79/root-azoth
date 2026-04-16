@@ -44,19 +44,19 @@ At startup, Gemini reads the repo-local adapter surfaces that Azoth deploys:
 
 The shared skill surface matters because Gemini should not use a second mirrored `.gemini/skills/` tree. In Azoth, that mirror is intentionally retired to avoid duplicate discovery and runtime warnings.
 
-## Command Rename Notes
+## Gemini-Specific Command Names
 
-Gemini CLI may rename workspace commands when they collide with built-in or skill command names. In a live session on this branch, Gemini CLI v0.38.1 reported these renames:
+Azoth now deploys stable Gemini command names for the collision-prone workflows while keeping canonical source command names unchanged in `.claude/commands/`.
 
-- `/plan` -> `/workspace.plan`
-- workspace `/remember` -> `/workspace.remember`
-- skill `/remember` -> `/remember1`
-- workspace `/dynamic-full-auto` -> `/workspace.dynamic-full-auto`
-- skill `/dynamic-full-auto` -> `/dynamic-full-auto1`
+| Canonical Azoth command | Gemini command |
+|--------|--------|
+| `/plan` | `/workspace.plan` |
+| `/remember` | `/workspace.remember` |
+| `/dynamic-full-auto` | `/workspace.dynamic-full-auto` |
 
-Treat those names as runtime aliases, not canonical Azoth names. The canonical source commands remain `.claude/commands/*.md`, and `scripts/azoth-deploy.py` projects them into `.gemini/commands/*.toml`.
+All other commands keep their canonical names on the Gemini surface.
 
-If Gemini prints a rename notice at startup, use the renamed alias in that session.
+Gemini can still rename other commands in future if a built-in or discovered skill conflicts. If startup output shows a rename notice, trust the runtime alias printed by Gemini for that session.
 
 ## Tutorial 1: Start a Safe Gemini Session
 
@@ -70,7 +70,7 @@ Goal: open Gemini in the repo, confirm it loaded Azoth context, and orient yours
 2. Watch the startup banner for three things:
    - The current workspace path is this repo.
    - `GEMINI.md` and `AGENTS.md` are part of the loaded context.
-   - Any command rename notices are visible.
+   - Any unexpected command rename notices are visible.
 3. Run `/help` to inspect the active command surface for this session.
 4. Ask Gemini to ground itself in the repo before you do real work. Example:
    ```text
@@ -86,7 +86,7 @@ Goal: open Gemini in the repo, confirm it loaded Azoth context, and orient yours
    - `/auto <goal>` if you already know your goal.
    - `/roadmap` if you need roadmap context first.
 
-Expected outcome: Gemini is attached to the repo, you know whether any command names were renamed, and you have either an orientation snapshot or a scoped next step.
+Expected outcome: Gemini is attached to the repo, you know the active command surface, and you have either an orientation snapshot or a scoped next step.
 
 ## Tutorial 2: Use the Core Azoth Workflow From Gemini
 
@@ -122,8 +122,6 @@ If the task is already approved and does not need `/auto` classification:
 ```
 
 ### Path C: Planning only
-
-If Gemini renamed `/plan` in your session, use the alias it printed at startup. On the tested branch that was:
 
 ```text
 /workspace.plan write a small onboarding improvement for Gemini users
