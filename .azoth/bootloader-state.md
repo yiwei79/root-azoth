@@ -5,19 +5,19 @@
 
 ## Last Session
 - **Session**: 2026-04-16-branch-hygiene
-- **Goal**: Merge feat/gemini-cli-adapter into phase/v0.2.0-p2 + prune stale branches
+- **Goal**: Merge feat/gemini-cli-adapter + prune stale branches + codify D54 git strategy
 - **Pipeline**: standard (ad-hoc branch hygiene)
-- **Outcome**: in progress
-- **Episodes merged**: ep-207 (gemini parity), ep-208 (adhoc closeout), ep-209 (BL-043)
+- **Outcome**: closed (ep-210, success)
+- **Commits**: b805e68 (merge), 1191cd7 (D54 docs)
 
 ## Key Changes This Session
-1. Merged `feat/gemini-cli-adapter` → `phase/v0.2.0-p2`: Gemini CLI adapter surface (.gemini/ commands + agents, GEMINI.md, deploy script, onboarding guide).
-2. Resolved 5 state-file conflicts (azoth.yaml, .claude/settings.json, roadmap.yaml, bootloader-state.md, episodes.jsonl).
-3. Branch pruning: 10 stale local branches (all merged into phase/v0.2.0-p2) queued for deletion after user approval.
+1. Merged feat/gemini-cli-adapter into phase/v0.2.0-p2 (Gemini CLI adapter surface).
+2. Pruned 11 stale branches (local + remote); repo now has main + phase/v0.2.0-p2 only.
+3. Formalized D54 (branch model + worktree policy): CLAUDE.md, DECISIONS_INDEX.md, AZOTH_ARCHITECTURE.md, azoth.yaml. Decisions count: 53→54.
 
 ## Open Decisions
-- BL-046: remove the orphan `azoth-operating-model` Codex wrapper and add the reverse-orphan deploy check.
-- BL-049: version-bump.py already updates AZOTH_VERSION in .claude/settings.json — backlog item needs revalidation/closure.
+- BL-046: remove the orphan azoth-operating-model Codex wrapper + add reverse-orphan deploy check.
+- BL-049: version-bump.py already updates AZOTH_VERSION in .claude/settings.json — verify and close.
 
 ## Next Action
-- Run `/next` to select the next scoped task (only BL-046 is unblocked).
+- Run /next to select BL-049 (quick verify+close) or BL-046 (build).
