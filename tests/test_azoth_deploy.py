@@ -44,6 +44,7 @@ transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_copilot = _mod.transform_command_copilot
+transform_command_gemini = _mod.transform_command_gemini
 transform_command_opencode = _mod.transform_command_opencode
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
 deploy_codex_adapter = _mod.deploy_codex_adapter
@@ -52,6 +53,9 @@ deploy_cursor_rules = _mod.deploy_cursor_rules
 load_agents = _mod.load_agents
 load_commands = _mod.load_commands
 load_skills = _mod.load_skills
+gemini_command_name = _mod.gemini_command_name
+shared_skill_name = _mod.shared_skill_name
+transform_shared_skill = _mod.transform_shared_skill
 write_file = _mod.write_file
 main = _mod.main
 
@@ -649,6 +653,37 @@ def test_deployed_opencode_commands_match_transform() -> None:
         )
 
 
+def test_deployed_gemini_commands_match_transform() -> None:
+    """`.gemini/commands/*.toml` must match the Gemini transform with stable names."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        expected = transform_command_gemini(cmd)
+        deployed_name = gemini_command_name(cmd["name"])
+        dest = _REPO_ROOT / ".gemini" / "commands" / f"{deployed_name}.toml"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Gemini command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_gemini_removes_legacy_conflicting_command_names() -> None:
+    """Gemini command remaps must retire the old conflicting filenames."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        deployed_name = gemini_command_name(cmd["name"])
+        if deployed_name == cmd["name"]:
+            continue
+        legacy_dest = _REPO_ROOT / ".gemini" / "commands" / f"{cmd['name']}.toml"
+        assert not legacy_dest.exists(), (
+            f"legacy Gemini command still present at {legacy_dest.relative_to(_REPO_ROOT)}"
+        )
+
+
 def test_deployed_codex_agents_match_transform() -> None:
     """`.codex/agents/*.toml` must match `transform_agent_codex` output."""
     agents = load_agents(_REPO_ROOT)
@@ -666,17 +701,52 @@ def test_deployed_codex_agents_match_transform() -> None:
 
 
 def test_deployed_codex_skill_mirror_matches_canonical() -> None:
-    """`.agents/skills/<name>/SKILL.md` must mirror canonical repo skills for Codex discovery."""
+    """`.agents/skills/` must mirror the shared-surface transform used by Codex/Gemini/Antigravity."""
     skills = load_skills(_REPO_ROOT)
     assert skills, "expected skills/**/SKILL.md"
     for skill in skills:
-        dest = _REPO_ROOT / ".agents" / "skills" / skill["name"] / "SKILL.md"
+        dest = _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
         assert dest.is_file(), (
             f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
         )
-        assert dest.read_text(encoding="utf-8") == skill["raw"], (
-            f"Codex skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        assert dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
         )
+
+
+def test_deployed_gemini_uses_shared_agents_skill_surface() -> None:
+    """Gemini CLI must use the shared `.agents/skills/` mirror and retire `.gemini/skills/`."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
+    for skill in skills:
+        shared_dest = _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        assert shared_dest.is_file(), (
+            f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert shared_dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Gemini shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+        legacy_dest = _REPO_ROOT / ".gemini" / "skills" / skill["name"] / "SKILL.md"
+        assert not legacy_dest.exists(), (
+            f"legacy Gemini skill mirror still present at {legacy_dest.relative_to(_REPO_ROOT)}"
+        )
+
+
+def test_deployed_agents_skill_surface_has_no_stale_non_azoth_entries() -> None:
+    """`.agents/skills/` must be an Azoth-managed mirror, not an append-only cache."""
+    expected = {shared_skill_name(skill["name"]) for skill in load_skills(_REPO_ROOT)}
+    skill_root = _REPO_ROOT / ".agents" / "skills"
+    assert skill_root.is_dir(), "missing .agents/skills — run: python3 scripts/azoth-deploy.py"
+    unexpected = sorted(
+        path.name
+        for path in skill_root.iterdir()
+        if path.is_dir() and path.name not in expected and not path.name.startswith("azoth-")
+    )
+    assert unexpected == [], (
+        ".agents/skills contains stale non-Azoth entries: "
+        + ", ".join(unexpected)
+        + " — run python3 scripts/azoth-deploy.py"
+    )
 
 
 # ── P1-013: Orchestrator binding tests ──────────────────────────────────────

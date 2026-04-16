@@ -10,8 +10,8 @@ Transforms:
   .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
                         →  .agents/skills/azoth-<name>/...     (Codex explicit command-wrapper skills)
-  skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
-                        →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
+    skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+                                                →  .agents/skills/<name>/SKILL.md     (Codex / Gemini / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
                         →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
   kernel/templates/platform-adapters/codex/*.template
@@ -38,6 +38,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -306,6 +307,96 @@ def transform_agent_codex(agent: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def transform_agent_gemini(agent: dict[str, Any]) -> str:
+    """
+    Gemini CLI agent format (.gemini/agents/<name>.md).
+    YAML frontmatter: name, description, kind (local), tools, model, max_turns.
+    Body becomes the agent's system prompt.
+
+    Tool name mapping strategy:
+    - Azoth generic names (read, bash, ...) → Gemini CLI canonical names
+    - Subagent references (researcher, evaluator, ...) → dropped; Gemini CLI
+      subagents cannot call other subagents — multi-agent coordination must
+      happen at the top-level session via @agent-name syntax.
+    - Claude-Code-specific or Azoth-internal aliases (task, explore, research)
+      → dropped (no Gemini equivalent).
+    - If no valid tools remain after filtering → fall back to ["*"].
+    """
+    meta = agent["meta"]
+    fm: dict[str, Any] = {
+        "name": meta["name"],
+        "description": _description(meta),
+        "kind": "local",
+    }
+    # Map Azoth generic tool names to Gemini CLI canonical tool names.
+    # Empty list = drop the tool (no Gemini equivalent or not valid for subagents).
+    _TOOL_MAP: dict[str, list[str]] = {
+        # File system
+        "read": ["read_file", "read_many_files"],
+        "grep": ["grep_search"],
+        "glob": ["glob"],
+        "ls": ["list_directory"],
+        "edit": ["replace"],
+        "write": ["write_file"],
+        # Shell
+        "bash": ["run_shell_command"],
+        "test-runner": ["run_shell_command"],
+        # Web
+        "web": ["google_web_search", "web_fetch"],
+        "web-search": ["google_web_search"],
+        "web-fetch": ["web_fetch"],
+        "search": ["grep_search"],
+        # Claude Code-specific / Azoth-internal → drop
+        "task": [],
+        "explore": [],
+        "research": [],
+        # Subagent references → drop (Gemini subagents cannot call other subagents;
+        # orchestration happens at the main session level via @agent-name syntax)
+        "researcher": [],
+        "evaluator": [],
+        "prompt-engineer": [],
+        "research-orchestrator": [],
+        "architect": [],
+        "planner": [],
+        "builder": [],
+        "reviewer": [],
+        "agent-crafter": [],
+        "context-architect": [],
+    }
+    if tools := meta.get("tools"):
+        gemini_tools: list[str] = []
+        for t in tools:
+            mapped = _TOOL_MAP.get(t)
+            if mapped is not None:
+                gemini_tools.extend(mapped)
+            else:
+                gemini_tools.append(t)
+        # Deduplicate while preserving order.
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for t in gemini_tools:
+            if t and t not in seen:
+                deduped.append(t)
+                seen.add(t)
+        fm["tools"] = deduped if deduped else ["*"]
+    else:
+        # Default: broad access for tier 1-2, read-only for tier 3-4.
+        tier = int(meta.get("tier", 3))
+        if tier <= 2:
+            fm["tools"] = ["read_file", "read_many_files", "grep_search", "glob",
+                           "list_directory", "replace", "write_file",
+                           "run_shell_command", "google_web_search", "web_fetch"]
+        else:
+            fm["tools"] = ["read_file", "read_many_files", "grep_search", "glob",
+                           "list_directory", "google_web_search", "web_fetch"]
+    if "model" in meta:
+        fm["model"] = meta["model"]
+    # Conservative defaults for subagent execution limits.
+    fm["max_turns"] = 30
+    fm["timeout_mins"] = 10
+    return render_frontmatter(fm) + agent["body"]
+
+
 # ── Command transformations ──────────────────────────────────────────────────
 
 
@@ -344,6 +435,73 @@ def transform_command_antigravity(command: dict[str, Any]) -> str:
     Frontmatter is stripped, as Antigravity rules and workflows are plain markdown.
     """
     return command["body"]
+
+
+def transform_command_gemini(command: dict[str, Any]) -> str:
+    """
+    Gemini CLI custom command format (.gemini/commands/<name>.toml).
+    Uses TOML with a `prompt` field (multiline literal string) and optional
+    `description`. Shell injection (!{...}) and file injection (@{...}) are
+    available but not used here — commands rely on the model following the
+    prompt instructions to read files.
+    """
+    name = gemini_command_name(command["name"])
+    desc = str(command["meta"].get("description") or f"Azoth /{name} workflow")
+    body = command["body"]
+    lines = [
+        f'# Azoth /{name} command — generated by azoth-deploy.py',
+        f'description = "{_toml_escape_basic(desc)}"',
+        "prompt = " + _toml_multiline_literal(body),
+    ]
+    return "\n".join(lines) + "\n"
+
+
+_GEMINI_COMMAND_NAME_MAP: dict[str, str] = {
+    "dynamic-full-auto": "workspace.dynamic-full-auto",
+    "plan": "workspace.plan",
+    "remember": "workspace.remember",
+}
+
+
+def gemini_command_name(command_name: str) -> str:
+    """Return the deployed Gemini command name.
+
+    Gemini CLI merges workspace commands with built-ins and discovered skill
+    commands. A small set of Azoth commands collide consistently in live
+    sessions, so the Gemini-specific surface deploys stable names that avoid
+    runtime renaming while keeping canonical Azoth command names unchanged in
+    `.claude/commands/` and other platform adapters.
+    """
+    return _GEMINI_COMMAND_NAME_MAP.get(command_name, command_name)
+
+
+_SHARED_SKILL_NAME_MAP: dict[str, str] = {
+    "remember": "azoth-memory-capture",
+    "structured-autonomy-plan": "azoth-structured-autonomy-plan",
+}
+
+
+def shared_skill_name(skill_name: str) -> str:
+    """Return the deployed name for a skill on the shared `.agents/skills/` surface."""
+    return _SHARED_SKILL_NAME_MAP.get(skill_name, skill_name)
+
+
+def transform_shared_skill(skill: dict[str, Any]) -> str:
+    """Render a skill for the shared `.agents/skills/` surface.
+
+    Some generic canonical skill names collide with user-global Gemini skill
+    catalogs. The shared surface uses collision-safe deployed names while the
+    source repository keeps the canonical skill directory and semantics.
+    """
+    deployed_name = shared_skill_name(skill["name"])
+    if deployed_name == skill["name"]:
+        return skill["raw"]
+    meta = dict(skill["meta"])
+    meta["name"] = deployed_name
+    description = str(meta.get("description") or "").strip()
+    prefix = f"Shared-surface deployment name for Azoth's `{skill['name']}` skill."
+    meta["description"] = f"{prefix} {description}".strip()
+    return render_frontmatter(meta) + skill["body"]
 
 
 def codex_command_skill_name(command: dict[str, Any]) -> str:
@@ -492,6 +650,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "|----------|--------|----------|--------|-----------|",
         "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
+        "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
         "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
@@ -712,9 +871,95 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bo
     return True
 
 
+def remove_file(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated file no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_dir():
+        return False
+    path.unlink()
+    parent = path.parent
+    while parent != root and parent.exists():
+        try:
+            parent.rmdir()
+        except OSError:
+            break
+        parent = parent.parent
+    print(f"  [remove] {rel}")
+    return True
+
+
+def remove_tree(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated directory tree no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+    print(f"  [remove] {rel}")
+    return True
+
+
+def prune_agents_skill_surface(
+    root: Path,
+    expected_skill_names: set[str],
+    dry_run: bool,
+    *,
+    check: bool = False,
+) -> tuple[int, int]:
+    """Retire stale non-Azoth skills from the shared `.agents/skills/` surface.
+
+    The shared Gemini/Codex/Antigravity skill surface is Azoth-managed. Canonical
+    skills live under `skills/`, while `azoth-*` folders are reserved for wrapper
+    skills and bootstrap-specific entries. Everything else is treated as stale.
+    """
+    skills_root = root / ".agents" / "skills"
+    if not skills_root.is_dir():
+        return 0, 0
+    count = 0
+    stale = 0
+    for skill_dir in sorted(skills_root.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        name = skill_dir.name
+        if name in expected_skill_names or name.startswith("azoth-"):
+            continue
+        if not remove_tree(skill_dir, root, dry_run, check=check):
+            stale += 1
+        count += 1
+    return count, stale
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity", "gemini")
 COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
 
 
@@ -851,6 +1096,19 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
 
+        if "gemini" in platforms:
+            for agent in agents:
+                name = agent["meta"]["name"]
+                if not write_file(
+                    root / ".gemini" / "agents" / f"{name}.md",
+                    transform_agent_gemini(agent),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
         print()
 
     # ── Commands ─────────────────────────────────────────────────────────────
@@ -915,10 +1173,32 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
 
+        if "gemini" in platforms:
+            for cmd in commands:
+                deployed_name = gemini_command_name(cmd["name"])
+                if not write_file(
+                    root / ".gemini" / "commands" / f"{deployed_name}.toml",
+                    transform_command_gemini(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+                if deployed_name != cmd["name"]:
+                    if not remove_file(
+                        root / ".gemini" / "commands" / f"{cmd['name']}.toml",
+                        root,
+                        dry_run,
+                        check=check,
+                    ):
+                        stale += 1
+                    count += 1
+
         print()
 
     # ── Skills ───────────────────────────────────────────────────────────────
-    if skills and ("opencode" in platforms or "antigravity" in platforms or "codex" in platforms):
+    if skills and ("opencode" in platforms or "antigravity" in platforms or "codex" in platforms or "gemini" in platforms):
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
             if "opencode" in platforms:
@@ -931,16 +1211,34 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     stale += 1
                 count += 1
-            if "antigravity" in platforms or "codex" in platforms:
+            if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
                 if not write_file(
-                    root / ".agents" / "skills" / skill["name"] / "SKILL.md",
-                    skill["raw"],
+                    root / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md",
+                    transform_shared_skill(skill),
                     root,
                     dry_run,
                     check=check,
                 ):
                     stale += 1
                 count += 1
+            if "gemini" in platforms:
+                if not remove_file(
+                    root / ".gemini" / "skills" / skill["name"] / "SKILL.md",
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+        if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
+            n, s = prune_agents_skill_surface(
+                root,
+                {shared_skill_name(skill["name"]) for skill in skills},
+                dry_run,
+                check=check,
+            )
+            count += n
+            stale += s
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────
@@ -989,6 +1287,33 @@ def main(argv: list[str] | None = None) -> int:
                 dest = dest_dir / out_name
                 content = path.read_text(encoding="utf-8")
                 if not write_file(dest, content, root, dry_run, check=check):
+                    stale += 1
+                n += 1
+            count += n
+        print()
+
+    # ── Gemini CLI adapter (kernel templates) ────────────────────────────────
+    if "gemini" in platforms:
+        print("── gemini adapter ──────────────────────────────────────────────")
+        gemini_adapter = root / "kernel/templates/platform-adapters/gemini"
+        if not gemini_adapter.is_dir():
+            print(f"  [warning] no template files under {gemini_adapter}", file=sys.stderr)
+        else:
+            n = 0
+            # Deploy GEMINI.md context file to project root
+            gemini_md_tmpl = gemini_adapter / "GEMINI.md.template"
+            if gemini_md_tmpl.is_file():
+                content = gemini_md_tmpl.read_text(encoding="utf-8")
+                if not write_file(root / "GEMINI.md", content, root, dry_run, check=check):
+                    stale += 1
+                n += 1
+            # Deploy settings.json to .gemini/
+            settings_tmpl = gemini_adapter / "settings.json.template"
+            if settings_tmpl.is_file():
+                content = settings_tmpl.read_text(encoding="utf-8")
+                if not write_file(
+                    root / ".gemini" / "settings.json", content, root, dry_run, check=check
+                ):
                     stale += 1
                 n += 1
             count += n

@@ -36,7 +36,7 @@ layers:
 
 # Memory system
 memory:
-  episodes: 208
+  episodes: 209
   patterns: 9
   last_sync: null
 
