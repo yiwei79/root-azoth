@@ -41,6 +41,13 @@ consensus_themes:
       Provider prompt caching rewards static prefixes + minimal volatile suffix; BL-012 stage
       boundaries are compaction points; parallel eval and speculative tools trade cost, latency,
       and safety (D21, D23, D44, D46 — P1-011).
+  - id: closeout_efficiency
+    contributing_packs: [RP-F]
+    summary: >
+      Session closeout currently pays for both prompt-surface verbosity and implementation drift:
+      W3 and PR-review guidance are over-expanded in the command text, while `scripts/do_closeout.py`
+      misses documented W2 responsibilities and repeats artifact reads. The net effect is higher
+      token cost, stale-mirror risk, and incomplete end-of-session state updates (P1-006, P1-011).
 
 research_packs:
   - id: RP-A
@@ -134,6 +141,23 @@ research_packs:
       - "Cached KV retention and ZDR — policy-specific data posture."
       - "Preprints (ACON, PASTE, folding) — verify before kernel-hard rules."
 
+  - id: RP-F
+    topic: "Session-closeout efficiency and architecture drift"
+    sources:
+      - { title: "session-closeout command", url: "file:///Users/yiwei/GithubRepos/root-azoth/.claude/commands/session-closeout.md" }
+      - { title: "closeout implementation", url: "file:///Users/yiwei/GithubRepos/root-azoth/scripts/do_closeout.py" }
+      - { title: "cross-IDE closeout architecture", url: "file:///Users/yiwei/GithubRepos/root-azoth/docs/AZOTH_ARCHITECTURE.md" }
+      - { title: "gate protocol", url: "file:///Users/yiwei/GithubRepos/root-azoth/docs/GATE_PROTOCOL.md" }
+    implications_for_azoth:
+      - "Trim high-frequency closeout instructions so the command surface carries imperative steps, not repeated justification and schema tutorial content."
+      - "Realign `scripts/do_closeout.py` with documented W2 responsibilities: bootloader/session-state refresh where applicable, write-claim release, and authoritative repo-local state over backlog-side effects."
+      - "Reduce repeated artifact scans during closeout by threading parsed scope/episode state through W1-W4 instead of reloading the same files per step."
+      - "Choose one canonical version-bump rule and expose governed final-delivery approval in the primary closeout surface to remove architecture-level contradiction."
+    risks:
+      - "Doc-only trimming without script repair preserves stale or incomplete end-of-session state."
+      - "Script-only repair without command compression keeps closeout token-heavy across every platform mirror."
+      - "The current digest lives under roadmap_version v0.2.0 while roadmap active_version is v0.2.0-p2; DFA+ artifact path drift can hide future closeout findings."
+
 explore_swarm_summary:
   wave: "B + synthesis"
   findings:
@@ -146,6 +170,8 @@ explore_swarm_summary:
     - "PRE_DELIVERY_EVAL for implementation wave: E2 true (evaluator in /deliver rule-6 pipeline); E4 borderline (multi-file test only) — default baseline /eval at 0.85 unless human demands /eval-swarm."
     - "No pipeline-gate.json for this scope (delivery_pipeline standard, target_layer infrastructure)."
     - "Continuation: approved scope still P1-010 until expires_at; implementation not started in orchestrator thread — next action remains /deliver with Task-isolated stages."
+    - "2026-04-15 closeout-efficiency audit: command surface is verbose in W3/C6, `scripts/do_closeout.py` misses documented W2 responsibilities and write-claim release, and version-bump/final-delivery rules are split across conflicting surfaces."
+    - "DFA+ path drift: active roadmap version is v0.2.0-p2, but the canonical digest file still lives under .azoth/roadmap-specs/v0.2.0/."
 
 mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P1-012, P5-006]
 
@@ -163,6 +189,7 @@ mapping_notes:
   P1-011: "RP-E inference efficiency — BL-012 compaction, BL-011 spawns, D46 stable mirrors, caching docs; architecture Context & token budget section."
   P1-012: "Urgent DFA e2e friction — D21/D23/D50 blast radius: gates vs multi-wave mode, Task spawn, queen merge/handoff to /deliver|/auto; overlaps P1-001 ledger + P1-002 declarative waves."
   P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."
+  CLOSEOUT-EFF: "RP-F closeout audit — session-closeout should spend tokens on imperative steps, while implementation must restore W2 responsibilities and remove contradictory closeout rules."
   INI-MEM-001: "RP-MEM-A verbatim-first storage — compress-before-index regression (96.6%→84.2%); M3 must index on full signal."
   INI-MEM-002: "RP-MEM-C temporal KG — valid_from/valid_to point-in-time queries; D42 HITL invalidation preserved, no auto-expiry."
   INI-MEM-003: "RP-MEM-B hybrid retrieval — flat ChromaDB collection, fused_dist formula production-only (not just benchmark); optional SQLite-vec backend."
