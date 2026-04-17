@@ -719,7 +719,9 @@ def test_deployed_gemini_uses_shared_agents_skill_surface() -> None:
     skills = load_skills(_REPO_ROOT)
     assert skills, "expected skills/**/SKILL.md"
     for skill in skills:
-        shared_dest = _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        shared_dest = (
+            _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        )
         assert shared_dest.is_file(), (
             f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
         )

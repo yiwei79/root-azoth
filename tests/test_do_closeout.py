@@ -321,7 +321,9 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert scope["approved"] is False
     assert "closed_at" in scope
     assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
-    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
     assert "write_claim" not in ledger
     session_entry = ledger["sessions"][0]
     assert session_entry["status"] == "closed"
@@ -481,7 +483,9 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
     do_closeout.run_closeout(repo_root)
 
     expected_next_action = "Resume wave 2 review."
-    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
     session_entry = ledger["sessions"][0]
     assert session_entry["status"] == "parked"
     assert session_entry["active_run_id"] == "run-123"
