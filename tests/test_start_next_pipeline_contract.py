@@ -26,9 +26,10 @@ def test_start_resume_requires_pipeline_or_auto(rel: str) -> None:
     assert "/resume" in text, f"{rel}: missing /resume guidance"
     assert "/auto" in text, f"{rel}: missing /auto default guidance"
     assert "Stage 0" in text, f"{rel}: missing Stage 0 guidance"
-    assert "without a second scope-approval wall" in text or "do not jump straight to implementation" in text, (
-        f"{rel}: missing resume continuity guidance"
-    )
+    assert (
+        "without a second scope-approval wall" in text
+        or "do not jump straight to implementation" in text
+    ), f"{rel}: missing resume continuity guidance"
 
 
 @pytest.mark.parametrize(

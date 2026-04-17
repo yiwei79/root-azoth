@@ -35,7 +35,9 @@ def parse_iso_datetime(s: str) -> datetime:
     return datetime.fromisoformat(s)
 
 
-def check_scope_gate(session_id: Optional[str] = None, root: Path | None = None) -> Tuple[bool, str]:
+def check_scope_gate(
+    session_id: Optional[str] = None, root: Path | None = None
+) -> Tuple[bool, str]:
     """Validate the scope gate and return (valid, message)."""
     gate_path = find_scope_gate(root)
 
