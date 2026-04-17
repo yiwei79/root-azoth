@@ -20,9 +20,11 @@ def _run(
     gate_path: Path,
     file_path: str | None = None,
     pipeline_gate_path: Path | None = None,
+    write_claim: dict | None = None,
+    tool_input_override: dict | None = None,
 ) -> dict:
-    tool_input: dict = {}
-    if file_path is not None:
+    tool_input: dict = dict(tool_input_override or {})
+    if file_path is not None and "file_path" not in tool_input:
         tool_input["file_path"] = file_path
     stdin_payload = json.dumps(
         {
@@ -32,8 +34,16 @@ def _run(
         }
     )
     workspace = gate_path.parent
+    azoth_dir = workspace / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
+    if write_claim is not None:
+        (azoth_dir / "run-ledger.local.yaml").write_text(
+            json.dumps({"schema_version": 1, "runs": [], "write_claim": write_claim}),
+            encoding="utf-8",
+        )
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     if pipeline_gate_path is not None:
         env["AZOTH_PIPELINE_GATE_PATH"] = str(pipeline_gate_path)
     result = subprocess.run(
@@ -99,8 +109,11 @@ def test_t3b_create_file_gate_absent_vscode_payload(tmp_path: Path) -> None:
         }
     )
     workspace = gate_path.parent
+    azoth_dir = workspace / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     result = subprocess.run(
         ["python3", str(ORCHESTRATOR_PATH)],
         input=stdin_payload,
@@ -130,8 +143,11 @@ def test_t3c_replace_string_gate_absent_vscode_payload(tmp_path: Path) -> None:
         }
     )
     workspace = gate_path.parent
+    azoth_dir = workspace / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     result = subprocess.run(
         ["python3", str(ORCHESTRATOR_PATH)],
         input=stdin_payload,
@@ -173,7 +189,7 @@ def test_t5_write_approved_expired(tmp_path: Path) -> None:
 def test_t6_write_approved_valid(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": _future_expiry()}),
+        json.dumps({"approved": True, "expires_at": _future_expiry(), "session_id": "sess-valid"}),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -193,7 +209,7 @@ def test_t7_write_malformed_gate(tmp_path: Path) -> None:
 def test_t8_write_invalid_expires_at(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": "not-a-date"}),
+        json.dumps({"approved": True, "expires_at": "not-a-date", "session_id": "sess-invalid"}),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -205,7 +221,7 @@ def test_t8_write_invalid_expires_at(tmp_path: Path) -> None:
 def test_t9_write_naive_future_expires_at(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59"}),
+        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59", "session_id": "sess-naive"}),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -216,7 +232,7 @@ def test_t9_write_naive_future_expires_at(tmp_path: Path) -> None:
 def test_t10_write_z_suffix_future_expires_at(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59Z"}),
+        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59Z", "session_id": "sess-z"}),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -247,8 +263,11 @@ def test_t12b_create_file_to_gate_path_allowed_vscode_payload(tmp_path: Path) ->
         }
     )
     workspace = gate_path.parent
+    azoth_dir = workspace / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     result = subprocess.run(
         ["python3", str(ORCHESTRATOR_PATH)],
         input=stdin_payload,
@@ -287,11 +306,12 @@ def test_t13_governed_scope_write_denied_without_pipeline_gate(tmp_path: Path) -
 def test_t14_governed_scope_write_allowed_with_valid_pipeline_gate(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
     gate_path.write_text(
         json.dumps(
             {
                 "approved": True,
-                "expires_at": _future_expiry(),
+                "expires_at": expiry,
                 "session_id": "sess-governed",
                 "delivery_pipeline": "governed",
             }
@@ -303,7 +323,8 @@ def test_t14_governed_scope_write_allowed_with_valid_pipeline_gate(tmp_path: Pat
             {
                 "approved": True,
                 "session_id": "sess-governed",
-                "expires_at": _future_expiry(),
+                "expires_at": expiry,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
                 "pipeline": "deliver-full",
             }
         ),
@@ -334,6 +355,14 @@ def test_t15_governed_scope_write_to_pipeline_gate_path_allowed_without_prior_ga
     assert _decision(output) == "allow"
 
 
+def test_t15b_pipeline_gate_write_denied_without_scope_gate(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    output = _run("Write", gate_path, file_path=str(pg_path), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
 def test_t16_target_layer_m1_triggers_pipeline_gate(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     pg_path = tmp_path / "pipeline-gate.json"
@@ -354,12 +383,201 @@ def test_t16_target_layer_m1_triggers_pipeline_gate(tmp_path: Path) -> None:
     assert _decision(output) == "deny"
 
 
+def test_t16b_governed_scope_write_denied_with_pipeline_gate_session_mismatch(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": expiry,
+                "session_id": "sess-governed",
+                "delivery_pipeline": "governed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-other",
+                "expires_at": expiry,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
+                "pipeline": "deliver-full",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16c_governed_scope_write_denied_with_invalid_pipeline_name(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": expiry,
+                "session_id": "sess-governed",
+                "delivery_pipeline": "governed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-governed",
+                "expires_at": expiry,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
+                "pipeline": "ship-it",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16d_governed_scope_write_denied_with_opened_at_after_expires_at(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": expiry,
+                "session_id": "sess-governed",
+                "delivery_pipeline": "governed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-governed",
+                "expires_at": expiry,
+                "opened_at": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
+                "pipeline": "deliver-full",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16e_pipeline_gate_bootstrap_bypasses_foreign_write_claim(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "target_layer": "M1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run(
+        "Write",
+        gate_path,
+        file_path=str(pg_path),
+        pipeline_gate_path=pg_path,
+        write_claim={
+            "session_id": "sess-foreign",
+            "expires_at": _future_expiry(),
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    assert _decision(output) == "allow"
+
+
+def test_t16f_mixed_pipeline_gate_and_repo_targets_do_not_bypass_write_claim(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "target_layer": "M1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run(
+        "Write",
+        gate_path,
+        pipeline_gate_path=pg_path,
+        write_claim={
+            "session_id": "sess-foreign",
+            "expires_at": _future_expiry(),
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        },
+        tool_input_override={
+            "files": [
+                {"filePath": str(pg_path)},
+                {"filePath": str(tmp_path / "src.txt")},
+            ],
+            "content": "hello\n",
+        },
+    )
+    assert _decision(output) == "deny"
+    assert "write claim" in _reason(output).lower()
+
+
+def test_t16g_non_memory_claude_home_write_is_not_exempt(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    output = _run(
+        "Write",
+        gate_path,
+        file_path=str(Path.home() / ".claude" / "not-memory.txt"),
+    )
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
+def test_t16h_approved_scope_without_session_id_denies(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"))
+    assert _decision(output) == "deny"
+    assert "missing session_id" in _reason(output)
+
+
 def test_t17_scope_gate_thin_cli_write_denied_without_gate(tmp_path: Path) -> None:
     """Regression: scope-gate.py thin CLI (scope-only) must run without NameError."""
     gate_path = tmp_path / "scope-gate.json"
     workspace = gate_path.parent
+    azoth_dir = workspace / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
+    env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     stdin_payload = json.dumps(
         {
             "tool_name": "Write",
@@ -399,7 +617,7 @@ def test_t18_scope_gate_thin_malformed_stdin_allow(tmp_path: Path) -> None:
 
 
 def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> None:
-    """Writes to ~/.claude/… must be allowed even when scope gate is closed (W3 exemption)."""
+    """Writes to ~/.claude/…/memory must still require a valid scope gate."""
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
         json.dumps({"approved": False, "expires_at": _future_expiry()}),
@@ -409,14 +627,109 @@ def test_t19_write_to_claude_home_allowed_when_gate_closed(tmp_path: Path) -> No
         Path.home() / ".claude" / "projects" / "test-project" / "memory" / "project_status.md"
     )
     output = _run("Write", gate_path, file_path=claude_target)
-    assert _decision(output) == "allow"
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
 
 
 def test_t20_write_to_claude_home_allowed_when_gate_absent(tmp_path: Path) -> None:
-    """Writes to ~/.claude/… must be allowed even when no scope gate file exists."""
+    """Writes to ~/.claude/…/memory are denied when no scope gate file exists."""
     gate_path = tmp_path / "scope-gate.json"  # does not exist
     claude_target = str(
         Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md"
     )
     output = _run("Write", gate_path, file_path=claude_target)
-    assert _decision(output) == "allow"
+    assert _decision(output) == "deny"
+    assert "scope-gate" in _reason(output)
+
+
+def test_t20b_governed_memory_write_requires_pipeline_gate(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-governed",
+                "target_layer": "M1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    claude_target = str(
+        Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md"
+    )
+    output = _run("Write", gate_path, file_path=claude_target)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t20c_governed_memory_write_still_hits_write_claim(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": expiry,
+                "session_id": "sess-governed",
+                "target_layer": "M1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-governed",
+                "expires_at": expiry,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
+                "pipeline": "deliver-full",
+            }
+        ),
+        encoding="utf-8",
+    )
+    claude_target = str(
+        Path.home() / ".claude" / "projects" / "test-project" / "memory" / "MEMORY.md"
+    )
+    output = _run(
+        "Write",
+        gate_path,
+        file_path=claude_target,
+        pipeline_gate_path=pg_path,
+        write_claim={
+            "session_id": "sess-foreign",
+            "expires_at": _future_expiry(),
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    assert _decision(output) == "deny"
+    assert "write claim" in _reason(output).lower()
+
+
+def test_t20d_entropy_state_write_still_hits_write_claim(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "session_id": "sess-standard",
+            }
+        ),
+        encoding="utf-8",
+    )
+    entropy_target = tmp_path / "entropy-state.json"
+    output = _run(
+        "Write",
+        gate_path,
+        file_path=str(entropy_target),
+        write_claim={
+            "session_id": "sess-foreign",
+            "expires_at": _future_expiry(),
+            "acquired_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    assert _decision(output) == "deny"
+    assert "write claim" in _reason(output).lower()

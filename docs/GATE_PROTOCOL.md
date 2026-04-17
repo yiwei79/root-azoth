@@ -15,6 +15,18 @@ and verifies:
 If the scope-gate is missing, expired, or unapproved, **stop** and ask the human to
 run `/next` to declare intent and receive an approved scope card.
 
+### Scope-gate exemptions
+
+The scope-gate layer may explicitly allow a write before the repo-wide gate stack continues.
+These are **administrative/bootstrap** writes, not normal implementation writes:
+
+- writing or editing `.azoth/scope-gate.json` itself (scope bootstrap)
+- writing `.azoth/pipeline-gate.json` itself (pipeline bootstrap for governed work)
+- W3 mirror writes under `~/.claude/.../memory/`
+
+When a write is classified as one of these exemptions, downstream alignment, write-claim,
+and entropy gates must short-circuit and allow it.
+
 ## Pipeline-gate write (governed work only)
 
 **Before the first Write/Edit** to the repo in this run: `Read` `.azoth/scope-gate.json`.
@@ -43,6 +55,17 @@ values emitted by `/auto` scope-gate templates are `auto`, `deliver`, or `delive
 
 If `pipeline-gate.json` already exists with the same `session_id`, update `opened_at`
 only.
+
+Validity requirements for a live `pipeline-gate.json`:
+
+- `pipeline` or `pipeline_command` is present and names a real delivery command:
+  `auto`, `dynamic-full-auto`, `deliver`, or `deliver-full`
+- `opened_at` is parseable ISO-8601
+- `expires_at` is parseable ISO-8601 and still in the future
+- `opened_at <= expires_at`
+- `session_id` matches `scope-gate.json.session_id`
+- `expires_at` matches `scope-gate.json.expires_at`
+- if the scope already records an exact selected pipeline command, the pipeline-gate command must match it
 
 ## Governed closeout approval evidence
 
@@ -81,17 +104,21 @@ and confirm `session_id` consistency. See `.cursor/rules/claude-code-parity.mdc`
 the behavioral parity rules.
 
 Cross-platform validation: run `python3 scripts/check_gates.py --session-id <session_id>`
-(optionally `--require-pipeline-gate` for governed work). This script validates both gate
-files and cross-checks session_id consistency. It imports from `scripts/scope_gate_check.py`
-and extends it with pipeline-gate and field-completeness checks.
+(optionally `--require-pipeline-gate` to force the check even for non-governed sessions).
+This script validates both gate files, derives governed pipeline-gate requirements from the
+active scope, and cross-checks session_id consistency, timestamp freshness, and
+pipeline-command validity. It imports from `scripts/scope_gate_check.py` and extends it
+with pipeline-gate and field-completeness checks.
 
 ## Fused Declaration flow (`/auto`)
 
 When `/auto` is invoked, the orchestrator presents a **fused Declaration** combining
 scope card and pipeline composition in a single approval. On approval, the orchestrator
-writes `.azoth/scope-gate.json` (8 required fields: `session_id`, `goal`, `approved`,
-`approved_by`, `expires_at`, `backlog_id`, `delivery_pipeline`, `target_layer`) and
-optionally `.azoth/pipeline-gate.json` (for governed work). This replaces the separate
+writes `.azoth/scope-gate.json` with 7 core required fields
+(`session_id`, `goal`, `approved`, `approved_by`, `expires_at`, `backlog_id`,
+`target_layer`) plus one mode field (`delivery_pipeline` during the bridge, or
+`governance_mode` on the normalized path), and optionally `.azoth/pipeline-gate.json`
+(for governed work). This replaces the separate
 `/next` → `/auto` two-step flow.
 
 The fused Declaration eliminates one human gate (scope approval) from the `/auto` happy

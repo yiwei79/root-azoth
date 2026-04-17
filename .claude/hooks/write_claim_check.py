@@ -41,8 +41,15 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
       - The claim has expired (stale; caller should run resolve_stale_claims).
 
     Returns WriteClaimResult(allowed=False, deny_reason=...) when:
-      - An unexpired claim is held by a different session.
+      - An unexpired claim is held by a different session, OR
+      - The write-claim ledger cannot be loaded or validated safely.
     """
+    if not str(requesting_session or "").strip():
+        # Bootstrap/admin writes may not yet carry a scope session. Those writes are
+        # gated upstream by scope_gate_core exemptions and must not be blocked by the
+        # repo write lease.
+        return WriteClaimResult(allowed=True)
+
     # Import run_ledger — try the canonical scripts/ dir relative to this hook file
     # first (repo install), then scripts/ relative to the provided root (test override).
     _this_file = Path(__file__).resolve()
@@ -55,11 +62,9 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
     try:
         from run_ledger import load_write_claim  # type: ignore[import]
     except ImportError as exc:
-        # If run_ledger is unavailable, fail open (allow) with a warning — the hook
-        # must not permanently block writes due to an import error in non-critical path.
         return WriteClaimResult(
-            allowed=True,
-            deny_reason=f"[write-claim] WARNING: could not import run_ledger: {exc}",
+            allowed=False,
+            deny_reason=f"[write-claim] BLOCKED — could not import run_ledger: {exc}",
         )
 
     # Derive the effective root: if AZOTH_LEDGER_PATH is set (test override), derive root
@@ -71,12 +76,23 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
     else:
         effective_root = root
 
-    claim = load_write_claim(effective_root)
+    try:
+        claim = load_write_claim(effective_root)
+    except Exception as exc:
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason=f"[write-claim] BLOCKED — could not load write claim: {exc}",
+        )
 
     if claim is None:
         return WriteClaimResult(allowed=True)
 
     holder = claim.get("session_id", "")
+    if not str(holder or "").strip():
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason="[write-claim] BLOCKED — write claim is malformed: missing session_id.",
+        )
     if holder == requesting_session:
         return WriteClaimResult(allowed=True)
 
@@ -88,8 +104,10 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
         if exp_dt.tzinfo is None:
             exp_dt = exp_dt.replace(tzinfo=timezone.utc)
     except (ValueError, TypeError):
-        # Unparseable expiry — treat as expired, allow write
-        return WriteClaimResult(allowed=True)
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason="[write-claim] BLOCKED — write claim is malformed: invalid expires_at.",
+        )
 
     if datetime.now(timezone.utc) >= exp_dt:
         # Claim has expired — allow, but caller should call resolve_stale_claims
