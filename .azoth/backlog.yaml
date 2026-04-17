@@ -1744,4 +1744,29 @@ items:
     session-closeout.md documenting the convention and inbox file-naming scheme;
     (2) write three PR #9 inbox stub files (one per platform) so the reviews land in
     the right place when collected.
+- id: BL-051
+  title: "Research Claude Opus writing style and systematize it as Azoth's GPT-family response style"
+  source: human-preference-2026-04-17
+  target_layer: M1
+  delivery_pipeline: governed
+  status: active
+  target_version: v0.2.0-p2
+  priority: 1
+  created_date: '2026-04-17'
+  description: >
+    Treat this as an instruction-surface and model-behavior project, not a one-line
+    prompt tweak. Research the practical writing-style differences between Claude Opus
+    and GPT-family models in the contexts that matter for Azoth: architecture briefs,
+    explanations, close summaries, planning output, and high-signal operational responses.
+    Derive a concrete style rubric that captures the parts of the Claude Opus style the
+    human finds easier to read and digest: paragraph cadence, structural hierarchy,
+    density, contrastive reasoning, table usage, tone, and when to prefer prose over
+    bullets. Then apply that rubric systematically to Azoth's GPT-facing instruction
+    surfaces so GPT models default toward this style without breaking command contracts
+    or terse operational modes. Deliverables: (1) a research note comparing Claude Opus
+    writing traits versus current GPT defaults with positive and negative examples;
+    (2) a proposed Azoth response-style rubric for GPT-family models; (3) updates to the
+    relevant canonical instruction surfaces and generated mirrors; (4) regression checks
+    so the preferred style survives deploy/parity workflows and does not conflict with
+    cases where short operational output is still required.
 completed: []

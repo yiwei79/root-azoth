@@ -25,6 +25,10 @@ CLOSEOUT_MIRRORS = [
         REPO / ".agents" / "workflows" / "session-closeout.md",
         id="agents",
     ),
+    pytest.param(
+        REPO / ".gemini" / "commands" / "session-closeout.toml",
+        id="gemini",
+    ),
 ]
 
 
