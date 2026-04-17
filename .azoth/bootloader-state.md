@@ -1,23 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.21 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 21
+0.1.2.22 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 22
 
 ## Last Session
-- **Session**: 2026-04-16-branch-hygiene
-- **Goal**: Merge feat/gemini-cli-adapter + prune stale branches + codify D54 git strategy
-- **Pipeline**: standard (ad-hoc branch hygiene)
-- **Outcome**: closed (ep-210, success)
-- **Commits**: b805e68 (merge), 1191cd7 (D54 docs)
+- **Session**: 2026-04-16-p1-017
+- **Goal**: P1-017 reinforcement_count automation (closeout + promote path)
+- **Pipeline**: auto (standard, informational)
+- **Outcome**: closed (ep-211, success, eval 0.97)
+- **Commits**: pending
 
 ## Key Changes This Session
-1. Merged feat/gemini-cli-adapter into phase/v0.2.0-p2 (Gemini CLI adapter surface).
-2. Pruned 11 stale branches (local + remote); repo now has main + phase/v0.2.0-p2 only.
-3. Formalized D54 (branch model + worktree policy): CLAUDE.md, DECISIONS_INDEX.md, AZOTH_ARCHITECTURE.md, azoth.yaml. Decisions count: 53→54.
+1. Added W1b reinforcement_count step to session-closeout.md (and all mirrors via azoth-deploy.py).
+2. Added parametrized semantic test `test_closeout_mirror_documents_w1b_reinforcement_step` across 4 mirrors.
+3. Marked P1-017 complete in backlog. Phase 2 roadmap triage run — identified P1-020/P1-021 (deferred→active) and INI-RST-001/INI-MEM-004/INI-RST-003 (need new BL items).
 
 ## Open Decisions
 - BL-046: remove the orphan azoth-operating-model Codex wrapper + add reverse-orphan deploy check.
-- BL-049: version-bump.py already updates AZOTH_VERSION in .claude/settings.json — verify and close.
+- Follow-up (spawned): add Gemini TOML to CLOSEOUT_MIRRORS test parametrization.
 
 ## Next Action
-- Run /next to select BL-049 (quick verify+close) or BL-046 (build).
+- Activate P1-020 or P1-021 (flip deferred→active), or create BL items for high-priority p2 initiatives.

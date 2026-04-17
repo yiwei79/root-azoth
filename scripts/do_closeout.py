@@ -292,7 +292,9 @@ def update_session_registry(
         )
         matching_session["status"] = "parked"
         matching_session["next_action"] = next_action
-        matching_session["active_run_id"] = str(resumable_run.get("run_id") or preferred_run_id or "")
+        matching_session["active_run_id"] = str(
+            resumable_run.get("run_id") or preferred_run_id or ""
+        )
         matching_session.pop("closed_at", None)
         session_status = "parked"
     else:

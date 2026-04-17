@@ -48,3 +48,16 @@ def test_closeout_mirror_episode_template_includes_reinforcement_count(
         f"{mirror_path.relative_to(REPO)} episode template is missing 'reinforcement_count'. "
         "Add '\"reinforcement_count\": 0' to the episode JSON block in step 4."
     )
+
+
+@pytest.mark.parametrize("mirror_path", CLOSEOUT_MIRRORS)
+def test_closeout_mirror_documents_w1b_reinforcement_step(
+    mirror_path: Path,
+) -> None:
+    """P1-017: each closeout mirror must document the W1b reinforcement step."""
+    text = mirror_path.read_text(encoding="utf-8")
+    assert "W1b" in text, (
+        f"{mirror_path.relative_to(REPO)} is missing the W1b reinforcement step. "
+        "Add a 'W1b — Optional reinforcement_count update' block immediately after "
+        "the W1 log line in the Write Checkpoints section."
+    )
