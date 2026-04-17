@@ -88,7 +88,7 @@ When human signals `yes` on the Backlog axis:
      source: {insight id}
      target_layer: "{inferred: M1 | skills | infrastructure | docs}"
      delivery_pipeline: "{governed | standard}"
-     status: active
+     status: pending
      target_version: "{active_version from roadmap.yaml}"
      priority: {suggested integer}
      created_date: "{today YYYY-MM-DD}"

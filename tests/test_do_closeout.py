@@ -160,6 +160,26 @@ def _write_approvals(repo_root: Path, *records: dict[str, object]) -> str:
     return text
 
 
+def _update_backlog_item(repo_root: Path, backlog_id: str, **fields: object) -> None:
+    backlog_path = repo_root / ".azoth" / "backlog.yaml"
+    backlog = yaml.safe_load(backlog_path.read_text(encoding="utf-8"))
+    for item in backlog["items"]:
+        if item["id"] == backlog_id:
+            item.update(fields)
+            break
+    backlog_path.write_text(yaml.safe_dump(backlog, sort_keys=False), encoding="utf-8")
+
+
+def _set_version_tasks(repo_root: Path, version_id: str, tasks: list[dict[str, object]]) -> None:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
+    for version in roadmap["versions"]:
+        if version["id"] == version_id:
+            version["tasks"] = tasks
+            break
+    roadmap_path.write_text(yaml.safe_dump(roadmap, sort_keys=False), encoding="utf-8")
+
+
 def test_governed_closeout_requires_approval_evidence_before_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -379,6 +399,170 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
     ]
+
+
+def test_governed_closeout_skips_initiative_roadmap_ref_and_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-040")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-040",
+        roadmap_ref="INI-RST-001",
+        initiative_ref="INI-RST-001",
+        target_version="v0.2.0-p1",
+    )
+    _set_version_tasks(
+        repo_root,
+        "v0.2.0-p1",
+        [{"id": "P1-002", "title": "Declarative swarm", "decision_ref": ["D23"]}],
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    before = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    do_closeout.run_closeout(repo_root)
+    out = capsys.readouterr().out
+
+    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    assert "status: complete" in backlog_text
+    assert roadmap_text == before
+    assert "W2c:" in out
+    assert "INI-RST-001" in out
+
+
+def test_governed_closeout_skips_narrative_roadmap_ref_and_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-018")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-018",
+        roadmap_ref="intake-ep-087",
+        target_version="v0.2.0-p1",
+    )
+    _set_version_tasks(
+        repo_root,
+        "v0.2.0-p1",
+        [{"id": "P1-004", "title": "Control-plane surfacing", "decision_ref": ["D52"]}],
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    before = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    do_closeout.run_closeout(repo_root)
+    out = capsys.readouterr().out
+
+    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    assert "status: complete" in backlog_text
+    assert roadmap_text == before
+    assert "W2c:" in out
+    assert "intake-ep-087" in out
+
+
+def test_governed_closeout_skips_unknown_roadmap_ref_and_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-999")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-999",
+        roadmap_ref="P9-999",
+        target_version="v0.2.0-p1",
+    )
+    _set_version_tasks(
+        repo_root,
+        "v0.2.0-p1",
+        [{"id": "P1-024", "title": "Projection refactor", "decision_ref": ["D46"]}],
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    before = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    do_closeout.run_closeout(repo_root)
+    out = capsys.readouterr().out
+
+    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    assert "status: complete" in backlog_text
+    assert roadmap_text == before
+    assert "W2c:" in out
+    assert "P9-999" in out
+
+
+def test_governed_closeout_completes_real_roadmap_ref_task(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-041")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-041",
+        roadmap_ref="P1-017",
+        target_version="v0.2.0-p1",
+    )
+    _set_version_tasks(
+        repo_root,
+        "v0.2.0-p1",
+        [{"id": "P1-017", "title": "Reinforcement automation", "decision_ref": ["D11"]}],
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    assert "      - id: P1-017\n" not in roadmap_text
+    assert '{id: P1-017, title: "Governed closeout", completed_date:' in roadmap_text
 
 
 def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(

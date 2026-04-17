@@ -3,7 +3,7 @@ description = "DYNAMIC-FULL-AUTO+ session: adaptive research/explore swarms, dig
 prompt = '''
 # /dynamic-full-auto $ARGUMENTS
 
-**Primary specification:** `Read` **`skills/dynamic-full-auto/SKILL.md`** and execute it end-to-end for the goal in `$ARGUMENTS`. This command is the slash entry for that session mode; do not improvise a parallel workflow.
+**Primary specification:** `Read` **`.agents/skills/dynamic-full-auto/SKILL.md`** and execute it end-to-end for the goal in `$ARGUMENTS`. This command is the slash entry for that session mode; do not improvise a parallel workflow.
 
 ## Role
 
@@ -11,7 +11,7 @@ Orchestrator-only in main chat: run **adaptive** discovery waves (research + exp
 
 ## Iron laws (non-negotiable)
 
-Follow **`.agents/skills/swarm-coordination/SKILL.md`**: single-message fan-out, queen aggregation, no worker-to-worker chatter. Subagent work uses **`skills/subagent-router/SKILL.md`** **BL-011** spawn contract and **BL-012** typed handoffs.
+Follow the coordination rules in **`.agents/skills/dynamic-full-auto/SKILL.md`**: single-message fan-out, queen aggregation, no worker-to-worker chatter. Subagent work uses **`.agents/skills/subagent-router/SKILL.md`** **BL-011** spawn contract and **BL-012** typed handoffs.
 
 ## Gates
 
@@ -33,7 +33,7 @@ PRE_DELIVERY_EVAL section (including **`/eval-swarm`** when triggers fire).
 
 This command is defined for **Claude Code** (`.claude/commands/`). Other tools receive the equivalent workflow surface via deploy (`python3 scripts/azoth-deploy.py`, D46): prompt/command mirrors for Copilot/OpenCode and a generated `azoth-dynamic-full-auto` wrapper skill for Codex.
 
-**Normative behavior** lives in **`skills/dynamic-full-auto/SKILL.md`** — in particular:
+**Normative behavior** lives in **`.agents/skills/dynamic-full-auto/SKILL.md`** — in particular:
 
 - **Happy path (Cursor)** — Simulated scope-gate / pipeline-gate before writes (no PreToolUse); **`Task`** per delivery stage when the tool exists; Rich welcome via integrated terminal; digest mutations are writes and require an approved scope.
 - **Happy path (Claude Code)** — Same flow; hooks may enforce gates mechanically where configured.

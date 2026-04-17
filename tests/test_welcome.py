@@ -21,7 +21,7 @@ import welcome  # noqa: E402
 
 def _item(
     id: str,
-    status: str = "active",
+    status: str = "pending",
     priority: int = 1,
     blocked_by: list[str] | None = None,
 ) -> dict:
@@ -68,6 +68,12 @@ def test_completed_variant_counts_as_done_for_blockers() -> None:
 
 def test_filter_excludes_deferred() -> None:
     items = [_item("A", status="deferred"), _item("B")]
+    result = welcome.filter_unblocked_items(items, set())
+    assert [x["id"] for x in result] == ["B"]
+
+
+def test_filter_excludes_active_claimed_items() -> None:
+    items = [_item("A", status="active"), _item("B")]
     result = welcome.filter_unblocked_items(items, set())
     assert [x["id"] for x in result] == ["B"]
 
@@ -628,13 +634,13 @@ schema_version: 1
 items:
   - id: T-001
     title: First task
-    status: active
+    status: pending
     priority: 1
     target_layer: infrastructure
     delivery_pipeline: standard
   - id: T-002
     title: Second task
-    status: active
+    status: pending
     priority: 2
     target_layer: M1
     delivery_pipeline: governed
@@ -657,6 +663,45 @@ items:
     assert "T-001" in output
     assert "T-002" in output
     assert "T-DONE" not in output
+
+
+def test_render_with_backlog_hides_active_items(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """render_dashboard() should not surface claimed active backlog items."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    backlog_content = """
+schema_version: 1
+items:
+  - id: T-ACTIVE
+    title: Claimed task
+    status: active
+    priority: 1
+    target_layer: infrastructure
+    delivery_pipeline: standard
+  - id: T-PENDING
+    title: Pending task
+    status: pending
+    priority: 2
+    target_layer: infrastructure
+    delivery_pipeline: standard
+"""
+    (azoth_dir / "backlog.yaml").write_text(backlog_content)
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+
+    output = buf.getvalue()
+    assert "T-ACTIVE" not in output
+    assert "T-PENDING" in output
 
 
 def test_render_governed_scope_shows_pipeline_gate_open(

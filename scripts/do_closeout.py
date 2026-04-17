@@ -26,6 +26,7 @@ _SESSION_STATE_CHECKPOINT_FIELDS = (
     "pause_reason",
     "active_run_id",
 )
+_ROADMAP_TASK_SECTIONS = ("tasks", "completed_tasks", "deferred_tasks")
 
 
 class CloseoutError(RuntimeError):
@@ -323,19 +324,137 @@ def _mark_backlog_item_complete(
 
 
 def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
-    start_match = re.search(r"^(  - id: " + re.escape(version_id) + r"\n)", text, re.MULTILINE)
+    start_match = re.search(
+        r'^(?P<indent>\s*)-\s+id:\s*["\']?' + re.escape(version_id) + r'["\']?\s*$',
+        text,
+        re.MULTILINE,
+    )
     if not start_match:
         return None
-    next_match = re.search(r"^  - id:", text[start_match.end() :], re.MULTILINE)
+    item_indent = re.escape(start_match.group("indent"))
+    next_match = re.search(
+        rf"^{item_indent}-\s+id:\s",
+        text[start_match.end() :],
+        re.MULTILINE,
+    )
     end = start_match.end() + next_match.start() if next_match else len(text)
     return start_match.start(), end
+
+
+def _find_roadmap_version(
+    roadmap: dict[str, Any],
+    *,
+    version_id: str,
+) -> dict[str, Any] | None:
+    versions = roadmap.get("versions")
+    if not isinstance(versions, list):
+        return None
+    for version in versions:
+        if isinstance(version, dict) and str(version.get("id") or "") == version_id:
+            return version
+    return None
+
+
+def _resolve_roadmap_task_id(
+    repo_root: pathlib.Path,
+    *,
+    backlog_id: str,
+    roadmap_ref: str,
+    target_version: str,
+) -> tuple[str | None, str]:
+    candidate = (roadmap_ref or backlog_id).strip()
+    if not candidate:
+        return None, f"backlog item {backlog_id} has no roadmap task reference"
+    if not target_version:
+        return (
+            None,
+            f"skipping roadmap completion for backlog item {backlog_id}; "
+            f"target_version missing for ref {candidate!r}",
+        )
+
+    roadmap = load_yaml(repo_root / ".azoth" / "roadmap.yaml")
+    version = _find_roadmap_version(roadmap, version_id=target_version)
+    if version is None:
+        return (
+            None,
+            f"skipping roadmap completion for backlog item {backlog_id}; "
+            f"roadmap version {target_version!r} not found for ref {candidate!r}",
+        )
+
+    for section_name in _ROADMAP_TASK_SECTIONS:
+        section = version.get(section_name)
+        if not isinstance(section, list):
+            continue
+        for entry in section:
+            if isinstance(entry, dict) and str(entry.get("id") or "") == candidate:
+                return candidate, ""
+
+    return (
+        None,
+        f"skipping roadmap completion for backlog item {backlog_id}; "
+        f"ref {candidate!r} is not a roadmap task id in {target_version}",
+    )
+
+
+def _find_section_bounds(block: str, section_name: str) -> tuple[int, int] | None:
+    start_match = re.search(
+        rf"^(\s*){re.escape(section_name)}:\s*(?:null)?\s*$",
+        block,
+        flags=re.MULTILINE,
+    )
+    if not start_match:
+        return None
+    section_indent = re.escape(start_match.group(1))
+    next_match = re.search(
+        rf"^{section_indent}[A-Za-z0-9_]+:\s",
+        block[start_match.end() :],
+        flags=re.MULTILINE,
+    )
+    end = start_match.end() + next_match.start() if next_match else len(block)
+    return start_match.start(), end
+
+
+def _version_field_indent(block: str) -> str:
+    for line in block.splitlines():
+        if re.match(r"^\s*-\s+id:\s", line):
+            continue
+        match = re.match(r"^(\s+)[A-Za-z0-9_]+:\s", line)
+        if match:
+            return match.group(1)
+    return "  "
+
+
+def _remove_multiline_task_entry(block: str, task_id: str) -> tuple[str, bool]:
+    lines = block.splitlines(keepends=True)
+    start_idx: int | None = None
+    entry_indent = 0
+    for index, line in enumerate(lines):
+        match = re.match(rf'^(\s*)-\s+id:\s*["\']?{re.escape(task_id)}["\']?\s*$', line)
+        if match:
+            start_idx = index
+            entry_indent = len(match.group(1))
+            break
+    if start_idx is None:
+        return block, False
+
+    end_idx = start_idx + 1
+    while end_idx < len(lines):
+        stripped = lines[end_idx].strip()
+        if not stripped:
+            end_idx += 1
+            continue
+        indent = len(lines[end_idx]) - len(lines[end_idx].lstrip(" "))
+        if indent <= entry_indent:
+            break
+        end_idx += 1
+    return "".join(lines[:start_idx] + lines[end_idx:]), True
 
 
 def _mark_roadmap_task_complete(
     repo_root: pathlib.Path,
     *,
     backlog_id: str,
-    roadmap_ref: str,
+    roadmap_task_id: str,
     target_version: str,
     title: str,
     decision_ref: list[str],
@@ -352,32 +471,33 @@ def _mark_roadmap_task_complete(
 
     start, end = bounds
     block = text[start:end]
-    task_id = roadmap_ref or backlog_id
+    task_id = roadmap_task_id
     changed = False
 
-    task_match = re.search(
-        rf"^      - id: {re.escape(task_id)}\s*$",
-        block,
-        flags=re.MULTILINE,
-    )
-    if task_match:
-        next_match = re.search(
-            r"^(      - id:|    completed_tasks:)",
-            block[task_match.end() :],
-            flags=re.MULTILINE,
-        )
-        task_end = task_match.end() + next_match.start() if next_match else len(block)
-        block = block[:task_match.start()] + block[task_end:]
+    block, removed_task = _remove_multiline_task_entry(block, task_id)
+    if removed_task:
         changed = True
 
-    completed_pattern = rf"^      - \{{id: {re.escape(task_id)},.*$"
+    deferred_bounds = _find_section_bounds(block, "deferred_tasks")
+    if deferred_bounds is not None:
+        deferred_start, deferred_end = deferred_bounds
+        deferred_block = block[deferred_start:deferred_end]
+        deferred_entry = re.search(
+            rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*(?:\n|$)',
+            deferred_block,
+            flags=re.MULTILINE,
+        )
+        if deferred_entry:
+            deferred_block = (
+                deferred_block[: deferred_entry.start()] + deferred_block[deferred_entry.end() :]
+            )
+            block = block[:deferred_start] + deferred_block + block[deferred_end:]
+            changed = True
+
+    completed_pattern = rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
     completed_entry = re.search(completed_pattern, block, flags=re.MULTILINE)
     decision_text = f"[{', '.join(decision_ref)}]" if decision_ref else "[]"
     title_text = title.replace("\\", "\\\\").replace('"', '\\"')
-    completed_line = (
-        f'      - {{id: {task_id}, title: "{title_text}", completed_date: "{completed_date}", '
-        f"decision_ref: {decision_text}}}\n"
-    )
     if completed_entry:
         new_line = re.sub(
             r'completed_date: "[^"]*"',
@@ -393,26 +513,37 @@ def _mark_roadmap_task_complete(
             )
             changed = True
     else:
-        section_match = re.search(r"^    completed_tasks:\n", block, flags=re.MULTILINE)
-        if section_match is None:
-            block = block.rstrip("\n") + "\n    completed_tasks:\n"
-            section_match = re.search(r"^    completed_tasks:\n", block, flags=re.MULTILINE)
-        assert section_match is not None
-        insert_at = section_match.end()
-        while True:
-            line_end = block.find("\n", insert_at)
-            if line_end == -1:
-                line_end = len(block)
-                line = block[insert_at:line_end]
-                next_insert = line_end
-            else:
-                line = block[insert_at : line_end + 1]
-                next_insert = line_end + 1
-            if line.startswith("      - "):
-                insert_at = next_insert
-                continue
-            break
-        block = block[:insert_at] + completed_line + block[insert_at:]
+        completed_bounds = _find_section_bounds(block, "completed_tasks")
+        if completed_bounds is None:
+            key_indent = _version_field_indent(block)
+            item_indent = key_indent + "  "
+            completed_line = (
+                f'{item_indent}- {{id: {task_id}, title: "{title_text}", '
+                f'completed_date: "{completed_date}", decision_ref: {decision_text}}}\n'
+            )
+            completed_block = f"{key_indent}completed_tasks:\n{completed_line}"
+            block = block.rstrip("\n") + "\n" + completed_block
+        else:
+            completed_start, completed_end = completed_bounds
+            completed_block = block[completed_start:completed_end]
+            header_match = re.search(
+                r"^(\s*)completed_tasks:\s*(?:null)?\s*$",
+                completed_block,
+                flags=re.MULTILINE,
+            )
+            assert header_match is not None
+            key_indent = header_match.group(1)
+            item_indent = key_indent + "  "
+            completed_line = (
+                f'{item_indent}- {{id: {task_id}, title: "{title_text}", '
+                f'completed_date: "{completed_date}", decision_ref: {decision_text}}}\n'
+            )
+            completed_block = (
+                f"{key_indent}completed_tasks:\n"
+                + completed_block[header_match.end() :].lstrip("\n")
+            )
+            completed_block = completed_block.rstrip("\n") + "\n" + completed_line
+            block = block[:completed_start] + completed_block + block[completed_end:]
         changed = True
 
     if changed:
@@ -449,15 +580,26 @@ def update_planning_completion(
     if metadata is None:
         return changed_paths
 
-    roadmap_changed = _mark_roadmap_task_complete(
+    target_version = str(
+        metadata.get("target_version")
+        or load_yaml(repo_root / ".azoth" / "roadmap.yaml").get("active_version")
+        or ""
+    )
+    roadmap_task_id, warning = _resolve_roadmap_task_id(
         repo_root,
         backlog_id=backlog_id,
         roadmap_ref=str(metadata.get("roadmap_ref") or backlog_id),
-        target_version=str(
-            metadata.get("target_version")
-            or load_yaml(repo_root / ".azoth" / "roadmap.yaml").get("active_version")
-            or ""
-        ),
+        target_version=target_version,
+    )
+    if roadmap_task_id is None:
+        print(f"W2c: {warning}")
+        return changed_paths
+
+    roadmap_changed = _mark_roadmap_task_complete(
+        repo_root,
+        backlog_id=backlog_id,
+        roadmap_task_id=roadmap_task_id,
+        target_version=target_version,
         title=str(metadata.get("title") or backlog_id),
         decision_ref=_normalize_decision_refs(metadata.get("decision_ref")),
         completed_date=completed_date,

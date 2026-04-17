@@ -83,6 +83,7 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 # ── Pure business-logic helpers (testable) ───────────────────────────────────
 
 _DONE_STATUSES: set[str] = {"complete", "completed", "deferred"}
+_TOP_BACKLOG_EXCLUDED_STATUSES: set[str] = _DONE_STATUSES | {"active"}
 
 
 def filter_unblocked_items(
@@ -94,7 +95,7 @@ def filter_unblocked_items(
     """
     result = []
     for item in items:
-        if item.get("status") in _DONE_STATUSES:
+        if item.get("status") in _TOP_BACKLOG_EXCLUDED_STATUSES:
             continue
         blocked_by = item.get("blocked_by") or []
         if all(bid in complete_ids for bid in blocked_by):
@@ -540,7 +541,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     else:
         ini_fallback = state.get("unphased_initiatives", [])[:3]
         if ini_fallback:
-            lines.append("  No active backlog items — unscheduled initiatives:")
+            lines.append("  No unblocked pending backlog items — unscheduled initiatives:")
             lines.append("")
             for ini in ini_fallback:
                 iid = ini.get("id", "?")
