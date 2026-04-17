@@ -1661,7 +1661,7 @@ items:
   source: CDX-PR8-004
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 11
   created_date: '2026-04-14'
@@ -1749,7 +1749,7 @@ items:
   source: human-preference-2026-04-17
   target_layer: M1
   delivery_pipeline: governed
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 1
   created_date: '2026-04-17'
@@ -1769,4 +1769,60 @@ items:
     relevant canonical instruction surfaces and generated mirrors; (4) regression checks
     so the preferred style survives deploy/parity workflows and does not conflict with
     cases where short operational output is still required.
+- id: P1-022
+  title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)"
+  source: co-primary-blueprint-2026-04-17
+  roadmap_ref: P1-022
+  initiative_ref: INI-PLT-006
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  completed_date: '2026-04-17'
+  decision_ref:
+  - D19
+  - D21
+  - D46
+  - D50
+  - D52
+  blocked_by: []
+  description: >
+    Translate docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md into the roadmap system and
+    planning surfaces. Deliverables: (1) add INI-PLT-006 to roadmap.yaml with
+    Claude Code and Codex as co-primary command surfaces and the rest on an
+    adapter contract; (2) add a P1-022 roadmap spec and active v0.2.0-p2 task
+    wiring; (3) align orientation/planning surfaces to the new platform model;
+    (4) keep user-facing terminology command-first rather than renaming commands
+    to workflows. Non-goal: no scripts/azoth-deploy.py refactor or canonical
+    command-source migration in this slice.
+- id: P1-023
+  title: "Neutral canonical command contract design"
+  source: co-primary-command-contract-2026-04-17
+  roadmap_ref: P1-023
+  initiative_ref: INI-PLT-006
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  completed_date: '2026-04-17'
+  decision_ref:
+  - D19
+  - D21
+  - D46
+  blocked_by: []
+  description: >
+    Define the neutral canonical command contract for Azoth so commands can be
+    authored from a protocol-first source instead of treating .claude/commands
+    as the accidental long-term root. Deliverables: (1) document the chosen
+    canonical path and contract shape; (2) define projection rules for Claude
+    Code, Codex, Copilot, OpenCode, and Cursor; (3) add a representative
+    prototype command contract under commands/; (4) document the migration path
+    from legacy Claude-authored command bodies to canonical command contracts;
+    (5) add an initiative execution plan defining done criteria, stage gates,
+    and failure signals for INI-PLT-006. Non-goal: no scripts/azoth-deploy.py
+    refactor or broad command migration in this slice.
 completed: []

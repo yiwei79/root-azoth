@@ -1,0 +1,51 @@
+# Roadmap task spec — v0.2.0
+id: P1-022
+roadmap_version: v0.2.0
+title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)"
+decision_ref: [D19, D21, D46, D50, D52]
+
+intent: >
+  Translate the co-primary platform blueprint into Azoth's roadmap, architecture,
+  and planning surfaces so Claude Code and Codex are treated as co-primary
+  command surfaces while Cursor, Copilot, OpenCode, and Gemini / Antigravity
+  remain on an explicit adapter contract.
+
+problem: >
+  docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md now defines the desired direction, but
+  the roadmap system and planning surfaces do not yet carry that strategy.
+  Without explicit roadmap wiring, the model remains advisory rather than a
+  schedulable program of work, and current planning surfaces still read too much
+  like Claude-first-with-adapters.
+
+scope:
+  - ".azoth/roadmap.yaml initiative + active-phase wiring for INI-PLT-006 / P1-022"
+  - ".azoth/backlog.yaml active p2 backlog entry for P1-022"
+  - ".azoth/roadmap-specs/v0.2.0/P1-022.yaml"
+  - ".agents/skills/orientation/SKILL.md active-phase planning alignment"
+  - "Cross-links from architecture / planning docs to the co-primary blueprint as needed"
+
+non_goals:
+  - "Refactoring scripts/azoth-deploy.py in the same slice"
+  - "Migrating canonical command sources away from .claude/commands/ in the same slice"
+  - "Rewriting every adapter guide or platform surface in the same slice"
+  - "Renaming user-facing commands to workflows"
+
+acceptance:
+  - "INI-PLT-006 exists in roadmap.yaml with P1-022 as its first concrete slice"
+  - "P1-022 appears in the active v0.2.0-p2 task list and backlog queue"
+  - "Planning surfaces explicitly describe Claude Code and Codex as co-primary command surfaces"
+  - "The adapter contract for Copilot, Cursor, OpenCode, and Gemini / Antigravity remains explicit and honest"
+  - "User-facing terminology stays command-first; pipelines remain internal execution machinery"
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Phase 1 = roadmap/backlog/spec wiring + planning alignment only. Phase 2 =
+  neutral canonical command-contract design as a follow-on spec (P1-023).
+  Phase 3 = actual D46 command projection compiler refactor under separate
+  governed scope (P1-024).

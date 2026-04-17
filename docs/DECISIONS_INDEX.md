@@ -4,6 +4,8 @@ Machine-readable index of all architecture decisions (D1–D54).
 Agents use this to check compliance and track implementation status.
 
 See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
+See `docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md` for the co-primary platform strategy
+and unified governance model.
 
 ## Status Legend
 

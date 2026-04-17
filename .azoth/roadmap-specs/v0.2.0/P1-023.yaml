@@ -1,0 +1,52 @@
+# Roadmap task spec — v0.2.0
+id: P1-023
+roadmap_version: v0.2.0
+title: "Neutral canonical command contract design"
+decision_ref: [D19, D21, D46]
+
+intent: >
+  Define a neutral, command-first source-of-truth model so Azoth commands can
+  be authored once and projected into Claude Code, Codex, Copilot, OpenCode,
+  Cursor, and other adapter surfaces without making .claude/commands the sole
+  de facto canonical source forever.
+
+problem: >
+  The co-primary platform model requires commands to be protocol-first, not
+  Claude-derived by accident. Today, .claude/commands/*.md remain the practical
+  source of truth that D46 mirrors outward. That works for a Claude-first model
+  but creates conceptual drag once Codex is co-primary and the rest of the
+  platforms still need adapter compatibility.
+
+scope:
+  - "Choose canonical command source path and format"
+  - "Define required command fields: name, purpose, entry conditions, state artifacts, evidence, output"
+  - "Define projection rules for Claude Code, Codex, Copilot, OpenCode, and Cursor"
+  - "Document command-vs-pipeline terminology boundary"
+  - "Provide one worked command mapping example (for example /next or /auto)"
+  - "Document migration / dual-write strategy from .claude/commands to the neutral contract"
+  - "Add an initiative-level execution plan that defines success criteria, advancement evidence, and revision triggers for INI-PLT-006"
+
+non_goals:
+  - "Implementing scripts/azoth-deploy.py refactor in the same slice"
+  - "Migrating every existing command in the same slice"
+  - "Changing the semantics of existing commands"
+  - "Adding new platform targets"
+
+acceptance:
+  - "A chosen canonical command contract is documented with path + format"
+  - "Projection rules are explicit for Claude Code, Codex, Copilot, OpenCode, and Cursor"
+  - "At least one worked example shows how a canonical command maps into native surfaces"
+  - "A phased migration plan exists for moving away from .claude/commands as the sole source of truth"
+  - "INI-PLT-006 has an execution plan that defines done criteria, slice proofs, advancement evidence, and failure signals"
+
+dependencies: [P1-022]
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+
+elasticity: >
+  Phase 1 = design only. Phase 2 = optional one-command pilot if the design is
+  unambiguous. Phase 3 = full compiler migration under separate governed scope
+  (P1-024).

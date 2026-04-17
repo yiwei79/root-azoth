@@ -2,6 +2,11 @@
 
 > Finalized: 2026-04-03 | Session: SupplyGrowth Architect Session
 > Status: APPROVED — ready for Phase 1 implementation
+>
+> Strategic follow-up: see `docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md` for the
+> protocol-first platform model that treats **Claude Code** and **Codex** as
+> co-primary command surfaces while preserving the adapter pattern for the
+> remaining target platforms.
 
 ---
 
