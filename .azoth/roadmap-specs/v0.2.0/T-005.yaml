@@ -1,0 +1,46 @@
+id: T-005
+roadmap_version: v0.2.0
+title: Low-risk instruction-refinement lightweight lane
+decision_ref:
+- D23
+- D44
+intent: >
+  Define the residual follow-on for INI-PPL-001 after P1-008: keep the current
+  full instruction-refinement path intact, but add a clearly bounded lightweight
+  lane for low-risk refinement goals so iterative instruction tuning does not
+  always require the full architect → reviewer → planner → evaluator → builder
+  → architect chain.
+problem: >
+  P1-008 delivered the `knowledge == instruction-refinement` classification and
+  conservative Rule 4 full-pipeline route, which is now implemented and tested.
+  The roadmap initiative still promises an optional lighter lane for low-risk
+  refinement work, but no task currently specifies what "low-risk" means, when
+  the router may choose a lighter path, or how the system falls back to the
+  existing full route when risk is ambiguous. Without a dedicated residual spec,
+  the roadmap reads as though unfinished work still lives in P1-008 even though
+  that seed slice is already complete.
+scope:
+- "Define the routing contract for low-risk instruction-refinement in the auto-router surface"
+- "Update `pipelines/auto.pipeline.yaml` composition_rules to encode the lightweight lane and conservative fallback"
+- "Document qualifying vs fallback cases so the lightweight lane is decision-complete for implementers"
+- "Add routing tests that prove both lightweight-path and full-path behavior"
+non_goals:
+- "Rewriting or removing the existing Rule 4 full instruction-refinement path"
+- "Changing governance policy for kernel, M1, or governance-touching refinement work"
+- "Implementing unrelated self-improve, prompt-engineer, or memory-loop behavior beyond routing and tests"
+acceptance:
+- "The auto-router documentation explicitly defines what qualifies as low-risk instruction-refinement"
+- "The router documents the fallback rule: ambiguous, governance-touching, kernel-adjacent, or otherwise high-stakes refinement stays on the current full Rule 4 path"
+- "A matching composition rule exists in `pipelines/auto.pipeline.yaml` for the lightweight lane, with the existing full route preserved as fallback"
+- "Tests prove a qualifying low-risk instruction-refinement case uses the lightweight lane"
+- "Tests prove ambiguous or governed instruction-refinement still uses the full pipeline"
+dependencies: []
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = define and test the routing contract only. Phase 2 = execute the
+  runtime routing change once the governed slice is approved. If safety signals
+  stay unclear during implementation, preserve the current full path and defer
+  lightweight routing rather than weakening the fallback.

@@ -2061,6 +2061,29 @@ items:
     set.
 
     '
+- id: T-005
+  title: Low-risk instruction-refinement lightweight lane
+  source: roadmap-cleanup-2026-04-17
+  roadmap_ref: T-005
+  initiative_ref: INI-PPL-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-17'
+  decision_ref:
+  - D23
+  - D44
+  description: 'Residual follow-on for INI-PPL-001 after P1-008 delivered the full-pipeline
+    instruction-refinement foundation. Deliverables: (1) define which instruction-refinement
+    goals qualify as low-risk enough for a lighter auto lane; (2) preserve the current
+    full pipeline as the default fallback for ambiguous, governance-touching, or kernel-adjacent
+    refinement; (3) update auto-router documentation and auto.pipeline composition_rules
+    to encode both paths explicitly; (4) add tests proving lightweight-path routing
+    for qualifying cases and conservative fallback for the rest. Non-goal: no cleanup-only
+    roadmap edits count as implementation of this slice; runtime behavior changes happen
+    only when T-005 itself is executed.'
 - id: BL-052
   title: Correct /session-closeout W1b contract and strengthen mirror semantics tests
   source: F1-CODEX-001

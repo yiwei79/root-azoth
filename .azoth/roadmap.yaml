@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 39
+    current_patch: 40
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -349,11 +349,12 @@ versions:
       Second working phase of v0.2.0 milestone. Carries P1-017/P1-020/P1-021 from p1 plus
       high-priority initiatives: INI-RST-001 (declarative swarm spec depth), INI-MEM-004
       (memory loop hardening), INI-RST-003 (multi-writer safety next level), and
-      INI-PLT-006 (co-primary platform model + neutral command contract). Medium-priority initiatives
-      (INI-PPL-001, INI-PPL-002, INI-MEM-002, INI-MEM-003, INI-MEM-005,
-      INI-PLT-002, INI-EFF-001) available for scheduling after triage. Existing `P1-*`
-      task ids remain stable legacy refs inside p2, while new roadmap-backed work now mints
-      in `T-*`; phase/slice semantics come from `v0.2.0-p2`, not the task prefix.
+      INI-PLT-006 (co-primary platform model + neutral command contract). Medium-priority
+      follow-on work (T-005 for the residual low-risk instruction-refinement lane,
+      INI-MEM-002, INI-MEM-003, INI-MEM-005, INI-PLT-002, INI-EFF-001) remains available
+      for scheduling after triage. Existing `P1-*` task ids remain stable legacy refs
+      inside p2, while new roadmap-backed work now mints in `T-*`; phase/slice semantics
+      come from `v0.2.0-p2`, not the task prefix.
     tasks:
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
@@ -369,6 +370,9 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
+      - id: T-005
+        title: "Low-risk instruction-refinement lightweight lane"
+        decision_ref: [D23, D44]
     completed_tasks:
       - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
       - {id: P1-023, title: "Neutral canonical command contract design", completed_date: "2026-04-17", decision_ref: [D19, D21, D46]}
@@ -455,15 +459,19 @@ initiatives:
     title: "auto-router L2 / self-improve lane"
     category: pipeline
     theme: B
-    phase: null
+    phase: v0.2.0-p2
     priority: medium
-    task_ref: P1-008
+    task_ref: T-005
     summary: >
-      Stage 0 composition_rules for refinement goals; optional L2 self-improve lane
-      in auto-router that routes low-risk refinement goals through a lighter pipeline
-      (no full planner/builder/evaluator chain). Reduces overhead for iterative work.
+      P1-008 delivered the full-pipeline instruction-refinement foundation:
+      `knowledge == instruction-refinement`, Rule 4 routing, and the
+      `l2-evidence-review` inject into the architect stage. The remaining
+      follow-on is optional low-risk refinement routing: define when
+      instruction-refinement can use a lighter lane without weakening the
+      current conservative fallback for ambiguous, governance-touching, or
+      kernel-adjacent work.
     decision_ref: [D23, D44]
-    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
 
   - id: INI-PPL-002
     title: "Eval / eval-swarm wiring drift hardening"
@@ -473,9 +481,11 @@ initiatives:
     priority: medium
     task_ref: P1-010
     summary: >
-      Tests and mirror surfaces for eval/eval-swarm stay aligned across
-      skills/agentic-eval, skills/eval-swarm, and pipeline presets. Drift detection
-      prevents silent divergence between the eval skill and its swarm escalation path.
+      P1-010 delivered the core eval/eval-swarm drift hardening across command
+      surfaces, workflow references, and deployed mirrors. This initiative remains
+      as the thematic container for future parity expansions, but no residual
+      roadmap-backed slice is currently scheduled; the linked P1-010 spec is
+      historical foundation, not open p2 follow-on work.
     decision_ref: [D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
 

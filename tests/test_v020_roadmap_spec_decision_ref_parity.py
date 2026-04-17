@@ -8,6 +8,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 ROADMAP = REPO / ".azoth" / "roadmap.yaml"
+BACKLOG = REPO / ".azoth" / "backlog.yaml"
 SPECS_DIR = REPO / ".azoth" / "roadmap-specs" / "v0.2.0"
 
 
@@ -26,8 +27,15 @@ def _find_task(road: dict, tid: str) -> dict | None:
     return None
 
 
+def _find_backlog_item(backlog: dict, tid: str) -> dict | None:
+    for item in backlog.get("items") or []:
+        if item.get("id") == tid:
+            return item
+    return None
+
+
 def test_v020_spec_files_have_decision_ref() -> None:
-    for path in sorted(SPECS_DIR.glob("P*.yaml")):
+    for path in sorted(SPECS_DIR.glob("[PT]*.yaml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         assert "decision_ref" in data, f"{path.name} missing decision_ref"
         assert isinstance(data["decision_ref"], list), f"{path.name} decision_ref not a list"
@@ -50,6 +58,7 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-011",
         "P1-012",
         "P1-013",
+        "T-005",
     ):
         task = _find_task(road, tid)
         assert task is not None, (
@@ -62,3 +71,57 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
             f"{tid}: spec decision_ref {spec['decision_ref']!r} != "
             f"roadmap {task.get('decision_ref')!r}"
         )
+
+
+def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+    backlog = yaml.safe_load(BACKLOG.read_text(encoding="utf-8"))
+
+    completed_ids: set[str] = set()
+    active_p2_tasks: set[str] = set()
+    for block in road["versions"]:
+        bid = block.get("id", "")
+        if bid.startswith("v0.2.0-p"):
+            for task in block.get("completed_tasks") or []:
+                completed_ids.add(str(task.get("id")))
+        if bid == "v0.2.0-p2":
+            for task in block.get("tasks") or []:
+                active_p2_tasks.add(str(task.get("id")))
+
+    initiatives = {item["id"]: item for item in road.get("initiatives") or []}
+
+    ppl001 = initiatives["INI-PPL-001"]
+    assert ppl001.get("task_ref") not in completed_ids, (
+        "INI-PPL-001 is schedulable follow-on work and must point at a live residual task, "
+        "not a completed seed task."
+    )
+    assert str(ppl001.get("spec_ref") or "").endswith("/T-005.yaml"), (
+        "INI-PPL-001 should point at the residual T-005 spec."
+    )
+    backlog_t005 = _find_backlog_item(backlog, "T-005")
+    assert backlog_t005 is not None, "T-005 must exist in backlog.yaml"
+    assert backlog_t005.get("initiative_ref") == "INI-PPL-001", (
+        "T-005 backlog row must link back to INI-PPL-001."
+    )
+    assert backlog_t005.get("roadmap_ref") == "T-005", (
+        "T-005 backlog row must point at its roadmap task id."
+    )
+    assert backlog_t005.get("target_version") == "v0.2.0-p2", (
+        "T-005 backlog row must target v0.2.0-p2."
+    )
+    assert backlog_t005.get("decision_ref") == ppl001.get("decision_ref"), (
+        "T-005 backlog decision_ref must match the initiative decision_ref."
+    )
+
+    ppl002 = initiatives["INI-PPL-002"]
+    assert ppl002.get("task_ref") in completed_ids, (
+        "INI-PPL-002 should remain linked to its historical completed seed task "
+        "until a real residual slice is minted."
+    )
+    assert ppl002.get("phase") is None, (
+        "Historical-only initiatives should remain unscheduled until a real residual slice exists."
+    )
+    assert str(ppl002.get("task_ref")) not in active_p2_tasks, (
+        "Historical completed seed tasks must not reappear in the active p2 task list "
+        "as if they were scheduled follow-on work."
+    )
