@@ -230,14 +230,21 @@ At human gates and after every 3 completed stages, snapshot pipeline progress:
 ```yaml
 # .azoth/session-state.md (gitignored, ephemeral)
 session_id: <id>
-pipeline_position: <current_stage_index>
+pipeline: <auto | deliver | governed | ...>
+pipeline_position: <1-based stage index>
+current_stage_id: <current stage id>
 completed_stages: [stage_1_id, stage_2_id]
 pending_stages: [stage_3_id, stage_4_id]
-accumulated_findings: <compressed summary>
-scope_gate_path: .azoth/scope-gate.json
+pause_reason: <human-gate | handoff | retry>
+active_run_id: <durable run-ledger run_id>
 ```
 
-On session start, if `.azoth/session-state.md` exists with an unexpired checkpoint matching the scope-gate `session_id`, offer to resume from the last completed stage.
+Resume is a dedicated entrypoint: same-thread bare `resume` restores the parked current session, and
+`resume <session_id>` restores a named parked session from another thread. Explicit resume restores
+the previously approved scope without a second scope-approval wall. If a saved run checkpoint exists,
+restore the saved pipeline gate and continue from `current_stage_id`; if `pause_reason == human-gate`,
+surface that saved gate directly. If no checkpoint exists, restore scope only and route back to
+pipeline selection with `/auto` Stage 0 as the default recommendation.
 
 ## Memory Integration
 

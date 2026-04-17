@@ -755,7 +755,7 @@ def test_deployed_agents_skill_surface_has_no_stale_non_azoth_entries() -> None:
 
 _PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
 
-_SESSION_ENTRY_CMD_NAMES = ("start", "next")
+_SESSION_ENTRY_CMD_NAMES = ("start", "next", "resume")
 
 _REQUIRED_ORCHESTRATOR_SECTIONS = (
     "## Inline vs Orchestrate",
@@ -845,7 +845,7 @@ def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
 
 
 def test_source_session_entry_commands_have_orchestrator_agent_field() -> None:
-    """T6: source .claude/commands/start.md and next.md must have agent: orchestrator."""
+    """T6: source session-entry commands must have agent: orchestrator."""
     for name in _SESSION_ENTRY_CMD_NAMES:
         src = _REPO_ROOT / ".claude" / "commands" / f"{name}.md"
         assert src.is_file(), f"missing source command {name}.md"

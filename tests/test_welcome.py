@@ -889,7 +889,7 @@ def test_welcome_plain_no_crash_when_no_initiatives_key(
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())  # must not raise
 
 
-def test_welcome_plain_shows_next_resume_for_parked_sessions(
+def test_welcome_plain_shows_resume_for_parked_sessions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
@@ -917,7 +917,8 @@ def test_welcome_plain_shows_next_resume_for_parked_sessions(
     monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())
     out = buf.getvalue()
-    assert "next resume sid-parked" in out
+    assert "resume sid-parked" in out
+    assert "/resume" in out
     assert "resume   → continue approved scope" not in out
 
 

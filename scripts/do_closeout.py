@@ -12,10 +12,19 @@ from typing import Any
 
 import yaml
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
-from run_ledger import release_write_claim
+from run_ledger import release_write_claim, upsert_session
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
+_SESSION_STATE_CHECKPOINT_FIELDS = (
+    "pipeline",
+    "pipeline_position",
+    "current_stage_id",
+    "completed_stages",
+    "pending_stages",
+    "pause_reason",
+    "active_run_id",
+)
 
 
 class CloseoutError(RuntimeError):
@@ -252,15 +261,14 @@ def update_session_registry(
     *,
     scope: dict[str, Any],
     timestamp: str,
+    selected_ide: str | None = None,
 ) -> tuple[str, str, str]:
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
-    if not ledger_path.exists():
-        return default_next_action(), "closed", "W2: session registry not present (skipped)"
-
-    ledger = load_yaml(ledger_path)
+    ledger = load_yaml(ledger_path) if ledger_path.exists() else {"schema_version": 1, "runs": []}
     sessions = ledger.get("sessions")
     if not isinstance(sessions, list):
-        return default_next_action(), "closed", "W2: session registry not present (skipped)"
+        sessions = []
+        ledger["sessions"] = sessions
 
     session_id = str(scope.get("session_id") or "")
     matching_session = next(
@@ -271,42 +279,60 @@ def update_session_registry(
         ),
         None,
     )
-    if matching_session is None:
-        return (
-            default_next_action(),
-            "closed",
-            f"W2: session registry entry not found for '{session_id}'",
-        )
 
-    preferred_run_id = str(matching_session.get("active_run_id") or "") or None
+    preferred_run_id = (
+        str(matching_session.get("active_run_id") or "")
+        if isinstance(matching_session, dict)
+        else ""
+    ) or None
     resumable_run = _resumable_run_for_session(
         ledger,
         session_id=session_id,
         preferred_run_id=preferred_run_id,
     )
+    backlog_id = str(scope.get("backlog_id") or "AD-HOC")
+    goal = str(scope.get("goal") or "Session closeout")
+    ide = str(
+        (
+            (matching_session.get("ide") if isinstance(matching_session, dict) else None)
+            or selected_ide
+            or (resumable_run.get("ide") if isinstance(resumable_run, dict) else None)
+            or "unknown"
+        )
+    )
     if resumable_run is not None:
         next_action = str(
             resumable_run.get("next_action")
-            or matching_session.get("next_action")
+            or (matching_session.get("next_action") if isinstance(matching_session, dict) else None)
             or default_next_action()
         )
-        matching_session["status"] = "parked"
-        matching_session["next_action"] = next_action
-        matching_session["active_run_id"] = str(
-            resumable_run.get("run_id") or preferred_run_id or ""
+        upsert_session(
+            repo_root,
+            session_id=session_id,
+            backlog_id=backlog_id,
+            goal=goal,
+            status="parked",
+            ide=ide,
+            next_action=next_action,
+            updated_at=timestamp,
+            active_run_id=str(resumable_run.get("run_id") or preferred_run_id or ""),
         )
-        matching_session.pop("closed_at", None)
         session_status = "parked"
     else:
         next_action = default_next_action()
-        matching_session["status"] = "closed"
-        matching_session["next_action"] = next_action
-        matching_session.pop("active_run_id", None)
-        matching_session["closed_at"] = timestamp
+        upsert_session(
+            repo_root,
+            session_id=session_id,
+            backlog_id=backlog_id,
+            goal=goal,
+            status="closed",
+            ide=ide,
+            next_action=next_action,
+            updated_at=timestamp,
+            closed_at=timestamp,
+        )
         session_status = "closed"
 
-    matching_session["updated_at"] = timestamp
-    write_yaml(ledger_path, ledger)
     return next_action, session_status, f"W2: session registry updated ({session_status})"
 
 
@@ -412,6 +438,79 @@ def update_bootloader_state(
     print("W2: bootloader-state.md refreshed")
 
 
+def _normalized_stage_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def extract_session_checkpoint(session_state: dict[str, Any]) -> dict[str, Any]:
+    checkpoint: dict[str, Any] = {}
+    pipeline = str(session_state.get("pipeline") or "").strip()
+    if pipeline:
+        checkpoint["pipeline"] = pipeline
+
+    pipeline_position = session_state.get("pipeline_position")
+    if isinstance(pipeline_position, int) and pipeline_position > 0:
+        checkpoint["pipeline_position"] = pipeline_position
+
+    current_stage_id = str(session_state.get("current_stage_id") or "").strip()
+    if current_stage_id:
+        checkpoint["current_stage_id"] = current_stage_id
+
+    completed_stages = _normalized_stage_list(session_state.get("completed_stages"))
+    if completed_stages:
+        checkpoint["completed_stages"] = completed_stages
+
+    pending_stages = _normalized_stage_list(session_state.get("pending_stages"))
+    if pending_stages:
+        checkpoint["pending_stages"] = pending_stages
+
+    pause_reason = str(session_state.get("pause_reason") or "").strip()
+    if pause_reason:
+        checkpoint["pause_reason"] = pause_reason
+
+    active_run_id = str(session_state.get("active_run_id") or "").strip()
+    if active_run_id:
+        checkpoint["active_run_id"] = active_run_id
+
+    return checkpoint
+
+
+def write_session_state(
+    repo_root: pathlib.Path,
+    *,
+    session_id: str,
+    state: str,
+    timestamp: str,
+    active_task: str,
+    active_files: list[str],
+    pending_decisions: list[str],
+    approved_scope: str,
+    next_action: str,
+    selected_ide: str | None = None,
+    create_if_missing: bool = False,
+    checkpoint: dict[str, Any] | None = None,
+) -> str:
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    if not session_state_path.exists() and not create_if_missing:
+        return "W2: session-state.md not present (skipped)"
+    session_state = {
+        "session_id": session_id,
+        "state": state,
+        "last_ide": str(selected_ide or "unknown"),
+        "timestamp": timestamp,
+        "active_task": active_task,
+        "active_files": active_files,
+        "pending_decisions": pending_decisions,
+        "approved_scope": approved_scope,
+        "next_action": next_action,
+    }
+    session_state.update(extract_session_checkpoint(checkpoint or {}))
+    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
+    return "W2: session-state.md refreshed"
+
+
 def update_session_state(
     repo_root: pathlib.Path,
     *,
@@ -422,27 +521,23 @@ def update_session_state(
     existing_session_state: dict[str, Any],
     selected_ide: str | None = None,
 ) -> str:
-    session_state_path = repo_root / ".azoth" / "session-state.md"
-    if not session_state_path.exists():
-        return "W2: session-state.md not present (skipped)"
-
     goal = str(scope.get("goal") or "Session closeout")
     pending_decisions = existing_session_state.get("pending_decisions")
     if not isinstance(pending_decisions, list):
         pending_decisions = []
-    session_state = {
-        "session_id": str(scope.get("session_id") or "unknown-session"),
-        "state": "closed",
-        "last_ide": str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
-        "timestamp": timestamp,
-        "active_task": f"Closed — {goal}",
-        "active_files": active_files,
-        "pending_decisions": pending_decisions,
-        "approved_scope": f"Completed: {goal}",
-        "next_action": next_action,
-    }
-    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
-    return "W2: session-state.md refreshed"
+    return write_session_state(
+        repo_root,
+        session_id=str(scope.get("session_id") or "unknown-session"),
+        state="closed",
+        timestamp=timestamp,
+        active_task=f"Closed — {goal}",
+        active_files=active_files,
+        pending_decisions=pending_decisions,
+        approved_scope=f"Completed: {goal}",
+        next_action=next_action,
+        selected_ide=str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
+        checkpoint=extract_session_checkpoint(existing_session_state),
+    )
 
 
 def write_claude_memory_mirror(
@@ -553,18 +648,19 @@ def run_closeout(
             f"W1b: reinforcement {status} for {result.episode_id} "
             f"(count={result.reinforcement_count})"
         )
+    selected_ide = str(existing_session_state.get("last_ide") or "")
     close_scope_gate(repo_root, timestamp)
     next_action, session_status, registry_note = update_session_registry(
         repo_root,
         scope=scope,
         timestamp=timestamp,
+        selected_ide=selected_ide or None,
     )
     print(registry_note)
     if release_write_claim(repo_root, session_id):
         print(f"W2: write claim released for session '{session_id}'")
     else:
         print(f"W2: write claim not held by '{session_id}' — no-op")
-    selected_ide = str(existing_session_state.get("last_ide") or "")
     if ledger_path.exists():
         ledger_after_registry = load_yaml(ledger_path)
         sessions = ledger_after_registry.get("sessions")

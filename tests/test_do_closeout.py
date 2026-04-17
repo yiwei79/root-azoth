@@ -106,6 +106,9 @@ def _build_repo(
                     "updated_at": "2026-04-15T00:00:00+00:00",
                     "next_action": "Resume wave 2 review.",
                     "stages_completed": ["planner"],
+                    "active_stage_id": "architect_review",
+                    "pending_stage_ids": ["builder_apply", "reviewer_gate"],
+                    "pause_reason": "human-gate",
                     "waves": [],
                     "branches": [],
                 }
@@ -116,21 +119,31 @@ def _build_repo(
         encoding="utf-8",
     )
     if include_session_state:
-        (azoth_dir / "session-state.md").write_text(
-            yaml.safe_dump(
+        session_state: dict[str, object] = {
+            "session_id": session_id,
+            "state": "active",
+            "last_ide": "codex",
+            "timestamp": "2026-04-15T00:00:00+00:00",
+            "active_task": "In progress",
+            "active_files": [],
+            "pending_decisions": [],
+            "approved_scope": f"{backlog_id}: Governed closeout",
+            "next_action": "Continue current scope",
+        }
+        if include_resumable_run:
+            session_state.update(
                 {
-                    "session_id": session_id,
-                    "state": "active",
-                    "last_ide": "codex",
-                    "timestamp": "2026-04-15T00:00:00+00:00",
-                    "active_task": "In progress",
-                    "active_files": [],
-                    "pending_decisions": [],
-                    "approved_scope": f"{backlog_id}: Governed closeout",
-                    "next_action": "Continue current scope",
-                },
-                sort_keys=False,
-            ),
+                    "pipeline": "auto",
+                    "pipeline_position": 2,
+                    "current_stage_id": "architect_review",
+                    "completed_stages": ["planner"],
+                    "pending_stages": ["builder_apply", "reviewer_gate"],
+                    "pause_reason": "human-gate",
+                    "active_run_id": "run-123",
+                }
+            )
+        (azoth_dir / "session-state.md").write_text(
+            yaml.safe_dump(session_state, sort_keys=False),
             encoding="utf-8",
         )
     return tmp_path
@@ -501,6 +514,78 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
     memory_dir = do_closeout.claude_project_memory_dir(repo_root)
     project_status = (memory_dir / "project_status.md").read_text(encoding="utf-8")
     assert f"Next action: {expected_next_action}" in project_status
+
+
+def test_governed_closeout_preserves_checkpoint_fields_in_session_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["pipeline"] == "auto"
+    assert session_state["pipeline_position"] == 2
+    assert session_state["current_stage_id"] == "architect_review"
+    assert session_state["completed_stages"] == ["planner"]
+    assert session_state["pending_stages"] == ["builder_apply", "reviewer_gate"]
+    assert session_state["pause_reason"] == "human-gate"
+    assert session_state["active_run_id"] == "run-123"
+
+
+def test_governed_closeout_creates_session_registry_entry_when_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_sessions_registry=False,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    session_entry = ledger["sessions"][0]
+    assert session_entry["session_id"] == "sess-123"
+    assert session_entry["status"] == "closed"
+    assert session_entry["backlog_id"] == "BL-123"
+    assert session_entry["goal"] == "BL-123: Governed closeout"
 
 
 def test_governed_closeout_skips_session_state_when_file_absent(

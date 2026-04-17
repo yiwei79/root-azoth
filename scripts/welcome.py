@@ -572,6 +572,11 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("")
 
     lines.append("── START (what to type) ──")
+    parked_session_id = (
+        str(session_state.get("session_id") or "")
+        if str(session_state.get("state") or "") == "parked"
+        else ""
+    )
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:72]
         lines.append(f"  resume   → continue approved scope: {goal_truncated}")
@@ -579,15 +584,20 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             session_id = str(entry.get("session_id") or "")
             if session_id and session_id != scope.get("session_id"):
                 lines.append(
-                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
+                    f"  resume {session_id}   → /resume — reopen parked session directly"
                 )
+    elif parked_session_id:
+        parked_goal = (session_state.get("approved_scope") or session_state.get("active_task") or "")[:72]
+        lines.append(f"  resume   → /resume — reopen parked session: {parked_goal}")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != parked_session_id:
+                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
     elif open_sessions:
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "")
             if session_id:
-                lines.append(
-                    f"  next resume {session_id}   → /next — reopen parked session with approval card"
-                )
+                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
     lines.append("  next     → /next — scope card for next priority task")
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
@@ -598,7 +608,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
     lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
     lines.append(
-        "  codex    → primary: /skills or $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only"
+        "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only"
     )
     lines.append("")
     lines.append(sep)
@@ -821,6 +831,11 @@ def render_dashboard() -> None:
     last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
     options_lines: list[str] = []
+    parked_session_id = (
+        str(session_state.get("session_id") or "")
+        if str(session_state.get("state") or "") == "parked"
+        else ""
+    )
     if is_scope_active(scope, complete_ids):
         goal_truncated = (scope.get("goal") or "")[:60]
         options_lines.append(
@@ -832,16 +847,30 @@ def render_dashboard() -> None:
             session_id = str(entry.get("session_id") or "")
             if session_id and session_id != scope.get("session_id"):
                 options_lines.append(
-                    f"[bold cyan]next resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /next — reopen parked session with approval card"
+                    f"[bold cyan]resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /resume — reopen parked session directly"
+                )
+    elif parked_session_id:
+        parked_goal = (session_state.get("approved_scope") or session_state.get("active_task") or "")[:60]
+        options_lines.append(
+            f"[bold green]:right_arrow: resume[/bold green]"
+            f"   Reopen parked session: [italic]{parked_goal}[/italic]"
+        )
+        options_lines.append("")
+        for entry in open_sessions[:3]:
+            session_id = str(entry.get("session_id") or "")
+            if session_id and session_id != parked_session_id:
+                options_lines.append(
+                    f"[bold cyan]resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /resume — reopen parked session directly"
                 )
     elif open_sessions:
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "")
             if session_id:
                 options_lines.append(
-                    f"[bold cyan]next resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /next — reopen parked session with approval card"
+                    f"[bold cyan]resume {session_id}[/bold cyan]"
+                    "   :right_arrow: /resume — reopen parked session directly"
                 )
     options_lines += [
         "[bold cyan]next[/bold cyan]     :right_arrow: /next — open scope card for next priority task",
@@ -853,7 +882,7 @@ def render_dashboard() -> None:
         "[bold cyan]remember[/bold cyan] :right_arrow: /remember — quick M3 capture (not full closeout)",
         "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff",
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
-        "[bold magenta]codex[/bold magenta]    :right_arrow: primary /skills or $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only",
+        "[bold magenta]codex[/bold magenta]    :right_arrow: primary /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 

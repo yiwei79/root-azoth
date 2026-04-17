@@ -43,7 +43,8 @@ The welcome dashboard shows you:
 ├─────────────────────────────────────────────────┤
 │  What next?                                      │
 │    • next    — pick top backlog item              │
-│    • resume  — continue prior session             │
+│    • resume  — reopen parked current session      │
+│    • resume <id> — reopen another parked session  │
 │    • intake  — process queued insights            │
 │    • /auto   — freeform goal                      │
 └─────────────────────────────────────────────────┘
@@ -54,7 +55,8 @@ The welcome dashboard shows you:
 | Command | When to use |
 |---------|-------------|
 | `next` | Pick the highest-priority backlog item |
-| `resume <id>` | Continue an interrupted session |
+| `resume` | Reopen the parked session for this thread without a second scope approval |
+| `resume <id>` | Reopen an interrupted parked session from another thread |
 | `intake` | Process insight files from `.azoth/inbox/` |
 | `/auto <goal>` | Start with a specific goal |
 
@@ -93,7 +95,7 @@ The scope gate has a **2-hour TTL**. The orchestrator now manages this actively:
   ──────────           ──────
   > 15 min remaining   Keep going normally.
   < 15 min remaining   TTL card: extend / checkpoint / abort.
-  Expired              Pipeline halts. Re-scope with /next.
+  Expired              Pipeline halts. Re-scope with /next or /resume.
 ```
 
 **In-place extension**: the orchestrator can extend TTL by 1 hour mid-pipeline
@@ -104,6 +106,34 @@ so you always know.
 
 Each stage runs in sequence with typed handoffs:
 
+```
+
+### Stage-aware resume
+
+When a session is parked, Azoth separates three concerns:
+
+- Scope restoration via `.azoth/scope-gate.json`
+- Pipeline checkpoint restoration via `.azoth/run-ledger.local.yaml`
+- Cross-IDE mirror state via `.azoth/session-state.md`
+
+`/resume` restores the approved scope directly; it does not ask for a second
+scope-approval card. If a saved run checkpoint exists, Azoth restores the saved
+pipeline gate and resumes from the stored stage or human gate. If no checkpoint
+exists, `/resume` restores scope only and routes back to pipeline selection,
+with `/auto` Stage 0 as the default recommendation.
+
+Checkpoint mirror shape:
+
+```yaml
+session_id: abc-123
+state: parked
+pipeline: auto
+pipeline_position: 2
+current_stage_id: architect_review
+completed_stages: [planner]
+pending_stages: [builder_apply, reviewer_gate]
+pause_reason: human-gate
+active_run_id: run-123
 ```
                     Typed YAML Handoff
                     ─────────────────
@@ -146,7 +176,8 @@ Closeout performs 4 write phases:
 ├───────────────────────────────────────────────────────┤
 │  W2: STATE                                            │
 │  Update bootloader-state.md, close scope gate,        │
-│  refresh session-state.md for cross-IDE handoff.       │
+│  refresh session-state.md for cross-IDE handoff,       │
+│  preserving any stage-aware resume checkpoint fields.  │
 ├───────────────────────────────────────────────────────┤
 │  W3: MEMORY MIRROR                                    │
 │  Sync to ~/.claude/projects/.../memory/ so Claude     │
@@ -164,7 +195,7 @@ Closeout performs 4 write phases:
 - **Continuity**: `bootloader-state.md` tells the next session exactly where
   things left off
 - **Cross-IDE**: If you switch from Copilot to Claude Code (or vice versa),
-  the handoff state travels with you
+  the handoff state and any saved pipeline checkpoint travel with you
 - **Versioning**: Every session bumps the patch version — you always know
   what changed when
 

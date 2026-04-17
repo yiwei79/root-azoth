@@ -22,7 +22,13 @@ EXAMPLE = ROOT / ".azoth" / "run-ledger.local.yaml.example"
 SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from run_ledger import load_active_run, load_open_sessions, load_session, validate_ledger  # noqa: E402
+from run_ledger import (  # noqa: E402
+    load_active_run,
+    load_open_sessions,
+    load_session,
+    upsert_session,
+    validate_ledger,
+)
 
 
 # ── 1. Schema file ─────────────────────────────────────────────────────────────
@@ -199,10 +205,34 @@ def test_validate_accepts_sessions_and_run_metadata() -> None:
                 "created_at": "2026-04-10T10:00:00+00:00",
                 "updated_at": "2026-04-10T10:30:00+00:00",
                 "next_action": "resume this later",
+                "active_stage_id": "architect_brief",
+                "pending_stage_ids": ["builder_apply", "reviewer_gate"],
+                "pause_reason": "human-gate",
             }
         ],
     }
     assert validate_ledger(data) == []
+
+
+def test_validate_rejects_invalid_pause_reason() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-1",
+                "mode": "auto",
+                "goal": "Test goal",
+                "status": "paused",
+                "created_at": "2026-04-10T10:00:00+00:00",
+                "updated_at": "2026-04-10T10:30:00+00:00",
+                "next_action": "resume this later",
+                "pause_reason": "approval-card",
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("pause_reason" in error for error in errors)
 
 
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
@@ -306,6 +336,14 @@ def _append(ledger: Path, **kwargs: str) -> subprocess.CompletedProcess[str]:
         value = kwargs.get(field)
         if value is not None:
             cmd += [f"--{field.replace('_', '-')}", value]
+    active_stage_id = kwargs.get("active_stage_id")
+    if active_stage_id is not None:
+        cmd += ["--active-stage-id", active_stage_id]
+    for stage_id in kwargs.get("pending_stage_ids", []):
+        cmd += ["--pending-stage-id", stage_id]
+    pause_reason = kwargs.get("pause_reason")
+    if pause_reason is not None:
+        cmd += ["--pause-reason", pause_reason]
     for stage in kwargs.get("stages", []):
         cmd += ["--stage-completed", stage]
     if "wave" in kwargs:
@@ -388,6 +426,26 @@ def test_append_writes_session_metadata(tmp_path: Path) -> None:
     assert data["runs"][0]["session_id"] == "2026-04-10-p1-001-copilot-152000"
     assert data["runs"][0]["backlog_id"] == "P1-001"
     assert data["runs"][0]["ide"] == "copilot"
+
+
+def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    result = _append(
+        ledger,
+        run_id="run-stage-aware",
+        active_stage_id="architect_brief",
+        pending_stage_ids=["builder_apply", "reviewer_gate"],
+        pause_reason="human-gate",
+        stages=["planner_stage0"],
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["active_stage_id"] == "architect_brief"
+    assert run["pending_stage_ids"] == ["builder_apply", "reviewer_gate"]
+    assert run["pause_reason"] == "human-gate"
+    assert run["stages_completed"] == ["planner_stage0"]
 
 
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────
@@ -517,7 +575,7 @@ def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
                         "goal": "Resume target",
                         "status": "parked",
                         "ide": "claude-code",
-                        "next_action": "resume via /next",
+                        "next_action": "resume via /resume",
                         "updated_at": "2026-04-10T09:00:00+00:00",
                     }
                 ],
@@ -529,6 +587,59 @@ def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
     session = load_session(tmp_path, "target-session")
     assert session is not None
     assert session["backlog_id"] == "P1-005"
+
+
+def test_upsert_session_creates_registry_when_missing(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+
+    created, entry = upsert_session(
+        tmp_path,
+        session_id="sess-park",
+        backlog_id="AD-HOC",
+        goal="Park this session",
+        status="parked",
+        ide="claude-code",
+        next_action="Resume later",
+        updated_at="2026-04-16T18:00:00+00:00",
+    )
+
+    assert created is True
+    assert entry["status"] == "parked"
+    ledger = yaml.safe_load((azoth / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    assert ledger["sessions"][0]["session_id"] == "sess-park"
+    assert ledger["sessions"][0]["next_action"] == "Resume later"
+
+
+def test_park_session_subcommand_creates_or_updates_entry(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    ledger.write_text("schema_version: 1\nruns: []\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "park-session",
+            "sess-park",
+            "AD-HOC",
+            "--goal",
+            "Branch hygiene",
+            "--ide",
+            "claude-code",
+            "--next-action",
+            "Resume the interrupted Claude session.",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "parked" in result.stdout
+    saved = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    assert saved["sessions"][0]["session_id"] == "sess-park"
+    assert saved["sessions"][0]["status"] == "parked"
 
 
 # ── 20–22. welcome.py plain renderer ──────────────────────────────────────────

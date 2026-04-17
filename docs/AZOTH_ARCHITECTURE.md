@@ -550,7 +550,7 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
 
-**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, `.codex/hooks/user_prompt_submit_router.py`, and `.codex/agents/*.toml` provide strong workflow parity, but Claude-style `Write/Edit` interception is still unavailable outside Bash hooks.
+**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/resume`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, `.codex/hooks/user_prompt_submit_router.py`, and `.codex/agents/*.toml` provide strong workflow parity, but Claude-style `Write/Edit` interception is still unavailable outside Bash hooks.
 
 **Codex hook protocol (confirmed via runtime errors):** Codex hooks have **strict stdout requirements** that differ from Claude Code:
 
@@ -589,7 +589,7 @@ Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D
 | **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | ⚠️ **attempt mirror write** so later Claude Code sessions can read the latest Copilot-authored closeout |
 | **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
 
-**Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule).
+**Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule). Stage-aware continuity uses `.azoth/run-ledger.local.yaml` as the durable source of truth and mirrors `pipeline`, `pipeline_position`, `current_stage_id`, `completed_stages`, `pending_stages`, `pause_reason`, and `active_run_id` into `session-state.md` for cross-IDE resume.
 
 **Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**), and **GitHub Copilot** should also best-effort mirror W3 during closeout so Claude Code can read Copilot-authored session state later. **OpenCode** and **GitHub Copilot** still do not **consume** `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or another host with access.
 
@@ -1137,6 +1137,8 @@ documented under **`skills/dynamic-full-auto/SKILL.md`** (roadmap **P1-012**).
    **Lightweight alternative:** the orchestrator may extend `expires_at` in-place (by 1 hour) when
    a pipeline is mid-execution, provided it surfaces a TTL card to the human offering extend /
    checkpoint / abort. This avoids full re-scoping mid-pipeline while preserving human-in-the-loop.
+   Explicit `/resume` restores the previously approved scope directly; it should not force a second
+   scope-approval wall.
 2. **Chunk delivery** — Keep each governed write batch within approved scope; split backlog slices
    rather than exceeding the per-session file ceiling.
 3. **Run ledger (P1-001)** — Append wave outcomes to `.azoth/run-ledger.local.yaml` (gitignored)

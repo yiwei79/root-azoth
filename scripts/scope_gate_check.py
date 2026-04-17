@@ -11,6 +11,8 @@ Exit codes:
 Prints a human-readable status line suitable for embedding in workflow output.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -19,10 +21,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 
-def find_scope_gate() -> Path:
+def find_scope_gate(root: Path | None = None) -> Path:
     """Locate .azoth/scope-gate.json relative to the repo root."""
-    # Walk up from script location to find repo root
-    here = Path(__file__).resolve().parent.parent
+    here = root or Path(__file__).resolve().parent.parent
     return here / ".azoth" / "scope-gate.json"
 
 
@@ -34,9 +35,9 @@ def parse_iso_datetime(s: str) -> datetime:
     return datetime.fromisoformat(s)
 
 
-def check_scope_gate(session_id: Optional[str] = None) -> Tuple[bool, str]:
+def check_scope_gate(session_id: Optional[str] = None, root: Path | None = None) -> Tuple[bool, str]:
     """Validate the scope gate and return (valid, message)."""
-    gate_path = find_scope_gate()
+    gate_path = find_scope_gate(root)
 
     if not gate_path.exists():
         return False, "❌ BLOCKED — scope-gate.json not found. Run /next to open scope."
@@ -115,9 +116,15 @@ def main():
         help="Optional session ID to match against the gate",
         default=None,
     )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=None,
+        help="Optional repo root containing .azoth/ (for tests and relocated worktrees).",
+    )
     args = parser.parse_args()
 
-    valid, message = check_scope_gate(args.session_id)
+    valid, message = check_scope_gate(args.session_id, root=args.root)
     print(message)
     sys.exit(0 if valid else 1)
 

@@ -213,7 +213,26 @@ $defs:
         items:
           type: string
           minLength: 1
+          pattern: "^[a-z][a-z0-9_-]*$"
         description: "Ordered list of pipeline stage names completed so far."
+
+      active_stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+        description: "Current stage anchor for stage-aware resume."
+
+      pending_stage_ids:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          pattern: "^[a-z][a-z0-9_-]*$"
+        description: "Remaining stage ids for the current pipeline checkpoint."
+
+      pause_reason:
+        type: string
+        enum: [human-gate, handoff, retry]
+        description: "Why the run is paused when status=paused."
 
       waves:
         type: array

@@ -14,6 +14,10 @@ Usage:
                                         [--stage-completed STAGE] ...
                                         [--wave JSON]
                                         [--ledger PATH]
+  python scripts/run_ledger.py park-session SESSION_ID BACKLOG_ID --goal GOAL
+                                        --ide IDE --next-action TEXT
+                                        [--active-run-id ID]
+                                        [--ledger PATH]
 """
 
 from __future__ import annotations
@@ -34,7 +38,10 @@ _STATUS_ENUM = {"active", "complete", "failed", "paused"}
 _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
+_PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+_STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
+_UNSET = object()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -207,6 +214,40 @@ def validate_ledger(data: dict) -> list[str]:
                 for j, s in enumerate(sc):
                     if not isinstance(s, str) or not s.strip():
                         errors.append(f"{prefix}.stages_completed[{j}] must be a non-empty string")
+                    elif not _STAGE_ID_RE.match(s):
+                        errors.append(
+                            f"{prefix}.stages_completed[{j}] must match stage id pattern, got {s!r}"
+                        )
+
+        active_stage_id = entry.get("active_stage_id")
+        if active_stage_id is not None:
+            if not isinstance(active_stage_id, str) or not active_stage_id.strip():
+                errors.append(f"{prefix}: active_stage_id must be a non-empty string")
+            elif not _STAGE_ID_RE.match(active_stage_id):
+                errors.append(
+                    f"{prefix}: active_stage_id must match stage id pattern, got {active_stage_id!r}"
+                )
+
+        pending_stage_ids = entry.get("pending_stage_ids")
+        if pending_stage_ids is not None:
+            if not isinstance(pending_stage_ids, list):
+                errors.append(f"{prefix}: pending_stage_ids must be a list")
+            else:
+                for j, stage_id in enumerate(pending_stage_ids):
+                    if not isinstance(stage_id, str) or not stage_id.strip():
+                        errors.append(
+                            f"{prefix}.pending_stage_ids[{j}] must be a non-empty string"
+                        )
+                    elif not _STAGE_ID_RE.match(stage_id):
+                        errors.append(
+                            f"{prefix}.pending_stage_ids[{j}] must match stage id pattern, got {stage_id!r}"
+                        )
+
+        pause_reason = entry.get("pause_reason")
+        if pause_reason is not None and pause_reason not in _PAUSE_REASON_ENUM:
+            errors.append(
+                f"{prefix}: pause_reason {pause_reason!r} not in {sorted(_PAUSE_REASON_ENUM)}"
+            )
 
         # waves
         waves = entry.get("waves")
@@ -284,6 +325,12 @@ def validate_ledger(data: dict) -> list[str]:
 
 def _ledger_path_from_root(root: Path) -> Path:
     return root / ".azoth" / "run-ledger.local.yaml"
+
+
+def _root_from_ledger_path(path: Path) -> Path:
+    if path.parent.name == ".azoth":
+        return path.parent.parent
+    return path.parent
 
 
 def load_write_claim(root: Path) -> dict | None:
@@ -403,6 +450,199 @@ def resolve_stale_claims(root: Path) -> bool:
     return False
 
 
+def upsert_session(
+    root: Path,
+    *,
+    session_id: str,
+    backlog_id: str,
+    goal: str,
+    status: str,
+    ide: str,
+    next_action: str,
+    updated_at: str | None = None,
+    active_run_id: str | None = None,
+    closed_at: str | None = None,
+    ledger_path: Path | None = None,
+) -> tuple[bool, dict]:
+    """Create or update a session registry entry.
+
+    Returns (created, entry).
+    """
+    if status not in _SESSION_STATUS_ENUM:
+        raise ValueError(f"status {status!r} not in {sorted(_SESSION_STATUS_ENUM)}")
+
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        data = _load_ledger(resolved_ledger_path)
+
+    sessions = data.get("sessions")
+    if not isinstance(sessions, list):
+        sessions = []
+        data["sessions"] = sessions
+
+    entry = next(
+        (
+            item
+            for item in sessions
+            if isinstance(item, dict) and str(item.get("session_id") or "") == session_id
+        ),
+        None,
+    )
+    created = entry is None
+    if entry is None:
+        entry = {"session_id": session_id}
+        sessions.append(entry)
+
+    timestamp = updated_at or utc_now_iso()
+    entry["session_id"] = session_id
+    entry["backlog_id"] = backlog_id
+    entry["goal"] = goal
+    entry["status"] = status
+    entry["ide"] = ide
+    entry["next_action"] = next_action
+    entry["updated_at"] = timestamp
+
+    if active_run_id:
+        entry["active_run_id"] = active_run_id
+    else:
+        entry.pop("active_run_id", None)
+
+    if closed_at:
+        entry["closed_at"] = closed_at
+    elif status == "closed":
+        entry["closed_at"] = timestamp
+    else:
+        entry.pop("closed_at", None)
+
+    errors = validate_ledger(data)
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    _write_ledger(resolved_ledger_path, data)
+    return created, entry
+
+
+def load_run(root: Path, run_id: str) -> dict | None:
+    """Return a single run entry by run_id, or None when absent."""
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        return None
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        return None
+    for entry in runs:
+        if isinstance(entry, dict) and str(entry.get("run_id") or "") == run_id:
+            return entry
+    return None
+
+
+def upsert_run(
+    root: Path,
+    *,
+    run_id: str,
+    mode: str,
+    goal: str,
+    status: str,
+    next_action: str,
+    session_id: str | None = None,
+    backlog_id: str | None = None,
+    ide: str | None = None,
+    updated_at: str | None = None,
+    stages_completed: list[str] | object = _UNSET,
+    active_stage_id: str | None | object = _UNSET,
+    pending_stage_ids: list[str] | object = _UNSET,
+    pause_reason: str | None | object = _UNSET,
+    wave_entry: dict | object = _UNSET,
+    ledger_path: Path | None = None,
+) -> tuple[bool, dict]:
+    """Create or update a run entry.
+
+    Returns (created, entry).
+    """
+    if status not in _STATUS_ENUM:
+        raise ValueError(f"status {status!r} not in {sorted(_STATUS_ENUM)}")
+
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        data = _load_ledger(resolved_ledger_path)
+
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        runs = []
+        data["runs"] = runs
+
+    entry = next(
+        (
+            item
+            for item in runs
+            if isinstance(item, dict) and str(item.get("run_id") or "") == run_id
+        ),
+        None,
+    )
+    created = entry is None
+    if entry is None:
+        entry = {"run_id": run_id, "created_at": updated_at or utc_now_iso()}
+        runs.append(entry)
+
+    timestamp = updated_at or utc_now_iso()
+    entry["run_id"] = run_id
+    entry["mode"] = mode
+    entry["goal"] = goal
+    entry["status"] = status
+    entry["updated_at"] = timestamp
+    entry["next_action"] = next_action
+    entry.setdefault("created_at", timestamp)
+
+    for field, value in (("session_id", session_id), ("backlog_id", backlog_id), ("ide", ide)):
+        if value is not None:
+            entry[field] = value
+
+    if stages_completed is not _UNSET:
+        if stages_completed:
+            entry["stages_completed"] = list(stages_completed)
+        else:
+            entry.pop("stages_completed", None)
+
+    if active_stage_id is not _UNSET:
+        if active_stage_id:
+            entry["active_stage_id"] = active_stage_id
+        else:
+            entry.pop("active_stage_id", None)
+
+    if pending_stage_ids is not _UNSET:
+        if pending_stage_ids:
+            entry["pending_stage_ids"] = list(pending_stage_ids)
+        else:
+            entry.pop("pending_stage_ids", None)
+
+    if pause_reason is not _UNSET:
+        if pause_reason:
+            entry["pause_reason"] = pause_reason
+        else:
+            entry.pop("pause_reason", None)
+
+    if wave_entry is not _UNSET:
+        if wave_entry is not None:
+            entry.setdefault("waves", []).append(wave_entry)
+
+    errors = validate_ledger(data)
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    _write_ledger(resolved_ledger_path, data)
+    return created, entry
+
+
 # ── Business-logic helpers (testable without CLI) ─────────────────────────────
 
 
@@ -477,6 +717,9 @@ def cmd_status(args: argparse.Namespace) -> None:
         sc = run.get("stages_completed") or []
         if sc:
             print(f"  stages completed: {len(sc)}")
+        active_stage_id = run.get("active_stage_id")
+        if active_stage_id:
+            print(f"  active stage: {active_stage_id}")
     else:
         print("no active run")
     # Write-claim info
@@ -491,7 +734,7 @@ def cmd_status(args: argparse.Namespace) -> None:
 
 def cmd_claim(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     ok, info = acquire_write_claim(root, args.session_id, args.expires_at, harness=args.harness)
     if ok:
         print(f"write claim acquired: {info}")
@@ -502,7 +745,7 @@ def cmd_claim(args: argparse.Namespace) -> None:
 
 def cmd_release_claim(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     released = release_write_claim(root, args.session_id)
     if released:
         print(f"write claim released for session '{args.session_id}'")
@@ -513,7 +756,7 @@ def cmd_release_claim(args: argparse.Namespace) -> None:
 
 def cmd_resolve_stale(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     cleared = resolve_stale_claims(root)
     if cleared:
         print("stale write claim cleared")
@@ -521,13 +764,29 @@ def cmd_resolve_stale(args: argparse.Namespace) -> None:
         print("no stale claim found")
 
 
+def cmd_park_session(args: argparse.Namespace) -> None:
+    path: Path = args.ledger
+    root = _root_from_ledger_path(path)
+    created, entry = upsert_session(
+        root,
+        session_id=args.session_id,
+        backlog_id=args.backlog_id,
+        goal=args.goal,
+        status="parked",
+        ide=args.ide,
+        next_action=args.next_action,
+        updated_at=utc_now_iso(),
+        active_run_id=args.active_run_id,
+        ledger_path=path,
+    )
+    verb = "created" if created else "updated"
+    print(f"session {entry['session_id']} {verb} as parked")
+
+
 def cmd_append(args: argparse.Namespace) -> None:
     path: Path = args.ledger
     data = _load_ledger(path)
-    if not isinstance(data.get("runs"), list):
-        data["runs"] = []
-
-    # Parse --wave JSON if provided
+    root = _root_from_ledger_path(path)
     wave_entry: dict | None = None
     if args.wave:
         try:
@@ -536,61 +795,44 @@ def cmd_append(args: argparse.Namespace) -> None:
             _die(f"--wave is not valid JSON: {exc}")
         if not isinstance(wave_entry, dict):
             _die("--wave must be a JSON object")
-
-    now = utc_now_iso()
-    runs: list[dict] = data["runs"]
-
-    # Find existing entry with matching run_id
-    existing: dict | None = None
-    for r in runs:
-        if isinstance(r, dict) and r.get("run_id") == args.run_id:
-            existing = r
-            break
-
-    if existing is not None:
-        existing["status"] = args.status
-        existing["next_action"] = args.next_action
-        existing["updated_at"] = now
-        for field in ("session_id", "backlog_id", "ide"):
-            value = getattr(args, field)
-            if value is not None:
-                existing[field] = value
-        if args.stages_completed:
-            sc = existing.setdefault("stages_completed", [])
-            for s in args.stages_completed:
-                sc.append(s)
-        if wave_entry is not None:
-            existing.setdefault("waves", []).append(wave_entry)
-        verb = "updated"
-    else:
-        entry: dict = {
-            "run_id": args.run_id,
-            "mode": args.mode,
-            "goal": args.goal,
-            "status": args.status,
-            "created_at": now,
-            "updated_at": now,
-            "next_action": args.next_action,
-        }
-        for field in ("session_id", "backlog_id", "ide"):
-            value = getattr(args, field)
-            if value is not None:
-                entry[field] = value
-        if args.stages_completed:
-            entry["stages_completed"] = list(args.stages_completed)
-        if wave_entry is not None:
-            entry["waves"] = [wave_entry]
-        runs.append(entry)
-        verb = "created"
-
-    # Validate before writing
-    errors = validate_ledger(data)
-    if errors:
-        for e in errors:
-            print(e, file=sys.stderr)
-        _die("ledger would be invalid after mutation — not written")
-
-    _write_ledger(path, data)
+    existing = next(
+        (
+            entry
+            for entry in data.get("runs", [])
+            if isinstance(entry, dict) and str(entry.get("run_id") or "") == args.run_id
+        ),
+        None,
+    )
+    stages_completed = _UNSET
+    if args.stages_completed:
+        merged_stages = (
+            list(existing.get("stages_completed", []))
+            if isinstance(existing, dict) and isinstance(existing.get("stages_completed"), list)
+            else []
+        )
+        merged_stages.extend(args.stages_completed)
+        stages_completed = merged_stages
+    created, _ = upsert_run(
+        root,
+        run_id=args.run_id,
+        session_id=args.session_id,
+        backlog_id=args.backlog_id,
+        ide=args.ide,
+        mode=args.mode,
+        goal=args.goal,
+        status=args.status,
+        next_action=args.next_action,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=args.active_stage_id if args.active_stage_id is not None else _UNSET,
+        pending_stage_ids=(
+            args.pending_stage_ids if args.pending_stage_ids is not None else _UNSET
+        ),
+        pause_reason=args.pause_reason if args.pause_reason is not None else _UNSET,
+        wave_entry=wave_entry if wave_entry is not None else _UNSET,
+        ledger_path=path,
+    )
+    verb = "created" if created else "updated"
     print(f"run {args.run_id} {verb}")
 
 
@@ -631,6 +873,27 @@ def main() -> None:
 
     subs.add_parser("resolve-stale", help="Clear an expired write claim (clock-only check).")
 
+    ps = subs.add_parser(
+        "park-session",
+        help="Create or update a parked session registry entry.",
+    )
+    ps.add_argument("session_id", metavar="SESSION_ID", help="Session identifier to park.")
+    ps.add_argument("backlog_id", metavar="BACKLOG_ID", help="Backlog identifier or AD-HOC.")
+    ps.add_argument("--goal", required=True, metavar="GOAL", help="Human-readable session goal.")
+    ps.add_argument("--ide", required=True, metavar="IDE", help="Harness or IDE label.")
+    ps.add_argument(
+        "--next-action",
+        required=True,
+        metavar="TEXT",
+        help="Resume instruction shown by /resume.",
+    )
+    ps.add_argument(
+        "--active-run-id",
+        metavar="RUN_ID",
+        default=None,
+        help="Optional resumable run linked to the parked session.",
+    )
+
     ap = subs.add_parser("append", help="Create or update a run entry.")
     ap.add_argument("--run-id", required=True, metavar="ID", help="Unique run identifier.")
     ap.add_argument("--session-id", metavar="SESSION_ID", help="Optional linked session id.")
@@ -658,6 +921,26 @@ def main() -> None:
         metavar="JSON",
         help='Wave outcome as JSON object, e.g. \'{"wave": 1, "status": "pass"}\'.',
     )
+    ap.add_argument(
+        "--active-stage-id",
+        metavar="STAGE_ID",
+        default=None,
+        help="Current stage identifier for a resumable checkpoint.",
+    )
+    ap.add_argument(
+        "--pending-stage-id",
+        action="append",
+        dest="pending_stage_ids",
+        default=None,
+        metavar="STAGE_ID",
+        help="Stage id to include in pending_stage_ids (repeatable).",
+    )
+    ap.add_argument(
+        "--pause-reason",
+        choices=sorted(_PAUSE_REASON_ENUM),
+        default=None,
+        help="Why the run is paused, when applicable.",
+    )
 
     args = parser.parse_args()
     {
@@ -667,6 +950,7 @@ def main() -> None:
         "claim": cmd_claim,
         "release-claim": cmd_release_claim,
         "resolve-stale": cmd_resolve_stale,
+        "park-session": cmd_park_session,
     }[args.command](args)
 
 

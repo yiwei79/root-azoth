@@ -92,7 +92,10 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
 - Cross-IDE handoff: if the session used **`.azoth/session-state.md`**, refresh it (active task,
   files touched, next action, pending decisions) with the same `session_id` as the selected
-  registry entry; if unused, log `session-state skipped` in the alignment summary.
+  registry entry. Preserve any stage-aware checkpoint fields already present there
+  (`pipeline`, `pipeline_position`, `current_stage_id`, `completed_stages`, `pending_stages`,
+  `pause_reason`, `active_run_id`) instead of collapsing continuity to prose only; if unused,
+  log `session-state skipped` in the alignment summary.
 - Keep W2 authoritative: if any later mirror diverges from repo-local state, W2 wins.
 - Log: `W2 ✓ bootloader-state.md updated, write claim released, scope gate closed — proceeding to W3`
 
