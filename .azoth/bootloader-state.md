@@ -1,7 +1,7 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.23 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 23
+0.1.2.24 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 24
 
 ## Last Session
 - **Session**: 2026-04-17-worktree-merge
