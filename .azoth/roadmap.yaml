@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 28
+    current_patch: 29
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -369,10 +369,6 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
-      - id: P1-024
-        title: "D46 command projection compiler refactor"
-        decision_ref: [D19, D21, D46, D50]
-        initiative_ref: "INI-PLT-006"
       - id: T-001
         title: "Dedicated roadmap/backlog/spec scaffolder"
         decision_ref: [D47, D48, D50]
@@ -380,6 +376,7 @@ versions:
     completed_tasks:
       - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
       - {id: P1-023, title: "Neutral canonical command contract design", completed_date: "2026-04-17", decision_ref: [D19, D21, D46]}
+      - {id: P1-024, title: "D46 command projection compiler refactor", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50]}
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.

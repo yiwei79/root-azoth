@@ -43,6 +43,11 @@ def _build_repo(
                 "  - id: v0.2.0-p1",
                 "    status: active",
                 "    current_patch: 29",
+                "    tasks:",
+                f"      - id: {backlog_id}",
+                '        title: "Governed closeout"',
+                "        decision_ref: [D50]",
+                "    completed_tasks:",
                 "",
             ]
         ),
@@ -325,7 +330,8 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     episode = json.loads(episode_lines[0])
     assert episode["session_id"] == "sess-123"
     assert episode["goal"] == "BL-123: Governed closeout"
-    assert ".azoth/backlog.yaml" not in episode["context"]["files_changed"]
+    assert ".azoth/backlog.yaml" in episode["context"]["files_changed"]
+    assert ".azoth/roadmap.yaml" in episode["context"]["files_changed"]
     assert ".azoth/run-ledger.local.yaml" in episode["context"]["files_changed"]
     assert ".azoth/bootloader-state.md" in episode["context"]["files_changed"]
     assert ".azoth/session-state.md" in episode["context"]["files_changed"]
@@ -333,7 +339,13 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
     assert scope["approved"] is False
     assert "closed_at" in scope
-    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert "status: active" not in backlog_text
+    assert "status: complete" in backlog_text
+    assert "completed_date:" in backlog_text
+    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
+    assert "      - id: BL-123\n" not in roadmap_text
+    assert '{id: BL-123, title: "Governed closeout", completed_date:' in roadmap_text
     ledger = yaml.safe_load(
         (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
     )

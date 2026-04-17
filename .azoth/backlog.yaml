@@ -1837,10 +1837,11 @@ items:
   initiative_ref: INI-PLT-006
   target_layer: M1
   delivery_pipeline: governed
-  status: active
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-17'
+  completed_date: '2026-04-17'
   decision_ref:
   - D19
   - D21

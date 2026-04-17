@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -228,6 +229,242 @@ def close_scope_gate(repo_root: pathlib.Path, timestamp: str) -> dict[str, Any]:
         json.dump(gate_data, handle, indent=2)
     print(f"W2: scope gate closed at {gate_path}")
     return gate_data
+
+
+def _completed_date(timestamp: str) -> str:
+    return timestamp.split("T", 1)[0]
+
+
+def _normalize_decision_refs(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if value is None:
+        return []
+    return [str(value)]
+
+
+def _find_top_level_item_block(text: str, item_id: str) -> tuple[int, int] | None:
+    start_match = re.search(
+        rf'^\s*-\s+id:\s*["\']?{re.escape(item_id)}["\']?\s*$',
+        text,
+        flags=re.MULTILINE,
+    )
+    if not start_match:
+        return None
+    next_match = re.search(r"^\s*-\s+id:\s", text[start_match.end() :], flags=re.MULTILINE)
+    end = start_match.end() + next_match.start() if next_match else len(text)
+    return start_match.start(), end
+
+
+def _mark_backlog_item_complete(
+    repo_root: pathlib.Path,
+    *,
+    backlog_id: str,
+    completed_date: str,
+) -> tuple[dict[str, Any] | None, bool]:
+    backlog_path = repo_root / ".azoth" / "backlog.yaml"
+    backlog_data = load_yaml(backlog_path)
+    items = backlog_data.get("items")
+    if not isinstance(items, list):
+        print(f"W2c: backlog item {backlog_id!r} not found in {backlog_path} (items missing)")
+        return None, False
+
+    metadata: dict[str, Any] | None = None
+    for item in items:
+        if isinstance(item, dict) and str(item.get("id") or "") == backlog_id:
+            metadata = item
+            break
+
+    if metadata is None:
+        print(f"W2c: backlog item {backlog_id!r} not found in {backlog_path}")
+        return None, False
+
+    text = backlog_path.read_text(encoding="utf-8")
+    bounds = _find_top_level_item_block(text, backlog_id)
+    if bounds is None:
+        print(f"W2c: backlog item {backlog_id!r} not found as a text block in {backlog_path}")
+        return metadata, False
+
+    start, end = bounds
+    block = text[start:end]
+    new_block = re.sub(r"^(\s+status:\s*).*$", r"\1complete", block, count=1, flags=re.MULTILINE)
+    if re.search(r"^\s+completed_date:\s*", new_block, flags=re.MULTILINE):
+        new_block = re.sub(
+            r"^(\s+)completed_date:\s*.*$",
+            lambda m: f"{m.group(1)}completed_date: '{completed_date}'",
+            new_block,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    elif re.search(r"^\s+created_date:\s*.*$", new_block, flags=re.MULTILINE):
+        new_block = re.sub(
+            r"^(\s+)created_date:\s*.*\n",
+            lambda m: f"{m.group(0)}{m.group(1)}completed_date: '{completed_date}'\n",
+            new_block,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    else:
+        new_block = re.sub(
+            r"^(\s+)status:\s*complete\n",
+            lambda m: f"{m.group(0)}{m.group(1)}completed_date: '{completed_date}'\n",
+            new_block,
+            count=1,
+            flags=re.MULTILINE,
+        )
+
+    changed = new_block != block
+    if changed:
+        backlog_path.write_text(text[:start] + new_block + text[end:], encoding="utf-8")
+        print(f"W2c: backlog item {backlog_id} marked complete")
+    else:
+        print(f"W2c: backlog item {backlog_id} already complete")
+    return metadata, changed
+
+
+def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
+    start_match = re.search(r"^(  - id: " + re.escape(version_id) + r"\n)", text, re.MULTILINE)
+    if not start_match:
+        return None
+    next_match = re.search(r"^  - id:", text[start_match.end() :], re.MULTILINE)
+    end = start_match.end() + next_match.start() if next_match else len(text)
+    return start_match.start(), end
+
+
+def _mark_roadmap_task_complete(
+    repo_root: pathlib.Path,
+    *,
+    backlog_id: str,
+    roadmap_ref: str,
+    target_version: str,
+    title: str,
+    decision_ref: list[str],
+    completed_date: str,
+) -> bool:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    text = roadmap_path.read_text(encoding="utf-8")
+    bounds = _find_version_block(text, target_version)
+    if bounds is None:
+        print(
+            f"W2c: roadmap version {target_version!r} not found while completing {backlog_id}"
+        )
+        return False
+
+    start, end = bounds
+    block = text[start:end]
+    task_id = roadmap_ref or backlog_id
+    changed = False
+
+    task_match = re.search(
+        rf"^      - id: {re.escape(task_id)}\s*$",
+        block,
+        flags=re.MULTILINE,
+    )
+    if task_match:
+        next_match = re.search(
+            r"^(      - id:|    completed_tasks:)",
+            block[task_match.end() :],
+            flags=re.MULTILINE,
+        )
+        task_end = task_match.end() + next_match.start() if next_match else len(block)
+        block = block[:task_match.start()] + block[task_end:]
+        changed = True
+
+    completed_pattern = rf"^      - \{{id: {re.escape(task_id)},.*$"
+    completed_entry = re.search(completed_pattern, block, flags=re.MULTILINE)
+    decision_text = f"[{', '.join(decision_ref)}]" if decision_ref else "[]"
+    title_text = title.replace("\\", "\\\\").replace('"', '\\"')
+    completed_line = (
+        f'      - {{id: {task_id}, title: "{title_text}", completed_date: "{completed_date}", '
+        f"decision_ref: {decision_text}}}\n"
+    )
+    if completed_entry:
+        new_line = re.sub(
+            r'completed_date: "[^"]*"',
+            f'completed_date: "{completed_date}"',
+            completed_entry.group(0),
+            count=1,
+        )
+        if new_line != completed_entry.group(0):
+            block = (
+                block[: completed_entry.start()]
+                + new_line
+                + block[completed_entry.end() :]
+            )
+            changed = True
+    else:
+        section_match = re.search(r"^    completed_tasks:\n", block, flags=re.MULTILINE)
+        if section_match is None:
+            block = block.rstrip("\n") + "\n    completed_tasks:\n"
+            section_match = re.search(r"^    completed_tasks:\n", block, flags=re.MULTILINE)
+        assert section_match is not None
+        insert_at = section_match.end()
+        while True:
+            line_end = block.find("\n", insert_at)
+            if line_end == -1:
+                line_end = len(block)
+                line = block[insert_at:line_end]
+                next_insert = line_end
+            else:
+                line = block[insert_at : line_end + 1]
+                next_insert = line_end + 1
+            if line.startswith("      - "):
+                insert_at = next_insert
+                continue
+            break
+        block = block[:insert_at] + completed_line + block[insert_at:]
+        changed = True
+
+    if changed:
+        roadmap_path.write_text(text[:start] + block + text[end:], encoding="utf-8")
+        print(f"W2c: roadmap task {task_id} moved to completed_tasks in {target_version}")
+    else:
+        print(f"W2c: roadmap task {task_id} already complete in {target_version}")
+    return changed
+
+
+def update_planning_completion(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    timestamp: str,
+    session_status: str,
+) -> list[str]:
+    if session_status != "closed":
+        return []
+
+    backlog_id = str(scope.get("backlog_id") or "").strip()
+    if not backlog_id or backlog_id == "AD-HOC":
+        return []
+
+    completed_date = _completed_date(timestamp)
+    changed_paths: list[str] = []
+    metadata, backlog_changed = _mark_backlog_item_complete(
+        repo_root,
+        backlog_id=backlog_id,
+        completed_date=completed_date,
+    )
+    if backlog_changed:
+        changed_paths.append(".azoth/backlog.yaml")
+    if metadata is None:
+        return changed_paths
+
+    roadmap_changed = _mark_roadmap_task_complete(
+        repo_root,
+        backlog_id=backlog_id,
+        roadmap_ref=str(metadata.get("roadmap_ref") or backlog_id),
+        target_version=str(
+            metadata.get("target_version")
+            or load_yaml(repo_root / ".azoth" / "roadmap.yaml").get("active_version")
+            or ""
+        ),
+        title=str(metadata.get("title") or backlog_id),
+        decision_ref=_normalize_decision_refs(metadata.get("decision_ref")),
+        completed_date=completed_date,
+    )
+    if roadmap_changed:
+        changed_paths.append(".azoth/roadmap.yaml")
+    return changed_paths
 
 
 def _resumable_run_for_session(
@@ -611,6 +848,7 @@ def run_closeout(
 
     timestamp = utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
     session_id = str(scope.get("session_id") or "unknown-session")
+    backlog_id = str(scope.get("backlog_id") or "").strip()
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
     session_state_path = repo_root / ".azoth" / "session-state.md"
     existing_session_state = load_yaml(session_state_path)
@@ -620,6 +858,8 @@ def run_closeout(
         ".azoth/scope-gate.json",
         "azoth.yaml",
     ]
+    if backlog_id and backlog_id != "AD-HOC":
+        authoritative_files.extend([".azoth/backlog.yaml", ".azoth/roadmap.yaml"])
     if ledger_path.exists():
         authoritative_files.append(".azoth/run-ledger.local.yaml")
     if session_state_path.exists():
@@ -657,6 +897,12 @@ def run_closeout(
         selected_ide=selected_ide or None,
     )
     print(registry_note)
+    update_planning_completion(
+        repo_root,
+        scope=scope,
+        timestamp=timestamp,
+        session_status=session_status,
+    )
     if release_write_claim(repo_root, session_id):
         print(f"W2: write claim released for session '{session_id}'")
     else:
