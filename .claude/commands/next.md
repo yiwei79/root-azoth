@@ -1,5 +1,5 @@
 ---
-description: "Show the next priority task from the roadmap and suggest how to proceed"
+description: Show the next priority task from the roadmap and suggest how to proceed
 azoth_effect: mixed
 agent: orchestrator
 ---

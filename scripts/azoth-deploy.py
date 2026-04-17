@@ -7,9 +7,12 @@ Transforms:
                                                 →  .github/agents/<name>.agent.md      (GitHub Copilot compatibility mirror)
                         →  .opencode/agents/<name>.md          (OpenCode)
                         →  .codex/agents/<name>.toml           (Codex custom agents)
-  .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
+  commands/<name>/command.yaml
+                        →  .claude/commands/<name>.md          (Claude Code, when contract-backed)
+                        →  .github/prompts/<name>.prompt.md    (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
                         →  .agents/skills/azoth-<name>/...     (Codex explicit command-wrapper skills)
+  .claude/commands/*.md →  same deploy targets as legacy fallback when no canonical contract exists
     skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
                                                 →  .agents/skills/<name>/SKILL.md     (Codex / Gemini / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
@@ -194,17 +197,91 @@ def load_agents(root: Path) -> list[dict[str, Any]]:
     return agents
 
 
+def _normalize_command_meta(
+    contract: dict[str, Any],
+    legacy_meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the metadata fields consumed by deploy transforms."""
+    meta: dict[str, Any] = {}
+    for field in ("description", "agent", "azoth_effect"):
+        value = contract.get(field)
+        if value is not None:
+            meta[field] = value
+    if legacy_meta:
+        for field in ("description", "agent", "azoth_effect"):
+            if field not in meta and field in legacy_meta:
+                meta[field] = legacy_meta[field]
+    return meta
+
+
+def _load_command_contract(root: Path, path: Path) -> dict[str, Any]:
+    """Load one canonical command contract plus its resolved markdown body."""
+    contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(contract, dict):
+        raise ValueError(f"{path}: command contract root must be a mapping")
+
+    name = str(contract.get("name") or path.parent.name).strip()
+    if not name:
+        raise ValueError(f"{path}: command contract missing name")
+
+    body_cfg = contract.get("body") or {}
+    if not isinstance(body_cfg, dict):
+        raise ValueError(f"{path}: body must be a mapping")
+
+    body_mode = str(body_cfg.get("mode") or "").strip()
+    body_source_path: Path | None = None
+    legacy_meta: dict[str, Any] | None = None
+
+    if body_mode == "legacy_claude_markdown":
+        source_rel = str(body_cfg.get("source_path") or "").strip()
+        if not source_rel:
+            raise ValueError(f"{path}: legacy_claude_markdown requires body.source_path")
+        body_source_path = root / source_rel
+        legacy_text = body_source_path.read_text(encoding="utf-8")
+        legacy_meta, body = parse_frontmatter(legacy_text)
+    elif body_mode == "canonical_markdown":
+        source_rel = str(body_cfg.get("source_path") or "").strip()
+        body_source_path = root / source_rel if source_rel else path.parent / "body.md"
+        body = body_source_path.read_text(encoding="utf-8")
+    else:
+        raise ValueError(f"{path}: unsupported body.mode {body_mode!r}")
+
+    return {
+        "path": path,
+        "name": name,
+        "meta": _normalize_command_meta(contract, legacy_meta),
+        "body": body,
+        "contract": contract,
+        "contract_path": path.relative_to(root).as_posix(),
+        "body_source_path": body_source_path.relative_to(root).as_posix()
+        if body_source_path is not None
+        else None,
+    }
+
+
 def load_commands(root: Path) -> list[dict[str, Any]]:
-    """Load all commands from .claude/commands/*.md."""
+    """Load commands with canonical contracts taking precedence over legacy markdown."""
+    commands_by_name: dict[str, dict[str, Any]] = {}
+
     cmd_dir = root / ".claude" / "commands"
-    if not cmd_dir.is_dir():
-        return []
-    commands = []
-    for path in sorted(cmd_dir.glob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        meta, body = parse_frontmatter(text)
-        commands.append({"path": path, "name": path.stem, "meta": meta, "body": body})
-    return commands
+    if cmd_dir.is_dir():
+        for path in sorted(cmd_dir.glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            meta, body = parse_frontmatter(text)
+            commands_by_name[path.stem] = {
+                "path": path,
+                "name": path.stem,
+                "meta": meta,
+                "body": body,
+            }
+
+    contract_dir = root / "commands"
+    if contract_dir.is_dir():
+        for path in sorted(contract_dir.glob("*/command.yaml")):
+            command = _load_command_contract(root, path)
+            commands_by_name[command["name"]] = command
+
+    return [commands_by_name[name] for name in sorted(commands_by_name)]
 
 
 def load_skills(root: Path) -> list[dict[str, Any]]:
@@ -416,6 +493,25 @@ def transform_agent_gemini(agent: dict[str, Any]) -> str:
 # ── Command transformations ──────────────────────────────────────────────────
 
 
+def transform_command_claude(command: dict[str, Any]) -> str:
+    """
+    Claude Code command format (.claude/commands/<name>.md).
+    Contract-backed commands render fresh frontmatter; legacy commands pass through.
+    """
+    if "contract" not in command:
+        path = command["path"]
+        return Path(path).read_text(encoding="utf-8")
+
+    fm: dict[str, Any] = {}
+    if desc := command["meta"].get("description"):
+        fm["description"] = desc
+    if effect := command["meta"].get("azoth_effect"):
+        fm["azoth_effect"] = effect
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
+    return render_frontmatter(fm) + command["body"]
+
+
 def transform_command_copilot(command: dict[str, Any]) -> str:
     """
     Copilot prompt format (.github/prompts/<name>.prompt.md).
@@ -563,10 +659,21 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
         f"This skill is the explicit Codex-native equivalent of typing `/{name}`.",
         "",
         "Execution contract:",
-        f"- Read `.claude/commands/{name}.md` and follow it as the source of truth.",
-        f"- Treat the rest of the user's prompt after `${skill_name}` as `$ARGUMENTS`.",
-        "- Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.",
     ]
+    if contract_path := command.get("contract_path"):
+        lines.append(f"- Read `{contract_path}` and treat it as the source of truth.")
+        if body_source_path := command.get("body_source_path"):
+            lines.append(
+                f"- Read the body source referenced by that contract: `{body_source_path}`."
+            )
+    else:
+        lines.append(f"- Read `.claude/commands/{name}.md` and follow it as the source of truth.")
+    lines.extend(
+        [
+            f"- Treat the rest of the user's prompt after `${skill_name}` as `$ARGUMENTS`.",
+            "- Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.",
+        ]
+    )
     if agent := command["meta"].get("agent"):
         lines.append(f"- Preserve the command's `agent: {agent}` binding.")
     if effect := command["meta"].get("azoth_effect"):
@@ -576,11 +683,20 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
             f"- If the user typed literal `/{name}` in prompt text instead, apply the same workflow contract.",
             "",
             "Command metadata:",
-            f"- Source path: `.claude/commands/{name}.md`",
+            (
+                f"- Contract path: `{contract_path}`"
+                if contract_path
+                else f"- Source path: `.claude/commands/{name}.md`"
+            ),
+            (
+                f"- Body source path: `{command['body_source_path']}`"
+                if command.get("body_source_path")
+                else None
+            ),
             f"- Description: {description}",
         ]
     )
-    return render_frontmatter(fm) + "\n".join(lines) + "\n"
+    return render_frontmatter(fm) + "\n".join(line for line in lines if line is not None) + "\n"
 
 
 def transform_command_codex_skill_metadata(command: dict[str, Any]) -> str:
@@ -1130,6 +1246,27 @@ def main(argv: list[str] | None = None) -> int:
     # ── Commands ─────────────────────────────────────────────────────────────
     if commands:
         print("── commands ────────────────────────────────────────────────────")
+
+        if "claude" in platforms or "cursor" in platforms:
+            for cmd in commands:
+                contract = cmd.get("contract")
+                if not isinstance(contract, dict):
+                    continue
+                claude_projection = contract.get("projection", {}).get("claude", {})
+                if not isinstance(claude_projection, dict):
+                    continue
+                output_rel = str(claude_projection.get("output_path") or "").strip()
+                if not output_rel:
+                    continue
+                if not write_file(
+                    root / output_rel,
+                    transform_command_claude(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
 
         if "copilot" in platforms:
             for cmd in commands:

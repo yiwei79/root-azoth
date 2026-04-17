@@ -62,11 +62,11 @@ projection:
     metadata_path: .agents/skills/azoth-next/openai.yaml
 
 migration:
-  phase: design_pilot
-  runtime_source_of_truth: .claude/commands/next.md
+  phase: projection_pilot
+  runtime_source_of_truth: commands/next/command.yaml
   notes:
-    - This contract is not yet consumed by scripts/azoth-deploy.py.
-    - P1-024 will switch Codex wrappers and other projections to read this contract first.
+    - scripts/azoth-deploy.py now consumes this contract first for the pilot projection path.
+    - The markdown body still bridges through .claude/commands/next.md until commands/next/body.md exists.
 
 references:
   - .azoth/roadmap-specs/v0.2.0/P1-023.yaml

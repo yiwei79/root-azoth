@@ -44,7 +44,9 @@ transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
+transform_command_claude = _mod.transform_command_claude
 transform_command_copilot = _mod.transform_command_copilot
+transform_command_codex_skill = _mod.transform_command_codex_skill
 transform_command_gemini = _mod.transform_command_gemini
 transform_command_opencode = _mod.transform_command_opencode
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
@@ -428,6 +430,38 @@ def _write_minimal_command(root: Path) -> None:
     )
 
 
+def _write_contract_command(root: Path) -> None:
+    legacy_path = root / ".claude" / "commands" / "next.md"
+    legacy_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_path.write_text(
+        "---\n"
+        'description: "Legacy next description"\n'
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    contract_path = root / "commands" / "next" / "command.yaml"
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        "schema_version: 1\n"
+        "name: next\n"
+        "display_name: /next\n"
+        "description: Canonical next description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "body:\n"
+        "  mode: legacy_claude_markdown\n"
+        "  source_path: .claude/commands/next.md\n"
+        "projection:\n"
+        "  claude:\n"
+        "    output_path: .claude/commands/next.md\n",
+        encoding="utf-8",
+    )
+
+
 def _write_minimal_skill(root: Path) -> None:
     path = root / "skills" / "context-map" / "SKILL.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -730,6 +764,23 @@ def test_deployed_copilot_prompts_match_transform() -> None:
         )
 
 
+def test_deployed_claude_contract_commands_match_transform() -> None:
+    """Contract-backed `.claude/commands/*.md` outputs must match the Claude transform."""
+    commands = [cmd for cmd in load_commands(_REPO_ROOT) if "contract" in cmd]
+    assert commands, "expected at least one contract-backed command"
+    for cmd in commands:
+        contract = cmd["contract"]
+        claude_projection = contract.get("projection", {}).get("claude", {})
+        dest = _REPO_ROOT / str(claude_projection["output_path"])
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == transform_command_claude(cmd), (
+            f"Claude command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
 def test_deployed_opencode_commands_match_transform() -> None:
     """`.opencode/commands/*.md` must match `transform_command_opencode` output."""
     commands = load_commands(_REPO_ROOT)
@@ -743,6 +794,21 @@ def test_deployed_opencode_commands_match_transform() -> None:
         actual = dest.read_text(encoding="utf-8")
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_command_wrappers_match_transform() -> None:
+    """Codex command wrapper skills must match `transform_command_codex_skill` output."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected command sources"
+    for cmd in commands:
+        dest = _REPO_ROOT / ".agents" / "skills" / f"azoth-{cmd['name']}" / "SKILL.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == transform_command_codex_skill(cmd), (
+            f"Codex command skill drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
 
 
@@ -1031,6 +1097,27 @@ def test_check_mode_clean_returns_zero(tmp_path: Path) -> None:
 
     rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
     assert rc == 0
+
+
+def test_load_commands_prefers_canonical_contract_and_resolves_body(tmp_path: Path) -> None:
+    _write_contract_command(tmp_path)
+    commands = load_commands(tmp_path)
+    assert len(commands) == 1
+    cmd = commands[0]
+    assert cmd["name"] == "next"
+    assert cmd["meta"]["description"] == "Canonical next description"
+    assert cmd["contract_path"] == "commands/next/command.yaml"
+    assert cmd["body_source_path"] == ".claude/commands/next.md"
+    assert cmd["body"].startswith("# /next")
+    assert "Legacy next description" not in cmd["body"]
+
+
+def test_transform_command_codex_skill_uses_contract_path_when_present(tmp_path: Path) -> None:
+    _write_contract_command(tmp_path)
+    cmd = load_commands(tmp_path)[0]
+    rendered = transform_command_codex_skill(cmd)
+    assert "commands/next/command.yaml" in rendered
+    assert ".claude/commands/next.md" in rendered
 
 
 def test_check_mode_stale_returns_one(tmp_path: Path) -> None:

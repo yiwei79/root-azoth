@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/next`.
 
 Execution contract:
-- Read `.claude/commands/next.md` and follow it as the source of truth.
+- Read `commands/next/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `.claude/commands/next.md`.
 - Treat the rest of the user's prompt after `$azoth-next` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/next` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/next.md`
+- Contract path: `commands/next/command.yaml`
+- Body source path: `.claude/commands/next.md`
 - Description: Show the next priority task from the roadmap and suggest how to proceed

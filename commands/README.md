@@ -15,14 +15,14 @@ commands/<name>/body.md
 
 Current migration status:
 
-- This directory is design-first, not runtime-active
-- `scripts/azoth-deploy.py` still compiles command surfaces from `.claude/commands/*.md`
+- This directory is partially runtime-active for pilot contracts consumed by `scripts/azoth-deploy.py`
+- Commands without a canonical contract still compile from `.claude/commands/*.md`
 - individual command contracts may temporarily point back to legacy Claude command files
   through `body.mode: legacy_claude_markdown`
 
 Prototype coverage in this slice:
 
-- `commands/next/command.yaml`
+- `commands/next/command.yaml` is the active pilot contract
 
 Rules:
 
