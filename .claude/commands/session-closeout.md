@@ -1,5 +1,5 @@
 ---
-description: "Unified eval + close + sync — run at the end of every session"
+description: Unified eval + close + sync — run at the end of every session
 azoth_effect: write
 agent: orchestrator
 ---

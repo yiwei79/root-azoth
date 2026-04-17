@@ -1,0 +1,45 @@
+schema_version: 1
+name: deliver
+display_name: /deliver
+description: Lean pipeline for pre-approved, additive work
+agent: orchestrator
+azoth_effect: write
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/deliver.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/deliver.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/deliver.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/deliver.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/deliver.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-deliver/SKILL.md
+    metadata_path: .agents/skills/azoth-deliver/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/deliver.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/deliver.md
+
+migration:
+  phase: canonical_body_batch_2_session_a
+  runtime_source_of_truth: commands/deliver/command.yaml
+  notes:
+    - Session A of T-003 moves /deliver onto the neutral command path.
+    - .claude/commands/deliver.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-003.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

@@ -1,5 +1,6 @@
 ---
-description: "Governance quality gate — evaluate artifacts; auto-escalates to swarm eval when warranted"
+description: Governance quality gate — evaluate artifacts; auto-escalates to swarm
+  eval when warranted
 azoth_effect: read
 agent: orchestrator
 ---

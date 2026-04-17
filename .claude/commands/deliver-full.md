@@ -1,5 +1,6 @@
 ---
-description: "Full pipeline with governance gates — for kernel, governance, or breaking changes"
+description: Full pipeline with governance gates — for kernel, governance, or breaking
+  changes
 azoth_effect: write
 agent: orchestrator
 ---

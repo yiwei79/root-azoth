@@ -1,5 +1,5 @@
 ---
-description: "Roadmap dashboard — versioned phases (D48) and upcoming work"
+description: Roadmap dashboard — versioned phases (D48) and upcoming work
 azoth_effect: read
 agent: orchestrator
 ---

@@ -1,5 +1,5 @@
 ---
-description: "Auto-compose and execute a pipeline based on goal classification"
+description: Auto-compose and execute a pipeline based on goal classification
 azoth_effect: write
 agent: orchestrator
 ---

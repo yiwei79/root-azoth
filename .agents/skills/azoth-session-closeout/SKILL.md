@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/session-closeout`.
 
 Execution contract:
-- Read `.claude/commands/session-closeout.md` and follow it as the source of truth.
+- Read `commands/session-closeout/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `.claude/commands/session-closeout.md`.
 - Treat the rest of the user's prompt after `$azoth-session-closeout` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/session-closeout` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/session-closeout.md`
+- Contract path: `commands/session-closeout/command.yaml`
+- Body source path: `.claude/commands/session-closeout.md`
 - Description: Unified eval + close + sync — run at the end of every session

@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/sync`.
 
 Execution contract:
-- Read `.claude/commands/sync.md` and follow it as the source of truth.
+- Read `commands/sync/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `.claude/commands/sync.md`.
 - Treat the rest of the user's prompt after `$azoth-sync` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/sync` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/sync.md`
+- Contract path: `commands/sync/command.yaml`
+- Body source path: `.claude/commands/sync.md`
 - Description: Extract patterns from a source framework into Azoth
