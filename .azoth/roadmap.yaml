@@ -4,6 +4,11 @@
 #
 # COMPATIBILITY: The top-level `current_phase` and `tasks:` fields are preserved for
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
+# Task-id semantics: existing `v0.2.0` task ids include a stable legacy `P1-*` namespace.
+# Do not infer the current milestone-local phase from that prefix; use `active_version`,
+# the containing `versions[]` block, and backlog `target_version` for slice semantics.
+# Forward rule: keep historical `P1-*` ids frozen, but mint all new roadmap-backed work in
+# the neutral `T-{NNN}` namespace. Do not rename historical task ids in place.
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
 current_phase: 2
@@ -125,6 +130,15 @@ tasks:
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
 active_version: v0.2.0-p2
+task_id_policy:
+  legacy_milestones:
+    - milestone: v0.2.0
+      prefix: P1
+      width: 3
+      frozen: true
+  future_default:
+    prefix: T
+    width: 3
 
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.MILESTONE_PHASE.PATCH under v0.2.0)
 # - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.P.M → 0.1.P.M+1 + active v0.2.0-pP current_patch +1
@@ -337,7 +351,9 @@ versions:
       (memory loop hardening), INI-RST-003 (multi-writer safety next level), and
       INI-PLT-006 (co-primary platform model + neutral command contract). Medium-priority initiatives
       (INI-PPL-001, INI-PPL-002, INI-MEM-002, INI-MEM-003, INI-MEM-005,
-      INI-PLT-002, INI-EFF-001) available for scheduling after triage.
+      INI-PLT-002, INI-EFF-001) available for scheduling after triage. Existing `P1-*`
+      task ids remain stable legacy refs inside p2, while new roadmap-backed work now mints
+      in `T-*`; phase/slice semantics come from `v0.2.0-p2`, not the task prefix.
     tasks:
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
@@ -357,6 +373,10 @@ versions:
         title: "D46 command projection compiler refactor"
         decision_ref: [D19, D21, D46, D50]
         initiative_ref: "INI-PLT-006"
+      - id: T-001
+        title: "Dedicated roadmap/backlog/spec scaffolder"
+        decision_ref: [D47, D48, D50]
+        initiative_ref: "INI-RST-004"
     completed_tasks:
       - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
       - {id: P1-023, title: "Neutral canonical command contract design", completed_date: "2026-04-17", decision_ref: [D19, D21, D46]}
@@ -416,6 +436,22 @@ initiatives:
       writers are safe rather than advisory.
     decision_ref: [D21, D46, D50]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
+
+  - id: INI-RST-004
+    title: "Roadmap/backlog/spec scaffolding"
+    category: run-state
+    theme: A
+    phase: v0.2.0-p2
+    priority: medium
+    task_ref: T-001
+    summary: >
+      Add a dedicated authoring path for roadmap work so new task ids, backlog
+      rows, initiative links, and per-task specs can be scaffolded coherently
+      from one command instead of hand-editing multiple files. Builds on the
+      task_id_policy rule and the roadmap_task_id helper, but extends that into
+      a full multi-file scaffolder for the roadmap system itself.
+    decision_ref: [D47, D48, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-001.yaml"
 
   # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001

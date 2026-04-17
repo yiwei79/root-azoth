@@ -409,6 +409,8 @@ def test_release_writes_phased_post_release_version(tmp_path: Path) -> None:
 
     rdata = yaml.safe_load(roadmap_p.read_text())
     assert rdata["active_version"] == "v0.2.0-p1"
+    assert rdata["task_id_policy"]["legacy_milestones"][0]["prefix"] == "P1"
+    assert rdata["task_id_policy"]["future_default"]["prefix"] == "T"
     assert rdata["current_phase"] == 1
     assert int(rdata.get("lifecycle_phase", 0)) == 8
     v007 = next(x for x in rdata["versions"] if x["id"] == "v0.0.7")
@@ -561,6 +563,7 @@ def test_phase_advances_post_release_working_slice(tmp_path: Path) -> None:
 
     roadmap_data = yaml.safe_load(roadmap_p.read_text())
     assert roadmap_data["active_version"] == "v0.2.0-p2"
+    assert roadmap_data["task_id_policy"]["legacy_milestones"][0]["milestone"] == "v0.2.0"
     assert roadmap_data["current_phase"] == 2
     v021 = next(v for v in roadmap_data["versions"] if v["id"] == "v0.2.0-p1")
     assert v021["status"] == "complete"

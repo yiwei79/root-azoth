@@ -1,4 +1,9 @@
 schema_version: 1
+# Task-id semantics: `id` is a stable backlog key. Existing `v0.2.0` tasks include a
+# legacy `P1-*` namespace even when carried into `v0.2.0-p2`; use `target_version` to
+# determine the active working slice / milestone-local phase.
+# Forward rule: historical `P1-*` ids stay unchanged, but new roadmap-backed task ids mint
+# in the neutral `T-{NNN}` namespace instead of embedding a milestone-local phase number.
 items:
 - id: BL-002
   title: 'Scope-gate: PreToolUse hook for builder-mode enforcement'
@@ -1832,7 +1837,7 @@ items:
   initiative_ref: INI-PLT-006
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: active
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-17'
@@ -1854,4 +1859,31 @@ items:
     semantics; (4) extend drift/parity tests to cover the new projection path.
     Non-goal: no broad command migration or removal of the legacy source path
     before the pilot is proven stable.
+- id: T-001
+  title: "Dedicated roadmap/backlog/spec scaffolder"
+  source: roadmap-system-scaffolder-2026-04-17
+  roadmap_ref: T-001
+  initiative_ref: INI-RST-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-17'
+  decision_ref:
+  - D47
+  - D48
+  - D50
+  blocked_by: []
+  description: >
+    Add a dedicated scaffolder for roadmap work so new task ids, backlog rows,
+    roadmap task entries, initiative links, and per-task spec stubs can be
+    created from one coherent path instead of manual multi-file editing.
+    Deliverables: (1) a script or command entrypoint that mints the correct
+    roadmap task id from task_id_policy; (2) explicit support for backlog-only
+    BL ids where needed; (3) generated skeletons for .azoth/backlog.yaml,
+    .azoth/roadmap.yaml, and .azoth/roadmap-specs/; (4) tests that keep the
+    scaffolder aligned with the current roadmap schema and version slices.
+    Non-goal: no automatic reprioritization, no scope approval side effects,
+    and no retroactive renaming of historical ids.
 completed: []

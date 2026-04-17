@@ -1,0 +1,47 @@
+# Roadmap task spec — v0.2.0
+id: T-001
+roadmap_version: v0.2.0
+title: "Dedicated roadmap/backlog/spec scaffolder"
+decision_ref: [D47, D48, D50]
+
+intent: >
+  Add a dedicated scaffolder for roadmap work so new task ids, backlog rows,
+  roadmap task entries, initiative links, and per-task spec stubs can be
+  created from one coherent path instead of manual multi-file editing.
+
+problem: >
+  The roadmap system now has a machine-readable task_id_policy and a helper for
+  minting ids, but authors still have to hand-edit backlog.yaml, roadmap.yaml,
+  and roadmap-specs/ in lockstep. That keeps roadmap maintenance error-prone and
+  leaves no single trusted entrypoint for creating a new roadmap-backed slice.
+
+scope:
+  - "Dedicated scaffolder entrypoint for roadmap-backed task creation"
+  - "task_id_policy-aware roadmap task id minting"
+  - "Optional backlog-only BL id support where the workflow is backlog-only"
+  - "Generated skeletons for .azoth/backlog.yaml, .azoth/roadmap.yaml, and roadmap-specs/"
+  - "Tests for schema alignment and legacy-vs-future namespace behavior"
+
+non_goals:
+  - "Automatic reprioritization of existing roadmap or backlog items"
+  - "Automatic scope-gate or pipeline-gate writes"
+  - "Renaming historical P1-* ids or BL-* ids in place"
+  - "Forcing intake backlog drafts to become roadmap-backed tasks by default"
+
+acceptance:
+  - "One command can mint a coherent roadmap-backed task skeleton with id, backlog row, roadmap entry, and spec stub"
+  - "Backlog-only flows can still resolve BL ids without manual counting"
+  - "Generated output matches the current roadmap/backlog schema and target_version semantics"
+  - "Tests cover both legacy P1 namespace behavior and future T namespace behavior for scaffolding"
+
+dependencies: []
+
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+
+elasticity: >
+  Phase 1 = scaffold roadmap-backed tasks cleanly. Phase 2 = add optional
+  initiative creation/update ergonomics. Phase 3 = decide whether the scaffold
+  should surface through a dedicated command instead of script-only usage.

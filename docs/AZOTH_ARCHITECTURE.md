@@ -1289,6 +1289,39 @@ The PATCH counter provides agents with a reliable time-series signal: higher PAT
 in the phase. PHASE provides coarser orientation. Together they encode "where in development
 are we" without requiring agents to read git history.
 
+### Task IDs vs Working Slices
+
+Post-v0.1.0 roadmap work has two separate axes:
+
+- **Task id** (for example `P1-024`) = stable backlog/spec reference key
+- **Working slice** (for example `v0.2.0-p2`) = milestone-local phase / delivery target
+
+The current `v0.2.0` task set includes a legacy `P1-*` namespace because those ids were minted
+when `v0.2.0-p1` opened. That namespace was carried into later working slices so existing spec
+refs, backlog links, tests, memory episodes, and PR discussion references stayed stable.
+
+Implications:
+
+- Do **not** read the `P1` prefix as "phase 1" once a task is scheduled under `v0.2.0-p2+`
+- Use `roadmap.yaml` `active_version`, the containing `versions[]` block, and backlog
+  `target_version` to answer "what phase/slice is this in?"
+- In human-facing summaries, prefer `P1-024 @ v0.2.0-p2` or `T-001 @ v0.2.0-p2` when ambiguity matters
+
+### Namespace Rule Going Forward
+
+- `v0.2.0` keeps existing `P1-*` ids as frozen legacy keys
+- Historical `P1-*` ids are **not** renamed mid-stream just to match the current slice label
+- New roadmap-backed task ids now mint in a neutral namespace:
+  `T-{NNN}` (for example `T-001`, `T-002`)
+- `T-*` ids are opaque task identifiers, not phase labels
+- Milestone-local phase/slice semantics continue to come from `active_version`,
+  the containing roadmap version block, and backlog `target_version`
+- `roadmap.yaml` `task_id_policy` is the machine-readable source for this rule;
+  `python scripts/roadmap_task_id.py` resolves the next available task id from that policy
+
+This gives Azoth a clean future naming model without breaking the large body of existing
+references to `P1-*` work across specs, tests, memory, and delivery history.
+
 ### Implementation (BL-009)
 
 - `scripts/version-bump.py` — reads `azoth.yaml`, applies `--patch` or `--phase` bump,
