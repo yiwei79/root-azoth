@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.28 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 28
+0.1.2.30 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 30
 
 ## Last Session
-- **Session**: 2026-04-17-p1-024
-- **Goal**: P1-024: D46 command projection compiler refactor
-- **Pipeline**: governed
+- **Session**: 2026-04-17-t-001
+- **Goal**: T-001: Dedicated roadmap/backlog/spec scaffolder
+- **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-221 (success)
+- **Episode**: ep-223 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
