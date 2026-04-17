@@ -1,9 +1,4 @@
 schema_version: 1
-# Task-id semantics: `id` is a stable backlog key. Existing `v0.2.0` tasks include a
-# legacy `P1-*` namespace even when carried into `v0.2.0-p2`; use `target_version` to
-# determine the active working slice / milestone-local phase.
-# Forward rule: historical `P1-*` ids stay unchanged, but new roadmap-backed task ids mint
-# in the neutral `T-{NNN}` namespace instead of embedding a milestone-local phase number.
 items:
 - id: BL-002
   title: 'Scope-gate: PreToolUse hook for builder-mode enforcement'
@@ -19,11 +14,11 @@ items:
   decision_ref:
   - D43
   - D50
-  description: 'PreToolUse hook on Write/Edit tools that reads .azoth/scope-gate.json. If flag is absent or expired, hook
-    exits non-zero and prints the intent-declaration reminder. Moves the confirm-before-building rule from agent memory (driftable
-    — violated ep-022, ep-028, ep-029) to tool execution (deterministic). Part of the D50 scope card system.
-
-    '
+  description: "PreToolUse hook on Write/Edit tools that reads .azoth/scope-gate.json.\
+    \ If flag is absent or expired, hook exits non-zero and prints the intent-declaration\
+    \ reminder. Moves the confirm-before-building rule from agent memory (driftable\
+    \ \u2014 violated ep-022, ep-028, ep-029) to tool execution (deterministic). Part\
+    \ of the D50 scope card system.\n"
 - id: BL-004
   title: Update /next for ROADMAP.yaml + backlog.yaml + scope card (D50)
   source: ep-032
@@ -39,14 +34,16 @@ items:
   - D50
   blocked_by:
   - BL-002
-  priority_note: 'Elevated to priority 1 (bootstrap exception, 2026-04-05): scope-gate hook is live but scope-gate.json must
-    be written manually until BL-004 delivers the /next scope card writer. BL-004 closes the bootstrap gap.
+  priority_note: 'Elevated to priority 1 (bootstrap exception, 2026-04-05): scope-gate
+    hook is live but scope-gate.json must be written manually until BL-004 delivers
+    the /next scope card writer. BL-004 closes the bootstrap gap.
 
     '
-  description: 'Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active version, (2) read backlog.yaml for operational
-    priorities, (3) output a scope card (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on human approval.
-    Scope card validator: reject any card mixing M1-targeted items with runtime tasks. Deprecates flat tasks: reading from
-    roadmap.yaml.
+  description: 'Rewrite .claude/commands/next.md to: (1) read ROADMAP.yaml active
+    version, (2) read backlog.yaml for operational priorities, (3) output a scope
+    card (1 primary goal + max 2 secondary), (4) write .azoth/scope-gate.json on human
+    approval. Scope card validator: reject any card mixing M1-targeted items with
+    runtime tasks. Deprecates flat tasks: reading from roadmap.yaml.
 
     '
 - id: BL-003
@@ -63,9 +60,10 @@ items:
   - D49
   blocked_by:
   - BL-002
-  description: 'Extend D33 step 3 (Human Triage) to 3-axis: simultaneously decide (1) M3 action (integrate/archive/defer),
-    (2) M2 candidate flag (yes/no), (3) backlog item needed (yes/no/draft). All axes are independent. M2 flag consumed by
-    /promote. Backlog draft appended to backlog.yaml on human approval. Update .claude/commands/intake.md.
+  description: 'Extend D33 step 3 (Human Triage) to 3-axis: simultaneously decide
+    (1) M3 action (integrate/archive/defer), (2) M2 candidate flag (yes/no), (3) backlog
+    item needed (yes/no/draft). All axes are independent. M2 flag consumed by /promote.
+    Backlog draft appended to backlog.yaml on human approval. Update .claude/commands/intake.md.
 
     '
 - id: BL-001
@@ -78,13 +76,15 @@ items:
   target_version: v0.0.3
   priority: 3
   created_date: '2026-04-05'
-  description: 'Refactor .claude/commands/session-closeout.md to sequence Write/Edit calls with explicit checkpoints between
-    each one (or batch state updates into a single file where possible). Also document adding Write/Edit to settings.local.json
-    allow list as a workaround for restrictive permission models that require per-call authorization.
+  description: 'Refactor .claude/commands/session-closeout.md to sequence Write/Edit
+    calls with explicit checkpoints between each one (or batch state updates into
+    a single file where possible). Also document adding Write/Edit to settings.local.json
+    allow list as a workaround for restrictive permission models that require per-call
+    authorization.
 
     '
 - id: BL-005
-  title: Formalize M2→M1 promotion path in governance doc (D51)
+  title: "Formalize M2\u2192M1 promotion path in governance doc (D51)"
   source: ep-032
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -93,13 +93,12 @@ items:
   priority: 4
   created_date: '2026-04-05'
   decision_ref: D51
-  description: 'Add the M2→M1 promotion path to kernel/GOVERNANCE.md and kernel/PROMOTION_RUBRIC.md. Trigger: target_layer
-    M1 backlog item + /deliver-full pipeline. Document the between-sessions-only rule. Update PROMOTION_RUBRIC.md to include
-    M2→M1 criteria alongside M3→M2.
-
-    '
+  description: "Add the M2\u2192M1 promotion path to kernel/GOVERNANCE.md and kernel/PROMOTION_RUBRIC.md.\
+    \ Trigger: target_layer M1 backlog item + /deliver-full pipeline. Document the\
+    \ between-sessions-only rule. Update PROMOTION_RUBRIC.md to include M2\u2192M1\
+    \ criteria alongside M3\u2192M2.\n"
 - id: BL-007
-  title: Session Welcome UX — /start command and skill (D52)
+  title: "Session Welcome UX \u2014 /start command and skill (D52)"
   source: session-2026-04-06
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -110,19 +109,23 @@ items:
   decision_ref:
   - D52
   - D41
-  description: 'Implement session welcome dashboard as a Rich-based Python script. Deliverables: (1) scripts/welcome.py —
-    reads azoth.yaml, backlog.yaml, scope-gate.json, .azoth/memory/episodes.jsonl; renders 5-panel dashboard using the Rich
-    library (pip install rich). Panel structure: box.HEAVY header (identity: repo/branch/date/version), box.MINIMAL phases
-    strip ([1]✓ ...[6]○), Columns([health, backlog], equal=True, expand=True) with box.ROUNDED panels — left: L0-L3 layer
-    status + M1-M3 memory + scope/kernel; right: top-3 unblocked backlog items with id/title/layer/pipeline. box.ROUNDED last-session
-    strip. box.ROUNDED START options panel with context-sensitive [next]/[resume]. (2) .claude/commands/start.md — runs `python
-    scripts/welcome.py` via Bash then routes user option selection to /next, /intake, /promote, /eval, or custom goal → auto-pipeline.
-    (3) kernel/templates/CLAUDE.md.template — add /start usage note. Rich handles all Unicode/emoji width via wcwidth internally;
-    use Rich named markup (:check_mark:, :right_arrow:) for reliable rendering.
-
-    '
+  description: "Implement session welcome dashboard as a Rich-based Python script.\
+    \ Deliverables: (1) scripts/welcome.py \u2014 reads azoth.yaml, backlog.yaml,\
+    \ scope-gate.json, .azoth/memory/episodes.jsonl; renders 5-panel dashboard using\
+    \ the Rich library (pip install rich). Panel structure: box.HEAVY header (identity:\
+    \ repo/branch/date/version), box.MINIMAL phases strip ([1]\u2713 ...[6]\u25CB\
+    ), Columns([health, backlog], equal=True, expand=True) with box.ROUNDED panels\
+    \ \u2014 left: L0-L3 layer status + M1-M3 memory + scope/kernel; right: top-3\
+    \ unblocked backlog items with id/title/layer/pipeline. box.ROUNDED last-session\
+    \ strip. box.ROUNDED START options panel with context-sensitive [next]/[resume].\
+    \ (2) .claude/commands/start.md \u2014 runs `python scripts/welcome.py` via Bash\
+    \ then routes user option selection to /next, /intake, /promote, /eval, or custom\
+    \ goal \u2192 auto-pipeline. (3) kernel/templates/CLAUDE.md.template \u2014 add\
+    \ /start usage note. Rich handles all Unicode/emoji width via wcwidth internally;\
+    \ use Rich named markup (:check_mark:, :right_arrow:) for reliable rendering.\n"
 - id: BL-008
-  title: Subagent auto-routing policy — when-to-subagent rules integrated into pipeline composition (D21)
+  title: "Subagent auto-routing policy \u2014 when-to-subagent rules integrated into\
+    \ pipeline composition (D21)"
   source: ep-041
   target_layer: M1
   delivery_pipeline: governed
@@ -131,18 +134,21 @@ items:
   priority: 5
   created_date: '2026-04-06'
   decision_ref: D21
-  description: 'Instead of hardcoding Agent(subagent_type=...) mandates per pipeline command (BL-006 approach), define a general
-    subagent routing policy with four decision triggers: (1) context-isolation — review stage must not share context with
-    the stage it reviews; (2) review-independence — any gate whose job is to critique an artifact must be a fresh subagent;
-    (3) parallel-execution — independent research or analysis tasks that can run concurrently; (4) context-budget — stages
-    that would consume excessive context in the orchestrator. Deliverables: (a) skills/subagent-router/ — routing policy skill
-    that defines the four triggers and maps goal classification dimensions to subagent assignments; (b) /auto updated — pipeline
-    composition stage uses the router to emit subagent assignments automatically after goal classification, so every auto-composed
-    pipeline inherits correct subagent behavior; (c) /deliver updated — reference the routing policy instead of inline mandates;
-    (d) /deliver-full updated — same (BL-006 hardcodes become policy-derived). No per-pipeline audit work required for future
-    pipelines — they inherit the policy via /auto composition.
-
-    '
+  description: "Instead of hardcoding Agent(subagent_type=...) mandates per pipeline\
+    \ command (BL-006 approach), define a general subagent routing policy with four\
+    \ decision triggers: (1) context-isolation \u2014 review stage must not share\
+    \ context with the stage it reviews; (2) review-independence \u2014 any gate whose\
+    \ job is to critique an artifact must be a fresh subagent; (3) parallel-execution\
+    \ \u2014 independent research or analysis tasks that can run concurrently; (4)\
+    \ context-budget \u2014 stages that would consume excessive context in the orchestrator.\
+    \ Deliverables: (a) skills/subagent-router/ \u2014 routing policy skill that defines\
+    \ the four triggers and maps goal classification dimensions to subagent assignments;\
+    \ (b) /auto updated \u2014 pipeline composition stage uses the router to emit\
+    \ subagent assignments automatically after goal classification, so every auto-composed\
+    \ pipeline inherits correct subagent behavior; (c) /deliver updated \u2014 reference\
+    \ the routing policy instead of inline mandates; (d) /deliver-full updated \u2014\
+    \ same (BL-006 hardcodes become policy-derived). No per-pipeline audit work required\
+    \ for future pipelines \u2014 they inherit the policy via /auto composition.\n"
 - id: BL-006
   title: Enforce subagent invocation per stage in /deliver-full (D21)
   source: session-2026-04-06
@@ -153,15 +159,18 @@ items:
   priority: 5
   created_date: '2026-04-06'
   decision_ref: D21
-  description: '/deliver-full currently does not mandate that each pipeline stage is executed via Agent(subagent_type=...).
-    Without explicit subagent invocation, Claude runs all stages inline in the same context, eliminating context isolation
-    and allowing the governance/architect review stages to share context with the stages they are supposed to critique independently.
-    Update .claude/commands/deliver-full.md to explicitly require subagent invocation for each stage (architect, reviewer,
+  description: '/deliver-full currently does not mandate that each pipeline stage
+    is executed via Agent(subagent_type=...). Without explicit subagent invocation,
+    Claude runs all stages inline in the same context, eliminating context isolation
+    and allowing the governance/architect review stages to share context with the
+    stages they are supposed to critique independently. Update .claude/commands/deliver-full.md
+    to explicitly require subagent invocation for each stage (architect, reviewer,
     planner, evaluator, builder) and specify which subagent_type maps to which stage.
 
     '
 - id: BL-009
-  title: 'Auto-versioning: scripts/version-bump.py + session-closeout + deliver-full integration (D53)'
+  title: 'Auto-versioning: scripts/version-bump.py + session-closeout + deliver-full
+    integration (D53)'
   source: session-2026-04-06-d53
   target_layer: M1
   delivery_pipeline: governed
@@ -172,15 +181,17 @@ items:
   decision_ref:
   - D53
   - D48
-  description: 'Implement delivery-triggered version increments per D53. Version format: 0.0.PHASE.PATCH where PHASE = current
-    phase number (3–6) and PATCH increments every delivery session, resetting to 1 on phase bump. Final release bump: 0.1.0
-    (full roadmap complete, git tag). Deliverables: (1) scripts/version-bump.py — reads azoth.yaml, applies --patch (PATCH+1),
-    --phase (PHASE+1, PATCH reset to 1), or --release (0.1.0 + git tag proposal); writes azoth.yaml + updates roadmap.yaml
-    active_version and current_patch fields. Prints old→new transition. (2) /session-closeout integration — final step calls
-    version-bump.py --patch after confirming at least one artifact was written this session. (3) /deliver-full integration
-    — calls version-bump.py --patch after builder stage completes successfully.
-
-    '
+  description: "Implement delivery-triggered version increments per D53. Version format:\
+    \ 0.0.PHASE.PATCH where PHASE = current phase number (3\u20136) and PATCH increments\
+    \ every delivery session, resetting to 1 on phase bump. Final release bump: 0.1.0\
+    \ (full roadmap complete, git tag). Deliverables: (1) scripts/version-bump.py\
+    \ \u2014 reads azoth.yaml, applies --patch (PATCH+1), --phase (PHASE+1, PATCH\
+    \ reset to 1), or --release (0.1.0 + git tag proposal); writes azoth.yaml + updates\
+    \ roadmap.yaml active_version and current_patch fields. Prints old\u2192new transition.\
+    \ (2) /session-closeout integration \u2014 final step calls version-bump.py --patch\
+    \ after confirming at least one artifact was written this session. (3) /deliver-full\
+    \ integration \u2014 calls version-bump.py --patch after builder stage completes\
+    \ successfully.\n"
 - id: BL-010
   title: Fix 6 pre-existing stale/fragile test failures
   source: ep-bl009-delivery
@@ -190,13 +201,16 @@ items:
   target_version: v0.0.3
   priority: 7
   created_date: '2026-04-06'
-  description: "Six pre-existing test failures surfaced during BL-009 delivery. Category A (4 stale hardcoded values):\n \
-    \ - test_handoff_artifacts.py::TestAzothYaml::test_has_version (expects 0.1.0)\n  - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_version_consistent\
-    \ (expects 0.1.0)\n  - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_decision_count_consistent (expects\
-    \ 52)\n  - test_inbox.py::TestRepoIdentity::test_decisions_count_52 (expects 52)\nFix: update to dynamic reads from azoth.yaml/DECISIONS_INDEX.md,\
-    \ or update hardcoded values to current (version: 0.0.3.14, decisions: 53). Category B (2 environment-sensitive git-diff\
-    \ state checks):\n  - test_deliver_subagent_gates.py::test_only_deliver_md_modified\n  - test_subagent_router.py::test_only_subagent_router_skill_modified\n\
-    Fix: mark xfail with reason, or refactor to not depend on working tree state.\n"
+  description: "Six pre-existing test failures surfaced during BL-009 delivery. Category\
+    \ A (4 stale hardcoded values):\n  - test_handoff_artifacts.py::TestAzothYaml::test_has_version\
+    \ (expects 0.1.0)\n  - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_version_consistent\
+    \ (expects 0.1.0)\n  - test_handoff_artifacts.py::TestCrossArtifactConsistency::test_decision_count_consistent\
+    \ (expects 52)\n  - test_inbox.py::TestRepoIdentity::test_decisions_count_52 (expects\
+    \ 52)\nFix: update to dynamic reads from azoth.yaml/DECISIONS_INDEX.md, or update\
+    \ hardcoded values to current (version: 0.0.3.14, decisions: 53). Category B (2\
+    \ environment-sensitive git-diff state checks):\n  - test_deliver_subagent_gates.py::test_only_deliver_md_modified\n\
+    \  - test_subagent_router.py::test_only_subagent_router_skill_modified\nFix: mark\
+    \ xfail with reason, or refactor to not depend on working tree state.\n"
 - id: P3-004
   title: Auto-pipeline router (LLM-as-router)
   source: roadmap-pending-p3
@@ -209,11 +223,12 @@ items:
   decision_ref:
   - D23
   blocked_by: null
-  description: 'Implement the auto-detection logic that classifies an incoming goal and selects the correct pipeline preset.
-    The LLM-as-router reads the goal classification dimensions (scope, layer, risk) and emits a pipeline assignment + subagent
-    routing plan. Referenced as the missing piece in pipelines/auto.pipeline.yaml composition_rules (D23 partial). Validated
-    by ep-017 (auto-pipeline correctly routed P3-001 work) and ep-029 (router composition rules referenced but router itself
-    not yet built).
+  description: 'Implement the auto-detection logic that classifies an incoming goal
+    and selects the correct pipeline preset. The LLM-as-router reads the goal classification
+    dimensions (scope, layer, risk) and emits a pipeline assignment + subagent routing
+    plan. Referenced as the missing piece in pipelines/auto.pipeline.yaml composition_rules
+    (D23 partial). Validated by ep-017 (auto-pipeline correctly routed P3-001 work)
+    and ep-029 (router composition rules referenced but router itself not yet built).
 
     '
 - id: P3-005
@@ -229,10 +244,12 @@ items:
   - D21
   - D44
   blocked_by: null
-  description: 'The full pipeline Stage 6 (Architect Review) needs explicit quality criteria for structured content: minimum
-    depth thresholds, governance constraint coverage, interaction pattern completeness. D44 was created from ep-021 analytics
-    (first-pass shallow output pattern). Defines what "sufficient depth" means for agent archetypes, skill definitions, and
-    pipeline schemas so the reviewer subagent has a concrete rubric.
+  description: 'The full pipeline Stage 6 (Architect Review) needs explicit quality
+    criteria for structured content: minimum depth thresholds, governance constraint
+    coverage, interaction pattern completeness. D44 was created from ep-021 analytics
+    (first-pass shallow output pattern). Defines what "sufficient depth" means for
+    agent archetypes, skill definitions, and pipeline schemas so the reviewer subagent
+    has a concrete rubric.
 
     '
 - id: P3-006
@@ -248,10 +265,11 @@ items:
   - D11
   - D45
   blocked_by: null
-  description: 'Layer 1 skill implementing the D45 read path: extract tags from current goal, grep M3 episodes and M2 patterns,
-    rank matches by recency and reinforcement_count, surface top 1-3 relevant episodes before planning begins. Closes the
-    write-only memory sink problem (M2 pattern: memory-requires-read-back-mechanism). Deliverable: skills/context-recall/
-    SKILL.md + implementation. Added to roadmap via ep-025.
+  description: 'Layer 1 skill implementing the D45 read path: extract tags from current
+    goal, grep M3 episodes and M2 patterns, rank matches by recency and reinforcement_count,
+    surface top 1-3 relevant episodes before planning begins. Closes the write-only
+    memory sink problem (M2 pattern: memory-requires-read-back-mechanism). Deliverable:
+    skills/context-recall/ SKILL.md + implementation. Added to roadmap via ep-025.
 
     '
 - id: P1.5-CLEANUP
@@ -266,13 +284,15 @@ items:
   decision_ref:
   - D11
   blocked_by: null
-  description: 'azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has 50+ entries. Fix: either update the count
-    field to reflect actual count, or make the field dynamic (scripts read live count). Also verify other stale counts in
+  description: 'azoth.yaml shows episodes: 0 but .azoth/memory/episodes.jsonl has
+    50+ entries. Fix: either update the count field to reflect actual count, or make
+    the field dynamic (scripts read live count). Also verify other stale counts in
     azoth.yaml (patterns, skills) match filesystem reality.
 
     '
 - id: BL-011
-  title: Spawn prompt minimization — pipeline Agent() calls to minimal goal+params pattern
+  title: "Spawn prompt minimization \u2014 pipeline Agent() calls to minimal goal+params\
+    \ pattern"
   source: session-2026-04-06-token-opt
   target_layer: M1
   delivery_pipeline: governed
@@ -283,16 +303,18 @@ items:
   decision_ref:
   - D21
   - D23
-  description: 'Each Agent() subagent spawn currently passes 100-300 line prompts that load into the subagent context at turn
-    0, on top of inherited CLAUDE.md + skills. Fix: move subagent-specific context into dedicated skill files (lazy-loaded);
-    spawn prompts carry only goal + parameters (~20 lines max). Deliverables: (1) pattern documented in skills/subagent-router/
-    as spawn-prompt convention; (2) existing pipeline skills (/auto, /deliver, /deliver-full) updated to follow minimal-spawn
-    pattern; (3) example before/after showing token delta. Estimated yield: 500-2,000 tokens saved per subagent invocation,
-    compounds across every pipeline run.
+  description: 'Each Agent() subagent spawn currently passes 100-300 line prompts
+    that load into the subagent context at turn 0, on top of inherited CLAUDE.md +
+    skills. Fix: move subagent-specific context into dedicated skill files (lazy-loaded);
+    spawn prompts carry only goal + parameters (~20 lines max). Deliverables: (1)
+    pattern documented in skills/subagent-router/ as spawn-prompt convention; (2)
+    existing pipeline skills (/auto, /deliver, /deliver-full) updated to follow minimal-spawn
+    pattern; (3) example before/after showing token delta. Estimated yield: 500-2,000
+    tokens saved per subagent invocation, compounds across every pipeline run.
 
     '
 - id: BL-012
-  title: Typed pipeline stage summary schema — structured handoffs between stages
+  title: "Typed pipeline stage summary schema \u2014 structured handoffs between stages"
   source: session-2026-04-06-token-opt
   target_layer: M1
   delivery_pipeline: governed
@@ -303,16 +325,18 @@ items:
   decision_ref:
   - D21
   - D23
-  description: 'Pipeline stages currently pass full prose reports back to the orchestrator (3-8K tokens per stage). Define
-    a typed YAML summary schema (10-15 fields, 200-400 tokens) that each stage emits instead of prose. Deliverables: (1) pipelines/stage-summary.schema.yaml
-    — typed schema with required/optional fields per stage type (research, build, eval, audit); (2) pipeline skills updated
-    to require structured summary output from subagents; (3) orchestrator instructions updated to expect and pass typed summaries
-    between stages. Estimated yield: 3-8K → 200-400 tokens per stage boundary; a 4-stage pipeline saves ~15-25K tokens in
-    orchestrator context per run.
-
-    '
+  description: "Pipeline stages currently pass full prose reports back to the orchestrator\
+    \ (3-8K tokens per stage). Define a typed YAML summary schema (10-15 fields, 200-400\
+    \ tokens) that each stage emits instead of prose. Deliverables: (1) pipelines/stage-summary.schema.yaml\
+    \ \u2014 typed schema with required/optional fields per stage type (research,\
+    \ build, eval, audit); (2) pipeline skills updated to require structured summary\
+    \ output from subagents; (3) orchestrator instructions updated to expect and pass\
+    \ typed summaries between stages. Estimated yield: 3-8K \u2192 200-400 tokens\
+    \ per stage boundary; a 4-stage pipeline saves ~15-25K tokens in orchestrator\
+    \ context per run.\n"
 - id: BL-013
-  title: CLAUDE.md progressive disclosure — prune roadmap/workflow sections, move to lazy-loaded skills
+  title: "CLAUDE.md progressive disclosure \u2014 prune roadmap/workflow sections,\
+    \ move to lazy-loaded skills"
   source: session-2026-04-06-token-opt
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -320,18 +344,20 @@ items:
   target_version: v0.0.3.28
   priority: 2
   created_date: '2026-04-06'
-  description: 'CLAUDE.md is 173 lines (target: ~80-90). The phase roadmap section (~60 lines) changes every sprint and does
-    not guide behavior — move to a lazy-loaded skills/orientation/ skill. The verbose Development Workflow section restates
-    rules already in kernel/ — trim to pointers. Behavioral rules (git conventions, coding standards, core rules) stay in
-    root CLAUDE.md. Deliverables: (1) CLAUDE.md pruned to ~80-90 lines; (2) skills/orientation/SKILL.md captures phase roadmap
-    + detailed workflow context (loaded on-demand when working on roadmap/planning tasks); (3) verify no behavioral regressions
-    (Claude still follows all rules). Estimated yield: ~500-700 tokens freed from always-loaded context; eliminates instruction-degradation
-    risk from oversized CLAUDE.md.
-
-    '
+  description: "CLAUDE.md is 173 lines (target: ~80-90). The phase roadmap section\
+    \ (~60 lines) changes every sprint and does not guide behavior \u2014 move to\
+    \ a lazy-loaded skills/orientation/ skill. The verbose Development Workflow section\
+    \ restates rules already in kernel/ \u2014 trim to pointers. Behavioral rules\
+    \ (git conventions, coding standards, core rules) stay in root CLAUDE.md. Deliverables:\
+    \ (1) CLAUDE.md pruned to ~80-90 lines; (2) skills/orientation/SKILL.md captures\
+    \ phase roadmap + detailed workflow context (loaded on-demand when working on\
+    \ roadmap/planning tasks); (3) verify no behavioral regressions (Claude still\
+    \ follows all rules). Estimated yield: ~500-700 tokens freed from always-loaded\
+    \ context; eliminates instruction-degradation risk from oversized CLAUDE.md.\n"
   blocked_by: null
 - id: BL-014
-  title: Kernel doc consolidation — deduplicate drift detection, gate definitions, promotion checklists
+  title: "Kernel doc consolidation \u2014 deduplicate drift detection, gate definitions,\
+    \ promotion checklists"
   source: session-2026-04-06-token-opt
   target_layer: M1
   delivery_pipeline: governed
@@ -341,17 +367,19 @@ items:
   created_date: '2026-04-06'
   decision_ref:
   - D26
-  description: 'Three redundancy targets in always-loaded kernel files (~2K tokens total): (1) Drift detection: mechanics
-    duplicated between TRUST_CONTRACT.md §3 and GOVERNANCE.md §4 — keep full spec in GOVERNANCE.md, replace TRUST_CONTRACT.md
-    §3 with a 2-line pointer (~800 tokens saved); (2) Gate definitions: human/agent gate types defined in GOVERNANCE.md §2,
-    BOOTLOADER.md, and TRUST_CONTRACT.md §2 — single source in GOVERNANCE.md, pointers elsewhere (~600 tokens saved); (3)
-    Promotion checklists: M3→M2 and M2→M1 checklists in PROMOTION_RUBRIC.md are near-identical structures — merge into one
-    universal checklist with destination branches (~600 tokens saved). All changes are pointer-replacements, not content deletion.
-    Requires /deliver-full.
-
-    '
+  description: "Three redundancy targets in always-loaded kernel files (~2K tokens\
+    \ total): (1) Drift detection: mechanics duplicated between TRUST_CONTRACT.md\
+    \ \xA73 and GOVERNANCE.md \xA74 \u2014 keep full spec in GOVERNANCE.md, replace\
+    \ TRUST_CONTRACT.md \xA73 with a 2-line pointer (~800 tokens saved); (2) Gate\
+    \ definitions: human/agent gate types defined in GOVERNANCE.md \xA72, BOOTLOADER.md,\
+    \ and TRUST_CONTRACT.md \xA72 \u2014 single source in GOVERNANCE.md, pointers\
+    \ elsewhere (~600 tokens saved); (3) Promotion checklists: M3\u2192M2 and M2\u2192\
+    M1 checklists in PROMOTION_RUBRIC.md are near-identical structures \u2014 merge\
+    \ into one universal checklist with destination branches (~600 tokens saved).\
+    \ All changes are pointer-replacements, not content deletion. Requires /deliver-full.\n"
 - id: BL-015
-  title: Agent/skill boilerplate dedup — posture single-source + skill trigger compression
+  title: "Agent/skill boilerplate dedup \u2014 posture single-source + skill trigger\
+    \ compression"
   source: session-2026-04-06-token-opt
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -359,17 +387,19 @@ items:
   target_version: v0.0.4
   priority: 4
   created_date: '2026-04-06'
-  description: 'Two boilerplate reduction targets: (1) Agent posture: all 10 agents/*.agent.md files have near-identical posture:
-    sections (~300 chars each, ~3K total). Define "Default Posture" once in GOVERNANCE.md §Default-Posture; replace posture
-    blocks in agent files with a single-line pointer. Agents with genuinely unique posture rules keep only those deltas. (2)
-    Skill triggers: 12 SKILL.md files have "Use this skill when:" preambles averaging 3-5 bullets each. Compress to 1-2 sentences
-    per skill — enough signal for Claude to match the skill, not a comprehensive list of scenarios. Estimated yield: ~800
-    tokens (agents, on-demand) + ~600 tokens (skills, on-demand). Low yield per session but improves maintainability.
-
-    '
+  description: "Two boilerplate reduction targets: (1) Agent posture: all 10 agents/*.agent.md\
+    \ files have near-identical posture: sections (~300 chars each, ~3K total). Define\
+    \ \"Default Posture\" once in GOVERNANCE.md \xA7Default-Posture; replace posture\
+    \ blocks in agent files with a single-line pointer. Agents with genuinely unique\
+    \ posture rules keep only those deltas. (2) Skill triggers: 12 SKILL.md files\
+    \ have \"Use this skill when:\" preambles averaging 3-5 bullets each. Compress\
+    \ to 1-2 sentences per skill \u2014 enough signal for Claude to match the skill,\
+    \ not a comprehensive list of scenarios. Estimated yield: ~800 tokens (agents,\
+    \ on-demand) + ~600 tokens (skills, on-demand). Low yield per session but improves\
+    \ maintainability.\n"
   blocked_by: null
 - id: BL-016
-  title: Cursor platform adapter — minimal bridge for cross-IDE session continuity
+  title: "Cursor platform adapter \u2014 minimal bridge for cross-IDE session continuity"
   source: session-2026-04-07-cursor
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -377,14 +407,16 @@ items:
   target_version: v0.0.4
   priority: 4
   created_date: '2026-04-07'
-  description: 'Cursor (v1.x) has a native toggle — Settings → Rules → "Include third-party plugin skills and configs" — that
-    auto-loads CLAUDE.md, .claude/commands/, agents/, and skills/ into every Cursor chat. This gives ~90% Claude Code compatibility
-    for free. The adapter bridges the remaining gap: M2 memory and cross-IDE session handoff. Deliverables: (1) kernel/templates/platform-adapters/cursor/azoth-memory.mdc.template
-    — alwaysApply rule that reads patterns.yaml, bootloader-state.md, and session-state.md at session start; (2) kernel/templates/platform-adapters/cursor/README.md
-    — setup instructions (toggle + manual install) and capability delta table; (3) .azoth/session-state.md — cross-IDE handoff
-    capsule schema, written by /session-closeout, read by azoth-memory.mdc on resume.
-
-    '
+  description: "Cursor (v1.x) has a native toggle \u2014 Settings \u2192 Rules \u2192\
+    \ \"Include third-party plugin skills and configs\" \u2014 that auto-loads CLAUDE.md,\
+    \ .claude/commands/, agents/, and skills/ into every Cursor chat. This gives ~90%\
+    \ Claude Code compatibility for free. The adapter bridges the remaining gap: M2\
+    \ memory and cross-IDE session handoff. Deliverables: (1) kernel/templates/platform-adapters/cursor/azoth-memory.mdc.template\
+    \ \u2014 alwaysApply rule that reads patterns.yaml, bootloader-state.md, and session-state.md\
+    \ at session start; (2) kernel/templates/platform-adapters/cursor/README.md \u2014\
+    \ setup instructions (toggle + manual install) and capability delta table; (3)\
+    \ .azoth/session-state.md \u2014 cross-IDE handoff capsule schema, written by\
+    \ /session-closeout, read by azoth-memory.mdc on resume.\n"
 - id: P4-001
   title: README (philosophy + quickstart)
   source: roadmap-v0.0.4
@@ -397,7 +429,8 @@ items:
   created_date: '2026-04-07'
   decision_ref:
   - D16
-  description: 'Public-facing README: philosophy, quickstart, install path. Decision D16.
+  description: 'Public-facing README: philosophy, quickstart, install path. Decision
+    D16.
 
     '
 - id: P4-002
@@ -413,11 +446,12 @@ items:
   decision_ref:
   - D5
   - D36
-  description: 'Interactive installer / project bootstrap aligned with scaffold vs project modes.
+  description: 'Interactive installer / project bootstrap aligned with scaffold vs
+    project modes.
 
     '
 - id: P4-005
-  title: Path duality convention (kernel/ vs .azoth/kernel/) — D42
+  title: "Path duality convention (kernel/ vs .azoth/kernel/) \u2014 D42"
   source: roadmap-v0.0.4
   roadmap_ref: P4-005
   target_layer: infrastructure
@@ -428,10 +462,9 @@ items:
   created_date: '2026-04-07'
   decision_ref:
   - D42
-  description: 'Formalize D42: scaffold uses repo root kernel/; consumer installs use read-only .azoth/kernel/; architecture
-    §18 + DECISIONS_INDEX + CLAUDE pointers.
-
-    '
+  description: "Formalize D42: scaffold uses repo root kernel/; consumer installs\
+    \ use read-only .azoth/kernel/; architecture \xA718 + DECISIONS_INDEX + CLAUDE\
+    \ pointers.\n"
 - id: P4-006
   title: Kernel docs dual-path awareness (BOOTLOADER ACTIVATE + follow-ups)
   source: roadmap-v0.0.4
@@ -444,10 +477,9 @@ items:
   created_date: '2026-04-07'
   decision_ref:
   - D42
-  description: 'Reviewer/evaluator follow-up: BOOTLOADER ACTIVATE resolves G (kernel vs .azoth/kernel); architecture §18 drift
-    line; README consumer paths; CLAUDE template Cursor scaffold note; DECISIONS_INDEX D50/D52 status; orientation checklist.
-
-    '
+  description: "Reviewer/evaluator follow-up: BOOTLOADER ACTIVATE resolves G (kernel\
+    \ vs .azoth/kernel); architecture \xA718 drift line; README consumer paths; CLAUDE\
+    \ template Cursor scaffold note; DECISIONS_INDEX D50/D52 status; orientation checklist.\n"
 - id: P5-001
   title: Commit-time governance enforcement hooks
   source: roadmap-v0.0.5
@@ -461,17 +493,17 @@ items:
   decision_ref:
   - D43
   blocked_by: null
-  priority_note: 'Initial slice delivered: git commit-msg + scripts/git_commit_policy.py (Co-Authored-By rejection), scripts/azoth_install_git_hooks.py,
-    docs; optional commit-format rules deferred.
+  priority_note: 'Initial slice delivered: git commit-msg + scripts/git_commit_policy.py
+    (Co-Authored-By rejection), scripts/azoth_install_git_hooks.py, docs; optional
+    commit-format rules deferred.
 
     '
-  description: 'Extend trust from builder-time (BL-002 scope-gate) to commit-time: hooks or pre-commit checks that enforce
-    governance rules before changes enter history. Surfaces violations with the same mechanical determinism as PreToolUse
-    — not memory-dependent. Composes with entropy and alignment hooks.
-
-    '
+  description: "Extend trust from builder-time (BL-002 scope-gate) to commit-time:\
+    \ hooks or pre-commit checks that enforce governance rules before changes enter\
+    \ history. Surfaces violations with the same mechanical determinism as PreToolUse\
+    \ \u2014 not memory-dependent. Composes with entropy and alignment hooks.\n"
 - id: P5-002
-  title: entropy-check hook (TRUST_CONTRACT §1 enforcement)
+  title: "entropy-check hook (TRUST_CONTRACT \xA71 enforcement)"
   source: roadmap-v0.0.5
   roadmap_ref: P5-002
   target_layer: M1
@@ -483,8 +515,9 @@ items:
   decision_ref:
   - D3
   blocked_by: null
-  description: 'Mechanical entropy measurement per TRUST_CONTRACT (files/lines/deletes, green/yellow/red zones). Runs at high
-    frequency relative to other hooks; blocks or escalates when red-zone thresholds would be exceeded without checkpoint or
+  description: 'Mechanical entropy measurement per TRUST_CONTRACT (files/lines/deletes,
+    green/yellow/red zones). Runs at high frequency relative to other hooks; blocks
+    or escalates when red-zone thresholds would be exceeded without checkpoint or
     human approval.
 
     '
@@ -499,13 +532,12 @@ items:
   priority: 3
   created_date: '2026-04-07'
   blocked_by: null
-  description: 'Enforce or validate the Alignment Summary format (TRUST_CONTRACT §2) at stage boundaries so humans receive
-    pull-based, comparable summaries without relying on prose discipline alone. Lower infrastructure cost than full telemetry
-    (P5-004).
-
-    '
+  description: "Enforce or validate the Alignment Summary format (TRUST_CONTRACT \xA7\
+    2) at stage boundaries so humans receive pull-based, comparable summaries without\
+    \ relying on prose discipline alone. Lower infrastructure cost than full telemetry\
+    \ (P5-004).\n"
 - id: P5-007
-  title: Session start hook — auto-trigger /start on session open
+  title: "Session start hook \u2014 auto-trigger /start on session open"
   source: roadmap-v0.0.5
   roadmap_ref: P5-007
   target_layer: M1
@@ -517,9 +549,10 @@ items:
   decision_ref:
   - D52
   blocked_by: null
-  description: 'Where the platform supports it (e.g. Claude Code), invoke or surface /start (scripts/welcome.py) at session
-    open so orientation, scope state, and routing are consistent. Builds on BL-007; closes the loop on session discipline.
-    Platform-parity notes for Cursor in kernel templates / docs as needed.
+  description: 'Where the platform supports it (e.g. Claude Code), invoke or surface
+    /start (scripts/welcome.py) at session open so orientation, scope state, and routing
+    are consistent. Builds on BL-007; closes the loop on session discipline. Platform-parity
+    notes for Cursor in kernel templates / docs as needed.
 
     '
 - id: P5-004
@@ -535,10 +568,10 @@ items:
   decision_ref:
   - D14
   blocked_by: null
-  description: 'D14 partial today — deliver durable session metrics (duration, tool use, stage outcomes, entropy events) suitable
-    for tuning hooks and reviewing trust-layer effectiveness. May span scripts, optional local logs, and governance doc updates.
-
-    '
+  description: "D14 partial today \u2014 deliver durable session metrics (duration,\
+    \ tool use, stage outcomes, entropy events) suitable for tuning hooks and reviewing\
+    \ trust-layer effectiveness. May span scripts, optional local logs, and governance\
+    \ doc updates.\n"
 - id: P5-005
   title: Git-based checkpoints (mechanical recovery path)
   source: roadmap-v0.0.5
@@ -552,10 +585,9 @@ items:
   decision_ref:
   - D15
   blocked_by: null
-  description: 'D15 documented in TRUST_CONTRACT — implement hook-assisted or scripted checkpoint/rollback flows (stash, tags,
-    or project convention) so recovery matches the Checkpoint Protocol without ad-hoc git literacy each time.
-
-    '
+  description: "D15 documented in TRUST_CONTRACT \u2014 implement hook-assisted or\
+    \ scripted checkpoint/rollback flows (stash, tags, or project convention) so recovery\
+    \ matches the Checkpoint Protocol without ad-hoc git literacy each time.\n"
 - id: P5-006
   title: Phone-friendly output (narrow terminals)
   source: roadmap-v0.0.5
@@ -564,17 +596,19 @@ items:
   delivery_pipeline: standard
   status: deferred
   target_version: v0.2.0-p1
-  deferred_from: v0.0.5 Phase 5 — deprioritized past v0.1.0 public release track (2026-04-08)
+  deferred_from: "v0.0.5 Phase 5 \u2014 deprioritized past v0.1.0 public release track\
+    \ (2026-04-08)"
   priority: 7
   created_date: '2026-04-07'
   blocked_by: null
-  description: 'Optimize welcome/dashboard and key CLI outputs for narrow viewports (mobile SSH, small terminals): line wrapping,
-    panel width, optional compact mode. Lowest relative ROI versus enforcement hooks; polish after core Trust Layer behaviors
+  description: 'Optimize welcome/dashboard and key CLI outputs for narrow viewports
+    (mobile SSH, small terminals): line wrapping, panel width, optional compact mode.
+    Lowest relative ROI versus enforcement hooks; polish after core Trust Layer behaviors
     ship.
 
     '
 - id: P6-001
-  title: Agent Crafter — meta-recursive agent design loop
+  title: "Agent Crafter \u2014 meta-recursive agent design loop"
   source: roadmap-v0.0.6
   roadmap_ref: P6-001
   target_layer: M1
@@ -587,12 +621,12 @@ items:
   - D7
   - D21
   blocked_by: null
-  priority_note: 'Delivers the closed loop: design/refine agents with evaluator + prompt-engineer, entropy guard, human promotion
-    — see AZOTH_ARCHITECTURE “Meta-Recursive Pattern”.
-
-    '
-  description: 'Harden the Agent Crafter archetype and its wiring: documented workflow from architect intent through crafter
-    output, evaluation, and human-gated promotion into `agents/` + deploy surfaces. Aligns Tier 3 meta role with trust contract
+  priority_note: "Delivers the closed loop: design/refine agents with evaluator +\
+    \ prompt-engineer, entropy guard, human promotion \u2014 see AZOTH_ARCHITECTURE\
+    \ \u201CMeta-Recursive Pattern\u201D.\n"
+  description: 'Harden the Agent Crafter archetype and its wiring: documented workflow
+    from architect intent through crafter output, evaluation, and human-gated promotion
+    into `agents/` + deploy surfaces. Aligns Tier 3 meta role with trust contract
     and subagent isolation (fresh-context review where applicable).
 
     '
@@ -610,11 +644,10 @@ items:
   - D21
   - D44
   blocked_by: null
-  description: 'Auto-refine prompts, skills, and rubrics from delivery evidence (evaluator scores, reviewer findings, episode
-    tags). Connect `prompt-engineer` and pipeline stages so L2 improvements are repeatable, scoped, and reviewable — not ad-hoc
-    rewrites.
-
-    '
+  description: "Auto-refine prompts, skills, and rubrics from delivery evidence (evaluator\
+    \ scores, reviewer findings, episode tags). Connect `prompt-engineer` and pipeline\
+    \ stages so L2 improvements are repeatable, scoped, and reviewable \u2014 not\
+    \ ad-hoc rewrites.\n"
 - id: P6-003
   title: L3 human-gated architecture proposals
   source: roadmap-v0.0.6
@@ -628,13 +661,13 @@ items:
   decision_ref:
   - D1
   blocked_by: null
-  description: 'Structured path for architecture changes that touch D1–D53 or layer boundaries: proposal artifact, explicit
-    human gate, and promotion into `docs/AZOTH_ARCHITECTURE.md` / ADR flow without bypassing kernel immutability or scope
-    discipline.
-
-    '
+  description: "Structured path for architecture changes that touch D1\u2013D53 or\
+    \ layer boundaries: proposal artifact, explicit human gate, and promotion into\
+    \ `docs/AZOTH_ARCHITECTURE.md` / ADR flow without bypassing kernel immutability\
+    \ or scope discipline.\n"
 - id: P6-003-OPT
-  title: 'P6-003 optional: /next proposal footer, AZOTH command row, ruff, regression tests'
+  title: 'P6-003 optional: /next proposal footer, AZOTH command row, ruff, regression
+    tests'
   source: session-2026-04-08
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -643,8 +676,9 @@ items:
   priority: 5
   created_date: '2026-04-08'
   blocked_by: null
-  description: 'Close deferred P6-003 polish: read-only architecture proposal line on /next scope card when unambiguous; add
-    /arch-proposal to docs/AZOTH_ARCHITECTURE.md command table with accurate D25 note; run ruff on architecture_proposal_validate.py;
+  description: 'Close deferred P6-003 polish: read-only architecture proposal line
+    on /next scope card when unambiguous; add /arch-proposal to docs/AZOTH_ARCHITECTURE.md
+    command table with accurate D25 note; run ruff on architecture_proposal_validate.py;
     extend pytest regression (test_azoth_commands_effect, TestGitignore or equivalents).
 
     '
@@ -662,9 +696,11 @@ items:
   decision_ref:
   - D2
   blocked_by: null
-  description: 'Deliver `scripts/kernel-integrity.py`: validate kernel invariants (authoritative file set under `kernel/`,
-    LOC/file-count bounds per D2, optional checksums or drift vs templates). Wire into CI or developer preflight; document
-    in `kernel/GOVERNANCE.md` or README as needed. Resolves governance blocker B2 and removes xfail on `test_b2_kernel_integrity_script`.
+  description: 'Deliver `scripts/kernel-integrity.py`: validate kernel invariants
+    (authoritative file set under `kernel/`, LOC/file-count bounds per D2, optional
+    checksums or drift vs templates). Wire into CI or developer preflight; document
+    in `kernel/GOVERNANCE.md` or README as needed. Resolves governance blocker B2
+    and removes xfail on `test_b2_kernel_integrity_script`.
 
     '
 - id: BL-018
@@ -682,8 +718,9 @@ items:
   decision_ref:
   - D12
   blocked_by: null
-  description: 'Ensure .claude/settings.json hook commands use repo-relative paths (no machine absolute paths) and CI-safe
-    resolution. Align or derive AZOTH_VERSION and AZOTH_PHASE with azoth.yaml (currently env can drift from manifest). Insight
+  description: 'Ensure .claude/settings.json hook commands use repo-relative paths
+    (no machine absolute paths) and CI-safe resolution. Align or derive AZOTH_VERSION
+    and AZOTH_PHASE with azoth.yaml (currently env can drift from manifest). Insight
     refs: PRC-P4-001, PRC-P4-002.
 
     '
@@ -700,12 +737,13 @@ items:
   priority: 2
   created_date: '2026-04-08'
   blocked_by: null
-  description: 'Resolve conflict between bare `pip install rich pyyaml` in docs/scaffold output and pip-install-guard on Claude
-    Code Bash: prefer requirements.txt or approved manifest language. Insight refs: PRC-P4-003, PRC-P4-004.
+  description: 'Resolve conflict between bare `pip install rich pyyaml` in docs/scaffold
+    output and pip-install-guard on Claude Code Bash: prefer requirements.txt or approved
+    manifest language. Insight refs: PRC-P4-003, PRC-P4-004.
 
     '
 - id: BL-020
-  title: Runtime gate JSON policy — scope-gate + pipeline-gate vs version control
+  title: "Runtime gate JSON policy \u2014 scope-gate + pipeline-gate vs version control"
   source: intake-d33-2026-04-08
   source_insight: PRC-P4-005, PRC-P4-006
   roadmap_ref: intake-ep-087
@@ -719,8 +757,9 @@ items:
   decision_ref:
   - D50
   blocked_by: null
-  description: 'Clarify and enforce whether .azoth/scope-gate.json and pipeline-gate.json are tracked, templated, or gitignored;
-    avoid committing live session gates that could unblock wrong sessions. Pair with *.example templates and docs. Insight
+  description: 'Clarify and enforce whether .azoth/scope-gate.json and pipeline-gate.json
+    are tracked, templated, or gitignored; avoid committing live session gates that
+    could unblock wrong sessions. Pair with *.example templates and docs. Insight
     refs: PRC-P4-005, PRC-P4-006.
 
     '
@@ -737,13 +776,13 @@ items:
   priority: 4
   created_date: '2026-04-08'
   blocked_by: null
-  description: 'Align DAY0_TUTORIAL decision counts with DECISIONS_INDEX; add encoding=utf-8 to test file reads where missing;
-    decide gitignore or template policy for .azoth/session-state.md to reduce merge churn. Insight refs: PRC-P4-007 through
-    PRC-P4-011.
+  description: 'Align DAY0_TUTORIAL decision counts with DECISIONS_INDEX; add encoding=utf-8
+    to test file reads where missing; decide gitignore or template policy for .azoth/session-state.md
+    to reduce merge churn. Insight refs: PRC-P4-007 through PRC-P4-011.
 
     '
 - id: BL-022
-  title: roadmap_dashboard.py — defensive validation for malformed roadmap YAML
+  title: "roadmap_dashboard.py \u2014 defensive validation for malformed roadmap YAML"
   source: intake-d33-2026-04-08
   source_insight: PRC-P5D-001, PRC-P5D-002
   roadmap_ref: intake-ep-087
@@ -755,12 +794,13 @@ items:
   priority: 5
   created_date: '2026-04-08'
   blocked_by: null
-  description: 'Guard render_dashboard and _format_task_block against non-dict / malformed version and task entries; user-friendly
-    error panels instead of tracebacks. Insight refs: PRC-P5D-001, PRC-P5D-002.
+  description: 'Guard render_dashboard and _format_task_block against non-dict / malformed
+    version and task entries; user-friendly error panels instead of tracebacks. Insight
+    refs: PRC-P5D-001, PRC-P5D-002.
 
     '
 - id: BL-023
-  title: azoth-deploy parity — slash-command changes before merge (D46)
+  title: "azoth-deploy parity \u2014 slash-command changes before merge (D46)"
   source: intake-d33-2026-04-08
   source_insight: SRF-2026-04-08-001
   roadmap_ref: intake-ep-087
@@ -774,8 +814,9 @@ items:
   decision_ref:
   - D46
   blocked_by: null
-  description: 'Operationalize run `python3 scripts/azoth-deploy.py` after material changes to .claude/commands/*.md; optional
-    drift test for deployed command parity across OpenCode and Copilot mirrors. Insight ref: SRF-2026-04-08-001.
+  description: 'Operationalize run `python3 scripts/azoth-deploy.py` after material
+    changes to .claude/commands/*.md; optional drift test for deployed command parity
+    across OpenCode and Copilot mirrors. Insight ref: SRF-2026-04-08-001.
 
     '
 - id: BL-024
@@ -791,8 +832,9 @@ items:
   priority: 7
   created_date: '2026-04-08'
   blocked_by: null
-  description: 'Keep .azoth/bootloader-state.md Current Phase / toolkit version line in sync with azoth.yaml and roadmap active_version
-    during W2 session-closeout. Insight ref: SRF-2026-04-08-002.
+  description: 'Keep .azoth/bootloader-state.md Current Phase / toolkit version line
+    in sync with azoth.yaml and roadmap active_version during W2 session-closeout.
+    Insight ref: SRF-2026-04-08-002.
 
     '
 - id: BL-025
@@ -810,12 +852,11 @@ items:
   decision_ref:
   - D26
   blocked_by: null
-  description: 'Add test or single-source generation so kernel/GOVERNANCE.md §5 Never-Auto bullets and scripts/azoth-deploy.py
-    UNIVERSAL_NEVER_AUTO stay identical. m2_candidate insight from BL-015 follow-up. Insight ref: SRF-BL015-001.
-
-    '
+  description: "Add test or single-source generation so kernel/GOVERNANCE.md \xA7\
+    5 Never-Auto bullets and scripts/azoth-deploy.py UNIVERSAL_NEVER_AUTO stay identical.\
+    \ m2_candidate insight from BL-015 follow-up. Insight ref: SRF-BL015-001.\n"
 - id: BL-026
-  title: install.sh Step 7 checksums aligned with GOVERNANCE §4 canonical form
+  title: "install.sh Step 7 checksums aligned with GOVERNANCE \xA74 canonical form"
   source: intake-d33-2026-04-08
   source_insight: SRF-BL014-001
   roadmap_ref: intake-ep-087
@@ -829,10 +870,9 @@ items:
   decision_ref:
   - D2
   blocked_by: null
-  description: 'Align install.sh post-copy sha256/shasum step with GOVERNANCE §4 wording and stable four-file ordering; document
-    consumer .azoth/kernel/ path equivalence. Insight ref: SRF-BL014-001.
-
-    '
+  description: "Align install.sh post-copy sha256/shasum step with GOVERNANCE \xA7\
+    4 wording and stable four-file ordering; document consumer .azoth/kernel/ path\
+    \ equivalence. Insight ref: SRF-BL014-001.\n"
 - id: P4-003
   title: CI for drift detection
   source: roadmap-v0.0.7
@@ -846,9 +886,10 @@ items:
   created_date: '2026-04-08'
   decision_ref: null
   blocked_by: null
-  description: 'Drift CI on the public surface; pairs with extraction/sync validation before v0.1.0. Deferred from Phase 4
-    per roadmap v0.0.7. Delivered: `.github/workflows/ci.yml` runs repo-wide `ruff check` + `ruff format --check`, kernel-integrity,
-    full pytest; Ruff issues fixed + `ruff format` applied across Python tree.
+  description: 'Drift CI on the public surface; pairs with extraction/sync validation
+    before v0.1.0. Deferred from Phase 4 per roadmap v0.0.7. Delivered: `.github/workflows/ci.yml`
+    runs repo-wide `ruff check` + `ruff format --check`, kernel-integrity, full pytest;
+    Ruff issues fixed + `ruff format` applied across Python tree.
 
     '
 - id: P4-004
@@ -866,9 +907,11 @@ items:
   - D35
   - D37
   blocked_by: null
-  description: 'Public product repo + mechanical extraction; aligns with v0.1.0 release gate. Delivered: `scripts/azoth_extract_product.py`
-    + tests + `sync-config.yaml` `product_extraction` (excludes `.git/`); public repo github.com/yiwei79/azoth initial push;
-    PolyForm Noncommercial 1.0.0 LICENSE + README license section; confirm Actions green on default branch as ongoing hygiene.
+  description: 'Public product repo + mechanical extraction; aligns with v0.1.0 release
+    gate. Delivered: `scripts/azoth_extract_product.py` + tests + `sync-config.yaml`
+    `product_extraction` (excludes `.git/`); public repo github.com/yiwei79/azoth
+    initial push; PolyForm Noncommercial 1.0.0 LICENSE + README license section; confirm
+    Actions green on default branch as ongoing hygiene.
 
     '
 - id: P1-012
@@ -887,14 +930,15 @@ items:
   - D23
   - D50
   blocked_by: []
-  priority_note: 'Urgent / high friction: operators report difficulty running DYNAMIC-FULL-AUTO+ from a stated goal through
-    digest, Checkpoint Γ, and handoff to /auto|/deliver without manual glue.
-
-    '
-  description: 'Blast radius includes D50 scope and pipeline gates (Cursor hook-soft vs Claude mechanical), subagent/Task
-    availability and BL-011 isolation (D21), auto-router and pipeline composition (D23), optional PRE_DELIVERY_EVAL (/eval-swarm)
-    vs scope TTL, queen merge + validate ergonomics, overlap with P1-001 ledger/resume and P1-002 declarative waves. Deliver:
-    friction map, minimal mechanical fixes or doc-honest "happy path" that matches reality; optional welcome surfacing when
+  priority_note: "Urgent / high friction: operators report difficulty running DYNAMIC-FULL-AUTO+\
+    \ from a stated goal through digest, Checkpoint \u0393, and handoff to /auto|/deliver\
+    \ without manual glue.\n"
+  description: 'Blast radius includes D50 scope and pipeline gates (Cursor hook-soft
+    vs Claude mechanical), subagent/Task availability and BL-011 isolation (D21),
+    auto-router and pipeline composition (D23), optional PRE_DELIVERY_EVAL (/eval-swarm)
+    vs scope TTL, queen merge + validate ergonomics, overlap with P1-001 ledger/resume
+    and P1-002 declarative waves. Deliver: friction map, minimal mechanical fixes
+    or doc-honest "happy path" that matches reality; optional welcome surfacing when
     P1-004 lands. Spec: .azoth/roadmap-specs/v0.2.0/P1-012.yaml.
 
     '
@@ -912,8 +956,8 @@ items:
   - D21
   - D50
   blocked_by: []
-  description: 'See .azoth/roadmap-specs/v0.2.0/P1-001.yaml and SWARM_RESEARCH_DIGEST.yaml (durability). Durable .azoth run
-    state; optional welcome surfacing.
+  description: 'See .azoth/roadmap-specs/v0.2.0/P1-001.yaml and SWARM_RESEARCH_DIGEST.yaml
+    (durability). Durable .azoth run state; optional welcome surfacing.
 
     '
 - id: P1-002
@@ -932,7 +976,8 @@ items:
   - D28
   blocked_by:
   - P1-001
-  description: 'YAML/schema beside e2e-swarm-eval-loop.md; see P1-002.yaml and digest RP-B.
+  description: 'YAML/schema beside e2e-swarm-eval-loop.md; see P1-002.yaml and digest
+    RP-B.
 
     '
 - id: P1-003
@@ -969,13 +1014,16 @@ items:
   - D46
   - D50
   blocked_by: []
-  priority_note: 'Ad-hoc immediate override approved 2026-04-10: bootstrap Antigravity at practical, Copilot-level parity
-    for standard work before deeper deploy-target integration.
+  priority_note: 'Ad-hoc immediate override approved 2026-04-10: bootstrap Antigravity
+    at practical, Copilot-level parity for standard work before deeper deploy-target
+    integration.
 
     '
-  description: 'Repo-local Antigravity adapter under `.agents/` for standard infrastructure work: one always-on Azoth rule,
-    core workflows (`next`, `auto`, `deliver`, `session-closeout`), and one operating-model skill. Keep `.azoth/` as the authoritative
-    state layer. Explicitly defer kernel templates, D46 deploy-target integration, and governed M1 parity.
+  description: 'Repo-local Antigravity adapter under `.agents/` for standard infrastructure
+    work: one always-on Azoth rule, core workflows (`next`, `auto`, `deliver`, `session-closeout`),
+    and one operating-model skill. Keep `.azoth/` as the authoritative state layer.
+    Explicitly defer kernel templates, D46 deploy-target integration, and governed
+    M1 parity.
 
     '
 - id: P1-015
@@ -996,14 +1044,17 @@ items:
   - D50
   blocked_by:
   - P1-014
-  priority_note: 'Safety-critical follow-on after multi-session continuity: the repo can now track many sessions, but parallel
-    writers are still advisory until write claims become mechanical. Blocked on P1-014 so the Antigravity bootstrap surface
+  priority_note: 'Safety-critical follow-on after multi-session continuity: the repo
+    can now track many sessions, but parallel writers are still advisory until write
+    claims become mechanical. Blocked on P1-014 so the Antigravity bootstrap surface
     is stable before cross-harness writer enforcement is specified and wired.
 
     '
-  description: 'Add explicit write claims or leases, conflict detection, and auditable handoff rules so Copilot, Claude Code,
-    Antigravity, and other harnesses cannot all act as concurrent repo writers by convention alone. Promote the current many-session
-    / one-active-scope model into mechanical multi-writer safety; see .azoth/roadmap-specs/v0.2.0/P1-015.yaml and INI-RST-003.
+  description: 'Add explicit write claims or leases, conflict detection, and auditable
+    handoff rules so Copilot, Claude Code, Antigravity, and other harnesses cannot
+    all act as concurrent repo writers by convention alone. Promote the current many-session
+    / one-active-scope model into mechanical multi-writer safety; see .azoth/roadmap-specs/v0.2.0/P1-015.yaml
+    and INI-RST-003.
 
     '
 - id: P1-004
@@ -1039,7 +1090,8 @@ items:
   decision_ref:
   - D50
   blocked_by: []
-  description: 'Document autonomous/long-run patterns vs D50 gates; P1-005.yaml; digest RP-A.
+  description: 'Document autonomous/long-run patterns vs D50 gates; P1-005.yaml; digest
+    RP-A.
 
     '
 - id: P1-006
@@ -1057,7 +1109,8 @@ items:
   - D49
   - D51
   blocked_by: []
-  description: 'W2 includes session-state.md; reinforcement_count semantics; explore swarm P1-006 targets.
+  description: 'W2 includes session-state.md; reinforcement_count semantics; explore
+    swarm P1-006 targets.
 
     '
 - id: P1-017
@@ -1079,8 +1132,9 @@ items:
   - D51
   blocked_by:
   - P1-006
-  description: 'Deferred from P1-006 docs slice: add explicit, human-confirmed reinforcement_count increment mechanics in
-    closeout/promote with exact prior-episode targeting, per-session idempotency, and focused tests.
+  description: 'Deferred from P1-006 docs slice: add explicit, human-confirmed reinforcement_count
+    increment mechanics in closeout/promote with exact prior-episode targeting, per-session
+    idempotency, and focused tests.
 
     '
 - id: P1-007
@@ -1148,7 +1202,8 @@ items:
   decision_ref:
   - D46
   blocked_by: []
-  description: 'tests/test_eval_pipeline_wiring.py + mirrors; P1-010.yaml; digest RP-C.
+  description: 'tests/test_eval_pipeline_wiring.py + mirrors; P1-010.yaml; digest
+    RP-C.
 
     '
 - id: P1-011
@@ -1168,9 +1223,10 @@ items:
   - D44
   - D46
   blocked_by: []
-  description: 'Ad-hoc roadmap slice from research (provider prompt caching, ACON/context folding, JetBrains observation-heavy
-    traces, speculative tool execution tradeoffs) + context-architect blast map. Spec: P1-011.yaml; digest RP-E; builds on
-    completed BL-011/BL-012. Doc-first acceptance + anchor test.
+  description: 'Ad-hoc roadmap slice from research (provider prompt caching, ACON/context
+    folding, JetBrains observation-heavy traces, speculative tool execution tradeoffs)
+    + context-architect blast map. Spec: P1-011.yaml; digest RP-E; builds on completed
+    BL-011/BL-012. Doc-first acceptance + anchor test.
 
     '
 - id: P1-013
@@ -1189,13 +1245,16 @@ items:
   - D23
   - D46
   blocked_by: []
-  description: 'Claude Code supports a project/session default agent, but Azoth currently leaves the main thread on the product
-    default and relies on explicit `Agent(subagent_type=...)` spawns for archetype behavior. Define an explicit Azoth orchestrator
-    default for Claude Code and equivalent default-agent role semantics for Copilot adapters; see P1-013.yaml.
+  description: 'Claude Code supports a project/session default agent, but Azoth currently
+    leaves the main thread on the product default and relies on explicit `Agent(subagent_type=...)`
+    spawns for archetype behavior. Define an explicit Azoth orchestrator default for
+    Claude Code and equivalent default-agent role semantics for Copilot adapters;
+    see P1-013.yaml.
 
     '
 - id: P1-016
-  title: Antigravity full Azoth behavioral compliance (pipelines, gates, entropy, memory, closeout)
+  title: Antigravity full Azoth behavioral compliance (pipelines, gates, entropy,
+    memory, closeout)
   source: session-2026-04-11-p1-004-process-gap
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1213,45 +1272,58 @@ items:
   - D50
   - D52
   blocked_by: []
-  priority_note: 'Urgent: discovered during P1-004 delivery on Antigravity — every pipeline''s stage discipline, gate enforcement,
-    entropy tracking, memory writes, and session closeout protocol was bypassed or degraded because Antigravity has no equivalent
-    of Claude Code''s hook system (PreToolUse, PostToolUse, SessionStart). The gap is systemic: it affects /auto, /deliver,
-    /deliver-full, /session-closeout, /eval, scope-gate enforcement, and write-claim safety. Work went scope-card → code with
-    zero governance stages despite the user explicitly requesting the auto pipeline.
-
-    '
-  description: 'Antigravity''s bootstrap adapter (P1-014) correctly mirrors Claude Code''s commands 1:1 as workflows and loads
-    the azoth-core rule, but lacks any mechanical enforcement of Azoth''s designed behaviors. Claude Code enforces these via
-    hooks (settings.json PreToolUse/PostToolUse/SessionStart); Antigravity has no hook system, so discipline is purely instruction-based
-    and demonstrably drifts under even normal use. Gap areas — each must have a documented mitigation in the adapter: (1)
-    Pipeline stage discipline — /auto Stage 0 classification, pipeline composition, and human approval were all skipped; /deliver
-    and /deliver-full stage sequences similarly unenforced. Mitigation: azoth-core rule must mandate reading and following
-    the workflow file before any code writes, with an explicit classification output block and human approval gate before
-    the build stage. (2) Scope-gate enforcement — the azoth-core rule says "read scope-gate.json before write work" but nothing
-    mechanically blocks writes when the gate is missing/expired. Mitigation: explicit workflow precondition checks; optional
-    scripts/scope_gate_check.py. (3) Pipeline-gate enforcement — governed pipelines (M1, /deliver-full) require pipeline-gate.json
-    but Antigravity never writes or checks it. Mitigation: workflow steps must include gate write + validation. (4) Entropy
-    tracking — no per-turn file/line counting or zone escalation. Mitigation: entropy-guard skill integration in workflows;
-    periodic self-checks. (5) Session closeout — W1-W4 checkpoint sequence is documented but do_closeout.py was missing W3
-    (backlog update) and has no alignment with the full closeout workflow. Mitigation: closeout workflow must follow the full
-    W1-W4 sequence per session-closeout.md. (6) Memory system — M3 episode capture, M2 pattern promotion, context-recall at
-    session start are all instruction-dependent with no trigger. Mitigation: /start workflow must invoke context-recall; /session-closeout
-    must invoke remember. (7) Write-claim safety — P1-015''s write claims have no enforcement path in Antigravity. Mitigation:
-    document as Antigravity limitation; add claim check to scope-gate workflow. Deliverables: (a) updated .agents/rules/azoth-core.md
-    with stronger precondition language and explicit compliance checklist; (b) workflow files updated with mechanical precondition
-    steps (scope check, classification block, gate writes); (c) gap matrix documenting Claude Code hook → Antigravity workflow
-    mapping with honest "not enforceable" markers where mechanical parity is impossible; (d) optional scripts for lightweight
-    gate/scope validation callable from workflows. Acceptance: An Antigravity session following /auto must produce Stage 0
-    classification, wait for human pipeline approval, execute stages in order, and produce a closeout with W1-W4 steps — all
-    without the operator needing to remember the protocol manually.
-
-    '
+  priority_note: "Urgent: discovered during P1-004 delivery on Antigravity \u2014\
+    \ every pipeline's stage discipline, gate enforcement, entropy tracking, memory\
+    \ writes, and session closeout protocol was bypassed or degraded because Antigravity\
+    \ has no equivalent of Claude Code's hook system (PreToolUse, PostToolUse, SessionStart).\
+    \ The gap is systemic: it affects /auto, /deliver, /deliver-full, /session-closeout,\
+    \ /eval, scope-gate enforcement, and write-claim safety. Work went scope-card\
+    \ \u2192 code with zero governance stages despite the user explicitly requesting\
+    \ the auto pipeline.\n"
+  description: "Antigravity's bootstrap adapter (P1-014) correctly mirrors Claude\
+    \ Code's commands 1:1 as workflows and loads the azoth-core rule, but lacks any\
+    \ mechanical enforcement of Azoth's designed behaviors. Claude Code enforces these\
+    \ via hooks (settings.json PreToolUse/PostToolUse/SessionStart); Antigravity has\
+    \ no hook system, so discipline is purely instruction-based and demonstrably drifts\
+    \ under even normal use. Gap areas \u2014 each must have a documented mitigation\
+    \ in the adapter: (1) Pipeline stage discipline \u2014 /auto Stage 0 classification,\
+    \ pipeline composition, and human approval were all skipped; /deliver and /deliver-full\
+    \ stage sequences similarly unenforced. Mitigation: azoth-core rule must mandate\
+    \ reading and following the workflow file before any code writes, with an explicit\
+    \ classification output block and human approval gate before the build stage.\
+    \ (2) Scope-gate enforcement \u2014 the azoth-core rule says \"read scope-gate.json\
+    \ before write work\" but nothing mechanically blocks writes when the gate is\
+    \ missing/expired. Mitigation: explicit workflow precondition checks; optional\
+    \ scripts/scope_gate_check.py. (3) Pipeline-gate enforcement \u2014 governed pipelines\
+    \ (M1, /deliver-full) require pipeline-gate.json but Antigravity never writes\
+    \ or checks it. Mitigation: workflow steps must include gate write + validation.\
+    \ (4) Entropy tracking \u2014 no per-turn file/line counting or zone escalation.\
+    \ Mitigation: entropy-guard skill integration in workflows; periodic self-checks.\
+    \ (5) Session closeout \u2014 W1-W4 checkpoint sequence is documented but do_closeout.py\
+    \ was missing W3 (backlog update) and has no alignment with the full closeout\
+    \ workflow. Mitigation: closeout workflow must follow the full W1-W4 sequence\
+    \ per session-closeout.md. (6) Memory system \u2014 M3 episode capture, M2 pattern\
+    \ promotion, context-recall at session start are all instruction-dependent with\
+    \ no trigger. Mitigation: /start workflow must invoke context-recall; /session-closeout\
+    \ must invoke remember. (7) Write-claim safety \u2014 P1-015's write claims have\
+    \ no enforcement path in Antigravity. Mitigation: document as Antigravity limitation;\
+    \ add claim check to scope-gate workflow. Deliverables: (a) updated .agents/rules/azoth-core.md\
+    \ with stronger precondition language and explicit compliance checklist; (b) workflow\
+    \ files updated with mechanical precondition steps (scope check, classification\
+    \ block, gate writes); (c) gap matrix documenting Claude Code hook \u2192 Antigravity\
+    \ workflow mapping with honest \"not enforceable\" markers where mechanical parity\
+    \ is impossible; (d) optional scripts for lightweight gate/scope validation callable\
+    \ from workflows. Acceptance: An Antigravity session following /auto must produce\
+    \ Stage 0 classification, wait for human pipeline approval, execute stages in\
+    \ order, and produce a closeout with W1-W4 steps \u2014 all without the operator\
+    \ needing to remember the protocol manually.\n"
 - id: P1-018
   title: Mechanically enforce azoth-deploy after source agent changes
-  description: Builder stage did not run azoth-deploy.py after updating agents/tier1-core/orchestrator.agent.md despite documented
-    requirement. Add azoth-deploy as a mandatory builder-stage post-action in the planner structured-autonomy-plan when any
-    file under agents/ or .claude/commands/ is in the change set. Consider a pre-commit hook or CI check that fails if deployed
-    mirrors diverge from source.
+  description: Builder stage did not run azoth-deploy.py after updating agents/tier1-core/orchestrator.agent.md
+    despite documented requirement. Add azoth-deploy as a mandatory builder-stage
+    post-action in the planner structured-autonomy-plan when any file under agents/
+    or .claude/commands/ is in the change set. Consider a pre-commit hook or CI check
+    that fails if deployed mirrors diverge from source.
   status: complete
   priority: 14
   target_layer: infrastructure
@@ -1264,8 +1336,9 @@ items:
   blocked_by: []
 - id: P1-019
   title: Add ambiguous-case examples to CLAUDE.md rule 10 inline fallback
-  description: Rule 10 inline fallback clause uses only trivially-clear examples (fix this function, explain this error).
-    Add 1-2 examples of ambiguous requests with explicit guidance for the gray zone between orchestrate and inline. Reference
+  description: Rule 10 inline fallback clause uses only trivially-clear examples (fix
+    this function, explain this error). Add 1-2 examples of ambiguous requests with
+    explicit guidance for the gray zone between orchestrate and inline. Reference
     the orchestrator Goal Clarification protocol for the ask-one-question pattern.
   status: complete
   completed_date: '2026-04-12'
@@ -1279,7 +1352,7 @@ items:
   created_date: '2026-04-12'
   blocked_by: []
 - id: BL-027
-  title: "Fix eval-swarm.md azoth_effect: read → mixed (governance rule 7 violation)"
+  title: "Fix eval-swarm.md azoth_effect: read \u2192 mixed (governance rule 7 violation)"
   source: PRC-ES-001
   target_layer: M1
   delivery_pipeline: governed
@@ -1291,14 +1364,12 @@ items:
   - D23
   - D50
   blocked_by: []
-  description: >
-    eval-swarm.md frontmatter declares azoth_effect: read but Wave D orchestrates
-    builder/planner Tasks that write files — an active governance rule 7 violation.
-    Fix: change to azoth_effect: mixed, sync .github/prompts/eval-swarm.prompt.md,
-    re-run azoth-deploy.py to propagate to all platform mirrors.
-
+  description: "eval-swarm.md frontmatter declares azoth_effect: read but Wave D orchestrates\
+    \ builder/planner Tasks that write files \u2014 an active governance rule 7 violation.\
+    \ Fix: change to azoth_effect: mixed, sync .github/prompts/eval-swarm.prompt.md,\
+    \ re-run azoth-deploy.py to propagate to all platform mirrors.\n"
 - id: BL-028
-  title: "Exclude kernel/templates/ from product extraction (D42 compliance)"
+  title: Exclude kernel/templates/ from product extraction (D42 compliance)
   source: PRC-P4-001
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1310,15 +1381,16 @@ items:
   - D35
   - D42
   blocked_by: []
-  description: >
-    kernel/templates/ is not in sync-config.yaml exclude_paths, so raw scaffold
-    templates (CLAUDE.md.template, settings.json.template, platform-adapter templates)
-    ship verbatim to consumers. D42 states consumers get .azoth/kernel/ via install,
-    not raw templates. Fix: add kernel/templates/ to exclude_paths; add test asserting
-    absence from extracted output tree.
+  description: 'kernel/templates/ is not in sync-config.yaml exclude_paths, so raw
+    scaffold templates (CLAUDE.md.template, settings.json.template, platform-adapter
+    templates) ship verbatim to consumers. D42 states consumers get .azoth/kernel/
+    via install, not raw templates. Fix: add kernel/templates/ to exclude_paths; add
+    test asserting absence from extracted output tree.
 
+    '
 - id: BL-029
-  title: "Add eval-swarm escalation routing to Cursor claude-code-parity rules (platform parity)"
+  title: Add eval-swarm escalation routing to Cursor claude-code-parity rules (platform
+    parity)
   source: PRC-ES-004
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1330,15 +1402,15 @@ items:
   - D46
   - D52
   blocked_by: []
-  description: >
-    E1-E6 eval routing and /eval-swarm are deployed to Claude Code, Copilot, and
-    OpenCode but not Cursor. Add eval-swarm escalation guidance (E1-E6 trigger table
-    summary, threshold comparison) to kernel/templates/platform-adapters/cursor/
+  description: 'E1-E6 eval routing and /eval-swarm are deployed to Claude Code, Copilot,
+    and OpenCode but not Cursor. Add eval-swarm escalation guidance (E1-E6 trigger
+    table summary, threshold comparison) to kernel/templates/platform-adapters/cursor/
     claude-code-parity.mdc.template; regenerate with azoth-deploy.py --platforms cursor.
     Aligns with P1-021 memory platform parity work.
 
+    '
 - id: BL-030
-  title: "Assert LICENSE in test_extract_minimal_tree fixture (P4 shipping gate)"
+  title: Assert LICENSE in test_extract_minimal_tree fixture (P4 shipping gate)
   source: PRC-P4-003
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1349,14 +1421,14 @@ items:
   decision_ref:
   - D35
   blocked_by: []
-  description: >
-    test_extract_minimal_tree does not set up or assert the LICENSE file in the
-    extracted tree. PolyForm Noncommercial license is a critical P4 shipping
-    requirement. Add a LICENSE stub to the test fixture and assert 'LICENSE' in rels
-    to guard against regressions silently excluding it from the consumer product.
+  description: 'test_extract_minimal_tree does not set up or assert the LICENSE file
+    in the extracted tree. PolyForm Noncommercial license is a critical P4 shipping
+    requirement. Add a LICENSE stub to the test fixture and assert ''LICENSE'' in
+    rels to guard against regressions silently excluding it from the consumer product.
 
+    '
 - id: BL-031
-  title: "Fix Copilot adapter prompts dead-referencing .claude/ paths"
+  title: Fix Copilot adapter prompts dead-referencing .claude/ paths
   source: PRC-ES-002
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1369,14 +1441,12 @@ items:
   - D35
   - D36
   blocked_by: []
-  description: >
-    .github/prompts/eval.prompt.md and eval-swarm.prompt.md hard-reference
-    .claude/commands/eval.md — dead paths in consumer installs without .claude/.
-    Add prose note near cross-refs: 'If .claude/commands/ is not present, refer to
-    the skill in .github/prompts/ or your platform equivalent.'
-
+  description: ".github/prompts/eval.prompt.md and eval-swarm.prompt.md hard-reference\
+    \ .claude/commands/eval.md \u2014 dead paths in consumer installs without .claude/.\
+    \ Add prose note near cross-refs: 'If .claude/commands/ is not present, refer\
+    \ to the skill in .github/prompts/ or your platform equivalent.'\n"
 - id: BL-032
-  title: "Clarify --dry-run partial scope in azoth_extract_product.py"
+  title: Clarify --dry-run partial scope in azoth_extract_product.py
   source: 2c84f86c
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1386,14 +1456,15 @@ items:
   created_date: '2026-04-12'
   completed_date: '2026-04-12'
   blocked_by: []
-  description: >
-    azoth_extract_product.py --dry-run only executes step 1 (copy_tree); transforms,
-    sanitize, and emit_public_assets are skipped. This misleads operators expecting a
-    full dry-run preview. Fix: update --help and stderr banner to clearly state
-    'dry-run: step 1 (copy) only'. Optional: implement no-write traversal for steps 2-4.
+  description: 'azoth_extract_product.py --dry-run only executes step 1 (copy_tree);
+    transforms, sanitize, and emit_public_assets are skipped. This misleads operators
+    expecting a full dry-run preview. Fix: update --help and stderr banner to clearly
+    state ''dry-run: step 1 (copy) only''. Optional: implement no-write traversal
+    for steps 2-4.
 
+    '
 - id: BL-033
-  title: "Couple AZOTH_VERSION in DEFAULT_CLAUDE_SUBSTITUTIONS to azoth.yaml"
+  title: Couple AZOTH_VERSION in DEFAULT_CLAUDE_SUBSTITUTIONS to azoth.yaml
   source: 96da4411
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1405,15 +1476,15 @@ items:
   decision_ref:
   - D35
   blocked_by: []
-  description: >
-    DEFAULT_CLAUDE_SUBSTITUTIONS['AZOTH_VERSION'] is a hardcoded string literal
-    that can drift from azoth.yaml without coupling. Consumers receiving an extracted
-    product would see a stale version in their emitted CLAUDE.md. Fix: read
+  description: 'DEFAULT_CLAUDE_SUBSTITUTIONS[''AZOTH_VERSION''] is a hardcoded string
+    literal that can drift from azoth.yaml without coupling. Consumers receiving an
+    extracted product would see a stale version in their emitted CLAUDE.md. Fix: read
     AZOTH_VERSION from azoth.yaml at extract time, or add a test asserting equality
     with azoth.yaml toolkit version field.
 
+    '
 - id: P1-020
-  title: "Verbatim-first M3 storage strategy"
+  title: Verbatim-first M3 storage strategy
   source: dynamic-full-auto-plus
   roadmap_ref: P1-020
   target_layer: infrastructure
@@ -1427,13 +1498,14 @@ items:
   - D11
   - D45
   blocked_by: []
-  description: >
-    Store raw episode context verbatim in M3 before any summarisation or compression.
-    Enforce verbatim storage as the M3 baseline policy. Current M3 append-only JSONL
-    works; this adds policy enforcement and tooling. Initiative ref: INI-MEM-001.
+  description: 'Store raw episode context verbatim in M3 before any summarisation
+    or compression. Enforce verbatim storage as the M3 baseline policy. Current M3
+    append-only JSONL works; this adds policy enforcement and tooling. Initiative
+    ref: INI-MEM-001.
 
+    '
 - id: P1-021
-  title: "Memory operation platform parity"
+  title: Memory operation platform parity
   source: dynamic-full-auto-plus
   roadmap_ref: P1-021
   target_layer: infrastructure
@@ -1448,13 +1520,14 @@ items:
   - D46
   - D52
   blocked_by: []
-  description: >
-    Document and validate that M3 append, M2 promote, and context-recall operations
-    produce consistent results across Claude Code, Cursor, and Copilot adapter paths.
-    Initiative ref: INI-PLT-001.
+  description: 'Document and validate that M3 append, M2 promote, and context-recall
+    operations produce consistent results across Claude Code, Cursor, and Copilot
+    adapter paths. Initiative ref: INI-PLT-001.
+
+    '
 - id: BL-034
-  title: "Fix missing Compliance Checklist in .agents/rules/azoth-core.md"
-  source: "37645235-1a96-447b-a373-2c85bf246aa3"
+  title: Fix missing Compliance Checklist in .agents/rules/azoth-core.md
+  source: 37645235-1a96-447b-a373-2c85bf246aa3
   target_layer: infrastructure
   delivery_pipeline: standard
   status: complete
@@ -1462,13 +1535,14 @@ items:
   target_version: v0.2.0-p2
   priority: 8
   created_date: '2026-04-13'
-  description: >
-    Add ## Compliance Checklist section to .agents/rules/azoth-core.md with
-    Antigravity platform constraints to fix test_p1_016_antigravity_compliance
+  description: 'Add ## Compliance Checklist section to .agents/rules/azoth-core.md
+    with Antigravity platform constraints to fix test_p1_016_antigravity_compliance
     failure.
+
+    '
 - id: BL-035
-  title: "Add unit tests for stage_summary_validate.py and posttooluse_terminal_filter.py"
-  source: "881fd566-6399-4aa9-ace6-5c50ef0a5d63"
+  title: Add unit tests for stage_summary_validate.py and posttooluse_terminal_filter.py
+  source: 881fd566-6399-4aa9-ace6-5c50ef0a5d63
   target_layer: infrastructure
   delivery_pipeline: standard
   status: complete
@@ -1476,12 +1550,13 @@ items:
   target_version: v0.2.0-p2
   priority: 15
   created_date: '2026-04-13'
-  description: >
-    Add focused unit tests for stage_summary_validate.py (valid/invalid YAML
-    fixtures) and posttooluse_terminal_filter.py (regex match/miss cases).
-    Batch with next hook work.
+  description: 'Add focused unit tests for stage_summary_validate.py (valid/invalid
+    YAML fixtures) and posttooluse_terminal_filter.py (regex match/miss cases). Batch
+    with next hook work.
+
+    '
 - id: BL-036
-  title: "Fix test_checkpoint_help argparse wrapping fragility"
+  title: Fix test_checkpoint_help argparse wrapping fragility
   source: PRC-P5T-001
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1490,12 +1565,13 @@ items:
   target_version: v0.2.0-p2
   priority: 8
   created_date: '2026-04-13'
-  description: >
-    Normalize whitespace in test_azoth_checkpoint.py:120-128 before asserting
-    'git stash pop' substring to prevent argparse terminal-width wrapping
-    failures in CI (no TTY).
+  description: 'Normalize whitespace in test_azoth_checkpoint.py:120-128 before asserting
+    ''git stash pop'' substring to prevent argparse terminal-width wrapping failures
+    in CI (no TTY).
+
+    '
 - id: BL-037
-  title: "Align TRUST_CONTRACT §1 'per turn' with session-scoped enforcement"
+  title: "Align TRUST_CONTRACT \xA71 'per turn' with session-scoped enforcement"
   source: PRC-P5T-002
   target_layer: M1
   delivery_pipeline: governed
@@ -1506,12 +1582,11 @@ items:
   created_date: '2026-04-13'
   decision_ref:
   - D3
-  description: >
-    Update kernel/TRUST_CONTRACT.md §1 table and narrative to reflect that
-    entropy caps are session-scoped (keyed to scope-gate session_id), not
-    per-turn. Requires human gate (kernel file).
+  description: "Update kernel/TRUST_CONTRACT.md \xA71 table and narrative to reflect\
+    \ that entropy caps are session-scoped (keyed to scope-gate session_id), not per-turn.\
+    \ Requires human gate (kernel file).\n"
 - id: BL-038
-  title: "Expand CI ruff linting to all Python files"
+  title: Expand CI ruff linting to all Python files
   source: PRC-P5T-003
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1520,12 +1595,13 @@ items:
   target_version: v0.2.0-p2
   priority: 9
   created_date: '2026-04-13'
-  description: >
-    Expand .github/workflows/ci.yml ruff step from 5 specific files to
-    ruff check scripts/ tests/ .claude/hooks/. Fix the 20 pre-existing
-    errors or add per-file ignores.
+  description: 'Expand .github/workflows/ci.yml ruff step from 5 specific files to
+    ruff check scripts/ tests/ .claude/hooks/. Fix the 20 pre-existing errors or add
+    per-file ignores.
+
+    '
 - id: BL-039
-  title: "Add empty-path guard in kernel-integrity.py checksum parser"
+  title: Add empty-path guard in kernel-integrity.py checksum parser
   source: PRC-P5T-005
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1534,12 +1610,12 @@ items:
   target_version: v0.2.0-p2
   priority: 14
   created_date: '2026-04-13'
-  description: >
-    Add 'if not key: continue' guard after computing key in
-    _parse_checksum_lines to reject malformed checksum lines with empty
-    paths. Add test for the edge case.
+  description: 'Add ''if not key: continue'' guard after computing key in _parse_checksum_lines
+    to reject malformed checksum lines with empty paths. Add test for the edge case.
+
+    '
 - id: BL-040
-  title: "Declarative swarm / eval-wave specification — depth pass"
+  title: "Declarative swarm / eval-wave specification \u2014 depth pass"
   source: ini-rst-001
   roadmap_ref: INI-RST-001
   initiative_ref: INI-RST-001
@@ -1554,16 +1630,17 @@ items:
   - D23
   - D28
   blocked_by: []
-  description: >
-    Schema file + at least one example wave YAML under pipelines/ validated by pytest.
-    e2e-swarm-eval-loop.md links the canonical data path. Moves swarm/eval-wave
+  description: 'Schema file + at least one example wave YAML under pipelines/ validated
+    by pytest. e2e-swarm-eval-loop.md links the canonical data path. Moves swarm/eval-wave
     orchestration from prose-only workflows to structured, lintable YAML declarations.
     Acceptance: (1) pipelines/run-ledger.schema.yaml stage_id+wave_label cross-ref,
     (2) pipelines/swarm-build-review.example.yaml (2-wave A+B example), (3) pytest
     test_swarm_wave_schema.py TestBuildReviewExample 4/4 pass, (4) e2e-swarm-eval-loop.md
     links canonical data path. Initiative ref: INI-RST-001.
+
+    '
 - id: BL-041
-  title: "INI-MEM-004: Harden memory-loop parity for promote + closeout"
+  title: 'INI-MEM-004: Harden memory-loop parity for promote + closeout'
   source: dynamic-full-auto-plus
   roadmap_ref: P1-017
   initiative_ref: INI-MEM-004
@@ -1579,15 +1656,15 @@ items:
   - D49
   - D51
   blocked_by: []
-  description: >
-    Standard follow-up under INI-MEM-004 aligned to P1-017: add an explicit,
-    human-confirmed reinforcement_count update path on the promote and/or
-    closeout runtime surfaces, with exact-id targeting and per-session
-    idempotency tests. Keep kernel/PROMOTION_RUBRIC.md unchanged in this
-    slice and preserve new-episode initialization at reinforcement_count: 0.
+  description: 'Standard follow-up under INI-MEM-004 aligned to P1-017: add an explicit,
+    human-confirmed reinforcement_count update path on the promote and/or closeout
+    runtime surfaces, with exact-id targeting and per-session idempotency tests. Keep
+    kernel/PROMOTION_RUBRIC.md unchanged in this slice and preserve new-episode initialization
+    at reinforcement_count: 0.
 
+    '
 - id: BL-042
-  title: "Add kernel/templates/ to sync-config.yaml exclude_paths (D42 gap)"
+  title: Add kernel/templates/ to sync-config.yaml exclude_paths (D42 gap)
   source: ep-151
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1600,17 +1677,18 @@ items:
   - D35
   - D38
   blocked_by: []
-  description: >
-    sync-config.yaml exclude_paths does not include kernel/templates/, so the
-    full scaffold template tree (CLAUDE.md.template, settings.json.template,
-    platform-adapter *.mdc.template files) would ship verbatim to public product
-    consumers if product extraction ran today. D42 states consumers receive
-    .azoth/kernel/ via installer paths, not raw scaffold source trees. Fix:
-    add kernel/templates/ to exclude_paths in sync-config.yaml and audit for
-    any other scaffold-only directories missing from the exclusion list
-    (research_*/, .azoth/ runtime state) before the public azoth extraction (D35/D38).
+  description: 'sync-config.yaml exclude_paths does not include kernel/templates/,
+    so the full scaffold template tree (CLAUDE.md.template, settings.json.template,
+    platform-adapter *.mdc.template files) would ship verbatim to public product consumers
+    if product extraction ran today. D42 states consumers receive .azoth/kernel/ via
+    installer paths, not raw scaffold source trees. Fix: add kernel/templates/ to
+    exclude_paths in sync-config.yaml and audit for any other scaffold-only directories
+    missing from the exclusion list (research_*/, .azoth/ runtime state) before the
+    public azoth extraction (D35/D38).
+
+    '
 - id: BL-043
-  title: "Expand context-recall step in start.md with concrete invocation path"
+  title: Expand context-recall step in start.md with concrete invocation path
   source: CUR-PR8-003
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1619,14 +1697,14 @@ items:
   priority: 8
   created_date: '2026-04-14'
   completed_date: '2026-04-15'
-  description: >
-    The context-recall step added to .claude/commands/start.md names the skill
-    but provides no invocation path. Expand the step to specify: invoke via
-    skills/context-recall/SKILL.md, extract 3-5 tags from the session goal,
-    and surface top 1-3 results before routing. Link to SKILL.md for the full
-    scoring algorithm.
+  description: 'The context-recall step added to .claude/commands/start.md names the
+    skill but provides no invocation path. Expand the step to specify: invoke via
+    skills/context-recall/SKILL.md, extract 3-5 tags from the session goal, and surface
+    top 1-3 results before routing. Link to SKILL.md for the full scoring algorithm.
+
+    '
 - id: BL-044
-  title: "Add Codex-specific W3 note to session-closeout.md (parity with Copilot)"
+  title: Add Codex-specific W3 note to session-closeout.md (parity with Copilot)
   source: CDX-PR8-001
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1637,14 +1715,15 @@ items:
   decision_ref:
   - D46
   - D52
-  description: >
-    session-closeout.md W3 section documents Copilot fallback behavior but has
-    no equivalent Codex-specific guidance. Add a Codex W3 note parallel to the
-    Copilot note: state that Codex sessions should attempt W3 via file write to
-    ~/.claude/projects/<project-key>/memory/, log 'W3 deferred' if the path is
-    outside the sandbox, and confirm that committed W1/W2 remain authoritative.
+  description: 'session-closeout.md W3 section documents Copilot fallback behavior
+    but has no equivalent Codex-specific guidance. Add a Codex W3 note parallel to
+    the Copilot note: state that Codex sessions should attempt W3 via file write to
+    ~/.claude/projects/<project-key>/memory/, log ''W3 deferred'' if the path is outside
+    the sandbox, and confirm that committed W1/W2 remain authoritative.
+
+    '
 - id: BL-045
-  title: "Resolve agent frontmatter advisory-vs-structural propagation in azoth-deploy.py"
+  title: Resolve agent frontmatter advisory-vs-structural propagation in azoth-deploy.py
   source: CDX-PR8-003
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1654,15 +1733,15 @@ items:
   created_date: '2026-04-14'
   decision_ref:
   - D46
-  description: >
-    transform_command_codex_skill() in scripts/azoth-deploy.py writes agent: value
-    as body prose only, not into the fm dict / SKILL.md frontmatter. Determine
-    whether Codex skill frontmatter supports an agent field; if so, add it to the
-    fm dict. If not, add an explicit comment in the transform function documenting
-    the advisory-only propagation so future maintainers do not expect structural
-    enforcement.
+  description: 'transform_command_codex_skill() in scripts/azoth-deploy.py writes
+    agent: value as body prose only, not into the fm dict / SKILL.md frontmatter.
+    Determine whether Codex skill frontmatter supports an agent field; if so, add
+    it to the fm dict. If not, add an explicit comment in the transform function documenting
+    the advisory-only propagation so future maintainers do not expect structural enforcement.
+
+    '
 - id: BL-046
-  title: "Remove orphan azoth-operating-model Codex wrapper + add reverse-orphan check"
+  title: Remove orphan azoth-operating-model Codex wrapper + add reverse-orphan check
   source: CDX-PR8-004
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1670,13 +1749,14 @@ items:
   target_version: v0.2.0-p2
   priority: 11
   created_date: '2026-04-14'
-  description: >
-    .agents/skills/azoth-operating-model/ exists with no traceable source command
-    or skill. Delete the orphan directory. Add a reverse-orphan check to
-    scripts/azoth-deploy.py --check that flags deployed Codex wrappers with no
-    corresponding source in .claude/commands/ or skills/.
+  description: '.agents/skills/azoth-operating-model/ exists with no traceable source
+    command or skill. Delete the orphan directory. Add a reverse-orphan check to scripts/azoth-deploy.py
+    --check that flags deployed Codex wrappers with no corresponding source in .claude/commands/
+    or skills/.
+
+    '
 - id: BL-047
-  title: "Verify and resolve network_access=true on phase/v0.2.0-p2 branch"
+  title: Verify and resolve network_access=true on phase/v0.2.0-p2 branch
   source: CDX-PR8-005
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1685,17 +1765,17 @@ items:
   priority: 2
   created_date: '2026-04-14'
   completed_date: '2026-04-15'
-  description: >
-    A stash-pop commit on phase/v0.2.0-p2 contains network_access=true in
-    .codex/config.toml. This change was not in the PR-8 diff and may have been
-    included unintentionally. Human must verify intent: if unintentional, revert
-    on the branch; if intentional, add an explicit security rationale in the
-    commit message referencing the Codex sandbox policy before any further merge.
-    Verification completed 2026-04-15: current branch state is
-    .codex/config.toml network_access=false (set in commit 2438519), so no
-    revert was required.
+  description: 'A stash-pop commit on phase/v0.2.0-p2 contains network_access=true
+    in .codex/config.toml. This change was not in the PR-8 diff and may have been
+    included unintentionally. Human must verify intent: if unintentional, revert on
+    the branch; if intentional, add an explicit security rationale in the commit message
+    referencing the Codex sandbox policy before any further merge. Verification completed
+    2026-04-15: current branch state is .codex/config.toml network_access=false (set
+    in commit 2438519), so no revert was required.
+
+    '
 - id: BL-048
-  title: "Sync entropy limit (1000 lines/session) to canonical tier1-core agent archetypes"
+  title: Sync entropy limit (1000 lines/session) to canonical tier1-core agent archetypes
   source: COP-PR8-002
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1706,19 +1786,18 @@ items:
   completed_date: '2026-04-15'
   decision_ref:
   - D3
-  description: >
-    Verification completed 2026-04-15: the reported mismatch was already resolved
-    before this stage. The canonical builder archetype at
-    agents/tier1-core/builder.agent.md:103 and the Claude mirror at
-    .claude/agents/builder.md:80 both state the Trust Contract entropy ceiling as
-    '10 files, 1000 lines per session', and the reviewer archetype/mirror remain in
-    parity for the general entropy-ceiling governance wording at
-    agents/tier1-core/reviewer.agent.md:71 and .claude/agents/reviewer.md:48.
-    python3 scripts/azoth-deploy.py --check passed with all 176 files in sync. No
-    files under agents/ or .claude/agents/ were modified; only this backlog entry
-    was updated to record the verified already-satisfied state.
+  description: 'Verification completed 2026-04-15: the reported mismatch was already
+    resolved before this stage. The canonical builder archetype at agents/tier1-core/builder.agent.md:103
+    and the Claude mirror at .claude/agents/builder.md:80 both state the Trust Contract
+    entropy ceiling as ''10 files, 1000 lines per session'', and the reviewer archetype/mirror
+    remain in parity for the general entropy-ceiling governance wording at agents/tier1-core/reviewer.agent.md:71
+    and .claude/agents/reviewer.md:48. python3 scripts/azoth-deploy.py --check passed
+    with all 176 files in sync. No files under agents/ or .claude/agents/ were modified;
+    only this backlog entry was updated to record the verified already-satisfied state.
+
+    '
 - id: BL-049
-  title: "Extend version-bump.py to update AZOTH_VERSION in .claude/settings.json"
+  title: Extend version-bump.py to update AZOTH_VERSION in .claude/settings.json
   source: COP-PR8-004
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1727,14 +1806,15 @@ items:
   priority: 7
   created_date: '2026-04-14'
   completed_date: '2026-04-15'
-  description: >
-    AZOTH_VERSION in .claude/settings.json, version in azoth.yaml, and the version
-    declaration in CLAUDE.md currently diverge (0.1.2.9 vs 0.1.2.1 vs v0.1.2).
-    Extend scripts/version-bump.py to update the AZOTH_VERSION env var in
-    .claude/settings.json as part of every bump, preventing future manual drift.
-    Align all three sources to the current canonical value in the same commit.
+  description: 'AZOTH_VERSION in .claude/settings.json, version in azoth.yaml, and
+    the version declaration in CLAUDE.md currently diverge (0.1.2.9 vs 0.1.2.1 vs
+    v0.1.2). Extend scripts/version-bump.py to update the AZOTH_VERSION env var in
+    .claude/settings.json as part of every bump, preventing future manual drift. Align
+    all three sources to the current canonical value in the same commit.
+
+    '
 - id: BL-050
-  title: "Document PR review convention (Copilot/Cursor/Codex → inbox) in session-closeout.md"
+  title: "Document PR review convention (Copilot/Cursor/Codex \u2192 inbox) in session-closeout.md"
   source: human-convention-2026-04-15
   target_layer: infrastructure
   delivery_pipeline: standard
@@ -1742,15 +1822,17 @@ items:
   target_version: v0.2.0-p2
   priority: 3
   created_date: '2026-04-15'
-  description: >
-    Convention established 2026-04-15: after every PR creation, request code reviews from
-    Copilot, Cursor, and Codex and write their insights to .azoth/inbox/ as .jsonl files
-    for later /intake processing. Deliverables: (1) add a C6 step to Part C of
-    session-closeout.md documenting the convention and inbox file-naming scheme;
-    (2) write three PR #9 inbox stub files (one per platform) so the reviews land in
-    the right place when collected.
+  description: 'Convention established 2026-04-15: after every PR creation, request
+    code reviews from Copilot, Cursor, and Codex and write their insights to .azoth/inbox/
+    as .jsonl files for later /intake processing. Deliverables: (1) add a C6 step
+    to Part C of session-closeout.md documenting the convention and inbox file-naming
+    scheme; (2) write three PR #9 inbox stub files (one per platform) so the reviews
+    land in the right place when collected.
+
+    '
 - id: BL-051
-  title: "Research Claude Opus writing style and systematize it as Azoth's GPT-family response style"
+  title: Research Claude Opus writing style and systematize it as Azoth's GPT-family
+    response style
   source: human-preference-2026-04-17
   target_layer: M1
   delivery_pipeline: governed
@@ -1758,24 +1840,25 @@ items:
   target_version: v0.2.0-p2
   priority: 1
   created_date: '2026-04-17'
-  description: >
-    Treat this as an instruction-surface and model-behavior project, not a one-line
-    prompt tweak. Research the practical writing-style differences between Claude Opus
-    and GPT-family models in the contexts that matter for Azoth: architecture briefs,
-    explanations, close summaries, planning output, and high-signal operational responses.
-    Derive a concrete style rubric that captures the parts of the Claude Opus style the
-    human finds easier to read and digest: paragraph cadence, structural hierarchy,
-    density, contrastive reasoning, table usage, tone, and when to prefer prose over
-    bullets. Then apply that rubric systematically to Azoth's GPT-facing instruction
-    surfaces so GPT models default toward this style without breaking command contracts
-    or terse operational modes. Deliverables: (1) a research note comparing Claude Opus
-    writing traits versus current GPT defaults with positive and negative examples;
-    (2) a proposed Azoth response-style rubric for GPT-family models; (3) updates to the
-    relevant canonical instruction surfaces and generated mirrors; (4) regression checks
-    so the preferred style survives deploy/parity workflows and does not conflict with
-    cases where short operational output is still required.
+  description: 'Treat this as an instruction-surface and model-behavior project, not
+    a one-line prompt tweak. Research the practical writing-style differences between
+    Claude Opus and GPT-family models in the contexts that matter for Azoth: architecture
+    briefs, explanations, close summaries, planning output, and high-signal operational
+    responses. Derive a concrete style rubric that captures the parts of the Claude
+    Opus style the human finds easier to read and digest: paragraph cadence, structural
+    hierarchy, density, contrastive reasoning, table usage, tone, and when to prefer
+    prose over bullets. Then apply that rubric systematically to Azoth''s GPT-facing
+    instruction surfaces so GPT models default toward this style without breaking
+    command contracts or terse operational modes. Deliverables: (1) a research note
+    comparing Claude Opus writing traits versus current GPT defaults with positive
+    and negative examples; (2) a proposed Azoth response-style rubric for GPT-family
+    models; (3) updates to the relevant canonical instruction surfaces and generated
+    mirrors; (4) regression checks so the preferred style survives deploy/parity workflows
+    and does not conflict with cases where short operational output is still required.
+
+    '
 - id: P1-022
-  title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)"
+  title: Co-primary platform model codification (Claude Code + Codex; stable adapters)
   source: co-primary-blueprint-2026-04-17
   roadmap_ref: P1-022
   initiative_ref: INI-PLT-006
@@ -1793,17 +1876,18 @@ items:
   - D50
   - D52
   blocked_by: []
-  description: >
-    Translate docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md into the roadmap system and
-    planning surfaces. Deliverables: (1) add INI-PLT-006 to roadmap.yaml with
-    Claude Code and Codex as co-primary command surfaces and the rest on an
-    adapter contract; (2) add a P1-022 roadmap spec and active v0.2.0-p2 task
-    wiring; (3) align orientation/planning surfaces to the new platform model;
-    (4) keep user-facing terminology command-first rather than renaming commands
-    to workflows. Non-goal: no scripts/azoth-deploy.py refactor or canonical
-    command-source migration in this slice.
+  description: 'Translate docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md into the roadmap system
+    and planning surfaces. Deliverables: (1) add INI-PLT-006 to roadmap.yaml with
+    Claude Code and Codex as co-primary command surfaces and the rest on an adapter
+    contract; (2) add a P1-022 roadmap spec and active v0.2.0-p2 task wiring; (3)
+    align orientation/planning surfaces to the new platform model; (4) keep user-facing
+    terminology command-first rather than renaming commands to workflows. Non-goal:
+    no scripts/azoth-deploy.py refactor or canonical command-source migration in this
+    slice.
+
+    '
 - id: P1-023
-  title: "Neutral canonical command contract design"
+  title: Neutral canonical command contract design
   source: co-primary-command-contract-2026-04-17
   roadmap_ref: P1-023
   initiative_ref: INI-PLT-006
@@ -1819,19 +1903,19 @@ items:
   - D21
   - D46
   blocked_by: []
-  description: >
-    Define the neutral canonical command contract for Azoth so commands can be
-    authored from a protocol-first source instead of treating .claude/commands
-    as the accidental long-term root. Deliverables: (1) document the chosen
-    canonical path and contract shape; (2) define projection rules for Claude
-    Code, Codex, Copilot, OpenCode, and Cursor; (3) add a representative
-    prototype command contract under commands/; (4) document the migration path
-    from legacy Claude-authored command bodies to canonical command contracts;
-    (5) add an initiative execution plan defining done criteria, stage gates,
-    and failure signals for INI-PLT-006. Non-goal: no scripts/azoth-deploy.py
-    refactor or broad command migration in this slice.
+  description: 'Define the neutral canonical command contract for Azoth so commands
+    can be authored from a protocol-first source instead of treating .claude/commands
+    as the accidental long-term root. Deliverables: (1) document the chosen canonical
+    path and contract shape; (2) define projection rules for Claude Code, Codex, Copilot,
+    OpenCode, and Cursor; (3) add a representative prototype command contract under
+    commands/; (4) document the migration path from legacy Claude-authored command
+    bodies to canonical command contracts; (5) add an initiative execution plan defining
+    done criteria, stage gates, and failure signals for INI-PLT-006. Non-goal: no
+    scripts/azoth-deploy.py refactor or broad command migration in this slice.
+
+    '
 - id: P1-024
-  title: "D46 command projection compiler refactor"
+  title: D46 command projection compiler refactor
   source: co-primary-command-projection-2026-04-17
   roadmap_ref: P1-024
   initiative_ref: INI-PLT-006
@@ -1849,19 +1933,19 @@ items:
   - D50
   blocked_by:
   - P1-023
-  description: >
-    Implement the neutral canonical command source by refactoring D46 so Azoth
-    can generate harness-native command surfaces for Claude Code, Codex,
-    Copilot, OpenCode, and Cursor from one shared command contract.
-    Deliverables: (1) teach scripts/azoth-deploy.py to load the canonical
-    command contract; (2) prove one pilot command family can project end-to-end
-    while bridging legacy Claude markdown bodies; (3) update generated command
-    surfaces for Claude, Codex, Copilot, and OpenCode without changing command
-    semantics; (4) extend drift/parity tests to cover the new projection path.
-    Non-goal: no broad command migration or removal of the legacy source path
-    before the pilot is proven stable.
+  description: 'Implement the neutral canonical command source by refactoring D46
+    so Azoth can generate harness-native command surfaces for Claude Code, Codex,
+    Copilot, OpenCode, and Cursor from one shared command contract. Deliverables:
+    (1) teach scripts/azoth-deploy.py to load the canonical command contract; (2)
+    prove one pilot command family can project end-to-end while bridging legacy Claude
+    markdown bodies; (3) update generated command surfaces for Claude, Codex, Copilot,
+    and OpenCode without changing command semantics; (4) extend drift/parity tests
+    to cover the new projection path. Non-goal: no broad command migration or removal
+    of the legacy source path before the pilot is proven stable.
+
+    '
 - id: T-001
-  title: "Dedicated roadmap/backlog/spec scaffolder"
+  title: Dedicated roadmap/backlog/spec scaffolder
   source: roadmap-system-scaffolder-2026-04-17
   roadmap_ref: T-001
   initiative_ref: INI-RST-004
@@ -1877,19 +1961,19 @@ items:
   - D48
   - D50
   blocked_by: []
-  description: >
-    Add a dedicated scaffolder for roadmap work so new task ids, backlog rows,
-    roadmap task entries, initiative links, and per-task spec stubs can be
-    created from one coherent path instead of manual multi-file editing.
-    Deliverables: (1) a script or command entrypoint that mints the correct
-    roadmap task id from task_id_policy; (2) explicit support for backlog-only
-    BL ids where needed; (3) generated skeletons for .azoth/backlog.yaml,
-    .azoth/roadmap.yaml, and .azoth/roadmap-specs/; (4) tests that keep the
-    scaffolder aligned with the current roadmap schema and version slices.
-    Non-goal: no automatic reprioritization, no scope approval side effects,
-    and no retroactive renaming of historical ids.
+  description: 'Add a dedicated scaffolder for roadmap work so new task ids, backlog
+    rows, roadmap task entries, initiative links, and per-task spec stubs can be created
+    from one coherent path instead of manual multi-file editing. Deliverables: (1)
+    a script or command entrypoint that mints the correct roadmap task id from task_id_policy;
+    (2) explicit support for backlog-only BL ids where needed; (3) generated skeletons
+    for .azoth/backlog.yaml, .azoth/roadmap.yaml, and .azoth/roadmap-specs/; (4) tests
+    that keep the scaffolder aligned with the current roadmap schema and version slices.
+    Non-goal: no automatic reprioritization, no scope approval side effects, and no
+    retroactive renaming of historical ids.
+
+    '
 - id: T-002
-  title: "Co-primary command migration batch 1 — scope/orientation commands"
+  title: "Co-primary command migration batch 1 \u2014 scope/orientation commands"
   source: co-primary-command-migration-batch-1-2026-04-17
   roadmap_ref: T-002
   initiative_ref: INI-PLT-006
@@ -1907,26 +1991,28 @@ items:
   - D50
   - D52
   blocked_by: []
-  description: >
-    Migrate the first post-P1-024 command batch from pilot status into a real
-    canonical migration lane: `/start`, `/next`, and `/resume`. Deliverables:
-    (1) canonical command bodies/contracts for the batch, reducing semantic
-    dependence on `.claude/commands/*.md`; (2) aligned Claude/Codex/Copilot/
-    OpenCode/Cursor projections from the neutral contract; (3) updated
-    scope/orientation planning surfaces so the next action is explicit after the
-    pilot; (4) parity/drift tests that lock the batch to the canonical path.
-    Non-goal: no governed orchestration command migration in this slice.
+  description: 'Migrate the first post-P1-024 command batch from pilot status into
+    a real canonical migration lane: `/start`, `/next`, and `/resume`. Deliverables:
+    (1) canonical command bodies/contracts for the batch, reducing semantic dependence
+    on `.claude/commands/*.md`; (2) aligned Claude/Codex/Copilot/ OpenCode/Cursor
+    projections from the neutral contract; (3) updated scope/orientation planning
+    surfaces so the next action is explicit after the pilot; (4) parity/drift tests
+    that lock the batch to the canonical path. Non-goal: no governed orchestration
+    command migration in this slice.
+
+    '
 - id: T-003
-  title: "Co-primary command migration batch 2 — delivery/orchestration commands"
+  title: "Co-primary command migration batch 2 \u2014 delivery/orchestration commands"
   source: co-primary-command-migration-batch-2-2026-04-17
   roadmap_ref: T-003
   initiative_ref: INI-PLT-006
   target_layer: M1
   delivery_pipeline: governed
-  status: open
+  status: complete
   target_version: v0.2.0-p2
   priority: 3
   created_date: '2026-04-17'
+  completed_date: '2026-04-17'
   decision_ref:
   - D19
   - D21
@@ -1935,25 +2021,28 @@ items:
   - D46
   blocked_by:
   - T-002
-  description: >
-    Migrate the delivery-facing and orchestration-heavy command family after the
-    scope/orientation batch is stable: `/deliver`, `/plan`, `/test`, `/auto`,
-    `/deliver-full`, `/eval`, and `/eval-swarm`. Deliverables: (1) canonical
-    command contracts/bodies for this family; (2) projection updates that keep
-    governed semantics aligned across Claude Code, Codex, Copilot, OpenCode,
-    and Cursor; (3) regression coverage for stage/gate semantics under the new
-    path. Non-goal: no closeout/memory command migration in this slice.
+  description: 'Migrate the delivery-facing and orchestration-heavy command family
+    after the scope/orientation batch is stable: `/deliver`, `/plan`, `/test`, `/auto`,
+    `/deliver-full`, `/eval`, and `/eval-swarm`. Deliverables: (1) canonical command
+    contracts/bodies for this family; (2) projection updates that keep governed semantics
+    aligned across Claude Code, Codex, Copilot, OpenCode, and Cursor; (3) regression
+    coverage for stage/gate semantics under the new path. Non-goal: no closeout/memory
+    command migration in this slice.
+
+    '
 - id: T-004
-  title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit"
+  title: "Co-primary command migration batch 3 \u2014 closeout/memory/maintenance\
+    \ + initiative exit"
   source: co-primary-command-migration-batch-3-2026-04-17
   roadmap_ref: T-004
   initiative_ref: INI-PLT-006
   target_layer: M1
   delivery_pipeline: governed
-  status: open
+  status: complete
   target_version: v0.2.0-p2
   priority: 4
   created_date: '2026-04-17'
+  completed_date: '2026-04-17'
   decision_ref:
   - D11
   - D19
@@ -1962,13 +2051,43 @@ items:
   - D52
   blocked_by:
   - T-003
-  description: >
-    Finish the remaining command family and close the initiative: migrate
-    `/session-closeout`, `/remember`, `/sync`, and `/roadmap`, then tighten the
-    remaining legacy-body bridge so INI-PLT-006 can satisfy its exit criteria.
-    Deliverables: (1) canonical command contracts/bodies for closeout, memory,
-    and maintenance commands; (2) adapter-facing documentation that states the
-    final compatibility contract honestly; (3) final drift/parity evidence that
-    Codex wrappers no longer depend on `.claude/commands/*.md` as semantic
-    source of truth for the migrated command set.
+  description: 'Finish the remaining command family and close the initiative: migrate
+    `/session-closeout`, `/remember`, `/sync`, and `/roadmap`, then tighten the remaining
+    legacy-body bridge so INI-PLT-006 can satisfy its exit criteria. Deliverables:
+    (1) canonical command contracts/bodies for closeout, memory, and maintenance commands;
+    (2) adapter-facing documentation that states the final compatibility contract
+    honestly; (3) final drift/parity evidence that Codex wrappers no longer depend
+    on `.claude/commands/*.md` as semantic source of truth for the migrated command
+    set.
+
+    '
+- id: BL-052
+  title: Correct /session-closeout W1b contract and strengthen mirror semantics tests
+  source: F1-CODEX-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  description: Repair the W1b contract drift between the documented /session-closeout
+    flow and scripts/do_closeout.py. The in-flow W1b instructions must not direct
+    agents to a helper that reruns the full W1-W4 closeout path. Update the canonical
+    closeout surface and mirrors to make the safe path explicit, then strengthen semantic
+    regression coverage so the risky wording cannot silently reappear in markdown
+    or TOML mirrors.
+- id: BL-053
+  title: Add administrative no-bump finalization and tighten resume eligibility
+  source: SRF-2026-04-17-002
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  description: 'Add a supported administrative finalization path for parked, bookkeeping-only,
+    or already-bumped sessions that updates lifecycle state to closed without forcing
+    W4 patch bump. Use that control-plane cleanup to keep /start and /resume from
+    surfacing stale sessions, and harden welcome/resume eligibility so a bare `status:
+    active` ledger row is not treated as sufficient evidence of resumable work.'
 completed: []
