@@ -1825,4 +1825,33 @@ items:
     (5) add an initiative execution plan defining done criteria, stage gates,
     and failure signals for INI-PLT-006. Non-goal: no scripts/azoth-deploy.py
     refactor or broad command migration in this slice.
+- id: P1-024
+  title: "D46 command projection compiler refactor"
+  source: co-primary-command-projection-2026-04-17
+  roadmap_ref: P1-024
+  initiative_ref: INI-PLT-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  decision_ref:
+  - D19
+  - D21
+  - D46
+  - D50
+  blocked_by:
+  - P1-023
+  description: >
+    Implement the neutral canonical command source by refactoring D46 so Azoth
+    can generate harness-native command surfaces for Claude Code, Codex,
+    Copilot, OpenCode, and Cursor from one shared command contract.
+    Deliverables: (1) teach scripts/azoth-deploy.py to load the canonical
+    command contract; (2) prove one pilot command family can project end-to-end
+    while bridging legacy Claude markdown bodies; (3) update generated command
+    surfaces for Claude, Codex, Copilot, and OpenCode without changing command
+    semantics; (4) extend drift/parity tests to cover the new projection path.
+    Non-goal: no broad command migration or removal of the legacy source path
+    before the pilot is proven stable.
 completed: []

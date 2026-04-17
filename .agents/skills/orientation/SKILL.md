@@ -94,13 +94,13 @@ used before BL-013.
 ### Milestone v0.2.0 (milestone phase 2) — memory · declarative swarm depth · platform strategy 🎯 CURRENT
 
 - **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 2`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p2` for the phase-2 working slice, `current_phase: 2`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` currently leaves **P1-020** (verbatim-first M3) and **P1-021** (memory operation parity) deferred in `v0.2.0-p2`, while **P1-022** and **P1-023** landed the co-primary platform blueprint, neutral command contract, and initiative execution plan for **INI-PLT-006**. The next likely follow-on is **P1-024** (D46 command projection compiler refactor), but it should start in a fresh scoped session. High-priority initiatives now include **INI-RST-001**, **INI-MEM-004**, **INI-RST-003**, and **INI-PLT-006**; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Execution queue:** `.azoth/backlog.yaml` currently leaves **P1-020** (verbatim-first M3) and **P1-021** (memory operation parity) deferred in `v0.2.0-p2`, while **P1-022** and **P1-023** landed the co-primary platform blueprint, neutral command contract, and initiative execution plan for **INI-PLT-006**. **P1-024** (D46 command projection compiler refactor) is now the queued follow-on slice for a fresh scoped session under the same initiative. High-priority initiatives now include **INI-RST-001**, **INI-MEM-004**, **INI-RST-003**, and **INI-PLT-006**; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids / initiatives):**
   - **P1-020 / INI-MEM-001** — verbatim-first M3 storage strategy; keep full signal before downstream indexing or compression policy.
   - **P1-021 / INI-PLT-001** — memory operation parity across Claude Code, Cursor, and Copilot adapter paths.
   - **P1-022 / INI-PLT-006** — completed: codified Claude Code + Codex as co-primary command surfaces and made the adapter contract explicit for the rest.
   - **P1-023 / INI-PLT-006** — completed: defined the neutral canonical command contract, `commands/` source path, and initiative execution plan without refactoring D46 yet.
-  - **P1-024 / INI-PLT-006** — next planned compiler slice: pilot command projection from the neutral contract while bridging legacy Claude markdown bodies.
+  - **P1-024 / INI-PLT-006** — queued next compiler slice: pilot command projection from the neutral contract while bridging legacy Claude markdown bodies.
   - **P1-015 / INI-RST-003** — true multi-writer safety remains staged behind the platform/bootstrap path.
   - **P1-002 / INI-RST-001** — declarative swarm / eval-wave specification remains the run-state depth track after ledger foundations.
   - **P1-009 / INI-PLT-002** — Cursor session-open parity remains a medium-priority adapter-hardening slice.
