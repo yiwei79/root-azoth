@@ -1,23 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.21 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 21
+0.1.2.22 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 22
 
 ## Last Session
-- **Session**: 2026-04-16-branch-hygiene
-- **Goal**: Merge feat/gemini-cli-adapter + prune stale branches + codify D54 git strategy
-- **Pipeline**: standard (ad-hoc branch hygiene)
-- **Outcome**: closed (ep-210, success)
-- **Commits**: b805e68 (merge), 1191cd7 (D54 docs)
+- **Session**: 2026-04-16-gemini-mirror-test-parity
+- **Goal**: Add Gemini TOML mirror to CLOSEOUT_MIRRORS parametrization in test_reinforcement_count_semantics.py
+- **Pipeline**: standard (ad-hoc test parity fix)
+- **Outcome**: closed (ep-211, success)
 
 ## Key Changes This Session
-1. Merged feat/gemini-cli-adapter into phase/v0.2.0-p2 (Gemini CLI adapter surface).
-2. Pruned 11 stale branches (local + remote); repo now has main + phase/v0.2.0-p2 only.
-3. Formalized D54 (branch model + worktree policy): CLAUDE.md, DECISIONS_INDEX.md, AZOTH_ARCHITECTURE.md, azoth.yaml. Decisions count: 53→54.
+1. Added 5th pytest.param (id="gemini") to CLOSEOUT_MIRRORS in tests/test_reinforcement_count_semantics.py.
+2. .gemini/commands/session-closeout.toml now guarded against reinforcement_count schema drift.
+3. All 6 tests in test_reinforcement_count_semantics.py pass; 18 pre-existing failures in full suite are unrelated.
 
 ## Open Decisions
 - BL-046: remove the orphan azoth-operating-model Codex wrapper + add reverse-orphan deploy check.
 - BL-049: version-bump.py already updates AZOTH_VERSION in .claude/settings.json — verify and close.
 
 ## Next Action
-- Run /next to select BL-049 (quick verify+close) or BL-046 (build).
+- Merge worktree back to phase/v0.2.0-p2, delete worktree.
+- Run /next to select BL-046 (next backlog primary).
