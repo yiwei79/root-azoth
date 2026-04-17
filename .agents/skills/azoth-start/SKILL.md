@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/start`.
 
 Execution contract:
-- Read `.claude/commands/start.md` and follow it as the source of truth.
+- Read `commands/start/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `commands/start/body.md`.
 - Treat the rest of the user's prompt after `$azoth-start` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/start` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/start.md`
+- Contract path: `commands/start/command.yaml`
+- Body source path: `commands/start/body.md`
 - Description: Session welcome dashboard — orient, then route to your next action

@@ -1888,4 +1888,87 @@ items:
     scaffolder aligned with the current roadmap schema and version slices.
     Non-goal: no automatic reprioritization, no scope approval side effects,
     and no retroactive renaming of historical ids.
+- id: T-002
+  title: "Co-primary command migration batch 1 — scope/orientation commands"
+  source: co-primary-command-migration-batch-1-2026-04-17
+  roadmap_ref: T-002
+  initiative_ref: INI-PLT-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-17'
+  completed_date: '2026-04-17'
+  decision_ref:
+  - D19
+  - D21
+  - D46
+  - D50
+  - D52
+  blocked_by: []
+  description: >
+    Migrate the first post-P1-024 command batch from pilot status into a real
+    canonical migration lane: `/start`, `/next`, and `/resume`. Deliverables:
+    (1) canonical command bodies/contracts for the batch, reducing semantic
+    dependence on `.claude/commands/*.md`; (2) aligned Claude/Codex/Copilot/
+    OpenCode/Cursor projections from the neutral contract; (3) updated
+    scope/orientation planning surfaces so the next action is explicit after the
+    pilot; (4) parity/drift tests that lock the batch to the canonical path.
+    Non-goal: no governed orchestration command migration in this slice.
+- id: T-003
+  title: "Co-primary command migration batch 2 — delivery/orchestration commands"
+  source: co-primary-command-migration-batch-2-2026-04-17
+  roadmap_ref: T-003
+  initiative_ref: INI-PLT-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: open
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-17'
+  decision_ref:
+  - D19
+  - D21
+  - D23
+  - D44
+  - D46
+  blocked_by:
+  - T-002
+  description: >
+    Migrate the delivery-facing and orchestration-heavy command family after the
+    scope/orientation batch is stable: `/deliver`, `/plan`, `/test`, `/auto`,
+    `/deliver-full`, `/eval`, and `/eval-swarm`. Deliverables: (1) canonical
+    command contracts/bodies for this family; (2) projection updates that keep
+    governed semantics aligned across Claude Code, Codex, Copilot, OpenCode,
+    and Cursor; (3) regression coverage for stage/gate semantics under the new
+    path. Non-goal: no closeout/memory command migration in this slice.
+- id: T-004
+  title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit"
+  source: co-primary-command-migration-batch-3-2026-04-17
+  roadmap_ref: T-004
+  initiative_ref: INI-PLT-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: open
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-17'
+  decision_ref:
+  - D11
+  - D19
+  - D21
+  - D46
+  - D52
+  blocked_by:
+  - T-003
+  description: >
+    Finish the remaining command family and close the initiative: migrate
+    `/session-closeout`, `/remember`, `/sync`, and `/roadmap`, then tighten the
+    remaining legacy-body bridge so INI-PLT-006 can satisfy its exit criteria.
+    Deliverables: (1) canonical command contracts/bodies for closeout, memory,
+    and maintenance commands; (2) adapter-facing documentation that states the
+    final compatibility contract honestly; (3) final drift/parity evidence that
+    Codex wrappers no longer depend on `.claude/commands/*.md` as semantic
+    source of truth for the migrated command set.
 completed: []

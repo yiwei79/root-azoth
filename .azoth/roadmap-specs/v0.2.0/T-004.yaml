@@ -1,0 +1,42 @@
+# Roadmap task spec — v0.2.0
+id: T-004
+roadmap_version: v0.2.0
+title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit"
+decision_ref: [D11, D19, D21, D46, D52]
+
+intent: >
+  Finish the remaining command family and close INI-PLT-006 with an explicit
+  initiative-exit slice instead of leaving the end state implicit.
+
+problem: >
+  INI-PLT-006 cannot be considered complete while closeout, memory, and
+  maintenance commands still depend on the legacy bridge or while the initiative
+  lacks a final pass that certifies the adapter contract and remaining legacy
+  assumptions.
+
+scope:
+  - "Canonical migration for /session-closeout, /remember, /sync, and /roadmap"
+  - "Final adapter-contract documentation and parity evidence for the migrated command set"
+  - "Initiative-exit checks against the INI-PLT-006 execution plan"
+
+non_goals:
+  - "Reopening already-migrated command families without evidence of structural mismatch"
+  - "Promoting non-co-primary adapters to co-primary status"
+  - "Changing governance semantics to paper over harness limits"
+
+acceptance:
+  - "Closeout/memory/maintenance commands project from the neutral command path"
+  - "The initiative’s remaining adapter contract is documented honestly and consistently"
+  - "INI-PLT-006 has an explicit exit review instead of silently ending after partial migration"
+
+dependencies: [T-003]
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /auto
+
+elasticity: >
+  Phase 1 = migrate the remaining command family. Phase 2 = run initiative-exit
+  review against the execution plan. Phase 3 = either close INI-PLT-006 or feed
+  any structural mismatch back into a new scoped follow-up.

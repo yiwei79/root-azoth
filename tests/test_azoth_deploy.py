@@ -1120,6 +1120,34 @@ def test_transform_command_codex_skill_uses_contract_path_when_present(tmp_path:
     assert ".claude/commands/next.md" in rendered
 
 
+def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
+    command_path = tmp_path / "commands" / "start" / "command.yaml"
+    command_path.parent.mkdir(parents=True, exist_ok=True)
+    command_path.write_text(
+        "schema_version: 1\n"
+        "name: start\n"
+        "display_name: /start\n"
+        "description: Canonical start description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "body:\n"
+        "  mode: canonical_markdown\n"
+        "  source_path: commands/start/body.md\n",
+        encoding="utf-8",
+    )
+    body_path = tmp_path / "commands" / "start" / "body.md"
+    body_path.write_text("# /start\n\nUse the canonical body.\n", encoding="utf-8")
+
+    commands = load_commands(tmp_path)
+    assert len(commands) == 1
+    cmd = commands[0]
+    assert cmd["name"] == "start"
+    assert cmd["contract_path"] == "commands/start/command.yaml"
+    assert cmd["body_source_path"] == "commands/start/body.md"
+    assert cmd["body"].startswith("# /start")
+    assert "canonical body" in cmd["body"]
+
+
 def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
     """Deploy, mutate a mirror file, then --check → exit 1."""
     _write_minimal_agent(tmp_path)

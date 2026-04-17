@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/resume`.
 
 Execution contract:
-- Read `.claude/commands/resume.md` and follow it as the source of truth.
+- Read `commands/resume/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `commands/resume/body.md`.
 - Treat the rest of the user's prompt after `$azoth-resume` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/resume` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/resume.md`
+- Contract path: `commands/resume/command.yaml`
+- Body source path: `commands/resume/body.md`
 - Description: Resume the current active scope or reopen a parked session

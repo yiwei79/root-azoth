@@ -39,9 +39,8 @@ governance:
   target_layer_rule: never_mix_m1_and_non_m1
 
 body:
-  mode: legacy_claude_markdown
-  source_path: .claude/commands/next.md
-  migration_target_path: commands/next/body.md
+  mode: canonical_markdown
+  source_path: commands/next/body.md
 
 projection:
   claude:
@@ -62,11 +61,11 @@ projection:
     metadata_path: .agents/skills/azoth-next/openai.yaml
 
 migration:
-  phase: projection_pilot
+  phase: canonical_body_batch_1
   runtime_source_of_truth: commands/next/command.yaml
   notes:
-    - scripts/azoth-deploy.py now consumes this contract first for the pilot projection path.
-    - The markdown body still bridges through .claude/commands/next.md until commands/next/body.md exists.
+    - T-002 promotes /next from pilot bridge to canonical body ownership.
+    - .claude/commands/next.md is now a deployed output, not the authored semantic source.
 
 references:
   - .azoth/roadmap-specs/v0.2.0/P1-023.yaml

@@ -1,9 +1,3 @@
----
-description: Resume the current active scope or reopen a parked session
-azoth_effect: write
-agent: orchestrator
----
-
 # /resume [<session_id>]
 
 Restore a live approved scope or reopen a parked session with stage-aware pipeline continuity.

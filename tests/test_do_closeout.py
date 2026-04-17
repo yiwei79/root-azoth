@@ -401,6 +401,47 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     ]
 
 
+def test_governed_closeout_keeps_last_version_completion_inside_versions_section(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    roadmap_path.write_text(
+        roadmap_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "initiatives:",
+                '  - id: INI-RST-001',
+                '    title: "Declarative swarm / eval-wave specification"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
+    version = roadmap["versions"][0]
+    assert {entry["id"] for entry in version["completed_tasks"]} == {"BL-123"}
+    assert roadmap["initiatives"][0]["id"] == "INI-RST-001"
+    assert roadmap["initiatives"][0]["title"] == "Declarative swarm / eval-wave specification"
+
+
 def test_governed_closeout_skips_initiative_roadmap_ref_and_warns(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

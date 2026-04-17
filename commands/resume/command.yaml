@@ -1,0 +1,79 @@
+schema_version: 1
+name: resume
+display_name: /resume
+description: Resume the current active scope or reopen a parked session
+agent: orchestrator
+azoth_effect: write
+
+execution:
+  kind: resume
+  waits_for_human_signal: explicit_resume_intent
+  emits:
+    - resumed_scope
+    - resumed_pipeline_state
+
+arguments:
+  accepts_arguments: true
+  syntax: /resume [<session_id>]
+
+state:
+  reads:
+    - .azoth/scope-gate.json
+    - .azoth/session-state.md
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+  writes:
+    - .azoth/scope-gate.json
+    - .azoth/session-state.md
+    - .azoth/run-ledger.local.yaml
+    - .azoth/pipeline-gate.json
+  outputs:
+    - resumed_scope
+    - resumed_pipeline_state
+
+governance:
+  preconditions:
+    - explicit_resume_intent_restores_scope
+    - refuse_if_different_live_scope_exists
+  approval_mode: explicit_resume_intent
+  pipeline_gate_behavior: restore_saved_gate_or_route_to_selection
+  target_layer_rule: preserve_approved_scope
+
+body:
+  mode: canonical_markdown
+  source_path: commands/resume/body.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/resume.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/resume.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/resume.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/resume.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-resume/SKILL.md
+    metadata_path: .agents/skills/azoth-resume/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/resume.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/resume.md
+
+migration:
+  phase: canonical_body_batch_1
+  runtime_source_of_truth: commands/resume/command.yaml
+  notes:
+    - Batch T-002 moves /resume onto the neutral command path.
+    - .claude/commands/resume.md is now a deployed output, not the authored semantic source.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-002.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

@@ -159,17 +159,24 @@ Its prototype contract lives at:
 commands/next/command.yaml
 ```
 
-Key modeling choices:
+Key modeling choices in the pilot:
 
 - `execution.kind: scope_card`
 - `arguments.accepts_arguments: false`
 - `state.reads` captures roadmap/backlog/memory inputs
 - `state.writes_on_approval` captures the gated write set
-- `body.mode: legacy_claude_markdown` keeps `.claude/commands/next.md` as the
-  temporary body source until the compiler is refactored
+- `body.mode: legacy_claude_markdown` kept `.claude/commands/next.md` as the
+  temporary body source during the pilot projection slice
 
-This is deliberate: the design slice creates a real neutral contract without
-forcing dual maintenance of every command body yet.
+This was deliberate for the pilot: the design slice created a real neutral
+contract without forcing dual maintenance of every command body yet.
+
+Current status after `T-002` batch-1 migration:
+
+- `/next`, `/start`, and `/resume` now move under `commands/<name>/`
+- their `.claude/commands/*.md` files are deployed outputs again
+- `legacy_claude_markdown` remains supported as a transition mode for later batches,
+  but it is no longer required for the batch-1 command family
 
 ## 7. Migration Plan
 

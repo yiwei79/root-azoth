@@ -324,9 +324,17 @@ def _mark_backlog_item_complete(
 
 
 def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
+    versions_match = re.search(r"^versions:\s*$", text, re.MULTILINE)
+    if not versions_match:
+        return None
+    next_top_level = re.search(r"^[A-Za-z0-9_]+:\s", text[versions_match.end() :], re.MULTILINE)
+    versions_end = (
+        versions_match.end() + next_top_level.start() if next_top_level else len(text)
+    )
+    versions_block = text[versions_match.end() :versions_end]
     start_match = re.search(
         r'^(?P<indent>\s*)-\s+id:\s*["\']?' + re.escape(version_id) + r'["\']?\s*$',
-        text,
+        versions_block,
         re.MULTILINE,
     )
     if not start_match:
@@ -334,11 +342,16 @@ def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
     item_indent = re.escape(start_match.group("indent"))
     next_match = re.search(
         rf"^{item_indent}-\s+id:\s",
-        text[start_match.end() :],
+        versions_block[start_match.end() :],
         re.MULTILINE,
     )
-    end = start_match.end() + next_match.start() if next_match else len(text)
-    return start_match.start(), end
+    block_start = versions_match.end() + start_match.start()
+    block_end = (
+        versions_match.end() + start_match.end() + next_match.start()
+        if next_match
+        else versions_end
+    )
+    return block_start, block_end
 
 
 def _find_roadmap_version(

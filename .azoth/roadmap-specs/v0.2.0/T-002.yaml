@@ -1,0 +1,44 @@
+# Roadmap task spec — v0.2.0
+id: T-002
+roadmap_version: v0.2.0
+title: "Co-primary command migration batch 1 — scope/orientation commands"
+decision_ref: [D19, D21, D46, D50, D52]
+
+intent: >
+  Materialize the first post-pilot migration slice for INI-PLT-006 by moving the
+  scope/orientation command family onto the neutral command path.
+
+problem: >
+  P1-024 proved the pilot projection path, but the initiative still has no
+  operational batch queue and the orientation surfaces still point at completed
+  work. Without a concrete first migration batch, the initiative remains open in
+  theory but not schedulable in practice.
+
+scope:
+  - "Canonical command migration for /start, /next, and /resume"
+  - "Projection parity for Claude Code, Codex, Copilot, OpenCode, and Cursor"
+  - "Planning/orientation continuity updates tied to the new batch"
+  - "Drift/parity tests for migrated scope/orientation commands"
+
+non_goals:
+  - "Migrating delivery or orchestration-heavy commands in this slice"
+  - "Declaring INI-PLT-006 complete before later batches land"
+  - "Changing command semantics beyond what the neutral contract already defines"
+
+acceptance:
+  - "The scope/orientation command family is represented as concrete roadmap-backed work under INI-PLT-006"
+  - "Migrated commands project from the neutral command path with behaviorally aligned adapter outputs"
+  - "Orientation/planning surfaces no longer advertise completed P1-024 as the next slice"
+  - "Parity/drift tests cover the migrated family under the neutral source path"
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /auto
+
+elasticity: >
+  Phase 1 = land the migration queue and planning continuity fixes. Phase 2 =
+  migrate `/start`, `/next`, and `/resume` end-to-end. Phase 3 = use the batch
+  as the acceptance gate before moving to delivery/orchestration commands.

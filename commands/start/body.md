@@ -1,9 +1,3 @@
----
-description: Session welcome dashboard — orient, then route to your next action
-azoth_effect: read
-agent: orchestrator
----
-
 # /start
 
 Run at the beginning of any session to get a full project snapshot before deciding what to work on.
