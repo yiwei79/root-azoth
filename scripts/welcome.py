@@ -583,11 +583,11 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "")
             if session_id and session_id != scope.get("session_id"):
-                lines.append(
-                    f"  resume {session_id}   → /resume — reopen parked session directly"
-                )
+                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
     elif parked_session_id:
-        parked_goal = (session_state.get("approved_scope") or session_state.get("active_task") or "")[:72]
+        parked_goal = (
+            session_state.get("approved_scope") or session_state.get("active_task") or ""
+        )[:72]
         lines.append(f"  resume   → /resume — reopen parked session: {parked_goal}")
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "")
@@ -851,7 +851,9 @@ def render_dashboard() -> None:
                     "   :right_arrow: /resume — reopen parked session directly"
                 )
     elif parked_session_id:
-        parked_goal = (session_state.get("approved_scope") or session_state.get("active_task") or "")[:60]
+        parked_goal = (
+            session_state.get("approved_scope") or session_state.get("active_task") or ""
+        )[:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"
             f"   Reopen parked session: [italic]{parked_goal}[/italic]"

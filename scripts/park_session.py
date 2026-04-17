@@ -105,9 +105,8 @@ def _merge_checkpoint(
     if not checkpoint.get("pause_reason") and default_pause_reason:
         checkpoint["pause_reason"] = default_pause_reason
 
-    if (
-        "pipeline_position" not in checkpoint
-        and (checkpoint.get("current_stage_id") or checkpoint.get("pending_stages"))
+    if "pipeline_position" not in checkpoint and (
+        checkpoint.get("current_stage_id") or checkpoint.get("pending_stages")
     ):
         checkpoint["pipeline_position"] = len(checkpoint.get("completed_stages") or []) + 1
 
@@ -130,7 +129,8 @@ def _resume_next_action(
 ) -> str:
     current_stage_id = _coerce_string(checkpoint.get("current_stage_id"))
     pipeline = _coerce_string(
-        checkpoint.get("pipeline") or (run_entry.get("mode") if isinstance(run_entry, dict) else None)
+        checkpoint.get("pipeline")
+        or (run_entry.get("mode") if isinstance(run_entry, dict) else None)
     )
     pause_reason = _coerce_string(checkpoint.get("pause_reason"))
 
@@ -182,9 +182,7 @@ def _restore_pipeline_gate(
     result = subprocess.run(command, capture_output=True, text=True, check=False, cwd=repo_root)
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip() or "gate verification failed"
-        raise ParkSessionError(
-            f"Cannot restore pipeline gate for session '{session_id}': {detail}"
-        )
+        raise ParkSessionError(f"Cannot restore pipeline gate for session '{session_id}': {detail}")
 
 
 def park_session(
@@ -221,9 +219,14 @@ def park_session(
         "unknown",
     )
     existing_session = load_session(repo_root, resolved_session_id) or {}
-    resolved_active_run_id = _coerce_string(
-        active_run_id or existing_state.get("active_run_id") or existing_session.get("active_run_id")
-    ) or None
+    resolved_active_run_id = (
+        _coerce_string(
+            active_run_id
+            or existing_state.get("active_run_id")
+            or existing_session.get("active_run_id")
+        )
+        or None
+    )
     run_entry = load_run(repo_root, resolved_active_run_id) if resolved_active_run_id else None
     checkpoint = _merge_checkpoint(
         run_entry=run_entry,
@@ -438,7 +441,9 @@ def resume_session(
         encoding="utf-8",
     )
 
-    pipeline = _coerce_string(checkpoint.get("pipeline") or (run_entry.get("mode") if run_entry else ""))
+    pipeline = _coerce_string(
+        checkpoint.get("pipeline") or (run_entry.get("mode") if run_entry else "")
+    )
     if run_entry and pipeline:
         _restore_pipeline_gate(
             repo_root,

@@ -235,9 +235,7 @@ def validate_ledger(data: dict) -> list[str]:
             else:
                 for j, stage_id in enumerate(pending_stage_ids):
                     if not isinstance(stage_id, str) or not stage_id.strip():
-                        errors.append(
-                            f"{prefix}.pending_stage_ids[{j}] must be a non-empty string"
-                        )
+                        errors.append(f"{prefix}.pending_stage_ids[{j}] must be a non-empty string")
                     elif not _STAGE_ID_RE.match(stage_id):
                         errors.append(
                             f"{prefix}.pending_stage_ids[{j}] must match stage id pattern, got {stage_id!r}"
