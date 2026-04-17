@@ -5,8 +5,10 @@ W1–W4 closeout writes, and surfaces any queued inbox items.
 
 ## Preconditions
 
+<!-- P1-016: Antigravity compliance -->
 - Verify session scope was maintained throughout (check `.azoth/scope-gate.json`).
 - Ensure all write work stayed within approved scope and entropy bounds.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
 
 ## Part A: Evaluate Session Outputs
 
