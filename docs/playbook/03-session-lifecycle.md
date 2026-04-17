@@ -178,6 +178,9 @@ Closeout performs 4 write phases:
 │  Update bootloader-state.md, close scope gate,        │
 │  refresh session-state.md for cross-IDE handoff,       │
 │  preserving any stage-aware resume checkpoint fields.  │
+│  For roadmap/planning sessions, also sync initiative   │
+│  and backlog continuity so the next action is a real   │
+│  queued item, not only a spec or stale pointer.        │
 ├───────────────────────────────────────────────────────┤
 │  W3: MEMORY MIRROR                                    │
 │  Sync to ~/.claude/projects/.../memory/ so Claude     │

@@ -16,6 +16,9 @@ Prepare a short end-of-session summary covering:
 - what was accomplished,
 - what remains open or risky,
 - whether human follow-up is still needed.
+- if the session changed roadmap / backlog / initiative planning state, what the
+  next operational backlog item or initiative now is, and whether it is already
+  operationalized in backlog rather than only existing as a spec or note.
 
 ## Part B: Close Session
 
@@ -77,6 +80,18 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 **W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
 
 - Update `bootloader-state.md` with session outcome (phase, what changed, open decisions).
+- If the session changed roadmap / backlog / initiative planning state, run a
+  continuity audit before closing:
+  - move finished slices into backlog `status: complete` and roadmap `completed_tasks`
+    where applicable
+  - if an initiative `task_ref` / `spec_ref` still points at a now-completed slice,
+    retarget it to the next real pending slice or explicitly note why it remains on the
+    completed one
+  - if a slice is described as the next planned follow-on in roadmap / orientation /
+    close summary language, ensure it exists as a real backlog item or explicitly say it
+    is still spec-only
+  - if a backlog item was added and completed in the same session, say that explicitly
+    in the close summary so the human does not infer it was skipped
 - When `.azoth/run-ledger.local.yaml` contains a `sessions:` registry, use the active
   scope `session_id` as the default selected session. If a matching session entry exists,
   update that entry first: set it to `parked` when follow-up work remains or `closed` when
