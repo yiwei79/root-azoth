@@ -537,7 +537,7 @@ azoth init / azoth-deploy.py
 | Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | `/skills` wrappers (`azoth-*`) + literal-token fallback | .claude/commands/ (toggle) |
 | `.cursor/rules/*.mdc` | — | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
 | Config | .claude/settings.json | opencode.json | VS Code settings | `.codex/config.toml` | Cursor Settings + toggle |
-| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ⚠️ Hook-soft (`SessionStart`, `UserPromptSubmit`, Bash PostToolUse, `Stop`; no `PreToolUse` — see Codex hook protocol) | ❌ (use `.mdc` parity rules) |
+| Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ⚠️ Hooks-capable (`SessionStart`, `UserPromptSubmit`, Bash `PreToolUse`/`PostToolUse`, `Stop`; non-Bash interception still unavailable) | ❌ (use `.mdc` parity rules) |
 | MCP | .mcp.json | opencode.json `mcp` key | VS Code MCP | `.codex/config.toml` / plugins / MCP | VS Code MCP |
 
 ### Cursor IDE (Claude) and Claude Code parity
@@ -555,19 +555,19 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
 
-**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/resume`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, `.codex/hooks/user_prompt_submit_router.py`, and `.codex/agents/*.toml` provide strong workflow parity, but Claude-style `Write/Edit` interception is still unavailable outside Bash hooks.
+**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/resume`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, hooks-capable, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, `.codex/hooks/user_prompt_submit_router.py`, and `.codex/agents/*.toml` provide strong workflow parity, with real mechanical Bash hooks but still no broad Claude-style `Write/Edit` interception.
 
 **Codex hook protocol (confirmed via runtime errors):** Codex hooks have **strict stdout requirements** that differ from Claude Code:
 
 | Hook type | Allowed stdout | Forbidden |
 |-----------|---------------|-----------|
 | SessionStart | Plain text (becomes session context) | — |
-| UserPromptSubmit | `additionalContext` JSON | `permissionDecision` |
-| PreToolUse | `additionalContext` JSON only | `permissionDecision: allow\|deny` (unsupported) |
-| PostToolUse | `additionalContext` JSON | `permissionDecision` |
+| UserPromptSubmit | `additionalContext`, `updatedInput`, `decision: block` | — |
+| PreToolUse | Bash-only mechanical deny via `permissionDecision: deny` or legacy `decision: block` | Non-Bash interception (`Write`, `Edit`, MCP, web tools) |
+| PostToolUse | Bash-only `additionalContext`; `decision: block` changes continuation behavior | Undoing side effects from a Bash command that already ran |
 | Stop | Valid JSON **or** empty stdout | Plain text, emoji, human-readable messages |
 
-**Rules for Codex hooks:** (1) Never wire scripts that emit `permissionDecision` (e.g. `pip-install-guard.py`, `edit_pretooluse_orchestrator.py`). (2) Stop hooks must emit valid JSON or nothing — use `--quiet` for scripts that print status text. (3) `additionalContext` is advisory injection, not a blocking gate. (4) Enforcement that requires `deny` must be moved to `developer_instructions` in `.codex/config.toml`. `scripts/azoth-deploy.py` lints `.codex/hooks.json` for these violations on every deploy/check run. See `docs/platform-guides/codex-guide.md` § Codex Hook Protocol Rules.
+**Rules for Codex hooks:** (1) Bash `PreToolUse` may use `permissionDecision: deny`, but that support does **not** generalize beyond Bash. (2) Stop hooks must emit valid JSON or nothing — use `--quiet` for scripts that print status text. (3) `additionalContext` remains advisory injection for shared hooks such as `UserPromptSubmit` and `PostToolUse`. (4) Enforcement that requires non-Bash `Write/Edit` deny still lives in `developer_instructions` in `.codex/config.toml`. `scripts/azoth-deploy.py` lints `.codex/hooks.json` for these violations on every deploy/check run. See `docs/platform-guides/codex-guide.md` § Codex Hook Protocol Rules.
 
 **PreToolUse hook commands** in `.claude/settings.json` should use **paths relative to the repository root** (for example `python3 .claude/hooks/edit_pretooluse_orchestrator.py`) so clones and CI do not embed machine-specific absolute paths. Claude Code runs hooks with the **project workspace as the current working directory**. If a hook fails to resolve, use an absolute path only for local debugging.
 

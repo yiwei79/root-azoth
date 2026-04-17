@@ -7,8 +7,7 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/session_start_welcome.py\"",
-            "timeout": 120,
-            "statusMessage": "Loading Azoth orientation"
+            "timeout": 120
           }
         ]
       }
@@ -18,8 +17,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit_router.py\"",
-            "statusMessage": "Routing Azoth workflow prompt"
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit_router.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/pip-install-guard.py\""
           }
         ]
       }
@@ -30,8 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/posttooluse_terminal_filter.py\"",
-            "statusMessage": "Filtering terminal output"
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/posttooluse_terminal_filter.py\""
           }
         ]
       }
@@ -42,18 +50,7 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/kernel-integrity.py\"",
-            "timeout": 10,
-            "statusMessage": "Validating kernel integrity"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/notify.py\" --title \"Azoth\" --message \"Codex session waiting for input\" --quiet",
-            "timeout": 30,
-            "statusMessage": "Sending Azoth notification"
+            "timeout": 10
           }
         ]
       }

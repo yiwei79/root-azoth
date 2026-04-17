@@ -19,7 +19,7 @@ Classify every incoming goal before taking any action:
 - **Inline**: the goal is simple, low-risk, and can be satisfied without spawning subagents. Execute directly with a brief rationale.
 - **Orchestrate**: the goal requires staged pipeline execution, subagent delegation, or human gate management. Compose a pipeline and present the Declaration.
 
-Use D23 classification dimensions (scope / risk / complexity / knowledge) to determine which path applies. Default to **Orchestrate** when classification is ambiguous.
+Use D23 classification dimensions (scope / risk / complexity / knowledge) to determine which path applies. Default to **Orchestrate** when classification is ambiguous or latest/current external facts are material.
 
 ### Decision Table
 
@@ -44,7 +44,7 @@ Before composing a pipeline, confirm:
 1. Scope is understood — no ambiguous boundaries.
 2. Risk is assessed — governance, kernel, or breaking-change flags are identified.
 3. Complexity is estimated — pipeline preset selected via `auto-router`.
-4. Knowledge gaps are surfaced — research phase scheduled if needed.
+4. Knowledge gaps are surfaced — if the task depends on latest/current external platform or policy facts, schedule an official-source research pass before analysis, routing, or edits.
 
 If any of the four dimensions is unclear, ask one focused clarifying question. Do not proceed to the Declaration until the goal is clear.
 
@@ -360,7 +360,7 @@ After 3 consecutive stage failures within a single pipeline:
 This orchestrator is the default pipeline entry agent for:
 
 - **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `dynamic-full-auto.md`, `deliver.md`, `deliver-full.md`, `start.md`, and `next.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`. Session-entry commands (`start`, `next`) also carry `agent: orchestrator` to prevent agent reset when the user has selected the orchestrator; drift is detected by tests T6–T8. In GitHub Copilot freeform chat, literal pipeline tokens still count as command invocation; `.github/copilot-instructions.md` must enforce the same no-inline rule if native slash-command routing does not fire.
-- **Codex**: Codex does not document repo-defined custom slash-command registration, so `scripts/azoth-deploy.py` projects `.claude/commands/*.md` into discoverable `.agents/skills/azoth-*` wrapper skills with `agents/openai.yaml` metadata. In Codex, use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc. as the primary entry surface; literal `/auto`-style tokens are compatibility fallback routed by `.codex/hooks/user_prompt_submit_router.py`. Treat Codex as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/*.toml` provide strong workflow parity, but non-Bash tool enforcement remains behavioral.
+- **Codex**: Codex does not document repo-defined custom slash-command registration, so `scripts/azoth-deploy.py` projects `.claude/commands/*.md` into discoverable `.agents/skills/azoth-*` wrapper skills with `agents/openai.yaml` metadata. In Codex, use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc. as the primary entry surface; literal `/auto`-style tokens are compatibility fallback routed by `.codex/hooks/user_prompt_submit_router.py`. Treat Codex as **source-compatible, hooks-capable, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/*.toml` provide strong workflow parity, with mechanical Bash hooks but behavioral enforcement for non-Bash tool classes.
 - **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not supported by the platform. Main-session behavior relies on command-level `agent:` frontmatter and the CLAUDE.md instruction surface (rule 10, established by P1-013). The previously open main-session enforcement gap (tracked as DFA e2e friction) is closed by P1-013 via the instruction-surface approach.
 - **Cursor**: reads `.claude/agents/`, `.claude/commands/`, and `skills/` via the Claude Code compatibility toggle. Hook gaps (no PreToolUse, no SessionStart) are simulated by `.cursor/rules/claude-code-parity.mdc` (deployed by `azoth-deploy.py --platforms cursor`). No native `agent:` frontmatter routing; orchestrator binding is advisory via the parity rule.
 

@@ -876,9 +876,8 @@ def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> t
 
 # ── Codex hook compatibility lint ────────────────────────────────────────────
 
-# Scripts known to use Claude Code-only permissionDecision protocol.
+# Scripts known to depend on unsupported Codex PreToolUse semantics.
 _CODEX_UNSAFE_SCRIPTS: set[str] = {
-    "pip-install-guard.py",
     "edit_pretooluse_orchestrator.py",
     "scope-gate.py",
 }
@@ -890,9 +889,9 @@ def lint_codex_hooks(root: Path) -> list[str]:
     Returns a list of warning strings (empty = clean).
 
     Checks:
-    1. PreToolUse hooks must not use permissionDecision-based scripts.
+    1. PreToolUse hooks must not use scripts that depend on unsupported non-Bash interception.
     2. Stop hook scripts must not print non-JSON text to stdout (need --quiet).
-    3. Scripts using permissionDecision must not be wired into any Codex hook type.
+    3. PreToolUse/PostToolUse matchers should include Bash or they will not fire today.
     """
     hooks_path = root / ".codex" / "hooks.json"
     if not hooks_path.is_file():
@@ -918,13 +917,14 @@ def lint_codex_hooks(root: Path) -> list[str]:
                 if not isinstance(cmd, str):
                     continue
 
-                # Check 1: known permissionDecision scripts in any Codex hook
-                for unsafe in _CODEX_UNSAFE_SCRIPTS:
-                    if unsafe in cmd:
-                        warnings.append(
-                            f"  [codex-hook] {hook_type}: {unsafe} uses permissionDecision "
-                            f"protocol (Claude Code only) — will error in Codex"
-                        )
+                # Check 1: known unsupported PreToolUse scripts
+                if hook_type == "PreToolUse":
+                    for unsafe in _CODEX_UNSAFE_SCRIPTS:
+                        if unsafe in cmd:
+                            warnings.append(
+                                f"  [codex-hook] PreToolUse: {unsafe} depends on unsupported "
+                                f"non-Bash or Write/Edit interception in Codex"
+                            )
 
                 # Check 2: Stop hooks without --quiet for scripts that print to stdout
                 if hook_type == "Stop" and "notify.py" in cmd and "--quiet" not in cmd:
@@ -933,17 +933,14 @@ def lint_codex_hooks(root: Path) -> list[str]:
                         "— Codex parses Stop stdout as JSON"
                     )
 
-                # Check 3: any hook referencing scripts with permissionDecision output
-                if hook_type == "PreToolUse":
-                    # Resolve the script path and check for permissionDecision
-                    resolved = _resolve_hook_script(root, cmd)
-                    if resolved and resolved.is_file():
-                        content = resolved.read_text(encoding="utf-8", errors="replace")
-                        if "permissionDecision" in content:
-                            warnings.append(
-                                f"  [codex-hook] PreToolUse: {resolved.name} contains "
-                                f"permissionDecision — unsupported in Codex"
-                            )
+                # Check 3: current Codex Pre/Post runtime only emits Bash tool events
+                matcher = group.get("matcher")
+                if hook_type in {"PreToolUse", "PostToolUse"} and isinstance(matcher, str):
+                    if "Bash" not in matcher:
+                        warnings.append(
+                            f"  [codex-hook] {hook_type}: matcher {matcher!r} will not fire "
+                            "today — current Codex runtime only emits Bash"
+                        )
 
     return warnings
 

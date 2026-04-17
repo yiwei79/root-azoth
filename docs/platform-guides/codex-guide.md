@@ -4,13 +4,13 @@
 
 ## Classification
 
-Codex is **source-compatible, hook-soft, skill-routed** (D46).
+Codex is **source-compatible, hooks-capable, Bash-gated, skill-routed** (D46).
 
 | Property | Value |
 |----------|-------|
 | Instruction file | `CLAUDE.md` (read as project doc) + `AGENTS.md` (AAIF standard) |
 | Config | `.codex/config.toml` |
-| Hooks | `.codex/hooks.json` — advisory only (`additionalContext`, not `decision: block`); no PreToolUse (incompatible protocol) |
+| Hooks | `.codex/hooks.json` — mechanical `SessionStart`, `UserPromptSubmit`, `Stop`, and Bash-only `PreToolUse`/`PostToolUse` |
 | Agents | `.codex/agents/*.toml` (11 agents, all 4 tiers) |
 | Commands | `.agents/skills/azoth-*/SKILL.md` via `/skills`; literal tokens as fallback |
 | Skills | `.agents/skills/` (shared Codex/Antigravity path) |
@@ -40,8 +40,11 @@ Available command wrappers (21 total): `azoth-auto`, `azoth-deliver`, `azoth-del
 
 ## Trust Contract Enforcement
 
-Codex is **hook-soft**: PreToolUse hooks inject advisory context but cannot mechanically
-deny Write/Edit tool calls. Enforcement relies on three complementary layers:
+Codex is **hooks-capable**, but narrower than Claude Code. Current Codex runtime
+mechanically supports `SessionStart`, `UserPromptSubmit`, `Stop`, and Bash-only
+`PreToolUse`/`PostToolUse`. Non-Bash `Write`/`Edit` enforcement still relies on
+developer instructions and the sandbox. Enforcement therefore relies on three
+complementary layers:
 
 | Layer | Mechanism | Strength |
 |-------|-----------|----------|
@@ -54,48 +57,57 @@ deny Write/Edit tool calls. Enforcement relies on three complementary layers:
 - **Scope gate**: `developer_instructions` instructs the model to read `.azoth/scope-gate.json` before any write and stop if `session_id` is missing or `expires_at` has passed.
 - **Entropy ceiling**: max 10 files modified, 10 created, 0 deleted without approval, 1000 lines changed (quantified inline).
 - **Kernel immutability**: `kernel/*`, `.azoth/kernel/*`, `.azoth/memory/patterns.yaml` declared as never-modify-without-approval.
+- **Bash package policy**: `PreToolUse` wires `.claude/hooks/pip-install-guard.py`, so direct `pip install <package>` is mechanically blocked in Codex's current Bash hook path.
 - **Co-Authored-By**: `commit_attribution = ""` in config + explicit prohibition in instructions.
 - **Kernel drift**: `kernel-integrity.py` runs in the Stop hook (10s timeout) and flags any kernel file changes.
 
 ### What is NOT mechanically enforced
 
-- **Write/Edit deny**: Codex PreToolUse hooks cannot return `decision: block`. A sufficiently confused model could bypass `developer_instructions`. This is a platform limitation, not an Azoth gap.
-- **Per-path deny patterns**: No `.claude/settings.json` equivalent for file-level deny rules.
+- **Non-Bash Write/Edit deny**: current Codex `PreToolUse` interception only emits `Bash`, not `Write`, `Edit`, MCP, or web tools. A sufficiently confused model could still bypass `developer_instructions` outside the Bash hook surface.
+- **Per-path deny patterns**: no Codex equivalent to Claude Code's broad `Write`/`Edit` PreToolUse deny lattice.
 
 ## Hooks
 
-`.codex/hooks.json` configures 4 hook types with 5 hooks:
+`.codex/hooks.json` configures 5 hook types with 5 hooks:
 
 | Hook Type | Script | Purpose | Timeout |
 |-----------|--------|---------|---------|
 | SessionStart | `.claude/hooks/session_start_welcome.py` | Load Azoth orientation dashboard | 120s |
 | UserPromptSubmit | `.codex/hooks/user_prompt_submit_router.py` | Route literal Azoth tokens to command files | — |
+| PreToolUse (Bash) | `.claude/hooks/pip-install-guard.py` | Block bare `pip install <package>` | — |
 | PostToolUse (Bash) | `.claude/hooks/posttooluse_terminal_filter.py` | Filter terminal output | — |
 | Stop | `scripts/kernel-integrity.py` | Validate kernel integrity at session end | 10s |
-| Stop | `scripts/notify.py --quiet` | System notification when session waits | 30s |
 
-> **Note**: PreToolUse hooks are omitted. Claude Code's `pip-install-guard.py` uses
-> `permissionDecision: allow/deny` which Codex doesn't support — Codex PreToolUse hooks
-> only accept `additionalContext` injection. The pip install policy is enforced via
-> `developer_instructions` in `config.toml` instead.
+The generic Stop notification hook is intentionally omitted in Codex. It was too
+chatty for the value it provided, and firing on every `Stop` event did not match
+Azoth's human-gate notification policy.
 
 ### Codex Hook Protocol Rules
 
 Codex hooks have **strict stdout requirements** that differ from Claude Code. Any hook
 script wired into `.codex/hooks.json` must follow these rules:
 
-**Rule 1 — No `permissionDecision` responses.** Codex does not support
-`permissionDecision: allow|deny`. Only `additionalContext` injection is available.
-Scripts that return `permissionDecision` (e.g. `pip-install-guard.py`,
-`edit_pretooluse_orchestrator.py`) must NOT be wired into Codex hooks.
+**Rule 1 — `permissionDecision` is valid only for Bash `PreToolUse`.** Codex now
+documents mechanical Bash blocking via:
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "..."
+  }
+}
+```
+This is useful for narrow shell guardrails such as `pip-install-guard.py`. It does
+not extend to non-Bash tool classes today.
 
 **Rule 2 — No non-JSON stdout in Stop hooks.** Codex Stop hooks parse stdout as JSON.
 Any human-readable text (emoji, status messages, print statements) causes
 `"invalid stop hook JSON output"`. Use `--quiet` to suppress stdout, or ensure the
 script emits valid JSON or nothing.
 
-**Rule 3 — `additionalContext` is the only injection mechanism.** PostToolUse and
-UserPromptSubmit hooks can inject context via:
+**Rule 3 — `additionalContext` remains the main shared injection mechanism.**
+`UserPromptSubmit` and `PostToolUse` can inject context via:
 ```json
 {
   "hookSpecificOutput": {
@@ -104,7 +116,9 @@ UserPromptSubmit hooks can inject context via:
   }
 }
 ```
-This is advisory — it adds to the model's context, not a blocking gate.
+This is advisory — it adds to the model's context. In `PostToolUse`, `decision: "block"`
+changes how Codex continues from the Bash result, but it does not undo the shell
+side effect that already happened.
 
 **Rule 4 — SessionStart hooks emit plain text.** SessionStart stdout becomes part of
 the session context. Plain text is safe. JSON wrapping is not required.
@@ -116,7 +130,7 @@ exit 0 with empty stdout. Never crash on unexpected input.
 
 | Protocol | Claude Code | Codex | Safe to share? |
 |----------|-------------|-------|----------------|
-| `permissionDecision: allow\|deny` | ✅ Mechanical deny | ❌ Unsupported | No — Claude Code only |
+| `permissionDecision: deny` in Bash `PreToolUse` | ✅ Mechanical deny | ✅ Mechanical deny | Yes, for Bash-only hooks |
 | `additionalContext` injection | ✅ Works | ✅ Works | Yes |
 | Plain text stdout (SessionStart) | ✅ Context | ✅ Context | Yes |
 | Plain text stdout (Stop) | ✅ Ignored | ❌ Parsed as JSON | No — use `--quiet` |
@@ -128,11 +142,12 @@ exit 0 with empty stdout. Never crash on unexpected input.
 Before wiring any script into `.codex/hooks.json`:
 
 1. Check the script's stdout output — does it print human-readable text?
-2. Check for `permissionDecision` in the script — if present, it's Claude Code only.
-3. For Stop hooks: ensure the script emits valid JSON or nothing to stdout.
-4. For shared scripts: add `--quiet` flag or platform detection if stdout differs.
-5. After adding, run `python3 scripts/azoth-deploy.py --check` to verify sync.
-6. Test in a live Codex session before committing.
+2. If it is a `PreToolUse` hook, assume only `matcher: "Bash"` is live today.
+3. `permissionDecision` is acceptable only for Bash `PreToolUse`; do not project that assumption onto `Write`, `Edit`, MCP, or web tools.
+4. For Stop hooks: ensure the script emits valid JSON or nothing to stdout.
+5. For shared scripts: add `--quiet` flag or platform detection if stdout differs.
+6. After adding, run `python3 scripts/azoth-deploy.py --check` to verify sync.
+7. Test in a live Codex session before committing.
 
 ## Agents
 
@@ -159,7 +174,7 @@ Codex runs in `workspace-write` sandbox with `network_access = false`:
 
 Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto`. Key differences from Claude Code:
 
-1. PreToolUse hooks are advisory, not mechanical.
+1. Bash `PreToolUse`/`PostToolUse` are mechanical; non-Bash guardrails still rely on `developer_instructions`.
 2. Network is disabled — Wave A researchers cannot fetch external URLs.
 3. Multi-agent threads (up to 6) enable parallel local exploration.
 4. Scope-gate contract is identical: validate `.azoth/scope-gate.json` before writes.
@@ -175,7 +190,7 @@ See `skills/dynamic-full-auto/SKILL.md` § Happy path — Codex.
 | **Scope** | `$azoth-next` writes `.azoth/scope-gate.json`; model checks it before writes |
 | **Pipeline** | Orchestrator stays in main thread; subagents via `.codex/agents/*.toml` |
 | **Closeout** | `$azoth-session-closeout` writes W1/W2/W4; W3 mirror attempted, `W3 deferred` if blocked |
-| **Stop** | kernel-integrity.py validates; notify.py alerts |
+| **Stop** | kernel-integrity.py validates |
 
 ## Deployment
 
@@ -195,7 +210,7 @@ python3 scripts/azoth-deploy.py --check  # verify sync
 
 ## Tests
 
-8 Codex-specific tests in `tests/test_azoth_deploy.py`:
+10 Codex-specific tests in `tests/test_azoth_deploy.py`:
 
 | Test | Coverage |
 |------|----------|
@@ -205,6 +220,8 @@ python3 scripts/azoth-deploy.py --check  # verify sync
 | `test_main_codex_writes_agents_skills_and_adapter` | Full deployment integration |
 | `test_iter_codex_adapter_deployments_maps_templates` | Template → deployment mapping |
 | `test_deploy_codex_adapter_writes_matching_content` | Deployed content matches template |
+| `test_lint_codex_hooks_allows_bash_pretooluse_permission_decision_script` | Bash `PreToolUse` mechanical deny allowed in Codex lint |
+| `test_lint_codex_hooks_warns_for_unsupported_pretooluse_surface` | Non-Bash `PreToolUse` matcher/handler still rejected |
 | `test_deployed_codex_agents_match_transform` | Live `.codex/agents/` match transform output |
 | `test_deployed_codex_skill_mirror_matches_canonical` | `.agents/skills/` match canonical skills |
 
@@ -212,7 +229,8 @@ python3 scripts/azoth-deploy.py --check  # verify sync
 
 | Capability | Claude Code | Codex | Gap |
 |------------|-------------|-------|-----|
-| Write/Edit deny (PreToolUse) | Mechanical | Advisory | Platform limitation |
+| Bash deny (PreToolUse) | Mechanical | Mechanical | Bash-only in Codex today |
+| Write/Edit deny (PreToolUse) | Mechanical | Behavioral | Platform limitation |
 | Scope-gate enforcement | Hook binary | developer_instructions | Behavioral vs mechanical |
 | Container isolation | None (host FS) | OS-level sandbox | Codex advantage |
 | Slash commands | Native `/` picker | `/skills` + `$azoth-*` | Higher friction, same function |

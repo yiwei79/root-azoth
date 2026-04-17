@@ -124,7 +124,9 @@ in `meta` or a one-line orchestrator log).
 
 
 **Skip rules:** If `knowledge: known-pattern` **and** explore confirms no unknowns, queen may **skip
-Wave A** or run a **single** researcher pack for confirmation. If research is exhaustive but repo is
+Wave A** or run a **single** researcher pack for confirmation. **Exception:** if the task depends on
+latest/current external facts (platform behavior, APIs, policies, enums, specs), Wave A is mandatory
+and must use official sources before Checkpoint Γ or delivery. If research is exhaustive but repo is
 tiny, **skip Wave B** with explicit justification in `explore_swarm_summary.findings`.
 
 ## In-between pipeline routing (post-digest → delivery)
@@ -252,7 +254,7 @@ summaries inside governed pipelines.
 
 ## Happy path — Codex
 
-1. Codex is **hook-soft**: PreToolUse hooks are **advisory** (`additionalContext` injection), not mechanical (`decision: block`). Scope-gate and entropy enforcement rely on `developer_instructions` in `.codex/config.toml`.
+1. Codex now has **mechanical Bash hooks**: `PreToolUse` can block supported Bash commands, and `PostToolUse` / `Stop` / `UserPromptSubmit` are real hook surfaces. Scope-gate and entropy enforcement for non-Bash `Write`/`Edit` still rely on `developer_instructions` in `.codex/config.toml`.
 2. **Network is disabled** in `workspace-write` sandbox (`network_access = false`). **Wave A researcher tasks cannot fetch external URLs.** Research must use pre-seeded context, local files, or be delegated to a platform with network access (Claude Code, Copilot).
 3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 6, max_depth: 1`) enables parallel researcher/explore tasks within the sandbox, but without external fetches.
 4. **Digest writes** — Same scope-gate contract: validate `.azoth/scope-gate.json` before any write, including `append-pack` to the digest.

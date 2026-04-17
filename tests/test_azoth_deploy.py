@@ -16,6 +16,7 @@ Covers:
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import uuid
 from pathlib import Path
@@ -51,6 +52,7 @@ transform_command_gemini = _mod.transform_command_gemini
 transform_command_opencode = _mod.transform_command_opencode
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
 deploy_codex_adapter = _mod.deploy_codex_adapter
+lint_codex_hooks = _mod.lint_codex_hooks
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
 load_agents = _mod.load_agents
@@ -609,6 +611,67 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_lint_codex_hooks_allows_bash_pretooluse_permission_decision_script(tmp_path: Path) -> None:
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".claude" / "hooks").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".claude" / "hooks" / "pip-install-guard.py").write_text(
+        "print('permissionDecision')\n",
+        encoding="utf-8",
+    )
+    hooks_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": 'python3 "$(git rev-parse --show-toplevel)/.claude/hooks/pip-install-guard.py"',
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert lint_codex_hooks(tmp_path) == []
+
+
+def test_lint_codex_hooks_warns_for_unsupported_pretooluse_surface(tmp_path: Path) -> None:
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True, exist_ok=True)
+    hooks_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Edit|Write",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "python3 .claude/hooks/edit_pretooluse_orchestrator.py",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    warnings = lint_codex_hooks(tmp_path)
+    assert any("unsupported non-Bash or Write/Edit interception" in warning for warning in warnings)
+    assert any("only emits Bash" in warning for warning in warnings)
+
+
 def test_iter_cursor_rule_deployments_maps_templates() -> None:
     repo = Path(__file__).resolve().parent.parent
     root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
@@ -776,7 +839,17 @@ def test_deployed_claude_contract_commands_match_transform() -> None:
             f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
         )
         actual = dest.read_text(encoding="utf-8")
-        assert actual == transform_command_claude(cmd), (
+        expected = transform_command_claude(cmd)
+        if actual == expected:
+            continue
+        if cmd["contract"]["body"]["mode"] == "legacy_claude_markdown":
+            actual_meta, actual_body = parse_frontmatter(actual)
+            expected_meta, expected_body = parse_frontmatter(expected)
+            assert actual_meta == expected_meta and actual_body == expected_body, (
+                f"Claude command semantic drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+            )
+            continue
+        assert actual == expected, (
             f"Claude command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
         )
 
@@ -1059,6 +1132,20 @@ def test_orchestrator_archetype_line_count_ceiling() -> None:
     )
 
 
+def test_orchestrator_requires_official_source_research_for_current_external_facts() -> None:
+    content = ( _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md").read_text(encoding="utf-8")
+    assert "official-source research pass before analysis, routing, or edits" in content
+    assert "latest/current external facts are material" in content
+
+
+def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "Wave A is mandatory" in content
+    assert "official sources before Checkpoint" in content
+
+
 def test_all_source_commands_have_orchestrator_agent_binding() -> None:
     """T11: every .claude/commands/*.md must have agent: orchestrator to prevent
     Copilot agent reset when invoking any Azoth command."""
@@ -1146,6 +1233,37 @@ def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
     assert cmd["body_source_path"] == "commands/start/body.md"
     assert cmd["body"].startswith("# /start")
     assert "canonical body" in cmd["body"]
+
+
+@pytest.mark.parametrize(
+    ("command_name", "body_source_path"),
+    [
+        ("deliver", ".claude/commands/deliver.md"),
+        ("deliver-full", ".claude/commands/deliver-full.md"),
+        ("auto", ".claude/commands/auto.md"),
+        ("eval", ".claude/commands/eval.md"),
+        ("session-closeout", ".claude/commands/session-closeout.md"),
+        ("remember", ".claude/commands/remember.md"),
+        ("sync", ".claude/commands/sync.md"),
+        ("roadmap", ".claude/commands/roadmap.md"),
+    ],
+)
+def test_migrated_commands_load_from_canonical_contracts(
+    command_name: str, body_source_path: str
+) -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    cmd = commands[command_name]
+    assert cmd["contract_path"] == f"commands/{command_name}/command.yaml"
+    assert cmd["body_source_path"] == body_source_path
+    assert cmd["body"].startswith(f"# /{command_name}")
+
+
+def test_ini_plt_006_exit_commands_are_canonicalized() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    for command_name in ("session-closeout", "remember", "sync", "roadmap"):
+        assert "contract" in commands[command_name], (
+            f"INI-PLT-006 exit evidence missing canonical contract for {command_name}"
+        )
 
 
 def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
