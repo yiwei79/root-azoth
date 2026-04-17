@@ -1,0 +1,6 @@
+interface:
+  display_name: /park
+  short_description: Park the current session for later resumption
+  default_prompt: '$azoth-park '
+policy:
+  allow_implicit_invocation: false

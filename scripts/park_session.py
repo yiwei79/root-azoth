@@ -1,0 +1,610 @@
+#!/usr/bin/env python3
+"""Park or resume a scoped session."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+from do_closeout import (
+    close_scope_gate,
+    extract_session_checkpoint,
+    load_json,
+    load_yaml,
+    write_session_state,
+)
+from run_ledger import (
+    acquire_write_claim,
+    load_run,
+    load_session,
+    release_write_claim,
+    upsert_run,
+    upsert_session,
+)
+from session_continuity import scope_conflict_message
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+class ParkSessionError(RuntimeError):
+    """Raised when parking preconditions are not met."""
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+
+def _coerce_string(value: Any, fallback: str = "") -> str:
+    text = str(value or "").strip()
+    return text or fallback
+
+
+def _coerce_stage_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _checkpoint_from_run(run_entry: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(run_entry, dict):
+        return {}
+
+    checkpoint: dict[str, Any] = {}
+    pipeline = _coerce_string(run_entry.get("mode"))
+    if pipeline:
+        checkpoint["pipeline"] = pipeline
+
+    completed_stages = _coerce_stage_list(run_entry.get("stages_completed"))
+    if completed_stages:
+        checkpoint["completed_stages"] = completed_stages
+
+    current_stage_id = _coerce_string(run_entry.get("active_stage_id"))
+    if current_stage_id:
+        checkpoint["current_stage_id"] = current_stage_id
+
+    pending_stages = _coerce_stage_list(run_entry.get("pending_stage_ids"))
+    if pending_stages:
+        checkpoint["pending_stages"] = pending_stages
+
+    pause_reason = _coerce_string(run_entry.get("pause_reason"))
+    if pause_reason:
+        checkpoint["pause_reason"] = pause_reason
+
+    active_run_id = _coerce_string(run_entry.get("run_id"))
+    if active_run_id:
+        checkpoint["active_run_id"] = active_run_id
+
+    if (current_stage_id or pending_stages) and completed_stages:
+        checkpoint["pipeline_position"] = len(completed_stages) + 1
+    elif current_stage_id or pending_stages:
+        checkpoint["pipeline_position"] = 1
+
+    return checkpoint
+
+
+def _merge_checkpoint(
+    *,
+    run_entry: dict[str, Any] | None,
+    existing_state: dict[str, Any],
+    existing_matches: bool,
+    active_run_id: str | None = None,
+    default_pause_reason: str | None = None,
+) -> dict[str, Any]:
+    checkpoint = _checkpoint_from_run(run_entry)
+    if existing_matches:
+        checkpoint.update(extract_session_checkpoint(existing_state))
+
+    if active_run_id:
+        checkpoint["active_run_id"] = active_run_id
+
+    if not checkpoint.get("pause_reason") and default_pause_reason:
+        checkpoint["pause_reason"] = default_pause_reason
+
+    if (
+        "pipeline_position" not in checkpoint
+        and (checkpoint.get("current_stage_id") or checkpoint.get("pending_stages"))
+    ):
+        checkpoint["pipeline_position"] = len(checkpoint.get("completed_stages") or []) + 1
+
+    return checkpoint
+
+
+def _checkpoint_active_task(goal: str, checkpoint: dict[str, Any], parked: bool) -> str:
+    prefix = "Parked" if parked else "Resumed"
+    current_stage_id = _coerce_string(checkpoint.get("current_stage_id"))
+    if current_stage_id:
+        return f"{prefix} — {goal} (stage: {current_stage_id})"
+    return f"{prefix} — {goal}"
+
+
+def _resume_next_action(
+    *,
+    goal: str,
+    run_entry: dict[str, Any] | None,
+    checkpoint: dict[str, Any],
+) -> str:
+    current_stage_id = _coerce_string(checkpoint.get("current_stage_id"))
+    pipeline = _coerce_string(
+        checkpoint.get("pipeline") or (run_entry.get("mode") if isinstance(run_entry, dict) else None)
+    )
+    pause_reason = _coerce_string(checkpoint.get("pause_reason"))
+
+    if run_entry is None:
+        return (
+            "Continue the resumed parked scope. If no delivery pipeline is explicitly chosen, "
+            "use /auto and run Stage 0 before implementation."
+        )
+    if pause_reason == "human-gate":
+        if current_stage_id:
+            return f"Resume at human gate for stage `{current_stage_id}` in pipeline `{pipeline}`."
+        return f"Resume at the saved human gate in pipeline `{pipeline or 'unknown'}`."
+    if current_stage_id:
+        return f"Continue pipeline `{pipeline or 'unknown'}` at stage `{current_stage_id}`."
+    if pipeline:
+        return f"Continue the resumed parked scope through pipeline `{pipeline}`."
+    return f"Continue the resumed parked scope for {goal}."
+
+
+def _restore_pipeline_gate(
+    repo_root: Path,
+    *,
+    session_id: str,
+    pipeline: str,
+    expires_at: str,
+    require: bool = True,
+) -> None:
+    pipeline_gate = {
+        "session_id": session_id,
+        "pipeline": pipeline,
+        "approved": True,
+        "expires_at": expires_at,
+        "opened_at": utc_now_iso(),
+    }
+    (repo_root / ".azoth" / "pipeline-gate.json").write_text(
+        json.dumps(pipeline_gate, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    command = [
+        sys.executable,
+        str(ROOT / "scripts" / "check_gates.py"),
+        "--session-id",
+        session_id,
+        "--root",
+        str(repo_root),
+    ]
+    if require:
+        command.append("--require-pipeline-gate")
+    result = subprocess.run(command, capture_output=True, text=True, check=False, cwd=repo_root)
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or "gate verification failed"
+        raise ParkSessionError(
+            f"Cannot restore pipeline gate for session '{session_id}': {detail}"
+        )
+
+
+def park_session(
+    repo_root: Path,
+    *,
+    next_action: str,
+    ide: str | None = None,
+    active_run_id: str | None = None,
+    active_files: list[str] | None = None,
+    pending_decisions: list[str] | None = None,
+    session_id: str | None = None,
+    backlog_id: str | None = None,
+    goal: str | None = None,
+    timestamp: str | None = None,
+) -> dict[str, Any]:
+    scope = load_json(repo_root / ".azoth" / "scope-gate.json")
+    resolved_session_id = _coerce_string(session_id or scope.get("session_id"))
+    if not resolved_session_id:
+        raise ParkSessionError("Cannot park session: scope-gate.json missing session_id.")
+
+    resolved_goal = _coerce_string(goal or scope.get("goal"), "Parked session")
+    resolved_backlog_id = _coerce_string(backlog_id or scope.get("backlog_id"), "AD-HOC")
+    when = timestamp or utc_now_iso()
+
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    existing_state = load_yaml(session_state_path)
+    existing_matches = (
+        session_state_path.exists()
+        and _coerce_string(existing_state.get("session_id")) == resolved_session_id
+        and _coerce_string(existing_state.get("state")) != "empty"
+    )
+    selected_ide = _coerce_string(
+        ide or existing_state.get("last_ide"),
+        "unknown",
+    )
+    existing_session = load_session(repo_root, resolved_session_id) or {}
+    resolved_active_run_id = _coerce_string(
+        active_run_id or existing_state.get("active_run_id") or existing_session.get("active_run_id")
+    ) or None
+    run_entry = load_run(repo_root, resolved_active_run_id) if resolved_active_run_id else None
+    checkpoint = _merge_checkpoint(
+        run_entry=run_entry,
+        existing_state=existing_state,
+        existing_matches=existing_matches,
+        active_run_id=resolved_active_run_id,
+        default_pause_reason="handoff",
+    )
+    resolved_active_files = (
+        list(active_files)
+        if active_files is not None
+        else (
+            list(existing_state.get("active_files"))
+            if existing_matches and isinstance(existing_state.get("active_files"), list)
+            else []
+        )
+    )
+    resolved_pending_decisions = (
+        list(pending_decisions)
+        if pending_decisions is not None
+        else (
+            list(existing_state.get("pending_decisions"))
+            if existing_matches and isinstance(existing_state.get("pending_decisions"), list)
+            else []
+        )
+    )
+
+    created, _ = upsert_session(
+        repo_root,
+        session_id=resolved_session_id,
+        backlog_id=resolved_backlog_id,
+        goal=resolved_goal,
+        status="parked",
+        ide=selected_ide,
+        next_action=next_action,
+        updated_at=when,
+        active_run_id=resolved_active_run_id,
+    )
+
+    if resolved_active_run_id:
+        upsert_run(
+            repo_root,
+            run_id=resolved_active_run_id,
+            session_id=resolved_session_id,
+            backlog_id=resolved_backlog_id,
+            ide=selected_ide,
+            mode=_coerce_string(checkpoint.get("pipeline"), "auto"),
+            goal=resolved_goal,
+            status="paused",
+            next_action=next_action,
+            updated_at=when,
+            stages_completed=checkpoint.get("completed_stages", []),
+            active_stage_id=checkpoint.get("current_stage_id"),
+            pending_stage_ids=checkpoint.get("pending_stages", []),
+            pause_reason=_coerce_string(checkpoint.get("pause_reason"), "handoff"),
+        )
+
+    released_claim = release_write_claim(repo_root, resolved_session_id)
+    close_scope_gate(repo_root, when)
+    write_session_state(
+        repo_root,
+        session_id=resolved_session_id,
+        state="parked",
+        timestamp=when,
+        active_task=_checkpoint_active_task(resolved_goal, checkpoint, True),
+        active_files=resolved_active_files,
+        pending_decisions=resolved_pending_decisions,
+        approved_scope=resolved_goal,
+        next_action=next_action,
+        selected_ide=selected_ide,
+        create_if_missing=True,
+        checkpoint=checkpoint,
+    )
+
+    return {
+        "session_id": resolved_session_id,
+        "backlog_id": resolved_backlog_id,
+        "goal": resolved_goal,
+        "status": "parked",
+        "ide": selected_ide,
+        "created": created,
+        "write_claim_released": released_claim,
+        "scope_closed": True,
+        "active_run_id": resolved_active_run_id,
+        "pause_reason": checkpoint.get("pause_reason"),
+        "current_stage_id": checkpoint.get("current_stage_id"),
+    }
+
+
+def _resolve_resume_target(
+    repo_root: Path, session_id: str | None = None
+) -> tuple[str, dict[str, Any]]:
+    existing_state = load_yaml(repo_root / ".azoth" / "session-state.md")
+    resolved_session_id = _coerce_string(session_id)
+    if not resolved_session_id and _coerce_string(existing_state.get("state")) == "parked":
+        resolved_session_id = _coerce_string(existing_state.get("session_id"))
+    if not resolved_session_id:
+        raise ParkSessionError(
+            "Cannot resume session: no session_id provided and session-state.md is not parked."
+        )
+
+    conflict = scope_conflict_message(
+        repo_root,
+        command_name="resume",
+        requested_session_id=resolved_session_id,
+    )
+    if conflict:
+        raise ParkSessionError(f"{conflict} Options: park current, close current, or abort.")
+
+    session_entry = load_session(repo_root, resolved_session_id)
+    if session_entry is None:
+        raise ParkSessionError(
+            f"Cannot resume session: no run-ledger entry found for '{resolved_session_id}'."
+        )
+
+    status = _coerce_string(session_entry.get("status"))
+    if status not in {"active", "parked"}:
+        raise ParkSessionError(
+            f"Cannot resume session '{resolved_session_id}': status is {status or 'unknown'}."
+        )
+    return resolved_session_id, session_entry
+
+
+def _scope_shape_for_resume(
+    repo_root: Path,
+    *,
+    session_id: str,
+    backlog_id: str,
+    goal: str,
+) -> tuple[str, str]:
+    current_scope = load_json(repo_root / ".azoth" / "scope-gate.json")
+    if _coerce_string(current_scope.get("session_id")) == session_id:
+        delivery_pipeline = _coerce_string(current_scope.get("delivery_pipeline"), "standard")
+        target_layer = _coerce_string(current_scope.get("target_layer"), "infrastructure")
+        return delivery_pipeline, target_layer
+
+    backlog = load_yaml(repo_root / ".azoth" / "backlog.yaml")
+    items = backlog.get("items")
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if _coerce_string(item.get("id")) != backlog_id:
+                continue
+            delivery_pipeline = _coerce_string(item.get("delivery_pipeline"), "standard")
+            target_layer = _coerce_string(item.get("target_layer"), "infrastructure")
+            return delivery_pipeline, target_layer
+
+    return "standard", "infrastructure"
+
+
+def resume_session(
+    repo_root: Path,
+    *,
+    session_id: str | None = None,
+    ide: str | None = None,
+    timestamp: str | None = None,
+) -> dict[str, Any]:
+    resolved_session_id, session_entry = _resolve_resume_target(repo_root, session_id=session_id)
+    when = timestamp or utc_now_iso()
+    backlog_id = _coerce_string(session_entry.get("backlog_id"), "AD-HOC")
+    goal = _coerce_string(session_entry.get("goal"), "Resumed session")
+    active_run_id = _coerce_string(session_entry.get("active_run_id")) or None
+    delivery_pipeline, target_layer = _scope_shape_for_resume(
+        repo_root,
+        session_id=resolved_session_id,
+        backlog_id=backlog_id,
+        goal=goal,
+    )
+    selected_ide = _coerce_string(ide or session_entry.get("ide"), "unknown")
+
+    existing_state = load_yaml(repo_root / ".azoth" / "session-state.md")
+    existing_matches = _coerce_string(existing_state.get("session_id")) == resolved_session_id
+    pending_decisions = (
+        list(existing_state.get("pending_decisions"))
+        if existing_matches and isinstance(existing_state.get("pending_decisions"), list)
+        else []
+    )
+    active_files = (
+        list(existing_state.get("active_files"))
+        if existing_matches and isinstance(existing_state.get("active_files"), list)
+        else []
+    )
+    run_entry = load_run(repo_root, active_run_id) if active_run_id else None
+    checkpoint = _merge_checkpoint(
+        run_entry=run_entry,
+        existing_state=existing_state,
+        existing_matches=existing_matches,
+        active_run_id=active_run_id,
+    )
+
+    expires_at = (
+        (datetime.fromisoformat(when.replace("Z", "+00:00")) + timedelta(hours=2))
+        .astimezone(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+    )
+    next_action = _resume_next_action(goal=goal, run_entry=run_entry, checkpoint=checkpoint)
+
+    scope = {
+        "approved": True,
+        "expires_at": expires_at,
+        "goal": goal,
+        "session_id": resolved_session_id,
+        "approved_by": "human",
+        "backlog_id": backlog_id,
+        "delivery_pipeline": delivery_pipeline,
+        "target_layer": target_layer,
+    }
+    (repo_root / ".azoth" / "scope-gate.json").write_text(
+        json.dumps(scope, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    pipeline = _coerce_string(checkpoint.get("pipeline") or (run_entry.get("mode") if run_entry else ""))
+    if run_entry and pipeline:
+        _restore_pipeline_gate(
+            repo_root,
+            session_id=resolved_session_id,
+            pipeline=pipeline,
+            expires_at=expires_at,
+            require=True,
+        )
+    else:
+        pipeline_gate_path = repo_root / ".azoth" / "pipeline-gate.json"
+        if pipeline_gate_path.exists():
+            pipeline_gate_path.unlink()
+
+    created, _ = upsert_session(
+        repo_root,
+        session_id=resolved_session_id,
+        backlog_id=backlog_id,
+        goal=goal,
+        status="active",
+        ide=selected_ide,
+        next_action=next_action,
+        updated_at=when,
+        active_run_id=active_run_id,
+    )
+
+    pause_reason = _coerce_string(checkpoint.get("pause_reason"))
+    if run_entry and pipeline:
+        upsert_run(
+            repo_root,
+            run_id=_coerce_string(run_entry.get("run_id")),
+            session_id=resolved_session_id,
+            backlog_id=backlog_id,
+            ide=selected_ide,
+            mode=pipeline,
+            goal=goal,
+            status="paused" if pause_reason == "human-gate" else "active",
+            next_action=next_action,
+            updated_at=when,
+            stages_completed=checkpoint.get("completed_stages", []),
+            active_stage_id=checkpoint.get("current_stage_id"),
+            pending_stage_ids=checkpoint.get("pending_stages", []),
+            pause_reason=pause_reason if pause_reason == "human-gate" else None,
+        )
+
+    ok, claim_info = acquire_write_claim(
+        repo_root, resolved_session_id, expires_at, harness=selected_ide
+    )
+    if not ok:
+        raise ParkSessionError(f"Cannot resume session '{resolved_session_id}': {claim_info}")
+
+    write_session_state(
+        repo_root,
+        session_id=resolved_session_id,
+        state="active",
+        timestamp=when,
+        active_task=_checkpoint_active_task(goal, checkpoint, False),
+        active_files=active_files,
+        pending_decisions=pending_decisions,
+        approved_scope=goal,
+        next_action=next_action,
+        selected_ide=selected_ide,
+        create_if_missing=True,
+        checkpoint=checkpoint,
+    )
+
+    return {
+        "session_id": resolved_session_id,
+        "backlog_id": backlog_id,
+        "goal": goal,
+        "status": "active",
+        "ide": selected_ide,
+        "created": created,
+        "write_claim": claim_info,
+        "expires_at": expires_at,
+        "resume_type": "stage-aware" if run_entry and pipeline else "scope-only",
+        "pipeline": pipeline or None,
+        "current_stage_id": checkpoint.get("current_stage_id"),
+        "pending_stage_ids": checkpoint.get("pending_stages", []),
+        "pause_reason": pause_reason or None,
+        "human_gate": pause_reason == "human-gate",
+    }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Park the current scoped session for later /resume, or resume a parked session.",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume a parked session instead of parking the current one.",
+    )
+    parser.add_argument(
+        "--next-action",
+        default=None,
+        metavar="TEXT",
+        help="Resume instruction shown in the parked session registry.",
+    )
+    parser.add_argument(
+        "--ide", metavar="IDE", default=None, help="Harness label for the parked session."
+    )
+    parser.add_argument(
+        "--active-run-id",
+        metavar="RUN_ID",
+        default=None,
+        help="Optional resumable run linked to the parked session.",
+    )
+    parser.add_argument(
+        "--active-file",
+        action="append",
+        dest="active_files",
+        default=None,
+        metavar="PATH",
+        help="Tracked active file for the handoff capsule (repeatable).",
+    )
+    parser.add_argument(
+        "--pending-decision",
+        action="append",
+        dest="pending_decisions",
+        default=None,
+        metavar="TEXT",
+        help="Pending decision for the handoff capsule (repeatable).",
+    )
+    parser.add_argument(
+        "--session-id",
+        metavar="SESSION_ID",
+        default=None,
+        help="Override session_id from scope-gate.",
+    )
+    parser.add_argument(
+        "--backlog-id",
+        metavar="BACKLOG_ID",
+        default=None,
+        help="Override backlog_id from scope-gate.",
+    )
+    parser.add_argument(
+        "--goal", metavar="GOAL", default=None, help="Override goal from scope-gate."
+    )
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.resume:
+        result = resume_session(
+            ROOT,
+            session_id=args.session_id,
+            ide=args.ide,
+        )
+    else:
+        if not args.next_action:
+            parser.error("--next-action is required unless --resume is used")
+        result = park_session(
+            ROOT,
+            next_action=args.next_action,
+            ide=args.ide,
+            active_run_id=args.active_run_id,
+            active_files=args.active_files,
+            pending_decisions=args.pending_decisions,
+            session_id=args.session_id,
+            backlog_id=args.backlog_id,
+            goal=args.goal,
+        )
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()

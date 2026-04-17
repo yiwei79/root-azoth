@@ -1,0 +1,6 @@
+interface:
+  display_name: /resume
+  short_description: Resume the current active scope or reopen a parked session
+  default_prompt: '$azoth-resume '
+policy:
+  allow_implicit_invocation: false
