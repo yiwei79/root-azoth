@@ -4,19 +4,21 @@
 0.1.2.24 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 24
 
 ## Last Session
-- **Session**: 2026-04-17-worktree-merge
-- **Goal**: Merge worktree claude/condescending-mcnulty-d5d3b0 into phase/v0.2.0-p2 and delete worktree
-- **Pipeline**: standard
+- **Session**: 2026-04-17-next-active-filter
+- **Goal**: Fix multi-session coordination gap — /next now excludes active items, cross-checks run-ledger, and writes back status on scope approval
+- **Pipeline**: auto (governed, M1)
 - **Outcome**: closed
-- **Episode**: ep-214 (success)
+- **Episode**: ep-215 (pattern)
+- **PR**: https://github.com/yiwei79/root-azoth/pull/11
 
 ## Key Changes This Session
-1. W1 appended the closeout episode.
-2. W2 closed the scope gate and refreshed repo-local handoff state.
-3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.
+1. `.claude/commands/next.md` — 6 targeted changes: Step 0b (run-ledger cross-check), Step 3 filter (active exclusion), Step 10c (write-back), Scope Card Format (Excluded: placeholder), Step 10c recovery note, Rules (active semantics).
+2. Platform mirrors updated via azoth-deploy: `.agents/workflows/next.md`, `.gemini/commands/next.toml`, `.github/prompts/next.prompt.md`, `.opencode/commands/next.md`.
+3. PR #11 created against phase/v0.2.0-p2; Copilot/Codex review request filed to inbox.
 
 ## Open Decisions
-- None.
+- PR #11 awaiting Copilot/Codex review — insights will arrive in `.azoth/inbox/` for `/intake` triage.
+- `/session-closeout` does not yet clear `status: active` on backlog items — follow-up scope needed.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Merge PR #11 after review, then run `/next` for next task.
