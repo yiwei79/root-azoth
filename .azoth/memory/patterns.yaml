@@ -451,7 +451,7 @@ patterns:
   - id: control-plane-needs-real-time-claims-and-durable-status
     approved: true
     approved_date: "2026-04-17"
-    reinforced_by: [ep-158, ep-184, ep-193, ep-215]
+    reinforced_by: [ep-158, ep-184, ep-193, ep-215, ep-232, ep-233]
     trigger: any change to /next, scope selection, backlog claiming, or closeout status write-back
     summary: >
       Azoth control-plane state cannot rely on a single surface. Real-time
@@ -464,8 +464,11 @@ patterns:
       never written back. ep-184 and ep-193 reinforced the same stale-open
       failure class through review findings. ep-215 validated the fix shape:
       a three-layer defense of run-ledger cross-check, status:active exclusion,
-      and approval-time write-back. The pattern is specific to Azoth's
-      multi-surface session control plane, but it is now proven and actionable.
+      and approval-time write-back. ep-232 and ep-233 extend the same failure
+      class into resume/finalization UX: stale ledger state and missing
+      administrative finalization both leak bad control-plane state back to the
+      human. The pattern is specific to Azoth's multi-surface session control
+      plane, but it is now proven and actionable.
     how_to_apply: >
       Whenever scope selection or completion logic changes, audit all three
       surfaces together: (1) run-ledger.local.yaml for live claims, (2)
@@ -478,7 +481,7 @@ patterns:
   - id: platform-parity-needs-mechanical-mirrors-and-tests
     approved: true
     approved_date: "2026-04-17"
-    reinforced_by: [ep-150, ep-177, ep-178, ep-202]
+    reinforced_by: [ep-150, ep-177, ep-178, ep-202, ep-230, ep-231]
     trigger: any canonical command, hook, adapter, or instruction-surface change that projects to multiple platforms
     summary: >
       In Azoth, platform parity is not preserved by intention alone. When a
@@ -491,8 +494,11 @@ patterns:
       template coverage was incomplete. ep-177 and ep-178 exposed the same class
       for Codex command discovery and parity wiring. ep-202 reinforced that
       repeated runtime failures are a signal to add mechanical hardening rather
-      than trusting future manual sync. The repeated failure mode is structural:
-      mirror drift persists until tests and deploy paths encode the boundary.
+      than trusting future manual sync. ep-230 and ep-231 carry the same lesson
+      into closeout semantics: dangerous contract drift persisted because the
+      mirror text and the regression test were both too weak. The repeated
+      failure mode is structural: mirror drift persists until tests and deploy
+      paths encode the boundary.
     how_to_apply: >
       For any canonical instruction or hook change, identify the full mirror set
       before editing. Update every affected surface in the same session, run the

@@ -4,11 +4,11 @@
 0.1.2.39 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 39
 
 ## Last Session
-- **Session**: 2026-04-17-intake-bundle
-- **Goal**: AD-HOC: admit github-copilot-review and process approved intake bundles
+- **Session**: 2026-04-17-promote-closeout
+- **Goal**: /promote: approve recommended reinforcements and update patterns.yaml
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-235 (success)
+- **Episode**: ep-236 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
