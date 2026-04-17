@@ -447,3 +447,56 @@ patterns:
       session — uncommitted closeout state is invisible to other platforms.
       W3 content format: title, last_updated, current_version, active_phase,
       last_session summary, next_priority from backlog.
+
+  - id: control-plane-needs-real-time-claims-and-durable-status
+    approved: true
+    approved_date: "2026-04-17"
+    reinforced_by: [ep-158, ep-184, ep-193, ep-215]
+    trigger: any change to /next, scope selection, backlog claiming, or closeout status write-back
+    summary: >
+      Azoth control-plane state cannot rely on a single surface. Real-time
+      ownership belongs in run-ledger.local.yaml (claim registry), while durable
+      planning state belongs in backlog.yaml and scope-gate.json. Candidate
+      selection must cross-check both. If either side is omitted, stale or
+      lagging state resurfaces claimed or completed work as available.
+    why_it_matters: >
+      ep-158 showed a delivered item resurfacing because backlog completion was
+      never written back. ep-184 and ep-193 reinforced the same stale-open
+      failure class through review findings. ep-215 validated the fix shape:
+      a three-layer defense of run-ledger cross-check, status:active exclusion,
+      and approval-time write-back. The pattern is specific to Azoth's
+      multi-surface session control plane, but it is now proven and actionable.
+    how_to_apply: >
+      Whenever scope selection or completion logic changes, audit all three
+      surfaces together: (1) run-ledger.local.yaml for live claims, (2)
+      backlog.yaml for durable task state, and (3) scope-gate.json for current
+      intent. /next must exclude items claimed in either the ledger or backlog,
+      and closeout must write backlog completion before the scope closes. Treat
+      any one-surface fix as incomplete until the other two surfaces are checked
+      and regression-tested.
+
+  - id: platform-parity-needs-mechanical-mirrors-and-tests
+    approved: true
+    approved_date: "2026-04-17"
+    reinforced_by: [ep-150, ep-177, ep-178, ep-202]
+    trigger: any canonical command, hook, adapter, or instruction-surface change that projects to multiple platforms
+    summary: >
+      In Azoth, platform parity is not preserved by intention alone. When a
+      canonical contract changes, every generated or parallel platform surface
+      must be updated in the same slice and the propagation boundary must be
+      locked by regression tests. Otherwise one platform silently lags while the
+      source looks correct.
+    why_it_matters: >
+      ep-150 showed Cursor missing eval-swarm escalation routing because the
+      template coverage was incomplete. ep-177 and ep-178 exposed the same class
+      for Codex command discovery and parity wiring. ep-202 reinforced that
+      repeated runtime failures are a signal to add mechanical hardening rather
+      than trusting future manual sync. The repeated failure mode is structural:
+      mirror drift persists until tests and deploy paths encode the boundary.
+    how_to_apply: >
+      For any canonical instruction or hook change, identify the full mirror set
+      before editing. Update every affected surface in the same session, run the
+      relevant deploy or projection step, and add or update parity tests that
+      fail if one platform is omitted. If a field intentionally does not
+      propagate, encode that boundary explicitly in tests or documentation so
+      future sessions do not assume silent parity.
