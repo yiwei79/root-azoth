@@ -2113,4 +2113,22 @@ items:
     W4 patch bump. Use that control-plane cleanup to keep /start and /resume from
     surfacing stale sessions, and harden welcome/resume eligibility so a bare `status:
     active` ledger row is not treated as sufficient evidence of resumable work.'
+- id: BL-054
+  title: Add mechanical research-required gate for latest/current external-fact tasks
+  source: ep-239
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-18'
+  description: 'Add a mechanical pre-delivery guard for tasks that depend on latest/current
+    external facts such as platform behavior, APIs, policies, enums, or specs. Deliverables:
+    (1) a detection path that marks these goals as research-required before analysis
+    or edits; (2) an enforced official-source research checkpoint before Checkpoint
+    Gamma or delivery work proceeds; (3) aligned orchestrator / DFA+ / adapter-facing
+    guidance so repo-local docs are never treated as sufficient evidence when they
+    are themselves under audit; (4) regression coverage proving the gate fires for
+    temporally unstable external-knowledge tasks and does not trigger for stable local-only
+    work.'
 completed: []

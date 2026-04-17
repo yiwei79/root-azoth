@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.41 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 40
+0.1.2.42 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 41
 
 ## Last Session
-- **Session**: 2026-04-18-adhoc-session-continuity-ux
-- **Goal**: AD-HOC: unify session continuity and pipeline triggering UX across primary platforms
+- **Session**: 2026-04-18-adhoc-codex-hook-parity-refresh
+- **Goal**: AD-HOC: refresh Codex hook parity to the latest official model and fix hook UX
 - **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-238 (success)
+- **Episode**: ep-240 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
