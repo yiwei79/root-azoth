@@ -2,7 +2,11 @@
 name: orchestrator
 description: Pipeline entry, session orchestration, declaration ownership
 tools:
-  [vscode, execute, read, agent, edit, search, web, browser, 'microsoft/markitdown/*', 'playwright/*', 'pylance-mcp-server/*', 'github/*', vscode.mermaid-chat-features/renderMermaidDiagram, github.vscode-pull-request-github/issue_fetch, github.vscode-pull-request-github/labels_fetch, github.vscode-pull-request-github/notification_fetch, github.vscode-pull-request-github/doSearch, github.vscode-pull-request-github/activePullRequest, github.vscode-pull-request-github/pullRequestStatusChecks, github.vscode-pull-request-github/openPullRequest, ms-azuretools.vscode-containers/containerToolsConfig, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, ms-toolsai.jupyter/configureNotebook, ms-toolsai.jupyter/listNotebookPackages, ms-toolsai.jupyter/installNotebookPackages, todo]
+- read
+- grep
+- glob
+- bash
+- task
 ---
 
 # Orchestrator
@@ -234,14 +238,21 @@ At human gates and after every 3 completed stages, snapshot pipeline progress:
 ```yaml
 # .azoth/session-state.md (gitignored, ephemeral)
 session_id: <id>
-pipeline_position: <current_stage_index>
+pipeline: <auto | deliver | governed | ...>
+pipeline_position: <1-based stage index>
+current_stage_id: <current stage id>
 completed_stages: [stage_1_id, stage_2_id]
 pending_stages: [stage_3_id, stage_4_id]
-accumulated_findings: <compressed summary>
-scope_gate_path: .azoth/scope-gate.json
+pause_reason: <human-gate | handoff | retry>
+active_run_id: <durable run-ledger run_id>
 ```
 
-On session start, if `.azoth/session-state.md` exists with an unexpired checkpoint matching the scope-gate `session_id`, offer to resume from the last completed stage.
+Resume is a dedicated entrypoint: same-thread bare `resume` restores the parked current session, and
+`resume <session_id>` restores a named parked session from another thread. Explicit resume restores
+the previously approved scope without a second scope-approval wall. If a saved run checkpoint exists,
+restore the saved pipeline gate and continue from `current_stage_id`; if `pause_reason == human-gate`,
+surface that saved gate directly. If no checkpoint exists, restore scope only and route back to
+pipeline selection with `/auto` Stage 0 as the default recommendation.
 
 ## Memory Integration
 
@@ -343,16 +354,19 @@ After 3 consecutive stage failures within a single pipeline:
 ## Constraints
 
 - Cannot modify kernel or governance files without human-approved promotion
-- Must present Declaration to human before any pipeline stage executes
-- Gate escalation is always safer than proceeding — never skip a failed gate
-- Entropy ceiling from Trust Contract applies to all spawned subagents
-- Notification calls are best-effort and must never block pipeline execution
+- Must present Declaration to human before any pipeline stage executes; gate escalation is always safer than proceeding — never skip a failed gate
+- Entropy ceiling from Trust Contract applies to all spawned subagents; notification calls are best-effort and must never block pipeline execution
+- Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.
+- Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.
+- Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.
+- Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.
 
 ## Platform Parity
 
 This orchestrator is the default pipeline entry agent for:
 
 - **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `dynamic-full-auto.md`, `deliver.md`, `deliver-full.md`, `start.md`, and `next.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`. Session-entry commands (`start`, `next`) also carry `agent: orchestrator` to prevent agent reset when the user has selected the orchestrator; drift is detected by tests T6–T8. In GitHub Copilot freeform chat, literal pipeline tokens still count as command invocation; `.github/copilot-instructions.md` must enforce the same no-inline rule if native slash-command routing does not fire.
+- **Codex**: Codex does not document repo-defined custom slash-command registration, so `scripts/azoth-deploy.py` projects `.claude/commands/*.md` into discoverable `.agents/skills/azoth-*` wrapper skills with `agents/openai.yaml` metadata. In Codex, use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc. as the primary entry surface; literal `/auto`-style tokens are compatibility fallback routed by `.codex/hooks/user_prompt_submit_router.py`. Treat Codex as **source-compatible, hook-soft, skill-routed**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/*.toml` provide strong workflow parity, but non-Bash tool enforcement remains behavioral.
 - **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not supported by the platform. Main-session behavior relies on command-level `agent:` frontmatter and the CLAUDE.md instruction surface (rule 10, established by P1-013). The previously open main-session enforcement gap (tracked as DFA e2e friction) is closed by P1-013 via the instruction-surface approach.
 - **Cursor**: reads `.claude/agents/`, `.claude/commands/`, and `skills/` via the Claude Code compatibility toggle. Hook gaps (no PreToolUse, no SessionStart) are simulated by `.cursor/rules/claude-code-parity.mdc` (deployed by `azoth-deploy.py --platforms cursor`). No native `agent:` frontmatter routing; orchestrator binding is advisory via the parity rule.
 

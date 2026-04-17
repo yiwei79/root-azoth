@@ -1,0 +1,55 @@
+# Roadmap task spec — v0.2.0
+id: BL-051
+roadmap_version: v0.2.0
+title: "Research Claude Opus writing style and systematize it as Azoth's GPT-family response style"
+decision_ref: [D46]
+
+intent: >
+  Capture the Claude Opus writing traits the human prefers and codify them as a durable
+  response-style rubric for Azoth's human-facing GPT-family instruction surfaces without
+  breaking terse operational output or machine-optimized agent handoff artifacts.
+
+problem: >
+  Azoth's GPT-facing instruction surfaces still permit list-heavy, disconnected responses
+  that are harder to scan than the paragraph-led, contrastive explanations the human prefers
+  from Claude Opus. Without a canonical spec and deploy-backed regression coverage, those
+  human-facing style gains and the boundary protecting machine-optimized handoff artifacts
+  will drift across canonical sources and generated platform mirrors.
+
+scope:
+  - ".azoth/roadmap-specs/v0.2.0/BL-051.yaml"
+  - "CLAUDE.md core response-style guidance"
+  - "agents/tier1-core/orchestrator.agent.md response-style constraints"
+  - "Deployed orchestrator mirrors for Claude, Copilot, OpenCode, Codex, and Gemini"
+  - "Regression checks in tests/test_azoth_deploy.py for rubric presence and propagation"
+
+non_goals:
+  - "Turning gates, approvals, or status updates into long-form prose by default"
+  - "Editing kernel or governance files outside the approved slice"
+  - "Hand-editing generated platform mirrors instead of deploying from canonical sources"
+  - "Expanding the style rewrite across unrelated agents or commands in the same session"
+
+acceptance:
+  - "The BL-051 spec stores the approved rubric as deploy_assertions"
+  - "CLAUDE.md and the orchestrator archetype carry the same human-facing and agent-handoff rubric lines verbatim"
+  - "scripts/azoth-deploy.py propagates the rubric to Claude, Copilot, OpenCode, Codex, and Gemini orchestrator outputs"
+  - "Focused regression tests cover the canonical sources, deployed mirrors, and the existing orchestrator line ceiling"
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+deploy_assertions:
+  - "Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped."
+  - "Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations."
+  - "Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests."
+  - "Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs."
+
+elasticity: >
+  Phase 1 = codify the rubric on the highest-leverage GPT-facing instruction surfaces and
+  lock it with deploy-backed regression checks. Phase 2 = extend the same rubric to other
+  GPT-facing surfaces only if daily use confirms the style improves readability without
+  degrading terse operational flows.

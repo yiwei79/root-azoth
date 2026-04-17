@@ -1,24 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.24 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 24
+0.1.2.25 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 25
 
 ## Last Session
-- **Session**: 2026-04-17-next-active-filter
-- **Goal**: Fix multi-session coordination gap — /next now excludes active items, cross-checks run-ledger, and writes back status on scope approval
-- **Pipeline**: auto (governed, M1)
+- **Session**: 2026-04-17-bl-051
+- **Goal**: BL-051: Research Claude Opus writing style and systematize it as Azoth's GPT-family response style
+- **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-215 (pattern)
-- **PR**: https://github.com/yiwei79/root-azoth/pull/11
+- **Episode**: ep-216 (pattern)
 
 ## Key Changes This Session
-1. `.claude/commands/next.md` — 6 targeted changes: Step 0b (run-ledger cross-check), Step 3 filter (active exclusion), Step 10c (write-back), Scope Card Format (Excluded: placeholder), Step 10c recovery note, Rules (active semantics).
-2. Platform mirrors updated via azoth-deploy: `.agents/workflows/next.md`, `.gemini/commands/next.toml`, `.github/prompts/next.prompt.md`, `.opencode/commands/next.md`.
-3. PR #11 created against phase/v0.2.0-p2; Copilot/Codex review request filed to inbox.
+1. Delivered the BL-051 writing-style rubric to `CLAUDE.md`, the canonical orchestrator archetype, and the five deployed orchestrator mirrors for Claude, Copilot, OpenCode, Codex, and Gemini.
+2. Refined the rule after review so Claude-style prose applies to human-facing explanations, while BL-011/BL-012 and other agent-to-agent artifacts remain optimized for determinism and parseability.
+3. Final architect review and swarm eval both passed before closeout; the session is ready to hand off cleanly after commit.
 
 ## Open Decisions
-- PR #11 awaiting Copilot/Codex review — insights will arrive in `.azoth/inbox/` for `/intake` triage.
-- `/session-closeout` does not yet clear `status: active` on backlog items — follow-up scope needed.
+- The orchestrator source is now at the 400-line ceiling; future instruction growth in that file will require compression or extraction.
+- Any broader style rollout beyond the orchestrator should keep the same human-facing versus agent-handoff split rather than using a blanket all-agents rule.
 
 ## Next Action
-- Merge PR #11 after review, then run `/next` for next task.
+- Run `/next` to select the next scoped task.

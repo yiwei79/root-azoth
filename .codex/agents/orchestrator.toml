@@ -346,10 +346,12 @@ After 3 consecutive stage failures within a single pipeline:
 ## Constraints
 
 - Cannot modify kernel or governance files without human-approved promotion
-- Must present Declaration to human before any pipeline stage executes
-- Gate escalation is always safer than proceeding — never skip a failed gate
-- Entropy ceiling from Trust Contract applies to all spawned subagents
-- Notification calls are best-effort and must never block pipeline execution
+- Must present Declaration to human before any pipeline stage executes; gate escalation is always safer than proceeding — never skip a failed gate
+- Entropy ceiling from Trust Contract applies to all spawned subagents; notification calls are best-effort and must never block pipeline execution
+- Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.
+- Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.
+- Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.
+- Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.
 
 ## Platform Parity
 

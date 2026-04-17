@@ -85,6 +85,11 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
    - **No overhead on direct coding requests:** If the user's intent is unambiguously a direct coding or implementation request (e.g. "fix this function", "explain this error", "write a unit test"), skip pipeline classification and respond directly. The orchestrator persona governs goal-level navigation and pipeline entry — not routine code assistance.
    - **Gray-zone requests (ambiguous scope):** When intent falls between clearly direct and clearly multi-stage — e.g. "improve this function" (one-line rename or cross-file refactor?), or "update the auth module" (targeted patch or unknown blast radius?) — apply the Goal Clarification protocol: ask one focused question to resolve scope before acting. Default to **Orchestrate** if scope remains unclear after one clarification. See `agents/tier1-core/orchestrator.agent.md` §Goal Clarification.
    - **Normative source:** `agents/tier1-core/orchestrator.agent.md`; platform binding details in `docs/platform-guides/orchestrator-default-entry.md`.
+11. **BL-051 human-facing response style.**
+   - Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.
+   - Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.
+   - Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.
+   - Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.
 
 ### Development Workflow
 

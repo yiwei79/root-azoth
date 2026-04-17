@@ -21,6 +21,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+import yaml
 
 try:
     import tomllib
@@ -619,6 +620,98 @@ def test_deploy_cursor_rules_writes_matching_content(
 # ── Deployed command parity (D46 / BL-023) ────────────────────────────────────
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+BL051_SPEC_PATH = _REPO_ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "BL-051.yaml"
+BL051_CLAUDE_MD_PATH = _REPO_ROOT / "CLAUDE.md"
+BL051_ORCHESTRATOR_ARCHETYPE_PATH = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+BL051_REQUIRED_RUBRIC_LINES = (
+    "Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.",
+    "Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.",
+    "Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.",
+    "Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.",
+)
+
+
+def _copy_repo_fixture_entry(relative_path: str, root: Path) -> None:
+    source = _REPO_ROOT / relative_path
+    destination = root / relative_path
+    if source.is_dir():
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+
+
+def _stage_bl051_deploy_fixture(root: Path) -> None:
+    for relative_path in (
+        "agents/tier1-core/orchestrator.agent.md",
+        "kernel/templates/platform-adapters/codex",
+        "kernel/templates/platform-adapters/gemini",
+    ):
+        _copy_repo_fixture_entry(relative_path, root)
+
+
+def test_bl051_spec_file_exists_and_has_required_shape() -> None:
+    assert BL051_SPEC_PATH.is_file(), (
+        f"missing {BL051_SPEC_PATH.relative_to(_REPO_ROOT)}"
+    )
+
+    data = yaml.safe_load(BL051_SPEC_PATH.read_text(encoding="utf-8"))
+    assert isinstance(data, dict), "BL-051 spec must be a YAML mapping"
+    assert data.get("id") == "BL-051"
+    assert isinstance(data.get("title"), str) and data["title"].strip(), (
+        "BL-051 spec must define a non-empty title"
+    )
+    deploy_assertions = data.get("deploy_assertions")
+    assert isinstance(deploy_assertions, list), "BL-051 spec must define deploy_assertions"
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in deploy_assertions, f"BL-051 spec missing deploy_assertion: {line!r}"
+
+
+def test_bl051_claude_md_contains_required_rubric_lines() -> None:
+    content = BL051_CLAUDE_MD_PATH.read_text(encoding="utf-8")
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in content, f"CLAUDE.md missing BL-051 rubric line: {line!r}"
+
+
+def test_bl051_orchestrator_archetype_contains_required_rubric_lines() -> None:
+    content = BL051_ORCHESTRATOR_ARCHETYPE_PATH.read_text(encoding="utf-8")
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in content, f"orchestrator.agent.md missing BL-051 rubric line: {line!r}"
+
+
+def test_bl051_style_rubric_lines_propagate_to_deployed_orchestrator_outputs(
+    tmp_path: Path,
+) -> None:
+    _stage_bl051_deploy_fixture(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "claude",
+            "copilot",
+            "opencode",
+            "codex",
+            "gemini",
+            "--copilot-agent-location",
+            "both",
+        ]
+    )
+
+    assert rc == 0
+
+    for output_path in (
+        tmp_path / ".claude" / "agents" / "orchestrator.md",
+        tmp_path / ".github" / "agents" / "orchestrator.agent.md",
+        tmp_path / ".opencode" / "agents" / "orchestrator.md",
+        tmp_path / ".codex" / "agents" / "orchestrator.toml",
+        tmp_path / ".gemini" / "agents" / "orchestrator.md",
+    ):
+        assert output_path.is_file(), f"missing deployed orchestrator output: {output_path}"
+        content = output_path.read_text(encoding="utf-8")
+        for line in BL051_REQUIRED_RUBRIC_LINES:
+            assert line in content, f"{output_path.name} missing BL-051 rubric line: {line!r}"
 
 
 def test_deployed_copilot_prompts_match_transform() -> None:
