@@ -35,16 +35,16 @@ Mechanical extraction uses `sync-config.yaml` and product profiles (see architec
 
 For people working **in this repo**:
 
-1. **Prerequisites:** Python **3.11+**, `git`, [Claude Code](https://claude.com/claude-code) (primary). Optional: Codex, OpenCode, Copilot adapters.
+1. **Prerequisites:** Python **3.11+**, `git`, and one co-primary host: [Claude Code](https://claude.com/claude-code) or Codex. Optional: OpenCode, Copilot, Cursor, Gemini adapters.
 2. **Install Python deps** used by tooling (e.g. Rich for the welcome dashboard):
   `pip install -r requirements-dev.txt` (from repo root; or your project venv).
   This form satisfies **pip-install-guard** in Claude Code Bash.
 3. **Validate:** `python3 -m pytest` and `python3 -m ruff check .` / `ruff format --check .` (same gates as **GitHub Actions** `.github/workflows/ci.yml`).
-4. **After changing** canonical `skills/*`*, `agents/**`, or `.claude/commands/**`, sync platform copies:
+4. **After changing** canonical `commands/*`, `skills/*`, `agents/**`, or any remaining legacy `.claude/commands/**` bridge body, sync platform copies:
   `python3 scripts/azoth-deploy.py`
 5. **Public product extract (P4-004):** `python3 scripts/azoth_extract_product.py --validate-only` (CI smoke) or
   `python3 scripts/azoth_extract_product.py --out /tmp/azoth-dist` (full tree per `sync-config.yaml` `product_extraction`).
-6. **Session entry:** In **Claude Code**, **SessionStart** injects plain orientation at open (see `CLAUDE.md` rule 9); you can still run `/start` or `python3 scripts/welcome.py` for Rich or a refresh. In **Codex**, repo workflows are surfaced as explicit `/skills` entries with names like `azoth-start`, `azoth-next`, and `azoth-auto`, and can be invoked via `$azoth-start`, `$azoth-next`, `$azoth-auto`; literal `/start` and `/auto` text remain a compatibility fallback, not a native Codex slash-menu registration. The default Codex adapter keeps that fallback on a single `UserPromptSubmit` compatibility hook and leaves the rest of the control plane in `.codex/config.toml`. Elsewhere, run `/start` or `python3 scripts/welcome.py`, then `/next`, `/intake`, or a custom goal per `.claude/commands/`.
+6. **Session entry:** In **Claude Code**, **SessionStart** injects plain orientation at open (see `CLAUDE.md` rule 9); you can still run `/start` or `python3 scripts/welcome.py` for Rich or a refresh. In **Codex**, `$azoth-start` is the canonical daily entry surface: use `$azoth-start`, `$azoth-start next`, `$azoth-start closeout`, or `$azoth-start pipeline_command=<auto|deliver|deliver-full> <goal>`. Compatibility wrappers like `$azoth-auto` and `$azoth-deliver-full`, plus literal `/start`, `/next`, `/auto`, and `/deliver-full` text, normalize back through the same calm-flow control plane; they are compatibility fallback surfaces, not native Codex slash registration. Elsewhere, run `/start` or `python3 scripts/welcome.py`, then `/next`, `/intake`, or a custom goal per the generated command surfaces.
 
 Core contributor context lives in `**[CLAUDE.md](CLAUDE.md)`** — read it first.
 

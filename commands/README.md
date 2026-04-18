@@ -1,6 +1,6 @@
-# Canonical Commands
+# Command Contracts
 
-This directory is the future neutral source-of-truth for Azoth commands.
+This directory is the neutral authored source-of-truth for Azoth commands.
 
 Design source:
 
@@ -15,17 +15,12 @@ commands/<name>/body.md
 
 Current migration status:
 
-- This directory is partially runtime-active for pilot contracts consumed by `scripts/azoth-deploy.py`
-- Commands without a canonical contract still compile from `.claude/commands/*.md`
-- individual command contracts may temporarily point back to legacy Claude command files
-  through `body.mode: legacy_claude_markdown`
-
-Prototype coverage in this slice:
-
-- `commands/next/command.yaml` is the active pilot contract
+- `scripts/azoth-deploy.py` consumes these contracts directly for deployed platform surfaces
+- Migrated commands such as `/start`, `/next`, `/resume`, and `/session-closeout` already use canonical `commands/<name>/body.md`
+- Some commands still bridge through `body.mode: legacy_claude_markdown`; that bridge remains documented until the final body migration lands
 
 Rules:
 
 - Keep user-facing terminology command-first
-- Do not treat files here as live deploy input until `P1-024`
-- Prefer adding one representative pilot at a time rather than bulk-copying every command
+- Treat files here as the live authored command input for migrated commands
+- Keep command-first wording and make any remaining legacy bridge explicit in the contract

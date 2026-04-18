@@ -2,6 +2,8 @@
 
 > A step-by-step walkthrough of running your first pipeline.
 
+Codex note: the canonical Codex daily route is `$azoth-start`. Use `$azoth-start pipeline_command=auto <goal>` for the start-centered calm-flow path, or `$azoth-auto <goal>` as a compatibility wrapper. Literal `/auto` text in Codex is compatibility fallback, not the primary UX surface.
+
 ## Before You Start
 
 Make sure Azoth is installed. You should see a welcome dashboard when starting
@@ -11,7 +13,8 @@ a new session:
 You: /start
 ```
 
-If the dashboard appears, you're ready.
+If the dashboard appears, you're ready. In Codex, that same daily route starts at
+`$azoth-start`; raw slash tokens stay in compatibility-fallback territory there.
 
 ---
 
@@ -21,6 +24,12 @@ Type `/auto` followed by your goal in plain language:
 
 ```
 You: /auto add a retry mechanism to the API client
+```
+
+In Codex, the equivalent canonical entry is:
+
+```
+You: $azoth-start pipeline_command=auto add a retry mechanism to the API client
 ```
 
 That's it. Azoth handles the rest.
@@ -124,6 +133,8 @@ This:
 3. **Updates state files** for the next session
 4. **Commits changes** to git
 
+In Codex, closeout keeps W1/W2/W4 authoritative and treats W3 as best-effort/deferred unless you explicitly request a Claude memory mirror refresh.
+
 ---
 
 ## Common Patterns
@@ -174,7 +185,7 @@ Azoth: Launching discovery swarms...
 
 ## Tips
 
-1. **Start with `/auto`** — it picks the right pipeline 90% of the time
+1. **Start with `/auto`** — or `$azoth-start pipeline_command=auto <goal>` in Codex calm flow — it picks the right pipeline 90% of the time
 2. **Say `adjust`** if the classification seems wrong — you can override
 3. **Use `/dynamic-full-auto`** when you're exploring, not building
 4. **Always `/session-closeout`** — it's how Azoth learns and improves
@@ -192,4 +203,4 @@ Azoth: Launching discovery swarms...
 | **Memory consultation** | Checks M3 episodes before classification — suggests prior pipelines for similar goals |
 | **Error recovery** | Retry policy + circuit breaker (3 failures → halt + diagnostic card) |
 | **Evaluator dispatch** | E1-E6 triggers decide single eval (0.85) vs swarm eval (0.90) automatically |
-| **Agent binding** | `/start` and `/next` now keep orchestrator agent context across all platforms |
+| **Agent binding** | `/start`, `/next`, and Codex calm-flow `$azoth-start ...` now keep orchestrator agent context across all platforms |

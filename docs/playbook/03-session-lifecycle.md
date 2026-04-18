@@ -18,9 +18,11 @@ Every Azoth session follows three phases:
    5 min                 30-120 min             5 min
 ```
 
+Codex note: the same lifecycle is start-centered. Use `$azoth-start`, `$azoth-start next`, `$azoth-start pipeline_command=<...> <goal>`, and `$azoth-session-closeout`. Literal slash tokens are compatibility fallback in Codex, not the primary daily path.
+
 ---
 
-## Phase 1: Orient (`/start`)
+## Phase 1: Orient (`/start`, or `$azoth-start` in Codex)
 
 ```
 You: /start
@@ -59,6 +61,8 @@ The welcome dashboard shows you:
 | `resume <id>` | Reopen an interrupted parked session from another thread |
 | `intake` | Process insight files from `.azoth/inbox/` |
 | `/auto <goal>` | Start with a specific goal |
+
+In Codex, route those same choices through `$azoth-start ...` instead of splitting the daily path into `/start -> /next -> /auto`.
 
 ---
 
@@ -183,8 +187,8 @@ Closeout performs 4 write phases:
 │  queued item, not only a spec or stale pointer.        │
 ├───────────────────────────────────────────────────────┤
 │  W3: MEMORY MIRROR                                    │
-│  Sync to ~/.claude/projects/.../memory/ so Claude     │
-│  Code sessions can read Copilot-authored state.        │
+│  Best-effort sync to ~/.claude/projects/.../memory/   │
+│  and log `W3 deferred` when the path is unavailable.  │
 ├───────────────────────────────────────────────────────┤
 │  W4: VERSION                                          │
 │  Bump patch version (e.g., 0.1.1.31 → 0.1.1.32).     │
@@ -197,10 +201,13 @@ Closeout performs 4 write phases:
 - **Memory**: Future sessions read past episodes to avoid repeating mistakes
 - **Continuity**: `bootloader-state.md` tells the next session exactly where
   things left off
-- **Cross-IDE**: If you switch from Copilot to Claude Code (or vice versa),
-  the handoff state and any saved pipeline checkpoint travel with you
+- **Cross-IDE**: If you switch between Codex, Claude Code, Copilot, or another
+  supported adapter, the repo-local handoff state and any saved pipeline checkpoint
+  travel with you; W3 is a best-effort Claude memory mirror
 - **Versioning**: Every session bumps the patch version — you always know
   what changed when
+
+In Codex, W3 is supplemental: W2 repo-local state wins if W2 and W3 diverge, and W3 deferral must never block W4.
 
 ---
 

@@ -2,6 +2,8 @@
 
 > Quick reference for all Azoth slash commands.
 
+Codex note: `$azoth-start` is the canonical daily entry surface in Codex. Compatibility wrappers like `$azoth-auto` and literal slash tokens still work, but routed workflow commands normalize back through the same calm-flow start controller.
+
 ## Pipeline Commands
 
 ### `/auto <goal>`
@@ -14,6 +16,7 @@
 - **Gates**: 1 fused Declaration (scope + pipeline in one approval)
 - **Lightweight path**: known-pattern + non-governance → informational auto-proceed
 - **Stages**: 3-6 depending on classification (see auto-router rules)
+- **Codex canonical route**: `$azoth-start pipeline_command=auto <goal>`
 
 ---
 
@@ -27,6 +30,7 @@
 - **Gates**: 1 human gate (final approval)
 - **Stages**: pipeline-gate → planner → test-builder → builder → architect-review
 - **Use when**: Work is already scoped and approved, non-governance
+- **Codex canonical route**: `$azoth-start pipeline_command=deliver <goal>`
 
 ---
 
@@ -40,6 +44,7 @@
 - **Gates**: 3 human gates (goal, design, delivery)
 - **Stages**: goal-clarify → architect → governance-review → planner → test-builder → builder → architect-review
 - **Use when**: Touching kernel/, governance rules, or making breaking changes
+- **Codex canonical route**: `$azoth-start pipeline_command=deliver-full <goal>`
 
 ---
 
@@ -67,6 +72,7 @@
 ```
 
 Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom goal.
+In Codex, use `$azoth-start` for the same surface; `$azoth-start next` and `$azoth-start pipeline_command=<...> <goal>` stay inside the same calm-flow route.
 
 ---
 
@@ -79,6 +85,7 @@ Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom g
 ```
 
 Writes `.azoth/scope-gate.json` after human approval. Not needed when using `/auto` (fused Declaration handles it).
+In Codex, the canonical daily equivalent is `$azoth-start next`.
 
 ---
 
@@ -90,6 +97,7 @@ Writes `.azoth/scope-gate.json` after human approval. Not needed when using `/au
 ```
 
 Performs W1-W4: episode capture, state update, memory mirror, version bump.
+In Codex, `$azoth-session-closeout` is the primary entry and W3 is best-effort/deferred by default.
 
 ---
 

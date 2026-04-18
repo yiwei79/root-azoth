@@ -2056,9 +2056,9 @@ items:
     legacy-body bridge so INI-PLT-006 can satisfy its exit criteria. Deliverables:
     (1) canonical command contracts/bodies for closeout, memory, and maintenance commands;
     (2) adapter-facing documentation that states the final compatibility contract
-    honestly; (3) final drift/parity evidence that Codex wrappers no longer depend
-    on `.claude/commands/*.md` as semantic source of truth for the migrated command
-    set.
+    honestly; (3) final drift/parity evidence that the migrated command set follows
+    the canonical contract while any remaining `legacy_claude_markdown` bridges stay
+    documented honestly until their final body migration lands.
 
     '
 - id: T-005

@@ -16,7 +16,7 @@ Extract proven governance patterns, bootloader philosophy, and self-improvement
 loops from a production agentic framework into a standalone, portable,
 "drop-and-start" personal toolkit that:
 
-- Works natively with Claude Code (primary), exposes discoverable `/skills`-based parity in Codex, and remains compatible with OpenCode + GitHub Copilot
+- Works natively with the co-primary hosts Claude Code and Codex, while remaining compatible with OpenCode + GitHub Copilot
 - Embodies "be water" philosophy: minimal invariant kernel → emergent structure
 - Enables trusted autonomous agent swarms with single human alignment point
 - Self-improves from experience (L1 → L2 → L3 maturity ladder)
@@ -555,7 +555,7 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
 
-**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth must project canonical `.claude/commands/*.md` workflows into Codex's **discoverable native surface** first: generated `.agents/skills/azoth-*` wrappers with `agents/openai.yaml` metadata expose `/auto`, `/next`, `/resume`, `/deliver`, `/start`, and related entries through `/skills`. Literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` provide the main control plane, `.codex/hooks/user_prompt_submit_router.py` remains as a narrow compatibility hook, and there is still no broad Claude-style `Write/Edit` interception.
+**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth projects command semantics into Codex through a calm-flow control plane: `$azoth-start` is the canonical daily entry surface, generated `azoth-*` wrappers remain discoverable through `/skills`, and literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` provide the main control plane, `.codex/hooks/user_prompt_submit_router.py` remains as a narrow compatibility hook, and there is still no broad Claude-style `Write/Edit` interception.
 
 **Codex hook protocol (confirmed via runtime errors):** Codex hooks have **strict stdout requirements** that differ from Claude Code:
 
@@ -585,7 +585,7 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 Azoth treats **repo-local state** as the **authoritative** narrative every platform must converge on. **Claude Code project memory** (`~/.claude/projects/<project-key>/memory/`) is a **supplemental mirror**, not a second source of truth.
 
-Canonical checkpoint text lives in **`.claude/commands/session-closeout.md`** (D46 copies to **`.github/prompts/session-closeout.prompt.md`** and **`.opencode/commands/session-closeout.md`**).
+Canonical checkpoint text lives in **`commands/session-closeout/body.md`**; deploy outputs mirror it to **`.claude/commands/session-closeout.md`**, **`.github/prompts/session-closeout.prompt.md`**, and **`.opencode/commands/session-closeout.md`**.
 
 | Checkpoint | What it writes | Claude Code | Cursor | OpenCode | GitHub Copilot |
 |------------|----------------|-------------|--------|----------|----------------|
