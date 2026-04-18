@@ -15,6 +15,8 @@ from typing import Any
 import yaml
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
 from run_ledger import release_write_claim, upsert_run, upsert_session
+from session_continuity import governance_mode as normalized_governance_mode
+from session_continuity import selected_pipeline_command
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
@@ -98,7 +100,18 @@ def default_next_action() -> str:
 
 
 def is_governed_scope(scope: dict[str, Any]) -> bool:
-    return scope.get("delivery_pipeline") == "governed" or scope.get("target_layer") == "M1"
+    return normalized_governance_mode(scope) == "governed"
+
+
+def closeout_pipeline_label(scope: dict[str, Any]) -> str:
+    candidate = selected_pipeline_command(scope)
+    if candidate:
+        return candidate
+    for field_name in ("governance_mode", "delivery_pipeline"):
+        value = str(scope.get(field_name) or "").strip()
+        if value:
+            return value
+    return "standard"
 
 
 def _is_human_approved_final_delivery(record: dict[str, Any]) -> bool:
@@ -1018,7 +1031,7 @@ def update_bootloader_state(
     version = azoth_data.get("version", "unknown")
     phase = azoth_data.get("phase", "unknown")
     goal = str(scope.get("goal") or "Session closeout")
-    pipeline = str(scope.get("delivery_pipeline") or "standard")
+    pipeline = closeout_pipeline_label(scope)
 
     lines = [
         "# Azoth Bootloader State",
@@ -1119,7 +1132,7 @@ def write_session_state(
 ) -> str:
     session_state_path = repo_root / ".azoth" / "session-state.md"
     if not session_state_path.exists() and not create_if_missing:
-        return "W2: session-state.md not present (skipped)"
+        return "W2: .azoth/session-state.md not present (W2 handoff artifact skipped)"
     session_state = {
         "session_id": session_id,
         "state": state,
@@ -1133,7 +1146,7 @@ def write_session_state(
     }
     session_state.update(extract_session_checkpoint(checkpoint or {}))
     session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
-    return "W2: session-state.md refreshed"
+    return "W2: .azoth/session-state.md refreshed (W2 handoff artifact)"
 
 
 def update_session_state(
@@ -1339,6 +1352,7 @@ def run_closeout(
         clear_checkpoint=administrative_finalize or session_status == "closed",
     )
     print(session_state_note)
+    print("W2 handoff artifact: .azoth/session-state.md")
     update_bootloader_state(
         repo_root,
         scope=scope,
@@ -1352,11 +1366,21 @@ def run_closeout(
         ),
     )
     update_episode_count(repo_root, episode_count)
-    write_claude_memory_mirror(
-        repo_root,
-        latest_episode=latest_episode,
-        next_action=next_action,
-    )
+    try:
+        write_claude_memory_mirror(
+            repo_root,
+            latest_episode=latest_episode,
+            next_action=next_action,
+        )
+    except Exception as exc:
+        print(
+            "W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout "
+            f"in Claude Code ({exc})"
+        )
+        print("W3 disposition: deferred")
+    else:
+        print("W3 disposition: completed")
+    print(f"Next operator action: {next_action}")
     finalize_closeout_artifacts(
         repo_root,
         administrative_finalize=administrative_finalize,

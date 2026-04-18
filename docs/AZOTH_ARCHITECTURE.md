@@ -534,7 +534,7 @@ azoth init / azoth-deploy.py
 | AGENTS.md | ✅ Native | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
 | Skills (SKILL.md) | ✅ .claude/skills/ | ✅ .opencode/skills/{name}/ | ✅ .github/skills/ | ✅ `.agents/skills/` + `azoth-*` wrappers | ✅ .claude + repo (toggle) |
 | Agents | .claude/agents/ | .opencode/agents/ | .claude/agents/ by default, optional .github/agents/ mirror | `.codex/agents/*.toml` | .claude/agents/ (toggle) |
-| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | `/skills` wrappers (`azoth-*`) + literal-token fallback | .claude/commands/ (toggle) |
+| Commands | .claude/commands/ | .opencode/commands/ | .github/prompts/ | `/skills` wrappers (`azoth-*`; `$azoth-start` calm-flow default) + literal-token fallback | .claude/commands/ (toggle) |
 | `.cursor/rules/*.mdc` | — | — | — | — | ✅ from `azoth-deploy --platforms cursor` |
 | Config | .claude/settings.json | opencode.json | VS Code settings | `.codex/config.toml` | Cursor Settings + toggle |
 | Hooks | ✅ Full hook system | ✅ Plugin system | ⚠️ Limited | ⚠️ Hooks-capable (`SessionStart`, `UserPromptSubmit`, Bash `PreToolUse`/`PostToolUse`, `Stop`; non-Bash interception still unavailable) | ❌ (use `.mdc` parity rules) |
@@ -555,7 +555,7 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 **GitHub Copilot parity:** Copilot can load `.github/prompts/`, `.github/copilot-instructions.md`, and discover Azoth agents, but freeform chat is not guaranteed to mechanically switch into slash-command execution. Therefore Copilot must treat literal pipeline tokens (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`) as explicit pipeline-entry requests, keep the orchestrator in main chat, and use staged `Task` / subagent execution when available rather than inlining the full pipeline in one thread.
 
-**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth projects command semantics into Codex through a calm-flow control plane: `$azoth-start` is the canonical daily entry surface, generated `azoth-*` wrappers remain discoverable through `/skills`, and literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` provide the main control plane, `.codex/hooks/user_prompt_submit_router.py` remains as a narrow compatibility hook, and there is still no broad Claude-style `Write/Edit` interception.
+**Codex parity:** Codex does **not** currently document repo-defined custom slash-command registration. Therefore Azoth projects command semantics into Codex through a calm-flow control plane: `$azoth-start` is the canonical daily entry surface, generated `azoth-*` wrappers remain discoverable through `/skills`, and literal `/auto`-style prompt text remains a **compatibility fallback**, not the primary UX contract. Codex should be treated as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` provide the main control plane, `.codex/hooks/user_prompt_submit_router.py` remains as a narrow compatibility hook, and there is still no broad Claude-style `Write/Edit` interception. When a command still uses `body.mode: legacy_claude_markdown`, the Codex wrapper must state that it is bridging through the matching `.claude/commands/*.md` body rather than overstating independence from the legacy mirror.
 
 **Codex hook protocol (confirmed via runtime errors):** Codex hooks have **strict stdout requirements** that differ from Claude Code:
 
@@ -585,18 +585,18 @@ Cursor can consume the **same** Azoth sources as Claude Code when **Settings →
 
 Azoth treats **repo-local state** as the **authoritative** narrative every platform must converge on. **Claude Code project memory** (`~/.claude/projects/<project-key>/memory/`) is a **supplemental mirror**, not a second source of truth.
 
-Canonical checkpoint text lives in **`commands/session-closeout/body.md`**; deploy outputs mirror it to **`.claude/commands/session-closeout.md`**, **`.github/prompts/session-closeout.prompt.md`**, and **`.opencode/commands/session-closeout.md`**.
+Canonical checkpoint contract lives in **`commands/session-closeout/command.yaml`** plus **`commands/session-closeout/body.md`**; deploy outputs mirror it to **`.claude/commands/session-closeout.md`**, **`.github/prompts/session-closeout.prompt.md`**, and **`.opencode/commands/session-closeout.md`**.
 
-| Checkpoint | What it writes | Claude Code | Cursor | OpenCode | GitHub Copilot |
-|------------|----------------|-------------|--------|----------|----------------|
-| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ (same repo path) |
-| **W2** | `.azoth/bootloader-state.md`, `.azoth/run-ledger.local.yaml`, `.azoth/scope-gate.json` (`.azoth/session-state.md` when present) | ✅ | ✅ | ✅ | ✅ (same repo paths) |
-| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | ⚠️ **attempt mirror write** so later Claude Code sessions can read the latest Copilot-authored closeout |
-| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ |
+| Checkpoint | What it writes | Claude Code | Codex | Cursor | OpenCode | GitHub Copilot |
+|------------|----------------|-------------|-------|--------|----------|----------------|
+| **W1** | `.azoth/memory/episodes.jsonl` | ✅ | ✅ | ✅ | ✅ | ✅ (same repo path) |
+| **W2** | `.azoth/bootloader-state.md`, `.azoth/run-ledger.local.yaml`, `.azoth/scope-gate.json` (`.azoth/session-state.md` when present) | ✅ | ✅ | ✅ | ✅ | ✅ (same repo paths) |
+| **W3** | `~/.claude/projects/<project-key>/memory/` (`project_status.md`, `MEMORY.md` index, optional `feedback_*.md`) | ✅ native | ⚠️ **best-effort** with host FS access; else log `W3 deferred` | ⚠️ **attempt** with host FS access; else log `W3 deferred` | N/A | ⚠️ **attempt mirror write** so later Claude Code sessions can read the latest Copilot-authored closeout |
+| **W4** | `python scripts/version-bump.py --patch` | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 **Session start (all IDEs):** **`azoth-memory.mdc`** (Cursor) / same paths in Claude Code — read **`.azoth/memory/patterns.yaml`**, **`.azoth/bootloader-state.md`**, **`.azoth/session-state.md`** when present. Handoff **`session-state.md`** is separate from the W2 bullets in `/session-closeout` (update it when you intentionally leave a cross-IDE capsule). Stage-aware continuity uses `.azoth/run-ledger.local.yaml` as the durable source of truth and mirrors `pipeline`, `pipeline_position`, `current_stage_id`, `completed_stages`, `pending_stages`, `pause_reason`, and `active_run_id` into `session-state.md` for cross-IDE resume.
 
-**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists so Claude Code’s native project-memory layer stays aligned; **Cursor** must mirror that intent (attempt W3 or log deferral per **`kernel/templates/platform-adapters/cursor/claude-code-parity.mdc.template`**), and **GitHub Copilot** should also best-effort mirror W3 during closeout so Claude Code can read Copilot-authored session state later. **OpenCode** and **GitHub Copilot** still do not **consume** `~/.claude/projects/.../memory/`; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or another host with access.
+**Parity rule:** **W1 + W2 + W4** are the **shared contract** — every tool edits or commits the **same files in the repo**. **W3** exists so Claude Code’s native project-memory layer stays aligned; **Codex**, **Cursor**, and **GitHub Copilot** should treat it as a best-effort mirror (attempt W3 or log deferral per the platform adapter rules) instead of a closeout blocker. **Codex**, **OpenCode**, and **GitHub Copilot** still do not **consume** `~/.claude/projects/.../memory/` as a native runtime surface; their parity is **committed W1/W2** (plus `azoth.yaml`). If W2 and W3 diverge, **W2 wins**; refresh W3 on the next closeout run from Claude Code or another host with access.
 
 **Governed closeout rule:** before `scripts/do_closeout.py` performs any W1–W4 mutation for a governed scope or `target_layer: M1`, it must validate the latest matching human `final-delivery` approval for the active `session_id` in `.azoth/final-delivery-approvals.jsonl`. Approval evidence is consume-only during closeout: read it, validate it, and leave it unchanged. Missing, malformed, missing-match, or denied records fail closed before W1.
 
@@ -629,22 +629,26 @@ implicitly allowed tools  → permission: allow
 This enables cross-platform workspace compatibility without waiting for the Phase 4 installer.
 
 ```
-agents/**/*.agent.md  ─┬→ .claude/agents/<name>.md         (Claude Code + default Copilot path)
-                       ├→ .github/agents/<name>.agent.md   (optional Copilot compatibility mirror)
-                       ├→ .opencode/agents/<name>.md       (posture→permission, infer mode)
-                       └→ .codex/agents/<name>.toml        (Codex custom agents)
+agents/**/*.agent.md            ─┬→ .claude/agents/<name>.md         (Claude Code + default Copilot path)
+                                 ├→ .github/agents/<name>.agent.md   (optional Copilot compatibility mirror)
+                                 ├→ .opencode/agents/<name>.md       (posture→permission, infer mode)
+                                 └→ .codex/agents/<name>.toml        (Codex custom agents)
 
-.claude/commands/*.md ─┬→ .github/prompts/<name>.prompt.md (add agent binding)
-                       ├→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
-                       └→ .agents/skills/azoth-<name>/     (Codex command-wrapper skills + UI metadata)
+commands/<name>/command.yaml    ─┬→ .claude/commands/<name>.md       (deployed Claude mirror)
+ + canonical body.md            ├→ .github/prompts/<name>.prompt.md (add agent binding)
+                                 ├→ .opencode/commands/<name>.md     (add $ARGUMENTS support)
+                                 └→ .agents/skills/azoth-<name>/     (Codex command-wrapper skills + UI metadata)
 
-skills/**/ ────────────┬→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
-                       └→ .agents/skills/<name>/SKILL.md    (Codex / Antigravity shared skill path)
+commands/<name>/command.yaml    ─┬→ same deployed outputs as above
+ + legacy `.claude/commands/*.md`┘   while `body.mode: legacy_claude_markdown` remains live
+
+skills/**/ ─────────────────────┬→ .opencode/skills/<name>/SKILL.md  (per-skill subdirectory)
+                                 └→ .agents/skills/<name>/SKILL.md    (Codex / Antigravity shared skill path)
 kernel/templates/platform-adapters/codex/*.template
-                       → .codex/*                            (Codex project adapter files)
+                                 → .codex/*                            (Codex project adapter files)
 kernel/templates/platform-adapters/cursor/*.mdc.template
-                       → .cursor/rules/<name>.mdc           (Cursor always-on rules)
-                         AGENTS.md                          (generated broadcast layer)
+                                 → .cursor/rules/<name>.mdc           (Cursor always-on rules)
+                                   AGENTS.md                          (generated broadcast layer)
 ```
 
 Prior art: Caliber (`caliber-ai-org/ai-setup`) uses a similar canonical→many approach
@@ -805,9 +809,9 @@ azoth/
 │   └── tier4-utility/
 │
 ├── instructions/                 # Portable instruction library
-├── commands/                     # Dual-write command templates
-│   ├── claude/
-│   └── copilot/
+├── commands/                     # Neutral command contracts + authored bodies
+│   ├── <name>/command.yaml
+│   └── <name>/body.md            # when migrated; legacy_claude_markdown bridges still exist for some families
 ├── pipelines/                    # Layer 3: CURRENT
 ├── scaffold/                     # Coded agent templates
 │   ├── coded-agent/
@@ -902,7 +906,7 @@ azoth/
 | D49 | Intake 3-axis triage | Extends D33 step 3: for each integrated insight, human simultaneously decides (1) M3 action, (2) M2 candidate flag, (3) backlog item needed — three independent axes, any combination valid |
 | D50 | Session scope card | `/next` outputs a scope card (1 primary + max 2 secondary goals); human approves → writes `.azoth/scope-gate.json`; validator rejects mixed M1+runtime sessions |
 | D51 | Formalized M2→M1 promotion path | M1 changes are a governed event: `target_layer: M1` backlog item + `/deliver-full` pipeline; M1 changes happen between sessions only; scope card validator enforces isolation |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); `.claude/commands/start.md` runs the script via Bash then routes user option; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 (Claude Code): `hooks.SessionStart` → `.claude/hooks/session_start_welcome.py` runs `welcome.py --plain`, tees stdout to `.azoth/session-orientation.txt` (gitignored), injects same text into model context; matchers `startup|resume`; optional per-hook `timeout` (seconds, hooks doc); `CLAUDE.md` rule 9 — default trust injection, `Read` file for verbatim chat only; Cursor has no SessionStart — parity rules + manual script |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Rich-rendered terminal dashboard at session open; `scripts/welcome.py` reads `azoth.yaml`, `backlog.yaml`, `scope-gate.json`, recent episodes and renders via Python `rich` library — `box.HEAVY` identity header, `box.MINIMAL` phase progress strip, `Columns([health, backlog])` 2-column body with `box.ROUNDED` panels, last-session strip, START options panel; Rich handles all Unicode/emoji width via wcwidth internally — zero manual padding; context-sensitive option menu (resume if gate active, else /next); the canonical start contract now lives in `commands/start/command.yaml` + `commands/start/body.md`, with deployed mirrors for Claude/Cursor and calm-flow `$azoth-start` routing for Codex; UX entry point for D41 bootstrap loop; Phase 4 deliverable; Phase 5 (Claude Code): `hooks.SessionStart` → `.claude/hooks/session_start_welcome.py` runs `welcome.py --plain`, tees stdout to `.azoth/session-orientation.txt` (gitignored), injects same text into model context; matchers `startup|resume`; optional per-hook `timeout` (seconds, hooks doc); `CLAUDE.md` rule 9 — default trust injection, `Read` file for verbatim chat only; Cursor has no SessionStart — parity rules + manual script |
 
 ---
 
@@ -1198,7 +1202,7 @@ D11 noted "M2→M1 pending" as a partial status. D51 formalizes it.
 - M1 changes happen *between* sessions, never during an active session
 - The scope card validator (D50) enforces this: M1 items cannot be mixed with runtime tasks
 - `/deliver-full` is the required pipeline for all M1-targeted backlog items
-- This applies to kernel/, skills/ (.claude/commands/), and agents/ equally
+- This applies to kernel/, skills/, commands/ (plus their deployed mirrors), and agents/ equally
 
 **Promotion chain:**
 
@@ -1218,7 +1222,7 @@ m2_candidate=true flag      set at intake                           target_layer
 | D49 | Intake 3-axis triage | M3/M2/backlog routing is simultaneous and independent, not sequential |
 | D50 | Session scope card | Mechanical scope limiter — approved goals write scope-gate.json before session |
 | D51 | Formalized M2→M1 promotion path | M1 changes are governed events between sessions; target_layer field routes delivery |
-| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
+| D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; in **Codex**, `$azoth-start` is the calm-flow daily entry surface and raw slash tokens are compatibility fallback. **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
 | D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH pre-release, then 0.1.MILESTONE_PHASE.PATCH while shipping toward v0.2.0 |
 | D54 | Branch model + worktree policy | Two permanent branches (`main`, `phase/vN-pN`); short-lived feature/patch branches deleted on merge; zero-worktree default to avoid scope-gate + run-ledger conflicts |
 

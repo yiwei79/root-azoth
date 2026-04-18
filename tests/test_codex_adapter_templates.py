@@ -83,7 +83,12 @@ def test_codex_router_adds_context_for_auto_token() -> None:
     payload = json.loads(_run_router(router, "/auto investigate drift", cwd=REPO))
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/auto" in ctx
-    assert ".claude/commands/auto.md" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "pipeline_command=auto" in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=auto investigate drift"
+    )
 
 
 def test_codex_router_adds_context_for_any_existing_command_token() -> None:
@@ -92,7 +97,7 @@ def test_codex_router_adds_context_for_any_existing_command_token() -> None:
     payload = json.loads(_run_router(router, "/remember capture this lesson", cwd=REPO))
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/remember" in ctx
-    assert ".claude/commands/remember.md" in ctx
+    assert "commands/remember/command.yaml" in ctx
 
 
 def test_codex_router_adds_context_for_hookmode_token() -> None:
@@ -101,7 +106,7 @@ def test_codex_router_adds_context_for_hookmode_token() -> None:
     payload = json.loads(_run_router(router, "/hookmode verbo", cwd=REPO))
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/hookmode" in ctx
-    assert ".claude/commands/hookmode.md" in ctx
+    assert "commands/hookmode/command.yaml" in ctx
 
 
 def test_codex_router_adds_context_from_non_root_cwd() -> None:
@@ -110,7 +115,11 @@ def test_codex_router_adds_context_from_non_root_cwd() -> None:
     payload = json.loads(_run_router(router, "/auto investigate drift", cwd=REPO / "tests"))
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/auto" in ctx
-    assert ".claude/commands/auto.md" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=auto investigate drift"
+    )
 
 
 def test_codex_router_ignores_mention_only_command_tokens() -> None:
@@ -119,15 +128,19 @@ def test_codex_router_ignores_mention_only_command_tokens() -> None:
     assert _run_router(router, "Explain the difference between /auto and /deliver in Azoth.", cwd=REPO).strip() == ""
 
 
-def test_codex_router_redirects_deliver_full_token_to_staged_skill_entry() -> None:
+def test_codex_router_redirects_deliver_full_token_to_start_centered_route() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
     assert router.is_file(), "missing deployed Codex user prompt router"
     payload = json.loads(_run_router(router, "/deliver-full harden codex adapter", cwd=REPO))
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/deliver-full" in ctx
-    assert ".claude/commands/deliver-full.md" in ctx
-    assert "$azoth-deliver-full" in ctx
-    assert "/skills" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/deliver-full/command.yaml" in ctx
+    assert ".agents/skills/azoth-start/SKILL.md" in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=deliver-full harden codex adapter"
+    )
 
 
 def test_codex_router_warns_pipeline_tokens_need_staged_delegation_not_inline_fallback() -> None:
@@ -137,13 +150,11 @@ def test_codex_router_warns_pipeline_tokens_need_staged_delegation_not_inline_fa
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "staged pipeline execution" in ctx
     assert "not permission to improvise the work inline" in ctx
-    assert "STOP and ask the human" in ctx
-    assert "staged delegation is unavailable" in ctx
+    assert "STOP after the Declaration and ask the human" in ctx
 
 
 def _copy_router_fixture(tmp_path: Path) -> Path:
     (tmp_path / ".codex" / "hooks").mkdir(parents=True)
-    (tmp_path / ".claude" / "commands").mkdir(parents=True)
     (tmp_path / "scripts").mkdir(parents=True)
     (tmp_path / ".azoth").mkdir(parents=True)
 
@@ -151,8 +162,8 @@ def _copy_router_fixture(tmp_path: Path) -> Path:
         (REPO / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    (tmp_path / ".claude" / "commands" / "auto.md").write_text(
-        (REPO / ".claude" / "commands" / "auto.md").read_text(encoding="utf-8"),
+    (tmp_path / "scripts" / "codex_control_plane.py").write_text(
+        (REPO / "scripts" / "codex_control_plane.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
     (tmp_path / "scripts" / "session_continuity.py").write_text(
@@ -185,6 +196,28 @@ def test_codex_router_adds_resume_guidance_and_write_disclaimer(tmp_path: Path) 
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "resume/continue decision" in ctx
     assert "does not authorize writes" in ctx
+    assert payload["hookSpecificOutput"]["updatedInput"] == "$azoth-start pipeline_command=auto BL-123: Active scope"
+
+
+def test_codex_router_canonical_start_fails_closed_when_staged_delegation_is_unavailable(
+    tmp_path: Path,
+) -> None:
+    router = _copy_router_fixture(tmp_path)
+    payload = json.loads(
+        _run_router(
+            router,
+            "/start pipeline_command=deliver-full harden codex adapter",
+            cwd=tmp_path,
+        )
+    )
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "pipeline_command=deliver-full" in ctx
+    assert "Staged delegation is unavailable in this runtime" in ctx
+    assert "STOP after the Declaration and ask the human" in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=deliver-full harden codex adapter"
+    )
 
 
 def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> None:

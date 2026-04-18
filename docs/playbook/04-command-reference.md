@@ -1,8 +1,11 @@
 # Command Reference
 
-> Quick reference for all Azoth slash commands.
+> Quick reference for Azoth commands across slash-native and skill-routed surfaces.
 
-Codex note: `$azoth-start` is the canonical daily entry surface in Codex. Compatibility wrappers like `$azoth-auto` and literal slash tokens still work, but routed workflow commands normalize back through the same calm-flow start controller.
+Claude/Cursor/OpenCode can use slash-style command text directly. In Codex, calm
+flow prefers `/skills` with `$azoth-start` as the daily entry surface; compatibility
+wrappers and raw slash tokens still work, but routed workflow commands normalize
+back through the same start-centered control plane.
 
 ## Pipeline Commands
 
@@ -72,7 +75,9 @@ Codex note: `$azoth-start` is the canonical daily entry surface in Codex. Compat
 ```
 
 Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom goal.
-In Codex, use `$azoth-start` for the same surface; `$azoth-start next` and `$azoth-start pipeline_command=<...> <goal>` stay inside the same calm-flow route.
+
+In Codex calm flow, prefer `$azoth-start`, `$azoth-start next`, `$azoth-start closeout`,
+or `$azoth-start <goal>` for the same routes.
 
 ---
 
@@ -97,7 +102,9 @@ In Codex, the canonical daily equivalent is `$azoth-start next`.
 ```
 
 Performs W1-W4: episode capture, state update, memory mirror, version bump.
-In Codex, `$azoth-session-closeout` is the primary entry and W3 is best-effort/deferred by default.
+In Codex calm flow, prefer `$azoth-start closeout` or use `$azoth-session-closeout`
+directly. W3 is best-effort and may log `W3 deferred`; repo-local W1/W2/W4 remain
+authoritative.
 
 ---
 

@@ -77,6 +77,7 @@ The installer detects your AI toolchain (Claude Code, Codex, OpenCode, Copilot, 
 | Need                                                  | Location                                                                                                              |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Architecture & decisions                              | `[docs/AZOTH_ARCHITECTURE.md](docs/AZOTH_ARCHITECTURE.md)`                                                            |
+| Codex calm-flow usage                                 | `[docs/platform-guides/codex-guide.md](docs/platform-guides/codex-guide.md)`                                          |
 | Gemini onboarding                                      | `[docs/platform-guides/gemini-guide.md](docs/platform-guides/gemini-guide.md)`                                        |
 | Path duality (scaffold `kernel/` vs `.azoth/kernel/`) | Architecture **§18** (D42)                                                                                            |
 | Boot sequence (Activate → Survey → Operate → Harden)  | `[kernel/BOOTLOADER.md](kernel/BOOTLOADER.md)` (this repo) · `**BOOTLOADER.md`** under `.azoth/kernel/` after install |
@@ -89,10 +90,10 @@ The installer detects your AI toolchain (Claude Code, Codex, OpenCode, Copilot, 
 
 ## Contributing
 
-Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, slash commands, or Codex adapter files, run `**python3 scripts/azoth-deploy.py**` so Codex, OpenCode, Copilot, and Cursor stay aligned.
+Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, command contracts, legacy command bodies, or Codex adapter files, run `**python3 scripts/azoth-deploy.py**` so Codex, OpenCode, Copilot, and Cursor stay aligned.
 
 **Pull requests:** Opening a PR loads [`.github/pull_request_template.md`](.github/pull_request_template.md) — including a **one-liner** to request **GitHub Copilot** review so findings land as **D32 inbox JSONL** (see [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) §7) for **`/intake`**, not ad-hoc drive-by edits. Repository Copilot context: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 **Cursor:** For IDE-side blindspot review that **writes the same D32 contract** to `.azoth/inbox/`, use **`/review-insights`** or follow **`skills/cursor-review-insights/SKILL.md`** (see [`.cursor/rules/code-review-insights.mdc`](.cursor/rules/code-review-insights.mdc) after `azoth-deploy`).
 
-**Slash commands** (`.claude/commands/*.md`) must declare `**azoth_effect: read | write | mixed`** in YAML frontmatter so it is obvious whether the default path can **build** (Write/Edit) or stays read-only — see `[kernel/GOVERNANCE.md](kernel/GOVERNANCE.md)`.
+**Command contracts** in `commands/<name>/command.yaml` must declare `**azoth_effect: read | write | mixed`** so it is obvious whether the default path can **build** (Write/Edit) or stays read-only. When a command still uses `body.mode: legacy_claude_markdown`, keep the referenced `.claude/commands/*.md` body aligned too — see `[kernel/GOVERNANCE.md](kernel/GOVERNANCE.md)`.

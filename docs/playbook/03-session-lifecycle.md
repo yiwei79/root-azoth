@@ -18,7 +18,7 @@ Every Azoth session follows three phases:
    5 min                 30-120 min             5 min
 ```
 
-Codex note: the same lifecycle is start-centered. Use `$azoth-start`, `$azoth-start next`, `$azoth-start pipeline_command=<...> <goal>`, and `$azoth-session-closeout`. Literal slash tokens are compatibility fallback in Codex, not the primary daily path.
+Codex note: the same lifecycle is start-centered. Use `$azoth-start`, `$azoth-start next`, `$azoth-start pipeline_command=<...> <goal>`, and `$azoth-start closeout`. `$azoth-session-closeout` remains a direct wrapper, while literal slash tokens are compatibility fallback in Codex, not the primary daily path.
 
 ---
 

@@ -1993,8 +1993,9 @@ items:
   blocked_by: []
   description: 'Migrate the first post-P1-024 command batch from pilot status into
     a real canonical migration lane: `/start`, `/next`, and `/resume`. Deliverables:
-    (1) canonical command bodies/contracts for the batch, reducing semantic dependence
-    on `.claude/commands/*.md`; (2) aligned Claude/Codex/Copilot/ OpenCode/Cursor
+    (1) canonical command bodies/contracts for the batch, eliminating semantic dependence
+    on `.claude/commands/*.md` for the migrated `/start`, `/next`, and `/resume`
+    surfaces; (2) aligned Claude/Codex/Copilot/ OpenCode/Cursor
     projections from the neutral contract; (3) updated scope/orientation planning
     surfaces so the next action is explicit after the pilot; (4) parity/drift tests
     that lock the batch to the canonical path. Non-goal: no governed orchestration
@@ -2288,9 +2289,10 @@ items:
   description: 'Review the remaining canonical command-contract migration surfaces
     together and land them as an atomic bundle instead of allowing command contracts,
     wrapper skills, and parity expectations to drift independently. The slice should
-    verify the command-contract source of truth, confirm deploy/parity behavior across
-    the affected command and wrapper surfaces, and only land the migration once the
-    related tests and mirrors move together.'
+    verify the command-contract source of truth for the migrated bundles, confirm
+    deploy/parity behavior across the affected command and wrapper surfaces, and
+    only land the migration once the related tests and mirrors move together while
+    any remaining legacy bridges are stated explicitly.'
 - id: BL-058
   title: Review and codify semantic drift checks for legacy command mirrors
   source: SRF-2026-04-17-004
@@ -2305,4 +2307,7 @@ items:
     tests with that policy explicitly. The slice should verify the current azoth-deploy
     parity expectations, document the intended comparison rule, and ensure the test
     contract changes are anchored to the corresponding command migration behavior
-    rather than drifting as an isolated test tweak.'
+    rather than drifting as an isolated test tweak. Current mixed-state reality:
+    some commands still use `body.mode: legacy_claude_markdown`, so the policy must
+    stay honest about that bridge instead of asserting repo-wide independence from
+    `.claude/commands/*.md` too early.'

@@ -30,6 +30,8 @@ from rich.text import Text
 
 from run_ledger import load_active_run as load_active_ledger_run
 from run_ledger import load_resumable_sessions
+from session_continuity import governance_mode as normalized_governance_mode
+from session_continuity import selected_pipeline_command
 
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
@@ -105,7 +107,22 @@ def filter_unblocked_items(
 
 def is_governed_scope(scope: dict[str, Any]) -> bool:
     """True when scope-gate indicates M1 or governed delivery (matches PreToolUse hook)."""
-    return scope.get("delivery_pipeline") == "governed" or scope.get("target_layer") == "M1"
+    return normalized_governance_mode(scope) == "governed"
+
+
+def pipeline_label(
+    record: dict[str, Any],
+    pipeline_gate: dict[str, Any] | None = None,
+) -> str:
+    """Return the normalized pipeline/governance label for operator-facing renders."""
+    candidate = selected_pipeline_command(record, pipeline_gate)
+    if candidate:
+        return candidate
+    for field_name in ("governance_mode", "delivery_pipeline", "pipeline"):
+        value = str(record.get(field_name) or "").strip()
+        if value:
+            return value
+    return "?"
 
 
 def write_claim_status_line(scope: dict[str, Any] | None, claim: dict[str, Any] | None) -> str:
@@ -281,21 +298,31 @@ def git_info() -> tuple[str, str]:
 
 
 def continuity_status(
-    scope: dict[str, Any], session_state: dict[str, Any], sessions: list[dict[str, Any]]
+    scope: dict[str, Any],
+    session_state: dict[str, Any],
+    sessions: list[dict[str, Any]],
+    *,
+    complete_ids: set[str] | None = None,
 ) -> tuple[str, str] | None:
     """Report whether registry, active scope, and session-state mirror agree."""
-    scope_session_id = str(scope.get("session_id") or "")
-    mirror_session_id = str(session_state.get("session_id") or "")
+    scope_session_id = (
+        str(scope.get("session_id") or "") if is_scope_active(scope, complete_ids) else ""
+    )
+    if not scope_session_id:
+        return None
+    mirror_session_id = (
+        str(session_state.get("session_id") or "")
+        if str(session_state.get("state") or "").strip() == "active"
+        else ""
+    )
     registry_session = next(
         (entry for entry in sessions if entry.get("session_id") == scope_session_id), None
     )
 
     if scope_session_id and registry_session and mirror_session_id == scope_session_id:
         return ("OK", scope_session_id)
-    if scope_session_id or mirror_session_id:
-        detail = f"scope={scope_session_id or '-'} / mirror={mirror_session_id or '-'}"
-        return ("MISMATCH", detail)
-    return None
+    detail = f"scope={scope_session_id or '-'} / mirror={mirror_session_id or '-'}"
+    return ("MISMATCH", detail)
 
 
 # ── Dashboard data + renderers ────────────────────────────────────────────────
@@ -363,7 +390,12 @@ def gather_dashboard_state() -> dict[str, Any]:
         "top3": top3,
         "unphased_initiatives": unphased_initiatives,
         "open_sessions": open_sessions,
-        "continuity": continuity_status(scope, session_state, open_sessions),
+        "continuity": continuity_status(
+            scope,
+            session_state,
+            open_sessions,
+            complete_ids=complete_ids,
+        ),
         "run_ledger": load_active_run(ROOT),
     }
 
@@ -481,7 +513,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         if is_governed_scope(scope):
             pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
             if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
-                pipe = pipeline_gate.get("pipeline", "?")
+                pipe = pipeline_label(scope, pipeline_gate)
                 pg_suffix = f"  [{pipeline_gate_ttl}]" if pipeline_gate_ttl else ""
                 lines.append(f"    Pipeline gate: OK  ({pipe}){pg_suffix}")
             elif pipeline_gate_ttl == "EXPIRED":
@@ -503,7 +535,9 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         lines.append("")
         lines.append("  Sessions")
         mirror_session_id = str(session_state.get("session_id") or "")
-        scope_session_id = str(scope.get("session_id") or "")
+        scope_session_id = (
+            str(scope.get("session_id") or "") if is_scope_active(scope, complete_ids) else ""
+        )
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "?")
             status = str(entry.get("status") or "?")
@@ -532,7 +566,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             iid = item.get("id", "?")
             title = item.get("title", "?")
             layer = item.get("target_layer", "?")
-            pipeline = item.get("delivery_pipeline", "?")
+            pipeline = pipeline_label(item)
             status = item.get("status", "?")
             lines.append(f"  {iid}  [{status}]")
             lines.append(f"    {title}")
@@ -718,7 +752,7 @@ def render_dashboard() -> None:
         if is_governed_scope(scope):
             pipeline_gate_ttl = format_gate_ttl(pipeline_gate, now=now)
             if is_pipeline_gate_valid(scope, pipeline_gate, now=now):
-                pipe = pipeline_gate.get("pipeline", "?")
+                pipe = pipeline_label(scope, pipeline_gate)
                 pg_markup = f"  [dim]{pipeline_gate_ttl}[/dim]" if pipeline_gate_ttl else ""
                 health_lines.append(
                     f"  :green_circle: [green]Pipeline gate: OK[/green]  [dim]{pipe}[/dim]{pg_markup}"
@@ -749,7 +783,9 @@ def render_dashboard() -> None:
         health_lines.append("")
         health_lines.append("[bold]Sessions[/bold]")
         mirror_session_id = str(session_state.get("session_id") or "")
-        scope_session_id = str(scope.get("session_id") or "")
+        scope_session_id = (
+            str(scope.get("session_id") or "") if is_scope_active(scope, complete_ids) else ""
+        )
         for entry in open_sessions[:3]:
             session_id = str(entry.get("session_id") or "?")
             status = str(entry.get("status") or "?")
@@ -785,7 +821,7 @@ def render_dashboard() -> None:
         iid = item.get("id", "?")
         title = item.get("title", "?")
         layer = item.get("target_layer", "?")
-        pipeline = item.get("delivery_pipeline", "?")
+        pipeline = pipeline_label(item)
         status = item.get("status", "?")
         status_col = "yellow" if status == "active" else "dim"
         backlog_lines.append(

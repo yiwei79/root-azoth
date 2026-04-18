@@ -133,7 +133,9 @@ This:
 3. **Updates state files** for the next session
 4. **Commits changes** to git
 
-In Codex, closeout keeps W1/W2/W4 authoritative and treats W3 as best-effort/deferred unless you explicitly request a Claude memory mirror refresh.
+In Codex, prefer `$azoth-start closeout` for the daily route. `$azoth-session-closeout`
+still works as a direct wrapper, while W1/W2/W4 stay authoritative and W3 remains
+best-effort/deferred unless you explicitly request a Claude memory mirror refresh.
 
 ---
 

@@ -24,7 +24,7 @@ Codex: $azoth-start pipeline_command=auto fix the login bug
                                            ← pipeline composes, you approve, it runs
 
 Claude/OpenCode/Cursor: /session-closeout
-Codex: $azoth-session-closeout            ← save learnings, bump version, done
+Codex: $azoth-start closeout              ← save learnings, bump version, done
 ```
 
 In Codex, raw slash tokens like `/auto` and `/next` are compatibility fallback, not the primary daily path. They normalize back through the calm-flow `$azoth-start` controller.
