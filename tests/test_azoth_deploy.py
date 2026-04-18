@@ -1271,7 +1271,10 @@ def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
         ("deliver", ".claude/commands/deliver.md"),
         ("deliver-full", ".claude/commands/deliver-full.md"),
         ("auto", ".claude/commands/auto.md"),
+        ("plan", ".claude/commands/plan.md"),
+        ("test", ".claude/commands/test.md"),
         ("eval", ".claude/commands/eval.md"),
+        ("eval-swarm", ".claude/commands/eval-swarm.md"),
         ("hookmode", ".claude/commands/hookmode.md"),
         ("session-closeout", ".claude/commands/session-closeout.md"),
         ("remember", ".claude/commands/remember.md"),
@@ -1295,6 +1298,93 @@ def test_ini_plt_006_exit_commands_are_canonicalized() -> None:
         assert "contract" in commands[command_name], (
             f"INI-PLT-006 exit evidence missing canonical contract for {command_name}"
         )
+
+
+def test_t003_delivery_orchestration_family_is_canonicalized() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    for command_name in (
+        "deliver",
+        "plan",
+        "test",
+        "auto",
+        "deliver-full",
+        "eval",
+        "eval-swarm",
+    ):
+        assert "contract" in commands[command_name], (
+            f"T-003 migration incomplete: expected canonical contract for {command_name}"
+        )
+
+
+@pytest.mark.parametrize(
+    ("command_name", "azoth_effect", "gemini_output_path"),
+    [
+        ("plan", "read", ".gemini/commands/workspace.plan.toml"),
+        ("test", "write", ".gemini/commands/test.toml"),
+        ("eval-swarm", "mixed", ".gemini/commands/eval-swarm.toml"),
+    ],
+)
+def test_bl057_residual_bundle_contract_metadata_is_complete_and_consistent(
+    command_name: str, azoth_effect: str, gemini_output_path: str
+) -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    cmd = commands[command_name]
+    contract = cmd["contract"]
+
+    assert contract["schema_version"] == 1
+    assert contract["name"] == command_name
+    assert contract["display_name"] == f"/{command_name}"
+    assert contract["agent"] == "orchestrator"
+    assert contract["azoth_effect"] == azoth_effect
+
+    assert contract["body"] == {
+        "mode": "legacy_claude_markdown",
+        "source_path": f".claude/commands/{command_name}.md",
+    }
+    assert cmd["contract_path"] == f"commands/{command_name}/command.yaml"
+    assert cmd["body_source_path"] == f".claude/commands/{command_name}.md"
+
+    assert contract["migration"]["phase"] == "canonical_body_batch_2_residual_bundle"
+    assert contract["migration"]["runtime_source_of_truth"] == cmd["contract_path"]
+    assert any("BL-057" in note for note in contract["migration"]["notes"])
+    assert any(cmd["body_source_path"] in note for note in contract["migration"]["notes"])
+
+    assert contract["references"] == [
+        ".azoth/roadmap-specs/v0.2.0/T-003.yaml",
+        "docs/CANONICAL_COMMAND_CONTRACT.md",
+    ]
+
+    assert contract["projection"] == {
+        "claude": {
+            "kind": "native_command_markdown",
+            "output_path": f".claude/commands/{command_name}.md",
+        },
+        "cursor": {
+            "kind": "claude_command_toggle_surface",
+            "output_path": f".claude/commands/{command_name}.md",
+        },
+        "copilot": {
+            "kind": "prompt_markdown",
+            "output_path": f".github/prompts/{command_name}.prompt.md",
+        },
+        "opencode": {
+            "kind": "native_command_markdown",
+            "output_path": f".opencode/commands/{command_name}.md",
+        },
+        "codex": {
+            "kind": "skill_wrapper",
+            "output_path": f".agents/skills/azoth-{command_name}/SKILL.md",
+            "metadata_path": f".agents/skills/azoth-{command_name}/agents/openai.yaml",
+        },
+        "gemini": {
+            "kind": "native_command_toml",
+            "output_path": gemini_output_path,
+        },
+        "antigravity": {
+            "kind": "workflow_markdown",
+            "output_path": f".agents/workflows/{command_name}.md",
+        },
+    }
 
 
 def test_check_mode_stale_returns_one(tmp_path: Path) -> None:

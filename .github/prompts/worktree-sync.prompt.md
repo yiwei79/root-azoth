@@ -52,7 +52,12 @@ Use when this worktree is on a feature, patch, or detached producer branch.
 
 6. **Push** (if tracking a remote): `git push`
 
-7. **Report**:
+7. **Register the integrator handoff**:
+   - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --record-producer-handoff`
+   - This must run only after the producer branch is clean at the intended handoff commit
+   - The backend writes a shared handoff record keyed by the git common dir so the active integrator worktree can resolve it immediately
+
+8. **Report**:
    ```
    ## Sync Complete
    - Commit: {SHA}
@@ -61,7 +66,7 @@ Use when this worktree is on a feature, patch, or detached producer branch.
    - Branch: {branch}
    - Remote: {pushed | local-only}
    - Role: producer
-   - Next step: hand this branch to the active integrator
+   - Handoff: queued for the active integrator
    ```
 
 ## Integrator Sync
@@ -80,17 +85,25 @@ Use when this worktree is on the active integration branch.
 3. **Refresh integration branch**:
    - ensure the target branch is current before merging
 
-4. **Merge exactly one producer branch**:
-   - merge one ready producer branch into the integration branch
+4. **Resolve exactly one ready producer handoff**:
+   - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --next-ready-handoff`
+   - If the human names a specific producer branch, pass `--producer-branch <branch>`
+   - STOP if no ready producer handoff is queued for the target branch
+
+5. **Merge exactly one producer branch**:
+   - merge the selected ready producer branch into the integration branch
    - resolve conflicts deliberately, especially in shared Azoth state surfaces
 
-5. **Run required post-merge regeneration/tests**:
+6. **Run required post-merge regeneration/tests**:
    - if command/agent/skill/platform-adapter parity changed, run the required sync or deploy step
    - run the targeted verification for the merged slice
 
-6. **Commit and push the integration result** if needed
+7. **Mark the handoff integrated**:
+   - After the merge succeeds, execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --mark-integrated <producer_branch>`
 
-7. **Report**:
+8. **Commit and push the integration result** if needed
+
+9. **Report**:
    ```
    ## Integration Sync Complete
    - Branch merged: {producer_branch}

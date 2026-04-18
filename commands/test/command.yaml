@@ -1,0 +1,75 @@
+schema_version: 1
+name: test
+display_name: /test
+description: Generate unit tests for specified code
+agent: orchestrator
+azoth_effect: write
+
+execution:
+  kind: utility
+  waits_for_human_signal: none
+  emits:
+    - generated_tests
+    - test_run_report
+
+arguments:
+  accepts_arguments: true
+  syntax: /test <target>
+
+state:
+  reads:
+    - azoth.yaml
+    - user-specified targets via $ARGUMENTS
+    - existing test files matching the target
+  writes:
+    - generated or updated test files for the target
+  outputs:
+    - generated_tests
+    - test_run_report
+
+governance:
+  preconditions:
+    - discover_existing_test_conventions
+    - verify_generated_tests_before_finish
+  approval_mode: none
+  pipeline_gate_behavior: direct_execution
+  target_layer_rule: follow_target_language_test_conventions
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/test.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/test.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/test.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/test.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/test.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-test/SKILL.md
+    metadata_path: .agents/skills/azoth-test/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/test.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/test.md
+
+migration:
+  phase: canonical_body_batch_2_residual_bundle
+  runtime_source_of_truth: commands/test/command.yaml
+  notes:
+    - BL-057 closes the remaining T-003 orchestration bundle atomically.
+    - .claude/commands/test.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-003.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

@@ -2280,10 +2280,11 @@ items:
   source: SRF-2026-04-17-003
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-18'
+  completed_date: '2026-04-18'
   description: 'Review the remaining canonical command-contract migration surfaces
     together and land them as an atomic bundle instead of allowing command contracts,
     wrapper skills, and parity expectations to drift independently. The slice should

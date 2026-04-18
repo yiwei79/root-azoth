@@ -9,10 +9,14 @@ dirty so only one clean integrator pass happens at a time.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -39,6 +43,208 @@ def _run_git(repo: Path, *args: str, check: bool = True) -> subprocess.Completed
         text=True,
         check=check,
     )
+
+
+def _resolve_git_common_dir(repo: Path) -> Path | None:
+    env_override = os.environ.get("AZOTH_GIT_COMMON_DIR")
+    if env_override:
+        return Path(env_override).expanduser().resolve()
+    result = _run_git(repo, "rev-parse", "--git-common-dir", check=False)
+    if result.returncode != 0:
+        return None
+    raw = result.stdout.strip()
+    if not raw:
+        return None
+    path = Path(raw)
+    if not path.is_absolute():
+        path = (repo / path).resolve()
+    return path.resolve()
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _handoff_queue_path(repo: Path) -> Path | None:
+    explicit_path = os.environ.get("AZOTH_WORKTREE_HANDOFF_QUEUE_PATH")
+    if explicit_path:
+        return Path(explicit_path).expanduser().resolve()
+
+    common_dir = _resolve_git_common_dir(repo)
+    if common_dir is None:
+        return None
+
+    digest = hashlib.sha1(str(common_dir).encode("utf-8")).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / "azoth-worktree-handoffs" / f"{digest}.jsonl"
+
+
+def _append_jsonl_record(path: Path, record: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True))
+        handle.write("\n")
+
+
+def _load_jsonl_records(path: Path | None) -> list[dict[str, object]]:
+    if path is None or not path.exists():
+        return []
+    records: list[dict[str, object]] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        data = json.loads(line)
+        if isinstance(data, dict):
+            records.append(data)
+    return records
+
+
+def _current_head(repo: Path) -> str:
+    result = _run_git(repo, "rev-parse", "HEAD")
+    return result.stdout.strip()
+
+
+def _latest_ready_handoff(
+    repo: Path,
+    *,
+    target_branch: str,
+    producer_branch: str | None = None,
+) -> dict[str, object] | None:
+    queue_path = _handoff_queue_path(repo)
+    states: dict[tuple[str, str], dict[str, object]] = {}
+    for record in _load_jsonl_records(queue_path):
+        event = str(record.get("event") or "").strip()
+        branch = str(record.get("producer_branch") or "").strip()
+        target = str(record.get("target_branch") or "").strip()
+        if not branch or not target:
+            continue
+        key = (target, branch)
+        if event == "producer-ready":
+            states[key] = record
+        elif event == "integrated":
+            states.pop(key, None)
+
+    ready_records = [
+        record
+        for (target, branch), record in states.items()
+        if target == target_branch and (producer_branch is None or branch == producer_branch)
+    ]
+    if not ready_records:
+        return None
+    ready_records.sort(key=lambda record: str(record.get("recorded_at") or ""))
+    return ready_records[-1]
+
+
+def register_producer_handoff(repo: Path, current: str, target_branch: str) -> int:
+    if current == target_branch:
+        print(
+            "worktree-sync: cannot record a producer handoff from the integration branch",
+            file=sys.stderr,
+        )
+        return 1
+    if working_tree_dirty(repo):
+        print(
+            "worktree-sync: producer handoff requires a clean worktree. Commit or park local changes first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    queue_path = _handoff_queue_path(repo)
+    if queue_path is None:
+        print("worktree-sync: could not resolve the shared handoff queue path", file=sys.stderr)
+        return 1
+
+    record: dict[str, object] = {
+        "event": "producer-ready",
+        "recorded_at": _utc_now_iso(),
+        "producer_branch": current,
+        "target_branch": target_branch,
+        "head_sha": _current_head(repo),
+        "worktree_path": str(repo.resolve()),
+        "queue_path": str(queue_path),
+    }
+    common_dir = _resolve_git_common_dir(repo)
+    if common_dir is not None:
+        record["git_common_dir"] = str(common_dir)
+
+    _append_jsonl_record(queue_path, record)
+    print(
+        "worktree-sync: recorded producer handoff "
+        f"'{current}' -> '{target_branch}' at {record['head_sha']} in {queue_path}"
+    )
+    return 0
+
+
+def show_ready_handoff(repo: Path, target_branch: str, producer_branch: str | None, *, as_json: bool) -> int:
+    record = _latest_ready_handoff(
+        repo,
+        target_branch=target_branch,
+        producer_branch=producer_branch,
+    )
+    if record is None:
+        wanted = f" for '{producer_branch}'" if producer_branch else ""
+        print(
+            f"worktree-sync: no ready producer handoff found for target '{target_branch}'{wanted}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if as_json:
+        print(json.dumps(record, ensure_ascii=True, sort_keys=True))
+    else:
+        print(
+            "worktree-sync: selected ready producer handoff "
+            f"'{record['producer_branch']}' at {record['head_sha']} targeting '{target_branch}'"
+        )
+    return 0
+
+
+def mark_integrated(repo: Path, current: str, target_branch: str, producer_branch: str) -> int:
+    if current != target_branch:
+        print(
+            "worktree-sync: integration completion can only be recorded from the active integration branch",
+            file=sys.stderr,
+        )
+        return 1
+
+    ready = _latest_ready_handoff(
+        repo,
+        target_branch=target_branch,
+        producer_branch=producer_branch,
+    )
+    if ready is None:
+        print(
+            f"worktree-sync: no ready producer handoff found for '{producer_branch}' on '{target_branch}'",
+            file=sys.stderr,
+        )
+        return 1
+
+    queue_path = _handoff_queue_path(repo)
+    if queue_path is None:
+        print("worktree-sync: could not resolve the shared handoff queue path", file=sys.stderr)
+        return 1
+
+    record: dict[str, object] = {
+        "event": "integrated",
+        "recorded_at": _utc_now_iso(),
+        "producer_branch": producer_branch,
+        "producer_head_sha": ready.get("head_sha"),
+        "target_branch": target_branch,
+        "integrator_branch": current,
+        "integrated_head_sha": _current_head(repo),
+        "worktree_path": str(repo.resolve()),
+        "queue_path": str(queue_path),
+    }
+    common_dir = _resolve_git_common_dir(repo)
+    if common_dir is not None:
+        record["git_common_dir"] = str(common_dir)
+
+    _append_jsonl_record(queue_path, record)
+    print(
+        "worktree-sync: marked producer handoff "
+        f"'{producer_branch}' integrated into '{target_branch}' at {record['integrated_head_sha']}"
+    )
+    return 0
 
 
 def _roadmap_target_branch(repo: Path) -> str | None:
@@ -206,7 +412,7 @@ def producer_refresh(repo: Path, current: str, target_branch: str) -> int:
     return 0
 
 
-def integrator_preflight(repo: Path, current: str, target_branch: str) -> int:
+def integrator_preflight(repo: Path, current: str, target_branch: str, *, quiet: bool = False) -> int:
     if working_tree_dirty(repo):
         paths = "\n".join(f"- {path}" for path in dirty_paths(repo))
         print(
@@ -217,10 +423,11 @@ def integrator_preflight(repo: Path, current: str, target_branch: str) -> int:
         )
         return 1
 
-    print(
-        f"worktree-sync: integrator branch '{current}' is clean and ready to merge exactly "
-        "one producer branch."
-    )
+    if not quiet:
+        print(
+            f"worktree-sync: integrator branch '{current}' is clean and ready to merge exactly "
+            "one producer branch."
+        )
     return 0
 
 
@@ -238,6 +445,32 @@ def main(argv: list[str] | None = None) -> int:
         "--target-branch",
         default=None,
         help="Optional integration branch override. Defaults to phase/<active_version>.",
+    )
+    parser.add_argument(
+        "--record-producer-handoff",
+        action="store_true",
+        help="Record the current clean producer branch as ready for integrator handoff.",
+    )
+    parser.add_argument(
+        "--next-ready-handoff",
+        action="store_true",
+        help="Show the next ready producer handoff for the target branch.",
+    )
+    parser.add_argument(
+        "--producer-branch",
+        default=None,
+        help="Optional producer branch selector for ready/integrated handoff actions.",
+    )
+    parser.add_argument(
+        "--mark-integrated",
+        default=None,
+        metavar="BRANCH",
+        help="Mark a queued producer handoff as integrated into the target branch.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON for ready handoff selection.",
     )
     args = parser.parse_args(argv)
 
@@ -260,8 +493,29 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if branch == target_branch:
-        return integrator_preflight(root, branch, target_branch)
-    return producer_refresh(root, branch, target_branch)
+        result = integrator_preflight(
+            root,
+            branch,
+            target_branch,
+            quiet=args.json and args.next_ready_handoff,
+        )
+    else:
+        result = producer_refresh(root, branch, target_branch)
+    if result != 0:
+        return result
+
+    if args.record_producer_handoff:
+        return register_producer_handoff(root, branch, target_branch)
+    if args.next_ready_handoff:
+        return show_ready_handoff(
+            root,
+            target_branch,
+            args.producer_branch,
+            as_json=args.json,
+        )
+    if args.mark_integrated:
+        return mark_integrated(root, branch, target_branch, args.mark_integrated)
+    return 0
 
 
 if __name__ == "__main__":
