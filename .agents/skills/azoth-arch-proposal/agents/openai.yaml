@@ -1,0 +1,4 @@
+interface:
+  name: azoth-arch-proposal
+  description: L3 human-gated architecture proposal artifact — structured YAML under
+    .azoth/proposals/

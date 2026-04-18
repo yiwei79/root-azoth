@@ -1,0 +1,22 @@
+---
+name: azoth-next
+description: Explicit Codex entrypoint for Azoth's `/next` workflow. Use when the
+  user wants to run `/next` in Codex via `/skills` or `$azoth-next`.
+---
+
+Use this skill as the Codex-visible entrypoint for Azoth's `/next` workflow.
+
+Codex does not register repository-defined slash commands in its built-in `/` command picker.
+This skill is the explicit Codex-native equivalent of typing `/next`.
+
+Execution contract:
+- Read `.claude/commands/next.md` and follow it as the source of truth.
+- Treat the rest of the user's prompt after `$azoth-next` as `$ARGUMENTS`.
+- Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
+- Preserve the command's `agent: orchestrator` binding.
+- Respect the command's `azoth_effect: mixed` contract.
+- If the user typed literal `/next` in prompt text instead, apply the same workflow contract.
+
+Command metadata:
+- Source path: `.claude/commands/next.md`
+- Description: Show the next priority task from the roadmap and suggest how to proceed

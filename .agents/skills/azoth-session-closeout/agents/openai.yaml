@@ -1,0 +1,3 @@
+interface:
+  name: azoth-session-closeout
+  description: Unified eval + close + sync — run at the end of every session

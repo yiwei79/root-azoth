@@ -1,0 +1,3 @@
+interface:
+  name: azoth-context-architect
+  description: Map dependencies, blast radius, and change sequencing before implementation

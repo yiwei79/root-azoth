@@ -1,0 +1,3 @@
+interface:
+  name: azoth-sync
+  description: Extract patterns from a source framework into Azoth

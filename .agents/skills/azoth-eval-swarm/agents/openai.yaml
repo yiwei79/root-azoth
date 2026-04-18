@@ -1,0 +1,4 @@
+interface:
+  name: azoth-eval-swarm
+  description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave
+    iteration

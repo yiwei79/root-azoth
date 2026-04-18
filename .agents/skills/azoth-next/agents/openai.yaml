@@ -1,0 +1,3 @@
+interface:
+  name: azoth-next
+  description: Show the next priority task from the roadmap and suggest how to proceed

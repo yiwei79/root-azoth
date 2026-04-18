@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave iteration
+agent: orchestrator
 ---
 
 # /eval-swarm $ARGUMENTS

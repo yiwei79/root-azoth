@@ -1,0 +1,3 @@
+interface:
+  name: azoth-bootstrap
+  description: Day 0 bootstrap — create the Azoth kernel from the architecture plan

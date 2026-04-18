@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Extract patterns from a source framework into Azoth
+agent: orchestrator
 ---
 
 # /sync — Pattern Extraction

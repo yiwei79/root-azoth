@@ -1,0 +1,3 @@
+interface:
+  name: azoth-test
+  description: Generate unit tests for specified code

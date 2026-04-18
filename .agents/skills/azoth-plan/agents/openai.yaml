@@ -1,0 +1,3 @@
+interface:
+  name: azoth-plan
+  description: Structured planning without execution

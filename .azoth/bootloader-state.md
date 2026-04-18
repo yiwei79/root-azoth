@@ -1,27 +1,26 @@
 # Azoth Bootloader State
 
 ## Current Phase
-v0.1.2.1 · Phase 2 — v0.2.0 · declarative swarm depth · memory hardening · active_version: v0.2.0-p2 · patch 1
+v0.1.2.2 · Phase 2 — v0.2.0 · declarative swarm depth · memory hardening · active_version: v0.2.0-p2 · patch 2
 
 ## Last Session
-- **Session**: 2026-04-13-ini-rst-001
-- **Platform**: Claude Code
-- **Delivered**: BL-034 — Declarative swarm / eval-wave specification depth pass (INI-RST-001)
-- **Pipeline**: deliver-full (governed, M1, 7-stage)
-- **Eval**: agentic-eval pass; all 90 new + pre-existing tests green
-- **Episodes**: ep-162
-- **Version bump**: 0.1.2.0 → 0.1.2.1
+- **Session**: 2026-04-18-codex-hook-ux-fix
+- **Platform**: Codex
+- **Delivered**: Codex hook UX regression fix + restored `azoth-*` command wrapper generation
+- **Pipeline**: auto (approved infrastructure closeout)
+- **Eval**: targeted Codex parity checks green (`tests/test_codex_adapter_templates.py`, `tests/test_azoth_deploy.py -k codex`)
+- **Episodes**: ep-163
+- **Version bump**: 0.1.2.1 → 0.1.2.2
 
 ## Key Changes This Session
-1. `pipelines/run-ledger.schema.yaml`: added optional `stage_id` (string, pattern-validated) + `wave_label` (enum [A,B,C,D], advisory) to `wave_entry.$defs`; added cross-reference design comment linking to `swarm-eval-wave.schema.yaml` (T1, BL-034).
-2. `pipelines/swarm-build-review.example.yaml`: new 2-wave (A=builder, B=reviewer) example; validates against swarm-eval-wave.schema.yaml; Iron Law compliant (max_parallel:5) (T2, BL-034).
-3. `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`: added reference bullet for `swarm-build-review.example.yaml` in References section (T5, BL-034).
-4. `tests/test_swarm_wave_schema.py`: `TestBuildReviewExample` class with 4 tests; all green.
-5. `tests/test_run_ledger.py`: 3 new tests for optional wave_entry fields + `import pytest` fix.
-6. `.azoth/backlog.yaml`: BL-034 added and complete.
+1. `.codex/hooks/user_prompt_submit_router.py` and the Codex adapter template now resolve repo paths from the hook location, only route leading workflow tokens, and add active-scope continuity guidance with a governed-write reminder.
+2. `.codex/config.toml` / `.codex/hooks.json` and their templates now use calmer Codex parity wording and hook copy consistent with this branch's real command surface.
+3. `scripts/azoth-deploy.py` again generates `.agents/skills/azoth-*` command wrappers plus `agents/openai.yaml`, restoring the discoverable Codex command surface after deploy.
+4. `tests/test_codex_adapter_templates.py` now covers non-root cwd routing, additional command coverage, mention-only token suppression, and active-scope resume guidance.
+5. `.claude/agents/orchestrator.md` now describes the actual Codex command entry surface on this branch instead of promising undeployed behavior.
 
 ## Open Decisions
-- None blocking. INI-RST-001 delivered. BL-034 complete.
+- No blocking decisions. Codex remains hook-soft: Bash hook enforcement exists, but non-Bash write gating is still behavioral.
 
 ## Next Action
-- Run `/next` to schedule next v0.2.0-p2 task (P1-017 reinforcement_count automation, P1-020 verbatim-first M3, P1-021 memory parity).
+- Re-open `/skills` in Codex to confirm the regenerated `azoth-*` command wrappers appear, then run `/next` for the next v0.2.0-p2 task.

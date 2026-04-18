@@ -1,0 +1,4 @@
+interface:
+  name: azoth-deliver-full
+  description: Full pipeline with governance gates — for kernel, governance, or breaking
+    changes

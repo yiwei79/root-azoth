@@ -35,7 +35,7 @@ PRE_DELIVERY_EVAL section (including **`/eval-swarm`** when triggers fire).
 
 ## Cursor / other IDEs
 
-This command is defined for **Claude Code** (`.claude/commands/`). Other tools mirror it via deploy (`python3 scripts/azoth-deploy.py`, D46).
+This command is defined for **Claude Code** (`.claude/commands/`). Other tools receive the equivalent workflow surface via deploy (`python3 scripts/azoth-deploy.py`, D46): prompt/command mirrors for Copilot/OpenCode and a generated `azoth-dynamic-full-auto` wrapper skill for Codex.
 
 **Normative behavior** lives in **`skills/dynamic-full-auto/SKILL.md`** — in particular:
 

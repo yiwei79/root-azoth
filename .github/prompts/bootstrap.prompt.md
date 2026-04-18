@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Day 0 bootstrap — create the Azoth kernel from the architecture plan
+agent: orchestrator
 ---
 
 # Azoth Day 0 Bootstrap

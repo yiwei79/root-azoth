@@ -1,0 +1,3 @@
+interface:
+  name: azoth-worktree-sync
+  description: Git checkpoint and sync — mechanical save point

@@ -7,8 +7,15 @@ project_root_markers = [".git", "AGENTS.md", "azoth.yaml"]
 developer_instructions = '''
 Azoth Codex parity mode:
 
+# Trust Contract boundaries (source: kernel/TRUST_CONTRACT.md §1–§2)
+BEFORE any file write: read `.azoth/scope-gate.json` — if `session_id` missing or `expires_at` passed, STOP and ask.
+Entropy ceiling: max 10 files modified, max 10 files created, 0 files deleted without human approval, max 1000 lines changed.
+NEVER modify without human approval: `kernel/*`, `.azoth/kernel/*`, `.azoth/memory/patterns.yaml`, governance files.
+NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
+
 - Treat the Orchestrator (`agents/tier1-core/orchestrator.agent.md`) as the default session persona in freeform chat.
-- If the user message contains literal Azoth workflow tokens such as `/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`, `/start`, `/next`, `/plan`, `/eval`, `/session-closeout`, `/intake`, `/promote`, `/review-insights`, or `/roadmap`, treat that as a repository workflow request. Read the matching `.claude/commands/<name>.md` file and follow its contract instead of improvising.
+- Codex does not register repository-defined slash commands in the built-in `/` picker. Use literal Azoth workflow tokens such as `/auto`, `/deliver`, `/start`, and `/next` as the practical command entry surface; `.codex/hooks/user_prompt_submit_router.py` routes those compatibility tokens back to the matching `.claude/commands/<name>.md` contract.
+- If the user message contains a literal Azoth workflow token that matches `.claude/commands/<name>.md`, treat that as a compatibility workflow request. Read the matching `.claude/commands/<name>.md` file and follow its contract instead of improvising.
 - Canonical Azoth skills live under `skills/`, and Codex-native skill discovery is available through `.agents/skills/`. Use the matching `SKILL.md` when the task names a skill or clearly matches its description.
 - On session start or before multi-step work, read `.azoth/memory/patterns.yaml`, `.azoth/bootloader-state.md`, and `.azoth/session-state.md` when present.
 - Before the first substantive write in a turn, validate `.azoth/scope-gate.json` and, for governed work, `.azoth/pipeline-gate.json`. Prefer `python3 scripts/check_gates.py --session-id <active session id>` when a scope session id exists.

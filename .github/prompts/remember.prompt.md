@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Capture a cross-session learning as a structured episode
+agent: orchestrator
 ---
 
 # /remember $ARGUMENTS
