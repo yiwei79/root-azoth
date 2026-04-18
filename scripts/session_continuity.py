@@ -58,6 +58,31 @@ def active_scope(root: Path) -> dict[str, Any]:
     return scope
 
 
+def session_registry_entry_is_resumable(
+    root: Path,
+    entry: dict[str, Any],
+    *,
+    scope: dict[str, Any] | None = None,
+) -> bool:
+    """Return True only for session records backed by a real resume signal.
+
+    `status: parked` is resumable by itself. `status: active` is resumable only when
+    the repo still has a matching live approved scope for the same session.
+    """
+    status = str(entry.get("status") or "").strip()
+    if status == "parked":
+        return True
+    if status != "active":
+        return False
+
+    live_scope = scope if scope is not None else active_scope(root)
+    if not live_scope:
+        return False
+    return str(live_scope.get("session_id") or "").strip() == str(
+        entry.get("session_id") or ""
+    ).strip()
+
+
 def governance_mode(scope: dict[str, Any]) -> str:
     """Return the normalized governance mode for a scope gate."""
     mode = str(scope.get("governance_mode") or "").strip()

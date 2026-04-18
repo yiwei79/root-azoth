@@ -29,7 +29,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from run_ledger import load_active_run as load_active_ledger_run
-from run_ledger import load_open_sessions
+from run_ledger import load_resumable_sessions
 
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
@@ -327,7 +327,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
     session_state = load_yaml(ROOT / ".azoth" / "session-state.md")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
-    open_sessions = load_open_sessions(ROOT)
+    open_sessions = load_resumable_sessions(ROOT)
 
     repo, branch = git_info()
     now = utc_now()

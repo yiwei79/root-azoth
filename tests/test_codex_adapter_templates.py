@@ -91,6 +91,28 @@ def test_codex_router_ignores_mention_only_command_tokens() -> None:
     assert _run_router(router, "Explain the difference between /auto and /deliver in Azoth.", cwd=REPO).strip() == ""
 
 
+def test_codex_router_redirects_deliver_full_token_to_staged_skill_entry() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/deliver-full harden codex adapter", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/deliver-full" in ctx
+    assert ".claude/commands/deliver-full.md" in ctx
+    assert "$azoth-deliver-full" in ctx
+    assert "/skills" in ctx
+
+
+def test_codex_router_warns_pipeline_tokens_need_staged_delegation_not_inline_fallback() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/deliver-full harden codex adapter", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "staged pipeline execution" in ctx
+    assert "not permission to improvise the work inline" in ctx
+    assert "STOP and ask the human" in ctx
+    assert "staged delegation is unavailable" in ctx
+
+
 def _copy_router_fixture(tmp_path: Path) -> Path:
     (tmp_path / ".codex" / "hooks").mkdir(parents=True)
     (tmp_path / ".claude" / "commands").mkdir(parents=True)
@@ -135,3 +157,12 @@ def test_codex_router_adds_resume_guidance_and_write_disclaimer(tmp_path: Path) 
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "resume/continue decision" in ctx
     assert "does not authorize writes" in ctx
+
+
+def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> None:
+    config = REPO / ".codex" / "config.toml"
+    assert config.is_file(), "missing deployed Codex config"
+    text = config.read_text(encoding="utf-8")
+    assert "staged pipeline execution and staged delegation" in text
+    assert "STOP after the Declaration and ask the human" in text
+    assert "Never silently continue inline as a fallback" in text

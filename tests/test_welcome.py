@@ -967,6 +967,45 @@ def test_welcome_plain_shows_resume_for_parked_sessions(
     assert "resume   → continue approved scope" not in out
 
 
+def test_welcome_plain_hides_stale_active_session_from_resume_options(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\n"
+        "sessions:\n"
+        "  - session_id: sid-stale\n"
+        "    backlog_id: BL-053\n"
+        "    goal: Stale active session\n"
+        "    status: active\n"
+        "    ide: codex\n"
+        "    next_action: should not be resumable\n"
+        "    updated_at: 2026-04-18T11:00:00+00:00\n"
+        "  - session_id: sid-parked\n"
+        "    backlog_id: BL-052\n"
+        "    goal: Resume me\n"
+        "    status: parked\n"
+        "    ide: codex\n"
+        "    next_action: Resume this parked session\n"
+        "    updated_at: 2026-04-18T10:00:00+00:00\n"
+        "runs: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "resume sid-parked" in out
+    assert "resume sid-stale" not in out
+
+
 def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirror(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

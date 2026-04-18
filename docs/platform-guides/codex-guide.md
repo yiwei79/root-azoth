@@ -30,13 +30,15 @@ Azoth commands are exposed through two layers:
 | Method | Example | How it works |
 |--------|---------|-------------|
 | **Primary**: `/skills` or `$azoth-*` | `$azoth-auto fix login bug` | Codex loads `.agents/skills/azoth-auto/SKILL.md`, which reads `.claude/commands/auto.md` |
-| **Fallback**: literal token | `/auto fix login bug` | `.codex/hooks/user_prompt_submit_router.py` injects the matching command text via `additionalContext` |
+| **Fallback**: literal token | `/auto fix login bug` | `.codex/hooks/user_prompt_submit_router.py` injects the matching command text via `additionalContext` and redirects you back toward the staged `$azoth-*` entry path for governed work |
 
 Available command wrappers (21 total): `azoth-auto`, `azoth-deliver`, `azoth-deliver-full`,
 `azoth-dynamic-full-auto`, `azoth-start`, `azoth-next`, `azoth-plan`, `azoth-eval`,
 `azoth-eval-swarm`, `azoth-test`, `azoth-promote`, `azoth-remember`, `azoth-intake`,
 `azoth-session-closeout`, `azoth-bootstrap`, `azoth-sync`, `azoth-worktree-sync`,
 `azoth-roadmap`, `azoth-review-insights`, `azoth-context-architect`, `azoth-arch-proposal`.
+
+For governed pipeline tokens such as `/deliver-full`, treat the literal token route as compatibility guidance only. The intended Codex entry is `/skills` or `$azoth-deliver-full`, which keeps the orchestrator as the main-thread owner and preserves staged delegation expectations. If staged delegation is unavailable on the current host/runtime, stop after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms; do not continue inline as a silent fallback.
 
 ## Trust Contract Enforcement
 

@@ -31,9 +31,9 @@ Codex does not document repo-defined custom slash-command registration. `scripts
 Codex entry has two layers:
 
 - **Primary**: use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc.
-- **Fallback**: literal `/auto`-style prompt text is routed by `.codex/hooks/user_prompt_submit_router.py` when the matching `.claude/commands/<name>.md` exists.
+- **Fallback**: literal `/auto`-style prompt text is routed by `.codex/hooks/user_prompt_submit_router.py` when the matching `.claude/commands/<name>.md` exists, but governed flows are redirected back toward the staged `$azoth-*` entry path rather than treated as permission to continue inline.
 
-The orchestrator remains the session-level pipeline owner in Codex, but parity is **skill-routed** and **hook-soft**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/orchestrator.toml` provide strong workflow guidance, while non-Bash tool enforcement remains behavioral rather than Claude-style mechanical interception.
+The orchestrator remains the session-level pipeline owner in Codex, but parity is **skill-routed** and **hook-soft**: `.codex/config.toml`, `.codex/hooks.json`, and `.codex/agents/orchestrator.toml` provide strong workflow guidance, while non-Bash tool enforcement remains behavioral rather than Claude-style mechanical interception. For governed tokens such as `/deliver-full`, the Codex adapter now fails closed at the instruction layer: if staged delegation is unavailable, the expected behavior is to stop after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms.
 
 ### Claude Code
 

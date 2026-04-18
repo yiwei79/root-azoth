@@ -125,8 +125,11 @@ def main() -> int:
     if name in PIPELINE_COMMANDS:
         guidance.extend(
             [
+                f"Prefer the staged Codex entry path: use `/skills` or type `$azoth-{name}` so Codex executes the generated Azoth wrapper skill instead of relying on literal token fallback alone.",
                 "Keep the orchestrator in the main thread.",
                 "Use staged subagents when the command or `skills/subagent-router/SKILL.md` requires isolation.",
+                "An explicit pipeline token is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
+                "If staged delegation is unavailable, STOP and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms.",
                 "For write-enabled or governed stages, follow the gate procedure in the command doc before editing.",
             ]
         )
