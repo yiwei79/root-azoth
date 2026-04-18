@@ -2,6 +2,8 @@
 
 > A step-by-step walkthrough of running your first pipeline.
 
+Codex note: the canonical Codex daily route is `$azoth-start`. Use `$azoth-start pipeline_command=auto <goal>` for the start-centered calm-flow path, or `$azoth-auto <goal>` as a compatibility wrapper. Literal `/auto` text in Codex is compatibility fallback, not the primary UX surface.
+
 ## Before You Start
 
 Make sure Azoth is installed. You should see a welcome dashboard when starting
@@ -21,6 +23,12 @@ Type `/auto` followed by your goal in plain language:
 
 ```
 You: /auto add a retry mechanism to the API client
+```
+
+In Codex, the equivalent canonical entry is:
+
+```
+You: $azoth-start pipeline_command=auto add a retry mechanism to the API client
 ```
 
 That's it. Azoth handles the rest.
@@ -123,6 +131,8 @@ This:
 2. **Bumps the version** (0.1.1.31 → 0.1.1.32)
 3. **Updates state files** for the next session
 4. **Commits changes** to git
+
+In Codex, closeout keeps W1/W2/W4 authoritative and treats W3 as best-effort/deferred unless you explicitly request a Claude memory mirror refresh.
 
 ---
 

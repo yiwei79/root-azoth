@@ -15,9 +15,15 @@
 ## Quick Start
 
 ```
-You: /start                    ← see dashboard, pick next task
-You: /auto fix the login bug   ← pipeline composes, you approve, it runs
-You: /session-closeout          ← save learnings, bump version, done
+Claude/OpenCode/Cursor: /start
+Codex: $azoth-start                       ← orient and choose the next move
+
+Claude/OpenCode/Cursor: /auto fix the login bug
+Codex: $azoth-start pipeline_command=auto fix the login bug
+                                           ← pipeline composes, you approve, it runs
+
+Claude/OpenCode/Cursor: /session-closeout
+Codex: $azoth-session-closeout            ← save learnings, bump version, done
 ```
 
-That's it. Three commands for a full governed session.
+In Codex, raw slash tokens like `/auto` and `/next` are compatibility fallback, not the primary daily path. They normalize back through the calm-flow `$azoth-start` controller.
