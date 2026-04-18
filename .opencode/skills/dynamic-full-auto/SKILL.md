@@ -143,7 +143,7 @@ tiny, **skip Wave B** with explicit justification in `explore_swarm_summary.find
   Only when Wave C is actually selected because the quality bar needs **≥ 0.90**, parallel
   independent work is present, or **eval.md** escalation triggers fire:
   - `**Read` `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`** and `**.claude/commands/eval-swarm.md`**.  
-  - Spawn **one message**, **≤7** `Task(subagent_type=evaluator, readonly=true)` with **minimal**
+  - Spawn **one message**, parallel evaluator Tasks within the **active platform execution budget** with **minimal**
   YAML: `pipeline: e2e-swarm-eval`, `stage_id`, `artifacts` paths, `threshold: 0.9`,
   `acceptance:` bullets — **no** builder chat log, **no** author narrative (anti-bias).  
   - Queen aggregates scores; **FAIL** → Wave D fix with **fresh** planner/builder Tasks, then
@@ -184,8 +184,9 @@ not override mechanical PreToolUse in Claude Code or simulated gates in Cursor.
 ## Wave A — Online Research Swarm
 
 1. Partition topics (e.g. durability, supervisor YAML, multi-eval independence, memory elasticity).
-2. In **one orchestrator message**, spawn **4–7** `Task(subagent_type=researcher)` (or
-  `research-orchestrator` fan-out if you centralize briefing) with **disjoint** briefs.
+2. In **one orchestrator message**, spawn `Task(subagent_type=researcher)` workers within the
+  **active platform execution budget**. If you centralize briefing through `research-orchestrator`,
+  reserve child capacity instead of filling every slot with direct researchers.
 3. Each worker returns **structured YAML** (or markdown containing a YAML block) with:
   `id` or `research_pack_id`, `topic`, `sources: [{title, url}]`, `implications_for_azoth`,
    `risks`.
@@ -256,7 +257,7 @@ summaries inside governed pipelines.
 
 1. Codex's default Azoth adapter is **instruction-first**: the main control plane lives in `.codex/config.toml`, while `.codex/hooks.json` keeps only a narrow `UserPromptSubmit` compatibility hook for literal workflow tokens. Scope-gate and entropy enforcement for non-Bash `Write`/`Edit` still rely on `developer_instructions`.
 2. **Network is disabled** in `workspace-write` sandbox (`network_access = false`). **Wave A researcher tasks cannot fetch external URLs.** Research must use pre-seeded context, local files, or be delegated to a platform with network access (Claude Code, Copilot).
-3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 6, max_depth: 1`) enables parallel researcher/explore tasks within the sandbox, but without external fetches.
+3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 10, max_depth: 2`) enables bounded nested researcher/explore tasks within the sandbox, but without external fetches. Only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1; otherwise prefer flat fan-out.
 4. **Digest writes** — Same scope-gate contract: validate `.azoth/scope-gate.json` before any write, including `append-pack` to the digest.
 5. **Checkpoint Γ + delivery** — Same logical flow; `pipeline-gate.json` must match the delivery command.
 6. **Integrity checks** — `scripts/kernel-integrity.py` remains available as an explicit utility, but it is no longer wired into the default Codex hook path.

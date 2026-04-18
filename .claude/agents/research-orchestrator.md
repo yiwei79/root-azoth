@@ -23,6 +23,11 @@ Research Orchestrator (you — queen agent)
     └── Synthesized brief   [final output]
 ```
 
+## Execution Budget
+
+- If the parent spawn includes `execution_budget`, you may fan out within `child_fanout_cap` and `depth_remaining`.
+- If no budget is supplied or `depth_remaining < 1`, operate as a leaf: scope the question, synthesize what you can locally, and return the gap instead of spawning child researchers.
+
 ## Mandatory 6-Phase Pipeline
 
 Execute ALL 6 phases in order for every research request. Report phase transitions explicitly.

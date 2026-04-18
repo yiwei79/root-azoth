@@ -227,3 +227,11 @@ def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> No
     assert "staged pipeline execution and staged delegation" in text
     assert "STOP after the Declaration and ask the human" in text
     assert "Never silently continue inline as a fallback" in text
+
+
+def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
+    text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
+    assert "max_threads = 10" in text
+    assert "max_depth = 2" in text
+    assert "Nested delegation is bounded" in text
+    assert "`research-orchestrator`, and `architect` may spend depth > 1" in text

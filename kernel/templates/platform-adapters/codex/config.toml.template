@@ -14,16 +14,20 @@ NEVER modify without human approval: `kernel/*`, `.azoth/kernel/*`, `.azoth/memo
 NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
 
 - Treat the Orchestrator (`agents/tier1-core/orchestrator.agent.md`) as the default session persona in freeform chat.
-- Codex does not register repository-defined slash commands in the built-in `/` picker. Azoth command workflows are exposed as explicit Codex skills under `.agents/skills/azoth-*`; in CLI or IDE, use `/skills` or type `$azoth-auto`, `$azoth-deliver`, `$azoth-start`, etc. The optional skill metadata displays them as `/auto`, `/deliver`, `/start`, and so on.
-- If the user message contains a literal Azoth workflow token that matches `.claude/commands/<name>.md`, treat that as a compatibility workflow request. Read the matching `.claude/commands/<name>.md` file and follow its contract instead of improvising.
+- Codex does not register repository-defined slash commands in the built-in `/` picker. Azoth command workflows are exposed as explicit Codex skills under `.agents/skills/azoth-*`; in CLI or IDE, use `/skills` or type `$azoth-start`, `$azoth-session-closeout`, and other `$azoth-*` wrappers.
+- In Codex calm mode, `$azoth-start` is the canonical session-entry surface for orientation and continuity routing. Use it first when the human needs a fresh start/resume/next-task decision instead of relying on any default SessionStart hook.
+- If the user message begins with a literal Azoth workflow token that matches `.claude/commands/<name>.md`, treat that as a compatibility request that must normalize through `scripts/codex_control_plane.py` into the matching `$azoth-*` wrapper when the generated skill exists. If the canonical Codex wrapper is missing, STOP and tell the human the Codex command surface is out of sync instead of continuing through raw slash fallback.
 - Canonical Azoth skills live under `skills/`, and Codex-native skill discovery is available through `.agents/skills/`. Use the matching `SKILL.md` when the task names a skill or clearly matches its description.
 - On session start or before multi-step work, read `.azoth/memory/patterns.yaml`, `.azoth/bootloader-state.md`, and `.azoth/session-state.md` when present.
 - Before the first substantive write in a turn, validate `.azoth/scope-gate.json` and, for governed work, `.azoth/pipeline-gate.json`. Prefer `python3 scripts/check_gates.py --session-id <active session id>` when a scope session id exists.
 - Simulate write-claim discipline in hook-soft flows: read `.azoth/run-ledger.local.yaml` and do not write while another live session holds `write_claim`.
 - For governed delivery pipelines, keep the orchestrator in the main thread and use staged subagents with the generated custom agents in `.codex/agents/` or Codex built-ins when appropriate. Forward typed YAML stage summaries between stages per `skills/subagent-router/SKILL.md`; do not collapse a multi-stage governed pipeline into one inline reply when isolation is needed.
+- Codex's default execution budget is `max_threads = 10`, `max_depth = 2`. Treat it as a shared budget, not permission to saturate every slot blindly.
+- Nested delegation is bounded: only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1, and only when the spawn includes an explicit `execution_budget`. All other agents are leaf-only.
 - An explicit Azoth pipeline invocation (`$azoth-auto`, `$azoth-deliver`, `$azoth-deliver-full`, literal `/auto`, `/deliver`, `/deliver-full`, etc.) is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.
-- If the current host/runtime cannot execute the required staged subagents, or if staged delegation is unavailable and you are about to continue without those staged handoffs actually happening, STOP after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms. Never silently continue inline as a fallback.
-- W1/W2/W4 under `.azoth/` are the authoritative cross-tool record. During `/session-closeout`, attempt W3 mirroring into `~/.claude/projects/.../memory/`; if blocked, log `W3 deferred` explicitly.
+- If the current host/runtime cannot execute the required staged subagents, or if staged delegation is unavailable and you are about to continue without those staged handoffs actually happening, STOP after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms. A Declaration, gate write, or status card does not count as stage execution. Never silently continue inline as a fallback.
+- The canonical Codex hook profile is `calm`: only `UserPromptSubmit` stays enabled by default. Verbose mode is diagnostic only; it is not the canonical operational model and not evidence of Codex parity.
+- W1/W2/W4 under `.azoth/` are the authoritative cross-tool record. During `/session-closeout`, treat W3 as best-effort: if mirroring into `~/.claude/projects/.../memory/` is blocked, log `W3 deferred` and continue to W4.
 - After changing canonical `agents/**/*.agent.md`, `skills/**/SKILL.md`, `.claude/commands/*.md`, or `kernel/templates/platform-adapters/codex/*`, run `python3 scripts/azoth-deploy.py`, then verify with `python3 scripts/azoth-deploy.py --check`.
 - Never add `Co-Authored-By` trailers.
 '''
@@ -33,8 +37,8 @@ codex_hooks = true
 multi_agent = true
 
 [agents]
-max_threads = 6
-max_depth = 1
+max_threads = 10
+max_depth = 2
 
 [sandbox_workspace_write]
 network_access = false
