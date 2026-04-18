@@ -19,4 +19,4 @@ Execution contract:
 
 Command metadata:
 - Source path: `.claude/commands/worktree-sync.md`
-- Description: Git checkpoint and sync — mechanical save point
+- Description: Protocol-aware worktree sync for producer and integrator sessions

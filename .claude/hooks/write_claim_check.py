@@ -114,8 +114,10 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
         return WriteClaimResult(allowed=True)
 
     # Unexpired foreign claim — deny
+    holder_worktree = str(claim.get("worktree_path") or "").strip()
+    location = f" at {holder_worktree}" if holder_worktree else ""
     deny_reason = (
-        f"[write-claim] Write blocked — write claim held by '{holder}' until {raw_exp}. "
+        f"[write-claim] Write blocked — write claim held by '{holder}'{location} until {raw_exp}. "
         f"Ask session '{holder}' to release the claim, or wait for expiry and run "
         f"`python3 scripts/run_ledger.py resolve-stale`."
     )

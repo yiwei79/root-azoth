@@ -11,6 +11,7 @@
 | [Your First /auto](./02-first-auto.md) | Step-by-step walkthrough of the `/auto` command |
 | [Session Lifecycle](./03-session-lifecycle.md) | Start → work → closeout flow |
 | [Command Reference](./04-command-reference.md) | Quick-reference for all slash commands |
+| [Parallel Sessions](./05-parallel-sessions.md) | Safe single-integrator protocol for parallel branches/worktrees |
 
 ## Quick Start
 

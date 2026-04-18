@@ -153,8 +153,12 @@ multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
 - **Normal BL work**: single checkout, switch branches with `git checkout`.
 - **Parallel exploratory sessions**: `git stash` + branch switch, not a worktree.
 - **Genuinely parallel builds** (e.g. testing platform X while implementing Y): a worktree
-  is acceptable — register a separate write claim per worktree path in
-  `.azoth/run-ledger.local.yaml`; close the worktree before `/session-closeout`.
+  is acceptable, but the writer token stays singleton across sibling worktrees. Azoth now
+  coordinates that lease through a shared cross-worktree claim keyed by the repo's git
+  common-dir and mirrored into each local `.azoth/run-ledger.local.yaml`. In practice:
+  one worktree may hold the live write claim, while other worktrees should stay in
+  discovery/review mode until the claim is released or handed off; close the worktree
+  before `/session-closeout`.
 - **Worktrees must be closed before closeout** — the `/worktree-sync` skill handles the
   checkpoint; the `.claude/worktrees/` registry tracks open ones.
 
