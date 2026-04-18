@@ -1,6 +1,6 @@
 interface:
   display_name: /worktree-sync
-  short_description: Git checkpoint and sync — mechanical save point
+  short_description: Protocol-aware worktree sync for producer and integrator sessions
   default_prompt: '$azoth-worktree-sync '
 policy:
   allow_implicit_invocation: false

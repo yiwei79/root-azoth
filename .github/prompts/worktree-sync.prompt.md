@@ -1,12 +1,37 @@
 ---
 mode: agent
-description: Git checkpoint and sync — mechanical save point
+description: Protocol-aware worktree sync for producer and integrator sessions
 agent: orchestrator
 ---
 
 # /worktree-sync
 
-Mechanical git save point. No governance evaluation. No session close. Just sync.
+Protocol-aware git sync for parallel worktrees.
+
+This command preserves Azoth's **single-integrator** parallel-session contract:
+
+- producer sessions sync local work and hand off their branch
+- the active integrator syncs and merges exactly one producer branch into the target branch
+- if the target branch worktree is dirty or another integration pass is in flight, stop
+
+No governance evaluation. No session close. Just sync under the parallel-session protocol.
+
+## Intent Detection
+
+1. **Detect current branch role**
+   - If on the active integration branch (for example `phase/v0.2.0-pN`), treat this as
+     an **integrator sync**.
+   - Otherwise treat this as a **producer sync**.
+
+2. **Fail closed on unsafe integration**
+   - If the current branch is the integration branch and the worktree is dirty with unrelated
+     changes, STOP and tell the human the tree is not safe for integration.
+   - Never silently merge a producer branch into a dirty integration worktree.
+   - Never assume multiple producer branches may be merged in one pass unless the human asks.
+
+## Producer Sync
+
+Use when this worktree is on a feature, patch, or detached producer branch.
 
 ## Process
 
@@ -28,6 +53,44 @@ Mechanical git save point. No governance evaluation. No session close. Just sync
    - Files: {count} changed
    - Branch: {branch}
    - Remote: {pushed | local-only}
+   - Role: producer
+   - Next step: hand this branch to the active integrator
+   ```
+
+## Integrator Sync
+
+Use when this worktree is on the active integration branch.
+
+## Process
+
+1. **Check git status**: confirm the integration worktree is clean enough for a merge
+
+2. **If dirty, STOP**:
+   - Report the dirty paths
+   - Explain that parallel integration is unsafe while the target worktree contains unrelated edits
+   - Ask the human to finish or park the other integration work first
+
+3. **Refresh integration branch**:
+   - ensure the target branch is current before merging
+
+4. **Merge exactly one producer branch**:
+   - merge one ready producer branch into the integration branch
+   - resolve conflicts deliberately, especially in shared Azoth state surfaces
+
+5. **Run required post-merge regeneration/tests**:
+   - if command/agent/skill/platform-adapter parity changed, run the required sync or deploy step
+   - run the targeted verification for the merged slice
+
+6. **Commit and push the integration result** if needed
+
+7. **Report**:
+   ```
+   ## Integration Sync Complete
+   - Branch merged: {producer_branch}
+   - Target branch: {target_branch}
+   - Commit: {SHA}
+   - Verification: {tests_or_checks}
+   - Next step: other producer sessions must refresh from target before the next merge
    ```
 
 ## Rules
@@ -36,3 +99,8 @@ Mechanical git save point. No governance evaluation. No session close. Just sync
 - Review staged files before committing — exclude secrets, large binaries
 - If there are uncommitted kernel changes, WARN and ask human before staging
 - Use specific file paths in `git add`, not `-A`
+- Treat `phase/v0.2.0-pN` as the normal integration branch unless the human names a different target
+- Preserve the **single integrator** contract from `docs/playbook/05-parallel-sessions.md`
+- Producer sessions must not merge themselves into the target branch while another integrator pass is active
+- Integrator sessions merge **one** producer branch at a time, then stop so other sessions can refresh
+- If integration is unsafe, fail closed and explain why instead of improvising around a dirty target tree
