@@ -1,5 +1,5 @@
 ---
-description: "Structured planning without execution"
+description: Structured planning without execution
 azoth_effect: read
 agent: orchestrator
 ---

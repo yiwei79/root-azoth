@@ -4,11 +4,11 @@
 0.1.2.51 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 50
 
 ## Last Session
-- **Session**: 2026-04-18-t-008
-- **Goal**: T-008: Minimal bounded research sufficiency gate
-- **Pipeline**: standard
+- **Session**: 2026-04-18-bl-057
+- **Goal**: BL-057: Close canonical command migration bundles atomically
+- **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-260 (success)
+- **Episode**: ep-261 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

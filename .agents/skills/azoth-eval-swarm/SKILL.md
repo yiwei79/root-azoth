@@ -10,7 +10,8 @@ Codex does not register repository-defined slash commands in its built-in `/` co
 This skill is the explicit Codex-native equivalent of typing `/eval-swarm`.
 
 Execution contract:
-- Read `.claude/commands/eval-swarm.md` and follow it as the source of truth.
+- Read `commands/eval-swarm/command.yaml` and treat it as the source of truth.
+- Read the body source referenced by that contract: `.claude/commands/eval-swarm.md`.
 - Treat the rest of the user's prompt after `$azoth-eval-swarm` as `$ARGUMENTS`.
 - Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.
 - Preserve the command's `agent: orchestrator` binding.
@@ -18,5 +19,6 @@ Execution contract:
 - If the user typed literal `/eval-swarm` in prompt text instead, apply the same workflow contract.
 
 Command metadata:
-- Source path: `.claude/commands/eval-swarm.md`
+- Contract path: `commands/eval-swarm/command.yaml`
+- Body source path: `.claude/commands/eval-swarm.md`
 - Description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave iteration
