@@ -57,6 +57,23 @@ properties:
           Optional IDE/harness label (e.g. claude-code, cursor, copilot, opencode,
           antigravity). Mechanical enforcement applies in Claude Code; other harnesses
           simulate the check via behavioral parity rules.
+      worktree_path:
+        type: string
+        minLength: 1
+        description: >
+          Absolute path of the worktree that currently owns the write lease. This is
+          advisory audit metadata used for parallel-worktree handoff and conflict
+          messages.
+      branch:
+        type: string
+        minLength: 1
+        description: "Optional current git branch for the lease-owning worktree."
+      git_common_dir:
+        type: string
+        minLength: 1
+        description: >
+          Optional git common-dir path used to derive the shared cross-worktree lease
+          identity when multiple worktrees of the same repo are active.
 
   sessions:
     type: array

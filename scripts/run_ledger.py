@@ -23,9 +23,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -70,22 +74,32 @@ def _load_ledger(path: Path) -> dict:
     return data
 
 
-def _write_ledger(path: Path, data: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-
-
-def _load_ledger_for_helpers(root: Path) -> dict | None:
-    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
-    if not ledger_path.exists():
+def _load_yaml_mapping(path: Path) -> dict | None:
+    if not path.exists():
         return None
     try:
-        with ledger_path.open(encoding="utf-8") as f:
+        with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except Exception:
         return None
     return data if isinstance(data, dict) else None
+
+
+def _write_yaml_mapping(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    tmp_path.replace(path)
+
+
+def _write_ledger(path: Path, data: dict) -> None:
+    _write_yaml_mapping(path, data)
+
+
+def _load_ledger_for_helpers(root: Path) -> dict | None:
+    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
+    return _load_yaml_mapping(ledger_path)
 
 
 # ── Validator ─────────────────────────────────────────────────────────────────
@@ -315,6 +329,14 @@ def validate_ledger(data: dict) -> list[str]:
                     f"write_claim: 'expires_at' must match ISO-8601 (YYYY-MM-DDTHH:MM:SS…), "
                     f"got {expires_val!r}"
                 )
+            for optional_field in ("worktree_path", "branch", "git_common_dir", "harness"):
+                optional_val = write_claim.get(optional_field)
+                if optional_val is not None and (
+                    not isinstance(optional_val, str) or not optional_val.strip()
+                ):
+                    errors.append(
+                        f"write_claim: '{optional_field}' must be a non-empty string when present"
+                    )
 
     return errors
 
@@ -332,8 +354,139 @@ def _root_from_ledger_path(path: Path) -> Path:
     return path.parent
 
 
+def _resolve_git_common_dir(root: Path) -> Path | None:
+    env_override = os.environ.get("AZOTH_GIT_COMMON_DIR")
+    if env_override:
+        return Path(env_override).expanduser().resolve()
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    raw = result.stdout.strip()
+    if not raw:
+        return None
+    path = Path(raw)
+    if not path.is_absolute():
+        path = (root / path).resolve()
+    return path.resolve()
+
+
+def _current_branch(root: Path) -> str | None:
+    env_override = os.environ.get("AZOTH_GIT_BRANCH")
+    if env_override:
+        return env_override.strip() or None
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    branch = result.stdout.strip()
+    return branch or None
+
+
+def shared_write_claim_path(root: Path) -> Path | None:
+    explicit_path = os.environ.get("AZOTH_SHARED_WRITE_CLAIM_PATH")
+    if explicit_path:
+        return Path(explicit_path).expanduser().resolve()
+
+    common_dir = _resolve_git_common_dir(root)
+    if common_dir is None:
+        return None
+
+    digest = hashlib.sha1(str(common_dir).encode("utf-8")).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / "azoth-write-claims" / f"{digest}.yaml"
+
+
+def _load_shared_write_claim(root: Path) -> dict | None:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None:
+        return None
+    return _load_yaml_mapping(claim_path)
+
+
+def _write_shared_write_claim(root: Path, claim: dict) -> None:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None:
+        return
+    _write_yaml_mapping(claim_path, claim)
+
+
+def _clear_shared_write_claim(root: Path) -> bool:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None or not claim_path.exists():
+        return False
+    claim_path.unlink()
+    return True
+
+
+def _write_local_claim_mirror(root: Path, claim: dict | None) -> None:
+    ledger_path = _ledger_path_from_root(root)
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        data = {"schema_version": 1, "runs": []}
+    if claim is None:
+        data.pop("write_claim", None)
+    else:
+        data["write_claim"] = claim
+    _write_ledger(ledger_path, data)
+
+
+def _parse_claim_expiry(raw_expiry: str) -> datetime | None:
+    try:
+        normalized = raw_expiry.replace("Z", "+00:00") if raw_expiry.endswith("Z") else raw_expiry
+        exp_dt = datetime.fromisoformat(normalized)
+        if exp_dt.tzinfo is None:
+            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+        return exp_dt
+    except (ValueError, TypeError):
+        return None
+
+
+def _build_write_claim(
+    root: Path,
+    *,
+    session_id: str,
+    expires_at: str,
+    harness: str | None,
+) -> dict:
+    claim: dict[str, str] = {
+        "session_id": session_id,
+        "expires_at": expires_at,
+        "acquired_at": utc_now_iso(),
+        "worktree_path": str(root.resolve()),
+    }
+    if harness is not None:
+        claim["harness"] = harness
+    branch = _current_branch(root)
+    if branch:
+        claim["branch"] = branch
+    common_dir = _resolve_git_common_dir(root)
+    if common_dir is not None:
+        claim["git_common_dir"] = str(common_dir)
+    return claim
+
+
 def load_write_claim(root: Path) -> dict | None:
     """Return the write_claim dict from the ledger, or None if absent."""
+    shared_claim = _load_shared_write_claim(root)
+    if shared_write_claim_path(root) is not None:
+        return shared_claim if isinstance(shared_claim, dict) else None
+
     data = _load_ledger_for_helpers(root)
     if data is None:
         return None
@@ -352,46 +505,49 @@ def acquire_write_claim(
     Returns (True, session_id) on success.
     Returns (False, reason) if an unexpired claim already exists for a different session.
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        data = {"schema_version": 1, "runs": []}
-
-    existing = data.get("write_claim")
+    current_worktree = str(root.resolve())
+    existing = load_write_claim(root)
     if isinstance(existing, dict):
         holder = existing.get("session_id", "")
         if holder == session_id:
-            # Re-acquire: update expiry
-            existing["expires_at"] = expires_at
-            existing["acquired_at"] = utc_now_iso()
-            if harness is not None:
-                existing["harness"] = harness
-            _write_ledger(ledger_path, data)
-            return True, session_id
-        # Check if the existing claim is expired
-        raw_exp = existing.get("expires_at", "")
-        from datetime import datetime, timezone as _tz
+            recorded_worktree = str(existing.get("worktree_path") or "").strip()
+            raw_exp = str(existing.get("expires_at") or "")
+            exp_dt = _parse_claim_expiry(raw_exp)
+            if recorded_worktree and recorded_worktree != current_worktree:
+                if exp_dt is not None and datetime.now(timezone.utc) < exp_dt:
+                    return (
+                        False,
+                        "write claim already held by this session from another worktree "
+                        f"({recorded_worktree}) until {raw_exp}; release it there first",
+                    )
+            else:
+                new_claim = _build_write_claim(
+                    root,
+                    session_id=session_id,
+                    expires_at=expires_at,
+                    harness=harness,
+                )
+                if shared_write_claim_path(root) is not None:
+                    _write_shared_write_claim(root, new_claim)
+                _write_local_claim_mirror(root, new_claim)
+                return True, session_id
 
-        try:
-            normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
-            exp_dt = datetime.fromisoformat(normalized)
-            if exp_dt.tzinfo is None:
-                exp_dt = exp_dt.replace(tzinfo=_tz.utc)
-        except (ValueError, TypeError):
-            exp_dt = None
-        if exp_dt is not None and datetime.now(_tz.utc) < exp_dt:
-            return False, f"write claim held by '{holder}' until {raw_exp}"
+        raw_exp = str(existing.get("expires_at") or "")
+        exp_dt = _parse_claim_expiry(raw_exp)
+        if exp_dt is not None and datetime.now(timezone.utc) < exp_dt:
+            holder_worktree = str(existing.get("worktree_path") or "").strip()
+            location = f" at {holder_worktree}" if holder_worktree else ""
+            return False, f"write claim held by '{holder}'{location} until {raw_exp}"
 
-    # No unexpired foreign claim — acquire it
-    new_claim: dict = {
-        "session_id": session_id,
-        "expires_at": expires_at,
-        "acquired_at": utc_now_iso(),
-    }
-    if harness is not None:
-        new_claim["harness"] = harness
-    data["write_claim"] = new_claim
-    _write_ledger(ledger_path, data)
+    new_claim = _build_write_claim(
+        root,
+        session_id=session_id,
+        expires_at=expires_at,
+        harness=harness,
+    )
+    if shared_write_claim_path(root) is not None:
+        _write_shared_write_claim(root, new_claim)
+    _write_local_claim_mirror(root, new_claim)
     return True, session_id
 
 
@@ -401,17 +557,14 @@ def release_write_claim(root: Path, session_id: str) -> bool:
     Returns True when the claim was owned by session_id and has been removed.
     Returns False (no-op) when no claim exists or the caller is not the owner.
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        return False
-    existing = data.get("write_claim")
+    existing = load_write_claim(root)
     if not isinstance(existing, dict):
         return False
     if existing.get("session_id") != session_id:
         return False
-    del data["write_claim"]
-    _write_ledger(ledger_path, data)
+    if shared_write_claim_path(root) is not None:
+        _clear_shared_write_claim(root)
+    _write_local_claim_mirror(root, None)
     return True
 
 
@@ -422,29 +575,15 @@ def resolve_stale_claims(root: Path) -> bool:
     Returns False when no claim exists or the claim is unexpired.
     Clock-only check — no external bypass signal (ADV-2).
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        return False
-    existing = data.get("write_claim")
+    existing = load_write_claim(root)
     if not isinstance(existing, dict):
         return False
-    raw_exp = existing.get("expires_at", "")
-    from datetime import datetime, timezone as _tz
-
-    try:
-        normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
-        exp_dt = datetime.fromisoformat(normalized)
-        if exp_dt.tzinfo is None:
-            exp_dt = exp_dt.replace(tzinfo=_tz.utc)
-    except (ValueError, TypeError):
-        # Unparseable expiry — treat as expired
-        del data["write_claim"]
-        _write_ledger(ledger_path, data)
-        return True
-    if datetime.now(_tz.utc) >= exp_dt:
-        del data["write_claim"]
-        _write_ledger(ledger_path, data)
+    raw_exp = str(existing.get("expires_at") or "")
+    exp_dt = _parse_claim_expiry(raw_exp)
+    if exp_dt is None or datetime.now(timezone.utc) >= exp_dt:
+        if shared_write_claim_path(root) is not None:
+            _clear_shared_write_claim(root)
+        _write_local_claim_mirror(root, None)
         return True
     return False
 
@@ -797,13 +936,20 @@ def cmd_status(args: argparse.Namespace) -> None:
     else:
         print("no active run")
     # Write-claim info
-    write_claim = data.get("write_claim")
+    write_claim = load_write_claim(_root_from_ledger_path(path))
+    claim_scope = "shared" if shared_write_claim_path(_root_from_ledger_path(path)) is not None else "local"
     if isinstance(write_claim, dict):
         holder = write_claim.get("session_id", "?")
         expires = write_claim.get("expires_at", "?")
-        print(f"Write claim: HELD by '{holder}'  expires {expires}")
+        print(f"Write claim ({claim_scope}): HELD by '{holder}'  expires {expires}")
+        worktree_path = write_claim.get("worktree_path")
+        if worktree_path:
+            print(f"  worktree: {worktree_path}")
+        branch = write_claim.get("branch")
+        if branch:
+            print(f"  branch: {branch}")
     else:
-        print("Write claim: none")
+        print(f"Write claim ({claim_scope}): none")
 
 
 def cmd_claim(args: argparse.Namespace) -> None:

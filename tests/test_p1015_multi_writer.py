@@ -48,7 +48,7 @@ def _past_expiry(seconds: int = 1) -> str:
 def _make_ledger(tmp_path: Path, write_claim: dict | None = None) -> Path:
     """Write a minimal valid ledger to tmp_path/.azoth/run-ledger.local.yaml."""
     azoth = tmp_path / ".azoth"
-    azoth.mkdir(exist_ok=True)
+    azoth.mkdir(parents=True, exist_ok=True)
     ledger_path = azoth / "run-ledger.local.yaml"
     data: dict = {"schema_version": 1, "runs": []}
     if write_claim is not None:
@@ -360,6 +360,72 @@ def test_p1015_release_other_session_noop(tmp_path: Path) -> None:
     remaining = load_write_claim(tmp_path)
     assert remaining is not None
     assert remaining["session_id"] == "sess-owner"
+
+
+def test_p1015_shared_claim_blocks_parallel_worktree_writer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sibling worktrees sharing one git common-dir must coordinate through one live claim."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
+
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
+
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
+
+    mirrored = load_write_claim(worktree_b)
+    assert mirrored is not None
+    assert mirrored["session_id"] == "sess-a"
+    assert mirrored["worktree_path"] == str(worktree_a.resolve())
+
+    denied, reason = acquire_write_claim(worktree_b, "sess-b", _future_expiry(), harness="codex")
+    assert denied is False
+    assert str(worktree_a.resolve()) in reason
+
+
+def test_p1015_shared_claim_release_clears_for_sibling_worktree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Releasing from one worktree clears the authoritative claim for all sibling worktrees."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
+
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
+
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
+    assert release_write_claim(worktree_a, "sess-a") is True
+    assert load_write_claim(worktree_b) is None
+
+
+def test_p1015_same_session_cannot_silently_move_claim_between_worktrees(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A live session/worktree lease must be explicitly released before the same session moves."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
+
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
+
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
+
+    denied, reason = acquire_write_claim(worktree_b, "sess-a", _future_expiry(), harness="codex")
+    assert denied is False
+    assert "another worktree" in reason
 
 
 # ── Regression ────────────────────────────────────────────────────────────────

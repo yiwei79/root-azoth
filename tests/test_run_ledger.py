@@ -689,7 +689,7 @@ def test_load_resumable_sessions_keeps_active_session_with_matching_live_scope(
                 "approved": True,
                 "session_id": "live-active",
                 "goal": "BL-053: administrative finalize",
-                "expires_at": "2026-04-18T12:00:00+00:00",
+                "expires_at": "2099-04-18T12:00:00+00:00",
             }
         ),
         encoding="utf-8",
