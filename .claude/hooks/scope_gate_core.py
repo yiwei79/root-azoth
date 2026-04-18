@@ -341,7 +341,6 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if normalized_write_action(payload) is None:
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
-    est_path = entropy_state_path(root)
     targets = [
         target
         for target in (resolved_target(root, path_str) for path_str in extract_target_path_strs(payload))
