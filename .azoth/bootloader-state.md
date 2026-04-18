@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.42 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 41
+0.1.2.43 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 42
 
 ## Last Session
-- **Session**: 2026-04-18-adhoc-codex-hook-parity-refresh
-- **Goal**: AD-HOC: refresh Codex hook parity to the latest official model and fix hook UX
+- **Session**: 2026-04-18-bl-052
+- **Goal**: BL-052: Correct /session-closeout W1b contract and strengthen mirror semantics tests
 - **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-240 (success)
+- **Episode**: ep-245 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

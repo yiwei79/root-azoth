@@ -1,0 +1,55 @@
+# Roadmap task spec — v0.2.0
+id: BL-055
+roadmap_version: v0.2.0
+title: "Codex pipeline-entry hardening for staged execution mode"
+decision_ref: [D21, D23, D46, D50]
+
+intent: >
+  Make Azoth's Codex pipeline feature dependable by designing the right pipeline-entry
+  architecture for a hook-soft runtime: a clear canonical entry path, explicit fallback
+  behavior for literal pipeline tokens, and a mandatory stop when staged delegation is
+  not actually active.
+
+problem: >
+  Recent Codex sessions showed that an approved `/auto` pipeline can still collapse into
+  inline execution even after routing, Declaration, and gate writes. The current Codex
+  adapter is strong on advisory routing and documentation, but weak on behavioral control:
+  literal `/auto` fallback still enters through advisory `UserPromptSubmit` context, and
+  the system does not yet make a visible stop when staged pipeline delegation is not
+  actually happening. Chasing a hard non-Bash hook is the wrong goal if the host does
+  not support it; the real goal is to make the pipeline feature work reliably through
+  the best architectural entry and handoff design Codex does support.
+
+scope:
+  - "Codex pipeline-entry contract in `kernel/templates/platform-adapters/codex/config.toml.template` and deployed `.codex/config.toml`"
+  - "Codex literal-token router in `kernel/templates/platform-adapters/codex/user_prompt_submit_router.py.template` and deployed `.codex/hooks/user_prompt_submit_router.py`"
+  - "Codex platform guidance documenting canonical vs compatibility entry behavior"
+  - "Behavior tests for redirect/rewrite/block semantics and stop-on-no-delegation flow"
+  - "Architectural alignment with `skills/subagent-router/SKILL.md` and orchestrator expectations"
+
+non_goals:
+  - "Inventing or depending on a hard non-Bash `Write`/`Edit` enforcement hook if Codex does not support one"
+  - "General pipeline redesign across every platform in the same slice"
+  - "Inline workaround prose that leaves the literal fallback path behaviorally ambiguous"
+  - "Continuing governed pipeline execution inline once staged delegation is known to be unavailable"
+
+acceptance:
+  - "Codex documents one canonical execution path for pipeline mode and one clearly bounded compatibility fallback path"
+  - "Literal `/auto`-style fallback no longer quietly behaves like permissive advisory routing only; it is rewritten, redirected, or blocked into the canonical staged path"
+  - "If staged delegation is unavailable or not actually active after pipeline approval, Codex stops and asks the human instead of silently continuing inline"
+  - "Focused tests prove the Codex router/control surfaces enforce the new entry semantics rather than only injecting explanatory context"
+  - "The spec explicitly records that the goal is reliable pipeline behavior, not a hard-hook fantasy that the host cannot support"
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Phase 1 = make the entry contract honest and dependable: canonical path, fallback behavior,
+  and stop/escalation semantics. Phase 2 = refine the host-specific UX (rewrite vs block vs
+  redirect) based on what Codex's `UserPromptSubmit` surface actually supports in practice.
+  If host capability is weaker than expected, prefer a strict, explicit redirect/stop model
+  over soft advisory text that allows inline collapse.

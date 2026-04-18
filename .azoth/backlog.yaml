@@ -2089,10 +2089,11 @@ items:
   source: F1-CODEX-001
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-17'
+  completed_date: '2026-04-18'
   description: Repair the W1b contract drift between the documented /session-closeout
     flow and scripts/do_closeout.py. The in-flow W1b instructions must not direct
     agents to a helper that reruns the full W1-W4 closeout path. Update the canonical
@@ -2131,4 +2132,24 @@ items:
     are themselves under audit; (4) regression coverage proving the gate fires for
     temporally unstable external-knowledge tasks and does not trigger for stable local-only
     work.'
+- id: BL-055
+  title: Codex pipeline-entry hardening for staged execution mode
+  source: ep-243
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 1
+  created_date: '2026-04-18'
+  description: 'Make the Codex pipeline feature dependable through the best architectural
+    entry/routing approach rather than chasing hard non-Bash hooks. Deliverables:
+    (1) define the canonical Codex pipeline-entry path (`$azoth-*` / `/skills`) and
+    the compatibility behavior for literal `/auto`-style fallback tokens; (2) use
+    the available Codex entry surfaces to rewrite, redirect, or block fallback entry
+    when needed so explicit pipeline requests do not drift into inline execution;
+    (3) require a visible stop/escalation path when staged delegation is unavailable
+    or not actually happening after pipeline approval; (4) add behavior tests proving
+    the pipeline entry path no longer silently collapses into inline work in the supported
+    Codex flow. Non-goal: this slice is not about inventing a hard non-Bash enforcement
+    hook if Codex does not support one.'
 completed: []
