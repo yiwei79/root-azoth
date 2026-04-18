@@ -2105,10 +2105,11 @@ items:
   source: SRF-2026-04-17-002
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-17'
+  completed_date: '2026-04-18'
   description: 'Add a supported administrative finalization path for parked, bookkeeping-only,
     or already-bumped sessions that updates lifecycle state to closed without forcing
     W4 patch bump. Use that control-plane cleanup to keep /start and /resume from
@@ -2137,10 +2138,11 @@ items:
   source: ep-243
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 1
   created_date: '2026-04-18'
+  completed_date: '2026-04-18'
   description: 'Make the Codex pipeline feature dependable through the best architectural
     entry/routing approach rather than chasing hard non-Bash hooks. Deliverables:
     (1) define the canonical Codex pipeline-entry path (`$azoth-*` / `/skills`) and
@@ -2152,4 +2154,54 @@ items:
     the pipeline entry path no longer silently collapses into inline work in the supported
     Codex flow. Non-goal: this slice is not about inventing a hard non-Bash enforcement
     hook if Codex does not support one.'
+- id: BL-056
+  title: Make governed pipeline approvals advance execution state mechanically
+  source: SRF-2026-04-18-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 1
+  created_date: '2026-04-18'
+  completed_date: '2026-04-18'
+  description: 'Fix the failure mode where a governed pipeline is declared, approved,
+    and gate-opened, yet the session still returns another stage card or narration
+    instead of executing the next downstream non-human stage. Deliverables: (1) introduce
+    a durable execution-state transition for governed pipeline approvals so human
+    gates are consumed as runtime state, not only as conversational acknowledgements;
+    (2) require immediate advancement into the next eligible non-human stage once
+    the corresponding approval is present; (3) align orchestrator/runtime behavior
+    across `/auto`, `/deliver`, and `/deliver-full` so stage progression cannot satisfy
+    itself with declarative status output alone; (4) add regression coverage for
+    the exact failure class: after pipeline approval and architect approval, the
+    session must proceed into real planner/test-builder execution in the same run,
+    and emitting only another status/declaration card counts as failure. Non-goal:
+    this slice is not another local wording tweak to one command body; it fixes the
+    orchestration/runtime boundary that allows declared-but-not-executed pipelines.'
+- id: T-006
+  title: First-class iterative revise-and-continue pipeline loops
+  source: roadmap-v0.2.0-p2
+  roadmap_ref: T-006
+  initiative_ref: INI-PPL-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-18'
+  decision_ref:
+  - D23
+  - D44
+  description: 'Future follow-on for the remaining orchestration gap after BL-056:
+    make reviewer/evaluator-driven revise-and-continue behavior a first-class runtime
+    loop instead of an orchestrator-only convention. Deliverables: (1) encode a
+    durable pipeline replay/return path when a review gate requests changes but the
+    scope remains valid; (2) route the run back to the correct upstream stage for
+    revision, then mechanically re-enter downstream stages in the same pipeline lineage;
+    (3) preserve typed stage-summary lineage so revised planner/builder outputs supersede
+    prior failed attempts without losing auditability; (4) add regression coverage
+    proving governed pipelines can iterate through request-changes and continue downstream
+    without human restatement of the full pipeline contract. Non-goal: this slice
+    is not another wording-only prompt refinement; it adds explicit runtime support
+    for iterative pipeline improvement.'
 completed: []

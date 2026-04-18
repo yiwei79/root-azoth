@@ -172,6 +172,13 @@ After human approval of the Declaration:
    design / adjust scope / abort). Wait for a human signal such as **proceed**,
    **revise-then-continue**, or **abort** before continuing. **Do not** treat “pipeline
    started” as overriding a failed review gate.
+   When the human does approve continuation on a governed run, consume that approval in the
+   same run through `scripts/run_ledger.py` by promoting the next executable stage from the
+   paused human-gate checkpoint. Another declaration/status card by itself is not valid
+   downstream progress.
+   Residual risk: revise-and-continue after reviewer/evaluator findings is still an
+   orchestrator-managed loop, not yet a first-class runtime replay primitive; roadmap
+   task `T-006` tracks that future hardening.
 
 6. **Evaluator stage — `/eval` routing (E1–E6):** When the **composed pipeline** includes an
    **evaluator** stage (or the orchestrator runs a **final quality gate** equivalent to

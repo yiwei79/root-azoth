@@ -23,8 +23,10 @@ SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from run_ledger import (  # noqa: E402
+    consume_human_gate_approval,
     load_active_run,
     load_open_sessions,
+    load_resumable_sessions,
     load_session,
     upsert_session,
     validate_ledger,
@@ -448,6 +450,84 @@ def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
     assert run["stages_completed"] == ["planner_stage0"]
 
 
+def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-human-gate",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "session_id": "2026-04-18-bl-056",
+                        "backlog_id": "BL-056",
+                        "ide": "codex",
+                        "stages_completed": ["auto_s1_architect", "auto_s2_reviewer"],
+                        "active_stage_id": "auto_s3_planner",
+                        "pending_stage_ids": ["auto_s4_evaluator", "auto_s5_builder"],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = consume_human_gate_approval(tmp_path, run_id="run-human-gate")
+
+    assert updated["status"] == "active"
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    assert updated["pending_stage_ids"] == ["auto_s5_builder"]
+    assert "pause_reason" not in updated
+    assert updated["stages_completed"] == [
+        "auto_s1_architect",
+        "auto_s2_reviewer",
+        "auto_s3_planner",
+    ]
+    assert "auto_s4_evaluator" in updated["next_action"]
+
+
+def test_consume_human_gate_approval_fails_closed_when_no_pending_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-no-pending",
+                        "mode": "deliver-full",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "active_stage_id": "deliver_full_s4",
+                        "pending_stage_ids": [],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="pending_stage_ids"):
+        consume_human_gate_approval(tmp_path, run_id="run-no-pending")
+
+
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────
 
 
@@ -559,6 +639,93 @@ def test_load_open_sessions_filters_closed_and_sorts_newest_first(tmp_path: Path
     )
     sessions = load_open_sessions(tmp_path)
     assert [entry["session_id"] for entry in sessions] == ["newer-active", "older-parked"]
+
+
+def test_load_resumable_sessions_excludes_active_session_without_live_scope(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "stale-active",
+                        "backlog_id": "BL-053",
+                        "goal": "BL-053: stale active session",
+                        "status": "active",
+                        "ide": "codex",
+                        "next_action": "should not resume",
+                        "updated_at": "2026-04-18T10:00:00+00:00",
+                    },
+                    {
+                        "session_id": "parked-session",
+                        "backlog_id": "BL-052",
+                        "goal": "BL-052: parked session",
+                        "status": "parked",
+                        "ide": "codex",
+                        "next_action": "safe to resume",
+                        "updated_at": "2026-04-18T09:00:00+00:00",
+                    },
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    sessions = load_resumable_sessions(tmp_path)
+    assert [entry["session_id"] for entry in sessions] == ["parked-session"]
+
+
+def test_load_resumable_sessions_keeps_active_session_with_matching_live_scope(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "live-active",
+                "goal": "BL-053: administrative finalize",
+                "expires_at": "2026-04-18T12:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "parked-session",
+                        "backlog_id": "BL-052",
+                        "goal": "BL-052: parked session",
+                        "status": "parked",
+                        "ide": "codex",
+                        "next_action": "safe to resume",
+                        "updated_at": "2026-04-18T09:00:00+00:00",
+                    },
+                    {
+                        "session_id": "live-active",
+                        "backlog_id": "BL-053",
+                        "goal": "BL-053: administrative finalize",
+                        "status": "active",
+                        "ide": "codex",
+                        "next_action": "continue current scope",
+                        "updated_at": "2026-04-18T10:00:00+00:00",
+                    },
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    sessions = load_resumable_sessions(tmp_path)
+    assert [entry["session_id"] for entry in sessions] == ["live-active", "parked-session"]
 
 
 def test_load_session_returns_matching_entry(tmp_path: Path) -> None:

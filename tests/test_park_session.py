@@ -291,7 +291,7 @@ def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path
     )
 
     assert result["resume_type"] == "stage-aware"
-    assert result["pipeline"] == "governed"
+    assert result["pipeline"] == "deliver-full"
     assert result["current_stage_id"] == "architect_brief"
     assert result["pending_stage_ids"] == ["builder_apply", "reviewer_gate"]
     assert result["human_gate"] is False
@@ -300,7 +300,7 @@ def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path
         (repo_root / ".azoth" / "pipeline-gate.json").read_text(encoding="utf-8")
     )
     assert pipeline_gate["session_id"] == "2026-04-16-branch-hygiene"
-    assert pipeline_gate["pipeline"] == "governed"
+    assert pipeline_gate["pipeline"] == "deliver-full"
     assert pipeline_gate["approved"] is True
 
     ledger = yaml.safe_load(
@@ -316,7 +316,7 @@ def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path
         (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
     )
     assert session_state["state"] == "active"
-    assert session_state["pipeline"] == "governed"
+    assert session_state["pipeline"] == "deliver-full"
     assert session_state["current_stage_id"] == "architect_brief"
     assert session_state["active_run_id"] == "run-001"
 
@@ -345,6 +345,7 @@ def test_resume_session_restores_saved_human_gate_without_pipeline_restart(tmp_p
     assert result["resume_type"] == "stage-aware"
     assert result["human_gate"] is True
     assert result["pause_reason"] == "human-gate"
+    assert result["pipeline"] == "deliver-full"
     assert result["current_stage_id"] == "architect_brief"
 
     ledger = yaml.safe_load(
@@ -353,13 +354,67 @@ def test_resume_session_restores_saved_human_gate_without_pipeline_restart(tmp_p
     run = ledger["runs"][0]
     assert run["status"] == "paused"
     assert run["pause_reason"] == "human-gate"
+    assert run["mode"] == "deliver-full"
     assert run["active_stage_id"] == "architect_brief"
 
     session_state = yaml.safe_load(
         (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
     )
+    assert session_state["pipeline"] == "deliver-full"
     assert session_state["pause_reason"] == "human-gate"
     assert "Resume at human gate" in session_state["next_action"]
+
+
+def test_resume_session_can_consume_saved_human_gate_and_advance(tmp_path: Path) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        run_status="paused",
+        run_pause_reason="human-gate",
+        delivery_pipeline="governed",
+        target_layer="M1",
+    )
+    park_session.park_session(
+        repo_root,
+        next_action="Resume later with /resume 2026-04-16-branch-hygiene.",
+        timestamp="2026-04-16T18:05:00+00:00",
+    )
+
+    result = park_session.resume_session(
+        repo_root,
+        session_id="2026-04-16-branch-hygiene",
+        timestamp="2099-04-16T18:10:00+00:00",
+        approve_human_gate=True,
+    )
+
+    assert result["resume_type"] == "stage-aware"
+    assert result["human_gate"] is False
+    assert result["pause_reason"] is None
+    assert result["pipeline"] == "deliver-full"
+    assert result["current_stage_id"] == "builder_apply"
+    assert result["pending_stage_ids"] == ["reviewer_gate"]
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    run = ledger["runs"][0]
+    assert run["status"] == "active"
+    assert run["active_stage_id"] == "builder_apply"
+    assert run["pending_stage_ids"] == ["reviewer_gate"]
+    assert run["stages_completed"] == [
+        "stage0_discovery",
+        "planner_brief",
+        "architect_brief",
+    ]
+    assert "pause_reason" not in run
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["pipeline"] == "deliver-full"
+    assert session_state["current_stage_id"] == "builder_apply"
+    assert session_state["pending_stages"] == ["reviewer_gate"]
+    assert "pause_reason" not in session_state
 
 
 def test_resume_session_scope_only_removes_stale_pipeline_gate(tmp_path: Path) -> None:

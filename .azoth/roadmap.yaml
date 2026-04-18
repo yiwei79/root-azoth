@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 43
+    current_patch: 46
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -351,6 +351,7 @@ versions:
       (memory loop hardening), INI-RST-003 (multi-writer safety next level), and
       INI-PLT-006 (co-primary platform model + neutral command contract). Medium-priority
       follow-on work (T-005 for the residual low-risk instruction-refinement lane,
+      T-006 for first-class iterative revise-and-continue pipeline loops,
       INI-MEM-002, INI-MEM-003, INI-MEM-005, INI-PLT-002, INI-EFF-001) remains available
       for scheduling after triage. Existing `P1-*` task ids remain stable legacy refs
       inside p2, while new roadmap-backed work now mints in `T-*`; phase/slice semantics
@@ -372,6 +373,9 @@ versions:
         carried_from: "v0.2.0-p1"
       - id: T-005
         title: "Low-risk instruction-refinement lightweight lane"
+        decision_ref: [D23, D44]
+      - id: T-006
+        title: "First-class iterative revise-and-continue pipeline loops"
         decision_ref: [D23, D44]
     completed_tasks:
       - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}

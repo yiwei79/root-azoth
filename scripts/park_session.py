@@ -20,6 +20,7 @@ from do_closeout import (
 )
 from run_ledger import (
     acquire_write_claim,
+    consume_human_gate_approval,
     load_run,
     load_session,
     release_write_claim,
@@ -183,6 +184,25 @@ def _restore_pipeline_gate(
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip() or "gate verification failed"
         raise ParkSessionError(f"Cannot restore pipeline gate for session '{session_id}': {detail}")
+
+
+def _normalize_pipeline_command(
+    *,
+    checkpoint: dict[str, Any],
+    run_entry: dict[str, Any] | None,
+    delivery_pipeline: str,
+    target_layer: str,
+) -> str:
+    for candidate in (
+        _coerce_string(checkpoint.get("pipeline")),
+        _coerce_string(run_entry.get("mode") if isinstance(run_entry, dict) else ""),
+        _coerce_string(delivery_pipeline),
+    ):
+        if candidate in {"auto", "dynamic-full-auto", "deliver", "deliver-full"}:
+            return candidate
+    if target_layer == "M1" or delivery_pipeline == "governed":
+        return "deliver-full"
+    return ""
 
 
 def park_session(
@@ -384,6 +404,7 @@ def resume_session(
     session_id: str | None = None,
     ide: str | None = None,
     timestamp: str | None = None,
+    approve_human_gate: bool = False,
 ) -> dict[str, Any]:
     resolved_session_id, session_entry = _resolve_resume_target(repo_root, session_id=session_id)
     when = timestamp or utc_now_iso()
@@ -441,9 +462,14 @@ def resume_session(
         encoding="utf-8",
     )
 
-    pipeline = _coerce_string(
-        checkpoint.get("pipeline") or (run_entry.get("mode") if run_entry else "")
+    pipeline = _normalize_pipeline_command(
+        checkpoint=checkpoint,
+        run_entry=run_entry,
+        delivery_pipeline=delivery_pipeline,
+        target_layer=target_layer,
     )
+    if pipeline:
+        checkpoint["pipeline"] = pipeline
     if run_entry and pipeline:
         _restore_pipeline_gate(
             repo_root,
@@ -487,6 +513,17 @@ def resume_session(
             pending_stage_ids=checkpoint.get("pending_stages", []),
             pause_reason=pause_reason if pause_reason == "human-gate" else None,
         )
+        if pause_reason == "human-gate" and approve_human_gate:
+            updated_run = consume_human_gate_approval(
+                repo_root,
+                run_id=_coerce_string(run_entry.get("run_id")),
+            )
+            checkpoint["completed_stages"] = list(updated_run.get("stages_completed") or [])
+            checkpoint["current_stage_id"] = updated_run.get("active_stage_id")
+            checkpoint["pending_stages"] = list(updated_run.get("pending_stage_ids") or [])
+            checkpoint.pop("pause_reason", None)
+            pause_reason = ""
+            next_action = str(updated_run.get("next_action") or next_action)
 
     ok, claim_info = acquire_write_claim(
         repo_root, resolved_session_id, expires_at, harness=selected_ide
@@ -574,6 +611,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override session_id from scope-gate.",
     )
     parser.add_argument(
+        "--approve-human-gate",
+        action="store_true",
+        help="When resuming a paused human-gate run, consume that approval and advance to the next executable stage.",
+    )
+    parser.add_argument(
         "--backlog-id",
         metavar="BACKLOG_ID",
         default=None,
@@ -593,6 +635,7 @@ def main() -> None:
             ROOT,
             session_id=args.session_id,
             ide=args.ide,
+            approve_human_gate=args.approve_human_gate,
         )
     else:
         if not args.next_action:

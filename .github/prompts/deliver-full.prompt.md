@@ -44,13 +44,17 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 - Subagents return findings; Orchestrator disposes and escalates to human if needed
 - **Orchestrator handoff:** Before each downstream `Agent`/`Task`, attach `inputs.prior_stage_summaries` with verbatim typed YAML from upstream stages (`subagent-router` §Orchestrator forward payload). Evaluator and review stages are not valid without this.
 - **Review escalation:** If Governance Review returns request-changes, CRITICAL/blocking findings, `entropy: RED`, or `status: needs-input`, **STOP** — do not run Planner until the human approves continuation (same human-gate pattern as `/auto` Execution §5).
+- **Governed approval consumption:** When the human approves continuation after a governed
+  gate, the same run must consume that approval through `scripts/run_ledger.py` by
+  promoting the next executable stage from the paused checkpoint. Another declaration or
+  status card alone is insufficient.
 - **Eval / swarm routing:** When the pipeline reaches an **evaluator** stage or a **final `/eval`**
   pass after Builder / Architect Review, apply `.claude/commands/eval.md` triggers **E1–E6**
   (governed scope and multi-stage summaries often satisfy **E2**/**E3**). If any trigger
   fires → **`/eval-swarm`** semantics (`/auto` Execution §6). Governed work must not skip
   this check before declaring delivery complete.
 - No review stage shall execute inline with the stage it reviews
-- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43). Residual risk: an orchestrator that ignores this text can still run stages inline.
+- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43). Residual risk: an orchestrator that ignores this text can still run stages inline, and revise-and-continue replay after review findings is still orchestrator-managed until `T-006`.
 - Isolation constraint applies to agent-gated review stages (3–6). Architect's own internal sub-invocations during Stage 2 (e.g. context-map, research-orchestrator) are governed by the architect archetype contract separately.
 
 ## Spawn invocation (BL-011)

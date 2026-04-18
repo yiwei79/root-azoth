@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+from session_continuity import active_scope, session_registry_entry_is_resumable
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
@@ -641,6 +642,71 @@ def upsert_run(
     return created, entry
 
 
+def consume_human_gate_approval(
+    root: Path,
+    *,
+    run_id: str,
+    next_action: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Advance a paused human-gate run to its next executable stage.
+
+    This is the shared fail-closed runtime transition for governed approval
+    consumption. It only succeeds when the targeted run is paused specifically at
+    a human gate and still has a pending executable stage to promote.
+    """
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    entry = load_run(root, run_id)
+    if entry is None:
+        raise ValueError(f"run {run_id!r} not found")
+
+    if entry.get("status") != "paused":
+        raise ValueError("approval consumption requires a paused run")
+    if entry.get("pause_reason") != "human-gate":
+        raise ValueError("approval consumption requires pause_reason='human-gate'")
+
+    prior_stage_id = str(entry.get("active_stage_id") or "").strip()
+    if not prior_stage_id:
+        raise ValueError("approval consumption requires active_stage_id")
+
+    pending_stage_ids = entry.get("pending_stage_ids")
+    if not isinstance(pending_stage_ids, list) or not pending_stage_ids:
+        raise ValueError("approval consumption requires a non-empty pending_stage_ids list")
+
+    next_stage_id = str(pending_stage_ids[0] or "").strip()
+    if not next_stage_id:
+        raise ValueError("approval consumption requires the next pending stage id")
+
+    stages_completed = list(entry.get("stages_completed") or [])
+    if prior_stage_id not in stages_completed:
+        stages_completed.append(prior_stage_id)
+
+    promoted_next_action = (
+        next_action
+        or f"Execute next executable stage `{next_stage_id}` in pipeline "
+        f"`{entry.get('mode', 'unknown')}`."
+    )
+
+    _, updated_entry = upsert_run(
+        root,
+        run_id=run_id,
+        mode=str(entry.get("mode") or ""),
+        goal=str(entry.get("goal") or ""),
+        status="active",
+        next_action=promoted_next_action,
+        session_id=str(entry.get("session_id") or "") or None,
+        backlog_id=str(entry.get("backlog_id") or "") or None,
+        ide=str(entry.get("ide") or "") or None,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=next_stage_id,
+        pending_stage_ids=pending_stage_ids[1:],
+        pause_reason=None,
+        ledger_path=resolved_ledger_path,
+    )
+    return updated_entry
+
+
 # ── Business-logic helpers (testable without CLI) ─────────────────────────────
 
 
@@ -679,6 +745,16 @@ def load_session(root: Path, session_id: str) -> dict | None:
 def load_open_sessions(root: Path) -> list[dict]:
     """Return active or parked sessions from the ledger, newest first."""
     return [entry for entry in load_sessions(root) if entry.get("status") in {"active", "parked"}]
+
+
+def load_resumable_sessions(root: Path) -> list[dict]:
+    """Return only sessions backed by a real resume signal, newest first."""
+    scope = active_scope(root)
+    return [
+        entry
+        for entry in load_open_sessions(root)
+        if session_registry_entry_is_resumable(root, entry, scope=scope)
+    ]
 
 
 # ── Subcommands ───────────────────────────────────────────────────────────────

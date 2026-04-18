@@ -67,6 +67,37 @@ Validity requirements for a live `pipeline-gate.json`:
 - `expires_at` matches `scope-gate.json.expires_at`
 - if the scope already records an exact selected pipeline command, the pipeline-gate command must match it
 
+## Governed approval consumption
+
+For governed runs, human approval is not complete when the gate files validate. The
+same run must consume that approval into execution state through
+`scripts/run_ledger.py` by advancing the paused human-gate checkpoint to the next
+executable stage.
+
+Required paused checkpoint shape before approval consumption:
+
+- `status: paused`
+- `pause_reason: human-gate`
+- `active_stage_id` names the gate-owning stage that just completed
+- `pending_stage_ids[0]` names the next executable downstream stage
+
+Required same-run mutation after approval consumption:
+
+- append the prior `active_stage_id` to `stages_completed`
+- promote `pending_stage_ids[0]` into `active_stage_id`
+- remove the promoted stage from `pending_stage_ids`
+- clear `pause_reason`
+- set `status: active`
+- rewrite `next_action` to the promoted executable stage
+
+Updating only narration or a status/declaration card is insufficient. If the next
+stage cannot be promoted mechanically, fail closed and stop.
+
+Residual risk remains intentionally visible: this same-run promotion path hardens
+paused governed human gates, but reviewer/evaluator-driven revise-and-continue loops
+are still orchestrator-managed rather than a first-class runtime replay primitive.
+Future roadmap task `T-006` is the follow-on for that iterative loop behavior.
+
 ## Governed closeout approval evidence
 
 Before `scripts/do_closeout.py` performs any governed W1–W4 mutation, it must read
@@ -124,3 +155,8 @@ writes `.azoth/scope-gate.json` with 7 core required fields
 The fused Declaration eliminates one human gate (scope approval) from the `/auto` happy
 path without reducing governance surface: all mandatory gates (kernel, governance, M2→M1,
 final delivery) remain unconditionally enforced.
+
+After a governed human gate is approved, `/auto`, `/deliver`, and `/deliver-full`
+must advance to the next executable stage in the same run via the shared
+`scripts/run_ledger.py` approval-consumption helper. Emitting only another
+declaration or status card after approval counts as failure.
