@@ -20,3 +20,8 @@ Execution contract:
 Command metadata:
 - Source path: `.claude/commands/dynamic-full-auto.md`
 - Description: DYNAMIC-FULL-AUTO+ session: adaptive research/explore swarms, digest, Checkpoint Γ, optional eval-swarm, then /auto-style delivery
+
+Codex calm-flow rules:
+- In Codex, `$azoth-dynamic-full-auto` is a compatibility shim over `$azoth-start ...`, not an independent daily entry path.
+- Normalize this request through `scripts/codex_control_plane.py` and preserve `pipeline_command: dynamic-full-auto`.
+- If Codex cannot normalize the request into the canonical calm-flow path, stop with a short redirect instead of continuing inline.

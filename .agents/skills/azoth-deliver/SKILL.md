@@ -22,3 +22,8 @@ Command metadata:
 - Contract path: `commands/deliver/command.yaml`
 - Body source path: `.claude/commands/deliver.md`
 - Description: Lean pipeline for pre-approved, additive work
+
+Codex calm-flow rules:
+- In Codex, `$azoth-deliver` is a compatibility shim over `$azoth-start ...`, not an independent daily entry path.
+- Normalize this request through `scripts/codex_control_plane.py` and preserve `pipeline_command: deliver`.
+- If Codex cannot normalize the request into the canonical calm-flow path, stop with a short redirect instead of continuing inline.

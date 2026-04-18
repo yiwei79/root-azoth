@@ -955,6 +955,18 @@ def test_welcome_plain_shows_resume_for_parked_sessions(
         "runs: []\n",
         encoding="utf-8",
     )
+    (azoth_dir / "session-state.md").write_text(
+        "session_id: sid-parked\n"
+        "state: parked\n"
+        "last_ide: codex\n"
+        "timestamp: 2026-04-10T10:00:00+00:00\n"
+        "active_task: Resume me\n"
+        "active_files: []\n"
+        "pending_decisions: []\n"
+        "approved_scope: sid-parked\n"
+        "next_action: Resume\n",
+        encoding="utf-8",
+    )
 
     buf = io.StringIO()
     monkeypatch.setattr(welcome, "ROOT", tmp_path)
@@ -962,9 +974,11 @@ def test_welcome_plain_shows_resume_for_parked_sessions(
     monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())
     out = buf.getvalue()
-    assert "resume sid-parked" in out
+    assert "resume   → /resume — reopen parked session" in out
     assert "/resume" in out
     assert "resume   → continue approved scope" not in out
+    assert "Continuity: OK  (sid-parked)" in out
+    assert "$azoth-start" in out
 
 
 def test_welcome_plain_hides_stale_active_session_from_resume_options(
@@ -1060,3 +1074,45 @@ def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirro
     assert "Continuity: OK  (sid-match)" in out
     assert "Sessions" in out
     assert "sid-match" in out
+
+
+def test_welcome_plain_ignores_closed_session_state_for_continuity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": False,
+                "closed_at": "2026-04-10T10:30:00+00:00",
+                "goal": "P1-001: Closed goal",
+                "session_id": "sid-closed",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth_dir / "session-state.md").write_text(
+        "session_id: sid-closed\n"
+        "state: closed\n"
+        "last_ide: codex\n"
+        "timestamp: 2026-04-10T10:30:00+00:00\n"
+        "active_task: Closed\n"
+        "active_files: []\n"
+        "pending_decisions: []\n"
+        "approved_scope: Completed: P1-001: Closed goal\n"
+        "next_action: Run `/next`\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text("schema_version: 1\nruns: []\n", encoding="utf-8")
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Continuity:" not in out

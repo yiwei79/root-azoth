@@ -18,6 +18,33 @@ def _future() -> str:
     return (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
 
 
+def _closeout_semantics(
+    *,
+    summary: str = "Completed session closeout via scripts/do_closeout.py (W1-W4).",
+    pending_decisions: list[str] | None = None,
+    next_action: str | None = None,
+    w3_mode: str = "defer",
+) -> dict[str, object]:
+    handoff: dict[str, object] = {
+        "pending_decisions": pending_decisions or [],
+    }
+    if next_action is not None:
+        handoff["next_action"] = next_action
+    return {
+        "schema_version": 1,
+        "session_summary": {"summary": summary},
+        "episode": {
+            "type": "success",
+            "summary": summary,
+            "lessons": ["Closeout kept repo-local state authoritative."],
+            "tags": ["codex-closeout"],
+            "context": {"surface": "codex"},
+        },
+        "handoff": handoff,
+        "w3": {"mode": w3_mode},
+    }
+
+
 def _build_repo(
     tmp_path: Path,
     *,
@@ -315,6 +342,11 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     repo_root = _build_repo(tmp_path, include_session_state=True)
     fake_home = tmp_path / "home"
     fake_home.mkdir()
+    semantics = _closeout_semantics(
+        summary="Closed governed closeout with repo-local W1/W2/W4 authority.",
+        pending_decisions=["Confirm whether the next slice should stay in governed delivery."],
+        w3_mode="attempt",
+    )
     approvals_before = _write_approvals(
         repo_root,
         {
@@ -338,7 +370,7 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
 
     monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
     monkeypatch.setenv("HOME", str(fake_home))
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(repo_root, closeout_semantics=semantics)
 
     episode_lines = (
         (repo_root / ".azoth" / "memory" / "episodes.jsonl")
@@ -350,6 +382,9 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     episode = json.loads(episode_lines[0])
     assert episode["session_id"] == "sess-123"
     assert episode["goal"] == "BL-123: Governed closeout"
+    assert episode["summary"] == semantics["episode"]["summary"]
+    assert episode["lessons"] == semantics["episode"]["lessons"]
+    assert episode["tags"] == ["closeout", "session-closeout", "codex-closeout"]
     assert ".azoth/backlog.yaml" in episode["context"]["files_changed"]
     assert ".azoth/roadmap.yaml" in episode["context"]["files_changed"]
     assert ".azoth/run-ledger.local.yaml" in episode["context"]["files_changed"]
@@ -384,10 +419,12 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert "state: closed" in session_state
     assert "last_ide: codex" in session_state
     assert f"next_action: {do_closeout.default_next_action()}" in session_state
+    assert "Confirm whether the next slice should stay in governed delivery." in session_state
     bootloader_state = (repo_root / ".azoth" / "bootloader-state.md").read_text(encoding="utf-8")
     assert "sess-123" in bootloader_state
     assert "ep-001" in bootloader_state
     assert do_closeout.default_next_action() in bootloader_state
+    assert semantics["session_summary"]["summary"] in bootloader_state
     memory_dir = do_closeout.claude_project_memory_dir(repo_root)
     project_status = (memory_dir / "project_status.md").read_text(encoding="utf-8")
     memory_index = (memory_dir / "MEMORY.md").read_text(encoding="utf-8")
@@ -433,7 +470,10 @@ def test_governed_closeout_keeps_last_version_completion_inside_versions_section
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
 
     roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
     version = roadmap["versions"][0]
@@ -599,7 +639,10 @@ def test_governed_closeout_completes_real_roadmap_ref_task(
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
 
     roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
     assert "      - id: P1-017\n" not in roadmap_text
@@ -673,7 +716,10 @@ def test_governed_closeout_retargets_initiative_alias_to_next_pending_slice(
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
 
     roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
     initiative = roadmap["initiatives"][0]
@@ -822,7 +868,10 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
 
     expected_next_action = "Resume wave 2 review."
     ledger = yaml.safe_load(
@@ -1086,6 +1135,269 @@ def test_governed_closeout_runs_w3_before_w4(
     monkeypatch.setattr(do_closeout, "run_version_bump", _fake_w4)
     monkeypatch.setenv("HOME", str(fake_home))
 
-    do_closeout.run_closeout(repo_root)
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
 
     assert order == ["W3", "W4"]
+
+
+def test_governed_closeout_defaults_w3_to_deferred_and_still_runs_w4(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    w3_calls: list[str] = []
+    w4_calls: list[str] = []
+
+    def _unexpected_w3(*args: object, **kwargs: object) -> None:
+        w3_calls.append("called")
+
+    def _fake_w4(*args: object, **kwargs: object) -> None:
+        w4_calls.append("called")
+
+    monkeypatch.setattr(do_closeout, "write_claude_memory_mirror", _unexpected_w3)
+    monkeypatch.setattr(do_closeout, "run_version_bump", _fake_w4)
+
+    do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    assert w3_calls == []
+    assert w4_calls == ["called"]
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    closeout_state = ledger["closeouts"]["sess-123"]
+    assert closeout_state["status"] == "complete"
+    assert closeout_state["w3_status"] == "deferred"
+    assert "Codex keeps W3 supplemental" in closeout_state["w3_note"]
+
+
+def test_governed_closeout_attempted_w3_failure_defers_and_continues_to_w4(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    w4_calls: list[str] = []
+
+    def _failing_w3(*args: object, **kwargs: object) -> None:
+        raise PermissionError("host memory path blocked")
+
+    def _fake_w4(*args: object, **kwargs: object) -> None:
+        w4_calls.append("called")
+
+    monkeypatch.setattr(do_closeout, "write_claude_memory_mirror", _failing_w3)
+    monkeypatch.setattr(do_closeout, "run_version_bump", _fake_w4)
+
+    do_closeout.run_closeout(
+        repo_root,
+        closeout_semantics=_closeout_semantics(w3_mode="attempt"),
+    )
+
+    assert w4_calls == ["called"]
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    closeout_state = ledger["closeouts"]["sess-123"]
+    assert closeout_state["status"] == "complete"
+    assert closeout_state["w3_status"] == "deferred"
+    assert "host memory path blocked" in closeout_state["w3_note"]
+
+
+def test_governed_closeout_retries_failed_w4_without_reappending_w1(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    w4_calls: list[str] = []
+
+    def _flaky_w4(*args: object, **kwargs: object) -> None:
+        w4_calls.append("called")
+        if len(w4_calls) == 1:
+            raise RuntimeError("version bump failed")
+
+    monkeypatch.setattr(do_closeout, "run_version_bump", _flaky_w4)
+
+    with pytest.raises(do_closeout.CloseoutError, match="during W4"):
+        do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    first_pass = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
+    assert len(first_pass) == 1
+    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text())
+    closeout_state = ledger["closeouts"]["sess-123"]
+    assert closeout_state["status"] == "retryable"
+    assert closeout_state["next_step"] == "W4"
+
+    do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    second_pass = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
+    assert len(second_pass) == 1
+    ledger = yaml.safe_load((repo_root / ".azoth" / "run-ledger.local.yaml").read_text())
+    closeout_state = ledger["closeouts"]["sess-123"]
+    assert closeout_state["status"] == "complete"
+    assert "next_step" not in closeout_state
+    assert w4_calls == ["called", "called"]
+
+
+def test_governed_closeout_retry_revalidates_approval_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    approvals_path = repo_root / ".azoth" / "final-delivery-approvals.jsonl"
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    w4_calls: list[str] = []
+
+    def _flaky_w4(*args: object, **kwargs: object) -> None:
+        w4_calls.append("called")
+        raise RuntimeError("version bump failed")
+
+    monkeypatch.setattr(do_closeout, "run_version_bump", _flaky_w4)
+
+    with pytest.raises(do_closeout.CloseoutError, match="during W4"):
+        do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    approvals_path.unlink()
+
+    with pytest.raises(do_closeout.ApprovalEvidenceError, match="missing .*final-delivery-approvals"):
+        do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    episode_lines = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
+    assert len(episode_lines) == 1
+    assert w4_calls == ["called"]
+
+
+def test_governed_closeout_retry_rejects_semantics_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    monkeypatch.setattr(
+        do_closeout,
+        "run_version_bump",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("version bump failed")),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="during W4"):
+        do_closeout.run_closeout(
+            repo_root,
+            closeout_semantics=_closeout_semantics(summary="Original closeout summary."),
+        )
+
+    with pytest.raises(do_closeout.CloseoutCheckpointError, match="do not match the saved checkpoint"):
+        do_closeout.run_closeout(
+            repo_root,
+            closeout_semantics=_closeout_semantics(summary="Different retry summary."),
+        )
+
+
+def test_governed_closeout_requires_live_scope_for_new_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    scope_gate = repo_root / ".azoth" / "scope-gate.json"
+    scope = json.loads(scope_gate.read_text(encoding="utf-8"))
+    scope["approved"] = False
+    scope_gate.write_text(json.dumps(scope), encoding="utf-8")
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(do_closeout.CloseoutError, match="approved and unexpired"):
+        do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_governed_closeout_blocks_competing_write_claim_before_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["write_claim"]["session_id"] = "other-session"
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(do_closeout.CloseoutError, match="write claim held by 'other-session'"):
+        do_closeout.run_closeout(repo_root, closeout_semantics=_closeout_semantics())
+
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""

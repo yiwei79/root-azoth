@@ -22,3 +22,8 @@ Command metadata:
 - Contract path: `commands/deliver-full/command.yaml`
 - Body source path: `.claude/commands/deliver-full.md`
 - Description: Full pipeline with governance gates — for kernel, governance, or breaking changes
+
+Codex calm-flow rules:
+- In Codex, `$azoth-deliver-full` is a compatibility shim over `$azoth-start ...`, not an independent daily entry path.
+- Normalize this request through `scripts/codex_control_plane.py` and preserve `pipeline_command: deliver-full`.
+- If Codex cannot normalize the request into the canonical calm-flow path, stop with a short redirect instead of continuing inline.

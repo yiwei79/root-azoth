@@ -22,3 +22,9 @@ Command metadata:
 - Contract path: `commands/start/command.yaml`
 - Body source path: `commands/start/body.md`
 - Description: Session welcome dashboard — orient, then route to your next action
+
+Codex calm-flow rules:
+- Treat `$azoth-start` as the canonical daily control surface in Codex.
+- Route `resume`, `next`, `closeout`, and custom goals through the same calm-flow controller in `scripts/codex_control_plane.py`.
+- In Codex, do not split the daily path into `/start -> /next -> /auto`; `next` and custom goals both resolve to the same fused declaration path.
+- If the request carries an explicit pipeline override, preserve it as `pipeline_command` while staying inside the `$azoth-start ...` route.

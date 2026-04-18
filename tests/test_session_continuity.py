@@ -158,3 +158,21 @@ def test_resolve_transition_does_not_collapse_distinct_work_item_ids(tmp_path: P
 
     assert decision.action == "replace"
     assert decision.reason == "different-pipeline-goal"
+
+
+def test_resolve_transition_treats_start_intake_as_orientation_only(tmp_path: Path) -> None:
+    repo_root = _write_scope(tmp_path)
+
+    decision = resolve_transition(repo_root, command_name="start", command_args="intake")
+
+    assert decision.action == "noop"
+    assert decision.reason == "start-routes-readonly"
+
+
+def test_resolve_transition_routes_start_next_through_replace_logic(tmp_path: Path) -> None:
+    repo_root = _write_scope(tmp_path)
+
+    decision = resolve_transition(repo_root, command_name="start", command_args="next")
+
+    assert decision.action == "replace"
+    assert decision.reason == "next-with-live-scope"

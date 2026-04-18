@@ -194,19 +194,9 @@ The human may override tier in the Declaration (e.g., "use premium for all stage
 
 ## Token Budget
 
-Track cumulative context consumption across the pipeline. Token budget is an estimate — the orchestrator does not have exact counts but uses heuristics based on stage count, prior_stage_summaries length, and spawn payload size.
+Track cumulative context consumption and the active execution budget. Context budget is an estimate based on stage count, `prior_stage_summaries` length, and spawn payload size: warn at **60%**, compress summaries at **80%**, and checkpoint to `.azoth/session-state.md` at **95%**.
 
-### Tracking Thresholds
-
-| Threshold | Action |
-|-----------|--------|
-| **60%** estimated | Log warning; begin preferring compressed summaries |
-| **80%** estimated | Compress all `prior_stage_summaries` to key-fields-only format |
-| **95%** estimated | Checkpoint state to `.azoth/session-state.md`, pause, offer: continue with fresh context or close |
-
-### Compressed Summary Format
-
-When budget exceeds 80%, compress prior_stage_summaries:
+When the context budget exceeds 80%, compress `prior_stage_summaries` to:
 ```yaml
 compressed: true
 stages_completed: [stage_ids]
@@ -214,6 +204,8 @@ key_findings: ["one-line finding 1", "one-line finding 2"]
 disposition: approved | request-changes
 cumulative_entropy: N
 ```
+
+On Codex, the default execution budget is `10` threads at depth `2`. Only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1, and only when the spawn carries `execution_budget`; all other agents are leaf-only. Reserve child capacity for queen agents instead of saturating every slot, and prefer flat fan-out when nesting does not add value.
 
 ## Session Lifecycle
 
@@ -285,7 +277,7 @@ Before any evaluator stage, compute which triggers fire. If **any** trigger is t
 | **E5** | Prior eval returned CONDITIONAL/FAIL or reviewer flagged issues | eval-swarm: fresh evaluators |
 | **E6** | Human signal ("parallel", "swarm") or stacked backlog IDs | eval-swarm: explicit request |
 
-**Spawn pattern**: one orchestrator message, ≤7 `Task(evaluator, readonly=true)` with minimal YAML: `pipeline: e2e-swarm-eval`, `stage_id`, `artifacts` paths, `threshold: 0.9`, `acceptance` bullets. No builder chat log in spawn (anti-bias).
+**Spawn pattern**: one orchestrator message, parallel evaluator `Task`s within the active platform execution budget using minimal YAML: `pipeline: e2e-swarm-eval`, `stage_id`, `artifacts` paths, `threshold: 0.9`, `acceptance` bullets. No builder chat log in spawn (anti-bias).
 
 **Voting**: majority pass at ≥0.90 average. Any single evaluator scoring <0.80 triggers human escalation regardless of average. If evaluators disagree (spread > 0.15), surface the disagreement to human rather than averaging.
 

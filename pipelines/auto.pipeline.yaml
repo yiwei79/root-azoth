@@ -44,6 +44,9 @@ composition_rules:
       pipeline: [architect, planner, evaluator, builder, architect]
       inject: "research-phase into architect"
 
+    - condition: "knowledge == instruction-refinement AND complexity == simple AND risk == cosmetic"
+      pipeline: [planner, builder, architect]
+
     - condition: "knowledge == instruction-refinement"
       pipeline: [architect, reviewer, planner, evaluator, builder, architect]
       inject: "l2-evidence-review into architect"

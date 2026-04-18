@@ -26,6 +26,7 @@ CANONICAL_CONDITIONS: list[str] = [
     "risk == governance-change",
     "scope == kernel",
     "knowledge == needs-research",
+    "knowledge == instruction-refinement AND complexity == simple AND risk == cosmetic",
     "knowledge == instruction-refinement",
     "scope == docs",
     "complexity == simple AND risk == cosmetic",
@@ -50,6 +51,33 @@ def _parse_frontmatter(content: str) -> dict:
         return {}
     frontmatter_text = "\n".join(lines[1:end_index])
     return yaml.safe_load(frontmatter_text) or {}
+
+
+def _load_pipeline_rules() -> list[dict]:
+    """Load composition rules from the auto pipeline."""
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    return data.get("composition_rules", {}).get("rules", [])
+
+
+def _rule_matches(condition: str, classification: dict[str, str]) -> bool:
+    """Evaluate the limited rule syntax used by the auto router."""
+    if condition == "default":
+        return True
+
+    clauses = [clause.strip() for clause in condition.split("AND")]
+    for clause in clauses:
+        field, expected = [part.strip() for part in clause.split("==", maxsplit=1)]
+        if classification.get(field) != expected:
+            return False
+    return True
+
+
+def _first_matching_rule(classification: dict[str, str]) -> dict:
+    """Return the first composition rule that matches the given classification."""
+    for rule in _load_pipeline_rules():
+        if _rule_matches(rule["condition"], classification):
+            return rule
+    raise AssertionError(f"No matching rule found for classification: {classification!r}")
 
 
 # ── Structure ─────────────────────────────────────────────────────────────────
@@ -139,13 +167,14 @@ def test_auto_router_rule_ordering() -> None:
 # ── Cross-file consistency ────────────────────────────────────────────────────
 
 
-def test_skill_instruction_refinement_rule() -> None:
-    """SKILL.md must contain an instruction-refinement routing row at priority 4.
+def test_skill_instruction_refinement_rules() -> None:
+    """SKILL.md must document both instruction-refinement rules in order.
 
     Verifies:
-    - A row with condition `knowledge == instruction-refinement` exists
-    - It appears AFTER `knowledge == needs-research` and BEFORE `scope == docs`
-    - Its pipeline is the full pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+    - A lightweight row exists for the exact low-risk qualifier
+    - A fallback row exists for generic instruction-refinement
+    - The lightweight row appears AFTER needs-research and BEFORE the fallback row
+    - The fallback row appears BEFORE scope == docs
     """
     assert SKILL_PATH.is_file(), (
         f"Skill file not found: {SKILL_PATH}. "
@@ -154,57 +183,87 @@ def test_skill_instruction_refinement_rule() -> None:
 
     content = SKILL_PATH.read_text(encoding="utf-8")
 
-    # Condition must be present
-    condition = "knowledge == instruction-refinement"
-    assert condition in content, f"Routing table must contain condition {condition!r}"
-
-    # Ordering: after needs-research, before scope == docs
-    pos_needs_research = content.index("knowledge == needs-research")
-    pos_instruction_refinement = content.index("knowledge == instruction-refinement")
-    pos_scope_docs = content.index("scope == docs")
-    assert pos_needs_research < pos_instruction_refinement < pos_scope_docs, (
-        "instruction-refinement rule must appear AFTER needs-research and BEFORE scope == docs"
+    lightweight_condition = (
+        "knowledge == instruction-refinement AND complexity == simple AND risk == cosmetic"
+    )
+    fallback_condition = "knowledge == instruction-refinement"
+    assert lightweight_condition in content, (
+        f"Routing table must contain condition {lightweight_condition!r}"
+    )
+    assert fallback_condition in content, (
+        f"Routing table must contain condition {fallback_condition!r}"
     )
 
-    # Pipeline for this rule must be full pipeline
-    # Find the table row containing the condition and verify the pipeline
+    pos_needs_research = content.index("knowledge == needs-research")
+    pos_lightweight = content.index(lightweight_condition)
+    pos_instruction_refinement = content.index(fallback_condition, pos_lightweight + 1)
+    pos_scope_docs = content.index("scope == docs")
+    assert pos_needs_research < pos_lightweight < pos_instruction_refinement < pos_scope_docs, (
+        "instruction-refinement rules must appear AFTER needs-research, with the lightweight "
+        "rule immediately before the fallback rule and both before scope == docs"
+    )
+
+    lightweight_seen = False
+    fallback_seen = False
     for line in content.splitlines():
-        if "knowledge == instruction-refinement" in line and "|" in line:
+        if lightweight_condition in line and "|" in line:
+            lightweight_seen = True
+            assert "planner, builder, architect" in line, (
+                "Lightweight instruction-refinement rule must use pipeline "
+                "[planner, builder, architect]"
+            )
+        if fallback_condition in line and lightweight_condition not in line and "|" in line:
+            fallback_seen = True
             assert "architect, reviewer, planner, evaluator, builder, architect" in line, (
-                "instruction-refinement rule must use full pipeline "
+                "Fallback instruction-refinement rule must use full pipeline "
                 "[architect, reviewer, planner, evaluator, builder, architect]"
             )
-            break
-    else:
-        raise AssertionError("Could not find instruction-refinement as a table row in SKILL.md")
+    assert lightweight_seen, "Could not find lightweight instruction-refinement row in SKILL.md"
+    assert fallback_seen, "Could not find fallback instruction-refinement row in SKILL.md"
 
 
-def test_pipeline_instruction_refinement_rule() -> None:
-    """auto.pipeline.yaml must contain a composition rule for instruction-refinement.
+def test_pipeline_instruction_refinement_rules() -> None:
+    """auto.pipeline.yaml must contain both instruction-refinement routing rules.
 
     Verifies:
-    - A rule with condition 'knowledge == instruction-refinement' exists
-    - Its pipeline list equals [architect, reviewer, planner, evaluator, builder, architect]
+    - A lightweight exact-match rule exists
+    - A generic fallback rule exists
+    - The lightweight rule precedes the fallback rule
     """
     assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
-    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
-    rules = data.get("composition_rules", {}).get("rules", [])
+    rules = _load_pipeline_rules()
 
-    matching_rules = [
-        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
-    ]
-    assert len(matching_rules) == 1, (
-        "Expected exactly one composition rule with condition "
-        "'knowledge == instruction-refinement', "
-        f"found {len(matching_rules)}"
+    lightweight_condition = (
+        "knowledge == instruction-refinement AND complexity == simple AND risk == cosmetic"
+    )
+    fallback_condition = "knowledge == instruction-refinement"
+    by_condition = {rule["condition"]: rule for rule in rules}
+
+    assert lightweight_condition in by_condition, (
+        "Expected a lightweight instruction-refinement composition rule"
+    )
+    assert fallback_condition in by_condition, (
+        "Expected a fallback instruction-refinement composition rule"
+    )
+
+    lightweight_pipeline = ["planner", "builder", "architect"]
+    assert by_condition[lightweight_condition]["pipeline"] == lightweight_pipeline, (
+        f"Lightweight instruction-refinement rule pipeline mismatch.\n"
+        f"  Expected: {lightweight_pipeline}\n"
+        f"  Got:      {by_condition[lightweight_condition]['pipeline']}"
     )
 
     expected_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
-    assert matching_rules[0]["pipeline"] == expected_pipeline, (
-        f"instruction-refinement rule pipeline mismatch.\n"
+    assert by_condition[fallback_condition]["pipeline"] == expected_pipeline, (
+        f"Fallback instruction-refinement rule pipeline mismatch.\n"
         f"  Expected: {expected_pipeline}\n"
-        f"  Got:      {matching_rules[0]['pipeline']}"
+        f"  Got:      {by_condition[fallback_condition]['pipeline']}"
+    )
+
+    positions = {rule["condition"]: index for index, rule in enumerate(rules)}
+    assert positions[lightweight_condition] < positions[fallback_condition], (
+        "The lightweight instruction-refinement rule must be evaluated before the fallback rule"
     )
 
 
@@ -233,24 +292,20 @@ def test_auto_router_cross_file_consistency() -> None:
 # ── P1-008: inject field and l2-evidence-review phase ────────────────────────
 
 
-def test_pipeline_instruction_refinement_inject_field() -> None:
-    """auto.pipeline.yaml instruction-refinement rule must have an inject field.
+def test_pipeline_instruction_refinement_fallback_inject_field() -> None:
+    """The fallback instruction-refinement rule must retain its inject field.
 
     Verifies:
-    - The rule with condition 'knowledge == instruction-refinement' has an 'inject' key
+    - The fallback rule with condition 'knowledge == instruction-refinement' has an 'inject' key
     - The inject value references 'l2-evidence-review' and 'architect'
     """
     assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
-    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
-    rules = data.get("composition_rules", {}).get("rules", [])
-
+    rules = _load_pipeline_rules()
     matching_rules = [
         r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
     ]
-    assert len(matching_rules) == 1, (
-        "Expected exactly one rule with condition 'knowledge == instruction-refinement'"
-    )
+    assert len(matching_rules) == 1, "Expected exactly one fallback instruction-refinement rule"
     rule = matching_rules[0]
 
     assert "inject" in rule, (
@@ -316,10 +371,7 @@ def test_pipeline_inject_field_consistency() -> None:
     """
     assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
-    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
-    rules = data.get("composition_rules", {}).get("rules", [])
-
-    by_condition = {r["condition"]: r for r in rules}
+    by_condition = {r["condition"]: r for r in _load_pipeline_rules()}
 
     nr_rule = by_condition.get("knowledge == needs-research", {})
     assert "inject" in nr_rule, (
@@ -342,3 +394,62 @@ def test_pipeline_inject_field_consistency() -> None:
     assert "architect" in nr_rule["inject"] and "architect" in ir_rule["inject"], (
         "Both inject directives must target the 'architect' stage"
     )
+
+
+def test_first_match_routes_lightweight_instruction_refinement() -> None:
+    """Qualifying low-risk instruction refinement should take the lightweight lane."""
+    rule = _first_matching_rule(
+        {
+            "scope": "skills",
+            "risk": "cosmetic",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        }
+    )
+    assert (
+        rule["condition"]
+        == "knowledge == instruction-refinement AND complexity == simple AND risk == cosmetic"
+    )
+    assert rule["pipeline"] == ["planner", "builder", "architect"]
+
+
+def test_first_match_falls_back_for_nonqualifying_instruction_refinement() -> None:
+    """Instruction refinement outside the exact low-risk qualifier should use the full lane."""
+    rule = _first_matching_rule(
+        {
+            "scope": "skills",
+            "risk": "additive",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        }
+    )
+    assert rule["condition"] == "knowledge == instruction-refinement"
+    assert rule["pipeline"] == ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
+
+
+def test_governance_precedence_over_instruction_refinement() -> None:
+    """Governance risk must win before any instruction-refinement routing rule."""
+    rule = _first_matching_rule(
+        {
+            "scope": "skills",
+            "risk": "governance-change",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        }
+    )
+    assert rule["condition"] == "risk == governance-change"
+    assert rule["pipeline"] == ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
+
+
+def test_kernel_precedence_over_instruction_refinement() -> None:
+    """Kernel scope must win before any instruction-refinement routing rule."""
+    rule = _first_matching_rule(
+        {
+            "scope": "kernel",
+            "risk": "cosmetic",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        }
+    )
+    assert rule["condition"] == "scope == kernel"
+    assert rule["pipeline"] == ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]

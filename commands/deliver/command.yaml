@@ -5,6 +5,56 @@ description: Lean pipeline for pre-approved, additive work
 agent: orchestrator
 azoth_effect: write
 
+execution:
+  kind: pipeline
+  waits_for_human_signal: governed_continuation_or_final_approval
+  emits:
+    - pipeline_gate
+    - run_checkpoint
+    - delivery_summary
+
+arguments:
+  accepts_arguments: true
+  syntax: /deliver <goal>
+
+state:
+  reads:
+    - .azoth/scope-gate.json
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+  writes:
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+  outputs:
+    - delivery_summary
+    - governed_handoff
+
+governance:
+  preconditions:
+    - require_approved_scope
+    - refuse_kernel_or_governance_surfaces
+    - governed_human_gates_must_advance_runtime_state
+  approval_mode: stage_gate_and_final_delivery_approval
+  pipeline_gate_behavior: open_or_update_matching_pipeline_gate
+  target_layer_rule: escalate_governed_scope_to_deliver_full
+
+runtime:
+  governance_mode:
+    command_default: standard
+    scope_gate_field: governance_mode
+    legacy_scope_gate_field: delivery_pipeline
+  pipeline_command:
+    command_value: deliver
+    scope_gate_field: pipeline_command
+    pipeline_gate_field: pipeline_command
+    legacy_pipeline_gate_field: pipeline
+    run_ledger_field: pipeline_command
+    legacy_run_ledger_field: mode
+  approval_consumption:
+    helper: scripts/run_ledger.py:consume_human_gate_approval
+    durable: true
+    same_run_required: true
+
 body:
   mode: legacy_claude_markdown
   source_path: .claude/commands/deliver.md

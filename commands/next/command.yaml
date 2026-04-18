@@ -38,6 +38,19 @@ governance:
   pipeline_gate_behavior: select_pipeline_after_scope_approval
   target_layer_rule: never_mix_m1_and_non_m1
 
+runtime:
+  governance_mode:
+    written_on_scope_approval: true
+    source: normalized_from_backlog_delivery_pipeline_and_target_layer
+    scope_gate_field: governance_mode
+    legacy_scope_gate_field: delivery_pipeline
+  pipeline_command:
+    written_on_explicit_pipeline_selection: true
+    scope_gate_field: pipeline_command
+    pipeline_gate_field: pipeline_command
+    legacy_pipeline_gate_field: pipeline
+    default_follow_up_command: auto
+
 body:
   mode: canonical_markdown
   source_path: commands/next/body.md

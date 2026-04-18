@@ -1174,6 +1174,36 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
     )
     assert "Wave A is mandatory" in content
     assert "official sources before Checkpoint" in content
+    assert "max_threads: 10, max_depth: 2" in content
+
+
+def test_subagent_router_defines_execution_budget_for_bounded_nesting() -> None:
+    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
+    for needle in (
+        "execution_budget",
+        "child_fanout_cap",
+        "depth_remaining",
+        "leaf-only",
+        "`research-orchestrator`",
+        "`architect`",
+    ):
+        assert needle in content, f"skills/subagent-router/SKILL.md missing {needle!r}"
+
+
+def test_adaptive_swarm_sources_drop_fixed_fanout_numbers() -> None:
+    for rel in (
+        "agents/tier1-core/orchestrator.agent.md",
+        "skills/dynamic-full-auto/SKILL.md",
+        ".claude/workflows/enterprise/e2e-swarm-eval-loop.md",
+    ):
+        content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "active platform execution budget" in content, f"{rel} missing budget-driven wording"
+        assert "≤7" not in content, f"{rel} still contains stale fixed fan-out wording"
+    dynamic = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "4–7" not in dynamic
+    assert "4-7" not in dynamic
 
 
 def test_all_source_commands_have_orchestrator_agent_binding() -> None:
@@ -1276,7 +1306,7 @@ def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
         ("eval", ".claude/commands/eval.md"),
         ("eval-swarm", ".claude/commands/eval-swarm.md"),
         ("hookmode", ".claude/commands/hookmode.md"),
-        ("session-closeout", ".claude/commands/session-closeout.md"),
+        ("session-closeout", "commands/session-closeout/body.md"),
         ("remember", ".claude/commands/remember.md"),
         ("sync", ".claude/commands/sync.md"),
         ("roadmap", ".claude/commands/roadmap.md"),

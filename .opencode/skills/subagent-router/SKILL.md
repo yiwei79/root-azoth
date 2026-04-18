@@ -114,6 +114,9 @@ stage_id: <string>   # e.g. deliver_full_s3 — see §Stage briefs
 subagent_type: <architect|planner|builder|reviewer|evaluator|...>
 trigger: <review-independence|context-isolation|context-budget|parallel-execution>
 model_tier: premium | standard | fast  # optional — set by orchestrator, resolved by router
+execution_budget:               # optional — omit for leaf-only execution
+  child_fanout_cap: <int>       # only for designated queen agents
+  depth_remaining: <int>        # decrement before spawning children
 goal: |
   <one paragraph: what the user asked for>
 inputs:
@@ -126,6 +129,11 @@ Optional: one line `role_hint:` repeating the canonical D21 audit string for tha
 **`model_tier` resolution**: the orchestrator sets `model_tier` based on risk and complexity
 (see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
 model identifier at spawn time. If omitted, defaults to `standard`.
+
+**`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
+`orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
+The root orchestrator owns the global execution budget and should reserve capacity for queen
+children instead of saturating all slots with direct leaf tasks.
 
 ### Orchestrator forward payload (mandatory)
 
@@ -264,4 +272,3 @@ skill to determine the correct subagent_type
 - **Governance review** — verify that each agent-gated stage has a trigger citation
 
 D21 remains the architecture anchor for the isolation rules in this router.
-

@@ -37,6 +37,18 @@ governance:
   pipeline_gate_behavior: route_only
   target_layer_rule: none
 
+runtime:
+  governance_mode:
+    source: scope_gate
+    scope_gate_field: governance_mode
+    legacy_scope_gate_field: delivery_pipeline
+  pipeline_command:
+    source: scope_or_pipeline_gate
+    scope_gate_field: pipeline_command
+    pipeline_gate_field: pipeline_command
+    legacy_pipeline_gate_field: pipeline
+    legacy_run_ledger_field: mode
+
 body:
   mode: canonical_markdown
   source_path: commands/start/body.md

@@ -14,6 +14,17 @@ from typing import Any
 PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
 _EXTEND_THRESHOLD_SECONDS = 30 * 60
 _WORK_ITEM_RE = re.compile(r"\b(?:[A-Z]{1,6}-\d{1,6}|P\d+-\d+|D\d+)\b", re.IGNORECASE)
+_START_READONLY_SELECTIONS = {
+    "",
+    "intake",
+    "promote",
+    "eval",
+    "roadmap",
+    "plan",
+    "remember",
+    "closeout",
+    "session-closeout",
+}
 
 
 @dataclass(frozen=True)
@@ -138,6 +149,26 @@ def _looks_like_same_goal(requested_goal: str, active_goal: str) -> bool:
     return _normalize(left) == _normalize(right)
 
 
+def _route_start_selection(command_args: str) -> tuple[str, str, str | None]:
+    """Map `/start <selection>` onto the downstream workflow it would invoke."""
+    selection = command_args.strip()
+    if not selection:
+        return "start", "", None
+
+    head, _, tail = selection.partition(" ")
+    lowered = head.lower()
+    remainder = tail.strip()
+
+    if lowered == "resume":
+        return "resume", "", remainder or None
+    if lowered == "next":
+        return "next", "", None
+    if lowered in _START_READONLY_SELECTIONS:
+        mapped = "session-closeout" if lowered in {"closeout", "session-closeout"} else lowered
+        return mapped, "", None
+    return "auto", selection, None
+
+
 def resolve_transition(
     root: Path,
     *,
@@ -156,6 +187,23 @@ def resolve_transition(
     active_goal = str(scope.get("goal") or "").strip()
     if not active_session_id:
         return TransitionDecision(action="new", reason="no-active-scope")
+
+    if command_name == "start":
+        routed_name, routed_args, routed_session_id = _route_start_selection(command_args)
+        if routed_name in {"start", "intake", "promote", "eval", "roadmap", "plan", "remember", "session-closeout"}:
+            return TransitionDecision(
+                action="noop",
+                reason="start-routes-readonly",
+                active_session_id=active_session_id,
+                active_goal=active_goal,
+            )
+        return resolve_transition(
+            root,
+            command_name=routed_name,
+            command_args=routed_args,
+            requested_session_id=routed_session_id,
+            now=now,
+        )
 
     if requested_session_id:
         if requested_session_id == active_session_id:

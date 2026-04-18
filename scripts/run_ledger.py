@@ -34,7 +34,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
-from session_continuity import active_scope, session_registry_entry_is_resumable
+from session_continuity import (
+    active_scope,
+    governance_mode as normalized_scope_governance_mode,
+    session_registry_entry_is_resumable,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
@@ -44,6 +48,8 @@ _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
 _PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
+_PIPELINE_COMMAND_ENUM = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
+_GOVERNANCE_MODE_ENUM = {"standard", "governed"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 _STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _UNSET = object()
@@ -100,6 +106,78 @@ def _write_ledger(path: Path, data: dict) -> None:
 def _load_ledger_for_helpers(root: Path) -> dict | None:
     ledger_path = root / ".azoth" / "run-ledger.local.yaml"
     return _load_yaml_mapping(ledger_path)
+
+
+def _clean_text(value: object) -> str:
+    return str(value or "").strip()
+
+
+def _derive_pipeline_command(
+    root: Path,
+    *,
+    mode: str,
+    session_id: str | None = None,
+    explicit_value: object = _UNSET,
+    existing_entry: dict | None = None,
+) -> str | None:
+    if explicit_value is not _UNSET:
+        candidate = _clean_text(explicit_value)
+        return candidate or None
+
+    for candidate in (
+        _clean_text(existing_entry.get("pipeline_command")) if isinstance(existing_entry, dict) else "",
+        _clean_text(mode),
+    ):
+        if candidate in _PIPELINE_COMMAND_ENUM:
+            return candidate
+
+    scope = active_scope(root)
+    active_scope_session_id = _clean_text(scope.get("session_id"))
+    effective_session_id = _clean_text(
+        session_id
+        or (existing_entry.get("session_id") if isinstance(existing_entry, dict) else "")
+    )
+    if scope and active_scope_session_id and (
+        not effective_session_id or effective_session_id == active_scope_session_id
+    ):
+        candidate = _clean_text(scope.get("pipeline_command"))
+        if candidate in _PIPELINE_COMMAND_ENUM:
+            return candidate
+    return None
+
+
+def _derive_governance_mode(
+    root: Path,
+    *,
+    pipeline_command: str | None,
+    session_id: str | None = None,
+    explicit_value: object = _UNSET,
+    existing_entry: dict | None = None,
+) -> str | None:
+    if explicit_value is not _UNSET:
+        candidate = _clean_text(explicit_value)
+        return candidate or None
+
+    candidate = (
+        _clean_text(existing_entry.get("governance_mode")) if isinstance(existing_entry, dict) else ""
+    )
+    if candidate in _GOVERNANCE_MODE_ENUM:
+        return candidate
+
+    scope = active_scope(root)
+    active_scope_session_id = _clean_text(scope.get("session_id"))
+    effective_session_id = _clean_text(
+        session_id
+        or (existing_entry.get("session_id") if isinstance(existing_entry, dict) else "")
+    )
+    if scope and active_scope_session_id and (
+        not effective_session_id or effective_session_id == active_scope_session_id
+    ):
+        return normalized_scope_governance_mode(scope)
+
+    if pipeline_command == "deliver-full":
+        return "governed"
+    return None
 
 
 # ── Validator ─────────────────────────────────────────────────────────────────
@@ -203,12 +281,46 @@ def validate_ledger(data: dict) -> list[str]:
         if len(run_id) > 128:
             errors.append(f"{prefix}: run_id exceeds 128 characters")
 
+        pipeline_command = entry.get("pipeline_command")
+        if pipeline_command is not None:
+            if not isinstance(pipeline_command, str) or not pipeline_command.strip():
+                errors.append(f"{prefix}: pipeline_command must be a non-empty string")
+            elif pipeline_command not in _PIPELINE_COMMAND_ENUM:
+                errors.append(
+                    f"{prefix}: pipeline_command {pipeline_command!r} not in {sorted(_PIPELINE_COMMAND_ENUM)}"
+                )
+
+        governance_mode = entry.get("governance_mode")
+        if governance_mode is not None:
+            if not isinstance(governance_mode, str) or not governance_mode.strip():
+                errors.append(f"{prefix}: governance_mode must be a non-empty string")
+            elif governance_mode not in _GOVERNANCE_MODE_ENUM:
+                errors.append(
+                    f"{prefix}: governance_mode {governance_mode!r} not in {sorted(_GOVERNANCE_MODE_ENUM)}"
+                )
+
         # status enum
         status = entry.get("status")
         if status is None:
             errors.append(f"{prefix}: missing required field 'status'")
         elif status not in _STATUS_ENUM:
             errors.append(f"{prefix}: status {status!r} not in {sorted(_STATUS_ENUM)}")
+
+        mode = _clean_text(entry.get("mode"))
+        if (
+            isinstance(pipeline_command, str)
+            and pipeline_command in _PIPELINE_COMMAND_ENUM
+            and mode in _PIPELINE_COMMAND_ENUM
+            and pipeline_command != mode
+        ):
+            errors.append(
+                f"{prefix}: pipeline_command {pipeline_command!r} must match mode {mode!r} "
+                "when mode is a delivery pipeline command"
+            )
+        if governance_mode == "standard" and pipeline_command == "deliver-full":
+            errors.append(
+                f"{prefix}: governance_mode 'standard' cannot be paired with pipeline_command 'deliver-full'"
+            )
 
         # ISO-8601 timestamps
         for ts_field in ("created_at", "updated_at"):
@@ -699,6 +811,8 @@ def upsert_run(
     active_stage_id: str | None | object = _UNSET,
     pending_stage_ids: list[str] | object = _UNSET,
     pause_reason: str | None | object = _UNSET,
+    pipeline_command: str | None | object = _UNSET,
+    governance_mode: str | None | object = _UNSET,
     wave_entry: dict | object = _UNSET,
     ledger_path: Path | None = None,
 ) -> tuple[bool, dict]:
@@ -736,6 +850,21 @@ def upsert_run(
         entry = {"run_id": run_id, "created_at": updated_at or utc_now_iso()}
         runs.append(entry)
 
+    normalized_pipeline_command = _derive_pipeline_command(
+        root,
+        mode=mode,
+        session_id=session_id,
+        explicit_value=pipeline_command,
+        existing_entry=entry,
+    )
+    normalized_governance_mode = _derive_governance_mode(
+        root,
+        pipeline_command=normalized_pipeline_command,
+        session_id=session_id,
+        explicit_value=governance_mode,
+        existing_entry=entry,
+    )
+
     timestamp = updated_at or utc_now_iso()
     entry["run_id"] = run_id
     entry["mode"] = mode
@@ -748,6 +877,18 @@ def upsert_run(
     for field, value in (("session_id", session_id), ("backlog_id", backlog_id), ("ide", ide)):
         if value is not None:
             entry[field] = value
+
+    if pipeline_command is not _UNSET or normalized_pipeline_command is not None:
+        if normalized_pipeline_command:
+            entry["pipeline_command"] = normalized_pipeline_command
+        else:
+            entry.pop("pipeline_command", None)
+
+    if governance_mode is not _UNSET or normalized_governance_mode is not None:
+        if normalized_governance_mode:
+            entry["governance_mode"] = normalized_governance_mode
+        else:
+            entry.pop("governance_mode", None)
 
     if stages_completed is not _UNSET:
         if stages_completed:
@@ -824,10 +965,16 @@ def consume_human_gate_approval(
     if prior_stage_id not in stages_completed:
         stages_completed.append(prior_stage_id)
 
+    pipeline_command = _clean_text(entry.get("pipeline_command") or entry.get("mode") or "unknown")
+    governance_mode = _clean_text(entry.get("governance_mode"))
+    pipeline_label = (
+        f"{governance_mode} pipeline `{pipeline_command}`"
+        if governance_mode
+        else f"pipeline `{pipeline_command}`"
+    )
     promoted_next_action = (
         next_action
-        or f"Execute next executable stage `{next_stage_id}` in pipeline "
-        f"`{entry.get('mode', 'unknown')}`."
+        or f"Execute next executable stage `{next_stage_id}` in {pipeline_label}."
     )
 
     _, updated_entry = upsert_run(
@@ -845,6 +992,8 @@ def consume_human_gate_approval(
         active_stage_id=next_stage_id,
         pending_stage_ids=pending_stage_ids[1:],
         pause_reason=None,
+        pipeline_command=entry.get("pipeline_command"),
+        governance_mode=entry.get("governance_mode"),
         ledger_path=resolved_ledger_path,
     )
     return updated_entry
@@ -929,8 +1078,17 @@ def cmd_status(args: argparse.Namespace) -> None:
         run = active[-1]
         run_id = run.get("run_id", "?")
         mode = run.get("mode", "?")
+        pipeline_command = _clean_text(run.get("pipeline_command"))
+        governance_mode = _clean_text(run.get("governance_mode"))
+        descriptor = mode
+        if pipeline_command and pipeline_command != mode:
+            descriptor = f"{mode} / pipeline {pipeline_command}"
+        elif pipeline_command:
+            descriptor = pipeline_command
+        if governance_mode:
+            descriptor = f"{descriptor} / {governance_mode}"
         next_action = (run.get("next_action") or "")[:80]
-        print(f"Active run  {run_id}  ({mode})  → {next_action}")
+        print(f"Active run  {run_id}  ({descriptor})  → {next_action}")
         sc = run.get("stages_completed") or []
         if sc:
             print(f"  stages completed: {len(sc)}")
@@ -1053,6 +1211,12 @@ def cmd_append(args: argparse.Namespace) -> None:
             args.pending_stage_ids if args.pending_stage_ids is not None else _UNSET
         ),
         pause_reason=args.pause_reason if args.pause_reason is not None else _UNSET,
+        pipeline_command=(
+            args.pipeline_command if args.pipeline_command is not None else _UNSET
+        ),
+        governance_mode=(
+            args.governance_mode if args.governance_mode is not None else _UNSET
+        ),
         wave_entry=wave_entry if wave_entry is not None else _UNSET,
         ledger_path=path,
     )
@@ -1124,6 +1288,18 @@ def main() -> None:
     ap.add_argument("--backlog-id", metavar="BACKLOG_ID", help="Optional linked backlog id.")
     ap.add_argument("--ide", metavar="IDE", help="Optional IDE or client label.")
     ap.add_argument("--mode", required=True, metavar="MODE", help="Pipeline mode/preset.")
+    ap.add_argument(
+        "--pipeline-command",
+        choices=sorted(_PIPELINE_COMMAND_ENUM),
+        default=None,
+        help="Optional normalized delivery command for the active pipeline lineage.",
+    )
+    ap.add_argument(
+        "--governance-mode",
+        choices=sorted(_GOVERNANCE_MODE_ENUM),
+        default=None,
+        help="Optional normalized governance mode for the active pipeline lineage.",
+    )
     ap.add_argument("--goal", required=True, metavar="GOAL", help="Human-readable goal.")
     ap.add_argument(
         "--status",

@@ -17,7 +17,7 @@ posture:
     - Deduplicate and reconcile findings from multiple researchers
     - Produce a single synthesized brief
   ask_first:
-    - Spawning more than 3 parallel research agents
+    - Spending more than the assigned child_fanout_cap
     - Expanding research scope beyond original question
   never_auto: []
 pipeline_stages: []
@@ -43,6 +43,11 @@ Research Orchestrator (you — queen agent)
     ▼ (merge + evaluate quality)
     └── Synthesized brief   [final output]
 ```
+
+## Execution Budget
+
+- If the parent spawn includes `execution_budget`, you may fan out within `child_fanout_cap` and `depth_remaining`.
+- If no budget is supplied or `depth_remaining < 1`, operate as a leaf: scope the question, synthesize what you can locally, and return the gap instead of spawning child researchers.
 
 ## Mandatory 6-Phase Pipeline
 

@@ -700,6 +700,46 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
             f"- Description: {description}",
         ]
     )
+    if name == "start":
+        lines.extend(
+            [
+                "",
+                "Codex calm-flow rules:",
+                "- Treat `$azoth-start` as the canonical daily control surface in Codex.",
+                "- Route `resume`, `next`, `closeout`, and custom goals through the same calm-flow controller in `scripts/codex_control_plane.py`.",
+                "- In Codex, do not split the daily path into `/start -> /next -> /auto`; `next` and custom goals both resolve to the same fused declaration path.",
+                "- If the request carries an explicit pipeline override, preserve it as `pipeline_command` while staying inside the `$azoth-start ...` route.",
+            ]
+        )
+    elif name == "session-closeout":
+        lines.extend(
+            [
+                "",
+                "Codex closeout rules:",
+                "- `$azoth-session-closeout` remains the explicit Codex closeout command; do not reroute closeout through a delivery pipeline.",
+                "- Treat `.azoth/` W1/W2/W4 artifacts as authoritative in Codex; W3 is a best-effort Claude-memory mirror and must log `W3 deferred` if blocked.",
+                "- If a prior closeout attempt already completed W1 or W2, resume from the recorded checkpoint instead of appending a second W1 episode.",
+            ]
+        )
+    elif name == "next":
+        lines.extend(
+            [
+                "",
+                "Codex calm-flow rules:",
+                "- In Codex, `$azoth-next` is a compatibility shim over `$azoth-start next`.",
+                "- Resolve task selection through `scripts/codex_control_plane.py` and keep the resulting fused declaration in one flow.",
+            ]
+        )
+    elif name in {"auto", "deliver", "deliver-full", "dynamic-full-auto"}:
+        lines.extend(
+            [
+                "",
+                "Codex calm-flow rules:",
+                f"- In Codex, `${skill_name}` is a compatibility shim over `$azoth-start ...`, not an independent daily entry path.",
+                f"- Normalize this request through `scripts/codex_control_plane.py` and preserve `pipeline_command: {name}`.",
+                "- If Codex cannot normalize the request into the canonical calm-flow path, stop with a short redirect instead of continuing inline.",
+            ]
+        )
     return render_frontmatter(fm) + "\n".join(line for line in lines if line is not None) + "\n"
 
 

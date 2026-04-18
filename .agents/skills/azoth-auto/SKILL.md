@@ -22,3 +22,8 @@ Command metadata:
 - Contract path: `commands/auto/command.yaml`
 - Body source path: `.claude/commands/auto.md`
 - Description: Auto-compose and execute a pipeline based on goal classification
+
+Codex calm-flow rules:
+- In Codex, `$azoth-auto` is a compatibility shim over `$azoth-start ...`, not an independent daily entry path.
+- Normalize this request through `scripts/codex_control_plane.py` and preserve `pipeline_command: auto`.
+- If Codex cannot normalize the request into the canonical calm-flow path, stop with a short redirect instead of continuing inline.

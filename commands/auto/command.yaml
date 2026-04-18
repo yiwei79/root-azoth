@@ -5,6 +5,59 @@ description: Auto-compose and execute a pipeline based on goal classification
 agent: orchestrator
 azoth_effect: write
 
+execution:
+  kind: pipeline
+  waits_for_human_signal: declaration_approval
+  emits:
+    - fused_declaration
+    - scope_gate
+    - pipeline_gate
+    - run_checkpoint
+
+arguments:
+  accepts_arguments: true
+  syntax: /auto <goal>
+
+state:
+  reads:
+    - .azoth/scope-gate.json
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+    - .azoth/backlog.yaml
+  writes:
+    - .azoth/scope-gate.json
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+  outputs:
+    - pipeline_declaration
+    - pipeline_progress
+
+governance:
+  preconditions:
+    - require_approved_scope_or_fused_declaration
+    - redirect_governed_scope_to_governed_execution_when_needed
+    - governed_human_gates_must_advance_runtime_state
+  approval_mode: fused_scope_and_pipeline_declaration
+  pipeline_gate_behavior: open_or_update_matching_pipeline_gate
+  target_layer_rule: m1_or_governance_scope_requires_governed_mode
+
+runtime:
+  governance_mode:
+    command_default: standard
+    scope_gate_field: governance_mode
+    legacy_scope_gate_field: delivery_pipeline
+  pipeline_command:
+    command_value: auto
+    scope_gate_field: pipeline_command
+    pipeline_gate_field: pipeline_command
+    legacy_pipeline_gate_field: pipeline
+    run_ledger_field: pipeline_command
+    legacy_run_ledger_field: mode
+  approval_consumption:
+    helper: scripts/run_ledger.py:consume_human_gate_approval
+    durable: true
+    same_run_required: true
+
 body:
   mode: legacy_claude_markdown
   source_path: .claude/commands/auto.md

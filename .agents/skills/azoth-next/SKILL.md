@@ -22,3 +22,7 @@ Command metadata:
 - Contract path: `commands/next/command.yaml`
 - Body source path: `commands/next/body.md`
 - Description: Show the next priority task from the roadmap and suggest how to proceed
+
+Codex calm-flow rules:
+- In Codex, `$azoth-next` is a compatibility shim over `$azoth-start next`.
+- Resolve task selection through `scripts/codex_control_plane.py` and keep the resulting fused declaration in one flow.

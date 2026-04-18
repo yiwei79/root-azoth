@@ -237,6 +237,51 @@ def test_validate_rejects_invalid_pause_reason() -> None:
     assert any("pause_reason" in error for error in errors)
 
 
+def test_validate_accepts_normalized_pipeline_runtime_fields() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-governed",
+                "mode": "deliver-full",
+                "pipeline_command": "deliver-full",
+                "governance_mode": "governed",
+                "goal": "Governed goal",
+                "status": "paused",
+                "created_at": "2026-04-18T09:00:00+00:00",
+                "updated_at": "2026-04-18T09:05:00+00:00",
+                "next_action": "Await human approval.",
+                "active_stage_id": "deliver_full_s3",
+                "pending_stage_ids": ["deliver_full_s4"],
+                "pause_reason": "human-gate",
+            }
+        ],
+    }
+
+    assert validate_ledger(data) == []
+
+
+def test_validate_rejects_invalid_pipeline_command_on_run() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-invalid-pipeline",
+                "mode": "deliver-full",
+                "pipeline_command": "ship-it",
+                "goal": "Governed goal",
+                "status": "active",
+                "created_at": "2026-04-18T09:00:00+00:00",
+                "updated_at": "2026-04-18T09:05:00+00:00",
+                "next_action": "continue",
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("pipeline_command" in error for error in errors)
+
+
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
 
 
@@ -334,6 +379,12 @@ def _append(ledger: Path, **kwargs: str) -> subprocess.CompletedProcess[str]:
         "--next-action",
         kwargs.get("next_action", "next step"),
     ]
+    pipeline_command = kwargs.get("pipeline_command")
+    if pipeline_command is not None:
+        cmd += ["--pipeline-command", pipeline_command]
+    governance_mode = kwargs.get("governance_mode")
+    if governance_mode is not None:
+        cmd += ["--governance-mode", governance_mode]
     for field in ("session_id", "backlog_id", "ide"):
         value = kwargs.get(field)
         if value is not None:
@@ -450,6 +501,37 @@ def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
     assert run["stages_completed"] == ["planner_stage0"]
 
 
+def test_append_persists_normalized_pipeline_runtime_fields(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    result = _append(
+        ledger,
+        run_id="run-runtime",
+        mode="deliver-full",
+        pipeline_command="deliver-full",
+        governance_mode="governed",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["pipeline_command"] == "deliver-full"
+    assert run["governance_mode"] == "governed"
+
+
+def test_append_derives_pipeline_command_from_delivery_mode(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    result = _append(
+        ledger,
+        run_id="run-derived-runtime",
+        mode="auto",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["pipeline_command"] == "auto"
+
+
 def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None:
     azoth = tmp_path / ".azoth"
     azoth.mkdir()
@@ -494,6 +576,44 @@ def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None
         "auto_s3_planner",
     ]
     assert "auto_s4_evaluator" in updated["next_action"]
+
+
+def test_consume_human_gate_approval_preserves_normalized_runtime_fields(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-governed-human-gate",
+                        "mode": "deliver-full",
+                        "pipeline_command": "deliver-full",
+                        "governance_mode": "governed",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "active_stage_id": "deliver_full_s3",
+                        "pending_stage_ids": ["deliver_full_s4", "deliver_full_s5"],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = consume_human_gate_approval(tmp_path, run_id="run-governed-human-gate")
+
+    assert updated["pipeline_command"] == "deliver-full"
+    assert updated["governance_mode"] == "governed"
+    assert updated["active_stage_id"] == "deliver_full_s4"
+    assert "governed pipeline `deliver-full`" in updated["next_action"]
 
 
 def test_consume_human_gate_approval_fails_closed_when_no_pending_stage(tmp_path: Path) -> None:

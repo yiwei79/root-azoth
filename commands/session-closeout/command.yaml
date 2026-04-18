@@ -5,9 +5,56 @@ description: Unified eval + close + sync — run at the end of every session
 agent: orchestrator
 azoth_effect: write
 
+execution:
+  kind: closeout
+  waits_for_human_signal: explicit_closeout_intent
+  emits:
+    - closeout_summary
+    - closeout_semantics
+    - closeout_checkpoint
+
+arguments:
+  accepts_arguments: false
+  syntax: /session-closeout
+
+state:
+  reads:
+    - .azoth/scope-gate.json
+    - .azoth/run-ledger.local.yaml
+    - .azoth/session-state.md
+    - .azoth/final-delivery-approvals.jsonl
+    - .azoth/memory/episodes.jsonl
+    - .azoth/backlog.yaml
+    - .azoth/roadmap.yaml
+    - azoth.yaml
+  writes:
+    - .azoth/memory/episodes.jsonl
+    - .azoth/bootloader-state.md
+    - .azoth/run-ledger.local.yaml
+    - .azoth/scope-gate.json
+    - .azoth/session-state.md
+    - .azoth/backlog.yaml
+    - .azoth/roadmap.yaml
+    - .azoth/session-orientation.txt
+    - azoth.yaml
+    - .claude/settings.json
+  outputs:
+    - closeout_summary
+    - closeout_semantics
+    - closeout_checkpoint
+
+governance:
+  preconditions:
+    - require_live_scope_or_saved_closeout_checkpoint
+    - governed_final_delivery_approval_before_first_w1_mutation
+    - keep_repo_local_w1_w2_w4_authoritative
+  approval_mode: explicit_closeout_intent
+  pipeline_gate_behavior: preserve_saved_stage_checkpoint_during_closeout
+  target_layer_rule: governed_closeout_fails_closed_before_w1
+
 body:
-  mode: legacy_claude_markdown
-  source_path: .claude/commands/session-closeout.md
+  mode: canonical_markdown
+  source_path: commands/session-closeout/body.md
 
 projection:
   claude:
@@ -38,7 +85,8 @@ migration:
   runtime_source_of_truth: commands/session-closeout/command.yaml
   notes:
     - T-004 moves /session-closeout onto the neutral command path.
-    - .claude/commands/session-closeout.md remains the authored semantic body during the bridge.
+    - commands/session-closeout/body.md is now the authored semantic body.
+    - Generated closeout mirrors remain deployed outputs until azoth-deploy is rerun.
 
 references:
   - .azoth/roadmap-specs/v0.2.0/T-004.yaml
