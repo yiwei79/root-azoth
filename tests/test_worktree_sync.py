@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -11,12 +13,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "worktree_sync.py"
 
 
-def _run_sync(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
+def _run_sync(cwd: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    cmd_env = os.environ.copy()
+    if env:
+        cmd_env.update(env)
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
         cwd=cwd,
         capture_output=True,
         text=True,
+        env=cmd_env,
     )
 
 
@@ -187,3 +193,80 @@ def test_worktree_sync_integrator_mode_allows_clean_target_branch(tmp_path: Path
 
     assert result.returncode == 0, result.stderr
     assert "clean and ready to merge exactly one producer branch" in result.stdout
+
+
+def test_worktree_sync_records_producer_handoff_in_shared_queue(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    _setup_phase_and_feature(tmp_path)
+    _commit_file(tmp_path, "feat/test-producer", "feature.txt", "feature\n", "feature commit")
+    queue_path = tmp_path.parent / f"{tmp_path.name}-shared-handoffs.jsonl"
+
+    result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--record-producer-handoff",
+        env={"AZOTH_WORKTREE_HANDOFF_QUEUE_PATH": str(queue_path)},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "recorded producer handoff 'feat/test-producer'" in result.stdout
+    records = [json.loads(line) for line in queue_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(records) == 1
+    assert records[0]["event"] == "producer-ready"
+    assert records[0]["producer_branch"] == "feat/test-producer"
+    assert records[0]["target_branch"] == "phase/v0.2.0-p2"
+
+
+def test_worktree_sync_integrator_selects_and_clears_ready_handoff(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    _setup_phase_and_feature(tmp_path)
+    _commit_file(tmp_path, "feat/test-producer", "feature.txt", "feature\n", "feature commit")
+    queue_path = tmp_path.parent / f"{tmp_path.name}-shared-handoffs.jsonl"
+    env = {"AZOTH_WORKTREE_HANDOFF_QUEUE_PATH": str(queue_path)}
+
+    producer_result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--record-producer-handoff",
+        env=env,
+    )
+    assert producer_result.returncode == 0, producer_result.stderr
+
+    _run_git(tmp_path, "checkout", "phase/v0.2.0-p2")
+    select_result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--next-ready-handoff",
+        "--json",
+        env=env,
+    )
+    assert select_result.returncode == 0, select_result.stderr
+    selected = json.loads(select_result.stdout)
+    assert selected["producer_branch"] == "feat/test-producer"
+
+    merge_result = _run_git(tmp_path, "merge", "--no-ff", "feat/test-producer")
+    assert merge_result.returncode == 0, merge_result.stderr
+
+    integrated_result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--mark-integrated",
+        "feat/test-producer",
+        env=env,
+    )
+    assert integrated_result.returncode == 0, integrated_result.stderr
+    assert "marked producer handoff 'feat/test-producer' integrated" in integrated_result.stdout
+
+    empty_result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--next-ready-handoff",
+        env=env,
+    )
+    assert empty_result.returncode == 1
+    assert "no ready producer handoff found" in empty_result.stderr
