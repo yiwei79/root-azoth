@@ -17,10 +17,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 
 from scope_gate_check import check_scope_gate, find_scope_gate
 
@@ -50,6 +52,9 @@ PIPELINE_GATE_CORE_REQUIRED_FIELDS = frozenset(
 
 PIPELINE_GATE_MODE_FIELDS = frozenset({"pipeline", "pipeline_command"})
 PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
+RESEARCH_EVIDENCE_REQUIRED_FIELDS = frozenset({"kind", "session_id", "path"})
+RESEARCH_EVIDENCE_KIND = "repo-local"
+WINDOWS_DRIVE_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 
 def find_pipeline_gate(root: Path | None = None) -> Path:
@@ -96,6 +101,72 @@ def _scope_selected_pipeline(scope_gate: dict) -> str:
     return ""
 
 
+def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
+    research_required = gate.get("research_required")
+    if not isinstance(research_required, bool):
+        return False, "❌ BLOCKED — pipeline-gate.json research_required must be a boolean."
+    if research_required is False:
+        return True, ""
+
+    evidence = gate.get("research_evidence")
+    if not isinstance(evidence, dict):
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence must be an object when "
+            "research_required is true.",
+        )
+
+    missing = RESEARCH_EVIDENCE_REQUIRED_FIELDS - set(evidence.keys())
+    if missing:
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence missing fields: "
+            f"{sorted(missing)}.",
+        )
+
+    kind = str(evidence.get("kind") or "").strip()
+    if kind != RESEARCH_EVIDENCE_KIND:
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.kind must equal "
+            f"{RESEARCH_EVIDENCE_KIND!r}.",
+        )
+
+    evidence_session_id = str(evidence.get("session_id") or "").strip()
+    if evidence_session_id != str(gate.get("session_id") or "").strip():
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.session_id must match "
+            "pipeline-gate session_id.",
+        )
+
+    evidence_path = str(evidence.get("path") or "").strip()
+    if not evidence_path:
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.path must be a repo-relative path.",
+        )
+    if Path(evidence_path).is_absolute() or WINDOWS_DRIVE_ABSOLUTE_RE.match(evidence_path):
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.path must be repo-relative.",
+        )
+    parsed_path = urlparse(evidence_path)
+    if parsed_path.scheme:
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.path must not use a URI scheme.",
+        )
+    normalized_parts = PurePosixPath(evidence_path.replace("\\", "/")).parts
+    if ".." in normalized_parts:
+        return (
+            False,
+            "❌ BLOCKED — pipeline-gate.json research_evidence.path must be repo-relative.",
+        )
+
+    return True, ""
+
+
 def check_scope_gate_fields(
     session_id: Optional[str] = None,
     root: Path | None = None,
@@ -133,13 +204,15 @@ def check_pipeline_gate(
     """Validate pipeline-gate.json if present or required."""
     gate_path = find_pipeline_gate(root)
     scope_path = find_scope_gate(root)
+    scope_requires_pipeline_gate = False
     if scope_path.exists():
         try:
             with open(scope_path, encoding="utf-8") as f:
                 scope = json.load(f)
         except (json.JSONDecodeError, OSError) as exc:
             return False, f"❌ BLOCKED — scope-gate.json is malformed during pipeline cross-check: {exc}"
-        require = require or _scope_requires_pipeline_gate(scope)
+        scope_requires_pipeline_gate = _scope_requires_pipeline_gate(scope)
+        require = require or scope_requires_pipeline_gate
     else:
         scope = None
 
@@ -186,6 +259,11 @@ def check_pipeline_gate(
             "❌ BLOCKED — pipeline-gate.json pipeline must be one of "
             f"{sorted(PIPELINE_COMMANDS)}, got {pipeline_name!r}.",
         )
+
+    if scope_requires_pipeline_gate:
+        research_valid, research_message = _validate_research_evidence(gate)
+        if not research_valid:
+            return False, research_message
 
     # Validate session_id consistency with scope-gate
     if scope is not None:

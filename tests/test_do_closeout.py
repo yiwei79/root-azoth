@@ -834,8 +834,13 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
     assert session_entry["next_action"] == expected_next_action
     assert "closed_at" not in session_entry
 
-    session_state = (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
-    assert f"next_action: {expected_next_action}" in session_state
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["state"] == "parked"
+    assert session_state["active_task"] == "Parked — BL-123: Governed closeout"
+    assert session_state["approved_scope"] == "BL-123: Governed closeout"
+    assert session_state["next_action"] == expected_next_action
 
     bootloader_state = (repo_root / ".azoth" / "bootloader-state.md").read_text(encoding="utf-8")
     assert expected_next_action in bootloader_state

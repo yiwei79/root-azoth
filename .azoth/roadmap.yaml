@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 48
+    current_patch: 50
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -379,10 +379,6 @@ versions:
       - id: T-006
         title: "First-class iterative revise-and-continue pipeline loops"
         decision_ref: [D23, D44]
-      - id: T-008
-        title: "Minimal bounded research sufficiency gate"
-        decision_ref: [D23, D44, D45, D46, D52]
-        initiative_ref: "INI-EVI-001"
       - id: T-009
         title: "Local research capsule bank + sufficiency checker"
         decision_ref: [D11, D23, D45, D46]
@@ -405,6 +401,7 @@ versions:
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
       - {id: T-003, title: "Co-primary command migration batch 2 — delivery/orchestration commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D23, D44, D46]}
       - {id: T-004, title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit", completed_date: "2026-04-17", decision_ref: [D11, D19, D21, D46, D52]}
+      - {id: T-008, title: "Minimal bounded research sufficiency gate", completed_date: "2026-04-18", decision_ref: [D23, D44, D45, D46, D52]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -571,70 +568,59 @@ initiatives:
       historical foundation, not open p2 follow-on work.
     decision_ref: [D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
-
   - id: INI-EVI-001
-    title: "Evidence-grounded external knowledge"
+    title: Evidence-grounded external knowledge
     category: pipeline
     theme: B
     dimensions:
-      themes: [B, C, D]
-      categories: [pipeline, memory, platform]
-      tracks: [research-sufficiency, evidence-capsules, freshness]
+      themes:
+      - B
+      - C
+      - D
+      categories:
+      - pipeline
+      - memory
+      - platform
+      tracks:
+      - research-sufficiency
+      - evidence-capsules
+      - freshness
     phase: v0.2.0-p2
     priority: high
-    task_ref: T-008
+    task_ref: T-009
     slices:
-      - task_ref: T-008
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-008.yaml"
-        phase: v0.2.0-p2
-        status: active
-        role: primary
-      - task_ref: T-009
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-009.yaml"
-        phase: v0.2.0-p2
-        status: planned
-        role: follow-on
-      - task_ref: T-010
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-010.yaml"
-        phase: v0.2.0-p2
-        status: planned
-        role: follow-on
-    summary: >
-      Establish a bounded but durable path for tasks that depend on external facts
-      which may have changed since training time. The initiative starts with a
-      mechanical entry gate for latest/current external-fact work, then expands
-      into reusable research capsules plus a sufficiency checker, and finally
-      hardens the cross-platform workflow surfaces so evidence-grounded behavior
-      remains honest across Codex, Claude-facing docs, and continuity tooling.
-    decision_ref: [D11, D23, D44, D45, D46, D50, D52]
-    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-008.yaml"
+    - task_ref: T-008
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-008.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-009
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
+      phase: v0.2.0-p2
+      status: active
+      role: primary
+    - task_ref: T-010
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-010.yaml
+      phase: v0.2.0-p2
+      status: planned
+      role: follow-on
+    summary: 'Establish a bounded but durable path for tasks that depend on external
+      facts which may have changed since training time. The initiative starts with a
+      mechanical entry gate for latest/current external-fact work, then expands into
+      reusable research capsules plus a sufficiency checker, and finally hardens the
+      cross-platform workflow surfaces so evidence-grounded behavior remains honest
+      across Codex, Claude-facing docs, and continuity tooling.
 
-  # ── Theme C: memory ────────────────────────────────────────────────────────
-  - id: INI-MEM-001
-    title: "Verbatim-first M3 storage strategy"
-    category: memory
-    theme: C
-    dimensions:
-      themes: [C]
-      categories: [memory]
-      tracks: [verbatim-storage, m3-policy]
-    phase: v0.2.0-p2
-    task_ref: P1-020
-    slices:
-      - task_ref: P1-020
-        spec_ref: null
-        phase: v0.2.0-p2
-        status: active
-        role: primary
-    priority: high
-    summary: >
-      Store raw episode context verbatim in M3 before any summarisation or compression.
-      Building the episodic index on full signal avoids the compress-before-index regression
-      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth M3
-      is currently append-only JSONL with no vector index; this initiative scopes the policy
-      and tooling to enforce verbatim storage as the baseline.
-    research_ref: "RP-MEM-A"
-    decision_ref: [D11, D45]
+      '
+    decision_ref:
+    - D11
+    - D23
+    - D44
+    - D45
+    - D46
+    - D50
+    - D52
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
 
   - id: INI-MEM-002
     title: "Temporal validity windows for M2 patterns"

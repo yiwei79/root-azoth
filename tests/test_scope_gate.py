@@ -42,6 +42,7 @@ def _run(
             encoding="utf-8",
         )
     env = {**os.environ, "AZOTH_SCOPE_GATE_PATH": str(gate_path)}
+    env["AZOTH_REPO_ROOT"] = str(workspace)
     env["AZOTH_ENTROPY_STATE_PATH"] = str(workspace / "entropy-state.json")
     env["AZOTH_LEDGER_PATH"] = str(azoth_dir / "run-ledger.local.yaml")
     if pipeline_gate_path is not None:
@@ -71,6 +72,36 @@ def _future_expiry() -> str:
 
 def _past_expiry() -> str:
     return (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
+
+
+def _governed_scope_gate(*, expiry: str, session_id: str = "sess-governed") -> dict:
+    return {
+        "approved": True,
+        "expires_at": expiry,
+        "session_id": session_id,
+        "target_layer": "M1",
+    }
+
+
+def _pipeline_gate(
+    *,
+    expiry: str,
+    session_id: str = "sess-governed",
+    research_required: bool = False,
+    research_evidence: dict | None = None,
+    pipeline: str = "deliver-full",
+) -> dict:
+    gate = {
+        "approved": True,
+        "session_id": session_id,
+        "expires_at": expiry,
+        "opened_at": datetime.now(timezone.utc).isoformat(),
+        "pipeline": pipeline,
+        "research_required": research_required,
+    }
+    if research_evidence is not None:
+        gate["research_evidence"] = research_evidence
+    return gate
 
 
 # T1: non-write/edit tool with absent gate file — must allow
@@ -326,6 +357,7 @@ def test_t14_governed_scope_write_allowed_with_valid_pipeline_gate(tmp_path: Pat
                 "expires_at": expiry,
                 "opened_at": datetime.now(timezone.utc).isoformat(),
                 "pipeline": "deliver-full",
+                "research_required": False,
             }
         ),
         encoding="utf-8",
@@ -475,6 +507,352 @@ def test_t16d_governed_scope_write_denied_with_opened_at_after_expires_at(tmp_pa
         encoding="utf-8",
     )
     output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16da_governed_scope_write_denied_without_research_required_flag(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "sess-governed",
+                "expires_at": expiry,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
+                "pipeline": "deliver-full",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16db_governed_scope_write_denied_with_non_boolean_research_required(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            {
+                **_pipeline_gate(expiry=expiry),
+                "research_required": "yes",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dc_governed_scope_write_allowed_with_research_required_false(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(json.dumps(_pipeline_gate(expiry=expiry)), encoding="utf-8")
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "allow"
+
+
+def test_t16dd_governed_scope_write_allowed_with_same_session_repo_local_research_evidence(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": ".azoth/research/sess-governed.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "allow"
+
+
+def test_t16de_governed_scope_write_denied_when_research_evidence_missing(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(_pipeline_gate(expiry=expiry, research_required=True)),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16df_governed_scope_write_denied_when_research_evidence_is_not_an_object(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            {
+                **_pipeline_gate(expiry=expiry, research_required=True),
+                "research_evidence": ["repo-local"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dg_governed_scope_write_denied_when_research_evidence_missing_field(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dh_governed_scope_write_denied_when_research_evidence_kind_is_not_repo_local(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "web",
+                    "session_id": "sess-governed",
+                    "path": ".azoth/research/sess-governed.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16di_governed_scope_write_denied_when_research_evidence_session_mismatches(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-other",
+                    "path": ".azoth/research/sess-governed.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dj_governed_scope_write_denied_when_research_evidence_path_is_absolute(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": str((tmp_path / "evidence.md").resolve()),
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dja_governed_scope_write_denied_when_research_evidence_path_uses_windows_drive(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": r"C:\evidence.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dk_governed_scope_write_denied_when_research_evidence_path_traverses_parent(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": "../outside.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dl_governed_scope_write_denied_when_research_evidence_path_has_uri_scheme(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": "file:///tmp/evidence.md",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "deny"
+    assert "pipeline-gate" in _reason(output).lower()
+
+
+def test_t16dlb_governed_scope_write_denied_when_research_evidence_path_has_non_file_uri_scheme(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": "mailto:evidence",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
 
@@ -686,6 +1064,7 @@ def test_t20c_governed_memory_write_still_hits_write_claim(tmp_path: Path) -> No
                 "expires_at": expiry,
                 "opened_at": datetime.now(timezone.utc).isoformat(),
                 "pipeline": "deliver-full",
+                "research_required": False,
             }
         ),
         encoding="utf-8",

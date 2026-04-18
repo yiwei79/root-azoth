@@ -1105,6 +1105,7 @@ def update_session_state(
     *,
     scope: dict[str, Any],
     timestamp: str,
+    session_status: str,
     active_files: list[str],
     next_action: str,
     existing_session_state: dict[str, Any],
@@ -1115,15 +1116,18 @@ def update_session_state(
     pending_decisions = existing_session_state.get("pending_decisions")
     if not isinstance(pending_decisions, list):
         pending_decisions = []
+    state = "parked" if session_status == "parked" else "closed"
+    active_task = f"Parked — {goal}" if state == "parked" else f"Closed — {goal}"
+    approved_scope = goal if state == "parked" else f"Completed: {goal}"
     return write_session_state(
         repo_root,
         session_id=str(scope.get("session_id") or "unknown-session"),
-        state="closed",
+        state=state,
         timestamp=timestamp,
-        active_task=f"Closed — {goal}",
+        active_task=active_task,
         active_files=active_files,
         pending_decisions=pending_decisions,
-        approved_scope=f"Completed: {goal}",
+        approved_scope=approved_scope,
         next_action=next_action,
         selected_ide=str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
         checkpoint={} if clear_checkpoint else extract_session_checkpoint(existing_session_state),
@@ -1291,6 +1295,7 @@ def run_closeout(
         repo_root,
         scope=scope,
         timestamp=timestamp,
+        session_status=session_status,
         active_files=active_files,
         next_action=next_action,
         existing_session_state=existing_session_state,
