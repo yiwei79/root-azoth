@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.51 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 50
+0.1.2.53 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 52
 
 ## Last Session
-- **Session**: 2026-04-18-bl-057
-- **Goal**: BL-057: Close canonical command migration bundles atomically
+- **Session**: 2026-04-18-adhoc-closeout-control-plane-fix
+- **Goal**: AD-HOC: parked-session closeout control-plane fix
 - **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-261 (success)
+- **Episode**: ep-264 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

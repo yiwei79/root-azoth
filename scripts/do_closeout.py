@@ -810,7 +810,11 @@ def _resumable_run_for_session(
         for run in runs
         if isinstance(run, dict)
         and str(run.get("session_id") or "") == session_id
-        and str(run.get("status") or "") in {"active", "paused"}
+        and str(run.get("status") or "") == "paused"
+        and (
+            str(run.get("active_stage_id") or "").strip()
+            or bool(run.get("pending_stage_ids"))
+        )
     ]
     if not resumable:
         return None
@@ -819,6 +823,32 @@ def _resumable_run_for_session(
             if str(run.get("run_id") or "") == preferred_run_id:
                 return run
     return resumable[-1]
+
+
+def _open_run_for_session(
+    ledger: dict[str, Any],
+    *,
+    session_id: str,
+    preferred_run_id: str | None = None,
+) -> dict[str, Any] | None:
+    runs = ledger.get("runs")
+    if not isinstance(runs, list):
+        return None
+
+    open_runs = [
+        run
+        for run in runs
+        if isinstance(run, dict)
+        and str(run.get("session_id") or "") == session_id
+        and str(run.get("status") or "") in {"active", "paused"}
+    ]
+    if not open_runs:
+        return None
+    if preferred_run_id:
+        for run in reversed(open_runs):
+            if str(run.get("run_id") or "") == preferred_run_id:
+                return run
+    return open_runs[-1]
 
 
 def update_session_registry(
@@ -851,6 +881,11 @@ def update_session_registry(
         if isinstance(matching_session, dict)
         else ""
     ) or None
+    open_run = _open_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
     resumable_run = _resumable_run_for_session(
         ledger,
         session_id=session_id,
@@ -891,19 +926,20 @@ def update_session_registry(
         session_status = "parked"
     else:
         next_action = closed_next_action
-        if resumable_run is not None and administrative_finalize:
+        run_to_close = open_run or resumable_run
+        if run_to_close is not None:
             upsert_run(
                 repo_root,
-                run_id=str(resumable_run.get("run_id") or preferred_run_id or ""),
-                mode=str(resumable_run.get("mode") or "auto"),
-                goal=str(resumable_run.get("goal") or goal),
+                run_id=str(run_to_close.get("run_id") or preferred_run_id or ""),
+                mode=str(run_to_close.get("mode") or "auto"),
+                goal=str(run_to_close.get("goal") or goal),
                 status="complete",
                 next_action=closed_next_action,
                 session_id=session_id,
                 backlog_id=backlog_id,
                 ide=ide,
                 updated_at=timestamp,
-                stages_completed=resumable_run.get("stages_completed") or [],
+                stages_completed=run_to_close.get("stages_completed") or [],
                 active_stage_id=None,
                 pending_stage_ids=[],
                 pause_reason=None,
@@ -1300,7 +1336,7 @@ def run_closeout(
         next_action=next_action,
         existing_session_state=existing_session_state,
         selected_ide=selected_ide or None,
-        clear_checkpoint=administrative_finalize,
+        clear_checkpoint=administrative_finalize or session_status == "closed",
     )
     print(session_state_note)
     update_bootloader_state(

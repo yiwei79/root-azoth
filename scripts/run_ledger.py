@@ -368,6 +368,8 @@ def _resolve_git_common_dir(root: Path) -> Path | None:
         )
     except Exception:
         return None
+    if result is None:
+        return None
     if result.returncode != 0:
         return None
     raw = result.stdout.strip()
@@ -392,6 +394,8 @@ def _current_branch(root: Path) -> str | None:
             check=False,
         )
     except Exception:
+        return None
+    if result is None:
         return None
     if result.returncode != 0:
         return None

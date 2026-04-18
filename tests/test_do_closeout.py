@@ -939,6 +939,56 @@ def test_governed_administrative_finalize_closes_resumable_session_without_versi
     assert version_bump_calls == []
 
 
+def test_governed_closeout_closes_stale_active_run_instead_of_parking(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["runs"][0]["status"] = "active"
+    ledger["runs"][0]["pause_reason"] = None
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    updated = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    session_entry = updated["sessions"][0]
+    run_entry = updated["runs"][0]
+
+    assert session_entry["status"] == "closed"
+    assert "active_run_id" not in session_entry
+    assert "closed_at" in session_entry
+    assert run_entry["status"] == "complete"
+    assert run_entry["next_action"] == "Run `/next` to select the next scoped task."
+    assert "active_stage_id" not in run_entry
+    assert "pending_stage_ids" not in run_entry
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["state"] == "closed"
+    assert "active_run_id" not in session_state
+
+
 def test_governed_closeout_creates_session_registry_entry_when_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
