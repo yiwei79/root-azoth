@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.53 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 52
+0.1.2.55 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 52
 
 ## Last Session
-- **Session**: 2026-04-18-adhoc-closeout-control-plane-fix
-- **Goal**: AD-HOC: parked-session closeout control-plane fix
+- **Session**: 2026-04-18-t-005
+- **Goal**: T-005: Low-risk instruction-refinement lightweight lane
 - **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-264 (success)
+- **Episode**: ep-265 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

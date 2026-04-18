@@ -26,6 +26,7 @@ CANONICAL_CONDITIONS: list[str] = [
     "risk == governance-change",
     "scope == kernel",
     "knowledge == needs-research",
+    "knowledge == instruction-refinement AND complexity == simple AND risk == additive",
     "knowledge == instruction-refinement",
     "scope == docs",
     "complexity == simple AND risk == cosmetic",
@@ -50,6 +51,32 @@ def _parse_frontmatter(content: str) -> dict:
         return {}
     frontmatter_text = "\n".join(lines[1:end_index])
     return yaml.safe_load(frontmatter_text) or {}
+
+
+def _load_pipeline_rules() -> list[dict]:
+    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
+    return data.get("composition_rules", {}).get("rules", [])
+
+
+def _rule_matches(condition: str, classification: dict[str, str]) -> bool:
+    """Evaluate the small D23 condition language used in auto.pipeline.yaml."""
+    if condition == "default":
+        return True
+
+    for clause in condition.split(" AND "):
+        key, expected = [part.strip() for part in clause.split("==", 1)]
+        expected = expected.strip('"').strip("'")
+        if classification.get(key) != expected:
+            return False
+    return True
+
+
+def _select_pipeline_for_classification(classification: dict[str, str]) -> list[str]:
+    """Apply first-match-wins routing semantics to auto.pipeline.yaml rules."""
+    for rule in _load_pipeline_rules():
+        if _rule_matches(rule["condition"], classification):
+            return rule["pipeline"]
+    raise AssertionError("auto.pipeline.yaml must include a default routing rule")
 
 
 # ── Structure ─────────────────────────────────────────────────────────────────
@@ -139,14 +166,8 @@ def test_auto_router_rule_ordering() -> None:
 # ── Cross-file consistency ────────────────────────────────────────────────────
 
 
-def test_skill_instruction_refinement_rule() -> None:
-    """SKILL.md must contain an instruction-refinement routing row at priority 4.
-
-    Verifies:
-    - A row with condition `knowledge == instruction-refinement` exists
-    - It appears AFTER `knowledge == needs-research` and BEFORE `scope == docs`
-    - Its pipeline is the full pipeline: [architect, reviewer, planner, evaluator, builder, architect]
-    """
+def test_skill_instruction_refinement_rules() -> None:
+    """SKILL.md must define both lightweight and fallback instruction-refinement rules."""
     assert SKILL_PATH.is_file(), (
         f"Skill file not found: {SKILL_PATH}. "
         "Builder must create skills/auto-router/SKILL.md before this test passes."
@@ -154,58 +175,126 @@ def test_skill_instruction_refinement_rule() -> None:
 
     content = SKILL_PATH.read_text(encoding="utf-8")
 
-    # Condition must be present
-    condition = "knowledge == instruction-refinement"
-    assert condition in content, f"Routing table must contain condition {condition!r}"
+    lightweight_condition = (
+        "knowledge == instruction-refinement AND complexity == simple AND risk == additive"
+    )
+    fallback_condition = "knowledge == instruction-refinement"
 
-    # Ordering: after needs-research, before scope == docs
-    pos_needs_research = content.index("knowledge == needs-research")
-    pos_instruction_refinement = content.index("knowledge == instruction-refinement")
-    pos_scope_docs = content.index("scope == docs")
-    assert pos_needs_research < pos_instruction_refinement < pos_scope_docs, (
-        "instruction-refinement rule must appear AFTER needs-research and BEFORE scope == docs"
+    assert lightweight_condition in content, (
+        f"Routing table must contain lightweight condition {lightweight_condition!r}"
+    )
+    assert fallback_condition in content, (
+        f"Routing table must contain fallback condition {fallback_condition!r}"
     )
 
-    # Pipeline for this rule must be full pipeline
-    # Find the table row containing the condition and verify the pipeline
+    pos_needs_research = content.index("knowledge == needs-research")
+    pos_lightweight = content.index(lightweight_condition)
+    pos_fallback = content.index(fallback_condition, pos_lightweight + 1)
+    pos_scope_docs = content.index("scope == docs")
+    assert pos_needs_research < pos_lightweight < pos_fallback < pos_scope_docs, (
+        "instruction-refinement lightweight and fallback rules must appear after "
+        "needs-research and before scope == docs in that order"
+    )
+
+    lightweight_row = None
+    fallback_row = None
     for line in content.splitlines():
-        if "knowledge == instruction-refinement" in line and "|" in line:
-            assert "architect, reviewer, planner, evaluator, builder, architect" in line, (
-                "instruction-refinement rule must use full pipeline "
-                "[architect, reviewer, planner, evaluator, builder, architect]"
-            )
-            break
-    else:
-        raise AssertionError("Could not find instruction-refinement as a table row in SKILL.md")
+        if lightweight_condition in line and "|" in line:
+            lightweight_row = line
+        elif fallback_condition in line and "|" in line:
+            fallback_row = line
+
+    assert lightweight_row is not None, "Could not find lightweight instruction-refinement row"
+    assert fallback_row is not None, "Could not find fallback instruction-refinement row"
+    assert "architect, planner, evaluator, builder, architect" in lightweight_row, (
+        "lightweight instruction-refinement rule must use "
+        "[architect, planner, evaluator, builder, architect]"
+    )
+    assert "architect, reviewer, planner, evaluator, builder, architect" in fallback_row, (
+        "fallback instruction-refinement rule must use full pipeline "
+        "[architect, reviewer, planner, evaluator, builder, architect]"
+    )
 
 
-def test_pipeline_instruction_refinement_rule() -> None:
-    """auto.pipeline.yaml must contain a composition rule for instruction-refinement.
-
-    Verifies:
-    - A rule with condition 'knowledge == instruction-refinement' exists
-    - Its pipeline list equals [architect, reviewer, planner, evaluator, builder, architect]
-    """
+def test_pipeline_instruction_refinement_rules() -> None:
+    """auto.pipeline.yaml must contain both lightweight and fallback instruction-refinement rules."""
     assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
-    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
-    rules = data.get("composition_rules", {}).get("rules", [])
+    rules = _load_pipeline_rules()
+    by_condition = {rule["condition"]: rule for rule in rules}
+    lightweight_condition = (
+        "knowledge == instruction-refinement AND complexity == simple AND risk == additive"
+    )
+    fallback_condition = "knowledge == instruction-refinement"
 
-    matching_rules = [
-        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
-    ]
-    assert len(matching_rules) == 1, (
-        "Expected exactly one composition rule with condition "
-        "'knowledge == instruction-refinement', "
-        f"found {len(matching_rules)}"
+    assert lightweight_condition in by_condition, (
+        f"Missing lightweight instruction-refinement rule {lightweight_condition!r}"
+    )
+    assert fallback_condition in by_condition, (
+        f"Missing fallback instruction-refinement rule {fallback_condition!r}"
     )
 
-    expected_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
-    assert matching_rules[0]["pipeline"] == expected_pipeline, (
-        f"instruction-refinement rule pipeline mismatch.\n"
-        f"  Expected: {expected_pipeline}\n"
-        f"  Got:      {matching_rules[0]['pipeline']}"
-    )
+    assert by_condition[lightweight_condition]["pipeline"] == [
+        "architect",
+        "planner",
+        "evaluator",
+        "builder",
+        "architect",
+    ], "lightweight instruction-refinement rule pipeline mismatch"
+    assert by_condition[fallback_condition]["pipeline"] == [
+        "architect",
+        "reviewer",
+        "planner",
+        "evaluator",
+        "builder",
+        "architect",
+    ], "fallback instruction-refinement rule pipeline mismatch"
+
+
+def test_instruction_refinement_routing_behavior() -> None:
+    """D23 first-match semantics must prefer the lightweight lane only for the qualifying case."""
+    lightweight_pipeline = ["architect", "planner", "evaluator", "builder", "architect"]
+    full_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
+
+    assert _select_pipeline_for_classification(
+        {
+            "scope": "pipelines",
+            "risk": "additive",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        }
+    ) == lightweight_pipeline
+
+    for classification in (
+        {
+            "scope": "pipelines",
+            "risk": "additive",
+            "complexity": "medium",
+            "knowledge": "instruction-refinement",
+        },
+        {
+            "scope": "pipelines",
+            "risk": "cosmetic",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        },
+        {
+            "scope": "pipelines",
+            "risk": "governance-change",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        },
+        {
+            "scope": "kernel",
+            "risk": "additive",
+            "complexity": "simple",
+            "knowledge": "instruction-refinement",
+        },
+    ):
+        assert _select_pipeline_for_classification(classification) == full_pipeline, (
+            "non-qualifying instruction-refinement work must fall through to the "
+            "existing full path or a higher-priority full rule"
+        )
 
 
 def test_auto_router_cross_file_consistency() -> None:
@@ -233,37 +322,32 @@ def test_auto_router_cross_file_consistency() -> None:
 # ── P1-008: inject field and l2-evidence-review phase ────────────────────────
 
 
-def test_pipeline_instruction_refinement_inject_field() -> None:
-    """auto.pipeline.yaml instruction-refinement rule must have an inject field.
-
-    Verifies:
-    - The rule with condition 'knowledge == instruction-refinement' has an 'inject' key
-    - The inject value references 'l2-evidence-review' and 'architect'
-    """
+def test_pipeline_instruction_refinement_inject_fields() -> None:
+    """Both instruction-refinement rules must keep the l2-evidence-review inject."""
     assert PIPELINE_PATH.is_file(), f"Pipeline file not found: {PIPELINE_PATH}"
 
-    data = yaml.safe_load(PIPELINE_PATH.read_text(encoding="utf-8"))
-    rules = data.get("composition_rules", {}).get("rules", [])
-
-    matching_rules = [
-        r for r in rules if r.get("condition") == "knowledge == instruction-refinement"
+    rules = _load_pipeline_rules()
+    expected_conditions = [
+        "knowledge == instruction-refinement AND complexity == simple AND risk == additive",
+        "knowledge == instruction-refinement",
     ]
-    assert len(matching_rules) == 1, (
-        "Expected exactly one rule with condition 'knowledge == instruction-refinement'"
-    )
-    rule = matching_rules[0]
 
-    assert "inject" in rule, (
-        "instruction-refinement rule is missing 'inject' field in auto.pipeline.yaml. "
-        'Add: inject: "l2-evidence-review into architect"'
-    )
-    inject_value = rule["inject"]
-    assert "l2-evidence-review" in inject_value, (
-        f"inject value must reference 'l2-evidence-review'; got: {inject_value!r}"
-    )
-    assert "architect" in inject_value, (
-        f"inject value must reference 'architect' (the target stage); got: {inject_value!r}"
-    )
+    for condition in expected_conditions:
+        matching_rules = [r for r in rules if r.get("condition") == condition]
+        assert len(matching_rules) == 1, (
+            f"Expected exactly one rule with condition {condition!r}; "
+            f"found {len(matching_rules)}"
+        )
+        inject_value = matching_rules[0].get("inject")
+        assert inject_value is not None, (
+            f"instruction-refinement rule {condition!r} is missing 'inject' field"
+        )
+        assert "l2-evidence-review" in inject_value, (
+            f"inject value must reference 'l2-evidence-review'; got: {inject_value!r}"
+        )
+        assert "architect" in inject_value, (
+            f"inject value must reference 'architect' (the target stage); got: {inject_value!r}"
+        )
 
 
 def test_skill_l2_evidence_review_phase_defined() -> None:
@@ -329,16 +413,32 @@ def test_pipeline_inject_field_consistency() -> None:
         f"needs-research inject must reference 'research-phase'; got {nr_rule['inject']!r}"
     )
 
-    ir_rule = by_condition.get("knowledge == instruction-refinement", {})
-    assert "inject" in ir_rule, "'knowledge == instruction-refinement' rule must have inject field"
-    assert "l2-evidence-review" in ir_rule["inject"], (
-        f"instruction-refinement inject must reference 'l2-evidence-review'; "
-        f"got {ir_rule['inject']!r}"
+    lightweight_ir_rule = by_condition.get(
+        "knowledge == instruction-refinement AND complexity == simple AND risk == additive", {}
     )
+    fallback_ir_rule = by_condition.get("knowledge == instruction-refinement", {})
 
-    assert nr_rule["inject"] != ir_rule["inject"], (
-        "inject values for needs-research and instruction-refinement must be distinct"
+    for condition, rule in (
+        (
+            "knowledge == instruction-refinement AND complexity == simple AND risk == additive",
+            lightweight_ir_rule,
+        ),
+        ("knowledge == instruction-refinement", fallback_ir_rule),
+    ):
+        assert "inject" in rule, f"{condition!r} rule must have inject field"
+        assert "l2-evidence-review" in rule["inject"], (
+            f"{condition!r} inject must reference 'l2-evidence-review'; "
+            f"got {rule['inject']!r}"
+        )
+
+    assert nr_rule["inject"] != lightweight_ir_rule["inject"], (
+        "needs-research and lightweight instruction-refinement inject values must be distinct"
     )
-    assert "architect" in nr_rule["inject"] and "architect" in ir_rule["inject"], (
-        "Both inject directives must target the 'architect' stage"
+    assert nr_rule["inject"] != fallback_ir_rule["inject"], (
+        "needs-research and fallback instruction-refinement inject values must be distinct"
     )
+    assert (
+        "architect" in nr_rule["inject"]
+        and "architect" in lightweight_ir_rule["inject"]
+        and "architect" in fallback_ir_rule["inject"]
+    ), "All inject directives must target the 'architect' stage"

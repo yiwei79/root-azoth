@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 51
+    current_patch: 53
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -373,9 +373,6 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
-      - id: T-005
-        title: "Low-risk instruction-refinement lightweight lane"
-        decision_ref: [D23, D44]
       - id: T-006
         title: "First-class iterative revise-and-continue pipeline loops"
         decision_ref: [D23, D44]
@@ -402,6 +399,7 @@ versions:
       - {id: T-003, title: "Co-primary command migration batch 2 — delivery/orchestration commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D23, D44, D46]}
       - {id: T-004, title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit", completed_date: "2026-04-17", decision_ref: [D11, D19, D21, D46, D52]}
       - {id: T-008, title: "Minimal bounded research sufficiency gate", completed_date: "2026-04-18", decision_ref: [D23, D44, D45, D46, D52]}
+      - {id: T-005, title: "Low-risk instruction-refinement lightweight lane", completed_date: "2026-04-18", decision_ref: [D23, D44]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -511,38 +509,43 @@ initiatives:
 
   # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001
-    title: "auto-router L2 / self-improve lane"
+    title: auto-router L2 / self-improve lane
     category: pipeline
     theme: B
     dimensions:
-      themes: [B]
-      categories: [pipeline]
-      tracks: [instruction-refinement, routing]
+      themes:
+      - B
+      categories:
+      - pipeline
+      tracks:
+      - instruction-refinement
+      - routing
     phase: v0.2.0-p2
     priority: medium
-    task_ref: T-005
+    task_ref: T-006
     slices:
-      - task_ref: T-005
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
-        phase: v0.2.0-p2
-        status: active
-        role: primary
-      - task_ref: T-006
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-006.yaml"
-        phase: v0.2.0-p2
-        status: planned
-        role: follow-on
-    summary: >
-      P1-008 delivered the full-pipeline instruction-refinement foundation:
-      `knowledge == instruction-refinement`, Rule 4 routing, and the
-      `l2-evidence-review` inject into the architect stage. The remaining
-      follow-on is optional low-risk refinement routing: define when
-      instruction-refinement can use a lighter lane without weakening the
-      current conservative fallback for ambiguous, governance-touching, or
-      kernel-adjacent work.
-    decision_ref: [D23, D44]
-    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
+    - task_ref: T-005
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-006
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
+      phase: v0.2.0-p2
+      status: active
+      role: primary
+    summary: 'P1-008 delivered the full-pipeline instruction-refinement foundation:
+      `knowledge == instruction-refinement`, Rule 4 routing, and the `l2-evidence-review`
+      inject into the architect stage. The remaining follow-on is optional low-risk
+      refinement routing: define when instruction-refinement can use a lighter lane
+      without weakening the current conservative fallback for ambiguous, governance-touching,
+      or kernel-adjacent work.
 
+      '
+    decision_ref:
+    - D23
+    - D44
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
   - id: INI-PPL-002
     title: "Eval / eval-swarm wiring drift hardening"
     category: pipeline
