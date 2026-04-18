@@ -2120,19 +2120,15 @@ items:
   source: ep-239
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 2
   created_date: '2026-04-18'
-  description: 'Add a mechanical pre-delivery guard for tasks that depend on latest/current
-    external facts such as platform behavior, APIs, policies, enums, or specs. Deliverables:
-    (1) a detection path that marks these goals as research-required before analysis
-    or edits; (2) an enforced official-source research checkpoint before Checkpoint
-    Gamma or delivery work proceeds; (3) aligned orchestrator / DFA+ / adapter-facing
-    guidance so repo-local docs are never treated as sufficient evidence when they
-    are themselves under audit; (4) regression coverage proving the gate fires for
-    temporally unstable external-knowledge tasks and does not trigger for stable local-only
-    work.'
+  completed_date: '2026-04-18'
+  description: 'Governance seed for the evidence-grounding initiative opened from
+    ep-239. This item is now absorbed into INI-EVI-001/T-008 so there is a single
+    live implementation target for the minimal bounded research sufficiency gate
+    instead of parallel backlog work.'
 - id: BL-055
   title: Codex pipeline-entry hardening for staged execution mode
   source: ep-243
@@ -2204,4 +2200,107 @@ items:
     without human restatement of the full pipeline contract. Non-goal: this slice
     is not another wording-only prompt refinement; it adds explicit runtime support
     for iterative pipeline improvement.'
-completed: []
+- id: T-008
+  title: Minimal bounded research sufficiency gate
+  source: roadmap-evidence-initiative-2026-04-18
+  roadmap_ref: T-008
+  initiative_ref: INI-EVI-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-18'
+  decision_ref:
+  - D23
+  - D44
+  - D45
+  - D46
+  - D52
+  description: 'Minimal bounded rollout for evidence-grounded external knowledge.
+    Deliverables: (1) detect explicit pipeline-entry goals that depend on latest/current
+    external facts; (2) require an explicitly referenced local research capsule before
+    analysis or edits continue; (3) fail closed when the capsule is missing, malformed,
+    stale by bounded rule, or clearly insufficient; (4) add regression coverage
+    proving latest/current external-fact goals stop while stable local-only goals
+    continue. Non-goal: this slice does not yet build the reusable research-bank
+    sufficiency model.'
+- id: T-009
+  title: Local research capsule bank + sufficiency checker
+  source: roadmap-evidence-initiative-2026-04-18
+  roadmap_ref: T-009
+  initiative_ref: INI-EVI-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-18'
+  decision_ref:
+  - D11
+  - D23
+  - D45
+  - D46
+  blocked_by:
+  - T-008
+  description: 'Expand the bounded gate into reusable research knowledge. Deliverables:
+    (1) define the local research capsule metadata for coverage, volatility, freshness,
+    and limitations; (2) derive required knowledge questions from a goal; (3) decide
+    `research_sufficient`, `research_refresh_needed`, or `research_missing` mechanically;
+    (4) add regression coverage for stale, partial, conflicting, and reusable local
+    research. Non-goal: this slice does not yet harden every platform/workflow surface.'
+- id: T-010
+  title: Research sufficiency platform parity + workflow hardening
+  source: roadmap-evidence-initiative-2026-04-18
+  roadmap_ref: T-010
+  initiative_ref: INI-EVI-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-18'
+  decision_ref:
+  - D23
+  - D46
+  - D50
+  - D52
+  blocked_by:
+  - T-009
+  description: 'Carry the research sufficiency model across the supported control-plane
+    surfaces. Deliverables: (1) align Codex/Claude-facing pipeline entry and workflow
+    guidance with the evidence-grounding contract; (2) ensure continuity and closeout
+    surfaces reflect initiative slice progression rather than prose-only intent;
+    (3) add platform-parity tests so evidence-grounded behavior cannot silently drift
+    by harness. Non-goal: this slice does not broaden the research trust policy beyond
+    Azoth''s bounded sufficiency contract.'
+- id: BL-057
+  title: Close canonical command migration bundles atomically
+  source: SRF-2026-04-17-003
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-18'
+  description: 'Review the remaining canonical command-contract migration surfaces
+    together and land them as an atomic bundle instead of allowing command contracts,
+    wrapper skills, and parity expectations to drift independently. The slice should
+    verify the command-contract source of truth, confirm deploy/parity behavior across
+    the affected command and wrapper surfaces, and only land the migration once the
+    related tests and mirrors move together.'
+- id: BL-058
+  title: Review and codify semantic drift checks for legacy command mirrors
+  source: SRF-2026-04-17-004
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-18'
+  description: 'Decide whether semantic-equivalence checks are the intended long-term
+    deploy contract for legacy Claude markdown command mirrors, and align the regression
+    tests with that policy explicitly. The slice should verify the current azoth-deploy
+    parity expectations, document the intended comparison rule, and ensure the test
+    contract changes are anchored to the corresponding command migration behavior
+    rather than drifting as an isolated test tweak.'

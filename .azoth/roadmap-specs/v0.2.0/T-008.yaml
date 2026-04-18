@@ -1,0 +1,41 @@
+id: T-008
+roadmap_version: v0.2.0
+title: Minimal bounded research sufficiency gate
+decision_ref:
+- D23
+- D44
+- D45
+- D46
+- D52
+intent: >
+  Add the first bounded mechanical stop that prevents explicit pipeline-entry work
+  from proceeding on stale model memory when the goal depends on latest/current
+  external facts.
+problem: >
+  Azoth currently has governance intent around external research, but the system
+  still relies too much on orchestration judgment and prompt wording to decide
+  when current external reality must be re-verified. That leaves room for sessions
+  to begin analysis or edits before establishing real-world evidence.
+scope:
+- "Detect explicit pipeline-entry goals that depend on latest/current external facts"
+- "Require an explicitly referenced local research capsule before analysis or edits continue"
+- "Fail closed when the capsule is missing, malformed, stale by bounded rule, or obviously insufficient"
+- "Add bounded regression coverage for research-required vs local-only entry cases"
+non_goals:
+- "Designing the full reusable research-bank freshness model"
+- "Introducing a strict global domain allowlist as the main control"
+- "Hardening every downstream platform/workflow surface in the same slice"
+acceptance:
+- "Explicit latest/current external-fact pipeline goals are classified as research-required before delivery work proceeds"
+- "A valid local research capsule can satisfy the bounded allow-path for this slice"
+- "Missing, malformed, stale, or clearly insufficient capsules stop the run rather than allowing analysis on probabilistic memory alone"
+- "Tests prove stable local-only pipeline goals do not trigger the gate"
+dependencies: []
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = bounded entry detection plus capsule-required stop. Phase 2 = refine
+  the stale/insufficient criteria only if the first bounded rule proves too weak
+  or too strict in practice.

@@ -606,6 +606,98 @@ def test_governed_closeout_completes_real_roadmap_ref_task(
     assert '{id: P1-017, title: "Governed closeout", completed_date:' in roadmap_text
 
 
+def test_governed_closeout_retargets_initiative_alias_to_next_pending_slice(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-041")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-041",
+        roadmap_ref="T-008",
+        initiative_ref="INI-EVI-001",
+        target_version="v0.2.0-p1",
+    )
+    (repo_root / ".azoth" / "roadmap.yaml").write_text(
+        "\n".join(
+            [
+                "active_version: v0.2.0-p1",
+                "versions:",
+                "  - id: v0.2.0-p1",
+                "    status: active",
+                "    current_patch: 29",
+                "    tasks:",
+                "      - id: T-008",
+                '        title: "Minimal bounded research sufficiency gate"',
+                "        decision_ref: [D23, D44]",
+                "    completed_tasks: []",
+                "initiatives:",
+                "  - id: INI-EVI-001",
+                '    title: "Evidence-grounded external knowledge"',
+                "    category: pipeline",
+                "    theme: B",
+                "    phase: v0.2.0-p1",
+                "    task_ref: T-008",
+                '    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-008.yaml"',
+                "    dimensions:",
+                "      themes: [B, C, D]",
+                "      categories: [pipeline, memory, platform]",
+                "      tracks: [research-sufficiency, evidence-capsules, freshness]",
+                "    slices:",
+                "      - task_ref: T-008",
+                '        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-008.yaml"',
+                "        phase: v0.2.0-p1",
+                "        status: active",
+                "        role: primary",
+                "      - task_ref: T-009",
+                '        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-009.yaml"',
+                "        phase: v0.2.0-p1",
+                "        status: planned",
+                "        role: follow-on",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
+    initiative = roadmap["initiatives"][0]
+    assert initiative["task_ref"] == "T-009"
+    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-009.yaml"
+    assert initiative["phase"] == "v0.2.0-p1"
+    assert initiative["slices"] == [
+        {
+            "task_ref": "T-008",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-008.yaml",
+            "phase": "v0.2.0-p1",
+            "status": "complete",
+            "role": "historical",
+        },
+        {
+            "task_ref": "T-009",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-009.yaml",
+            "phase": "v0.2.0-p1",
+            "status": "active",
+            "role": "primary",
+        },
+    ]
+
+
 def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -788,6 +880,58 @@ def test_governed_closeout_preserves_checkpoint_fields_in_session_state(
     assert session_state["pending_stages"] == ["builder_apply", "reviewer_gate"]
     assert session_state["pause_reason"] == "human-gate"
     assert session_state["active_run_id"] == "run-123"
+
+
+def test_governed_administrative_finalize_closes_resumable_session_without_version_bump(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd, check))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root, administrative_finalize=True)
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    session_entry = ledger["sessions"][0]
+    assert session_entry["status"] == "closed"
+    assert session_entry["next_action"] == (
+        "Administrative finalize complete — run `/next` to select the next scoped task."
+    )
+    assert "active_run_id" not in session_entry
+    assert "closed_at" in session_entry
+    assert "write_claim" not in ledger
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["state"] == "closed"
+    assert session_state["next_action"] == session_entry["next_action"]
+    assert "active_run_id" not in session_state
+
+    assert version_bump_calls == []
 
 
 def test_governed_closeout_creates_session_registry_entry_when_missing(

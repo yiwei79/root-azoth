@@ -1,0 +1,41 @@
+id: T-009
+roadmap_version: v0.2.0
+title: Local research capsule bank + sufficiency checker
+decision_ref:
+- D11
+- D23
+- D45
+- D46
+intent: >
+  Turn the bounded research gate into a reusable local knowledge system that can
+  decide when prior research is sufficient, when it must be refreshed, and when
+  it is missing entirely.
+problem: >
+  A stop-only gate prevents stale-memory execution, but it does not yet let Azoth
+  reuse prior research responsibly. Without explicit freshness, coverage, and
+  limitation metadata, the orchestrator still has to infer whether local research
+  is current enough and broad enough for the session goal.
+scope:
+- "Define the research capsule metadata for coverage, volatility, freshness, and limitations"
+- "Derive required knowledge questions from the session goal"
+- "Implement a bounded sufficiency outcome: `research_sufficient`, `research_refresh_needed`, or `research_missing`"
+- "Add regression coverage for stale, partial, conflicting, and reusable local capsules"
+non_goals:
+- "Solving every source-trust question with a new global registry"
+- "Hardening all platform-specific workflow surfaces in the same slice"
+- "Replacing the bounded T-008 gate before the reuse model is proven"
+acceptance:
+- "Capsules carry enough metadata to support explicit freshness and coverage checks"
+- "The sufficiency checker can distinguish reusable local research from research that must be refreshed"
+- "Tests prove stale, partial, or conflicting capsules do not silently satisfy the gate"
+- "Tests prove sufficiently fresh and adequately covering capsules can be reused"
+dependencies:
+- T-008
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = schema plus checker for the first bounded volatility classes. Phase 2
+  = refine heuristics and freshness policy once real sessions show where the
+  bounded model is too conservative or too permissive.

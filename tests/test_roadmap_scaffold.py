@@ -73,6 +73,8 @@ def test_scaffold_roadmap_task_creates_backlog_roadmap_spec_and_initiative_link(
             """\
             - id: INI-RST-004
               title: Roadmap/backlog/spec scaffolding
+              category: run-state
+              theme: A
               phase: null
               priority: medium
               summary: >
@@ -132,6 +134,20 @@ def test_scaffold_roadmap_task_creates_backlog_roadmap_spec_and_initiative_link(
     assert initiative["phase"] == "v0.2.0-p2"
     assert initiative["task_ref"] == "T-001"
     assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-001.yaml"
+    assert initiative["dimensions"] == {
+        "themes": ["A"],
+        "categories": ["run-state"],
+        "tracks": [],
+    }
+    assert initiative["slices"] == [
+        {
+            "task_ref": "T-001",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-001.yaml",
+            "phase": "v0.2.0-p2",
+            "status": "active",
+            "role": "primary",
+        }
+    ]
 
     spec_path = specs_root / "v0.2.0" / "T-001.yaml"
     spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
@@ -229,3 +245,175 @@ def test_scaffold_backlog_only_creates_bl_item_without_roadmap_or_spec(tmp_path:
     assert "roadmap_ref" not in created_item
     assert not (specs_root / "v0.2.0" / "BL-010.yaml").exists()
     assert roadmap_path.read_text(encoding="utf-8") == before_roadmap
+
+
+def test_scaffold_roadmap_task_appends_follow_on_slice_without_changing_live_primary(tmp_path: Path) -> None:
+    roadmap_path, backlog_path, specs_root = _write_repo(
+        tmp_path,
+        active_version="v0.2.0-p2",
+        milestone="v0.2.0",
+        versions_content=textwrap.dedent(
+            """\
+            - id: v0.2.0-p2
+              status: active
+              tasks:
+                - id: T-005
+                  title: Existing primary slice
+            """
+        ).rstrip(),
+        initiatives_content=textwrap.dedent(
+            """\
+            - id: INI-PPL-001
+              title: Pipeline initiative
+              category: pipeline
+              theme: B
+              phase: v0.2.0-p2
+              task_ref: T-005
+              spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
+              summary: >
+                Existing live slice.
+              slices:
+                - task_ref: T-005
+                  spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
+                  phase: v0.2.0-p2
+                  status: active
+                  role: primary
+            """
+        ).rstrip(),
+        backlog_items=textwrap.dedent(
+            """\
+            - id: T-005
+              roadmap_ref: T-005
+              status: pending
+            """
+        ).rstrip(),
+        spec_files=["T-005.yaml"],
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--title",
+            "Queued follow-on slice",
+            "--initiative-ref",
+            "INI-PPL-001",
+            "--roadmap-yaml",
+            str(roadmap_path),
+            "--backlog-yaml",
+            str(backlog_path),
+            "--specs-root",
+            str(specs_root),
+            "--created-date",
+            "2026-04-18",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0] == "T-006"
+
+    roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
+    initiative = roadmap["initiatives"][0]
+    assert initiative["task_ref"] == "T-005"
+    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
+    assert initiative["slices"] == [
+        {
+            "task_ref": "T-005",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-005.yaml",
+            "phase": "v0.2.0-p2",
+            "status": "active",
+            "role": "primary",
+        },
+        {
+            "task_ref": "T-006",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-006.yaml",
+            "phase": "v0.2.0-p2",
+            "status": "planned",
+            "role": "follow-on",
+        },
+    ]
+
+
+def test_scaffold_roadmap_task_promotes_alias_when_existing_primary_is_complete(tmp_path: Path) -> None:
+    roadmap_path, backlog_path, specs_root = _write_repo(
+        tmp_path,
+        active_version="v0.2.0-p2",
+        milestone="v0.2.0",
+        versions_content=textwrap.dedent(
+            """\
+            - id: v0.2.0-p2
+              status: active
+              tasks: []
+              completed_tasks:
+                - id: T-005
+                  title: Seed slice
+            """
+        ).rstrip(),
+        initiatives_content=textwrap.dedent(
+            """\
+            - id: INI-PPL-001
+              title: Pipeline initiative
+              category: pipeline
+              theme: B
+              phase: v0.2.0-p1
+              task_ref: T-005
+              spec_ref: ".azoth/roadmap-specs/v0.2.0/T-005.yaml"
+              summary: >
+                Historical seed slice.
+            """
+        ).rstrip(),
+        backlog_items=textwrap.dedent(
+            """\
+            - id: T-005
+              roadmap_ref: T-005
+              status: complete
+            """
+        ).rstrip(),
+        spec_files=["T-005.yaml"],
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--title",
+            "Replacement live slice",
+            "--initiative-ref",
+            "INI-PPL-001",
+            "--roadmap-yaml",
+            str(roadmap_path),
+            "--backlog-yaml",
+            str(backlog_path),
+            "--specs-root",
+            str(specs_root),
+            "--created-date",
+            "2026-04-18",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0] == "T-006"
+
+    roadmap = yaml.safe_load(roadmap_path.read_text(encoding="utf-8"))
+    initiative = roadmap["initiatives"][0]
+    assert initiative["phase"] == "v0.2.0-p2"
+    assert initiative["task_ref"] == "T-006"
+    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-006.yaml"
+    assert initiative["slices"] == [
+        {
+            "task_ref": "T-005",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-005.yaml",
+            "phase": "v0.2.0-p1",
+            "status": "complete",
+            "role": "historical",
+        },
+        {
+            "task_ref": "T-006",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-006.yaml",
+            "phase": "v0.2.0-p2",
+            "status": "active",
+            "role": "primary",
+        },
+    ]

@@ -13,7 +13,7 @@ SPECS_DIR = REPO / ".azoth" / "roadmap-specs" / "v0.2.0"
 
 
 def _find_task(road: dict, tid: str) -> dict | None:
-    """Find a task by id in any v0.2.0-pN version tasks/completed_tasks, or initiatives (by task_ref)."""
+    """Find a task by id in any v0.2.0-pN version tasks/completed_tasks, or initiatives."""
     for block in road["versions"]:
         bid = block.get("id", "")
         if bid.startswith("v0.2.0-p"):
@@ -24,6 +24,9 @@ def _find_task(road: dict, tid: str) -> dict | None:
     for ini in road.get("initiatives") or []:
         if ini.get("task_ref") == tid or ini.get("id") == tid:
             return ini
+        for item in ini.get("slices") or []:
+            if isinstance(item, dict) and item.get("task_ref") == tid:
+                return ini
     return None
 
 
@@ -59,6 +62,9 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-012",
         "P1-013",
         "T-005",
+        "T-008",
+        "T-009",
+        "T-010",
     ):
         task = _find_task(road, tid)
         assert task is not None, (
@@ -125,3 +131,39 @@ def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs()
         "Historical completed seed tasks must not reappear in the active p2 task list "
         "as if they were scheduled follow-on work."
     )
+
+
+def test_evidence_grounding_initiative_is_multi_dimensional_and_slice_backed() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+    initiatives = {item["id"]: item for item in road.get("initiatives") or []}
+
+    evi001 = initiatives["INI-EVI-001"]
+    assert evi001.get("theme") == "B"
+    assert evi001.get("category") == "pipeline"
+    assert evi001.get("dimensions") == {
+        "themes": ["B", "C", "D"],
+        "categories": ["pipeline", "memory", "platform"],
+        "tracks": ["research-sufficiency", "evidence-capsules", "freshness"],
+    }
+    slices = evi001.get("slices") or []
+    assert [item.get("task_ref") for item in slices] == ["T-008", "T-009", "T-010"]
+    assert slices[0]["role"] == "primary"
+    assert slices[0]["status"] == "active"
+    assert slices[1]["status"] == "planned"
+    assert slices[2]["status"] == "planned"
+
+
+def test_all_initiatives_expose_dimensions_and_slices() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+
+    for initiative in road.get("initiatives") or []:
+        assert "dimensions" in initiative, f"{initiative['id']} missing dimensions"
+        assert "slices" in initiative, f"{initiative['id']} missing slices"
+        dimensions = initiative["dimensions"]
+        assert isinstance(dimensions, dict), f"{initiative['id']} dimensions must be a mapping"
+        assert isinstance(dimensions.get("themes"), list), f"{initiative['id']} themes must be a list"
+        assert isinstance(
+            dimensions.get("categories"), list
+        ), f"{initiative['id']} categories must be a list"
+        assert isinstance(dimensions.get("tracks"), list), f"{initiative['id']} tracks must be a list"
+        assert isinstance(initiative["slices"], list), f"{initiative['id']} slices must be a list"

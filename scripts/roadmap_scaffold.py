@@ -95,6 +95,145 @@ def _default_source(prefix: str, created_date: str) -> str:
     return f"{prefix}-{created_date}"
 
 
+def _expected_spec_ref(*, milestone: str, item_id: str) -> str:
+    return f".azoth/roadmap-specs/{milestone}/{item_id}.yaml"
+
+
+def _completed_task_ids(roadmap: dict[str, Any], backlog: dict[str, Any]) -> set[str]:
+    completed: set[str] = set()
+
+    for version in roadmap.get("versions") or []:
+        if not isinstance(version, dict):
+            continue
+        for entry in version.get("completed_tasks") or []:
+            if isinstance(entry, dict):
+                task_id = str(entry.get("id") or "").strip()
+                if task_id:
+                    completed.add(task_id)
+
+    for item in backlog.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("status") or "") != "complete":
+            continue
+        task_id = str(item.get("roadmap_ref") or item.get("id") or "").strip()
+        if task_id:
+            completed.add(task_id)
+
+    return completed
+
+
+def _ensure_initiative_dimensions(initiative: dict[str, Any]) -> None:
+    dimensions = initiative.get("dimensions")
+    if not isinstance(dimensions, dict):
+        dimensions = {}
+        initiative["dimensions"] = dimensions
+
+    theme = str(initiative.get("theme") or "").strip()
+    if "themes" not in dimensions and theme:
+        dimensions["themes"] = [theme]
+
+    category = str(initiative.get("category") or "").strip()
+    if "categories" not in dimensions and category:
+        dimensions["categories"] = [category]
+
+    dimensions.setdefault("tracks", [])
+
+
+def _initiative_slices(initiative: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = initiative.get("slices")
+    if isinstance(raw, list):
+        return [deepcopy(item) for item in raw if isinstance(item, dict)]
+
+    task_ref = str(initiative.get("task_ref") or "").strip()
+    spec_ref = str(initiative.get("spec_ref") or "").strip()
+    phase = initiative.get("phase")
+    if not task_ref and not spec_ref and phase is None:
+        return []
+
+    status = "active" if phase else "historical"
+    return [
+        {
+            "task_ref": task_ref or None,
+            "spec_ref": spec_ref or None,
+            "phase": phase,
+            "status": status,
+            "role": "primary",
+        }
+    ]
+
+
+def _sync_slice_statuses(
+    slices: list[dict[str, Any]],
+    *,
+    completed_ids: set[str],
+) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for item in slices:
+        task_ref = str(item.get("task_ref") or "").strip()
+        normalized_item = deepcopy(item)
+        if task_ref and task_ref in completed_ids:
+            normalized_item["status"] = "complete"
+            if str(normalized_item.get("role") or "") == "primary":
+                normalized_item["role"] = "historical"
+        normalized.append(normalized_item)
+    return normalized
+
+
+def _primary_slice_index(
+    initiative: dict[str, Any],
+    slices: list[dict[str, Any]],
+) -> int | None:
+    alias_task_ref = str(initiative.get("task_ref") or "").strip()
+    if alias_task_ref:
+        for index, item in enumerate(slices):
+            if str(item.get("task_ref") or "").strip() == alias_task_ref:
+                return index
+
+    for index, item in enumerate(slices):
+        if str(item.get("role") or "") == "primary":
+            return index
+    return 0 if slices else None
+
+
+def _configure_initiative_for_new_slice(
+    initiative: dict[str, Any],
+    *,
+    item_id: str,
+    active_version: str,
+    milestone: str,
+    completed_ids: set[str],
+) -> None:
+    _ensure_initiative_dimensions(initiative)
+    slices = _sync_slice_statuses(_initiative_slices(initiative), completed_ids=completed_ids)
+    primary_index = _primary_slice_index(initiative, slices)
+    primary_slice = slices[primary_index] if primary_index is not None else None
+    primary_task_ref = str(primary_slice.get("task_ref") or "").strip() if primary_slice else ""
+    primary_live = bool(primary_task_ref) and primary_task_ref not in completed_ids
+
+    expected_spec_ref = _expected_spec_ref(milestone=milestone, item_id=item_id)
+    new_slice = {
+        "task_ref": item_id,
+        "spec_ref": expected_spec_ref,
+        "phase": active_version,
+        "status": "planned" if primary_live else "active",
+        "role": "follow-on" if primary_live else "primary",
+    }
+
+    if primary_live:
+        slices.append(new_slice)
+    else:
+        if primary_index is not None:
+            slices[primary_index]["status"] = "complete"
+            slices[primary_index]["role"] = "historical"
+        slices.append(new_slice)
+        initiative["phase"] = active_version
+        initiative["task_ref"] = item_id
+        initiative["spec_ref"] = expected_spec_ref
+
+    initiative["slices"] = slices
+
+
 def _build_backlog_item(
     *,
     item_id: str,
@@ -199,6 +338,7 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
     decision_ref = _normalize_decision_refs(args.decision_ref)
     blocked_by = _normalize_blocked_by(args.blocked_by)
     initiative = _find_initiative(roadmap, args.initiative_ref)
+    completed_ids = _completed_task_ids(roadmap, backlog)
 
     if args.namespace == "backlog":
         item_id = roadmap_task_id.next_backlog_id(roadmap, backlog, args.specs_root)
@@ -276,28 +416,13 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
     _dump_yaml(spec_path, spec_stub)
 
     if initiative is not None:
-        existing_task_ref = initiative.get("task_ref")
-        if existing_task_ref and existing_task_ref != item_id:
-            _die(
-                f"initiative {args.initiative_ref!r} already points at task_ref {existing_task_ref!r}; "
-                "manual update required"
-            )
-        existing_phase = initiative.get("phase")
-        if existing_phase not in (None, active_version):
-            _die(
-                f"initiative {args.initiative_ref!r} already has phase {existing_phase!r}; "
-                "manual rescheduling required"
-            )
-        existing_spec_ref = initiative.get("spec_ref")
-        expected_spec_ref = f".azoth/roadmap-specs/{milestone}/{item_id}.yaml"
-        if existing_spec_ref and existing_spec_ref != expected_spec_ref:
-            _die(
-                f"initiative {args.initiative_ref!r} already points at spec_ref {existing_spec_ref!r}; "
-                "manual update required"
-            )
-        initiative["phase"] = active_version
-        initiative["task_ref"] = item_id
-        initiative["spec_ref"] = expected_spec_ref
+        _configure_initiative_for_new_slice(
+            initiative,
+            item_id=item_id,
+            active_version=active_version,
+            milestone=milestone,
+            completed_ids=completed_ids,
+        )
 
     _dump_yaml(args.backlog_yaml, backlog)
     _dump_yaml(args.roadmap_yaml, roadmap)

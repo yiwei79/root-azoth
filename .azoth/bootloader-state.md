@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.47 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 45
+0.1.2.48 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 47
 
 ## Last Session
-- **Session**: 2026-04-18-bl-056
-- **Goal**: BL-056: Make governed pipeline approvals advance execution state mechanically
+- **Session**: 2026-04-18-bl-054
+- **Goal**: BL-054: Add mechanical research-required gate for latest/current external-fact tasks
 - **Pipeline**: governed
-- **Outcome**: closed
-- **Episode**: ep-250 (success)
+- **Outcome**: parked
+- **Episode**: ep-255 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -19,4 +19,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Revise architecture brief around explicit real-world evidence acquisition and rerun governance review at deliver_full_s3.

@@ -1,0 +1,39 @@
+id: T-010
+roadmap_version: v0.2.0
+title: Research sufficiency platform parity + workflow hardening
+decision_ref:
+- D23
+- D46
+- D50
+- D52
+intent: >
+  Carry the evidence-grounded research sufficiency model across Azoth’s supported
+  entry, continuity, and closeout surfaces so the contract remains honest by
+  platform and by workflow stage.
+problem: >
+  Even with a local sufficiency model, Azoth can still drift if only one harness
+  or one workflow surface enforces the behavior. The control plane needs parity
+  across pipeline entry, adapter-facing documentation, and continuity tooling so
+  evidence-grounded behavior is mechanical rather than conversational.
+scope:
+- "Align Codex/Claude-facing pipeline entry and workflow guidance with the research sufficiency contract"
+- "Ensure continuity and closeout surfaces understand initiative slice progression and research-grounded state"
+- "Add platform-parity tests that cover the supported evidence-grounding surfaces"
+non_goals:
+- "Broadening the research policy into a universal trust-scoring framework"
+- "Reworking unrelated roadmap, memory, or adapter contracts not touched by research sufficiency"
+- "Bundling T-008 or T-009 implementation into the same slice"
+acceptance:
+- "The evidence-grounding contract is stated consistently across the supported workflow surfaces"
+- "Continuity tooling reflects real slice progression rather than prose-only next-step language"
+- "Tests prove the supported platform surfaces do not silently drift away from the sufficiency model"
+dependencies:
+- T-009
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = parity and continuity hardening for the currently supported entry and
+  closeout surfaces. Phase 2 = widen parity only after the research sufficiency
+  model is stable in real use.

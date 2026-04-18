@@ -8,12 +8,13 @@ import pathlib
 import re
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timezone
 from typing import Any
 
 import yaml
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
-from run_ledger import release_write_claim, upsert_session
+from run_ledger import release_write_claim, upsert_run, upsert_session
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
@@ -354,6 +355,35 @@ def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
     return block_start, block_end
 
 
+def _find_initiative_block(text: str, initiative_id: str) -> tuple[int, int] | None:
+    initiatives_match = re.search(r"^initiatives:\s*$", text, re.MULTILINE)
+    if not initiatives_match:
+        return None
+
+    initiatives_block = text[initiatives_match.end() :]
+    start_match = re.search(
+        r'^(?P<indent>\s*)-\s+id:\s*["\']?' + re.escape(initiative_id) + r'["\']?\s*$',
+        initiatives_block,
+        re.MULTILINE,
+    )
+    if not start_match:
+        return None
+
+    item_indent = re.escape(start_match.group("indent"))
+    next_match = re.search(
+        rf"^{item_indent}-\s+id:\s",
+        initiatives_block[start_match.end() :],
+        re.MULTILINE,
+    )
+    block_start = initiatives_match.end() + start_match.start()
+    block_end = (
+        initiatives_match.end() + start_match.end() + next_match.start()
+        if next_match
+        else len(text)
+    )
+    return block_start, block_end
+
+
 def _find_roadmap_version(
     roadmap: dict[str, Any],
     *,
@@ -366,6 +396,143 @@ def _find_roadmap_version(
         if isinstance(version, dict) and str(version.get("id") or "") == version_id:
             return version
     return None
+
+
+def _find_initiative_for_task(
+    roadmap: dict[str, Any],
+    *,
+    task_id: str,
+) -> dict[str, Any] | None:
+    for initiative in roadmap.get("initiatives") or []:
+        if not isinstance(initiative, dict):
+            continue
+        if str(initiative.get("task_ref") or "") == task_id:
+            return initiative
+        for item in initiative.get("slices") or []:
+            if isinstance(item, dict) and str(item.get("task_ref") or "") == task_id:
+                return initiative
+    return None
+
+
+def _completed_task_ids(roadmap: dict[str, Any]) -> set[str]:
+    completed: set[str] = set()
+    for version in roadmap.get("versions") or []:
+        if not isinstance(version, dict):
+            continue
+        for entry in version.get("completed_tasks") or []:
+            if isinstance(entry, dict):
+                task_id = str(entry.get("id") or "").strip()
+                if task_id:
+                    completed.add(task_id)
+    return completed
+
+
+def _initiative_slices(initiative: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = initiative.get("slices")
+    if isinstance(raw, list):
+        return [item for item in raw if isinstance(item, dict)]
+
+    task_ref = str(initiative.get("task_ref") or "").strip()
+    spec_ref = str(initiative.get("spec_ref") or "").strip()
+    phase = initiative.get("phase")
+    if not task_ref and not spec_ref and phase is None:
+        return []
+
+    return [
+        {
+            "task_ref": task_ref or None,
+            "spec_ref": spec_ref or None,
+            "phase": phase,
+            "status": "active" if phase else "historical",
+            "role": "primary",
+        }
+    ]
+
+
+def _rewrite_initiative_block(
+    roadmap_path: pathlib.Path,
+    *,
+    initiative: dict[str, Any],
+) -> bool:
+    initiative_id = str(initiative.get("id") or "").strip()
+    if not initiative_id:
+        return False
+
+    text = roadmap_path.read_text(encoding="utf-8")
+    bounds = _find_initiative_block(text, initiative_id)
+    if bounds is None:
+        return False
+
+    rendered = textwrap.indent(
+        yaml.safe_dump([initiative], sort_keys=False, allow_unicode=True).rstrip("\n"),
+        "  ",
+    ) + "\n"
+    start, end = bounds
+    if start > 0 and text[start - 1] != "\n":
+        rendered = "\n" + rendered
+    roadmap_path.write_text(text[:start] + rendered + text[end:], encoding="utf-8")
+    return True
+
+
+def _sync_initiative_alias_after_task_completion(
+    repo_root: pathlib.Path,
+    *,
+    roadmap_task_id: str,
+) -> bool:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    roadmap = load_yaml(roadmap_path)
+    initiative = _find_initiative_for_task(roadmap, task_id=roadmap_task_id)
+    if initiative is None:
+        return False
+
+    slices = _initiative_slices(initiative)
+    if not slices:
+        return False
+
+    completed_ids = _completed_task_ids(roadmap)
+    changed = False
+    current_alias = str(initiative.get("task_ref") or "").strip()
+
+    for item in slices:
+        task_ref = str(item.get("task_ref") or "").strip()
+        if task_ref and task_ref in completed_ids and str(item.get("status") or "") != "complete":
+            item["status"] = "complete"
+            if str(item.get("role") or "") == "primary":
+                item["role"] = "historical"
+            changed = True
+
+    if current_alias == roadmap_task_id:
+        next_slice = next(
+            (
+                item
+                for item in slices
+                if str(item.get("task_ref") or "").strip() != roadmap_task_id
+                and str(item.get("task_ref") or "").strip() not in completed_ids
+                and str(item.get("status") or "") not in {"complete", "historical"}
+            ),
+            None,
+        )
+        if next_slice is not None:
+            for item in slices:
+                if item is next_slice:
+                    item["role"] = "primary"
+                    item["status"] = "active"
+                elif str(item.get("role") or "") == "primary":
+                    item["role"] = "historical"
+            initiative["task_ref"] = next_slice.get("task_ref")
+            initiative["spec_ref"] = next_slice.get("spec_ref")
+            initiative["phase"] = next_slice.get("phase")
+            changed = True
+            print(
+                f"W2c: initiative {initiative['id']} retargeted to next slice "
+                f"{initiative['task_ref']}"
+            )
+
+    if not changed:
+        return False
+
+    initiative["slices"] = slices
+    return _rewrite_initiative_block(roadmap_path, initiative=initiative)
 
 
 def _resolve_roadmap_task_id(
@@ -411,7 +578,7 @@ def _resolve_roadmap_task_id(
 
 def _find_section_bounds(block: str, section_name: str) -> tuple[int, int] | None:
     start_match = re.search(
-        rf"^(\s*){re.escape(section_name)}:\s*(?:null)?\s*$",
+        rf"^(\s*){re.escape(section_name)}:\s*(?:null|\[\])?\s*$",
         block,
         flags=re.MULTILINE,
     )
@@ -540,7 +707,7 @@ def _mark_roadmap_task_complete(
             completed_start, completed_end = completed_bounds
             completed_block = block[completed_start:completed_end]
             header_match = re.search(
-                r"^(\s*)completed_tasks:\s*(?:null)?\s*$",
+                r"^(\s*)completed_tasks:\s*(?:null|\[\])?\s*$",
                 completed_block,
                 flags=re.MULTILINE,
             )
@@ -619,6 +786,12 @@ def update_planning_completion(
     )
     if roadmap_changed:
         changed_paths.append(".azoth/roadmap.yaml")
+        initiative_changed = _sync_initiative_alias_after_task_completion(
+            repo_root,
+            roadmap_task_id=roadmap_task_id,
+        )
+        if initiative_changed and ".azoth/roadmap.yaml" not in changed_paths:
+            changed_paths.append(".azoth/roadmap.yaml")
     return changed_paths
 
 
@@ -654,6 +827,7 @@ def update_session_registry(
     scope: dict[str, Any],
     timestamp: str,
     selected_ide: str | None = None,
+    administrative_finalize: bool = False,
 ) -> tuple[str, str, str]:
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
     ledger = load_yaml(ledger_path) if ledger_path.exists() else {"schema_version": 1, "runs": []}
@@ -692,7 +866,12 @@ def update_session_registry(
             or "unknown"
         )
     )
-    if resumable_run is not None:
+    closed_next_action = (
+        "Administrative finalize complete — run `/next` to select the next scoped task."
+        if administrative_finalize
+        else default_next_action()
+    )
+    if resumable_run is not None and not administrative_finalize:
         next_action = str(
             resumable_run.get("next_action")
             or (matching_session.get("next_action") if isinstance(matching_session, dict) else None)
@@ -711,7 +890,24 @@ def update_session_registry(
         )
         session_status = "parked"
     else:
-        next_action = default_next_action()
+        next_action = closed_next_action
+        if resumable_run is not None and administrative_finalize:
+            upsert_run(
+                repo_root,
+                run_id=str(resumable_run.get("run_id") or preferred_run_id or ""),
+                mode=str(resumable_run.get("mode") or "auto"),
+                goal=str(resumable_run.get("goal") or goal),
+                status="complete",
+                next_action=closed_next_action,
+                session_id=session_id,
+                backlog_id=backlog_id,
+                ide=ide,
+                updated_at=timestamp,
+                stages_completed=resumable_run.get("stages_completed") or [],
+                active_stage_id=None,
+                pending_stage_ids=[],
+                pause_reason=None,
+            )
         upsert_session(
             repo_root,
             session_id=session_id,
@@ -725,7 +921,8 @@ def update_session_registry(
         )
         session_status = "closed"
 
-    return next_action, session_status, f"W2: session registry updated ({session_status})"
+    suffix = " — administrative finalize" if administrative_finalize else ""
+    return next_action, session_status, f"W2: session registry updated ({session_status}){suffix}"
 
 
 def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
@@ -912,6 +1109,7 @@ def update_session_state(
     next_action: str,
     existing_session_state: dict[str, Any],
     selected_ide: str | None = None,
+    clear_checkpoint: bool = False,
 ) -> str:
     goal = str(scope.get("goal") or "Session closeout")
     pending_decisions = existing_session_state.get("pending_decisions")
@@ -928,7 +1126,7 @@ def update_session_state(
         approved_scope=f"Completed: {goal}",
         next_action=next_action,
         selected_ide=str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
-        checkpoint=extract_session_checkpoint(existing_session_state),
+        checkpoint={} if clear_checkpoint else extract_session_checkpoint(existing_session_state),
     )
 
 
@@ -983,6 +1181,16 @@ def run_version_bump(repo_root: pathlib.Path) -> None:
         check=True,
     )
 
+
+def finalize_closeout_artifacts(
+    repo_root: pathlib.Path,
+    *,
+    administrative_finalize: bool = False,
+) -> None:
+    if administrative_finalize:
+        print("W4: Administrative finalize — skipping version-bump.py --patch")
+    else:
+        run_version_bump(repo_root)
     orientation_path = repo_root / ".azoth" / "session-orientation.txt"
     if orientation_path.exists():
         orientation_path.unlink()
@@ -995,6 +1203,7 @@ def run_closeout(
     repo_root: pathlib.Path = REPO_ROOT,
     *,
     reinforce_episode_ids: list[str] | None = None,
+    administrative_finalize: bool = False,
 ) -> None:
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
     enforce_governed_closeout_approval(repo_root, scope)
@@ -1050,6 +1259,7 @@ def run_closeout(
         scope=scope,
         timestamp=timestamp,
         selected_ide=selected_ide or None,
+        administrative_finalize=administrative_finalize,
     )
     print(registry_note)
     update_planning_completion(
@@ -1085,6 +1295,7 @@ def run_closeout(
         next_action=next_action,
         existing_session_state=existing_session_state,
         selected_ide=selected_ide or None,
+        clear_checkpoint=administrative_finalize,
     )
     print(session_state_note)
     update_bootloader_state(
@@ -1105,7 +1316,10 @@ def run_closeout(
         latest_episode=latest_episode,
         next_action=next_action,
     )
-    run_version_bump(repo_root)
+    finalize_closeout_artifacts(
+        repo_root,
+        administrative_finalize=administrative_finalize,
+    )
 
 
 def main() -> int:
@@ -1119,10 +1333,21 @@ def main() -> int:
         default=[],
         help="Exact prior episode id confirmed by the human for one reinforcement_count increment.",
     )
+    parser.add_argument(
+        "--administrative-finalize",
+        action="store_true",
+        help=(
+            "Close lifecycle state without a W4 patch bump. Use for bookkeeping-only "
+            "or already-bumped sessions that should end closed, not parked."
+        ),
+    )
     args = parser.parse_args()
 
     try:
-        run_closeout(reinforce_episode_ids=args.reinforce_episode_ids)
+        run_closeout(
+            reinforce_episode_ids=args.reinforce_episode_ids,
+            administrative_finalize=args.administrative_finalize,
+        )
     except CloseoutError as exc:
         print(str(exc), file=sys.stderr)
         return 1
