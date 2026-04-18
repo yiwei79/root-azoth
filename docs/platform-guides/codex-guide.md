@@ -257,6 +257,8 @@ the write surface honest. The current contract is:
   currently owns writes.
 - Safe pattern: keep non-owning worktrees in read-mostly discovery mode, then
   explicitly release or hand off the claim before implementation or closeout.
+- Producer sync now refreshes the local branch against the local integration
+  branch before commit creation, using `scripts/worktree_sync.py`.
 
 This gives Codex parallel-session safety without pretending Azoth's shared state
 surfaces are fully multi-writer yet. Future work can carve the repo into finer
@@ -268,8 +270,9 @@ parallel branch work is fine, but merges into the target branch should still be
 performed by one designated session at a time.
 
 `/worktree-sync` is the operational entrypoint for this protocol: on producer
-branches it behaves like sync-and-handoff, and on the integration branch it
-behaves like sync-and-merge-one, failing closed when the target worktree is dirty.
+branches it first refreshes against the local target branch, then behaves like
+sync-and-handoff; on the integration branch it behaves like sync-and-merge-one,
+failing closed when the target worktree is dirty.
 
 ## Deployment
 

@@ -35,6 +35,7 @@ A producer session may:
 
 - create a branch or worktree
 - explore, design, review, and implement locally
+- refresh from the local target branch before its sync commit
 - commit local changes on its own branch
 - hand its branch to the integrator
 
@@ -59,7 +60,7 @@ Only one integrator should exist at a time.
 
 1. Each session works on its own branch or worktree.
 2. One session is designated the current integrator.
-3. Producer sessions commit their local work and stop at branch-ready state.
+3. Producer sessions run `/worktree-sync`, which refreshes them against the local target branch before creating the sync commit.
 4. The integrator merges exactly one producer branch into the target branch.
 5. After the merge, the remaining producer sessions rebase or merge from the updated target branch.
 6. The next producer branch is integrated only after that refresh is complete.

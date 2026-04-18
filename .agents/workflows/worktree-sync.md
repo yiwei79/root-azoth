@@ -7,6 +7,7 @@ This command preserves Azoth's **single-integrator** parallel-session contract:
 - producer sessions sync local work and hand off their branch
 - the active integrator syncs and merges exactly one producer branch into the target branch
 - if the target branch worktree is dirty or another integration pass is in flight, stop
+- producer branches are refreshed against the local target branch before any sync commit is created
 
 No governance evaluation. No session close. Just sync under the parallel-session protocol.
 
@@ -29,17 +30,23 @@ Use when this worktree is on a feature, patch, or detached producer branch.
 
 ## Process
 
-1. **Check git status**: Identify all changed and untracked files
+1. **Run backend preflight**:
+   - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>]`
+   - Default target branch is the local active integration branch (normally `phase/v0.2.0-pN`)
+   - If target drift exists, the backend must stash tracked + untracked changes, rebase onto the local target branch, and restore the stash before commit creation
+   - If rebase or stash-restore conflicts occur, STOP immediately, resolve them, and rerun `/worktree-sync`
 
-2. **Stage changes**: `git add` specific files (not `-A` — review what's being staged)
+2. **Check git status**: Identify all changed and untracked files after the refresh
 
-3. **Generate commit message**: Concise, conventional-commit style summarizing the diff
+3. **Stage changes**: `git add` specific files (not `-A` — review what's being staged)
 
-4. **Commit**: `git commit -m "{message}"`
+4. **Generate commit message**: Concise, conventional-commit style summarizing the diff
 
-5. **Push** (if tracking a remote): `git push`
+5. **Commit**: `git commit -m "{message}"`
 
-6. **Report**:
+6. **Push** (if tracking a remote): `git push`
+
+7. **Report**:
    ```
    ## Sync Complete
    - Commit: {SHA}
@@ -96,5 +103,6 @@ Use when this worktree is on the active integration branch.
 - Treat `phase/v0.2.0-pN` as the normal integration branch unless the human names a different target
 - Preserve the **single integrator** contract from `docs/playbook/05-parallel-sessions.md`
 - Producer sessions must not merge themselves into the target branch while another integrator pass is active
+- Producer sessions must refresh against the local target branch **before** creating the sync commit
 - Integrator sessions merge **one** producer branch at a time, then stop so other sessions can refresh
 - If integration is unsafe, fail closed and explain why instead of improvising around a dirty target tree
