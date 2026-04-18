@@ -46,7 +46,9 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     return deepcopy(roadmap_task_id.load_yaml(path))
 
 
-def _ensure_active_version(roadmap: dict[str, Any], active_version: str | None) -> tuple[str, dict[str, Any]]:
+def _ensure_active_version(
+    roadmap: dict[str, Any], active_version: str | None
+) -> tuple[str, dict[str, Any]]:
     resolved = active_version or str(roadmap.get("active_version") or "").strip()
     if not resolved:
         _die("could not resolve active version from roadmap.yaml; pass --active-version")
@@ -58,9 +60,7 @@ def _ensure_active_version(roadmap: dict[str, Any], active_version: str | None) 
     _die(f"active version {resolved!r} was not found in roadmap.yaml versions[]")
 
 
-def _find_initiative(
-    roadmap: dict[str, Any], initiative_ref: str | None
-) -> dict[str, Any] | None:
+def _find_initiative(roadmap: dict[str, Any], initiative_ref: str | None) -> dict[str, Any] | None:
     if not initiative_ref:
         return None
 
@@ -298,7 +298,9 @@ def _build_spec_stub(
     delivery_pipeline: str,
     blocked_by: list[str],
 ) -> dict[str, Any]:
-    suggested_command = "/deliver-full" if delivery_pipeline == "governed" or target_layer == "M1" else "/auto"
+    suggested_command = (
+        "/deliver-full" if delivery_pipeline == "governed" or target_layer == "M1" else "/auto"
+    )
     return {
         "id": item_id,
         "roadmap_version": roadmap_version,
@@ -343,7 +345,9 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
     if args.namespace == "backlog":
         item_id = roadmap_task_id.next_backlog_id(roadmap, backlog, args.specs_root)
         source = args.source or _default_source("backlog-scaffold", created_date)
-        description = args.description or f'TODO: flesh out backlog-only description for "{args.title}".'
+        description = (
+            args.description or f'TODO: flesh out backlog-only description for "{args.title}".'
+        )
         backlog["items"].append(
             _build_backlog_item(
                 item_id=item_id,

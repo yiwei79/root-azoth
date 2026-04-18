@@ -307,7 +307,9 @@ def test_check_pipeline_gate_rejects_non_boolean_research_required(tmp_path: Pat
     assert "research_required" in message
 
 
-def test_check_pipeline_gate_allows_same_session_repo_local_research_evidence(tmp_path: Path) -> None:
+def test_check_pipeline_gate_allows_same_session_repo_local_research_evidence(
+    tmp_path: Path,
+) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
     expires = _future_iso()
@@ -329,7 +331,9 @@ def test_check_pipeline_gate_allows_same_session_repo_local_research_evidence(tm
     assert "Pipeline gate valid" in message
 
 
-def test_check_pipeline_gate_rejects_missing_research_evidence_when_required(tmp_path: Path) -> None:
+def test_check_pipeline_gate_rejects_missing_research_evidence_when_required(
+    tmp_path: Path,
+) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
     expires = _future_iso()
@@ -364,7 +368,9 @@ def test_check_pipeline_gate_rejects_malformed_research_evidence_object(tmp_path
     assert "research_evidence" in message
 
 
-def test_check_pipeline_gate_rejects_research_evidence_missing_required_field(tmp_path: Path) -> None:
+def test_check_pipeline_gate_rejects_research_evidence_missing_required_field(
+    tmp_path: Path,
+) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
     expires = _future_iso()
@@ -474,7 +480,9 @@ def test_check_pipeline_gate_rejects_windows_drive_research_evidence_path(tmp_pa
     assert "repo-relative" in message
 
 
-def test_check_pipeline_gate_rejects_parent_traversal_in_research_evidence_path(tmp_path: Path) -> None:
+def test_check_pipeline_gate_rejects_parent_traversal_in_research_evidence_path(
+    tmp_path: Path,
+) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
     expires = _future_iso()

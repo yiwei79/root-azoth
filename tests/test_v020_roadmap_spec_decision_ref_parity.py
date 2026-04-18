@@ -161,9 +161,13 @@ def test_all_initiatives_expose_dimensions_and_slices() -> None:
         assert "slices" in initiative, f"{initiative['id']} missing slices"
         dimensions = initiative["dimensions"]
         assert isinstance(dimensions, dict), f"{initiative['id']} dimensions must be a mapping"
-        assert isinstance(dimensions.get("themes"), list), f"{initiative['id']} themes must be a list"
-        assert isinstance(
-            dimensions.get("categories"), list
-        ), f"{initiative['id']} categories must be a list"
-        assert isinstance(dimensions.get("tracks"), list), f"{initiative['id']} tracks must be a list"
+        assert isinstance(dimensions.get("themes"), list), (
+            f"{initiative['id']} themes must be a list"
+        )
+        assert isinstance(dimensions.get("categories"), list), (
+            f"{initiative['id']} categories must be a list"
+        )
+        assert isinstance(dimensions.get("tracks"), list), (
+            f"{initiative['id']} tracks must be a list"
+        )
         assert isinstance(initiative["slices"], list), f"{initiative['id']} slices must be a list"

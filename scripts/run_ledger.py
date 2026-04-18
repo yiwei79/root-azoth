@@ -941,7 +941,9 @@ def cmd_status(args: argparse.Namespace) -> None:
         print("no active run")
     # Write-claim info
     write_claim = load_write_claim(_root_from_ledger_path(path))
-    claim_scope = "shared" if shared_write_claim_path(_root_from_ledger_path(path)) is not None else "local"
+    claim_scope = (
+        "shared" if shared_write_claim_path(_root_from_ledger_path(path)) is not None else "local"
+    )
     if isinstance(write_claim, dict):
         holder = write_claim.get("session_id", "?")
         expires = write_claim.get("expires_at", "?")

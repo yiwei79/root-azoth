@@ -86,7 +86,9 @@ def test_scope_conflict_allows_resume_of_active_session(tmp_path: Path) -> None:
     assert conflict is None
 
 
-def test_scope_conflict_allows_matching_pipeline_goal_when_live_scope_exists(tmp_path: Path) -> None:
+def test_scope_conflict_allows_matching_pipeline_goal_when_live_scope_exists(
+    tmp_path: Path,
+) -> None:
     repo_root = _write_scope(tmp_path, goal="BL-123: Active scope")
 
     conflict = scope_conflict_message(
@@ -133,7 +135,9 @@ def test_resolve_transition_uses_replace_for_next_when_live_scope_exists(tmp_pat
     assert decision.reason == "next-with-live-scope"
 
 
-def test_resolve_transition_prefers_extend_for_low_ttl_matching_pipeline_goal(tmp_path: Path) -> None:
+def test_resolve_transition_prefers_extend_for_low_ttl_matching_pipeline_goal(
+    tmp_path: Path,
+) -> None:
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat()
     repo_root = _write_scope(tmp_path, goal="BL-123: Active scope", expires_at=expires_at)
 

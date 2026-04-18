@@ -129,7 +129,9 @@ def _skill_path(root: Path, name: str) -> Path:
     return root / ".agents" / "skills" / f"azoth-{name}" / "SKILL.md"
 
 
-def _parsed_command_prompt(root: Path, prompt: str, *, name: str, arguments: str) -> ParsedPrompt | None:
+def _parsed_command_prompt(
+    root: Path, prompt: str, *, name: str, arguments: str
+) -> ParsedPrompt | None:
     if name in PIPELINE_COMMANDS:
         goal = arguments.strip()
         return ParsedPrompt(
@@ -216,7 +218,9 @@ def _freeform_transition_inputs(prompt: str) -> tuple[str, str]:
     if any(lowered.startswith(prefix) for prefix in _CONTINUE_PREFIXES):
         return "resume", ""
     if any(lowered.startswith(prefix) for prefix in _NEW_GOAL_PREFIXES):
-        normalized = re.sub(r"^\s*(start a new goal|start new goal|new goal)\s*:?\s*", "", stripped, flags=re.I)
+        normalized = re.sub(
+            r"^\s*(start a new goal|start new goal|new goal)\s*:?\s*", "", stripped, flags=re.I
+        )
         return "", normalized or stripped
     return "", stripped
 
@@ -309,7 +313,9 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
         guidance.append(
             "If staged delegation becomes unavailable at runtime, STOP after the Declaration and ask the human before continuing."
         )
-    guidance.append("For write-enabled or governed stages, follow the gate procedure before editing.")
+    guidance.append(
+        "For write-enabled or governed stages, follow the gate procedure before editing."
+    )
     return guidance
 
 

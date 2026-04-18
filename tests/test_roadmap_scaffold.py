@@ -55,7 +55,9 @@ def _write_repo(
     return roadmap_path, backlog_path, specs_root
 
 
-def test_scaffold_roadmap_task_creates_backlog_roadmap_spec_and_initiative_link(tmp_path: Path) -> None:
+def test_scaffold_roadmap_task_creates_backlog_roadmap_spec_and_initiative_link(
+    tmp_path: Path,
+) -> None:
     roadmap_path, backlog_path, specs_root = _write_repo(
         tmp_path,
         active_version="v0.2.0-p2",
@@ -247,7 +249,9 @@ def test_scaffold_backlog_only_creates_bl_item_without_roadmap_or_spec(tmp_path:
     assert roadmap_path.read_text(encoding="utf-8") == before_roadmap
 
 
-def test_scaffold_roadmap_task_appends_follow_on_slice_without_changing_live_primary(tmp_path: Path) -> None:
+def test_scaffold_roadmap_task_appends_follow_on_slice_without_changing_live_primary(
+    tmp_path: Path,
+) -> None:
     roadmap_path, backlog_path, specs_root = _write_repo(
         tmp_path,
         active_version="v0.2.0-p2",
@@ -335,7 +339,9 @@ def test_scaffold_roadmap_task_appends_follow_on_slice_without_changing_live_pri
     ]
 
 
-def test_scaffold_roadmap_task_promotes_alias_when_existing_primary_is_complete(tmp_path: Path) -> None:
+def test_scaffold_roadmap_task_promotes_alias_when_existing_primary_is_complete(
+    tmp_path: Path,
+) -> None:
     roadmap_path, backlog_path, specs_root = _write_repo(
         tmp_path,
         active_version="v0.2.0-p2",

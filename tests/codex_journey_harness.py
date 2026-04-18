@@ -101,7 +101,9 @@ def seed_azoth_repo(
             "status": "active",
             "title": "Journey test",
             "target_layer": "application",
-            "delivery_pipeline": "governed" if (scope or {}).get("governance_mode") == "governed" else "standard",
+            "delivery_pipeline": "governed"
+            if (scope or {}).get("governance_mode") == "governed"
+            else "standard",
         }
     ]
     write_yaml(azoth_dir / "backlog.yaml", {"schema_version": 1, "items": items})

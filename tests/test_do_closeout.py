@@ -413,7 +413,7 @@ def test_governed_closeout_keeps_last_version_completion_inside_versions_section
         + "\n".join(
             [
                 "initiatives:",
-                '  - id: INI-RST-001',
+                "  - id: INI-RST-001",
                 '    title: "Declarative swarm / eval-wave specification"',
                 "",
             ]

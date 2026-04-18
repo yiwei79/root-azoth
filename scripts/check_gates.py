@@ -120,8 +120,7 @@ def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
     if missing:
         return (
             False,
-            "❌ BLOCKED — pipeline-gate.json research_evidence missing fields: "
-            f"{sorted(missing)}.",
+            f"❌ BLOCKED — pipeline-gate.json research_evidence missing fields: {sorted(missing)}.",
         )
 
     kind = str(evidence.get("kind") or "").strip()
@@ -210,7 +209,10 @@ def check_pipeline_gate(
             with open(scope_path, encoding="utf-8") as f:
                 scope = json.load(f)
         except (json.JSONDecodeError, OSError) as exc:
-            return False, f"❌ BLOCKED — scope-gate.json is malformed during pipeline cross-check: {exc}"
+            return (
+                False,
+                f"❌ BLOCKED — scope-gate.json is malformed during pipeline cross-check: {exc}",
+            )
         scope_requires_pipeline_gate = _scope_requires_pipeline_gate(scope)
         require = require or scope_requires_pipeline_gate
     else:
@@ -278,8 +280,7 @@ def check_pipeline_gate(
         if scope_expires is not None and scope_expires != expires_at:
             return (
                 False,
-                "❌ BLOCKED — expires_at mismatch between scope-gate.json and "
-                "pipeline-gate.json.",
+                "❌ BLOCKED — expires_at mismatch between scope-gate.json and pipeline-gate.json.",
             )
         selected_pipeline = _scope_selected_pipeline(scope)
         if selected_pipeline and selected_pipeline != pipeline_name:

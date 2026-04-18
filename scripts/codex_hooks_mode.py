@@ -56,10 +56,16 @@ def marker_path(root: Path) -> Path:
 
 
 def ensure_templates(root: Path) -> None:
-    missing = [str(TEMPLATE_BY_MODE[mode]) for mode in VALID_MODES if not template_path(root, mode).is_file()]
+    missing = [
+        str(TEMPLATE_BY_MODE[mode])
+        for mode in VALID_MODES
+        if not template_path(root, mode).is_file()
+    ]
     if missing:
         raise FileNotFoundError(
-            "missing Codex hook templates: " + ", ".join(missing) + " — run from the Azoth repo root"
+            "missing Codex hook templates: "
+            + ", ".join(missing)
+            + " — run from the Azoth repo root"
         )
 
 

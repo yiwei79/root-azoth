@@ -65,7 +65,9 @@ def test_freeform_continue_and_new_goal_receive_continuity_guidance(tmp_path: Pa
     )
 
     continue_directive = directive_for_prompt(tmp_path, "continue this task")
-    new_goal_directive = directive_for_prompt(tmp_path, "start a new goal: BL-456 modernize calm flow")
+    new_goal_directive = directive_for_prompt(
+        tmp_path, "start a new goal: BL-456 modernize calm flow"
+    )
 
     assert continue_directive is not None
     assert "resume/continue decision" in continue_directive.additional_context
@@ -244,7 +246,10 @@ def test_router_level_closeout_entry_stays_explicit(tmp_path: Path) -> None:
     [
         ("/start next", "$azoth-start next"),
         ("/start closeout", "$azoth-session-closeout"),
-        ("/start pipeline_command=deliver-full govern kernel change", "$azoth-start pipeline_command=deliver-full govern kernel change"),
+        (
+            "/start pipeline_command=deliver-full govern kernel change",
+            "$azoth-start pipeline_command=deliver-full govern kernel change",
+        ),
     ],
 )
 def test_start_variants_normalize_to_calm_flow(

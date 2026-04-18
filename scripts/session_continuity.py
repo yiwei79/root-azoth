@@ -78,9 +78,10 @@ def session_registry_entry_is_resumable(
     live_scope = scope if scope is not None else active_scope(root)
     if not live_scope:
         return False
-    return str(live_scope.get("session_id") or "").strip() == str(
-        entry.get("session_id") or ""
-    ).strip()
+    return (
+        str(live_scope.get("session_id") or "").strip()
+        == str(entry.get("session_id") or "").strip()
+    )
 
 
 def governance_mode(scope: dict[str, Any]) -> str:
@@ -98,7 +99,9 @@ def governance_mode(scope: dict[str, Any]) -> str:
     return "standard"
 
 
-def selected_pipeline_command(scope: dict[str, Any], pipeline_gate: dict[str, Any] | None = None) -> str:
+def selected_pipeline_command(
+    scope: dict[str, Any], pipeline_gate: dict[str, Any] | None = None
+) -> str:
     """Return the selected delivery pipeline command when known."""
     if isinstance(pipeline_gate, dict):
         candidate = str(

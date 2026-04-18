@@ -343,7 +343,9 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
 
     targets = [
         target
-        for target in (resolved_target(root, path_str) for path_str in extract_target_path_strs(payload))
+        for target in (
+            resolved_target(root, path_str) for path_str in extract_target_path_strs(payload)
+        )
         if target is not None
     ]
 
@@ -406,13 +408,9 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=True)
 
     is_pg_write = any(
-        (
-            lambda target: (
-                target.resolve() == pg_path.resolve()
-                if target is not None
-                else False
-            )
-        )(target)
+        (lambda target: target.resolve() == pg_path.resolve() if target is not None else False)(
+            target
+        )
         for target in targets
     )
 

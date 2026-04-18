@@ -778,9 +778,7 @@ def _stage_bl051_deploy_fixture(root: Path) -> None:
 
 
 def test_bl051_spec_file_exists_and_has_required_shape() -> None:
-    assert BL051_SPEC_PATH.is_file(), (
-        f"missing {BL051_SPEC_PATH.relative_to(_REPO_ROOT)}"
-    )
+    assert BL051_SPEC_PATH.is_file(), f"missing {BL051_SPEC_PATH.relative_to(_REPO_ROOT)}"
 
     data = yaml.safe_load(BL051_SPEC_PATH.read_text(encoding="utf-8"))
     assert isinstance(data, dict), "BL-051 spec must be a YAML mapping"
@@ -1163,15 +1161,15 @@ def test_orchestrator_archetype_line_count_ceiling() -> None:
 
 
 def test_orchestrator_requires_official_source_research_for_current_external_facts() -> None:
-    content = ( _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md").read_text(encoding="utf-8")
+    content = (_REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md").read_text(
+        encoding="utf-8"
+    )
     assert "official-source research pass before analysis, routing, or edits" in content
     assert "latest/current external facts are material" in content
 
 
 def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
-    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert "Wave A is mandatory" in content
     assert "official sources before Checkpoint" in content
     assert "max_threads: 10, max_depth: 2" in content
@@ -1199,9 +1197,7 @@ def test_adaptive_swarm_sources_drop_fixed_fanout_numbers() -> None:
         content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
         assert "active platform execution budget" in content, f"{rel} missing budget-driven wording"
         assert "≤7" not in content, f"{rel} still contains stale fixed fan-out wording"
-    dynamic = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    dynamic = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert "4–7" not in dynamic
     assert "4-7" not in dynamic
 
