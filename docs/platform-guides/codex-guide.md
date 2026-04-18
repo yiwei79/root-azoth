@@ -4,13 +4,13 @@
 
 ## Classification
 
-Codex is **source-compatible, hooks-capable, Bash-gated, skill-routed** (D46).
+Codex is **source-compatible, instruction-first, skill-routed** (D46).
 
 | Property | Value |
 |----------|-------|
 | Instruction file | `CLAUDE.md` (read as project doc) + `AGENTS.md` (AAIF standard) |
 | Config | `.codex/config.toml` |
-| Hooks | `.codex/hooks.json` — mechanical `SessionStart`, `UserPromptSubmit`, `Stop`, and Bash-only `PreToolUse`/`PostToolUse` |
+| Hooks | `.codex/hooks.json` — default Azoth wiring keeps only a narrow `UserPromptSubmit` compatibility hook; optional verbose profile available |
 | Agents | `.codex/agents/*.toml` (11 agents, all 4 tiers) |
 | Commands | `.agents/skills/azoth-*/SKILL.md` via `/skills`; literal tokens as fallback |
 | Skills | `.agents/skills/` (shared Codex/Antigravity path) |
@@ -30,38 +30,35 @@ Azoth commands are exposed through two layers:
 | Method | Example | How it works |
 |--------|---------|-------------|
 | **Primary**: `/skills` or `$azoth-*` | `$azoth-auto fix login bug` | Codex loads `.agents/skills/azoth-auto/SKILL.md`, which reads `.claude/commands/auto.md` |
-| **Fallback**: literal token | `/auto fix login bug` | `.codex/hooks/user_prompt_submit_router.py` injects the matching command text via `additionalContext` and redirects you back toward the staged `$azoth-*` entry path for governed work |
+| **Fallback**: literal token | `/auto fix login bug` | `.codex/hooks/user_prompt_submit_router.py` injects compatibility guidance via `additionalContext` and redirects you back toward the staged `$azoth-*` entry path for governed work |
 
-Available command wrappers (21 total): `azoth-auto`, `azoth-deliver`, `azoth-deliver-full`,
+Available command wrappers (22 total): `azoth-auto`, `azoth-deliver`, `azoth-deliver-full`,
 `azoth-dynamic-full-auto`, `azoth-start`, `azoth-next`, `azoth-plan`, `azoth-eval`,
 `azoth-eval-swarm`, `azoth-test`, `azoth-promote`, `azoth-remember`, `azoth-intake`,
-`azoth-session-closeout`, `azoth-bootstrap`, `azoth-sync`, `azoth-worktree-sync`,
+`azoth-session-closeout`, `azoth-bootstrap`, `azoth-sync`, `azoth-hookmode`, `azoth-worktree-sync`,
 `azoth-roadmap`, `azoth-review-insights`, `azoth-context-architect`, `azoth-arch-proposal`.
 
 For governed pipeline tokens such as `/deliver-full`, treat the literal token route as compatibility guidance only. The intended Codex entry is `/skills` or `$azoth-deliver-full`, which keeps the orchestrator as the main-thread owner and preserves staged delegation expectations. If staged delegation is unavailable on the current host/runtime, stop after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms; do not continue inline as a silent fallback.
 
 ## Trust Contract Enforcement
 
-Codex is **hooks-capable**, but narrower than Claude Code. Current Codex runtime
-mechanically supports `SessionStart`, `UserPromptSubmit`, `Stop`, and Bash-only
-`PreToolUse`/`PostToolUse`. Non-Bash `Write`/`Edit` enforcement still relies on
-developer instructions and the sandbox. Enforcement therefore relies on three
-complementary layers:
+Codex can run hooks, but Azoth's default Codex adapter now uses only one of them:
+`UserPromptSubmit` for compatibility routing. Non-Bash `Write`/`Edit` enforcement
+still relies on developer instructions and the sandbox, so enforcement relies on
+two primary layers plus one narrow compatibility layer:
 
 | Layer | Mechanism | Strength |
 |-------|-----------|----------|
 | `developer_instructions` | Scope-gate check, entropy ceiling, kernel immutability rules inline in `.codex/config.toml` | Behavioral — model-dependent |
 | Container sandbox | `workspace-write` mode with network disabled; filesystem isolation | Mechanical — OS-level |
-| Stop hook | `scripts/kernel-integrity.py` validates kernel checksums at session end | Mechanical — post-hoc |
+| Compatibility hook | `UserPromptSubmit` nudges literal workflow tokens back toward `$azoth-*` / `/skills` | Advisory — UX routing only |
 
 ### What is enforced
 
 - **Scope gate**: `developer_instructions` instructs the model to read `.azoth/scope-gate.json` before any write and stop if `session_id` is missing or `expires_at` has passed.
 - **Entropy ceiling**: max 10 files modified, 10 created, 0 deleted without approval, 1000 lines changed (quantified inline).
 - **Kernel immutability**: `kernel/*`, `.azoth/kernel/*`, `.azoth/memory/patterns.yaml` declared as never-modify-without-approval.
-- **Bash package policy**: `PreToolUse` wires `.claude/hooks/pip-install-guard.py`, so direct `pip install <package>` is mechanically blocked in Codex's current Bash hook path.
 - **Co-Authored-By**: `commit_attribution = ""` in config + explicit prohibition in instructions.
-- **Kernel drift**: `kernel-integrity.py` runs in the Stop hook (10s timeout) and flags any kernel file changes.
 
 ### What is NOT mechanically enforced
 
@@ -70,19 +67,65 @@ complementary layers:
 
 ## Hooks
 
-`.codex/hooks.json` configures 5 hook types with 5 hooks:
+`.codex/hooks.json` intentionally configures a single default hook:
 
 | Hook Type | Script | Purpose | Timeout |
 |-----------|--------|---------|---------|
-| SessionStart | `.claude/hooks/session_start_welcome.py` | Load Azoth orientation dashboard | 120s |
 | UserPromptSubmit | `.codex/hooks/user_prompt_submit_router.py` | Route literal Azoth tokens to command files | — |
-| PreToolUse (Bash) | `.claude/hooks/pip-install-guard.py` | Block bare `pip install <package>` | — |
-| PostToolUse (Bash) | `.claude/hooks/posttooluse_terminal_filter.py` | Filter terminal output | — |
-| Stop | `scripts/kernel-integrity.py` | Validate kernel integrity at session end | 10s |
 
-The generic Stop notification hook is intentionally omitted in Codex. It was too
-chatty for the value it provided, and firing on every `Stop` event did not match
-Azoth's human-gate notification policy.
+This is a deliberate UX choice: Codex currently surfaces hook activity prominently,
+so Azoth keeps only the compatibility hook whose value is specific to Codex command
+entry. Orientation, Bash hygiene, and post-hoc integrity checks remain available as
+explicit commands or scripts, but are not wired into the default Codex hook path.
+
+### Optional verbose mode
+
+If you prefer more automatic Codex hook behavior and accept the noisier UI, opt into
+the verbose profile with the local switcher:
+
+```bash
+python3 scripts/codex_hooks_mode.py set verbose
+```
+
+Or use the Azoth command surface:
+
+```text
+/hookmode verbose
+$azoth-hookmode verbose
+```
+
+Return to the calm default with:
+
+```bash
+python3 scripts/codex_hooks_mode.py set verbose
+```
+
+The shorthand `verbo` is also accepted:
+
+```bash
+python3 scripts/codex_hooks_mode.py set verbo
+```
+
+Return to the calm default with:
+
+```bash
+python3 scripts/codex_hooks_mode.py set calm
+python3 scripts/codex_hooks_mode.py status
+```
+
+Verbose mode restores:
+- `SessionStart` for automatic plain orientation injection
+- Bash `PreToolUse` for `pip-install-guard.py`
+- Bash `PostToolUse` for terminal output filtering
+- `Stop` for automatic `kernel-integrity.py`
+
+`UserPromptSubmit` remains enabled in both modes.
+
+Use verbose mode only when the extra automation is worth the visible hook churn in
+Codex. It does **not** add Claude-style mechanical `Write`/`Edit` enforcement; non-Bash
+governance still lives in `.codex/config.toml`. The switcher writes a git-ignored
+local marker at `.codex/hooks.mode.local`, and `python3 scripts/azoth-deploy.py --check`
+honors that marker so local verbose mode does not look like accidental drift.
 
 ### Codex Hook Protocol Rules
 
@@ -151,6 +194,9 @@ Before wiring any script into `.codex/hooks.json`:
 6. After adding, run `python3 scripts/azoth-deploy.py --check` to verify sync.
 7. Test in a live Codex session before committing.
 
+The same protocol rules apply to the optional verbose profile in
+`kernel/templates/platform-adapters/codex/hooks.verbose.json.template`.
+
 ## Agents
 
 11 custom agents in `.codex/agents/*.toml`, covering all 4 tiers:
@@ -176,11 +222,11 @@ Codex runs in `workspace-write` sandbox with `network_access = false`:
 
 Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto`. Key differences from Claude Code:
 
-1. Bash `PreToolUse`/`PostToolUse` are mechanical; non-Bash guardrails still rely on `developer_instructions`.
+1. The default adapter keeps only `UserPromptSubmit`; guardrails rely on `developer_instructions`.
 2. Network is disabled — Wave A researchers cannot fetch external URLs.
 3. Multi-agent threads (up to 6) enable parallel local exploration.
 4. Scope-gate contract is identical: validate `.azoth/scope-gate.json` before writes.
-5. Stop hook runs `kernel-integrity.py` at session end.
+5. `kernel-integrity.py` remains an explicit utility, not a default Codex hook.
 
 See `skills/dynamic-full-auto/SKILL.md` § Happy path — Codex.
 
@@ -188,11 +234,11 @@ See `skills/dynamic-full-auto/SKILL.md` § Happy path — Codex.
 
 | Phase | Codex behavior |
 |-------|---------------|
-| **Start** | SessionStart hook runs `welcome.py`; use `$azoth-start` for routing menu |
+| **Start** | Use `$azoth-start` or `python3 scripts/welcome.py`; no default Codex auto-welcome hook |
 | **Scope** | `$azoth-next` writes `.azoth/scope-gate.json`; model checks it before writes |
 | **Pipeline** | Orchestrator stays in main thread; subagents via `.codex/agents/*.toml` |
 | **Closeout** | `$azoth-session-closeout` writes W1/W2/W4; W3 mirror attempted, `W3 deferred` if blocked |
-| **Stop** | kernel-integrity.py validates |
+| **Stop** | No default Codex stop hook; run integrity checks explicitly when needed |
 
 ## Parallel Worktrees
 

@@ -110,6 +110,13 @@ Performs W1-W4: episode capture, state update, memory mirror, version bump.
 ### `/roadmap`
 **Roadmap dashboard.** Shows versioned phases and upcoming work.
 
+### `/hookmode [status|calm|verbose|verbo]`
+**Codex hook profile switcher.** Inspect or change the local Codex hook mode.
+
+- **Default**: no argument shows the current mode and sync state
+- **`calm`**: restore the low-noise Codex default
+- **`verbose` / `verbo`**: enable the fuller automatic Codex hook profile locally
+
 ---
 
 ## Pipeline Selection Cheat Sheet

@@ -60,7 +60,7 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 
 - Append the episode structured in step 4
 - If the session changed a platform adapter, command surface, or parity behavior, name the affected platform, the primary surface, any compatibility fallback, and remaining mechanical limits.
-- If Codex parity changed, say whether the change affected generated `.agents/skills/azoth-*` wrappers, literal-token fallback, `.codex/config.toml` / `.codex/hooks.json`, or the current Bash-only hook boundary.
+- If Codex parity changed, say whether the change affected generated `.agents/skills/azoth-*` wrappers, literal-token fallback, `.codex/config.toml` / `.codex/hooks.json`, or the current minimal compatibility-hook contract.
 - Log: `W1 ✓ episode {id} appended — proceeding to W2`
 
 **W1b — Optional reinforcement_count update** → `scripts/reinforcement_count.py`

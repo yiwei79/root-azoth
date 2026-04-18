@@ -575,6 +575,9 @@ def test_iter_codex_adapter_deployments_maps_templates() -> None:
             'approval_policy = "on-request"\n', encoding="utf-8"
         )
         (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(
+            '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+        )
         (adapter / "user_prompt_submit_router.py.template").write_text(
             "#!/usr/bin/env python3\n", encoding="utf-8"
         )
@@ -596,9 +599,11 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
     try:
         config = 'approval_policy = "on-request"\n'
         hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         n, _ = deploy_codex_adapter(root, dry_run=False)
         assert n == 3
@@ -607,6 +612,31 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         assert (root / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(
             encoding="utf-8"
         ) == router
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_uses_verbose_template_when_local_marker_is_set() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        (root / ".codex").mkdir(parents=True, exist_ok=True)
+        (root / ".codex" / "hooks.mode.local").write_text("verbose\n", encoding="utf-8")
+
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+
+        assert n == 3
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == verbose_hooks
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
@@ -1242,6 +1272,7 @@ def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
         ("deliver-full", ".claude/commands/deliver-full.md"),
         ("auto", ".claude/commands/auto.md"),
         ("eval", ".claude/commands/eval.md"),
+        ("hookmode", ".claude/commands/hookmode.md"),
         ("session-closeout", ".claude/commands/session-closeout.md"),
         ("remember", ".claude/commands/remember.md"),
         ("sync", ".claude/commands/sync.md"),
@@ -1260,7 +1291,7 @@ def test_migrated_commands_load_from_canonical_contracts(
 
 def test_ini_plt_006_exit_commands_are_canonicalized() -> None:
     commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
-    for command_name in ("session-closeout", "remember", "sync", "roadmap"):
+    for command_name in ("session-closeout", "remember", "sync", "roadmap", "hookmode"):
         assert "contract" in commands[command_name], (
             f"INI-PLT-006 exit evidence missing canonical contract for {command_name}"
         )

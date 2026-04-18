@@ -1,0 +1,44 @@
+schema_version: 1
+name: hookmode
+display_name: /hookmode
+description: Inspect or switch the local Codex hook profile
+agent: orchestrator
+azoth_effect: write
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/hookmode.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/hookmode.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/hookmode.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/hookmode.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/hookmode.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-hookmode/SKILL.md
+    metadata_path: .agents/skills/azoth-hookmode/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/hookmode.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/hookmode.md
+
+migration:
+  phase: canonical_body_batch_3_initiative_exit
+  runtime_source_of_truth: commands/hookmode/command.yaml
+  notes:
+    - T-004 moves /hookmode onto the neutral command path.
+    - .claude/commands/hookmode.md remains the authored semantic body during the bridge.
+
+references:
+  - docs/CANONICAL_COMMAND_CONTRACT.md

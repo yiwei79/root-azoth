@@ -31,6 +31,7 @@ def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
     [
         "config.toml.template",
         "hooks.json.template",
+        "hooks.verbose.json.template",
         "user_prompt_submit_router.py.template",
     ],
 )
@@ -58,6 +59,24 @@ def test_live_codex_adapter_mirrors_templates() -> None:
         )
 
 
+def test_codex_hook_template_keeps_only_user_prompt_submit() -> None:
+    hooks = json.loads((CODEX_DIR / "hooks.json.template").read_text(encoding="utf-8"))["hooks"]
+    assert set(hooks.keys()) == {"UserPromptSubmit"}
+
+
+def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:
+    hooks = json.loads((CODEX_DIR / "hooks.verbose.json.template").read_text(encoding="utf-8"))[
+        "hooks"
+    ]
+    assert set(hooks.keys()) == {
+        "SessionStart",
+        "UserPromptSubmit",
+        "PreToolUse",
+        "PostToolUse",
+        "Stop",
+    }
+
+
 def test_codex_router_adds_context_for_auto_token() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
     assert router.is_file(), "missing deployed Codex user prompt router"
@@ -74,6 +93,15 @@ def test_codex_router_adds_context_for_any_existing_command_token() -> None:
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/remember" in ctx
     assert ".claude/commands/remember.md" in ctx
+
+
+def test_codex_router_adds_context_for_hookmode_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/hookmode verbo", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/hookmode" in ctx
+    assert ".claude/commands/hookmode.md" in ctx
 
 
 def test_codex_router_adds_context_from_non_root_cwd() -> None:
