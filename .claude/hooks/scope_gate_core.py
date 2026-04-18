@@ -366,6 +366,20 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if targets and all(_is_scope_bootstrap_target(target) for target in targets):
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
+    # Claude Code plan-mode writes to ~/.claude/plans/ before any scope card exists.
+    # Exempting only this specific sub-path avoids a bootstrap deadlock (BL-064).
+    _claude_plans_root = (Path.home() / ".claude" / "plans").resolve()
+
+    def _is_claude_plans_path(target: Path) -> bool:
+        try:
+            target.resolve().relative_to(_claude_plans_root)
+            return True
+        except (ValueError, OSError):
+            return False
+
+    if targets and all(_is_claude_plans_path(target) for target in targets):
+        return ScopeGateResult(allowed=True, skip_entropy=True)
+
     if not gate_path.exists():
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 

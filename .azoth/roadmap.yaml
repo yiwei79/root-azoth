@@ -384,6 +384,37 @@ versions:
         title: "Research sufficiency platform parity + workflow hardening"
         decision_ref: [D23, D46, D50, D52]
         initiative_ref: "INI-EVI-001"
+      - id: T-KRP-A
+        title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-B
+        title: "New skill: karpathy-principles SKILL.md for injectable discipline slot"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-C
+        title: "Builder agent posture: surgical changes + simplicity-first enforcement"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-D
+        title: "Orchestrator: assumption-surfacing checkpoint at goal classification"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-E
+        title: "structured-autonomy-plan: goal → success-criteria gate (T-006 dependency, autonomous loop enabler)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        note: "Implement before or alongside T-006 revise-and-continue loops"
     completed_tasks:
       - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
       - {id: P1-023, title: "Neutral canonical command contract design", completed_date: "2026-04-17", decision_ref: [D19, D21, D46]}
@@ -932,6 +963,44 @@ initiatives:
     spec_ref: ".azoth/roadmap-specs/v0.2.0/T-002.yaml"
 
   # ── Theme E: efficiency ────────────────────────────────────────────────────
+  - id: INI-KRP-001
+    title: "Karpathy Principles — behavioral quality layer"
+    category: efficiency
+    theme: E
+    dimensions:
+      themes: [E, A, B]
+      categories: [efficiency, run-state, pipeline]
+      tracks: [autonomous-quality, builder-discipline, goal-grounding]
+    phase: null
+    priority: high
+    research_ref: "ep-266"
+    summary: >
+      Integrate the four Andrej Karpathy LLM-coding principles (Think Before Coding,
+      Simplicity First, Surgical Changes, Goal-Driven Execution) as first-class behavioral
+      guidance across kernel instructions, skills, and agent postures. Primary payoff:
+      prerequisite scaffolding for the autonomous development loop (T-006 dependency).
+      Secondary: portable discipline layer for azoth installs downstream.
+      Research source: multica-ai/andrej-karpathy-skills (57k stars, MIT, Apr 2026).
+      Full findings in ep-266. Implementation decisions deferred — do not overfit spec
+      from research context alone; pick up with live context when activating.
+    decision_ref: [D21, D23, D51]
+    slices:
+      - task_ref: T-KRP-A
+        role: primary
+        status: planned
+      - task_ref: T-KRP-B
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-C
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-D
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-E
+        role: follow-on
+        status: planned
+
   - id: INI-EFF-001
     title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
     category: efficiency
