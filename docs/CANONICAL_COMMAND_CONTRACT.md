@@ -38,6 +38,13 @@ For the transition period, `command.yaml` may point at a legacy body source unde
 That gives Azoth a neutral command root now without forcing the `D46`
 projection/compiler refactor in the same slice.
 
+This is a mixed bridge, not a second canonical source-of-truth:
+
+- `commands/<name>/command.yaml` remains the authored contract
+- `body.mode: legacy_claude_markdown` reuses only the legacy markdown body source
+- deployed `.claude/commands/*.md` outputs stay generated artifacts, even when the
+  legacy body path matches the Claude projection path
+
 ## 3. Contract Shape
 
 Each command contract is a YAML document with these required top-level fields:
@@ -99,6 +106,10 @@ Design rule:
   - `azoth_effect`
   - `agent`
 - Body source: markdown body from `body`
+- `azoth-deploy --check` is byte-exact for canonical Claude outputs
+- Narrow exception: when `body.mode: legacy_claude_markdown`, Claude check mode
+  accepts parsed frontmatter equality plus exact body equality for that deployed
+  output only
 
 ### Cursor
 
@@ -193,6 +204,8 @@ Current status after `T-002` batch-1 migration:
 - Allow `body.mode: legacy_claude_markdown`
 - Prefer the contract for metadata and projection rules
 - Continue reading legacy Claude markdown for body text
+- In `--check`, allow scoped semantic parity only for the contract-backed Claude
+  output of legacy-body commands; all other projections stay byte-exact
 
 ### Phase 2: canonical body migration
 

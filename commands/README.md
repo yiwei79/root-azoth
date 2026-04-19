@@ -24,3 +24,9 @@ Rules:
 - Keep user-facing terminology command-first
 - Treat files here as the live authored command input for migrated commands
 - Keep command-first wording and make any remaining legacy bridge explicit in the contract
+- Treat `body.mode: legacy_claude_markdown` as a mixed bridge: the contract here stays
+  canonical, while the markdown body is still sourced from `.claude/commands/<name>.md`
+- `azoth-deploy --check` only permits semantic parity on the deployed Claude output for
+  that legacy bridge, defined as parsed frontmatter equality plus exact body equality
+- Keep every non-Claude projection and every canonical Claude projection byte-exact under
+  `azoth-deploy --check`

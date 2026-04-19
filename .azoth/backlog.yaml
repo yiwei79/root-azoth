@@ -2390,10 +2390,11 @@ items:
   source: SRF-2026-04-17-004
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 3
   created_date: '2026-04-18'
+  completed_date: '2026-04-19'
   description: 'Decide whether semantic-equivalence checks are the intended long-term
     deploy contract for legacy Claude markdown command mirrors, and align the regression
     tests with that policy explicitly. The slice should verify the current azoth-deploy

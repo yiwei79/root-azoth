@@ -516,6 +516,46 @@ def transform_command_claude(command: dict[str, Any]) -> str:
     return render_frontmatter(fm) + command["body"]
 
 
+def _uses_legacy_claude_command_check(command: dict[str, Any]) -> bool:
+    """Return True when Claude check mode should allow legacy semantic parity."""
+    contract = command.get("contract")
+    if not isinstance(contract, dict):
+        return False
+    body_cfg = contract.get("body")
+    if not isinstance(body_cfg, dict):
+        return False
+    return body_cfg.get("mode") == "legacy_claude_markdown"
+
+
+def check_claude_command_file(
+    path: Path,
+    command: dict[str, Any],
+    content: str,
+    root: Path,
+) -> bool:
+    """Check one contract-backed Claude command output without widening generic file parity."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if not path.is_file():
+        print(f"  [missing] {rel}")
+        return False
+
+    actual = path.read_text(encoding="utf-8")
+    if actual == content:
+        return True
+
+    if _uses_legacy_claude_command_check(command):
+        actual_meta, actual_body = parse_frontmatter(actual)
+        expected_meta, expected_body = parse_frontmatter(content)
+        if actual_meta == expected_meta and actual_body == expected_body:
+            return True
+
+    print(f"  [stale] {rel}")
+    return False
+
+
 def transform_command_copilot(command: dict[str, Any]) -> str:
     """
     Copilot prompt format (.github/prompts/<name>.prompt.md).
@@ -1270,13 +1310,14 @@ def main(argv: list[str] | None = None) -> int:
                 output_rel = str(claude_projection.get("output_path") or "").strip()
                 if not output_rel:
                     continue
-                if not write_file(
-                    root / output_rel,
-                    transform_command_claude(cmd),
-                    root,
-                    dry_run,
-                    check=check,
-                ):
+                dest_path = root / output_rel
+                content = transform_command_claude(cmd)
+                in_sync = (
+                    check_claude_command_file(dest_path, cmd, content, root)
+                    if check
+                    else write_file(dest_path, content, root, dry_run, check=False)
+                )
+                if not in_sync:
                     stale += 1
                 count += 1
 

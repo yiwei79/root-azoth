@@ -464,6 +464,28 @@ def _write_contract_command(root: Path) -> None:
     )
 
 
+def _write_canonical_contract_command(root: Path) -> None:
+    command_path = root / "commands" / "start" / "command.yaml"
+    command_path.parent.mkdir(parents=True, exist_ok=True)
+    command_path.write_text(
+        "schema_version: 1\n"
+        "name: start\n"
+        "display_name: /start\n"
+        "description: Canonical start description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "body:\n"
+        "  mode: canonical_markdown\n"
+        "  source_path: commands/start/body.md\n"
+        "projection:\n"
+        "  claude:\n"
+        "    output_path: .claude/commands/start.md\n",
+        encoding="utf-8",
+    )
+    body_path = root / "commands" / "start" / "body.md"
+    body_path.write_text("# /start\n\nUse the canonical body.\n", encoding="utf-8")
+
+
 def _write_minimal_skill(root: Path) -> None:
     path = root / "skills" / "context-map" / "SKILL.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1427,6 +1449,72 @@ def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
     agent_mirror.write_text("corrupted content", encoding="utf-8")
 
     rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_legacy_claude_formatting_only_drift_returns_zero(tmp_path: Path) -> None:
+    """Legacy Claude outputs accept parsed-frontmatter parity with an exact body match."""
+    _write_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "next.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "description: Canonical next description\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
+    assert rc == 0
+
+
+def test_check_mode_legacy_claude_substantive_drift_returns_one(tmp_path: Path) -> None:
+    """Legacy Claude outputs still fail when contract-governed frontmatter drifts."""
+    _write_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "next.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "description: Drifted next description\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_canonical_claude_formatting_only_drift_returns_one(tmp_path: Path) -> None:
+    """Canonical Claude outputs remain byte-exact in check mode."""
+    _write_canonical_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "start.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "description: Canonical start description\n"
+        "---\n\n"
+        "# /start\n\nUse the canonical body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
     assert rc == 1
 
 
