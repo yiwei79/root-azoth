@@ -426,6 +426,7 @@ def test_release_writes_phased_post_release_version(tmp_path: Path) -> None:
 
     settings = json.loads((base / ".claude" / "settings.json").read_text(encoding="utf-8"))
     assert settings["env"]["AZOTH_VERSION"] == "0.1.1.0"
+    assert settings["env"]["AZOTH_PHASE"] == "1"
 
 
 # ---------------------------------------------------------------------------
@@ -527,6 +528,7 @@ def test_phase_advances_post_release_working_slice(tmp_path: Path) -> None:
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
     roadmap_p = base / "roadmap.yaml"
+    _write_settings(base, "0.1.1.4", phase="1")
     azoth_p.write_text("version: 0.1.1.4\nphase: 1\nmilestone: v0.2.0\n", encoding="utf-8")
     roadmap_p.write_text(
         textwrap.dedent(
@@ -571,6 +573,10 @@ def test_phase_advances_post_release_working_slice(tmp_path: Path) -> None:
     v022 = next(v for v in roadmap_data["versions"] if v["id"] == "v0.2.0-p2")
     assert v022["status"] == "active"
     assert v022["current_patch"] == 0
+
+    settings = json.loads((base / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    assert settings["env"]["AZOTH_VERSION"] == "0.1.2.0"
+    assert settings["env"]["AZOTH_PHASE"] == "2"
 
 
 # ---------------------------------------------------------------------------

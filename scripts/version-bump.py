@@ -78,6 +78,20 @@ def _sync_settings_version(new_version: str, *, settings_path: Path) -> None:
         settings_path.write_text(updated, encoding="utf-8")
 
 
+def _sync_settings_phase(new_phase: int, *, settings_path: Path) -> None:
+    """Update AZOTH_PHASE in the paired .claude/settings.json if it exists."""
+    if not settings_path.is_file():
+        return
+    text = settings_path.read_text(encoding="utf-8")
+    updated = re.sub(
+        r'"AZOTH_PHASE":\s*"[^"]*"',
+        f'"AZOTH_PHASE": "{new_phase}"',
+        text,
+    )
+    if updated != text:
+        settings_path.write_text(updated, encoding="utf-8")
+
+
 def _write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
@@ -384,7 +398,8 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_version))
     _write(roadmap_path, new_roadmap)
 
-    _sync_settings_version(new_version, settings_path=_settings_path_for(azoth_path))
+    settings_path = _settings_path_for(azoth_path)
+    _sync_settings_version(new_version, settings_path=settings_path)
     print(f"version bumped {raw_version} → {new_version}")
 
 
@@ -463,7 +478,10 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_azoth_version))
     _write(roadmap_path, roadmap_text)
 
-    _sync_settings_version(new_azoth_version, settings_path=_settings_path_for(azoth_path))
+    settings_path = _settings_path_for(azoth_path)
+    _sync_settings_version(new_azoth_version, settings_path=settings_path)
+    if active_post_release_phase is not None:
+        _sync_settings_phase(new_phase_num, settings_path=settings_path)
     print(f"version bumped {raw_version} → {new_azoth_version} (phase advance)")
 
 
@@ -555,7 +573,9 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)
 
-    _sync_settings_version("0.1.1.0", settings_path=_settings_path_for(azoth_path))
+    settings_path = _settings_path_for(azoth_path)
+    _sync_settings_version("0.1.1.0", settings_path=settings_path)
+    _sync_settings_phase(1, settings_path=settings_path)
     print(f"version bumped {raw_version} → 0.1.1.0 (release)")
     print(
         'Next step (human): git tag -a v0.1.0 -m "Azoth v0.1.0 public release" '
