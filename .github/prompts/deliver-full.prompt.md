@@ -48,13 +48,18 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
   gate, the same run must consume that approval through `scripts/run_ledger.py` by
   promoting the next executable stage from the paused checkpoint. Another declaration or
   status card alone is insufficient.
+- **Revise-and-continue replay:** When reviewer/evaluator findings require a bounded
+  revision and scope remains valid, rewrite the active run queue fail-closed so the
+  approved upstream revision stage is replayed before the current gate-owning review
+  stage. Missing lineage proof, ambiguous queue state, or duplicate replay must stop and
+  escalate instead of mutating the run.
 - **Eval / swarm routing:** When the pipeline reaches an **evaluator** stage or a **final `/eval`**
   pass after Builder / Architect Review, apply `.claude/commands/eval.md` triggers **E1–E6**
   (governed scope and multi-stage summaries often satisfy **E2**/**E3**). If any trigger
   fires → **`/eval-swarm`** semantics (`/auto` Execution §6). Governed work must not skip
   this check before declaring delivery complete.
 - No review stage shall execute inline with the stage it reviews
-- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43). Residual risk: an orchestrator that ignores this text can still run stages inline, and revise-and-continue replay after review findings is still orchestrator-managed until `T-006`.
+- These prose mandates are now backed by shared fail-closed runtime enforcement for approval promotion and reviewer/evaluator-driven revise-and-continue replay. Any orchestrator behavior that bypasses those run-ledger transitions is a governance violation, not an accepted residual risk.
 - Isolation constraint applies to agent-gated review stages (3–6). Architect's own internal sub-invocations during Stage 2 (e.g. context-map, research-orchestrator) are governed by the architect archetype contract separately.
 
 ## Spawn invocation (BL-011)

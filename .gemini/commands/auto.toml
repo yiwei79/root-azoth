@@ -137,8 +137,10 @@ After human approval of the Declaration:
    }
    ```
 
-   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
-   `delivery_pipeline == governed` OR `target_layer == M1`):
+   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if the scope
+   is governed via `governance_mode == governed`, legacy
+   `delivery_pipeline == governed`, fused `/auto` selection
+   `delivery_pipeline == deliver-full`, or `target_layer == M1`):
    ```json
    {
      "session_id": "<must match scope-gate.json>",
@@ -179,9 +181,10 @@ After human approval of the Declaration:
    same run through `scripts/run_ledger.py` by promoting the next executable stage from the
    paused human-gate checkpoint. Another declaration/status card by itself is not valid
    downstream progress.
-   Residual risk: revise-and-continue after reviewer/evaluator findings is still an
-   orchestrator-managed loop, not yet a first-class runtime replay primitive; roadmap
-   task `T-006` tracks that future hardening.
+   When the finding is a valid revise-and-continue case, rewrite the active run queue
+   fail-closed so the approved upstream revision stage is inserted ahead of the current
+   gate-owning review stage. If lineage proof is missing, ambiguous, or already rewritten,
+   stop and escalate instead of narrating progress.
 
 6. **Evaluator stage — `/eval` routing (E1–E6):** When the **composed pipeline** includes an
    **evaluator** stage (or the orchestrator runs a **final quality gate** equivalent to
