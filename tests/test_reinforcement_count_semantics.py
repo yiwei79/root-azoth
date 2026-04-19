@@ -71,7 +71,9 @@ def test_closeout_mirror_documents_w1b_reinforcement_step(
     assert "--session-id <active-session-id> --source closeout" in text, (
         f"{mirror_path.relative_to(REPO)} must pin the W1b command arguments for session_id and source."
     )
-    assert "Do **not** run `python3 scripts/do_closeout.py --reinforce-episode <ep-id>` here" in text, (
+    assert (
+        "Do **not** run `python3 scripts/do_closeout.py --reinforce-episode <ep-id>` here" in text
+    ), (
         f"{mirror_path.relative_to(REPO)} must explicitly block the unsafe in-flow do_closeout.py reinforcement path."
     )
     assert "full W1-W4 closeout path" in text, (

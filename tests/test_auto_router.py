@@ -256,14 +256,17 @@ def test_instruction_refinement_routing_behavior() -> None:
     lightweight_pipeline = ["architect", "planner", "evaluator", "builder", "architect"]
     full_pipeline = ["architect", "reviewer", "planner", "evaluator", "builder", "architect"]
 
-    assert _select_pipeline_for_classification(
-        {
-            "scope": "pipelines",
-            "risk": "additive",
-            "complexity": "simple",
-            "knowledge": "instruction-refinement",
-        }
-    ) == lightweight_pipeline
+    assert (
+        _select_pipeline_for_classification(
+            {
+                "scope": "pipelines",
+                "risk": "additive",
+                "complexity": "simple",
+                "knowledge": "instruction-refinement",
+            }
+        )
+        == lightweight_pipeline
+    )
 
     for classification in (
         {
@@ -335,8 +338,7 @@ def test_pipeline_instruction_refinement_inject_fields() -> None:
     for condition in expected_conditions:
         matching_rules = [r for r in rules if r.get("condition") == condition]
         assert len(matching_rules) == 1, (
-            f"Expected exactly one rule with condition {condition!r}; "
-            f"found {len(matching_rules)}"
+            f"Expected exactly one rule with condition {condition!r}; found {len(matching_rules)}"
         )
         inject_value = matching_rules[0].get("inject")
         assert inject_value is not None, (
@@ -427,8 +429,7 @@ def test_pipeline_inject_field_consistency() -> None:
     ):
         assert "inject" in rule, f"{condition!r} rule must have inject field"
         assert "l2-evidence-review" in rule["inject"], (
-            f"{condition!r} inject must reference 'l2-evidence-review'; "
-            f"got {rule['inject']!r}"
+            f"{condition!r} inject must reference 'l2-evidence-review'; got {rule['inject']!r}"
         )
 
     assert nr_rule["inject"] != lightweight_ir_rule["inject"], (

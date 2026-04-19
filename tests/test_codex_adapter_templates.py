@@ -125,7 +125,12 @@ def test_codex_router_adds_context_from_non_root_cwd() -> None:
 def test_codex_router_ignores_mention_only_command_tokens() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
     assert router.is_file(), "missing deployed Codex user prompt router"
-    assert _run_router(router, "Explain the difference between /auto and /deliver in Azoth.", cwd=REPO).strip() == ""
+    assert (
+        _run_router(
+            router, "Explain the difference between /auto and /deliver in Azoth.", cwd=REPO
+        ).strip()
+        == ""
+    )
 
 
 def test_codex_router_redirects_deliver_full_token_to_start_centered_route() -> None:
@@ -196,7 +201,10 @@ def test_codex_router_adds_resume_guidance_and_write_disclaimer(tmp_path: Path) 
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "resume/continue decision" in ctx
     assert "does not authorize writes" in ctx
-    assert payload["hookSpecificOutput"]["updatedInput"] == "$azoth-start pipeline_command=auto BL-123: Active scope"
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=auto BL-123: Active scope"
+    )
 
 
 def test_codex_router_canonical_start_fails_closed_when_staged_delegation_is_unavailable(

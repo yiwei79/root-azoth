@@ -252,7 +252,9 @@ def test_t8_write_invalid_expires_at(tmp_path: Path) -> None:
 def test_t9_write_naive_future_expires_at(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59", "session_id": "sess-naive"}),
+        json.dumps(
+            {"approved": True, "expires_at": "2099-12-31T23:59:59", "session_id": "sess-naive"}
+        ),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -263,7 +265,9 @@ def test_t9_write_naive_future_expires_at(tmp_path: Path) -> None:
 def test_t10_write_z_suffix_future_expires_at(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
     gate_path.write_text(
-        json.dumps({"approved": True, "expires_at": "2099-12-31T23:59:59Z", "session_id": "sess-z"}),
+        json.dumps(
+            {"approved": True, "expires_at": "2099-12-31T23:59:59Z", "session_id": "sess-z"}
+        ),
         encoding="utf-8",
     )
     output = _run("Write", gate_path)
@@ -415,7 +419,9 @@ def test_t16_target_layer_m1_triggers_pipeline_gate(tmp_path: Path) -> None:
     assert _decision(output) == "deny"
 
 
-def test_t16b_governed_scope_write_denied_with_pipeline_gate_session_mismatch(tmp_path: Path) -> None:
+def test_t16b_governed_scope_write_denied_with_pipeline_gate_session_mismatch(
+    tmp_path: Path,
+) -> None:
     gate_path = tmp_path / "scope-gate.json"
     pg_path = tmp_path / "pipeline-gate.json"
     expiry = _future_expiry()
@@ -442,7 +448,9 @@ def test_t16b_governed_scope_write_denied_with_pipeline_gate_session_mismatch(tm
         ),
         encoding="utf-8",
     )
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
 
@@ -474,7 +482,9 @@ def test_t16c_governed_scope_write_denied_with_invalid_pipeline_name(tmp_path: P
         ),
         encoding="utf-8",
     )
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
 
@@ -506,7 +516,9 @@ def test_t16d_governed_scope_write_denied_with_opened_at_after_expires_at(tmp_pa
         ),
         encoding="utf-8",
     )
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
 
@@ -529,13 +541,17 @@ def test_t16da_governed_scope_write_denied_without_research_required_flag(tmp_pa
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
 
 
-def test_t16db_governed_scope_write_denied_with_non_boolean_research_required(tmp_path: Path) -> None:
+def test_t16db_governed_scope_write_denied_with_non_boolean_research_required(
+    tmp_path: Path,
+) -> None:
     gate_path = tmp_path / "scope-gate.json"
     pg_path = tmp_path / "pipeline-gate.json"
     expiry = _future_expiry()
@@ -550,7 +566,9 @@ def test_t16db_governed_scope_write_denied_with_non_boolean_research_required(tm
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -563,7 +581,9 @@ def test_t16dc_governed_scope_write_allowed_with_research_required_false(tmp_pat
     gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
     pg_path.write_text(json.dumps(_pipeline_gate(expiry=expiry)), encoding="utf-8")
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "allow"
 
@@ -590,7 +610,9 @@ def test_t16dd_governed_scope_write_allowed_with_same_session_repo_local_researc
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "allow"
 
@@ -605,7 +627,9 @@ def test_t16de_governed_scope_write_denied_when_research_evidence_missing(tmp_pa
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -628,7 +652,9 @@ def test_t16df_governed_scope_write_denied_when_research_evidence_is_not_an_obje
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -655,7 +681,9 @@ def test_t16dg_governed_scope_write_denied_when_research_evidence_missing_field(
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -683,7 +711,9 @@ def test_t16dh_governed_scope_write_denied_when_research_evidence_kind_is_not_re
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -711,7 +741,9 @@ def test_t16di_governed_scope_write_denied_when_research_evidence_session_mismat
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -739,7 +771,9 @@ def test_t16dj_governed_scope_write_denied_when_research_evidence_path_is_absolu
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -767,7 +801,9 @@ def test_t16dja_governed_scope_write_denied_when_research_evidence_path_uses_win
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -795,7 +831,9 @@ def test_t16dk_governed_scope_write_denied_when_research_evidence_path_traverses
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -823,7 +861,9 @@ def test_t16dl_governed_scope_write_denied_when_research_evidence_path_has_uri_s
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -851,7 +891,9 @@ def test_t16dlb_governed_scope_write_denied_when_research_evidence_path_has_non_
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "deny"
     assert "pipeline-gate" in _reason(output).lower()
@@ -885,7 +927,9 @@ def test_t16e_pipeline_gate_bootstrap_bypasses_foreign_write_claim(tmp_path: Pat
     assert _decision(output) == "allow"
 
 
-def test_t16f_mixed_pipeline_gate_and_repo_targets_do_not_bypass_write_claim(tmp_path: Path) -> None:
+def test_t16f_mixed_pipeline_gate_and_repo_targets_do_not_bypass_write_claim(
+    tmp_path: Path,
+) -> None:
     gate_path = tmp_path / "scope-gate.json"
     pg_path = tmp_path / "pipeline-gate.json"
     gate_path.write_text(

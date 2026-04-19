@@ -165,6 +165,7 @@ def _restore_pipeline_gate(
         "approved": True,
         "expires_at": expires_at,
         "opened_at": utc_now_iso(),
+        "research_required": False,
     }
     (repo_root / ".azoth" / "pipeline-gate.json").write_text(
         json.dumps(pipeline_gate, indent=2) + "\n",

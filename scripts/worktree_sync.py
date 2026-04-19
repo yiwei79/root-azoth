@@ -175,7 +175,9 @@ def register_producer_handoff(repo: Path, current: str, target_branch: str) -> i
     return 0
 
 
-def show_ready_handoff(repo: Path, target_branch: str, producer_branch: str | None, *, as_json: bool) -> int:
+def show_ready_handoff(
+    repo: Path, target_branch: str, producer_branch: str | None, *, as_json: bool
+) -> int:
     record = _latest_ready_handoff(
         repo,
         target_branch=target_branch,
@@ -359,7 +361,9 @@ def create_stash(repo: Path) -> str:
 def restore_stash(repo: Path, stash_ref: str) -> None:
     apply_result = _run_git(repo, "stash", "apply", stash_ref, check=False)
     if apply_result.returncode != 0:
-        detail = apply_result.stderr.strip() or apply_result.stdout.strip() or "git stash apply failed"
+        detail = (
+            apply_result.stderr.strip() or apply_result.stdout.strip() or "git stash apply failed"
+        )
         raise RuntimeError(
             f"stashed work could not be restored cleanly from {stash_ref}: {detail}. "
             f"Resolve the conflicts and rerun /worktree-sync. The stash remains available."
@@ -412,7 +416,9 @@ def producer_refresh(repo: Path, current: str, target_branch: str) -> int:
     return 0
 
 
-def integrator_preflight(repo: Path, current: str, target_branch: str, *, quiet: bool = False) -> int:
+def integrator_preflight(
+    repo: Path, current: str, target_branch: str, *, quiet: bool = False
+) -> int:
     if working_tree_dirty(repo):
         paths = "\n".join(f"- {path}" for path in dirty_paths(repo))
         print(

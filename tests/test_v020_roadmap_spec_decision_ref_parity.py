@@ -147,9 +147,11 @@ def test_evidence_grounding_initiative_is_multi_dimensional_and_slice_backed() -
     }
     slices = evi001.get("slices") or []
     assert [item.get("task_ref") for item in slices] == ["T-008", "T-009", "T-010"]
-    assert slices[0]["role"] == "primary"
-    assert slices[0]["status"] == "active"
-    assert slices[1]["status"] == "planned"
+    # T-008 is the historical seed slice (complete); T-009 is now the primary active slice.
+    assert slices[0]["role"] == "historical"
+    assert slices[0]["status"] == "complete"
+    assert slices[1]["role"] == "primary"
+    assert slices[1]["status"] == "active"
     assert slices[2]["status"] == "planned"
 
 
@@ -161,9 +163,13 @@ def test_all_initiatives_expose_dimensions_and_slices() -> None:
         assert "slices" in initiative, f"{initiative['id']} missing slices"
         dimensions = initiative["dimensions"]
         assert isinstance(dimensions, dict), f"{initiative['id']} dimensions must be a mapping"
-        assert isinstance(dimensions.get("themes"), list), f"{initiative['id']} themes must be a list"
-        assert isinstance(
-            dimensions.get("categories"), list
-        ), f"{initiative['id']} categories must be a list"
-        assert isinstance(dimensions.get("tracks"), list), f"{initiative['id']} tracks must be a list"
+        assert isinstance(dimensions.get("themes"), list), (
+            f"{initiative['id']} themes must be a list"
+        )
+        assert isinstance(dimensions.get("categories"), list), (
+            f"{initiative['id']} categories must be a list"
+        )
+        assert isinstance(dimensions.get("tracks"), list), (
+            f"{initiative['id']} tracks must be a list"
+        )
         assert isinstance(initiative["slices"], list), f"{initiative['id']} slices must be a list"

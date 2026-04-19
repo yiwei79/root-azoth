@@ -159,7 +159,9 @@ def next_task_id(
     selected_version = active_version or str(roadmap.get("active_version") or "").strip()
     if milestone is None:
         if not selected_version:
-            _die("could not resolve milestone: provide --milestone or ensure roadmap active_version exists")
+            _die(
+                "could not resolve milestone: provide --milestone or ensure roadmap active_version exists"
+            )
         milestone = milestone_for_version(selected_version)
 
     prefix, width = resolve_namespace_policy(roadmap, milestone)

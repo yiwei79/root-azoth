@@ -6,8 +6,8 @@ agent: orchestrator
 azoth_effect: write
 
 body:
-  mode: legacy_claude_markdown
-  source_path: .claude/commands/session-closeout.md
+  mode: canonical_markdown
+  source_path: commands/session-closeout/body.md
 
 projection:
   claude:

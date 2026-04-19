@@ -341,10 +341,11 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if normalized_write_action(payload) is None:
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
-    est_path = entropy_state_path(root)
     targets = [
         target
-        for target in (resolved_target(root, path_str) for path_str in extract_target_path_strs(payload))
+        for target in (
+            resolved_target(root, path_str) for path_str in extract_target_path_strs(payload)
+        )
         if target is not None
     ]
 
@@ -364,6 +365,20 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         return False
 
     if targets and all(_is_scope_bootstrap_target(target) for target in targets):
+        return ScopeGateResult(allowed=True, skip_entropy=True)
+
+    # Claude Code plan-mode writes to ~/.claude/plans/ before any scope card exists.
+    # Exempting only this specific sub-path avoids a bootstrap deadlock (BL-064).
+    _claude_plans_root = (Path.home() / ".claude" / "plans").resolve()
+
+    def _is_claude_plans_path(target: Path) -> bool:
+        try:
+            target.resolve().relative_to(_claude_plans_root)
+            return True
+        except (ValueError, OSError):
+            return False
+
+    if targets and all(_is_claude_plans_path(target) for target in targets):
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
     if not gate_path.exists():
@@ -393,13 +408,9 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=True)
 
     is_pg_write = any(
-        (
-            lambda target: (
-                target.resolve() == pg_path.resolve()
-                if target is not None
-                else False
-            )
-        )(target)
+        (lambda target: target.resolve() == pg_path.resolve() if target is not None else False)(
+            target
+        )
         for target in targets
     )
 

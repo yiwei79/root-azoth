@@ -342,10 +342,8 @@ def _find_version_block(text: str, version_id: str) -> tuple[int, int] | None:
     if not versions_match:
         return None
     next_top_level = re.search(r"^[A-Za-z0-9_]+:\s", text[versions_match.end() :], re.MULTILINE)
-    versions_end = (
-        versions_match.end() + next_top_level.start() if next_top_level else len(text)
-    )
-    versions_block = text[versions_match.end() :versions_end]
+    versions_end = versions_match.end() + next_top_level.start() if next_top_level else len(text)
+    versions_block = text[versions_match.end() : versions_end]
     start_match = re.search(
         r'^(?P<indent>\s*)-\s+id:\s*["\']?' + re.escape(version_id) + r'["\']?\s*$',
         versions_block,
@@ -476,10 +474,13 @@ def _rewrite_initiative_block(
     if bounds is None:
         return False
 
-    rendered = textwrap.indent(
-        yaml.safe_dump([initiative], sort_keys=False, allow_unicode=True).rstrip("\n"),
-        "  ",
-    ) + "\n"
+    rendered = (
+        textwrap.indent(
+            yaml.safe_dump([initiative], sort_keys=False, allow_unicode=True).rstrip("\n"),
+            "  ",
+        )
+        + "\n"
+    )
     start, end = bounds
     if start > 0 and text[start - 1] != "\n":
         rendered = "\n" + rendered
@@ -657,9 +658,7 @@ def _mark_roadmap_task_complete(
     text = roadmap_path.read_text(encoding="utf-8")
     bounds = _find_version_block(text, target_version)
     if bounds is None:
-        print(
-            f"W2c: roadmap version {target_version!r} not found while completing {backlog_id}"
-        )
+        print(f"W2c: roadmap version {target_version!r} not found while completing {backlog_id}")
         return False
 
     start, end = bounds
@@ -699,11 +698,7 @@ def _mark_roadmap_task_complete(
             count=1,
         )
         if new_line != completed_entry.group(0):
-            block = (
-                block[: completed_entry.start()]
-                + new_line
-                + block[completed_entry.end() :]
-            )
+            block = block[: completed_entry.start()] + new_line + block[completed_entry.end() :]
             changed = True
     else:
         completed_bounds = _find_section_bounds(block, "completed_tasks")
@@ -731,10 +726,9 @@ def _mark_roadmap_task_complete(
                 f'{item_indent}- {{id: {task_id}, title: "{title_text}", '
                 f'completed_date: "{completed_date}", decision_ref: {decision_text}}}\n'
             )
-            completed_block = (
-                f"{key_indent}completed_tasks:\n"
-                + completed_block[header_match.end() :].lstrip("\n")
-            )
+            completed_block = f"{key_indent}completed_tasks:\n" + completed_block[
+                header_match.end() :
+            ].lstrip("\n")
             completed_block = completed_block.rstrip("\n") + "\n" + completed_line
             block = block[:completed_start] + completed_block + block[completed_end:]
         changed = True
@@ -824,10 +818,7 @@ def _resumable_run_for_session(
         if isinstance(run, dict)
         and str(run.get("session_id") or "") == session_id
         and str(run.get("status") or "") == "paused"
-        and (
-            str(run.get("active_stage_id") or "").strip()
-            or bool(run.get("pending_stage_ids"))
-        )
+        and (str(run.get("active_stage_id") or "").strip() or bool(run.get("pending_stage_ids")))
     ]
     if not resumable:
         return None

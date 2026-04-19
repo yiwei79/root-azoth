@@ -2312,3 +2312,75 @@ items:
     some commands still use `body.mode: legacy_claude_markdown`, so the policy must
     stay honest about that bridge instead of asserting repo-wide independence from
     `.claude/commands/*.md` too early.'
+- id: BL-059
+  title: "INI-KRP-001: Karpathy Principles initiative registered in roadmap + backlog"
+  source: "ep-266"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-19'
+  completed_date: '2026-04-19'
+  initiative_ref: INI-KRP-001
+  description: >
+    Structural registration of INI-KRP-001 (Karpathy Principles behavioral quality layer).
+    Phase-undefined — assign to a phase at boundary time based on actual priorities.
+    Five task stubs (T-KRP-A through T-KRP-E) added to roadmap.yaml as planned/unscoped.
+    Research findings captured in ep-266. Implementation decisions intentionally deferred.
+    Future session activating this initiative should start with T-KRP-A (CLAUDE.md kernel
+    layer — lowest effort, highest reach).
+- id: BL-062
+  title: "scripts/initiative_scaffold.py — one-command initiative + task stub creation"
+  source: "ep-266"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-19'
+  description: >
+    Creating INI-KRP-001 required manually editing roadmap.yaml and backlog.yaml across
+    multiple sections — error-prone multi-file coordination with no automation. A scaffold
+    script modeled on roadmap_scaffold.py should accept --id INI-KRP-001 --tasks 5 and
+    auto-mint the initiative block, N task stub entries, and optional BL items in one command.
+    Acceptance: running the script produces valid roadmap.yaml and backlog.yaml entries;
+    python3 scripts/pipeline_lint.py passes after.
+- id: BL-063
+  title: "roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view"
+  source: "ep-266"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: active
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-19'
+  description: >
+    Initiative schema has dimensions.themes and dimensions.tracks fields, but
+    roadmap_dashboard.py renders a flat version-ordered list with no cross-section view.
+    Add --theme E / --track autonomous-quality flags to render all initiatives and tasks
+    matching that dimension across versions. Enables multi-dimensional roadmap views as
+    initiatives grow in number and span multiple phases.
+    Acceptance: python3 scripts/roadmap_dashboard.py --theme E returns only efficiency-theme
+    initiatives and their tasks; --track autonomous-quality returns only that track subset.
+- id: BL-064
+  title: "Scope-gate hook: whitelist paths outside repo root (fixes plan-mode write blocking)"
+  source: "ep-266"
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-19'
+  completed_date: '2026-04-19'
+  description: >
+    The PreToolUse hook in .claude/hooks/scope_gate_core.py fires on ALL Write/Edit
+    tool calls regardless of destination path. Discovered live when plan-mode tried to
+    write to ~/.claude/plans/ (outside the repo root) and was blocked because no scope
+    card existed — a deadlock for planning sessions. Fix: in evaluate_scope_gate(), add
+    an outside-root check before the `not gate_path.exists()` branch. If the resolved
+    target path does not share a common prefix with repo_root, skip enforcement and return
+    ScopeGateResult(allowed=True, skip_entropy=True).
+    File: .claude/hooks/scope_gate_core.py (evaluate_scope_gate, ~line 337).
+    Acceptance: writing to ~/.claude/plans/ proceeds without a scope card; writing to
+    .azoth/ still requires one.

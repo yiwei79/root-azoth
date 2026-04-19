@@ -13,7 +13,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "worktree_sync.py"
 
 
-def _run_sync(cwd: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+def _run_sync(
+    cwd: Path, *args: str, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     cmd_env = os.environ.copy()
     if env:
         cmd_env.update(env)
@@ -104,7 +106,9 @@ def test_worktree_sync_rebases_clean_producer_branch_before_commit(tmp_path: Pat
     assert result.returncode == 0, result.stderr
     assert "rebased onto 'phase/v0.2.0-p2'" in result.stdout
     assert (
-        _run_git(tmp_path, "merge-base", "--is-ancestor", "phase/v0.2.0-p2", "HEAD", check=False).returncode
+        _run_git(
+            tmp_path, "merge-base", "--is-ancestor", "phase/v0.2.0-p2", "HEAD", check=False
+        ).returncode
         == 0
     )
 
@@ -124,7 +128,9 @@ def test_worktree_sync_stashes_rebases_and_restores_dirty_producer_branch(tmp_pa
     status = _run_git(tmp_path, "status", "--porcelain").stdout
     assert "local-untracked.txt" in status
     assert (
-        _run_git(tmp_path, "merge-base", "--is-ancestor", "phase/v0.2.0-p2", "HEAD", check=False).returncode
+        _run_git(
+            tmp_path, "merge-base", "--is-ancestor", "phase/v0.2.0-p2", "HEAD", check=False
+        ).returncode
         == 0
     )
 
@@ -132,8 +138,12 @@ def test_worktree_sync_stashes_rebases_and_restores_dirty_producer_branch(tmp_pa
 def test_worktree_sync_stops_on_rebase_conflict_without_creating_commit(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     _setup_phase_and_feature(tmp_path)
-    _commit_file(tmp_path, "feat/test-producer", "tracked.txt", "feature branch line\n", "feature change")
-    _commit_file(tmp_path, "phase/v0.2.0-p2", "tracked.txt", "target branch line\n", "target change")
+    _commit_file(
+        tmp_path, "feat/test-producer", "tracked.txt", "feature branch line\n", "feature change"
+    )
+    _commit_file(
+        tmp_path, "phase/v0.2.0-p2", "tracked.txt", "target branch line\n", "target change"
+    )
     _run_git(tmp_path, "checkout", "feat/test-producer")
     head_before = _run_git(tmp_path, "rev-parse", "HEAD").stdout.strip()
 
@@ -149,7 +159,9 @@ def test_worktree_sync_stops_on_rebase_conflict_without_creating_commit(tmp_path
 def test_worktree_sync_stops_on_stash_restore_conflict_and_preserves_stash(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     _setup_phase_and_feature(tmp_path)
-    _commit_file(tmp_path, "phase/v0.2.0-p2", "tracked.txt", "target branch line\n", "target change")
+    _commit_file(
+        tmp_path, "phase/v0.2.0-p2", "tracked.txt", "target branch line\n", "target change"
+    )
     _run_git(tmp_path, "checkout", "feat/test-producer")
     (tmp_path / "tracked.txt").write_text("local dirty line\n", encoding="utf-8")
 
@@ -211,7 +223,11 @@ def test_worktree_sync_records_producer_handoff_in_shared_queue(tmp_path: Path) 
 
     assert result.returncode == 0, result.stderr
     assert "recorded producer handoff 'feat/test-producer'" in result.stdout
-    records = [json.loads(line) for line in queue_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    records = [
+        json.loads(line)
+        for line in queue_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     assert len(records) == 1
     assert records[0]["event"] == "producer-ready"
     assert records[0]["producer_branch"] == "feat/test-producer"
