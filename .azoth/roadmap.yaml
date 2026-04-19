@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 53
+    current_patch: 55
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -373,9 +373,6 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
-      - id: T-006
-        title: "First-class iterative revise-and-continue pipeline loops"
-        decision_ref: [D23, D44]
       - id: T-009
         title: "Local research capsule bank + sufficiency checker"
         decision_ref: [D11, D23, D45, D46]
@@ -431,6 +428,7 @@ versions:
       - {id: T-004, title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit", completed_date: "2026-04-17", decision_ref: [D11, D19, D21, D46, D52]}
       - {id: T-008, title: "Minimal bounded research sufficiency gate", completed_date: "2026-04-18", decision_ref: [D23, D44, D45, D46, D52]}
       - {id: T-005, title: "Low-risk instruction-refinement lightweight lane", completed_date: "2026-04-18", decision_ref: [D23, D44]}
+      - {id: T-006, title: "First-class iterative revise-and-continue pipeline loops", completed_date: "2026-04-18", decision_ref: [D23, D44]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -563,8 +561,8 @@ initiatives:
     - task_ref: T-006
       spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
       phase: v0.2.0-p2
-      status: active
-      role: primary
+      status: complete
+      role: historical
     summary: 'P1-008 delivered the full-pipeline instruction-refinement foundation:
       `knowledge == instruction-refinement`, Rule 4 routing, and the `l2-evidence-review`
       inject into the architect stage. The remaining follow-on is optional low-risk

@@ -2183,10 +2183,11 @@ items:
   initiative_ref: INI-PPL-001
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 3
   created_date: '2026-04-18'
+  completed_date: '2026-04-18'
   decision_ref:
   - D23
   - D44
