@@ -4,11 +4,11 @@
 0.1.2.67 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 64
 
 ## Last Session
-- **Session**: 2026-04-19-adhoc-publish-auto-meta-pipeline
-- **Goal**: AD-HOC: close out the auto meta-pipeline rollout, commit it cleanly, open a PR to main, and request inbox-only Copilot/Codex reviews
+- **Session**: 2026-04-19-adhoc-pr14-full-ci-regressions
+- **Goal**: AD-HOC: fix remaining full CI regressions on PR #14, then continue toward review completion + merge
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-284 (success)
+- **Episode**: ep-285 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
