@@ -2,7 +2,7 @@
 # This file tracks the toolkit's state and installed components.
 
 name: root-azoth
-version: 0.1.2.69
+version: 0.1.3.1
 description: The Universal Agentic Toolkit
 
 # Root scaffold identity (D34-D38)
@@ -12,7 +12,7 @@ scope:
   is_development_workshop: true
 
 # Milestone-local phase for the active working slice (v0.2.x); welcome strip uses lifecycle_phase
-phase: 2
+phase: 3
 milestone: v0.2.0
 lifecycle_phase: 8  # historical 1–7 + Next marker for shipped pre-1.0 roadmap + v0.1.0 gate
 
@@ -36,7 +36,7 @@ layers:
 
 # Memory system
 memory:
-  episodes: 290
+  episodes: 291
   patterns: 20
   last_sync: null
 
