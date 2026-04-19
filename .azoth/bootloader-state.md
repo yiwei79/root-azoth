@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.68 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 65
+0.1.2.69 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 66
 
 ## Last Session
-- **Session**: 2026-04-19-t-014
-- **Goal**: T-014: Worktree session lifecycle UX after integration
-- **Pipeline**: auto
+- **Session**: 2026-04-19-bl-065
+- **Goal**: BL-065: Worktree-upgrade external evidence refresh lane
+- **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-286 (success)
+- **Episode**: ep-288 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
