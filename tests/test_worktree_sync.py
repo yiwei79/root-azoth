@@ -891,6 +891,25 @@ def test_integrate_ready_handoff_fails_closed_on_handoffs_approval_path(tmp_path
     assert queued_result.returncode == 0, queued_result.stderr
 
 
+def test_merge_episode_records_dedupes_exact_rows_but_keeps_legacy_id_collisions() -> None:
+    target = [
+        {"id": "ep-112", "session_id": "capture", "summary": "first"},
+        {"id": "ep-112", "session_id": "closeout", "summary": "second"},
+    ]
+    producer = [
+        {"id": "ep-112", "session_id": "capture", "summary": "first"},
+        {"id": "ep-130", "session_id": "new", "summary": "third"},
+    ]
+
+    merged = worktree_sync_mod._merge_episode_records(target, producer)
+
+    assert merged == [
+        {"id": "ep-112", "session_id": "capture", "summary": "first"},
+        {"id": "ep-112", "session_id": "closeout", "summary": "second"},
+        {"id": "ep-130", "session_id": "new", "summary": "third"},
+    ]
+
+
 def test_integrate_ready_handoff_fails_closed_on_non_allowlisted_backlog_change(
     tmp_path: Path,
 ) -> None:

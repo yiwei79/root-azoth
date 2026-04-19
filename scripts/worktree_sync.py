@@ -363,17 +363,16 @@ def _merge_episode_records(
     target_records: list[dict[str, Any]], producer_records: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
     merged: list[dict[str, Any]] = []
-    by_id: dict[str, dict[str, Any]] = {}
+    seen_payloads: set[str] = set()
     for record in [*target_records, *producer_records]:
         episode_id = str(record.get("id") or "").strip()
         if not episode_id:
             raise ValueError("episodes.jsonl record missing id")
-        prior = by_id.get(episode_id)
-        if prior is not None and prior != record:
-            raise ValueError(f"episode id {episode_id!r} collides with different payloads")
-        if prior is None:
-            by_id[episode_id] = record
-            merged.append(record)
+        fingerprint = _sha256_hex(_canonical_json_bytes(record))
+        if fingerprint in seen_payloads:
+            continue
+        seen_payloads.add(fingerprint)
+        merged.append(record)
     return merged
 
 
