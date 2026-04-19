@@ -1,0 +1,130 @@
+proposal_schema_version: 1
+created_at: "2026-04-19T10:13:07Z"
+session_id: "2026-04-19-worktree-sync-sandbox-integration"
+backlog_id: "P1-015-followup"
+title: "Sandboxed integrate runs for worktree handoffs"
+summary: >
+  Azoth's current worktree sync flow is strong at producer preflight and handoff
+  registration, but it does not yet provide an Azoth-native end-of-session merge
+  workflow for safely integrating a producer branch into the target branch
+  without requiring a permanently open integrator session. This proposal
+  recommends a two-lane model: producer sessions prepare and queue a clean
+  handoff, while a short-lived integrate run performs a mandatory
+  temporary-worktree sandbox merge, applies deterministic reconciliation for
+  known shared Azoth state files, runs targeted verification, and only then
+  fast-forwards the live target branch. The goal is to fit real worktree usage
+  without weakening Azoth's single-integrator-operation safety model.
+status: draft
+decision_refs:
+  - D21
+  - D50
+  - D54
+scope_layers:
+  - pipelines
+  - docs
+  - mixed
+details:
+  problem:
+    current_gap: >
+      scripts/worktree_sync.py acts as a preflight and handoff backend, but the
+      /worktree-sync command contract reads like a full end-of-session
+      integration workflow. In real use, the missing piece is semantic merge and
+      integration of shared Azoth state without a persistent manager session.
+    why_rebase_first_is_insufficient: >
+      Producer refresh currently assumes that rebasing onto the target branch is
+      the right pre-handoff step. That works for isolated feature code, but it
+      breaks down when a producer branch includes session closeout or other
+      mutations to shared .azoth state that naturally overlap with the current
+      integrator branch.
+    observed_conflict_surfaces:
+      - ".azoth/backlog.yaml"
+      - ".azoth/roadmap.yaml"
+      - ".azoth/memory/episodes.jsonl"
+      - ".azoth/final-delivery-approvals.jsonl"
+      - ".azoth/bootloader-state.md"
+      - "azoth.yaml"
+  architectural_judgment:
+    statement: >
+      Azoth already documents a single-integrator control plane. The safest
+      upgrade is not to make producer rebases more clever, but to add an
+      explicit integrate lane that isolates merge risk from the live target
+      worktree and treats shared Azoth files as semantic state rather than
+      ordinary text conflicts. Single integrator should mean one integration
+      operation at a time, not one permanently open integrator workspace.
+    fit_with_existing_model:
+      - "Preserves one-integration-at-a-time behavior."
+      - "Keeps producer sessions lightweight and queue-based."
+      - "Avoids direct integration of branch-local .azoth truth into canonical shared state."
+      - "Removes the need to keep a dedicated integrator session open between merges."
+  proposal:
+    workflow_shape:
+      producer_lane:
+        - "Refresh from the target branch when cleanly possible."
+        - "Commit and optionally push producer-local work."
+        - "Record a ready handoff with branch, head SHA, verification facts, and merge intent."
+        - "Queue the handoff for later integration."
+        - "If the queue is idle and the target is safe, explicitly offer 'integrate now' as a follow-up."
+        - "Do not treat producer-side shared-state closeout as canonical if the branch is not the active integration operation."
+      integrate_lane:
+        - "Select exactly one ready producer handoff."
+        - "Create a temporary integration worktree from the current target tip."
+        - "Merge the producer branch in the temporary worktree, not the live integrator worktree."
+        - "Apply deterministic reconciliation rules for known shared Azoth state files."
+        - "Run targeted verification for the merged slice."
+        - "Integrate by fast-forwarding the live target branch to the tested merge commit."
+        - "Mark the handoff integrated and optionally prune producer resources."
+        - "Exit; do not leave a parked or always-open integrator session behind."
+    command_contract:
+      recommendation: >
+        Keep /worktree-sync as the operator entrypoint, but split it into two
+        explicit behaviors: producer handoff and integrate-next. The backend
+        should stop pretending that producer refresh and integration are
+        the same kind of operation.
+      candidate_modes:
+        - "producer: refresh-or-handoff"
+        - "integrate: sandbox-merge -> verify -> integrate -> prune"
+      finish_ux:
+        - "Default producer closeout reports 'handoff queued' after recording the handoff."
+        - "When the target branch is clean, no integration is in flight, and the selected handoff is unambiguous, report 'handoff queued; integrate now?' as an explicit follow-up."
+        - "Do not silently auto-start integration from producer closeout."
+    deterministic_reconciliation_policy:
+      approvals: "Union append for .azoth/final-delivery-approvals.jsonl."
+      episodes: >
+        Append with duplicate and episode-id collision guards; recompute any
+        derived counts from merged truth rather than trusting either side
+        blindly.
+      backlog_and_roadmap: >
+        Reconcile semantically by task/initiative identity and status, not by
+        whichever side wins a text merge.
+      bootloader_state: >
+        Prefer the current integration continuity narrative unless the producer
+        explicitly owns the active continuity slice.
+      azoth_yaml: >
+        Recompute derived counters such as episode counts from the merged
+        repository state.
+  non_goals:
+    - "Do not turn Azoth into a general multi-writer merge engine in this slice."
+    - "Do not allow parallel direct merges into the live integrator branch."
+    - "Do not auto-promote proposal text into docs/AZOTH_ARCHITECTURE.md or decisions docs."
+    - "Do not require a permanently open manager or integrator session."
+  future_exploration:
+    phased_path:
+      - "Phase 1: extend worktree-sync with explicit sandboxed integrate-next behavior."
+      - "Phase 2: move producer closeout toward a typed handoff capsule instead of canonical shared-state mutation."
+      - "Phase 3: revisit whether parts of P1-015 should be re-opened or continued as a new scoped initiative."
+    open_questions:
+      - "Should producer sessions be allowed to write shared .azoth state at all when they are not the active integration operation?"
+      - "Should the handoff record include a typed verification payload similar to BL-012 stage summaries?"
+      - "Should deterministic reconciliation live in worktree_sync.py or in a dedicated merge-policy module?"
+      - "Should a future automation runner be allowed to invoke the same integrate-next flow when the queue is idle, or should integration remain explicitly human-triggered?"
+  recommended_follow_up:
+    shape: >
+      Open a future scoped task to design and implement sandboxed integrator
+      integration as an Azoth-native workflow, beginning with docs/command
+      contract clarity and targeted backend/test coverage.
+    likely_touchpoints:
+      - ".claude/commands/worktree-sync.md"
+      - ".agents/skills/azoth-worktree-sync/SKILL.md"
+      - "scripts/worktree_sync.py"
+      - "tests/test_worktree_sync.py"
+      - "docs/playbook/05-parallel-sessions.md"

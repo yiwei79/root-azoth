@@ -13,8 +13,7 @@
 .azoth/run-ledger.local.yaml
 # bootloader-state.md — tracked in root-azoth for cloud sync / cross-machine handoff
 # Golden §4 manifest is tracked in this repo for CI / verify-checksums (GOV-B2).
-# Consumer installs may regenerate locally; see install.sh.
-.azoth/proposals/
+# Architecture proposals are tracked so future sessions can refine and promote them.
 
 # Python
 __pycache__/
