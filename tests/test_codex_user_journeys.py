@@ -6,8 +6,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import yaml
-
 from codex_journey_harness import (
     REPO,
     capture_plain_welcome,
@@ -368,19 +366,22 @@ def _stub_restore_pipeline_gate(
     pipeline: str,
     expires_at: str,
     require: bool = True,
+    research_required: bool = False,
+    research_evidence: dict | None = None,
 ) -> None:
     del require
+    payload = {
+        "session_id": session_id,
+        "pipeline": pipeline,
+        "approved": True,
+        "expires_at": expires_at,
+        "opened_at": "2099-04-18T09:00:00+00:00",
+        "research_required": research_required,
+    }
+    if research_evidence is not None:
+        payload["research_evidence"] = research_evidence
     (repo_root / ".azoth" / "pipeline-gate.json").write_text(
-        json.dumps(
-            {
-                "session_id": session_id,
-                "pipeline": pipeline,
-                "approved": True,
-                "expires_at": expires_at,
-                "opened_at": "2099-04-18T09:00:00+00:00",
-            }
-        )
-        + "\n",
+        json.dumps(payload) + "\n",
         encoding="utf-8",
     )
 
