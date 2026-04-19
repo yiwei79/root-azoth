@@ -4,28 +4,32 @@
 0.1.2.58 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 55
 
 ## Last Session
-- **Session**: 2026-04-18-ini-krp-001-registration
-- **Goal**: Register INI-KRP-001 (Karpathy principles) in roadmap; upgrade roadmap system gaps (BL-062, BL-063); fix BL-064 scope-gate plan-mode deadlock
-- **Pipeline**: standard
+- **Session**: 2026-04-19-t006-cont
+- **Goal**: Continuation: commit and push T-006 work after context-compaction interruption
+- **Pipeline**: continuation (no scope gate opened — completing prior T-006 session)
 - **Outcome**: closed
-- **Episode**: ep-266 (decision)
+- **Episode**: ep-268 (pattern)
 
 ## Key Changes This Session
-1. INI-KRP-001 registered in `.azoth/roadmap.yaml` — phase-undefined initiative, 5 M1-governed task stubs (T-KRP-A through T-KRP-E).
-2. BL-059 (complete), BL-062, BL-063, BL-064 added to `.azoth/backlog.yaml`; BL-064 completed this session.
-3. BL-064 fix: `.claude/hooks/scope_gate_core.py` — narrow `~/.claude/plans/` exemption added; 48/48 scope gate tests pass.
-4. ep-266 appended to `.azoth/memory/episodes.jsonl`.
-5. Scope gate closed.
-
-## Open Decisions
-- INI-KRP-001 phase assignment: deferred to next phase boundary — assign T-KRP-A/D to v0.2.0-p3 or equivalent.
-- T-006 (goal-criteria gate): paused at `deliver_full_s7_architect_review`; resume when ready. Write claim was released this session.
+1. T-006 work committed in 3 logical commits on `phase/v0.2.0-p2`:
+   - `feat(pipeline)`: run-ledger request-changes replay helper + wiring (run_ledger.py, park_session.py, 4 test files)
+   - `feat(governance)`: governed-signal detection normalized across orchestrator + GATE_PROTOCOL + all platform mirrors
+   - `chore(closeout)`: session state, ep-267, backlog/roadmap updates, version bump
+2. Fixup commit: `INI-PPL-001.task_ref` nulled (T-006 moved to completed_tasks); unused yaml import dropped (ruff F401).
+3. Branch pushed: `phase/v0.2.0-p2` now at `a70eb85`.
+4. Full suite: 1565 passed, 0 failed, 1 xfailed.
+5. ep-268 appended (pattern: stash-pop + parallel-edit CI failure cascade).
 
 ## Continuity Audit
-- BL-059 added and completed in same session (INI-KRP-001 registration) — noted explicitly.
-- BL-064 added and completed in same session — noted explicitly.
-- BL-062 and BL-063: added, status active, no implementation this session.
-- T-KRP-A through T-KRP-E: roadmap stubs only; no backlog items minted yet (spec-only at this stage).
+- T-006 (run-ledger replay + governance normalization): COMPLETE — all slices delivered, committed, pushed.
+- INI-PPL-001.task_ref: nulled — both T-005 and T-006 slices complete; residual lightweight-lane work is spec-only in T-005.yaml, not yet operationalized.
+- BL-062, BL-063: still active (initiative scaffold, dashboard filters) — no work this session.
+- INI-KRP-001 (T-KRP-A through T-KRP-E): planned, phase-undefined, no implementation.
+
+## Open Decisions
+- INI-KRP-001 phase assignment: deferred to next phase boundary.
+- INI-PPL-001 residual lightweight lane (T-005 spec): spec-only, no backlog item minted.
+- W3 memory sync: deferred from prior session — update ~/.claude/.../memory/project_status.md.
 
 ## Next Action
-- Run `/next` to select next scoped task (candidates: BL-062 initiative scaffold, BL-063 dashboard filters, or resume T-006).
+- Run `/next` to select next scoped task (candidates: BL-062 initiative scaffold, BL-063 dashboard filters, or an INI-KRP-001 task stub).
