@@ -1,0 +1,18 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-19-bl-065
+backlog_id: BL-065
+goal: "BL-065: Worktree-upgrade external evidence refresh lane"
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: 2026-04-19T20:45:00Z
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+    - BL-065
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: 1f543cde7a69036af8681f4093d8b946e68453421ad67fbd734163f9f3ff63d4
