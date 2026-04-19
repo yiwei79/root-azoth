@@ -576,7 +576,7 @@ initiatives:
     decision_ref:
     - D23
     - D44
-    spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
   - id: INI-PPL-002
     title: "Eval / eval-swarm wiring drift hardening"
     category: pipeline

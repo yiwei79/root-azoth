@@ -147,9 +147,11 @@ def test_evidence_grounding_initiative_is_multi_dimensional_and_slice_backed() -
     }
     slices = evi001.get("slices") or []
     assert [item.get("task_ref") for item in slices] == ["T-008", "T-009", "T-010"]
-    assert slices[0]["role"] == "primary"
-    assert slices[0]["status"] == "active"
-    assert slices[1]["status"] == "planned"
+    # T-008 is the historical seed slice (complete); T-009 is now the primary active slice.
+    assert slices[0]["role"] == "historical"
+    assert slices[0]["status"] == "complete"
+    assert slices[1]["role"] == "primary"
+    assert slices[1]["status"] == "active"
     assert slices[2]["status"] == "planned"
 
 
