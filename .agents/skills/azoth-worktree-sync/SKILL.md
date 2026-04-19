@@ -19,4 +19,4 @@ Execution contract:
 
 Command metadata:
 - Source path: `.claude/commands/worktree-sync.md`
-- Description: Protocol-aware worktree sync for producer and integrator sessions
+- Description: Protocol-aware worktree sync for producer handoffs and integrate runs

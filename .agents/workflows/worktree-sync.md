@@ -5,7 +5,7 @@ Protocol-aware git sync for parallel worktrees.
 This command preserves Azoth's **single-integrator** parallel-session contract:
 
 - producer sessions sync local work and hand off their branch
-- the active integrator syncs and merges exactly one producer branch into the target branch
+- a short-lived integrate run syncs and merges exactly one producer branch into the target branch
 - if the target branch worktree is dirty or another integration pass is in flight, stop
 - producer branches are refreshed against the local target branch before any sync commit is created
 
@@ -15,7 +15,7 @@ No governance evaluation. No session close. Just sync under the parallel-session
 
 1. **Detect current branch role**
    - If on the active integration branch (for example `phase/v0.2.0-pN`), treat this as
-     an **integrator sync**.
+     an **integrate run**.
    - Otherwise treat this as a **producer sync**.
 
 2. **Fail closed on unsafe integration**
@@ -46,10 +46,10 @@ Use when this worktree is on a feature, patch, or detached producer branch.
 
 6. **Push** (if tracking a remote): `git push`
 
-7. **Register the integrator handoff**:
+7. **Register the handoff**:
    - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --record-producer-handoff`
    - This must run only after the producer branch is clean at the intended handoff commit
-   - The backend writes a shared handoff record keyed by the git common dir so the active integrator worktree can resolve it immediately
+   - The backend writes a shared handoff record keyed by the git common dir so any later integrate run can resolve it immediately
 
 8. **Report**:
    ```
@@ -60,16 +60,18 @@ Use when this worktree is on a feature, patch, or detached producer branch.
    - Branch: {branch}
    - Remote: {pushed | local-only}
    - Role: producer
-   - Handoff: queued for the active integrator
+   - Handoff: queued
+   - Next: if the queue is idle and the target branch is clean, offer `integrate now`
    ```
 
-## Integrator Sync
+## Integrate Run
 
-Use when this worktree is on the active integration branch.
+Use when this worktree is on the active integration branch, but treat the run as
+short-lived and transactional rather than a permanently open session.
 
 ## Process
 
-1. **Check git status**: confirm the integration worktree is clean enough for a merge
+1. **Check git status**: confirm the target branch worktree is clean enough for an integrate run
 
 2. **If dirty, STOP**:
    - Report the dirty paths
@@ -84,8 +86,9 @@ Use when this worktree is on the active integration branch.
    - If the human names a specific producer branch, pass `--producer-branch <branch>`
    - STOP if no ready producer handoff is queued for the target branch
 
-5. **Merge exactly one producer branch**:
-   - merge the selected ready producer branch into the integration branch
+5. **Integrate exactly one producer branch**:
+   - merge the selected ready producer branch into a temporary integration worktree rooted at the target tip
+   - do not treat a permanently open integrator worktree as required state
    - resolve conflicts deliberately, especially in shared Azoth state surfaces
 
 6. **Run required post-merge regeneration/tests**:
@@ -95,12 +98,15 @@ Use when this worktree is on the active integration branch.
 7. **Mark the handoff integrated**:
    - After the merge succeeds, execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --mark-integrated <producer_branch>`
 
-8. **Commit and push the integration result** if needed
+8. **Promote the tested result**:
+   - fast-forward the live target branch to the tested merge commit
+   - push if needed
+   - clean up the temporary integration workspace
 
 9. **Report**:
    ```
-   ## Integration Sync Complete
-   - Branch merged: {producer_branch}
+   ## Integrate Run Complete
+   - Branch integrated: {producer_branch}
    - Target branch: {target_branch}
    - Commit: {SHA}
    - Verification: {tests_or_checks}
@@ -117,5 +123,6 @@ Use when this worktree is on the active integration branch.
 - Preserve the **single integrator** contract from `docs/playbook/05-parallel-sessions.md`
 - Producer sessions must not merge themselves into the target branch while another integrator pass is active
 - Producer sessions must refresh against the local target branch **before** creating the sync commit
-- Integrator sessions merge **one** producer branch at a time, then stop so other sessions can refresh
+- Integrate runs merge **one** producer branch at a time, then stop so other sessions can refresh
+- Single integrator means **one integration operation at a time**, not one permanently open session
 - If integration is unsafe, fail closed and explain why instead of improvising around a dirty target tree

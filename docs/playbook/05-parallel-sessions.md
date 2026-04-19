@@ -5,7 +5,7 @@
 This playbook describes the **recommended Codex/Azoth pattern today**:
 
 - multiple sessions may work in parallel on separate branches or worktrees
-- exactly **one** session acts as the **integrator**
+- exactly **one** integration operation runs at a time
 - merges into the target branch happen **sequentially**, never concurrently
 
 This is the lowest-effort way to get real value from parallel sessions without
@@ -42,26 +42,27 @@ A producer session may:
 A producer session should **not**:
 
 - merge itself into the shared target branch while another session may also merge
-- run final closeout for shared Azoth state unless it is the active integrator
+- run final closeout for shared Azoth state unless it owns the active integration operation
 - assume its local `.azoth/*` state is authoritative after another branch merges
 
-### Integrator Session
+### Integrate Run
 
-The integrator session owns:
+A short-lived integrate run owns:
 
 - merges into the target branch
 - conflict resolution against the latest target branch
 - final shared-state reconciliation
 - closeout for the integration pass
 
-Only one integrator should exist at a time.
+Only one integration operation should exist at a time. This does **not** require
+keeping a dedicated integrator session or worktree open between merges.
 
 ## Safe Workflow
 
 1. Each session works on its own branch or worktree.
-2. One session is designated the current integrator.
+2. When a handoff is ready to land, start a short-lived integrate run from the target branch.
 3. Producer sessions run `/worktree-sync`, which refreshes them against the local target branch before creating the sync commit.
-4. The integrator merges exactly one producer branch into the target branch.
+4. The integrate run merges exactly one producer branch into the target branch through a temporary sandbox worktree.
 5. After the merge, the remaining producer sessions rebase or merge from the updated target branch.
 6. The next producer branch is integrated only after that refresh is complete.
 7. Shared-state closeout happens once per integration step, not concurrently across sessions.
@@ -100,7 +101,7 @@ This is **coordinated single-writer, multi-worktree**, not full multi-writer.
 
 Before merging a producer branch:
 
-- confirm no other session is currently acting as integrator
+- confirm no other integration operation is currently in flight
 - pull or refresh the target branch first
 - inspect whether the producer touched shared Azoth state
 - if yes, reconcile those files deliberately instead of accepting both sides blindly
