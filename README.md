@@ -40,7 +40,7 @@ For people working **in this repo**:
   `pip install -r requirements-dev.txt` (from repo root; or your project venv).
   This form satisfies **pip-install-guard** in Claude Code Bash.
 3. **Validate:** `python3 -m pytest` and `python3 -m ruff check .` / `ruff format --check .` (same gates as **GitHub Actions** `.github/workflows/ci.yml`).
-4. **After changing** canonical `commands/*`, `skills/*`, `agents/**`, or any remaining legacy `.claude/commands/**` bridge body, sync platform copies:
+4. **After changing** canonical `.claude/commands/*.md`, `skills/*`, `agents/**`, or Codex adapter bridge files, sync platform copies:
   `python3 scripts/azoth-deploy.py`
 5. **Public product extract (P4-004):** `python3 scripts/azoth_extract_product.py --validate-only` (CI smoke) or
   `python3 scripts/azoth_extract_product.py --out /tmp/azoth-dist` (full tree per `sync-config.yaml` `product_extraction`).
