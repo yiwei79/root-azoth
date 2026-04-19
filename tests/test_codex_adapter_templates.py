@@ -11,6 +11,15 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 CODEX_DIR = REPO / "kernel" / "templates" / "platform-adapters" / "codex"
+CODEX_ONLY_STYLE_LINES = (
+    "Codex-only human-facing response style (BL-051 follow-on, not shared-platform canon):",
+    "For human-facing non-operational output in Codex, prefer short titled sections over large prose blocks when that improves scanability.",
+    "Selective emojis are allowed as navigational markers for summaries, approvals, status framing, and next steps; do not use them decoratively.",
+    "Use tables for comparisons, options, gate state, pipeline declarations, and tradeoffs only when the table will stay narrow inside the chat column.",
+    "If a table would become wide, wrap awkwardly, or cause horizontal scrolling, do not use it; switch to bullets, short labeled lines, or a two-part comparison instead.",
+    "Do not paragraph-dump. Do not produce decorative verbosity. Do not let visual structure become clutter.",
+    "Keep machine-facing artifacts terse and plain: BL-011 spawn payloads, BL-012 stage summaries, gates, evaluator scorecards, and schema-bound YAML/JSON/TOML stay optimized for determinism, not presentation flourish.",
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -243,3 +252,23 @@ def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
     assert "max_depth = 2" in text
     assert "Nested delegation is bounded" in text
     assert "`research-orchestrator`, and `architect` may spend depth > 1" in text
+
+
+def test_codex_config_template_and_deployed_output_include_codex_only_style_rubric() -> None:
+    for path in (CODEX_DIR / "config.toml.template", REPO / ".codex" / "config.toml"):
+        text = path.read_text(encoding="utf-8")
+        for line in CODEX_ONLY_STYLE_LINES:
+            assert line in text, f"{path.name} missing Codex-only style line: {line!r}"
+
+
+def test_codex_only_style_rubric_does_not_leak_into_shared_bl051_surfaces() -> None:
+    unique_line = CODEX_ONLY_STYLE_LINES[0]
+    for path in (
+        REPO / "CLAUDE.md",
+        REPO / "agents" / "tier1-core" / "orchestrator.agent.md",
+        REPO / ".claude" / "agents" / "orchestrator.md",
+    ):
+        text = path.read_text(encoding="utf-8")
+        assert unique_line not in text, (
+            f"{path.relative_to(REPO)} unexpectedly contains Codex-only style rubric"
+        )

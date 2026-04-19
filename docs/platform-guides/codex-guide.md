@@ -10,6 +10,43 @@
 - Compatibility wrappers like `$azoth-auto` and literal slash tokens still work, but they normalize back through the same calm-flow controller.
 - Generated Codex wrappers resolve from `commands/<name>/command.yaml`; some command bodies still bridge through `.claude/commands/*.md` while `legacy_claude_markdown` remains live.
 
+## Human-Facing Output
+
+Codex intentionally uses a **richer human-facing presentation layer** than the shared
+BL-051 baseline. This is a Codex-first follow-on, not a platform-wide rewrite.
+
+What counts as **human-facing** output in Codex:
+
+- summaries after discovery or implementation
+- approvals, declarations, and decision framing shown to the human
+- plans, tradeoff explanations, and “what happens next” guidance
+
+What counts as **operational / machine-facing** output:
+
+- BL-011 spawn payloads
+- BL-012 stage summaries
+- gate files and gate-validation state
+- evaluator scorecards and schema-bound YAML/JSON/TOML artifacts
+
+Codex guidance for human-facing output:
+
+- Prefer short titled sections over long paragraph walls.
+- Use hierarchy on purpose: a brief orienting sentence, then bullets or a compact table only when they genuinely improve scanning.
+- Use **selective** emojis as navigational markers, not decoration.
+- Use tables for comparisons, options, gate state, and pipeline declarations only when they stay visually narrow in the chat column.
+- If a table would overflow, wrap badly, or introduce horizontal scrolling, switch to bullets, labeled lines, or a short contrastive comparison instead.
+- Keep the user’s long-term goal visible: restate the goal, make scope boundaries legible, and offer only the nearest helpful next step.
+
+Codex guidance for operational output:
+
+- Keep it terse, plain, and parseable.
+- Do not add decorative formatting to machine-oriented artifacts.
+- Do not let richer presentation bleed into gates, handoffs, or schema-bound records.
+
+This split is deliberate: Codex should feel more scannable and supportive in human chat
+without weakening Azoth’s deterministic pipeline artifacts or silently changing the
+shared Claude/Copilot/OpenCode/Gemini house style.
+
 ## Daily Flow
 
 Use these as the default Codex entries:

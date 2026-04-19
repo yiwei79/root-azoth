@@ -29,6 +29,15 @@ NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
 - The canonical Codex hook profile is `calm`: only `UserPromptSubmit` stays enabled by default. Verbose mode is diagnostic only; it is not the canonical operational model and not evidence of Codex parity.
 - W1/W2/W4 under `.azoth/` are the authoritative cross-tool record. During `/session-closeout`, treat W3 as best-effort: if mirroring into `~/.claude/projects/.../memory/` is blocked, log `W3 deferred` and continue to W4.
 - After changing canonical `agents/**/*.agent.md`, `skills/**/SKILL.md`, `.claude/commands/*.md`, or `kernel/templates/platform-adapters/codex/*`, run `python3 scripts/azoth-deploy.py`, then verify with `python3 scripts/azoth-deploy.py --check`.
+- Codex-only human-facing response style (BL-051 follow-on, not shared-platform canon):
+  - For human-facing non-operational output in Codex, prefer short titled sections over large prose blocks when that improves scanability.
+  - Use hierarchy deliberately: lead with a one-sentence orienting summary, then use bullets or a compact table only when they make the next decision easier.
+  - Selective emojis are allowed as navigational markers for summaries, approvals, status framing, and next steps; do not use them decoratively.
+  - Use tables for comparisons, options, gate state, pipeline declarations, and tradeoffs only when the table will stay narrow inside the chat column.
+  - If a table would become wide, wrap awkwardly, or cause horizontal scrolling, do not use it; switch to bullets, short labeled lines, or a two-part comparison instead.
+  - Optimize for user intent and long-term continuity: restate the goal, make in-scope vs out-of-scope boundaries legible, and proactively offer only the nearest helpful next step.
+  - Do not paragraph-dump. Do not produce decorative verbosity. Do not let visual structure become clutter.
+  - Keep machine-facing artifacts terse and plain: BL-011 spawn payloads, BL-012 stage summaries, gates, evaluator scorecards, and schema-bound YAML/JSON/TOML stay optimized for determinism, not presentation flourish.
 - Never add `Co-Authored-By` trailers.
 '''
 
