@@ -126,6 +126,10 @@ pipeline gate and resumes from the stored stage or human gate. If no checkpoint
 exists, `/resume` restores scope only and routes back to pipeline selection,
 with `/auto` Stage 0 as the default recommendation.
 
+Only live approved scopes and parked sessions are resumable. A session that is
+closed or administratively finalized is non-resumable: open a fresh scope with
+`/next` instead of trying to reopen it with `/resume`.
+
 Checkpoint mirror shape:
 
 ```yaml
@@ -181,7 +185,10 @@ Closeout performs 4 write phases:
 │  W2: STATE                                            │
 │  Update bootloader-state.md, close scope gate,        │
 │  refresh session-state.md for cross-IDE handoff,       │
-│  preserving any stage-aware resume checkpoint fields.  │
+│  preserving any stage-aware resume checkpoint fields   │
+│  only for a parked handoff. Closed or administratively │
+│  finalized closeout clears the saved checkpoint so     │
+│  `/resume` cannot reopen finished work.                │
 │  For roadmap/planning sessions, also sync initiative   │
 │  and backlog continuity so the next action is a real   │
 │  queued item, not only a spec or stale pointer.        │

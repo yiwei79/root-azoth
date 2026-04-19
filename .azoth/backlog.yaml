@@ -2355,10 +2355,11 @@ items:
   initiative_ref: INI-RST-005
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p2
   priority: 4
   created_date: '2026-04-19'
+  completed_date: '2026-04-19'
   decision_ref:
   - D21
   - D50

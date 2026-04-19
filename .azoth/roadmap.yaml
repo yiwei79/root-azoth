@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 65
+    current_patch: 66
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -373,13 +373,6 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
-      - id: T-014
-        title: "Worktree session lifecycle UX after integration"
-        decision_ref: [D21, D50, D54]
-        target_layer: M1
-        delivery_pipeline: governed
-        initiative_ref: "INI-RST-005"
-        status: planned
       - id: T-KRP-A
         title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
         target_layer: M1
@@ -433,6 +426,7 @@ versions:
       - {id: T-012, title: "Sandboxed integrate-run execution for worktree handoffs", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
       - {id: T-010, title: "Research sufficiency platform parity + workflow hardening", completed_date: "2026-04-19", decision_ref: [D23, D46, D50, D52]}
       - {id: T-013, title: "Deterministic reconciliation policy for shared Azoth state during worktree integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
+      - {id: T-014, title: "Worktree session lifecycle UX after integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -574,8 +568,8 @@ initiatives:
     - task_ref: T-014
       spec_ref: null
       phase: v0.2.0-p2
-      status: active
-      role: primary
+      status: complete
+      role: historical
     summary: 'Refresh the worktree-upgrade contract around current repo truth and fresh
       external evidence, then stage the remaining delivery as three separate slices:
       sandboxed integrate-run execution, deterministic reconciliation for shared Azoth
@@ -589,8 +583,6 @@ initiatives:
     - D50
     - D54
     spec_ref: null
-
-  # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001
     title: auto-router L2 / self-improve lane
     category: pipeline

@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.67 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 64
+0.1.2.68 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 65
 
 ## Last Session
-- **Session**: 2026-04-19-adhoc-pr14-full-ci-regressions
-- **Goal**: AD-HOC: fix remaining full CI regressions on PR #14, then continue toward review completion + merge
+- **Session**: 2026-04-19-t-014
+- **Goal**: T-014: Worktree session lifecycle UX after integration
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-285 (success)
+- **Episode**: ep-286 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

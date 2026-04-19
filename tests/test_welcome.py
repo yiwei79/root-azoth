@@ -43,6 +43,12 @@ def _fixed_now() -> datetime:
     return datetime(2030, 4, 11, 12, 0, tzinfo=timezone.utc)
 
 
+def _section_between(text: str, start_heading: str, end_heading: str) -> str:
+    start = text.index(start_heading)
+    end = text.index(end_heading, start)
+    return text[start:end]
+
+
 # ── filter_unblocked_items ────────────────────────────────────────────────────
 
 
@@ -1006,6 +1012,42 @@ def test_welcome_plain_hides_stale_active_session_from_resume_options(
     assert "resume sid-stale" not in out
 
 
+def test_welcome_plain_hides_stale_parked_session_state_without_resumable_registry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "session-state.md").write_text(
+        "session_id: sid-finalized\n"
+        "state: parked\n"
+        "last_ide: codex\n"
+        "timestamp: 2026-04-19T10:00:00+00:00\n"
+        'active_task: "Parked handoff"\n'
+        "active_files: []\n"
+        "pending_decisions: []\n"
+        'approved_scope: "Completed: finalized session"\n'
+        'next_action: "This should not be resumable"\n',
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\nsessions: []\nruns: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+
+    assert "resume   → /resume — reopen parked session" not in out
+    assert "sid-finalized" not in out
+
+
 def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirror(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1060,3 +1102,32 @@ def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirro
     assert "Continuity: OK  (sid-match)" in out
     assert "Sessions" in out
     assert "sid-match" in out
+
+
+def test_session_lifecycle_doc_marks_closed_and_administratively_finalized_sessions_non_resumable() -> None:
+    doc = (Path(__file__).resolve().parent.parent / "docs" / "playbook" / "03-session-lifecycle.md")
+    text = doc.read_text(encoding="utf-8")
+    resume_section = _section_between(text, "### Stage-aware resume", "### Entropy Tracking")
+    closeout_section = _section_between(text, "## Phase 3: Close", "### Why closeout matters")
+
+    assert "closed or administratively finalized" in resume_section
+    assert "non-resumable" in resume_section
+    assert "clears the saved checkpoint" in closeout_section
+    assert "parked handoff" in closeout_section
+
+
+def test_parallel_sessions_doc_separates_queued_handoff_from_cleanup_responsibilities() -> None:
+    doc = (Path(__file__).resolve().parent.parent / "docs" / "playbook" / "05-parallel-sessions.md")
+    text = doc.read_text(encoding="utf-8")
+    workflow_section = _section_between(text, "## Safe Workflow", "## Recommended Boundaries")
+    checklist_section = _section_between(
+        text,
+        "## Merge Checklist For The Integrator",
+        "## Operational Rule Of Thumb",
+    )
+
+    assert "/worktree-sync" in workflow_section
+    assert "queued handoff boundary" in workflow_section
+    assert "not delivery completion" in workflow_section
+    assert "automatic cleanup" in checklist_section
+    assert "manual cleanup" in checklist_section

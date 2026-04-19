@@ -325,6 +325,76 @@ def continuity_status(
     return ("MISMATCH", detail)
 
 
+def resume_menu_state(
+    scope: dict[str, Any],
+    session_state: dict[str, Any],
+    open_sessions: list[dict[str, Any]],
+    *,
+    complete_ids: set[str] | None = None,
+) -> dict[str, Any]:
+    """Build the primary and alternate resume actions for dashboard rendering.
+
+    The resumable session registry is authoritative. A parked session-state mirror is
+    only used as the primary resume target when the same session still exists in the
+    resumable registry, which prevents stale closed/finalized mirrors from surfacing
+    as resumable work.
+    """
+    scope_session_id = (
+        str(scope.get("session_id") or "") if is_scope_active(scope, complete_ids) else ""
+    )
+    resumable_entries = [
+        entry
+        for entry in open_sessions
+        if isinstance(entry, dict) and str(entry.get("session_id") or "").strip()
+    ]
+    parked_session_id = (
+        str(session_state.get("session_id") or "")
+        if str(session_state.get("state") or "").strip() == "parked"
+        else ""
+    )
+
+    primary_kind: str | None = None
+    primary_goal = ""
+    alternate_entries = resumable_entries
+
+    if scope_session_id:
+        primary_kind = "scope"
+        primary_goal = str(scope.get("goal") or "")
+        alternate_entries = [
+            entry
+            for entry in resumable_entries
+            if str(entry.get("session_id") or "") != scope_session_id
+        ]
+    else:
+        parked_entry = next(
+            (
+                entry
+                for entry in resumable_entries
+                if str(entry.get("session_id") or "") == parked_session_id
+            ),
+            None,
+        )
+        if parked_entry is not None:
+            primary_kind = "parked"
+            primary_goal = str(
+                session_state.get("approved_scope")
+                or session_state.get("active_task")
+                or parked_entry.get("goal")
+                or ""
+            )
+            alternate_entries = [
+                entry
+                for entry in resumable_entries
+                if str(entry.get("session_id") or "") != parked_session_id
+            ]
+
+    return {
+        "primary_kind": primary_kind,
+        "primary_goal": primary_goal,
+        "alternate_entries": alternate_entries,
+    }
+
+
 # ── Dashboard data + renderers ────────────────────────────────────────────────
 
 
@@ -437,6 +507,12 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
+    resume_state = resume_menu_state(
+        scope,
+        session_state,
+        open_sessions,
+        complete_ids=complete_ids,
+    )
 
     current_phase = strip_phase
 
@@ -607,32 +683,16 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("")
 
     lines.append("── START (what to type) ──")
-    parked_session_id = (
-        str(session_state.get("session_id") or "")
-        if str(session_state.get("state") or "") == "parked"
-        else ""
-    )
-    if is_scope_active(scope, complete_ids):
-        goal_truncated = (scope.get("goal") or "")[:72]
+    if resume_state["primary_kind"] == "scope":
+        goal_truncated = resume_state["primary_goal"][:72]
         lines.append(f"  resume   → continue approved scope: {goal_truncated}")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != scope.get("session_id"):
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
-    elif parked_session_id:
-        parked_goal = (
-            session_state.get("approved_scope") or session_state.get("active_task") or ""
-        )[:72]
+    elif resume_state["primary_kind"] == "parked":
+        parked_goal = resume_state["primary_goal"][:72]
         lines.append(f"  resume   → /resume — reopen parked session: {parked_goal}")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != parked_session_id:
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
-    elif open_sessions:
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id:
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
+    for entry in resume_state["alternate_entries"][:3]:
+        session_id = str(entry.get("session_id") or "")
+        if session_id:
+            lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
     lines.append("  next     → /next — scope card for next priority task")
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
@@ -675,6 +735,12 @@ def render_dashboard() -> None:
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
+    resume_state = resume_menu_state(
+        scope,
+        session_state,
+        open_sessions,
+        complete_ids=complete_ids,
+    )
 
     header_text = Text(justify="center")
     header_text.append("AZOTH", style="bold white")
@@ -868,49 +934,27 @@ def render_dashboard() -> None:
     last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
     options_lines: list[str] = []
-    parked_session_id = (
-        str(session_state.get("session_id") or "")
-        if str(session_state.get("state") or "") == "parked"
-        else ""
-    )
-    if is_scope_active(scope, complete_ids):
-        goal_truncated = (scope.get("goal") or "")[:60]
+    if resume_state["primary_kind"] == "scope":
+        goal_truncated = resume_state["primary_goal"][:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"
             f"   Continue: [italic]{goal_truncated}[/italic]"
         )
         options_lines.append("")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != scope.get("session_id"):
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
-    elif parked_session_id:
-        parked_goal = (
-            session_state.get("approved_scope") or session_state.get("active_task") or ""
-        )[:60]
+    elif resume_state["primary_kind"] == "parked":
+        parked_goal = resume_state["primary_goal"][:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"
             f"   Reopen parked session: [italic]{parked_goal}[/italic]"
         )
         options_lines.append("")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != parked_session_id:
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
-    elif open_sessions:
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id:
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
+    for entry in resume_state["alternate_entries"][:3]:
+        session_id = str(entry.get("session_id") or "")
+        if session_id:
+            options_lines.append(
+                f"[bold cyan]resume {session_id}[/bold cyan]"
+                "   :right_arrow: /resume — reopen parked session directly"
+            )
     options_lines += [
         "[bold cyan]next[/bold cyan]     :right_arrow: /next — open scope card for next priority task",
         "[bold cyan]intake[/bold cyan]   :right_arrow: /intake — process queued insights from inbox",
