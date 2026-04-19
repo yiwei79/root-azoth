@@ -11,8 +11,8 @@
 # the neutral `T-{NNN}` namespace. Do not rename historical task ids in place.
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
-current_phase: 2
-current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 2)"
+current_phase: 3
+current_phase_title: "v0.2.0 — swarm · memory · UX (milestone phase 3)"
 lifecycle_phase: 8
 tasks:
   # Workflow loop — highest priority (new, D47-D51)
@@ -340,8 +340,8 @@ versions:
     pending_task_refs: []
 
   - id: v0.2.0-p2
-    status: active
-    current_patch: 66
+    status: complete
+    final_patch: 66
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -410,12 +410,6 @@ versions:
       - {id: P1-024, title: "D46 command projection compiler refactor", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50]}
       - {id: T-001, title: "Dedicated roadmap/backlog/spec scaffolder", completed_date: "2026-04-17", decision_ref: [D47, D48, D50]}
       - {id: T-002, title: "Co-primary command migration batch 1 — scope/orientation commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
-
-# ── Initiatives (schema_version: 2) ──────────────────────────────────────────
-# Phase-agnostic goal items. phase: null until triage assigns a milestone.
-# Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
-# Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
-# Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
       - {id: T-003, title: "Co-primary command migration batch 2 — delivery/orchestration commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D23, D44, D46]}
       - {id: T-004, title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit", completed_date: "2026-04-17", decision_ref: [D11, D19, D21, D46, D52]}
       - {id: T-008, title: "Minimal bounded research sufficiency gate", completed_date: "2026-04-18", decision_ref: [D23, D44, D45, D46, D52]}
@@ -427,6 +421,51 @@ versions:
       - {id: T-010, title: "Research sufficiency platform parity + workflow hardening", completed_date: "2026-04-19", decision_ref: [D23, D46, D50, D52]}
       - {id: T-013, title: "Deterministic reconciliation policy for shared Azoth state during worktree integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
       - {id: T-014, title: "Worktree session lifecycle UX after integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
+    pending_task_refs: []
+
+  - id: v0.2.0-p3
+    status: active
+    current_patch: 1
+    goal: "Carry-forward hardening: memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
+    phase_scope: [3]
+    themes: [A, C, D]
+    note: >
+      Third working phase of the v0.2.0 milestone. This slice intentionally closes p2 as
+      complete enough and carries forward the remaining hardening work without pivoting into
+      a new initiative family. Focus: verbatim-first M3 policy/tooling, memory operation parity,
+      roadmap/initiative authoring ergonomics, and bounded external evidence refresh for the
+      worktree lane. INI-KRP-001 remains explicitly unphased; phase 3 is a carry-forward
+      hardening slice, not a Karpathy-principles activation.
+    tasks:
+      - id: P1-020
+        title: "Verbatim-first M3 storage strategy"
+        decision_ref: [D11, D45]
+        initiative_ref: "INI-MEM-001"
+        carried_from: "v0.2.0-p2"
+      - id: P1-021
+        title: "Memory operation platform parity"
+        decision_ref: [D42, D46, D52]
+        initiative_ref: "INI-PLT-001"
+        carried_from: "v0.2.0-p2"
+      - id: BL-062
+        title: "scripts/initiative_scaffold.py — one-command initiative + task stub creation"
+        initiative_ref: "INI-KRP-001"
+        carried_from: "v0.2.0-p2"
+      - id: BL-063
+        title: "roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view"
+        initiative_ref: "INI-KRP-001"
+        carried_from: "v0.2.0-p2"
+      - id: BL-065
+        title: "Worktree-upgrade external evidence refresh lane"
+        initiative_ref: "INI-RST-005"
+        carried_from: "v0.2.0-p2"
+    pending_task_refs: []
+
+# ── Initiatives (schema_version: 2) ──────────────────────────────────────────
+# Phase-agnostic goal items. phase: null until triage assigns a milestone.
+# Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
+# Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
+# Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -546,9 +585,9 @@ initiatives:
       - worktree-integration
       - parallel-sessions
       - merge-reconciliation
-    phase: v0.2.0-p2
+    phase: v0.2.0-p3
     priority: high
-    task_ref: T-014
+    task_ref: null
     slices:
     - task_ref: T-011
       spec_ref: null
@@ -570,18 +609,38 @@ initiatives:
       phase: v0.2.0-p2
       status: complete
       role: historical
-    summary: 'Refresh the worktree-upgrade contract around current repo truth and fresh
-      external evidence, then stage the remaining delivery as three separate slices:
-      sandboxed integrate-run execution, deterministic reconciliation for shared Azoth
-      state, and post-integration lifecycle UX. T-011 is the completed planning/parity
-      slice; T-012 becomes the first implementation follow-on rather than reopening
-      historical P1-015.
+    summary: 'The roadmap-backed worktree-upgrade slices are complete for phase 2:
+      T-011 through T-014 are historical foundation, not active phase-3 roadmap work.
+      The only live follow-on is BL-065, a backlog-only external evidence refresh lane
+      that keeps the initiative honest when Git behavior or supporting workflow evidence
+      ages. Phase 3 should treat BL-065 as bounded maintenance follow-up, not as a
+      new roadmap task block or a reason to reopen historical P1-015.
 
       '
     decision_ref:
     - D21
     - D50
     - D54
+    spec_ref: null
+
+  - id: INI-RST-006
+    title: "Historical phase boards / continuity snapshots"
+    category: run-state
+    theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [history-boards, continuity, retrospective-surfaces]
+    phase: null
+    priority: low
+    task_ref: null
+    slices: []
+    summary: >
+      Maintain lightweight repo-local history boards for completed phases or milestone
+      slices when a human-readable retrospective snapshot is useful for continuity.
+      These boards live under `.azoth/` and summarize canonical roadmap/backlog state
+      without becoming a second automation source of truth.
+    decision_ref: [D48, D52]
     spec_ref: null
   - id: INI-PPL-001
     title: auto-router L2 / self-improve lane
@@ -709,13 +768,13 @@ initiatives:
       themes: [C]
       categories: [memory]
       tracks: [verbatim-storage, m3-policy]
-    phase: v0.2.0-p2
+    phase: v0.2.0-p3
     task_ref: P1-020
     slices:
       - task_ref: P1-020
         spec_ref: null
-        phase: v0.2.0-p2
-        status: active
+        phase: v0.2.0-p3
+        status: planned
         role: primary
     priority: high
     summary: >
@@ -876,13 +935,13 @@ initiatives:
       themes: [D]
       categories: [platform]
       tracks: [platform-parity, memory-ops]
-    phase: v0.2.0-p2
+    phase: v0.2.0-p3
     task_ref: P1-021
     slices:
       - task_ref: P1-021
         spec_ref: null
-        phase: v0.2.0-p2
-        status: active
+        phase: v0.2.0-p3
+        status: planned
         role: primary
     priority: medium
     summary: >
