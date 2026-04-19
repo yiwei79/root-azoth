@@ -83,6 +83,40 @@ def _write_pipeline_gate(
     (azoth_dir / "pipeline-gate.json").write_text(json.dumps(gate), encoding="utf-8")
 
 
+def _write_research_capsule(
+    repo_root: Path,
+    rel_path: str,
+    *,
+    source_session_id: str = "test-session",
+    fresh_until: str | None = None,
+    question_status: str = "answered",
+    capsule_overrides: dict | None = None,
+) -> Path:
+    capsule_path = repo_root / rel_path
+    capsule_path.parent.mkdir(parents=True, exist_ok=True)
+    capsule = {
+        "schema_version": 1,
+        "source_session_id": source_session_id,
+        "goal": "T-009: Local research capsule bank + sufficiency checker",
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "volatility": "bounded",
+        "limitations": [],
+        "questions": [
+            {
+                "question_id": "phase-1-reuse",
+                "question": "Can this repo-local research capsule be reused?",
+                "status": question_status,
+                "answered_at": datetime.now(timezone.utc).isoformat(),
+                "fresh_until": fresh_until or _future_iso(24),
+            }
+        ],
+    }
+    if capsule_overrides:
+        capsule.update(capsule_overrides)
+    capsule_path.write_text(json.dumps(capsule), encoding="utf-8")
+    return capsule_path
+
+
 # ── Import guard ──────────────────────────────────────────────────────────────
 
 
@@ -321,7 +355,96 @@ def test_check_pipeline_gate_allows_same_session_repo_local_research_evidence(
         research_evidence={
             "kind": "repo-local",
             "session_id": "test-session",
-            "path": ".azoth/research/test-session.md",
+            "path": ".azoth/research/test-session.json",
+        },
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is True
+    assert "Pipeline gate valid" in message
+
+
+def test_check_pipeline_gate_keeps_capsule_content_advisory_in_phase1(tmp_path: Path) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = _future_iso()
+    evidence_path = ".azoth/research/test-session.json"
+    _write_scope_gate(azoth_dir, governance_mode="governed", target_layer="M1", expires_at=expires)
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        fresh_until=_future_iso(-1),
+        question_status="conflicting",
+    )
+    _write_pipeline_gate(
+        azoth_dir,
+        expires_at=expires,
+        research_required=True,
+        research_evidence={
+            "kind": "repo-local",
+            "session_id": "test-session",
+            "path": evidence_path,
+        },
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is True
+    assert "Pipeline gate valid" in message
+
+
+def test_check_pipeline_gate_keeps_missing_required_questions_advisory_in_phase1(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = _future_iso()
+    evidence_path = ".azoth/research/test-session.json"
+    _write_scope_gate(azoth_dir, governance_mode="governed", target_layer="M1", expires_at=expires)
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        capsule_overrides={"questions": []},
+    )
+    _write_pipeline_gate(
+        azoth_dir,
+        expires_at=expires,
+        research_required=True,
+        research_evidence={
+            "kind": "repo-local",
+            "session_id": "test-session",
+            "path": evidence_path,
+        },
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is True
+    assert "Pipeline gate valid" in message
+
+
+def test_check_pipeline_gate_keeps_malformed_capsule_content_advisory_in_phase1(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = _future_iso()
+    evidence_path = ".azoth/research/test-session.json"
+    _write_scope_gate(azoth_dir, governance_mode="governed", target_layer="M1", expires_at=expires)
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        capsule_overrides={"questions": None},
+    )
+    _write_pipeline_gate(
+        azoth_dir,
+        expires_at=expires,
+        research_required=True,
+        research_evidence={
+            "kind": "repo-local",
+            "session_id": "test-session",
+            "path": evidence_path,
         },
     )
 
@@ -404,7 +527,7 @@ def test_check_pipeline_gate_rejects_wrong_research_evidence_kind(tmp_path: Path
         research_evidence={
             "kind": "web",
             "session_id": "test-session",
-            "path": ".azoth/research/test-session.md",
+            "path": ".azoth/research/test-session.json",
         },
     )
 
@@ -426,7 +549,7 @@ def test_check_pipeline_gate_rejects_research_evidence_session_mismatch(tmp_path
         research_evidence={
             "kind": "repo-local",
             "session_id": "other-session",
-            "path": ".azoth/research/test-session.md",
+            "path": ".azoth/research/test-session.json",
         },
     )
 

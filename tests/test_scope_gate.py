@@ -104,6 +104,40 @@ def _pipeline_gate(
     return gate
 
 
+def _write_research_capsule(
+    repo_root: Path,
+    rel_path: str,
+    *,
+    source_session_id: str = "sess-governed",
+    fresh_until: str | None = None,
+    question_status: str = "answered",
+    capsule_overrides: dict | None = None,
+) -> Path:
+    capsule_path = repo_root / rel_path
+    capsule_path.parent.mkdir(parents=True, exist_ok=True)
+    capsule = {
+        "schema_version": 1,
+        "source_session_id": source_session_id,
+        "goal": "T-009: Local research capsule bank + sufficiency checker",
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "volatility": "bounded",
+        "limitations": [],
+        "questions": [
+            {
+                "question_id": "phase-1-reuse",
+                "question": "Can this repo-local research capsule be reused?",
+                "status": question_status,
+                "answered_at": datetime.now(timezone.utc).isoformat(),
+                "fresh_until": fresh_until or _future_expiry(),
+            }
+        ],
+    }
+    if capsule_overrides:
+        capsule.update(capsule_overrides)
+    capsule_path.write_text(json.dumps(capsule), encoding="utf-8")
+    return capsule_path
+
+
 # T1: non-write/edit tool with absent gate file — must allow
 def test_t1_non_write_tool_gate_absent(tmp_path: Path) -> None:
     gate_path = tmp_path / "scope-gate.json"
@@ -603,7 +637,107 @@ def test_t16dd_governed_scope_write_allowed_with_same_session_repo_local_researc
                 research_evidence={
                     "kind": "repo-local",
                     "session_id": "sess-governed",
-                    "path": ".azoth/research/sess-governed.md",
+                    "path": ".azoth/research/sess-governed.json",
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "allow"
+
+
+def test_t16dde_governed_scope_write_allows_advisory_capsule_content_in_phase1(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    evidence_path = ".azoth/research/sess-governed.json"
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        fresh_until=_past_expiry(),
+        question_status="conflicting",
+    )
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": evidence_path,
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "allow"
+
+
+def test_t16ddf_governed_scope_write_allows_missing_required_questions_in_phase1(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    evidence_path = ".azoth/research/sess-governed.json"
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        capsule_overrides={"questions": []},
+    )
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": evidence_path,
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+
+    assert _decision(output) == "allow"
+
+
+def test_t16ddg_governed_scope_write_allows_malformed_capsule_content_in_phase1(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    pg_path = tmp_path / "pipeline-gate.json"
+    expiry = _future_expiry()
+    evidence_path = ".azoth/research/sess-governed.json"
+    gate_path.write_text(json.dumps(_governed_scope_gate(expiry=expiry)), encoding="utf-8")
+    _write_research_capsule(
+        tmp_path,
+        evidence_path,
+        capsule_overrides={"questions": None},
+    )
+    pg_path.write_text(
+        json.dumps(
+            _pipeline_gate(
+                expiry=expiry,
+                research_required=True,
+                research_evidence={
+                    "kind": "repo-local",
+                    "session_id": "sess-governed",
+                    "path": evidence_path,
                 },
             )
         ),
@@ -704,7 +838,7 @@ def test_t16dh_governed_scope_write_denied_when_research_evidence_kind_is_not_re
                 research_evidence={
                     "kind": "web",
                     "session_id": "sess-governed",
-                    "path": ".azoth/research/sess-governed.md",
+                    "path": ".azoth/research/sess-governed.json",
                 },
             )
         ),
@@ -734,7 +868,7 @@ def test_t16di_governed_scope_write_denied_when_research_evidence_session_mismat
                 research_evidence={
                     "kind": "repo-local",
                     "session_id": "sess-other",
-                    "path": ".azoth/research/sess-governed.md",
+                    "path": ".azoth/research/sess-governed.json",
                 },
             )
         ),

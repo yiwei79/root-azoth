@@ -174,6 +174,7 @@ def _restore_pipeline_gate(
         "session_id": session_id,
         "pipeline": pipeline,
         "approved": True,
+        "research_required": False,
         "expires_at": expires_at,
         "opened_at": utc_now_iso(),
         "research_required": False,
