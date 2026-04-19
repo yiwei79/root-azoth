@@ -6,7 +6,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import yaml
 
 from codex_journey_harness import (
     REPO,

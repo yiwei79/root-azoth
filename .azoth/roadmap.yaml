@@ -551,7 +551,7 @@ initiatives:
       - routing
     phase: v0.2.0-p2
     priority: medium
-    task_ref: T-006
+    task_ref: null
     slices:
     - task_ref: T-005
       spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
