@@ -859,6 +859,8 @@ def rewrite_request_changes_replay(
     root: Path,
     *,
     run_id: str,
+    finding_class: str | None = None,
+    threshold_limit: int | None = None,
     next_action: str | None = None,
     ledger_path: Path | None = None,
 ) -> dict:
@@ -881,12 +883,20 @@ def rewrite_request_changes_replay(
     if not stages_completed:
         raise ValueError("request-changes replay requires lineage proof from stages_completed")
 
-    revision_stage_id = str(stages_completed[-1] or "").strip()
-    if not revision_stage_id:
-        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+    revision_stage_id = _resolve_replay_target_stage(
+        stages_completed,
+        current_stage_id=current_stage_id,
+        finding_class=finding_class,
+    )
     if revision_stage_id == current_stage_id:
         raise ValueError(
             "unsupported request-changes replay shape: revision stage matches active stage"
+        )
+    effective_threshold = threshold_limit or _default_replay_threshold(entry)
+    replay_iteration = sum(1 for stage_id in stages_completed if stage_id == revision_stage_id) + 1
+    if replay_iteration > effective_threshold:
+        raise ValueError(
+            "request-changes replay threshold exhausted; recompose scope or escalate to human"
         )
 
     pending_stage_ids = list(entry.get("pending_stage_ids") or [])
@@ -907,10 +917,12 @@ def rewrite_request_changes_replay(
             "unsupported request-changes replay shape: queue already contains replay stages"
         )
 
+    finding_suffix = f" after `{finding_class}` findings" if finding_class else ""
     replay_next_action = (
         next_action
         or f"Resume at human gate for stage `{current_stage_id}` in pipeline "
-        f"`{entry.get('mode', 'unknown')}`; approval replays `{revision_stage_id}`."
+        f"`{entry.get('mode', 'unknown')}`; approval replays `{revision_stage_id}`"
+        f"{finding_suffix} (iteration {replay_iteration}/{effective_threshold})."
     )
 
     _, updated_entry = upsert_run(
@@ -931,6 +943,47 @@ def rewrite_request_changes_replay(
         ledger_path=resolved_ledger_path,
     )
     return updated_entry
+
+
+def _default_replay_threshold(entry: dict) -> int:
+    return 3 if str(entry.get("mode") or "").strip() == "deliver-full" else 2
+
+
+def _resolve_replay_target_stage(
+    stages_completed: list[str],
+    *,
+    current_stage_id: str,
+    finding_class: str | None,
+) -> str:
+    if not stages_completed:
+        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+
+    if not finding_class:
+        revision_stage_id = str(stages_completed[-1] or "").strip()
+        if not revision_stage_id:
+            raise ValueError("request-changes replay requires lineage proof from stages_completed")
+        return revision_stage_id
+
+    normalized = finding_class.strip().lower()
+    if normalized in {"architecture", "scope", "governance", "contract"}:
+        tokens = ("architect",)
+    elif normalized in {"planning", "test-strategy", "handoff-completeness"}:
+        tokens = ("planner",)
+    elif normalized in {"implementation", "failing-acceptance"}:
+        tokens = ("builder",)
+    elif normalized == "evidence-insufficient":
+        tokens = ("discovery", "research", "architect", "planner")
+    else:
+        raise ValueError(f"unsupported finding_class for replay routing: {finding_class!r}")
+
+    for stage_id in reversed(stages_completed):
+        candidate = str(stage_id or "").strip()
+        if candidate and candidate != current_stage_id and any(token in candidate for token in tokens):
+            return candidate
+
+    raise ValueError(
+        "request-changes replay requires lineage proof for the requested finding class"
+    )
 
 
 # ── Business-logic helpers (testable without CLI) ─────────────────────────────

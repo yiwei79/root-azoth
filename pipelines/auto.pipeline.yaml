@@ -1,7 +1,8 @@
 # Auto Pipeline — Azoth Layer 3 (D23, D28)
 # Dynamically composed by the Architect based on goal classification.
-# The Architect evaluates classification at runtime and selects a stage sequence.
-# composition_rules are evaluated top-to-bottom; first matching condition wins.
+# Stage 0 always runs; composition_rules then select a conservative reference
+# composition from the shared stage-family vocabulary.
+# Rules are evaluated top-to-bottom; first matching condition wins.
 
 name: auto
 description: >
@@ -24,7 +25,8 @@ stages:
 
 # composition_rules: evaluated at runtime after goal-clarification (D23).
 # classification fields are filled in by the Architect from the current goal.
-# Values below are representative defaults — overridden at runtime.
+# The selected row exposes reference_preset + ordered stage families +
+# discovery policy for the orchestrator to compose against the latest context.
 composition_rules:
   classification:
     scope: mixed           # kernel | skills | agents | pipelines | docs | mixed
@@ -32,42 +34,134 @@ composition_rules:
     complexity: medium     # simple | medium | complex
     knowledge: known-pattern  # known-pattern | needs-research | novel | instruction-refinement
 
+  shared_stage_families:
+    - context-recall
+    - discovery-evidence-research
+    - architect-design
+    - review
+    - plan
+    - execute
+    - quality-gate
+    - closeout
+
+  discovery_triggers:
+    - low-solution-confidence
+    - conflicting-memory-or-pattern-evidence
+    - cross-surface-drift
+    - latest-context-dependency
+    - gate-finding-evidence-insufficient
+
   # Rules are evaluated top-to-bottom. First match wins.
   rules:
     - condition: "risk == governance-change"
-      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+      reference_preset: full
+      stage_families:
+        - architect-design
+        - review
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "scope == kernel"
-      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+      reference_preset: full
+      stage_families:
+        - architect-design
+        - review
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "knowledge == needs-research"
-      pipeline: [architect, planner, evaluator, builder, architect]
-      inject: "research-phase into architect"
+      reference_preset: research
+      stage_families:
+        - discovery-evidence-research
+        - architect-design
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: required
 
     - condition: "knowledge == instruction-refinement AND complexity == simple AND risk == additive"
-      pipeline: [architect, planner, evaluator, builder, architect]
-      inject: "l2-evidence-review into architect"
+      reference_preset: refactor
+      stage_families:
+        - context-recall
+        - architect-design
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "knowledge == instruction-refinement"
-      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
-      inject: "l2-evidence-review into architect"
+      reference_preset: full
+      stage_families:
+        - context-recall
+        - architect-design
+        - review
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "scope == docs"
-      pipeline: [architect, builder, architect]
+      reference_preset: docs
+      stage_families:
+        - architect-design
+        - execute
+        - closeout
+      discovery_policy: conditional
 
     - condition: "complexity == simple AND risk == cosmetic"
-      pipeline: [planner, builder, architect]
+      reference_preset: hotfix
+      stage_families:
+        - plan
+        - execute
+        - closeout
+      discovery_policy: conditional
 
     - condition: "complexity == simple AND risk == additive"
-      pipeline: [planner, evaluator, builder, architect]
+      reference_preset: deliver
+      stage_families:
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "complexity == medium AND risk == additive AND knowledge == known-pattern"
-      pipeline: [planner, evaluator, builder, architect]
+      reference_preset: deliver
+      stage_families:
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "complexity == medium AND risk == additive"
-      pipeline: [architect, planner, evaluator, builder, architect]
+      reference_preset: refactor
+      stage_families:
+        - architect-design
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
     - condition: "default"
-      pipeline: [architect, reviewer, planner, evaluator, builder, architect]
+      reference_preset: full
+      stage_families:
+        - architect-design
+        - review
+        - plan
+        - execute
+        - quality-gate
+        - closeout
+      discovery_policy: conditional
 
 output: alignment-summary

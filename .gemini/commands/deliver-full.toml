@@ -35,6 +35,7 @@ Goal Clarification → Architect → Governance Review → Planner → Test Buil
 ## Orchestration Constraints
 
 - Policy source: `subagent-router` skill (trigger definitions and routing table)
+- Governed Stage 2 is a fresh-context architect stage. Spawn `deliver_full_s2_architect` next or fail closed before any inline architecture brief is produced.
 - Each agent gate (stages 3–6) mandates a fresh-context subagent invocation via `Agent(subagent_type=...)`
 - The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.
 - Subagents return findings; Orchestrator disposes and escalates to human if needed
@@ -68,6 +69,7 @@ spawn body.
 
 | Step | Stage | `subagent_type` | `stage_id` | `trigger` |
 |------|-------|-----------------|------------|-----------|
+| 2 | Architect | architect | `deliver_full_s2_architect` | context-isolation |
 | 3 | Governance Review | reviewer | `deliver_full_s3` | review-independence |
 | 4 | Planner | planner | `deliver_full_s4` | context-isolation |
 | 5 | Test Builder | builder | `deliver_full_s5` | review-independence |
@@ -80,6 +82,9 @@ spawn body.
 2. **Architect**
    - Investigate (explore codebase, research if needed)
    - Produce architecture brief: target model, boundaries, risks, success criteria
+   - Execute as the explicit fresh-context stage `deliver_full_s2_architect`; if this stage
+     cannot be spawned in the current runtime, stop after the declaration and fail closed
+     instead of drafting the architecture brief inline.
    - Gate: human (approve design)
 
 3. **Governance Review** — spawn per table; findings and recommended corrections per §Stage briefs: deliver-full

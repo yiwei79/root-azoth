@@ -1,40 +1,59 @@
 ---
 name: dynamic-full-auto
 description: |
-  DYNAMIC-FULL-AUTO+ with queen-controlled adaptive routing: situational extra waves, pivots,
-  post-digest re-classification via `skills/auto-router/SKILL.md` (D23), optional `/eval-swarm`
-  (≥0.90) before writes, merge to `SWARM_RESEARCH_DIGEST.yaml`, `scripts/swarm_research_digest.py`.
-  BL-011 spawns; scope/pipeline gates unchanged (D50).
+  DYNAMIC-FULL-AUTO+ as the high-autonomy posture of the shared auto-family engine:
+  declare an autonomy budget, adaptively insert discovery/evidence/research when needed,
+  re-classify via `skills/auto-router/SKILL.md` (D23), apply bounded replay, and continue
+  end-to-end under the same gates. BL-011 spawns; scope/pipeline gates unchanged (D50).
 ---
 
 # Dynamic Full Auto (DYNAMIC-FULL-AUTO+)
 
-Optional **session mode** for high-throughput, read-mostly discovery: parallel online research,
-parallel repo exploration, one machine-readable aggregate digest, then hand off to normal
-`/auto`, `/deliver`, or `/deliver-full` for gated implementation.
+Optional **session mode** for high-autonomy end-to-end execution. `dynamic-full-auto`
+uses the same orchestrator-centered engine as `/auto`, but starts with an explicit
+**autonomy budget** and may continue through discovery insertion, re-classification,
+execution, quality gates, bounded replay, and closeout without requiring a new human
+prompt at every step.
 
-This is **not** a replacement for `/auto` governance. It **compresses** the research and
-reconnaissance phases using the same **swarm-coordination** iron laws (single-message fan-out,
-queen aggregation, no worker-to-worker chatter).
+This mode is **not** defined by discovery. Discovery, evidence gathering, and research
+are shared auto-family capabilities that can appear in `/auto`, `/deliver`,
+`/deliver-full`, or `dynamic-full-auto` whenever the latest context demands them.
 
-The orchestrator is **not** bound to a single A→B→merge line: it **observes signals** after each
-wave and **re-routes** (repeat, skip, insert eval, re-classify, or abort). That is the
-**dynamic** in the name.
+The orchestrator is **not** bound to a single A→B→merge line: it observes signals after
+each wave and can repeat, skip, insert eval, re-classify, replay upstream, or abort.
+That is the **dynamic** in the name. The distinction is that `dynamic-full-auto` keeps
+continuation authority for the full run once the autonomy budget is approved.
 
 ## Overview
 
 ```
-Human opt-in
-  → [Wave A*] parallel researcher (repeat/partial/skip per signals below)
-  → [Wave B*] parallel explore   (repeat/partial/skip per signals below)
-  → Queen merge + validate digest
-  → [Checkpoint Γ] Re-run Stage 0 classification + auto-router (D23) — may change pipeline
-  → [Optional Wave C] /eval-swarm — parallel Task(evaluator), threshold 0.9, anti-bias spawns
-  → Delivery: /auto | /deliver | /deliver-full under approved scope + gates
+Human opt-in + autonomy budget
+  → Stage 0 intake + latest-context read-back
+  → [Wave A/B*] discovery / evidence / research when signals warrant it
+  → Queen merge + validate digest when a digest is needed
+  → [Checkpoint Γ] Re-run Stage 0 classification + auto-router (D23)
+  → architect / review / plan / execute / quality gate
+  → bounded replay or recomposition when gates fail
+  → closeout
 ```
 
 `*` Waves are **elastic**: the queen may run **Wave A2**, **B-only**, **A-only**, or **short-circuit**
-to merge when the situation warrants (see decision table).
+to merge when the situation warrants. Wave A is mandatory when latest/current external
+facts are material and must use official sources before Checkpoint Γ or delivery.
+
+## Autonomy Budget
+
+At session start, declare:
+
+- goal
+- selected mode = `dynamic-full-auto`
+- replay threshold
+- whether discovery / evidence insertion may happen automatically
+- recomposition stop conditions
+- required human-gate boundaries
+
+After approval, the orchestrator may continue end-to-end until a required human gate,
+threshold stop, or explicit abort condition is reached.
 
 **Digest artifact (canonical path):**
 
@@ -227,10 +246,10 @@ summaries inside governed pipelines.
 
 | Aspect      | DYNAMIC-FULL-AUTO+                               | `/auto`                                  |
 | ----------- | ------------------------------------------------ | ---------------------------------------- |
-| Goal        | Digest + reconnaissance                          | Composed delivery + gated writes         |
+| Goal        | Autonomous end-to-end completion under an approved budget | Composed delivery + gated writes |
 | Parallelism | Research + explore swarms first                  | Stage-isolated `Task` per pipeline row   |
-| Human       | Opt-in once for **this mode**; **during discovery/digest** there is **no extra** human pipeline-declaration step *until* Checkpoint Γ — **not** “no gates for the whole session.” After Γ, same declaration + review semantics as `/auto` for the **delivery** pipeline. | Declaration + review stops as documented for the composed delivery table |
-| Outputs     | `SWARM_RESEARCH_DIGEST.yaml`                     | Merged code/config under scope           |
+| Human       | Opt-in once for the autonomy budget; required human gates still stop the run. | Declaration + review stops as documented for the composed delivery table |
+| Outputs     | Completed delivery plus any supporting digest artifacts | Merged code/config under scope |
 
 
 **Writes vs “mid-run”:** Any **Write/Edit** (including mutating the digest on disk) still requires valid **`.azoth/scope-gate.json`** (and **`.azoth/pipeline-gate.json`** when governed, with **`pipeline`** set to the delivery command you will actually run: `"auto"` \| `"deliver"` \| `"deliver-full"` — **do not** assume `auto` if the handoff is `/deliver` or `/deliver-full` per `.claude/commands/dynamic-full-auto.md` **Gates**). *Mode contract* means the **discovery/digest phases** do not add a **second** `/auto`-style pipeline table **before** Γ; it does **not** exempt tool writes from D50.

@@ -426,8 +426,9 @@ goal_clarification:
 
 ### Auto-Pipeline (D23)
 
-Default behavior when user doesn't specify a pipeline. The Architect classifies the
-goal and composes a pipeline from presets.
+Default behavior when user doesn't specify a pipeline. The Orchestrator classifies the
+goal, reads the latest local context, and composes a pipeline from a shared stage-family
+vocabulary. Presets remain conservative reference compositions, not rigid output targets.
 
 ```yaml
 auto_pipeline:
@@ -439,26 +440,59 @@ auto_pipeline:
     complexity: simple | medium | complex
     knowledge: known-pattern | needs-research | novel | instruction-refinement
 
+  shared_stage_families:
+    - context-recall
+    - discovery-evidence-research
+    - architect-design
+    - review
+    - plan
+    - execute
+    - quality-gate
+    - closeout
+
+  discovery_triggers:
+    - low-solution-confidence
+    - conflicting-memory-or-pattern-evidence
+    - cross-surface-drift
+    - latest-context-dependency
+    - gate-finding-evidence-insufficient
+
   composition_rules:
-    - if risk == governance-change: ALWAYS full pipeline
-    - if scope == kernel: ALWAYS full pipeline
-    - if complexity == simple AND risk == cosmetic:
-        pipeline: [planner, builder, architect-review]
-    - if complexity == simple AND risk == additive:
-        pipeline: [planner, test-builder, builder, architect-review]
+    - if risk == governance-change:
+        reference_preset: full
+        stage_families: [architect-design, review, plan, execute, quality-gate, closeout]
+        discovery_policy: conditional
+    - if scope == kernel:
+        reference_preset: full
+        stage_families: [architect-design, review, plan, execute, quality-gate, closeout]
+        discovery_policy: conditional
     - if knowledge == needs-research:
-        inject: research-phase into architect stage
+        reference_preset: research
+        stage_families: [discovery-evidence-research, architect-design, plan, execute, quality-gate, closeout]
+        discovery_policy: required
     - if knowledge == instruction-refinement:
-        inject: l2-evidence-review into architect stage
+        reference_preset: full
+        stage_families: [context-recall, architect-design, review, plan, execute, quality-gate, closeout]
+        discovery_policy: conditional
     - if scope == docs:
-        pipeline: [architect, builder, architect-review]
-    - default: full pipeline
+        reference_preset: docs
+        stage_families: [architect-design, execute, closeout]
+        discovery_policy: conditional
+    - default:
+        reference_preset: full
+        stage_families: [architect-design, review, plan, execute, quality-gate, closeout]
+        discovery_policy: conditional
 
   declaration:
     format: visual-ui
     shows: [goal, classification, composed-stages, rationale]
     gate: human-approve  # Human can override composition
 ```
+
+Discovery / evidence / research is a **cross-cutting capability** that any auto-family
+run may insert when the trigger vocabulary warrants it. `dynamic-full-auto` uses this
+same engine in a stronger autonomy posture: it begins with an autonomy budget and may
+continue end-to-end, but it is not a discovery wrapper or a forced handoff mode.
 
 ### Pipeline Presets (D28)
 

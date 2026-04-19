@@ -19,4 +19,4 @@ Execution contract:
 
 Command metadata:
 - Source path: `.claude/commands/dynamic-full-auto.md`
-- Description: DYNAMIC-FULL-AUTO+ session: adaptive research/explore swarms, digest, Checkpoint Γ, optional eval-swarm, then /auto-style delivery
+- Description: DYNAMIC-FULL-AUTO+ session: high-autonomy auto-family execution with an autonomy budget, adaptive discovery/evidence insertion, Checkpoint Γ, optional eval-swarm, bounded replay, and closeout

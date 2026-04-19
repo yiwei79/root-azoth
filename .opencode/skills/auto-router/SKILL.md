@@ -11,16 +11,31 @@ governance_anchor: D23
 ## Overview
 
 The auto-router skill is the decision engine for dynamic pipeline composition
-(D23). After the Architect completes Stage 0 goal classification, this skill
-maps the four classification dimensions — scope, risk, complexity, and knowledge
-— onto a concrete stage sequence from `pipelines/auto.pipeline.yaml`.
+(D23). After Stage 0 intake and goal classification, this skill maps the four
+classification dimensions — scope, risk, complexity, and knowledge — onto a
+conservative routing row from `pipelines/auto.pipeline.yaml`.
 
-Rules are evaluated **top-to-bottom**. The first matching condition wins.
-The resulting pipeline is presented to the human for approval before execution.
+Rules are evaluated **top-to-bottom**. The first matching condition wins for
+the **base composition**, which is now expressed as:
 
-Without this skill, the Architect has no canonical reference and must guess
-at stage sequences. This causes ad-hoc pipeline selection that bypasses the
-governed composition rules in `auto.pipeline.yaml`.
+- a `reference_preset`
+- an ordered list of `stage_families`
+- a `discovery_policy`
+
+The orchestrator still reasons over the latest context before execution:
+
+- `context-recall` is mandatory for pipeline-improvement, instruction-refinement,
+  and replay-after-gate-failure work.
+- latest repo-state evidence and platform constraints are part of composition,
+  not post-hoc cleanup.
+- discovery / evidence / research is a **cross-cutting insertion capability**
+  that `/auto` may add when confidence is low or evidence is missing.
+- the selected row is a **reference composition / conservative template**, not
+  permission to skip gates or collapse ownership into inline orchestration.
+
+Without this skill, the Architect has no canonical reference and must guess at
+pipeline shape. This causes ad-hoc selection that bypasses the governed rules in
+`auto.pipeline.yaml`.
 
 ## When to Use
 
@@ -32,24 +47,49 @@ Trigger: `$GOAL has been classified; compose the pipeline.`
 
 This skill is invoked by `/auto` before the Declaration step.
 
+## Shared Stage Families
+
+Every `/auto` run reasons from the same stage-family vocabulary:
+
+1. `intake + classification` — owned by Stage 0
+2. `context-recall`
+3. `discovery-evidence-research`
+4. `architect-design`
+5. `review`
+6. `plan`
+7. `execute`
+8. `quality-gate`
+9. `closeout`
+
+The shared discovery trigger vocabulary in `auto.pipeline.yaml` is:
+
+- `low-solution-confidence`
+- `conflicting-memory-or-pattern-evidence`
+- `cross-surface-drift`
+- `latest-context-dependency`
+- `gate-finding-evidence-insufficient`
+
+The routing table below selects the conservative base shape. The orchestrator
+then applies the mandatory read-back and insertion rules above so the composed
+pipeline reflects current context rather than a frozen preset.
+
 ## Routing Rules
 
 Rules are evaluated in the order below. **Stop at the first match.**
 
-
-| Priority | Condition                                   | Pipeline Stages                                                 | Notes                                                                |
-| -------- | ------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1        | `risk == governance-change`                 | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — any governance mutation requires maximum oversight   |
-| 2        | `scope == kernel`                           | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — kernel is immutable without human-approved promotion |
-| 3        | `knowledge == needs-research`               | `[architect, planner, evaluator, builder, architect]`           | Inject research-phase into architect stage before planner            |
-| 4        | `knowledge == instruction-refinement AND complexity == simple AND risk == additive` | `[architect, planner, evaluator, builder, architect]` | Lightweight instruction-refinement — keeps l2 evidence review but drops reviewer for bounded additive work |
-| 5        | `knowledge == instruction-refinement`       | `[architect, reviewer, planner, evaluator, builder, architect]` | Full fallback — ambiguous, governed, kernel-adjacent, or otherwise non-qualifying refinement stays conservative |
-| 6        | `scope == docs`                             | `[architect, builder, architect]`                               | Lightweight — docs carry low risk and need no review or evaluation   |
-| 7        | `complexity == simple AND risk == cosmetic` | `[planner, builder, architect]`                                 | Minimal pipeline — no review or evaluation needed                    |
-| 8        | `complexity == simple AND risk == additive` | `[planner, evaluator, builder, architect]`                      | Additive changes need evaluation even when simple                    |
-| 9        | `complexity == medium AND risk == additive AND knowledge == known-pattern` | `[planner, evaluator, builder, architect]`    | Medium additive known-pattern — reviewer eliminated; evaluator retains correctness gate |
-| 10       | `complexity == medium AND risk == additive` | `[architect, planner, evaluator, builder, architect]`           | Medium additive — architect scopes design; reviewer eliminated       |
-| 11       | `default`                                   | `[architect, reviewer, planner, evaluator, builder, architect]` | Full pipeline — when in doubt, use maximum coverage                  |
+| Priority | Condition | Reference Preset | Stage Families | Discovery Policy | Notes |
+| -------- | --------- | ---------------- | -------------- | ---------------- | ----- |
+| 1 | `risk == governance-change` | `full` | `architect-design`, `review`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Full lane — any governance mutation requires maximum oversight |
+| 2 | `scope == kernel` | `full` | `architect-design`, `review`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Full lane — kernel is immutable without human-approved promotion |
+| 3 | `knowledge == needs-research` | `research` | `discovery-evidence-research`, `architect-design`, `plan`, `execute`, `quality-gate`, `closeout` | `required` | Discovery-first delivery lane — the shared research family must run before design locks |
+| 4 | `knowledge == instruction-refinement AND complexity == simple AND risk == additive` | `refactor` | `context-recall`, `architect-design`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Lightweight instruction-refinement — keeps L2 evidence loading but drops reviewer for bounded additive work |
+| 5 | `knowledge == instruction-refinement` | `full` | `context-recall`, `architect-design`, `review`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Full fallback — ambiguous, governed, kernel-adjacent, or otherwise non-qualifying refinement stays conservative |
+| 6 | `scope == docs` | `docs` | `architect-design`, `execute`, `closeout` | `conditional` | Lightweight — docs carry low risk and usually need no review or separate quality gate |
+| 7 | `complexity == simple AND risk == cosmetic` | `hotfix` | `plan`, `execute`, `closeout` | `conditional` | Minimal lane — no dedicated review or quality gate by default |
+| 8 | `complexity == simple AND risk == additive` | `deliver` | `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Additive changes keep a correctness gate even when simple |
+| 9 | `complexity == medium AND risk == additive AND knowledge == known-pattern` | `deliver` | `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Medium additive known-pattern — reviewer eliminated; quality gate retained |
+| 10 | `complexity == medium AND risk == additive` | `refactor` | `architect-design`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Medium additive novel work — architect scopes the design while staying below the full review lane |
+| 11 | `default` | `full` | `architect-design`, `review`, `plan`, `execute`, `quality-gate`, `closeout` | `conditional` | Full lane — when in doubt, use maximum coverage |
 
 
 ### Rule Rationale
@@ -57,16 +97,22 @@ Rules are evaluated in the order below. **Stop at the first match.**
 **Rule 1 (governance-change)** — Any change to kernel, governance, or the trust
 contract requires the full review cycle. Risk dimension takes priority over all
 other dimensions because governance mutations are irreversible without human
-approval.
+approval. `/auto` does **not** forcibly redirect these cases to `/deliver-full`;
+it composes the conservative full path while keeping orchestrator ownership
+unless the human explicitly chose another command. The `full` reference preset
+anchors the heaviest oversight shape, while the stage-family list keeps the
+declarative contract aligned with the shared auto-family vocabulary.
 
 **Rule 2 (kernel scope)** — Kernel scope triggers full pipeline independently
 of risk rating. A "cosmetic" change to kernel/ is still a kernel change and
-must pass through reviewer and evaluator.
+must pass through review and quality gates.
 
 **Rule 3 (needs-research)** — When the knowledge dimension signals that the
-solution space is not yet understood, a research phase must be injected into
-the Architect stage before planning proceeds. The evaluator remains in the
-pipeline because research outputs need quality validation.
+solution space is not yet understood, discovery / evidence gathering must be
+inserted before planning proceeds. This insertion is not unique to one mode:
+it is part of the shared auto-family control plane. The evaluator remains in
+the pipeline because research outputs need quality validation. This is the only
+rule with `discovery_policy: required`.
 
 **Rule 4 (lightweight instruction-refinement)** — When the knowledge dimension
 indicates instruction-refinement and the work is both `simple` and `additive`,
@@ -84,8 +130,8 @@ must fall through immediately to the full reviewer-inclusive route rather than
 trying to infer a lighter lane from intent alone.
 
 The **l2-evidence-review** phase is defined as the following sequence of steps,
-executed by the Architect at the start of the stage, before any planning brief
-is produced:
+executed inside the `context-recall` family before the `architect-design` stage
+produces any planning brief:
 
 1. **Read M3 episodes** — load `.azoth/memory/episodes.jsonl` and filter for
    entries tagged `instruction-refinement`; extract friction signals, failed
@@ -128,3 +174,18 @@ risk is additive (no governance surface). The evaluator validates quality.
 **Rule 11 (default)** — Any goal that does not match conditions 1–10 uses the
 full pipeline. The default is conservative: prefer more oversight over less.
 
+## Bounded Replay
+
+Self-iterative quality inside `/auto` is a bounded replay contract, not a
+manual prompt loop.
+
+- architecture / scope / governance / contract findings replay `architect`
+- planning / test-strategy / handoff-completeness findings replay `planner`
+- implementation / failing-acceptance findings replay `builder`
+- evidence-insufficient findings insert discovery / evidence before replaying
+  design or planning
+
+Default thresholds are `2` replays for non-governed runs and `3` for governed
+or high-stakes runs. When the threshold is exhausted, the orchestrator stops
+replay and enters recomposition: narrow the slice, change the pipeline shape,
+or escalate to the human for a pipeline decision.

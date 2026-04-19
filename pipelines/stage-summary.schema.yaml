@@ -116,6 +116,47 @@ properties:
       maxLength: 512
     description: "Paths or logical artifact names (e.g. architecture-brief, task-plan)."
 
+  replay_iteration:
+    type: integer
+    minimum: 1
+    maximum: 10
+    description: "Current bounded-replay attempt count when this stage is part of a revise-and-continue loop."
+
+  replay_target_stage:
+    type: string
+    minLength: 1
+    maxLength: 128
+    description: "Stage id selected as the lowest legitimate upstream corrective target."
+
+  finding_class:
+    type: string
+    enum:
+      - architecture
+      - scope
+      - governance
+      - contract
+      - planning
+      - test-strategy
+      - handoff-completeness
+      - implementation
+      - failing-acceptance
+      - evidence-insufficient
+    description: "Finding class that triggered bounded replay routing."
+
+  threshold_limit:
+    type: integer
+    minimum: 1
+    maximum: 10
+    description: "Maximum replay count allowed before recomposition or escalation."
+
+  lineage_artifacts:
+    type: array
+    maxItems: 10
+    items:
+      type: string
+      maxLength: 512
+    description: "Typed handoff or evidence artifact ids that justify the replay path."
+
   next:
     type: string
     maxLength: 600
