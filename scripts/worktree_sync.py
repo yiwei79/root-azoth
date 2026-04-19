@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -133,6 +134,11 @@ def _load_jsonl_records(path: Path | None) -> list[dict[str, object]]:
 
 def _current_head(repo: Path) -> str:
     result = _run_git(repo, "rev-parse", "HEAD")
+    return result.stdout.strip()
+
+
+def _short_head(repo: Path, rev: str = "HEAD", *, length: int = 8) -> str:
+    result = _run_git(repo, "rev-parse", f"--short={length}", rev)
     return result.stdout.strip()
 
 
@@ -882,6 +888,7 @@ def register_producer_handoff(repo: Path, current: str, target_branch: str) -> i
         "target_branch": target_branch,
         "head_sha": head_sha,
         "handoff_id": _handoff_id(target_branch, current, head_sha),
+        "cleanup_candidates": _cleanup_candidates_for_branch(repo, current, head_sha),
         "worktree_path": str(repo.resolve()),
         "queue_path": str(queue_path),
     }
@@ -1053,17 +1060,107 @@ def resolve_target_branch(repo: Path, override: str | None) -> str:
     )
 
 
-def current_branch(repo: Path) -> str:
+def current_branch(repo: Path) -> str | None:
     result = _run_git(repo, "branch", "--show-current", check=False)
     branch = result.stdout.strip()
-    if not branch:
-        raise RuntimeError("worktree-sync requires a named branch; detached HEAD is not supported.")
-    return branch
+    return branch or None
 
 
 def branch_exists(repo: Path, branch: str) -> bool:
     result = _run_git(repo, "show-ref", "--verify", f"refs/heads/{branch}", check=False)
     return result.returncode == 0
+
+
+def _branch_tip(repo: Path, branch: str) -> str | None:
+    result = _run_git(repo, "rev-parse", f"refs/heads/{branch}", check=False)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def _codex_worktree_token(repo: Path) -> str | None:
+    parts = repo.resolve().parts
+    for idx in range(len(parts) - 2):
+        if parts[idx] == ".codex" and parts[idx + 1] == "worktrees":
+            token = parts[idx + 2].strip()
+            if token:
+                return token
+    return None
+
+
+def _sanitize_branch_token(value: str) -> str:
+    normalized = re.sub(r"[^A-Za-z0-9]+", "-", value).strip("-").lower()
+    return normalized or "detached"
+
+
+def _detached_branch_base(repo: Path, head_sha: str) -> str:
+    worktree_token = _codex_worktree_token(repo)
+    if worktree_token is None:
+        worktree_token = hashlib.sha1(str(repo.resolve()).encode("utf-8")).hexdigest()[:8]
+    branch_token = _sanitize_branch_token(worktree_token)
+    head_token = _short_head(repo, head_sha)
+    return f"codex/wt-{branch_token}-{head_token}"
+
+
+def _switch_to_branch(repo: Path, branch: str, *, create: bool) -> subprocess.CompletedProcess[str]:
+    args = ["switch"]
+    if create:
+        args.extend(["-c", branch])
+    else:
+        args.append(branch)
+    return _run_git(repo, *args, check=False)
+
+
+def resolve_producer_branch(repo: Path) -> tuple[str, str | None]:
+    branch = current_branch(repo)
+    if branch:
+        return branch, None
+
+    head_sha = _current_head(repo)
+    short_head = _short_head(repo, head_sha)
+    base_branch = _detached_branch_base(repo, head_sha)
+    suffix = 1
+    while True:
+        candidate = base_branch if suffix == 1 else f"{base_branch}-{suffix}"
+        existing_tip = _branch_tip(repo, candidate)
+        if existing_tip is None:
+            switch_result = _switch_to_branch(repo, candidate, create=True)
+            if switch_result.returncode == 0:
+                return (
+                    candidate,
+                    "worktree-sync: attached detached producer HEAD at "
+                    f"{short_head} to auto-created local branch '{candidate}'.",
+                )
+            detail = (
+                switch_result.stderr.strip()
+                or switch_result.stdout.strip()
+                or "git switch -c failed"
+            )
+            raise RuntimeError(
+                "worktree-sync: could not attach detached producer HEAD to "
+                f"'{candidate}': {detail}"
+            )
+
+        if existing_tip != head_sha:
+            suffix += 1
+            continue
+
+        switch_result = _switch_to_branch(repo, candidate, create=False)
+        if switch_result.returncode == 0:
+            return (
+                candidate,
+                "worktree-sync: attached detached producer HEAD at "
+                f"{short_head} to existing local branch '{candidate}'.",
+            )
+
+        detail = switch_result.stderr.strip() or switch_result.stdout.strip() or "git switch failed"
+        if "already checked out" in detail:
+            suffix += 1
+            continue
+        raise RuntimeError(
+            "worktree-sync: could not reuse detached producer branch "
+            f"'{candidate}': {detail}"
+        )
 
 
 def working_tree_dirty(repo: Path) -> bool:
@@ -1195,6 +1292,278 @@ def integrator_preflight(
     return 0
 
 
+def _cleanup_candidates_for_branch(
+    repo: Path, producer_branch: str, head_sha: str
+) -> list[dict[str, str]]:
+    candidates: list[dict[str, str]] = [
+        {
+            "branch": producer_branch,
+            "expected_sha": head_sha,
+            "reason": "queued-producer-branch",
+        }
+    ]
+    if producer_branch.endswith("-integrable"):
+        sibling_branch = producer_branch[: -len("-integrable")]
+        sibling_tip = _branch_tip(repo, sibling_branch)
+        if sibling_tip:
+            candidates.append(
+                {
+                    "branch": sibling_branch,
+                    "expected_sha": sibling_tip,
+                    "reason": "superseded-by-integrable",
+                }
+            )
+    return candidates
+
+
+def _normalize_cleanup_candidates(ready: dict[str, object]) -> list[dict[str, str]]:
+    raw_candidates = ready.get("cleanup_candidates")
+    normalized: list[dict[str, str]] = []
+    if isinstance(raw_candidates, list):
+        for raw_candidate in raw_candidates:
+            if not isinstance(raw_candidate, dict):
+                continue
+            branch = str(raw_candidate.get("branch") or "").strip()
+            expected_sha = str(raw_candidate.get("expected_sha") or "").strip()
+            reason = str(raw_candidate.get("reason") or "").strip()
+            if branch and expected_sha:
+                normalized.append(
+                    {
+                        "branch": branch,
+                        "expected_sha": expected_sha,
+                        "reason": reason or "cleanup-candidate",
+                    }
+                )
+    if normalized:
+        return normalized
+
+    producer_branch = str(ready.get("producer_branch") or "").strip()
+    head_sha = str(ready.get("head_sha") or "").strip()
+    if producer_branch and head_sha:
+        normalized.append(
+            {
+                "branch": producer_branch,
+                "expected_sha": head_sha,
+                "reason": "queued-producer-branch",
+            }
+        )
+    return normalized
+
+
+def _git_worktree_entries(repo: Path) -> list[dict[str, object]]:
+    result = _run_git(repo, "worktree", "list", "--porcelain", check=False)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "git worktree list failed")
+
+    entries: list[dict[str, object]] = []
+    current: dict[str, object] | None = None
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            if current is not None:
+                entries.append(current)
+                current = None
+            continue
+        key, _, value = line.partition(" ")
+        if key == "worktree":
+            if current is not None:
+                entries.append(current)
+            current = {"worktree": value.strip()}
+            continue
+        if current is None:
+            continue
+        if key == "detached":
+            current["detached"] = True
+        else:
+            current[key] = value.strip()
+    if current is not None:
+        entries.append(current)
+    return entries
+
+
+def _branch_worktrees(repo: Path, branch: str) -> list[Path]:
+    target_ref = f"refs/heads/{branch}"
+    paths: list[Path] = []
+    for entry in _git_worktree_entries(repo):
+        if str(entry.get("branch") or "").strip() != target_ref:
+            continue
+        worktree_path = str(entry.get("worktree") or "").strip()
+        if worktree_path:
+            paths.append(Path(worktree_path).resolve())
+    return paths
+
+
+def _commit_is_reachable_from(repo: Path, commit_sha: str, branch: str) -> bool:
+    result = _run_git(repo, "merge-base", "--is-ancestor", commit_sha, branch, check=False)
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "merge-base failed")
+
+
+def _new_cleanup_summary() -> dict[str, object]:
+    return {
+        "removed_branches": [],
+        "removed_worktrees": [],
+        "skipped_cleanup": [],
+    }
+
+
+def _cleanup_skip(
+    summary: dict[str, object],
+    *,
+    branch: str,
+    reason: str,
+    detail: str | None = None,
+    worktree_path: str | None = None,
+) -> None:
+    item: dict[str, str] = {"branch": branch, "reason": reason}
+    if detail:
+        item["detail"] = detail
+    if worktree_path:
+        item["worktree_path"] = worktree_path
+    skipped = summary.setdefault("skipped_cleanup", [])
+    assert isinstance(skipped, list)
+    skipped.append(item)
+
+
+def cleanup_integrated_branches(
+    repo: Path,
+    *,
+    target_branch: str,
+    current_branch_name: str,
+    ready: dict[str, object],
+) -> dict[str, object]:
+    summary = _new_cleanup_summary()
+    seen_branches: set[str] = set()
+    for candidate in _normalize_cleanup_candidates(ready):
+        branch = candidate["branch"]
+        if branch in seen_branches:
+            continue
+        seen_branches.add(branch)
+
+        expected_sha = candidate["expected_sha"]
+        if branch in {target_branch, current_branch_name}:
+            _cleanup_skip(summary, branch=branch, reason="protected-branch")
+            continue
+
+        current_tip = _branch_tip(repo, branch)
+        if current_tip is None:
+            _cleanup_skip(summary, branch=branch, reason="branch-missing")
+            continue
+        if current_tip != expected_sha:
+            _cleanup_skip(summary, branch=branch, reason="tip-moved")
+            continue
+        try:
+            merged = _commit_is_reachable_from(repo, current_tip, target_branch)
+        except RuntimeError as exc:
+            _cleanup_skip(summary, branch=branch, reason="reachability-check-failed", detail=str(exc))
+            continue
+        if not merged:
+            _cleanup_skip(summary, branch=branch, reason="not-merged-into-target")
+            continue
+
+        attached_worktrees = _branch_worktrees(repo, branch)
+        blocked = False
+        for worktree_path in attached_worktrees:
+            if worktree_path == repo.resolve():
+                _cleanup_skip(
+                    summary,
+                    branch=branch,
+                    reason="branch-attached-to-live-worktree",
+                    worktree_path=str(worktree_path),
+                )
+                blocked = True
+                break
+            if working_tree_dirty(worktree_path):
+                _cleanup_skip(
+                    summary,
+                    branch=branch,
+                    reason="attached-worktree-dirty",
+                    worktree_path=str(worktree_path),
+                )
+                blocked = True
+                break
+            remove_result = _run_git(
+                repo, "worktree", "remove", "--force", str(worktree_path), check=False
+            )
+            if remove_result.returncode != 0:
+                detail = (
+                    remove_result.stderr.strip()
+                    or remove_result.stdout.strip()
+                    or "git worktree remove failed"
+                )
+                _cleanup_skip(
+                    summary,
+                    branch=branch,
+                    reason="worktree-remove-failed",
+                    detail=detail,
+                    worktree_path=str(worktree_path),
+                )
+                blocked = True
+                break
+            removed_worktrees = summary.setdefault("removed_worktrees", [])
+            assert isinstance(removed_worktrees, list)
+            removed_worktrees.append(str(worktree_path))
+        if blocked:
+            continue
+
+        delete_result = _run_git(repo, "branch", "-d", branch, check=False)
+        if delete_result.returncode != 0:
+            detail = (
+                delete_result.stderr.strip()
+                or delete_result.stdout.strip()
+                or "git branch -d failed"
+            )
+            _cleanup_skip(
+                summary,
+                branch=branch,
+                reason="branch-delete-failed",
+                detail=detail,
+            )
+            continue
+
+        removed_branches = summary.setdefault("removed_branches", [])
+        assert isinstance(removed_branches, list)
+        removed_branches.append(branch)
+
+    return summary
+
+
+def _cleanup_summary_lines(summary: dict[str, object]) -> list[str]:
+    lines: list[str] = []
+    removed_branches = summary.get("removed_branches")
+    if isinstance(removed_branches, list) and removed_branches:
+        lines.append(
+            "worktree-sync: cleanup removed branches "
+            + ", ".join(str(branch) for branch in removed_branches)
+            + "."
+        )
+    removed_worktrees = summary.get("removed_worktrees")
+    if isinstance(removed_worktrees, list) and removed_worktrees:
+        lines.append(
+            "worktree-sync: cleanup removed worktrees "
+            + ", ".join(str(path) for path in removed_worktrees)
+            + "."
+        )
+    skipped_cleanup = summary.get("skipped_cleanup")
+    if isinstance(skipped_cleanup, list) and skipped_cleanup:
+        skipped_bits: list[str] = []
+        for item in skipped_cleanup:
+            if not isinstance(item, dict):
+                continue
+            branch = str(item.get("branch") or "").strip() or "<unknown>"
+            reason = str(item.get("reason") or "").strip() or "skipped"
+            worktree_path = str(item.get("worktree_path") or "").strip()
+            if worktree_path:
+                skipped_bits.append(f"{branch} ({reason}: {worktree_path})")
+            else:
+                skipped_bits.append(f"{branch} ({reason})")
+        if skipped_bits:
+            lines.append("worktree-sync: cleanup skipped " + ", ".join(skipped_bits) + ".")
+    return lines
+
+
 def integrate_ready_handoff(
     repo: Path,
     current: str,
@@ -1249,6 +1618,12 @@ def integrate_ready_handoff(
                 file=sys.stderr,
             )
             return 1
+        cleanup_summary = cleanup_integrated_branches(
+            repo,
+            target_branch=target_branch,
+            current_branch_name=current,
+            ready=ready,
+        )
         result_payload = {
             "event": "integrated",
             "producer_branch": producer,
@@ -1261,6 +1636,7 @@ def integrate_ready_handoff(
             "verification_commands": [],
             "verification_count": 0,
             "repair_only": True,
+            "cleanup_summary": cleanup_summary,
         }
         if as_json:
             print(json.dumps(result_payload, ensure_ascii=True, sort_keys=True))
@@ -1269,6 +1645,8 @@ def integrate_ready_handoff(
                 "worktree-sync: repaired handoff queue state for already-promoted handoff "
                 f"'{producer}' ({resolved_handoff_id})."
             )
+            for line in _cleanup_summary_lines(cleanup_summary):
+                print(line)
         return 0
 
     sandbox_dir = Path(tempfile.mkdtemp(prefix="azoth-integrate-run-"))
@@ -1407,6 +1785,12 @@ def integrate_ready_handoff(
                 file=sys.stderr,
             )
             return 1
+        cleanup_summary = cleanup_integrated_branches(
+            repo,
+            target_branch=target_branch,
+            current_branch_name=current,
+            ready=ready,
+        )
 
         result_payload = {
             "event": "integrated",
@@ -1420,6 +1804,7 @@ def integrate_ready_handoff(
             "verification_commands": verify_commands,
             "verification_count": len(verification_results),
             "repair_only": False,
+            "cleanup_summary": cleanup_summary,
         }
         succeeded = True
         if as_json:
@@ -1431,6 +1816,8 @@ def integrate_ready_handoff(
                 f"'{producer}' ({resolved_handoff_id}) into '{target_branch}' via sandbox {sandbox_dir}.\n"
                 f"worktree-sync: promoted tested merge {sandbox_head} ({subject})."
             )
+            for line in _cleanup_summary_lines(cleanup_summary):
+                print(line)
         return 0
     finally:
         if worktree_added and succeeded:
@@ -1511,12 +1898,35 @@ def main(argv: list[str] | None = None) -> int:
                 f"target branch '{target_branch}' does not exist locally. "
                 "Refresh your local repo or pass a valid --target-branch."
             )
-        branch = current_branch(root)
+        raw_branch = current_branch(root)
     except RuntimeError as exc:
         print(f"worktree-sync: {exc}", file=sys.stderr)
         return 1
 
-    if branch == target_branch:
+    is_integrator = raw_branch is not None and raw_branch == target_branch
+    if raw_branch is None:
+        try:
+            branch, attach_message = resolve_producer_branch(root)
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        if attach_message:
+            print(attach_message)
+    else:
+        branch = raw_branch
+
+    if (
+        args.next_ready_handoff
+        or args.integrate_ready_handoff
+        or args.mark_integrated is not None
+    ) and not is_integrator:
+        print(
+            "worktree-sync: integrate actions require the active integration branch to be checked out.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if is_integrator:
         result = integrator_preflight(
             root,
             branch,
