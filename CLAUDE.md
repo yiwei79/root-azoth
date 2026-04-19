@@ -129,7 +129,7 @@ Two permanent branches; all other branches are short-lived:
 
 ```
 main                  ← stable releases only (tagged on squash-merge from phase branch)
-phase/v0.2.0-p2       ← active integration branch; receives all merges for current phase
+phase/v0.2.0-p3       ← active integration branch; receives all merges for current phase
   └── patch/<bl-id>   ← one branch per backlog item; deleted immediately after merge
   └── feat/<slug>     ← ad-hoc feature work; deleted immediately after merge
 ```
@@ -142,7 +142,7 @@ Rules:
 - **Short-lived feature/patch branches** — open on scope approval, merge (or squash) within
   the same session or next, delete immediately. Never let stale branches accumulate.
 - **Merge with `--no-ff`** into the phase branch to preserve feature history.
-- **Tag phases** with `git tag v0.2.0-p2-close` before the squash to `main` (user-confirmed,
+- **Tag phases** with `git tag v0.2.0-p3-close` before the squash to `main` (user-confirmed,
   never auto-pushed).
 
 #### Worktree Policy (D54)
@@ -177,7 +177,7 @@ multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 2 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p2` for the phase-2 working slice under the `v0.2.0` milestone. Phase 1 (v0.2.0-p1) complete with 45 patches (25 tasks delivered). Phase 2 focus: memory hardening (P1-017, P1-020, P1-021 carried), declarative swarm depth, platform parity polish. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
+**Current phase:** Phase 3 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p3` for the phase-3 working slice under the `v0.2.0` milestone. Phase 1 (v0.2.0-p1) complete with 45 patches (25 tasks delivered). Phase 2 is closed as complete enough; Phase 3 focus is carry-forward hardening across memory policy, platform parity, roadmap tooling, and bounded evidence refresh. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
 
 ## Origin
 
