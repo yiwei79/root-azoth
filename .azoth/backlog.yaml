@@ -2279,6 +2279,93 @@ items:
     (3) add platform-parity tests so evidence-grounded behavior cannot silently drift
     by harness. Non-goal: this slice does not broaden the research trust policy beyond
     Azoth''s bounded sufficiency contract.'
+- id: T-011
+  title: Worktree contract parity + proposal refresh
+  source: roadmap-worktree-upgrade-2026-04-19
+  roadmap_ref: T-011
+  initiative_ref: INI-RST-005
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-19'
+  completed_date: '2026-04-19'
+  decision_ref:
+  - D21
+  - D50
+  - D54
+  blocked_by: []
+  description: 'Planning-only worktree upgrade slice. Deliverables: (1) minimal
+    proposal-system hardening for repo-aware backlog/decision refs, (2) refreshed
+    worktree proposal tied to a live follow-on task, (3) mandatory external research
+    capsule and merged swarm digest, and (4) roadmap/backlog split across parity,
+    execution, reconciliation, and lifecycle slices. Non-goal: no sandbox merge
+    engine or lifecycle implementation lands here.'
+- id: T-012
+  title: Sandboxed integrate-run execution for worktree handoffs
+  source: roadmap-worktree-upgrade-2026-04-19
+  roadmap_ref: T-012
+  initiative_ref: INI-RST-005
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 2
+  created_date: '2026-04-19'
+  decision_ref:
+  - D21
+  - D50
+  - D54
+  blocked_by:
+  - T-011
+  description: 'Implement the real integrate lane for worktree handoffs. Deliverables:
+    create a temporary integration worktree from the target tip, merge the selected
+    ready handoff there, run targeted verification, and only advance the live target
+    branch after the sandbox result is accepted. This slice should update the command/playbook
+    contract so execution claims match backend reality.'
+- id: T-013
+  title: Deterministic reconciliation policy for shared Azoth state during worktree integration
+  source: roadmap-worktree-upgrade-2026-04-19
+  roadmap_ref: T-013
+  initiative_ref: INI-RST-005
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 3
+  created_date: '2026-04-19'
+  decision_ref:
+  - D21
+  - D50
+  - D54
+  blocked_by:
+  - T-012
+  description: 'Define and implement semantic reconciliation rules for shared Azoth
+    state once the sandbox integrate lane exists. Focus on backlog/roadmap identity,
+    approvals append semantics, episode collision guards, and derived counter recomputation
+    instead of line-oriented text merge behavior.'
+- id: T-014
+  title: Worktree session lifecycle UX after integration
+  source: roadmap-worktree-upgrade-2026-04-19
+  roadmap_ref: T-014
+  initiative_ref: INI-RST-005
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-19'
+  decision_ref:
+  - D21
+  - D50
+  - D54
+  blocked_by:
+  - T-013
+  description: 'Improve the user-facing lifecycle after integration becomes real:
+    clear closeout/reporting language, cleanup/prune behavior, follow-on routing,
+    and honest continuation handling for sessions that hand off work without directly
+    integrating it.'
 - id: BL-057
   title: Close canonical command migration bundles atomically
   source: SRF-2026-04-17-003
@@ -2386,3 +2473,19 @@ items:
     File: .claude/hooks/scope_gate_core.py (evaluate_scope_gate, ~line 337).
     Acceptance: writing to ~/.claude/plans/ proceeds without a scope card; writing to
     .azoth/ still requires one.
+- id: BL-065
+  title: "Worktree-upgrade external evidence refresh lane"
+  source: "2026-04-19-worktree-upgrade-research"
+  initiative_ref: INI-RST-005
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p2
+  priority: 4
+  created_date: '2026-04-19'
+  description: >
+    Refresh the bounded external evidence that informs the worktree-upgrade
+    initiative when assumptions age or tool behavior changes. Re-check official
+    Git documentation first, then bounded academic workflow/evaluation sources,
+    and write the updated findings back into the local research capsule/digest
+    rather than leaving them as chat-only context.

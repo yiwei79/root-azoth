@@ -12,6 +12,10 @@ meta:
   wave_b: "orchestrator pass — eval.md / deliver.md / deploy mirrors; declare /deliver pipeline + test matrix"
   wave_b2: "2026-04-08T23:19Z bare /dynamic-full-auto — scope-gate valid P1-010; digest merge + Γ only; no new explore Tasks"
   checkpoint_gamma: "scope infrastructure · risk additive · complexity simple · knowledge known-pattern → auto-router rule 6 → /deliver"
+  worktree_upgrade_research_session: "2026-04-19-worktree-upgrade-research"
+  wave_a3: "mandatory external research lane — official Git docs plus bounded academic workflow/evaluation sources"
+  wave_b3: "repo-local explore lane — proposal validator/tests, worktree-sync command/backend/tests, playbook, roadmap/backlog placement"
+  checkpoint_gamma_2026_04_19: "planning-only slice → refresh proposal + digest + research capsule + roadmap/backlog; no implementation handoff in this session"
 
 consensus_themes:
   - id: durability
@@ -48,6 +52,30 @@ consensus_themes:
       W3 and PR-review guidance are over-expanded in the command text, while `scripts/do_closeout.py`
       misses documented W2 responsibilities and repeats artifact reads. The net effect is higher
       token cost, stale-mirror risk, and incomplete end-of-session state updates (P1-006, P1-011).
+  - id: worktree_lifecycle_is_short_lived_and_explicit
+    contributing_packs: [RP-WT-IND, RP-WT-REPO]
+    summary: >
+      Official Git worktree behavior favors explicit lifecycle operations (add, lock, prune,
+      remove) and short-lived isolated worktrees. Azoth's worktree integration flow should map
+      onto that model rather than implying a permanently parked integrator workspace.
+  - id: per_worktree_state_should_stay_isolated
+    contributing_packs: [RP-WT-IND, RP-WT-REPO]
+    summary: >
+      Git's per-worktree configuration model reinforces Azoth's need to isolate transient
+      integration state inside the temporary integration worktree, while canonical shared state
+      stays in the repository truth after an accepted merge.
+  - id: worktree_swarm_design_should_be_bounded_and_diverse
+    contributing_packs: [RP-WT-ACAD]
+    summary: >
+      Recent multi-agent literature supports bounded role diversity and reviewer independence,
+      not indiscriminate swarm growth. For the worktree upgrade, one external lane plus a small
+      repo-local lane is justified; extra agents should exist only when they add distinct evidence.
+  - id: worktree_contract_parity_precedes_execution_engine
+    contributing_packs: [RP-WT-REPO]
+    summary: >
+      The repo already implements producer refresh and handoff queueing, but not sandboxed merge
+      execution. Contract parity and proposal refresh should therefore ship before the execution,
+      reconciliation, and lifecycle slices.
 
 research_packs:
   - id: RP-A
@@ -157,6 +185,46 @@ research_packs:
       - "Doc-only trimming without script repair preserves stale or incomplete end-of-session state."
       - "Script-only repair without command compression keeps closeout token-heavy across every platform mirror."
       - "The current digest lives under roadmap_version v0.2.0 while roadmap active_version is v0.2.0-p2; DFA+ artifact path drift can hide future closeout findings."
+  - id: RP-WT-IND
+    topic: "Official Git worktree lifecycle and per-worktree state"
+    sources:
+      - { title: "git-worktree manual", url: "https://git-scm.com/docs/git-worktree.html" }
+      - { title: "git-sparse-checkout manual", url: "https://git-scm.com/docs/git-sparse-checkout/2.36.0" }
+    implications_for_azoth:
+      - "Treat temporary integration worktrees as explicit short-lived lifecycle objects."
+      - "Keep transient integration state isolated per worktree rather than broadening live target state."
+      - "Align command/playbook claims with the actual worktree operations Azoth executes."
+    risks:
+      - "If Azoth claims integration behavior beyond what the backend performs, users will infer safety guarantees that do not yet exist."
+      - "Shared-state merges remain hazardous until deterministic reconciliation rules are defined."
+  - id: RP-WT-ACAD
+    topic: "Bounded multi-agent orchestration and evaluator independence"
+    sources:
+      - { title: "A Survey on LLM-Based Multi-Agent Systems", url: "https://link.springer.com/article/10.1007/s44336-024-00009-2" }
+      - { title: "Rethinking the Value of Multi-Agent Workflow: A Strong Single Agent Baseline", url: "https://openreview.net/forum?id=i95lcR2GN5" }
+      - { title: "Understanding Agent Scaling in LLM-Based Multi-Agent Systems via Diversity", url: "https://openreview.net/forum?id=9BN2W5BCfE" }
+      - { title: "AEMA: Verifiable Evaluation Framework for Trustworthy and Controlled Agentic LLM Systems", url: "https://openreview.net/forum?id=DXIEHiZx3i" }
+    implications_for_azoth:
+      - "Use mandatory external research only when current facts materially matter, then keep the lane bounded."
+      - "Prefer differentiated roles and explicit synthesis over larger undirected swarms."
+      - "Preserve evaluator independence and evidence trails in worktree-planning sessions."
+    risks:
+      - "Several sources are submissions or workshop papers, so they should inform architecture judgment without becoming hard policy."
+      - "Multi-agent overhead can exceed its value when the task is still satisfiable by a strong local pass."
+  - id: RP-WT-REPO
+    topic: "Repo-local worktree contract drift and phased follow-on split"
+    sources:
+      - { title: "worktree-sync command", url: "file:///Users/yiwei/GithubRepos/root-azoth/.claude/commands/worktree-sync.md" }
+      - { title: "worktree_sync backend", url: "file:///Users/yiwei/GithubRepos/root-azoth/scripts/worktree_sync.py" }
+      - { title: "worktree_sync tests", url: "file:///Users/yiwei/GithubRepos/root-azoth/tests/test_worktree_sync.py" }
+      - { title: "parallel sessions playbook", url: "file:///Users/yiwei/GithubRepos/root-azoth/docs/playbook/05-parallel-sessions.md" }
+    implications_for_azoth:
+      - "Separate implemented producer-handoff behavior from planned integration behavior in the command contract."
+      - "Stage the upgrade as parity/proposal refresh first, then execution, then reconciliation, then lifecycle UX."
+      - "Treat P1-015 as historical multi-writer safety foundation, not as the active worktree-upgrade slice."
+    risks:
+      - "Detached HEAD rules currently drift between command text and backend validation."
+      - "Without a real integrate-run engine, docs can overpromise safety and automation."
 
 explore_swarm_summary:
   wave: "B + synthesis"
@@ -172,8 +240,11 @@ explore_swarm_summary:
     - "Continuation: approved scope still P1-010 until expires_at; implementation not started in orchestrator thread — next action remains /deliver with Task-isolated stages."
     - "2026-04-15 closeout-efficiency audit: command surface is verbose in W3/C6, `scripts/do_closeout.py` misses documented W2 responsibilities and write-claim release, and version-bump/final-delivery rules are split across conflicting surfaces."
     - "DFA+ path drift: active roadmap version is v0.2.0-p2, but the canonical digest file still lives under .azoth/roadmap-specs/v0.2.0/."
+    - "2026-04-19 worktree lane: repo truth currently covers producer refresh, clean-target preflight, ready-handoff queueing, and integrated marking, but not sandboxed merge execution."
+    - "2026-04-19 worktree lane: command/playbook contract drifts from backend reality, including detached HEAD handling and broader integrate-lane claims."
+    - "2026-04-19 worktree lane: phased roadmap split should be T-011 parity/proposal refresh, then T-012 execution, T-013 reconciliation, and T-014 lifecycle UX."
 
-mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P1-012, P5-006]
+mapped_roadmap_tasks: [P1-001, P1-002, P1-003, P1-004, P1-005, P1-006, P1-007, P1-008, P1-009, P1-010, P1-011, P1-012, P5-006, T-011, T-012, T-013, T-014]
 
 mapping_notes:
   P1-001: "RP-A durability + explore: queen/run state only in chat — ledger + resume protocol closes gap."
@@ -190,6 +261,11 @@ mapping_notes:
   P1-012: "Urgent DFA e2e friction — D21/D23/D50 blast radius: gates vs multi-wave mode, Task spawn, queen merge/handoff to /deliver|/auto; overlaps P1-001 ledger + P1-002 declarative waves."
   P5-006: "Deferred narrow-terminal UX; D52 welcome/dashboard surfaces (no hook semantic change)."
   CLOSEOUT-EFF: "RP-F closeout audit — session-closeout should spend tokens on imperative steps, while implementation must restore W2 responsibilities and remove contradictory closeout rules."
+  T-011: "Worktree contract parity + proposal refresh — combines mandatory external research with repo-local drift findings and lands the planning artifacts only."
+  T-012: "Sandboxed integrate-run execution — first implementation slice for temporary-worktree merge/verify/integrate behavior."
+  T-013: "Deterministic reconciliation policy — semantic merge rules for shared Azoth state once the execution lane exists."
+  T-014: "Lifecycle UX after integration — closeout, cleanup, and follow-on routing once integration is real."
+  BL-065: "External evidence refresh lane — revisit official Git and bounded academic sources when the worktree-upgrade assumptions age."
   INI-MEM-001: "RP-MEM-A verbatim-first storage — compress-before-index regression (96.6%→84.2%); M3 must index on full signal."
   INI-MEM-002: "RP-MEM-C temporal KG — valid_from/valid_to point-in-time queries; D42 HITL invalidation preserved, no auto-expiry."
   INI-MEM-003: "RP-MEM-B hybrid retrieval — flat ChromaDB collection, fused_dist formula production-only (not just benchmark); optional SQLite-vec backend."

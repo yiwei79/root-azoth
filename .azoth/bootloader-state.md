@@ -1,19 +1,19 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.59 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 56
+0.1.2.61 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 58
 
 ## Last Session
-- **Session**: 2026-04-19-worktree-sync-ux
-- **Goal**: AD-HOC: workflow refinement for worktree integrate UX and closeout friction
+- **Session**: 2026-04-19-t-011
+- **Goal**: T-011: Worktree contract parity + proposal refresh
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-271 (success)
+- **Episode**: ep-272 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
 2. W2 closed the scope gate and refreshed repo-local handoff state.
-3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.
+3. W3 mirrored the closeout snapshot and W4 finalized the patch bump/orientation state.
 
 ## Open Decisions
 - None.

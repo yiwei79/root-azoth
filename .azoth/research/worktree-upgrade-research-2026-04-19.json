@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "source_session_id": "2026-04-19-worktree-upgrade-research",
+  "goal": "T-011: Worktree contract parity + proposal refresh",
+  "captured_at": "2026-04-19T16:30:00+00:00",
+  "volatility": "mixed",
+  "limitations": [
+    "Official Git documentation is treated as normative for worktree behavior as observed on 2026-04-19.",
+    "Academic multi-agent sources are directional architecture input, not hard product requirements.",
+    "Repo-local findings describe current Azoth behavior in this repository snapshot and may age as implementation lands."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this worktree-upgrade research capsule be reused for the next worktree planning slice?",
+      "status": "answered",
+      "answered_at": "2026-04-19T16:30:00+00:00",
+      "fresh_until": "2026-05-19T16:30:00+00:00"
+    },
+    {
+      "question_id": "phase-1-slice-t-011-t-011-worktree-contract-parity-proposal-refresh",
+      "question": "What is implemented now versus planned next for the T-011 worktree contract parity slice?",
+      "status": "answered",
+      "answered_at": "2026-04-19T16:30:00+00:00",
+      "fresh_until": "2026-05-19T16:30:00+00:00"
+    }
+  ],
+  "sources": [
+    {
+      "kind": "industry-official",
+      "title": "git-worktree manual",
+      "url": "https://git-scm.com/docs/git-worktree.html",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "Official Git documentation",
+      "findings": [
+        "Worktree add/remove/lock/prune semantics should anchor Azoth's factual integration lifecycle.",
+        "Per-worktree configuration support (`extensions.worktreeConfig`) reinforces keeping temporary integration state isolated."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "git-sparse-checkout manual",
+      "url": "https://git-scm.com/docs/git-sparse-checkout/2.36.0",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "Official Git documentation",
+      "findings": [
+        "Git already distinguishes worktree-local configuration from shared repository state.",
+        "Azoth can safely model sandbox integration state as ephemeral per-worktree state instead of canonical repo truth."
+      ]
+    },
+    {
+      "kind": "academic-survey",
+      "title": "A Survey on LLM-Based Multi-Agent Systems",
+      "url": "https://link.springer.com/article/10.1007/s44336-024-00009-2",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "2024 survey article",
+      "findings": [
+        "Role specialization is useful when coordination stays bounded and explicit.",
+        "Control-plane clarity matters as much as agent count."
+      ]
+    },
+    {
+      "kind": "academic-submission",
+      "title": "Rethinking the Value of Multi-Agent Workflow: A Strong Single Agent Baseline",
+      "url": "https://openreview.net/forum?id=i95lcR2GN5",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "OpenReview submission",
+      "findings": [
+        "Multi-agent workflow should be justified against strong single-agent baselines.",
+        "Extra lanes should exist only when they add distinct evidence or independence."
+      ]
+    },
+    {
+      "kind": "academic-workshop",
+      "title": "Understanding Agent Scaling in LLM-Based Multi-Agent Systems via Diversity",
+      "url": "https://openreview.net/forum?id=9BN2W5BCfE",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "OpenReview workshop paper",
+      "findings": [
+        "Agent diversity matters more than raw agent count.",
+        "Bounded specialized lanes are preferable to unstructured swarm expansion."
+      ]
+    },
+    {
+      "kind": "academic-workshop",
+      "title": "AEMA: Verifiable Evaluation Framework for Trustworthy and Controlled Agentic LLM Systems",
+      "url": "https://openreview.net/forum?id=DXIEHiZx3i",
+      "freshness_observed_at": "2026-04-19",
+      "published_context": "OpenReview workshop paper",
+      "findings": [
+        "Evidence-backed evaluation and explicit reviewer independence improve trustworthiness.",
+        "Audit trails should survive beyond a single agent run."
+      ]
+    }
+  ],
+  "repo_findings": [
+    "scripts/worktree_sync.py currently implements producer refresh, dirty-target preflight, ready handoff queueing, and integrated marking.",
+    "The current command/playbook surface claims more integration behavior than the backend executes today.",
+    "Detached HEAD handling is inconsistent: command copy is permissive, backend validation is not.",
+    "Shared Azoth state files remain the main reconciliation risk for future integrate-run work."
+  ],
+  "recommended_reuse_for": [
+    "T-012",
+    "T-013",
+    "T-014"
+  ]
+}

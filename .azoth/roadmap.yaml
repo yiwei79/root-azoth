@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 57
+    current_patch: 58
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -377,6 +377,27 @@ versions:
         title: "Research sufficiency platform parity + workflow hardening"
         decision_ref: [D23, D46, D50, D52]
         initiative_ref: "INI-EVI-001"
+      - id: T-012
+        title: "Sandboxed integrate-run execution for worktree handoffs"
+        decision_ref: [D21, D50, D54]
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-RST-005"
+        status: planned
+      - id: T-013
+        title: "Deterministic reconciliation policy for shared Azoth state during worktree integration"
+        decision_ref: [D21, D50, D54]
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-RST-005"
+        status: planned
+      - id: T-014
+        title: "Worktree session lifecycle UX after integration"
+        decision_ref: [D21, D50, D54]
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-RST-005"
+        status: planned
       - id: T-KRP-A
         title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
         target_layer: M1
@@ -426,6 +447,7 @@ versions:
       - {id: T-005, title: "Low-risk instruction-refinement lightweight lane", completed_date: "2026-04-18", decision_ref: [D23, D44]}
       - {id: T-006, title: "First-class iterative revise-and-continue pipeline loops", completed_date: "2026-04-18", decision_ref: [D23, D44]}
       - {id: T-009, title: "Local research capsule bank + sufficiency checker", completed_date: "2026-04-19", decision_ref: [D11, D23, D45, D46]}
+      - {id: T-011, title: "Worktree contract parity + proposal refresh", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -532,6 +554,47 @@ initiatives:
       a full multi-file scaffolder for the roadmap system itself.
     decision_ref: [D47, D48, D50]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/T-001.yaml"
+
+  - id: INI-RST-005
+    title: "Worktree integration workflow hardening"
+    category: run-state
+    theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [worktree-integration, parallel-sessions, merge-reconciliation]
+    phase: v0.2.0-p2
+    priority: high
+    task_ref: T-012
+    slices:
+      - task_ref: T-011
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: complete
+        role: historical
+      - task_ref: T-012
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: planned
+        role: primary
+      - task_ref: T-013
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: planned
+        role: follow_on
+      - task_ref: T-014
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: planned
+        role: follow_on
+    summary: >
+      Refresh the worktree-upgrade contract around current repo truth and fresh
+      external evidence, then stage the remaining delivery as three separate
+      slices: sandboxed integrate-run execution, deterministic reconciliation
+      for shared Azoth state, and post-integration lifecycle UX. T-011 is the
+      completed planning/parity slice; T-012 becomes the first implementation
+      follow-on rather than reopening historical P1-015.
+    decision_ref: [D21, D50, D54]
 
   # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001

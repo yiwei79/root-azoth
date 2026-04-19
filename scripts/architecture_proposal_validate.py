@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 PROPOSAL_SCHEMA_VERSION = 1
 TITLE_MAX_LEN = 256
 SUMMARY_MAX_LEN = 8192
@@ -19,6 +21,11 @@ _VALID_SCOPE_LAYERS = frozenset({"kernel", "skills", "agents", "pipelines", "doc
 
 _ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$")
 _DECISION_REF_RE = re.compile(r"^D\d+$")
+_DECISION_ROW_RE = re.compile(r"\|\s*(D\d+)\s*\|")
+
+ROOT = Path(__file__).resolve().parent.parent
+BACKLOG_PATH = ROOT / ".azoth" / "backlog.yaml"
+DECISIONS_INDEX_PATH = ROOT / "docs" / "DECISIONS_INDEX.md"
 
 _TOP_KEYS = frozenset(
     {
@@ -40,7 +47,36 @@ class ArchitectureProposalValidationError(Exception):
     pass
 
 
-def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None:
+def _load_backlog_ids(path: Path = BACKLOG_PATH) -> set[str]:
+    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if isinstance(loaded, dict):
+        items = loaded.get("items")
+    else:
+        items = loaded
+    if not isinstance(items, list):
+        raise ArchitectureProposalValidationError(
+            "architecture_proposal_validate: .azoth/backlog.yaml must contain a list of items"
+        )
+    ids: set[str] = set()
+    for item in items:
+        if isinstance(item, dict):
+            item_id = item.get("id")
+            if isinstance(item_id, str) and item_id:
+                ids.add(item_id)
+    return ids
+
+
+def _load_decision_ids(path: Path = DECISIONS_INDEX_PATH) -> set[str]:
+    return set(_DECISION_ROW_RE.findall(path.read_text(encoding="utf-8")))
+
+
+def validate_architecture_proposal(
+    doc: Any,
+    *,
+    label: str = "proposal",
+    backlog_ids: set[str] | None = None,
+    decision_ids: set[str] | None = None,
+) -> None:
     if not isinstance(doc, dict):
         raise ArchitectureProposalValidationError(f"{label}: must be a JSON/YAML object")
     extra = set(doc.keys()) - _TOP_KEYS
@@ -76,6 +112,10 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
             raise ArchitectureProposalValidationError(
                 f"{label}: {key} must be non-empty str, max {maxlen}"
             )
+    if backlog_ids is not None and doc["backlog_id"] not in backlog_ids:
+        raise ArchitectureProposalValidationError(
+            f"{label}: backlog_id {doc['backlog_id']!r} not found in .azoth/backlog.yaml"
+        )
 
     title = doc["title"]
     if not isinstance(title, str) or not (1 <= len(title) <= TITLE_MAX_LEN):
@@ -101,6 +141,10 @@ def validate_architecture_proposal(doc: Any, *, label: str = "proposal") -> None
             raise ArchitectureProposalValidationError(
                 f"{label}: decision_refs[{i}] must match pattern D<number>"
             )
+        if decision_ids is not None and ref not in decision_ids:
+            raise ArchitectureProposalValidationError(
+                f"{label}: decision_refs[{i}] {ref!r} not found in docs/DECISIONS_INDEX.md"
+            )
 
     layers = doc["scope_layers"]
     if not isinstance(layers, list) or len(layers) < 1:
@@ -123,13 +167,6 @@ def _load_doc(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     suffix = path.suffix.lower()
     if suffix in {".yaml", ".yml"}:
-        try:
-            import yaml  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise SystemExit(
-                "architecture_proposal_validate: PyYAML required for .yaml/.yml "
-                "(pip install pyyaml)"
-            ) from e
         loaded = yaml.safe_load(text)
     elif suffix == ".json":
         loaded = json.loads(text)
@@ -152,7 +189,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     try:
         doc = _load_doc(path)
-        validate_architecture_proposal(doc, label=path.name)
+        validate_architecture_proposal(
+            doc,
+            label=path.name,
+            backlog_ids=_load_backlog_ids(),
+            decision_ids=_load_decision_ids(),
+        )
     except ArchitectureProposalValidationError as e:
         print(f"architecture_proposal_validate: {e}", file=sys.stderr)
         return 1
