@@ -81,7 +81,12 @@ class TestPresetComposition:
         ]
 
     def test_deliver_stage_agent_sequence(self) -> None:
-        assert stage_agents(load_preset("deliver")) == ["planner", "evaluator", "builder", "architect"]
+        assert stage_agents(load_preset("deliver")) == [
+            "planner",
+            "evaluator",
+            "builder",
+            "architect",
+        ]
 
     def test_hotfix_stage_agent_sequence(self) -> None:
         assert stage_agents(load_preset("hotfix")) == ["planner", "builder", "architect"]
@@ -96,7 +101,13 @@ class TestPresetComposition:
         assert stage_agents(load_preset("review")) == ["architect", "reviewer", "architect"]
 
     def test_refactor_stage_agent_sequence(self) -> None:
-        assert stage_agents(load_preset("refactor")) == ["architect", "planner", "evaluator", "builder", "architect"]
+        assert stage_agents(load_preset("refactor")) == [
+            "architect",
+            "planner",
+            "evaluator",
+            "builder",
+            "architect",
+        ]
 
     def test_auto_has_shared_stage_family_contract(self) -> None:
         data = load_preset("auto")
@@ -120,7 +131,9 @@ class TestPresetComposition:
 
     def test_auto_needs_research_rule_requires_discovery(self) -> None:
         rules = load_preset("auto")["composition_rules"]["rules"]
-        needs_research = next(rule for rule in rules if rule["condition"] == "knowledge == needs-research")
+        needs_research = next(
+            rule for rule in rules if rule["condition"] == "knowledge == needs-research"
+        )
         assert needs_research["discovery_policy"] == "required"
         assert needs_research["stage_families"][0] == "discovery-evidence-research"
 
@@ -151,6 +164,8 @@ class TestGateConstraints:
             assert last_gate["action"] == "final-approval"
 
     def test_full_governance_stage_has_agent_gate(self) -> None:
-        gov_stage = next(s for s in load_preset("full")["stages"] if s["name"] == "governance-review")
+        gov_stage = next(
+            s for s in load_preset("full")["stages"] if s["name"] == "governance-review"
+        )
         assert gov_stage["gate"]["type"] == "agent"
         assert gov_stage["gate"]["action"] == "architect-disposition"

@@ -134,9 +134,7 @@ def validate_stage_summary(doc: Any, *, label: str = "document") -> None:
             raise StageSummaryValidationError(f"{label}: lineage_artifacts max 10 items")
         for i, item in enumerate(value):
             if not isinstance(item, str):
-                raise StageSummaryValidationError(
-                    f"{label}: lineage_artifacts[{i}] must be string"
-                )
+                raise StageSummaryValidationError(f"{label}: lineage_artifacts[{i}] must be string")
             if len(item) > 512:
                 raise StageSummaryValidationError(
                     f"{label}: lineage_artifacts[{i}] exceeds 512 chars"

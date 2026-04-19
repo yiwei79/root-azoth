@@ -730,7 +730,10 @@ def test_resume_session_approval_updates_registry_to_promoted_revision_stage(
     ledger = yaml.safe_load(
         (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
     )
-    assert ledger["sessions"][0]["next_action"] != "Resume at human gate for stage `deliver_full_s5` in pipeline `deliver-full`."
+    assert (
+        ledger["sessions"][0]["next_action"]
+        != "Resume at human gate for stage `deliver_full_s5` in pipeline `deliver-full`."
+    )
     assert "deliver_full_s4" in ledger["sessions"][0]["next_action"]
 
 

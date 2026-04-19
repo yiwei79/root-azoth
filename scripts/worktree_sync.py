@@ -234,7 +234,10 @@ def _resolve_ready_handoff(
         for record in ready_records:
             if str(record.get("handoff_id") or "").strip() != handoff_id:
                 continue
-            if producer_branch and str(record.get("producer_branch") or "").strip() != producer_branch:
+            if (
+                producer_branch
+                and str(record.get("producer_branch") or "").strip() != producer_branch
+            ):
                 return (
                     None,
                     "worktree-sync: handoff id "
@@ -409,9 +412,7 @@ def _merge_allowlisted_items(
     union_ids = {item_id for item_id in [*target_index.keys(), *producer_index.keys()] if item_id}
 
     changed_ids = {
-        item_id
-        for item_id in union_ids
-        if target_index.get(item_id) != producer_index.get(item_id)
+        item_id for item_id in union_ids if target_index.get(item_id) != producer_index.get(item_id)
     }
     unauthorized = sorted(changed_ids - allowed_ids)
     if unauthorized:
@@ -506,7 +507,11 @@ def _validate_governed_capsule(
         raise ValueError(f"{label}: approved_at missing")
 
     scope_payload = _scope_payload_from_capsule(capsule)
-    if not scope_payload["session_id"] or not scope_payload["backlog_id"] or not scope_payload["goal"]:
+    if (
+        not scope_payload["session_id"]
+        or not scope_payload["backlog_id"]
+        or not scope_payload["goal"]
+    ):
         raise ValueError(f"{label}: scope payload is incomplete")
     fingerprint = _scope_fingerprint(scope_payload)
     if str(capsule.get("scope_fingerprint") or "").strip() != fingerprint:
@@ -575,7 +580,9 @@ def _load_capsule_from_ready_record(
         raise ValueError("approval_evidence_path must point to a tracked governed approval capsule")
     raw = _git_show_text(repo, queued_head_sha, approval_path)
     if raw is None:
-        raise ValueError(f"queued producer commit does not contain approval artifact {approval_path}")
+        raise ValueError(
+            f"queued producer commit does not contain approval artifact {approval_path}"
+        )
     sha = _sha256_hex(raw.encode("utf-8"))
     if sha != str(ready.get("approval_evidence_sha256") or "").strip():
         raise ValueError("approval_evidence_sha256 mismatch")
@@ -715,7 +722,13 @@ def _recompute_azoth_manifest(sandbox_dir: Path, baseline_text: str | None) -> N
             for line in decisions_index.read_text(encoding="utf-8").splitlines()
             if line.startswith("| D")
         )
-    episode_count = len(_load_jsonl_text((sandbox_dir / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") if (sandbox_dir / ".azoth" / "memory" / "episodes.jsonl").exists() else ""))
+    episode_count = len(
+        _load_jsonl_text(
+            (sandbox_dir / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8")
+            if (sandbox_dir / ".azoth" / "memory" / "episodes.jsonl").exists()
+            else ""
+        )
+    )
     patterns_count = 0
     patterns_path = sandbox_dir / ".azoth" / "memory" / "patterns.yaml"
     if patterns_path.exists():
@@ -792,7 +805,9 @@ def _reconcile_shared_state(
         )
     else:
         _write_text_or_remove(
-            sandbox_dir, ".azoth/backlog.yaml", _git_show_text(repo, baseline_head, ".azoth/backlog.yaml")
+            sandbox_dir,
+            ".azoth/backlog.yaml",
+            _git_show_text(repo, baseline_head, ".azoth/backlog.yaml"),
         )
 
     if ".azoth/roadmap.yaml" in governed_changes:
@@ -806,16 +821,22 @@ def _reconcile_shared_state(
         )
     else:
         _write_text_or_remove(
-            sandbox_dir, ".azoth/roadmap.yaml", _git_show_text(repo, baseline_head, ".azoth/roadmap.yaml")
+            sandbox_dir,
+            ".azoth/roadmap.yaml",
+            _git_show_text(repo, baseline_head, ".azoth/roadmap.yaml"),
         )
 
     _recompute_azoth_manifest(sandbox_dir, _git_show_text(repo, baseline_head, "azoth.yaml"))
 
 
 def _persist_reconciled_state(sandbox_dir: Path) -> None:
-    status_result = _run_git(sandbox_dir, "status", "--porcelain", "--", *RECONCILED_PATHS, check=False)
+    status_result = _run_git(
+        sandbox_dir, "status", "--porcelain", "--", *RECONCILED_PATHS, check=False
+    )
     if status_result.returncode != 0:
-        raise RuntimeError(status_result.stderr.strip() or status_result.stdout.strip() or "git status failed")
+        raise RuntimeError(
+            status_result.stderr.strip() or status_result.stdout.strip() or "git status failed"
+        )
     if not status_result.stdout.strip():
         return
     changed_paths = [path for path in dirty_paths(sandbox_dir) if path in set(RECONCILED_PATHS)]
@@ -823,11 +844,15 @@ def _persist_reconciled_state(sandbox_dir: Path) -> None:
         return
     add_result = _run_git(sandbox_dir, "add", "--", *changed_paths, check=False)
     if add_result.returncode != 0:
-        raise RuntimeError(add_result.stderr.strip() or add_result.stdout.strip() or "git add failed")
+        raise RuntimeError(
+            add_result.stderr.strip() or add_result.stdout.strip() or "git add failed"
+        )
     commit_result = _run_git(sandbox_dir, "commit", "--amend", "--no-edit", check=False)
     if commit_result.returncode != 0:
         raise RuntimeError(
-            commit_result.stderr.strip() or commit_result.stdout.strip() or "git commit --amend failed"
+            commit_result.stderr.strip()
+            or commit_result.stdout.strip()
+            or "git commit --amend failed"
         )
 
 
@@ -970,8 +995,7 @@ def mark_integrated(
         _append_jsonl_record(queue_path, record)
     except OSError as exc:
         print(
-            "worktree-sync: could not update the handoff queue after promotion: "
-            f"{exc}",
+            f"worktree-sync: could not update the handoff queue after promotion: {exc}",
             file=sys.stderr,
         )
         return 1
@@ -1262,7 +1286,9 @@ def integrate_ready_handoff(
             check=False,
         )
         if add_result.returncode != 0:
-            detail = add_result.stderr.strip() or add_result.stdout.strip() or "git worktree add failed"
+            detail = (
+                add_result.stderr.strip() or add_result.stdout.strip() or "git worktree add failed"
+            )
             print(
                 f"worktree-sync: could not create integration sandbox worktree: {detail}",
                 file=sys.stderr,
@@ -1282,7 +1308,9 @@ def integrate_ready_handoff(
             check=False,
         )
         if merge_result.returncode != 0:
-            detail = merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge failed"
+            detail = (
+                merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge failed"
+            )
             print(
                 "worktree-sync: sandbox integrate-run blocked — merge hit conflicts.\n"
                 f"Sandbox preserved at {sandbox_dir}\n{detail}",

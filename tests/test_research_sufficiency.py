@@ -41,9 +41,9 @@ def _evaluate(
 ) -> dict:
     module = _load_module()
     evaluate = getattr(module, "evaluate_research_sufficiency", None)
-    assert callable(
-        evaluate
-    ), "research_sufficiency.evaluate_research_sufficiency must exist for T-009 Phase 1"
+    assert callable(evaluate), (
+        "research_sufficiency.evaluate_research_sufficiency must exist for T-009 Phase 1"
+    )
     result = evaluate(
         repo_root=repo_root,
         evidence_path=evidence_path,

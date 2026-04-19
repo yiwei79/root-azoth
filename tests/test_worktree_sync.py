@@ -43,9 +43,7 @@ def _run_git(cwd: Path, *args: str, check: bool = True) -> subprocess.CompletedP
 
 def _queue_records(path: Path) -> list[dict[str, object]]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -192,12 +190,7 @@ def _write_governed_capsule(
     }
     payload = worktree_sync_mod._scope_payload_from_capsule(capsule)
     capsule["scope_fingerprint"] = worktree_sync_mod._scope_fingerprint(payload)
-    relpath = (
-        repo
-        / ".azoth"
-        / "governed-state-approvals"
-        / f"{session_id}-{backlog_id}.yaml"
-    )
+    relpath = repo / ".azoth" / "governed-state-approvals" / f"{session_id}-{backlog_id}.yaml"
     relpath.parent.mkdir(parents=True, exist_ok=True)
     relpath.write_text(yaml.safe_dump(capsule, sort_keys=False), encoding="utf-8")
     return relpath
@@ -495,7 +488,9 @@ def test_worktree_sync_integrate_ready_handoff_promotes_verified_merge_from_queu
     assert "no ready producer handoff found" in empty_result.stderr
 
 
-def test_worktree_sync_integrate_ready_handoff_fails_closed_before_promotion(tmp_path: Path) -> None:
+def test_worktree_sync_integrate_ready_handoff_fails_closed_before_promotion(
+    tmp_path: Path,
+) -> None:
     _init_repo(tmp_path)
     _setup_phase_and_feature(tmp_path)
     _commit_file(tmp_path, "feat/test-producer", "feature.txt", "feature\n", "feature commit")
@@ -568,7 +563,7 @@ def test_worktree_sync_integrate_ready_handoff_replay_repairs_queue_without_seco
     handoff_id = str(_queue_records(queue_path)[0]["handoff_id"])
 
     _run_git(tmp_path, "checkout", "phase/v0.2.0-p2")
-    verify_command = f'{sys.executable} -c "from pathlib import Path; assert Path(\'feature.txt\').read_text() == \'feature\\\\n\'"'
+    verify_command = f"{sys.executable} -c \"from pathlib import Path; assert Path('feature.txt').read_text() == 'feature\\\\n'\""
     queue_path.chmod(0o400)
     try:
         first_result = _run_sync(
@@ -810,7 +805,9 @@ def test_integrate_ready_handoff_runs_reconcile_before_verify_commands(tmp_path:
     assert integrate_result.returncode == 0, integrate_result.stderr
     payload = json.loads(integrate_result.stdout)
     assert payload["verification_count"] == 1
-    assert "ep-002" in (tmp_path / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8")
+    assert "ep-002" in (tmp_path / ".azoth" / "memory" / "episodes.jsonl").read_text(
+        encoding="utf-8"
+    )
     approvals = _queue_records(tmp_path / ".azoth" / "final-delivery-approvals.jsonl")
     assert len(approvals) == 2
     assert "decisions: 3" in (tmp_path / "azoth.yaml").read_text(encoding="utf-8")
@@ -836,7 +833,9 @@ def test_integrate_ready_handoff_fails_closed_on_handoffs_approval_path(tmp_path
     )
     queue_path = tmp_path.parent / f"{tmp_path.name}-shared-handoffs.jsonl"
     producer_head = _run_git(tmp_path, "rev-parse", "HEAD").stdout.strip()
-    handoff_id = worktree_sync_mod._handoff_id("phase/v0.2.0-p2", "feat/test-producer", producer_head)
+    handoff_id = worktree_sync_mod._handoff_id(
+        "phase/v0.2.0-p2", "feat/test-producer", producer_head
+    )
     _write_jsonl(
         queue_path,
         [
@@ -874,7 +873,9 @@ def test_integrate_ready_handoff_fails_closed_on_handoffs_approval_path(tmp_path
     )
 
     assert result.returncode == 1
-    assert "approval_evidence_path must point to a tracked governed approval capsule" in result.stderr
+    assert (
+        "approval_evidence_path must point to a tracked governed approval capsule" in result.stderr
+    )
     assert "Sandbox preserved at" in result.stderr
     assert _run_git(tmp_path, "rev-parse", "HEAD").stdout.strip() == head_before
     queued_result = _run_sync(
@@ -996,9 +997,7 @@ def test_integrate_ready_handoff_fails_closed_on_non_allowlisted_backlog_change(
 
 
 def test_worktree_sync_docs_describe_governed_reconcile_substep() -> None:
-    command_text = (ROOT / ".claude" / "commands" / "worktree-sync.md").read_text(
-        encoding="utf-8"
-    )
+    command_text = (ROOT / ".claude" / "commands" / "worktree-sync.md").read_text(encoding="utf-8")
     playbook_text = (ROOT / "docs" / "playbook" / "05-parallel-sessions.md").read_text(
         encoding="utf-8"
     )

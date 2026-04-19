@@ -978,7 +978,11 @@ def _resolve_replay_target_stage(
 
     for stage_id in reversed(stages_completed):
         candidate = str(stage_id or "").strip()
-        if candidate and candidate != current_stage_id and any(token in candidate for token in tokens):
+        if (
+            candidate
+            and candidate != current_stage_id
+            and any(token in candidate for token in tokens)
+        ):
             return candidate
 
     raise ValueError(

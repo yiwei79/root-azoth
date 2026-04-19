@@ -649,9 +649,7 @@ def test_rewrite_request_changes_replay_fails_closed_without_lineage_proof(
     )
 
     with pytest.raises(ValueError, match="lineage"):
-        run_ledger_module.rewrite_request_changes_replay(
-            tmp_path, run_id="run-missing-lineage"
-        )
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-missing-lineage")
 
 
 def test_rewrite_request_changes_replay_fails_closed_on_unsupported_shape(
@@ -684,9 +682,7 @@ def test_rewrite_request_changes_replay_fails_closed_on_unsupported_shape(
     )
 
     with pytest.raises(ValueError, match="unsupported"):
-        run_ledger_module.rewrite_request_changes_replay(
-            tmp_path, run_id="run-unsupported-shape"
-        )
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-unsupported-shape")
 
 
 def test_rewrite_request_changes_replay_fails_closed_on_duplicate_rewrite(
@@ -728,9 +724,7 @@ def test_rewrite_request_changes_replay_fails_closed_on_duplicate_rewrite(
     )
 
     with pytest.raises(ValueError, match="already rewritten|duplicate"):
-        run_ledger_module.rewrite_request_changes_replay(
-            tmp_path, run_id="run-duplicate-rewrite"
-        )
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-duplicate-rewrite")
 
 
 def test_rewrite_request_changes_replay_honors_ledger_path_override(tmp_path: Path) -> None:
@@ -771,8 +765,11 @@ def test_rewrite_request_changes_replay_honors_ledger_path_override(tmp_path: Pa
 
     assert updated["pause_reason"] == "human-gate"
     persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
-    assert persisted["pending_stage_ids"] == ["auto_s3_planner", "auto_s4_evaluator", "auto_s5_builder"]
-
+    assert persisted["pending_stage_ids"] == [
+        "auto_s3_planner",
+        "auto_s4_evaluator",
+        "auto_s5_builder",
+    ]
 
 
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────
