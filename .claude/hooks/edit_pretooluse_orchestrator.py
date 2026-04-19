@@ -100,8 +100,6 @@ def main() -> None:
             )
             emit_hook_response(allow=False, reason=_claim_result.deny_reason)
             return
-        if _claim_result.deny_reason.startswith("[write-claim] WARNING:"):
-            print(_claim_result.deny_reason, file=sys.stderr)
     except Exception as _wc_exc:
         warning = f"[write-claim] BLOCKED — unexpected error in write_claim_check: {_wc_exc}"
         record_pretooluse_write_edit(

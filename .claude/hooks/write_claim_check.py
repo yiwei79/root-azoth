@@ -32,7 +32,12 @@ class WriteClaimResult:
     deny_reason: str = ""
 
 
-def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResult:
+def evaluate_write_claim(
+    root: Path,
+    requesting_session: str,
+    *,
+    allow_sessionless: bool = False,
+) -> WriteClaimResult:
     """Evaluate whether requesting_session may write under the current write claim.
 
     Returns WriteClaimResult(allowed=True) when:
@@ -45,10 +50,16 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
       - The write-claim ledger cannot be loaded or validated safely.
     """
     if not str(requesting_session or "").strip():
-        # Bootstrap/admin writes may not yet carry a scope session. Those writes are
-        # gated upstream by scope_gate_core exemptions and must not be blocked by the
-        # repo write lease.
-        return WriteClaimResult(allowed=True)
+        if allow_sessionless:
+            return WriteClaimResult(allowed=True)
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason=(
+                "[write-claim] BLOCKED — requesting session is missing. "
+                "Fail closed unless an upstream bootstrap/admin exemption explicitly allows "
+                "sessionless writes."
+            ),
+        )
 
     # Import run_ledger — try the canonical scripts/ dir relative to this hook file
     # first (repo install), then scripts/ relative to the provided root (test override).

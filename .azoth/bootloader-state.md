@@ -1,7 +1,7 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.66 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 63
+0.1.2.67 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 64
 
 ## Last Session
 - **Session**: 2026-04-19-adhoc-publish-auto-meta-pipeline

@@ -16,7 +16,10 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from research_sufficiency import evaluate_research_sufficiency, validate_research_evidence_reference
+from research_sufficiency import (  # noqa: E402
+    evaluate_research_sufficiency,
+    validate_research_evidence_reference,
+)
 
 _WRITE_TOOL_NAMES = {"write", "create_file", "createfile"}
 _EDIT_TOOL_NAMES = {

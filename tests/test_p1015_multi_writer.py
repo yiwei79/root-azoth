@@ -510,8 +510,8 @@ def test_p1015_evaluate_write_claim_no_claim(tmp_path: Path) -> None:
     assert result.allowed is True, "No claim in ledger must allow write"
 
 
-def test_p1015_evaluate_write_claim_empty_requesting_session_allows(tmp_path: Path) -> None:
-    """Bootstrap/admin writes without a requesting session must not be blocked by a foreign claim."""
+def test_p1015_evaluate_write_claim_empty_requesting_session_denies(tmp_path: Path) -> None:
+    """Sessionless writes fail closed unless an explicit upstream exemption allows them."""
     hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
     if hook_dir not in sys.path:
         sys.path.insert(0, hook_dir)
@@ -526,6 +526,28 @@ def test_p1015_evaluate_write_claim_empty_requesting_session_allows(tmp_path: Pa
     }
     _make_ledger(tmp_path, write_claim=claim)
     result = evaluate_write_claim(tmp_path, requesting_session="")
+    assert result.allowed is False
+    assert "requesting session is missing" in result.deny_reason
+
+
+def test_p1015_evaluate_write_claim_empty_requesting_session_allows_with_exemption(
+    tmp_path: Path,
+) -> None:
+    """Trusted bootstrap/admin paths may opt in to explicit sessionless write exemptions."""
+    hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
+    if hook_dir not in sys.path:
+        sys.path.insert(0, hook_dir)
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    from write_claim_check import evaluate_write_claim  # type: ignore[import]
+
+    claim = {
+        "session_id": "sess-owner",
+        "expires_at": _future_expiry(),
+        "acquired_at": "2026-04-11T10:00:00+00:00",
+    }
+    _make_ledger(tmp_path, write_claim=claim)
+    result = evaluate_write_claim(tmp_path, requesting_session="", allow_sessionless=True)
     assert result.allowed is True
 
 
