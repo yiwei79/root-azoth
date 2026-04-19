@@ -176,6 +176,28 @@ def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
     return False, f"❌ BLOCKED — {result['reasons'][0]}"
 
 
+def extract_structural_research_gate_payload(gate: dict) -> Tuple[bool, dict, str]:
+    """Return the blocking research gate payload that must survive reconstruction."""
+    research_required = gate.get("research_required")
+    if not isinstance(research_required, bool):
+        return (
+            False,
+            {},
+            "❌ BLOCKED — pipeline-gate.json research_required must be a boolean.",
+        )
+
+    payload = {"research_required": research_required}
+    if research_required is False:
+        return True, payload, ""
+
+    research_valid, research_message = _validate_research_evidence(gate)
+    if not research_valid:
+        return False, {}, research_message
+
+    payload["research_evidence"] = gate.get("research_evidence")
+    return True, payload, ""
+
+
 def _load_research_sufficiency_module():
     try:
         return importlib.import_module("research_sufficiency")
@@ -308,7 +330,7 @@ def check_pipeline_gate(
         )
 
     if scope_requires_pipeline_gate:
-        research_valid, research_message = _validate_research_evidence(gate)
+        research_valid, _, research_message = extract_structural_research_gate_payload(gate)
         if not research_valid:
             return False, research_message
         advisory = _evaluate_research_capsule_advisory(

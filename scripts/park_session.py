@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import yaml
+from check_gates import extract_structural_research_gate_payload
 from do_closeout import (
     close_scope_gate,
     extract_session_checkpoint,
@@ -34,6 +36,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 class ParkSessionError(RuntimeError):
     """Raised when parking preconditions are not met."""
+
+
+_STRUCTURAL_RESEARCH_GATE_FIELDS = ("research_required", "research_evidence")
 
 
 def utc_now_iso() -> str:
@@ -85,7 +90,116 @@ def _checkpoint_from_run(run_entry: dict[str, Any] | None) -> dict[str, Any]:
     elif current_stage_id or pending_stages:
         checkpoint["pipeline_position"] = 1
 
+    structural_payload = _extract_structural_research_payload(
+        run_entry,
+        session_id=_coerce_string(run_entry.get("session_id")),
+    )
+    if structural_payload:
+        checkpoint.update(structural_payload)
+
     return checkpoint
+
+
+def _extract_structural_research_payload(
+    source: dict[str, Any] | None,
+    *,
+    session_id: str,
+    required: bool = False,
+    source_name: str = "checkpoint",
+) -> dict[str, Any]:
+    if not isinstance(source, dict):
+        if required:
+            raise ParkSessionError(
+                f"Cannot recover structural research gate from {source_name}: missing source data."
+            )
+        return {}
+
+    if not any(field in source for field in _STRUCTURAL_RESEARCH_GATE_FIELDS):
+        if required:
+            raise ParkSessionError(
+                f"Cannot recover structural research gate from {source_name}: "
+                "research_required is missing."
+            )
+        return {}
+
+    gate_payload = {"session_id": session_id}
+    for field in _STRUCTURAL_RESEARCH_GATE_FIELDS:
+        if field in source:
+            gate_payload[field] = source[field]
+
+    ok, payload, message = extract_structural_research_gate_payload(gate_payload)
+    if not ok:
+        if required:
+            detail = message.replace("pipeline-gate.json ", "", 1)
+            raise ParkSessionError(
+                f"Cannot recover structural research gate from {source_name}: {detail}"
+            )
+        return {}
+    return payload
+
+
+def _governed_resume_requires_structural_research_payload(
+    *,
+    run_entry: dict[str, Any] | None,
+    pipeline: str,
+    delivery_pipeline: str,
+    target_layer: str,
+) -> bool:
+    if not (run_entry and pipeline):
+        return False
+    return target_layer == "M1" or delivery_pipeline == "governed"
+
+
+def _read_live_structural_research_payload(
+    repo_root: Path,
+    *,
+    session_id: str,
+) -> dict[str, Any]:
+    pipeline_gate_path = repo_root / ".azoth" / "pipeline-gate.json"
+    if not pipeline_gate_path.exists():
+        return {}
+
+    gate = load_json(pipeline_gate_path)
+    if _coerce_string(gate.get("session_id")) != session_id:
+        return {}
+    if not any(field in gate for field in _STRUCTURAL_RESEARCH_GATE_FIELDS):
+        return {}
+
+    ok, payload, message = extract_structural_research_gate_payload(gate)
+    if not ok:
+        raise ParkSessionError(message.replace("pipeline-gate.json ", "", 1))
+    return payload
+
+
+def _persist_structural_research_checkpoint(
+    repo_root: Path,
+    *,
+    session_id: str,
+    active_run_id: str | None,
+    payload: dict[str, Any],
+) -> None:
+    if not payload:
+        return
+
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = load_yaml(ledger_path)
+    runs = ledger.get("runs")
+    if isinstance(runs, list) and active_run_id:
+        for run in runs:
+            if not isinstance(run, dict):
+                continue
+            if _coerce_string(run.get("run_id")) != active_run_id:
+                continue
+            run.update(payload)
+            break
+        ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    session_state = load_yaml(session_state_path)
+    if _coerce_string(session_state.get("session_id")) != session_id:
+        return
+    session_state.update(payload)
+    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
 
 
 def _merge_checkpoint(
@@ -169,16 +283,19 @@ def _restore_pipeline_gate(
     pipeline: str,
     expires_at: str,
     require: bool = True,
+    research_required: bool = False,
+    research_evidence: dict[str, Any] | None = None,
 ) -> None:
     pipeline_gate = {
         "session_id": session_id,
         "pipeline": pipeline,
         "approved": True,
-        "research_required": False,
         "expires_at": expires_at,
         "opened_at": utc_now_iso(),
-        "research_required": False,
+        "research_required": research_required,
     }
+    if research_evidence is not None:
+        pipeline_gate["research_evidence"] = research_evidence
     (repo_root / ".azoth" / "pipeline-gate.json").write_text(
         json.dumps(pipeline_gate, indent=2) + "\n",
         encoding="utf-8",
@@ -268,6 +385,19 @@ def park_session(
         active_run_id=resolved_active_run_id,
         default_pause_reason="handoff",
     )
+    checkpoint.update(
+        _extract_structural_research_payload(
+            existing_state if existing_matches else None,
+            session_id=resolved_session_id,
+            source_name="session-state.md",
+        )
+    )
+    checkpoint.update(
+        _read_live_structural_research_payload(
+            repo_root,
+            session_id=resolved_session_id,
+        )
+    )
     resolved_active_files = (
         list(active_files)
         if active_files is not None
@@ -332,6 +462,16 @@ def park_session(
         selected_ide=selected_ide,
         create_if_missing=True,
         checkpoint=checkpoint,
+    )
+    _persist_structural_research_checkpoint(
+        repo_root,
+        session_id=resolved_session_id,
+        active_run_id=resolved_active_run_id,
+        payload=_extract_structural_research_payload(
+            checkpoint,
+            session_id=resolved_session_id,
+            source_name="park checkpoint",
+        ),
     )
 
     return {
@@ -483,6 +623,17 @@ def resume_session(
     )
     if pipeline:
         checkpoint["pipeline"] = pipeline
+    structural_research_payload = _extract_structural_research_payload(
+        checkpoint,
+        session_id=resolved_session_id,
+        required=_governed_resume_requires_structural_research_payload(
+            run_entry=run_entry,
+            pipeline=pipeline,
+            delivery_pipeline=delivery_pipeline,
+            target_layer=target_layer,
+        ),
+        source_name="parked checkpoint",
+    )
     if run_entry and pipeline:
         _restore_pipeline_gate(
             repo_root,
@@ -490,6 +641,8 @@ def resume_session(
             pipeline=pipeline,
             expires_at=expires_at,
             require=True,
+            research_required=bool(structural_research_payload.get("research_required", False)),
+            research_evidence=structural_research_payload.get("research_evidence"),
         )
     else:
         pipeline_gate_path = repo_root / ".azoth" / "pipeline-gate.json"
@@ -568,6 +721,12 @@ def resume_session(
         selected_ide=selected_ide,
         create_if_missing=True,
         checkpoint=checkpoint,
+    )
+    _persist_structural_research_checkpoint(
+        repo_root,
+        session_id=resolved_session_id,
+        active_run_id=active_run_id,
+        payload=structural_research_payload,
     )
 
     return {

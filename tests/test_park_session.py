@@ -22,6 +22,8 @@ def _build_repo(
     run_pause_reason: str | None = None,
     delivery_pipeline: str = "standard",
     target_layer: str = "infrastructure",
+    checkpoint_research_required: bool | None = None,
+    checkpoint_research_evidence: dict[str, object] | None = None,
 ) -> Path:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir(parents=True)
@@ -60,6 +62,10 @@ def _build_repo(
         }
         if run_pause_reason:
             run_entry["pause_reason"] = run_pause_reason
+        if checkpoint_research_required is not None:
+            run_entry["research_required"] = checkpoint_research_required
+        if checkpoint_research_evidence is not None:
+            run_entry["research_evidence"] = checkpoint_research_evidence
         runs.append(run_entry)
     (azoth_dir / "run-ledger.local.yaml").write_text(
         yaml.safe_dump(
@@ -114,6 +120,16 @@ def _build_repo(
                         "pending_stages": ["builder_apply", "reviewer_gate"],
                         "active_run_id": "run-001",
                         **({"pause_reason": run_pause_reason} if run_pause_reason else {}),
+                        **(
+                            {"research_required": checkpoint_research_required}
+                            if checkpoint_research_required is not None
+                            else {}
+                        ),
+                        **(
+                            {"research_evidence": checkpoint_research_evidence}
+                            if checkpoint_research_evidence is not None
+                            else {}
+                        ),
                     },
                     sort_keys=False,
                 ),
@@ -187,20 +203,44 @@ def _stub_restore_pipeline_gate(
     pipeline: str,
     expires_at: str,
     require: bool = True,
+    research_required: bool = False,
+    research_evidence: dict[str, object] | None = None,
 ) -> None:
     del require
+    gate = {
+        "session_id": session_id,
+        "pipeline": pipeline,
+        "approved": True,
+        "expires_at": expires_at,
+        "opened_at": "2099-04-16T18:10:00+00:00",
+        "research_required": research_required,
+    }
+    if research_evidence is not None:
+        gate["research_evidence"] = research_evidence
     (repo_root / ".azoth" / "pipeline-gate.json").write_text(
-        json.dumps(
-            {
-                "session_id": session_id,
-                "pipeline": pipeline,
-                "approved": True,
-                "expires_at": expires_at,
-                "opened_at": "2099-04-16T18:10:00+00:00",
-                "research_required": False,
-            }
-        )
-        + "\n",
+        json.dumps(gate) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_pipeline_gate(
+    repo_root: Path,
+    *,
+    research_required: bool,
+    research_evidence: dict[str, object] | None = None,
+) -> None:
+    gate = {
+        "session_id": "2026-04-16-branch-hygiene",
+        "pipeline": "deliver-full",
+        "approved": True,
+        "expires_at": "2099-04-16T19:17:45+00:00",
+        "opened_at": "2026-04-16T17:17:46+00:00",
+        "research_required": research_required,
+    }
+    if research_evidence is not None:
+        gate["research_evidence"] = research_evidence
+    (repo_root / ".azoth" / "pipeline-gate.json").write_text(
+        json.dumps(gate) + "\n",
         encoding="utf-8",
     )
 
@@ -353,12 +393,59 @@ def test_park_session_snapshots_stage_checkpoint_into_run_and_session_state(tmp_
     assert session_state["active_run_id"] == "run-001"
 
 
-def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path: Path) -> None:
+def test_park_session_snapshots_structural_research_gate_into_run_and_session_state(
+    tmp_path: Path,
+) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
     repo_root = _build_repo(
         tmp_path,
         with_resumable_run=True,
         delivery_pipeline="governed",
         target_layer="M1",
+    )
+    _write_pipeline_gate(
+        repo_root,
+        research_required=True,
+        research_evidence=research_evidence,
+    )
+
+    park_session.park_session(
+        repo_root,
+        next_action="Resume later with /resume 2026-04-16-branch-hygiene.",
+        timestamp="2026-04-16T18:05:00+00:00",
+    )
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    run = ledger["runs"][0]
+    assert run["research_required"] is True
+    assert run["research_evidence"] == research_evidence
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert session_state["research_required"] is True
+    assert session_state["research_evidence"] == research_evidence
+
+
+def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path: Path) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        delivery_pipeline="governed",
+        target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
     )
     park_session.park_session(
         repo_root,
@@ -385,6 +472,8 @@ def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path
     assert pipeline_gate["session_id"] == "2026-04-16-branch-hygiene"
     assert pipeline_gate["pipeline"] == "deliver-full"
     assert pipeline_gate["approved"] is True
+    assert pipeline_gate["research_required"] is True
+    assert pipeline_gate["research_evidence"] == research_evidence
 
     ledger = yaml.safe_load(
         (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
@@ -405,6 +494,11 @@ def test_resume_session_restores_scope_and_pipeline_gate_from_saved_run(tmp_path
 
 
 def test_resume_session_restores_saved_human_gate_without_pipeline_restart(tmp_path: Path) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
     repo_root = _build_repo(
         tmp_path,
         with_resumable_run=True,
@@ -412,6 +506,8 @@ def test_resume_session_restores_saved_human_gate_without_pipeline_restart(tmp_p
         run_pause_reason="human-gate",
         delivery_pipeline="governed",
         target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
     )
     park_session.park_session(
         repo_root,
@@ -446,9 +542,19 @@ def test_resume_session_restores_saved_human_gate_without_pipeline_restart(tmp_p
     assert session_state["pipeline"] == "deliver-full"
     assert session_state["pause_reason"] == "human-gate"
     assert "Resume at human gate" in session_state["next_action"]
+    pipeline_gate = json.loads(
+        (repo_root / ".azoth" / "pipeline-gate.json").read_text(encoding="utf-8")
+    )
+    assert pipeline_gate["research_required"] is True
+    assert pipeline_gate["research_evidence"] == research_evidence
 
 
 def test_resume_session_can_consume_saved_human_gate_and_advance(tmp_path: Path) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
     repo_root = _build_repo(
         tmp_path,
         with_resumable_run=True,
@@ -456,6 +562,8 @@ def test_resume_session_can_consume_saved_human_gate_and_advance(tmp_path: Path)
         run_pause_reason="human-gate",
         delivery_pipeline="governed",
         target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
     )
     park_session.park_session(
         repo_root,
@@ -500,10 +608,42 @@ def test_resume_session_can_consume_saved_human_gate_and_advance(tmp_path: Path)
     assert "pause_reason" not in session_state
 
 
+def test_resume_session_fails_closed_when_structural_research_gate_cannot_be_recovered(
+    tmp_path: Path,
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        delivery_pipeline="governed",
+        target_layer="M1",
+    )
+    park_session.park_session(
+        repo_root,
+        next_action="Resume later with /resume 2026-04-16-branch-hygiene.",
+        timestamp="2026-04-16T18:05:00+00:00",
+    )
+
+    with pytest.raises(
+        park_session.ParkSessionError,
+        match="research",
+    ):
+        park_session.resume_session(
+            repo_root,
+            session_id="2026-04-16-branch-hygiene",
+            ide="codex",
+            timestamp="2099-04-16T18:10:00+00:00",
+        )
+
+
 def test_resume_session_surfaces_replay_target_after_human_gate_rewrite(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
     repo_root = _build_repo(
         tmp_path,
         with_resumable_run=True,
@@ -511,6 +651,8 @@ def test_resume_session_surfaces_replay_target_after_human_gate_rewrite(
         run_pause_reason="human-gate",
         delivery_pipeline="governed",
         target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
     )
     monkeypatch.setattr(park_session, "_restore_pipeline_gate", _stub_restore_pipeline_gate)
     _rewrite_replay_queue(repo_root)
@@ -546,6 +688,11 @@ def test_resume_session_approval_updates_registry_to_promoted_revision_stage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
     repo_root = _build_repo(
         tmp_path,
         with_resumable_run=True,
@@ -553,6 +700,8 @@ def test_resume_session_approval_updates_registry_to_promoted_revision_stage(
         run_pause_reason="human-gate",
         delivery_pipeline="governed",
         target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
     )
     monkeypatch.setattr(park_session, "_restore_pipeline_gate", _stub_restore_pipeline_gate)
     _rewrite_replay_queue(repo_root)
