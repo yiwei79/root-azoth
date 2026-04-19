@@ -122,6 +122,89 @@ def _build_repo(
     return tmp_path
 
 
+def _rewrite_replay_queue(
+    repo_root: Path,
+    *,
+    current_stage_id: str = "deliver_full_s5",
+    revision_stage_id: str = "deliver_full_s4",
+) -> None:
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    run = ledger["runs"][0]
+    run["mode"] = "deliver-full"
+    run["status"] = "paused"
+    run["next_action"] = (
+        f"Resume at human gate for stage `{current_stage_id}` in pipeline `deliver-full`; "
+        f"approval replays `{revision_stage_id}`."
+    )
+    run["stages_completed"] = [
+        "deliver_full_s2_architect",
+        "deliver_full_s3",
+        revision_stage_id,
+    ]
+    run["active_stage_id"] = current_stage_id
+    run["pending_stage_ids"] = [
+        revision_stage_id,
+        current_stage_id,
+        "deliver_full_s6",
+        "deliver_full_s7_architect_review",
+    ]
+    run["pause_reason"] = "human-gate"
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    session_state = yaml.safe_load(session_state_path.read_text(encoding="utf-8"))
+    session_state["pipeline"] = "deliver-full"
+    session_state["pipeline_position"] = 5
+    session_state["current_stage_id"] = current_stage_id
+    session_state["completed_stages"] = [
+        "deliver_full_s2_architect",
+        "deliver_full_s3",
+        revision_stage_id,
+    ]
+    session_state["pending_stages"] = [
+        revision_stage_id,
+        current_stage_id,
+        "deliver_full_s6",
+        "deliver_full_s7_architect_review",
+    ]
+    session_state["pause_reason"] = "human-gate"
+    session_state["active_run_id"] = "run-001"
+    session_state["next_action"] = (
+        f"Resume at human gate for stage `{current_stage_id}` in pipeline `deliver-full`; "
+        f"approval replays `{revision_stage_id}`."
+    )
+    session_state_path.write_text(
+        yaml.safe_dump(session_state, sort_keys=False),
+        encoding="utf-8",
+    )
+
+
+def _stub_restore_pipeline_gate(
+    repo_root: Path,
+    *,
+    session_id: str,
+    pipeline: str,
+    expires_at: str,
+    require: bool = True,
+) -> None:
+    del require
+    (repo_root / ".azoth" / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": session_id,
+                "pipeline": pipeline,
+                "approved": True,
+                "expires_at": expires_at,
+                "opened_at": "2099-04-16T18:10:00+00:00",
+                "research_required": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_park_session_records_parked_handoff_and_releases_claim(tmp_path: Path) -> None:
     repo_root = _build_repo(tmp_path)
 
@@ -415,6 +498,91 @@ def test_resume_session_can_consume_saved_human_gate_and_advance(tmp_path: Path)
     assert session_state["current_stage_id"] == "builder_apply"
     assert session_state["pending_stages"] == ["reviewer_gate"]
     assert "pause_reason" not in session_state
+
+
+def test_resume_session_surfaces_replay_target_after_human_gate_rewrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        run_status="paused",
+        run_pause_reason="human-gate",
+        delivery_pipeline="governed",
+        target_layer="M1",
+    )
+    monkeypatch.setattr(park_session, "_restore_pipeline_gate", _stub_restore_pipeline_gate)
+    _rewrite_replay_queue(repo_root)
+    park_session.park_session(
+        repo_root,
+        next_action="Resume later with /resume 2026-04-16-branch-hygiene.",
+        timestamp="2026-04-16T18:05:00+00:00",
+    )
+
+    result = park_session.resume_session(
+        repo_root,
+        session_id="2026-04-16-branch-hygiene",
+        timestamp="2099-04-16T18:10:00+00:00",
+    )
+
+    assert result["resume_type"] == "stage-aware"
+    assert result["human_gate"] is True
+    assert result["current_stage_id"] == "deliver_full_s5"
+    assert result["pending_stage_ids"] == [
+        "deliver_full_s4",
+        "deliver_full_s5",
+        "deliver_full_s6",
+        "deliver_full_s7_architect_review",
+    ]
+
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
+    assert "deliver_full_s4" in session_state["next_action"]
+
+
+def test_resume_session_approval_updates_registry_to_promoted_revision_stage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        run_status="paused",
+        run_pause_reason="human-gate",
+        delivery_pipeline="governed",
+        target_layer="M1",
+    )
+    monkeypatch.setattr(park_session, "_restore_pipeline_gate", _stub_restore_pipeline_gate)
+    _rewrite_replay_queue(repo_root)
+    park_session.park_session(
+        repo_root,
+        next_action="Resume later with /resume 2026-04-16-branch-hygiene.",
+        timestamp="2026-04-16T18:05:00+00:00",
+    )
+
+    result = park_session.resume_session(
+        repo_root,
+        session_id="2026-04-16-branch-hygiene",
+        timestamp="2099-04-16T18:10:00+00:00",
+        approve_human_gate=True,
+    )
+
+    assert result["resume_type"] == "stage-aware"
+    assert result["human_gate"] is False
+    assert result["current_stage_id"] == "deliver_full_s4"
+    assert result["pending_stage_ids"] == [
+        "deliver_full_s5",
+        "deliver_full_s6",
+        "deliver_full_s7_architect_review",
+    ]
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    assert ledger["sessions"][0]["next_action"] != "Resume at human gate for stage `deliver_full_s5` in pipeline `deliver-full`."
+    assert "deliver_full_s4" in ledger["sessions"][0]["next_action"]
 
 
 def test_resume_session_scope_only_removes_stale_pipeline_gate(tmp_path: Path) -> None:

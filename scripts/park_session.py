@@ -134,6 +134,12 @@ def _resume_next_action(
         or (run_entry.get("mode") if isinstance(run_entry, dict) else None)
     )
     pause_reason = _coerce_string(checkpoint.get("pause_reason"))
+    pending_stages = _coerce_stage_list(checkpoint.get("pending_stages"))
+    replay_target = ""
+    if pause_reason == "human-gate" and current_stage_id and pending_stages:
+        candidate = pending_stages[0]
+        if candidate and candidate != current_stage_id:
+            replay_target = candidate
 
     if run_entry is None:
         return (
@@ -142,6 +148,11 @@ def _resume_next_action(
         )
     if pause_reason == "human-gate":
         if current_stage_id:
+            if replay_target:
+                return (
+                    f"Resume at human gate for stage `{current_stage_id}` in pipeline "
+                    f"`{pipeline}`; approval replays `{replay_target}`."
+                )
             return f"Resume at human gate for stage `{current_stage_id}` in pipeline `{pipeline}`."
         return f"Resume at the saved human gate in pipeline `{pipeline or 'unknown'}`."
     if current_stage_id:
@@ -525,6 +536,17 @@ def resume_session(
             checkpoint.pop("pause_reason", None)
             pause_reason = ""
             next_action = str(updated_run.get("next_action") or next_action)
+            upsert_session(
+                repo_root,
+                session_id=resolved_session_id,
+                backlog_id=backlog_id,
+                goal=goal,
+                status="active",
+                ide=selected_ide,
+                next_action=next_action,
+                updated_at=when,
+                active_run_id=active_run_id,
+            )
 
     ok, claim_info = acquire_write_claim(
         repo_root, resolved_session_id, expires_at, harness=selected_ide
