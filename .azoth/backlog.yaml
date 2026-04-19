@@ -1529,8 +1529,8 @@ items:
   roadmap_ref: P1-020
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: deferred
-  target_version: v0.2.0-p2
+  status: pending
+  target_version: v0.2.0-p3
   deferred_from: v0.2.0-p1
   priority: 2
   created_date: '2026-04-12'
@@ -1550,8 +1550,8 @@ items:
   roadmap_ref: P1-021
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: deferred
-  target_version: v0.2.0-p2
+  status: pending
+  target_version: v0.2.0-p3
   deferred_from: v0.2.0-p1
   priority: 3
   created_date: '2026-04-12'
@@ -2472,8 +2472,8 @@ items:
   source: ep-266
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
-  target_version: v0.2.0-p2
+  status: pending
+  target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-19'
   description: 'Creating INI-KRP-001 required manually editing roadmap.yaml and backlog.yaml
@@ -2490,8 +2490,8 @@ items:
   source: ep-266
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: active
-  target_version: v0.2.0-p2
+  status: pending
+  target_version: v0.2.0-p3
   priority: 4
   created_date: '2026-04-19'
   description: 'Initiative schema has dimensions.themes and dimensions.tracks fields,
@@ -2531,15 +2531,31 @@ items:
   initiative_ref: INI-RST-005
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: complete
-  target_version: v0.2.0-p2
+  status: pending
+  target_version: v0.2.0-p3
   priority: 4
   created_date: '2026-04-19'
-  completed_date: '2026-04-19'
   description: 'Refresh the bounded external evidence that informs the worktree-upgrade
     initiative when assumptions age or tool behavior changes. Re-check official Git
     documentation first, then bounded academic workflow/evaluation sources, and write
     the updated findings back into the local research capsule/digest rather than leaving
     them as chat-only context.
+
+    '
+- id: BL-066
+  title: Historical board for completed phase slices
+  source: session-2026-04-19-phase2-history
+  initiative_ref: INI-RST-006
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 5
+  created_date: '2026-04-19'
+  completed_date: '2026-04-19'
+  description: 'Add a repo-local historical board for a completed phase slice using
+    canonical roadmap/backlog state as the source of truth. Initial artifact: `.azoth/roadmap-specs/v0.2.0/PHASE-02-HISTORY.md`
+    for the closed `v0.2.0-p2` carry-forward transition. Non-goal: no new automation
+    contract or dashboard dependency yet; this is a continuity surface only.
 
     '
