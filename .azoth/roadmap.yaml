@@ -129,7 +129,7 @@ tasks:
 
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
-active_version: v0.2.0-p2
+active_version: v0.2.0-p3
 task_id_policy:
   legacy_milestones:
     - milestone: v0.2.0
