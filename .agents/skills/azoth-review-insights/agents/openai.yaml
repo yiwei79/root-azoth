@@ -1,0 +1,7 @@
+interface:
+  display_name: /review-insights
+  short_description: Run Cursor-oriented blindspot review and write D32 insights to
+    .azoth/inbox/
+  default_prompt: '$azoth-review-insights '
+policy:
+  allow_implicit_invocation: false

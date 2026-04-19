@@ -1,6 +1,7 @@
 ---
 mode: agent
 description: Roadmap dashboard — versioned phases (D48) and upcoming work
+agent: orchestrator
 ---
 
 # /roadmap

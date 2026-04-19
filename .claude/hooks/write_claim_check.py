@@ -32,7 +32,12 @@ class WriteClaimResult:
     deny_reason: str = ""
 
 
-def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResult:
+def evaluate_write_claim(
+    root: Path,
+    requesting_session: str,
+    *,
+    allow_sessionless: bool = False,
+) -> WriteClaimResult:
     """Evaluate whether requesting_session may write under the current write claim.
 
     Returns WriteClaimResult(allowed=True) when:
@@ -41,8 +46,21 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
       - The claim has expired (stale; caller should run resolve_stale_claims).
 
     Returns WriteClaimResult(allowed=False, deny_reason=...) when:
-      - An unexpired claim is held by a different session.
+      - An unexpired claim is held by a different session, OR
+      - The write-claim ledger cannot be loaded or validated safely.
     """
+    if not str(requesting_session or "").strip():
+        if allow_sessionless:
+            return WriteClaimResult(allowed=True)
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason=(
+                "[write-claim] BLOCKED — requesting session is missing. "
+                "Fail closed unless an upstream bootstrap/admin exemption explicitly allows "
+                "sessionless writes."
+            ),
+        )
+
     # Import run_ledger — try the canonical scripts/ dir relative to this hook file
     # first (repo install), then scripts/ relative to the provided root (test override).
     _this_file = Path(__file__).resolve()
@@ -55,11 +73,9 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
     try:
         from run_ledger import load_write_claim  # type: ignore[import]
     except ImportError as exc:
-        # If run_ledger is unavailable, fail open (allow) with a warning — the hook
-        # must not permanently block writes due to an import error in non-critical path.
         return WriteClaimResult(
-            allowed=True,
-            deny_reason=f"[write-claim] WARNING: could not import run_ledger: {exc}",
+            allowed=False,
+            deny_reason=f"[write-claim] BLOCKED — could not import run_ledger: {exc}",
         )
 
     # Derive the effective root: if AZOTH_LEDGER_PATH is set (test override), derive root
@@ -71,12 +87,23 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
     else:
         effective_root = root
 
-    claim = load_write_claim(effective_root)
+    try:
+        claim = load_write_claim(effective_root)
+    except Exception as exc:
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason=f"[write-claim] BLOCKED — could not load write claim: {exc}",
+        )
 
     if claim is None:
         return WriteClaimResult(allowed=True)
 
     holder = claim.get("session_id", "")
+    if not str(holder or "").strip():
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason="[write-claim] BLOCKED — write claim is malformed: missing session_id.",
+        )
     if holder == requesting_session:
         return WriteClaimResult(allowed=True)
 
@@ -88,16 +115,20 @@ def evaluate_write_claim(root: Path, requesting_session: str) -> WriteClaimResul
         if exp_dt.tzinfo is None:
             exp_dt = exp_dt.replace(tzinfo=timezone.utc)
     except (ValueError, TypeError):
-        # Unparseable expiry — treat as expired, allow write
-        return WriteClaimResult(allowed=True)
+        return WriteClaimResult(
+            allowed=False,
+            deny_reason="[write-claim] BLOCKED — write claim is malformed: invalid expires_at.",
+        )
 
     if datetime.now(timezone.utc) >= exp_dt:
         # Claim has expired — allow, but caller should call resolve_stale_claims
         return WriteClaimResult(allowed=True)
 
     # Unexpired foreign claim — deny
+    holder_worktree = str(claim.get("worktree_path") or "").strip()
+    location = f" at {holder_worktree}" if holder_worktree else ""
     deny_reason = (
-        f"[write-claim] Write blocked — write claim held by '{holder}' until {raw_exp}. "
+        f"[write-claim] Write blocked — write claim held by '{holder}'{location} until {raw_exp}. "
         f"Ask session '{holder}' to release the claim, or wait for expiry and run "
         f"`python3 scripts/run_ledger.py resolve-stale`."
     )

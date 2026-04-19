@@ -1,23 +1,30 @@
 ---
-description: "Show the next priority task from the roadmap and suggest how to proceed"
+description: Show the next priority task from the roadmap and suggest how to proceed
 azoth_effect: mixed
 agent: orchestrator
 ---
 
-# /next [resume <session_id>] — What Should I Work On?
+# /next — What Should I Work On?
 
 Read the backlog and roadmap, produce a scope card, and write scope-gate.json on approval.
 
 ## Steps
 
-0. **Optional resume lookup**: If the invocation includes `resume <session_id>`, read
-    `.azoth/run-ledger.local.yaml` and locate the matching entry under the optional
-    `sessions:` array.
-    - If found and `status` is `active` or `parked`, use its `backlog_id`, `goal`, and
-       `next_action` as additional context for the scope card.
-    - If missing, invalid, or `status` is `closed`, explain that the session cannot be resumed.
-    - Never rewrite `.azoth/scope-gate.json` directly from the resume lookup. Resume requests
-       still flow through the same human approval step below before any scope-gate write.
+0. **Refuse when another scope is still live**: Read `.azoth/scope-gate.json`.
+    - If it is approved, unexpired, and already names an active `session_id`, **STOP**.
+    - Do **not** silently overwrite the active scope by selecting new work.
+    - If another active scope exists, route to `/resume`, `/park`, or `/session-closeout` instead.
+
+0b. **Cross-check run-ledger for in-flight sessions**: Read `.azoth/run-ledger.local.yaml`.
+    - If the file is absent or unreadable, skip this step (treat as no in-flight sessions).
+    - Parse the `sessions` list. Collect entries where `status` is `active` or `parked`
+      and `backlog_id` is a non-empty string.
+    - Build an **excluded-ids set** from those `backlog_id` values.
+    - Any backlog item whose `id` appears in this set must **not** be surfaced as a candidate
+      in Step 3, even if its `backlog.yaml` status has not yet been flipped to `active`
+      (lag window between write-claim and write-back).
+    - If the excluded-ids set is non-empty, note it in the scope card footer:
+      e.g. "N item(s) excluded — claimed by another session".
 
 1. **Load backlog**: Read `.azoth/backlog.yaml`
 2. **Load roadmap context**: Read `.azoth/roadmap.yaml` — use `active_version` to find the
@@ -25,7 +32,8 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
    Also read `current_phase` and `current_phase_title` for display in the scope card header.
    (The legacy `tasks:` field is deprecated — do not use it for candidate task sourcing.)
 3. **Find candidate tasks**: From backlog `items`, collect all where:
-   - `status` is not `complete` and not `deferred` (deferred items target a future `target_version`)
+   - `status` is not `complete`, not `deferred`, and not `active`
+     (`active` items are already claimed by a running session — skip them; `deferred` items target a future `target_version`)
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
    Sort by `priority` ascending (lower = higher priority).
 4. **Select primary task**: Highest-priority unblocked item.
@@ -113,6 +121,24 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 
     Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. If none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
 
+10c. **Mark backlog item as active**: After the write claim is successfully acquired,
+    update `.azoth/backlog.yaml`: find the item whose `id` matches `backlog_id` from
+    scope-gate.json and set its `status` field to `active`.
+
+    - **How**: Targeted in-place YAML edit — locate the item by `id:` key, change its
+      `status:` line to `status: active`. Do not alter any other field or reformat the file.
+    - **If item not found**: log a warning in the confirmation message
+      ("Warning: backlog item `<id>` not found in backlog.yaml — status not updated") and
+      continue; do not abort scope approval.
+    - **If item is already `active`**: no-op — note "already active" in the confirmation
+      message and continue.
+    - **If write claim was denied** (competing session holds an unexpired claim): do not
+      update backlog status; surface the denial to the human and stop.
+    - **Recovery (abandoned scope):** If a session ends without `/session-closeout` (crash
+      or manual abort), the item remains `active` in `backlog.yaml`. Clear it by running
+      `/session-closeout` (even with no deliverables) or by manually setting `status` back
+      to the prior value and running `python3 scripts/run_ledger.py release-claim <session_id>`.
+
 ## Scope Card Format
 
 ```markdown
@@ -126,6 +152,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 
 **Why:** {decision_ref} — {one-line decision summary from DECISIONS_INDEX.md}
 **Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
+**Excluded:** {N} item(s) skipped — claimed by another session ({id}, …)    ← omit if excluded-ids set is empty (Step 0b)
 
 **Architecture proposal (read-only, informational only):** `{backlog_id}` — {title} — status {status}    ← only if step 8b matches exactly one file
 
@@ -137,8 +164,11 @@ Type `skip` to skip primary and show next candidate.
 ## Rules
 
 - **Never auto-start work** — output the scope card and wait for `approved`
-- **Never auto-resume by rewriting scope** — `resume <session_id>` is read-only until the
-   human types `approved`
+- **`/next` is for new work** — do not use it to reopen parked sessions or continue an active scope
+- **`active` means claimed** — a backlog item with `status: active` is owned by a running
+  session; `/next` skips it. The status is set by Step 10c on scope approval and cleared by
+  `/session-closeout` when the session ends
+- **If a live scope already exists**, stop and route to `/resume`, `/park`, or `/session-closeout`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
 - **Skip completed items** — if all backlog items are complete, congratulate and show the
   next version entry from `roadmap.yaml versions:` as a preview

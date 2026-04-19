@@ -6,7 +6,7 @@
 #   D6  — Pipelines: YAML-declarative
 #   D17 — Pipeline schema: Phase 3 deliverable
 #   D21 — Full pipeline: 7 stages with typed gates
-#   D23 — Auto-pipeline: LLM-as-router (composition_rules)
+#   D23 — Auto-pipeline: LLM-as-router (shared stage families + composition_rules)
 #   D24 — Gate typing: human vs agent
 #   D28 — 8 pipeline presets
 #   D44 — Stage 6 quality rubric hook (gate.rubric, structure deferred to P3-005)
@@ -20,6 +20,13 @@ description: >
 type: object
 required: [name, description, preset, stages]
 additionalProperties: false
+allOf:
+  - if:
+      properties:
+        preset:
+          const: auto
+    then:
+      required: [composition_rules]
 
 properties:
 
@@ -83,6 +90,39 @@ $defs:
       - agent-crafter
       - context-architect
     description: "One of the 10 canonical agent archetypes (D7). See agents/ for definitions."
+
+  reference_preset_name:
+    type: string
+    enum: [full, deliver, hotfix, docs, research, review, refactor]
+    description: "Conservative preset used as the reference composition for an auto-router row."
+
+  stage_family_name:
+    type: string
+    enum:
+      - context-recall
+      - discovery-evidence-research
+      - architect-design
+      - review
+      - plan
+      - execute
+      - quality-gate
+      - closeout
+    description: "Shared stage-family vocabulary for `/auto` composition."
+
+  discovery_trigger_name:
+    type: string
+    enum:
+      - low-solution-confidence
+      - conflicting-memory-or-pattern-evidence
+      - cross-surface-drift
+      - latest-context-dependency
+      - gate-finding-evidence-insufficient
+    description: "Cross-cutting discovery insertion trigger vocabulary for the auto-family engine."
+
+  discovery_policy_name:
+    type: string
+    enum: [skip, conditional, required]
+    description: "Whether a routing row forbids, permits, or requires discovery insertion."
 
   # ── Gate ─────────────────────────────────────────────────────────────────
   # Every stage exits through a typed gate (D24).
@@ -179,9 +219,9 @@ $defs:
     description: >
       D23 auto-pipeline composition config.
       The Architect classifies the goal, evaluates rules top-to-bottom,
-      and composes a stage list. First matching rule wins.
+      and selects a conservative reference composition using shared stage families.
       Only valid when preset=auto.
-    required: [classification, rules]
+    required: [classification, shared_stage_families, discovery_triggers, rules]
     properties:
       classification:
         type: object
@@ -201,6 +241,20 @@ $defs:
           knowledge:
             type: string
             enum: [known-pattern, needs-research, novel, instruction-refinement]
+      shared_stage_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: "Canonical stage-family vocabulary that rule stage_families must draw from."
+        items:
+          $ref: "#/$defs/stage_family_name"
+      discovery_triggers:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: "Canonical discovery insertion trigger vocabulary for the auto-family engine."
+        items:
+          $ref: "#/$defs/discovery_trigger_name"
       rules:
         type: array
         minItems: 1
@@ -209,7 +263,7 @@ $defs:
           Include a catch-all default as the last entry.
         items:
           type: object
-          required: [condition, pipeline]
+          required: [condition, reference_preset, stage_families, discovery_policy]
           additionalProperties: false
           properties:
             condition:
@@ -217,14 +271,14 @@ $defs:
               description: >
                 Boolean expression over classification fields.
                 Examples: "risk == governance-change", "complexity == simple AND risk == cosmetic"
-            pipeline:
+            reference_preset:
+              $ref: "#/$defs/reference_preset_name"
+            stage_families:
               type: array
               minItems: 1
+              uniqueItems: true
               items:
-                type: string
-              description: "Ordered agent names forming the composed stage sequence."
-            inject:
-              type: string
-              description: >
-                Optional stage injection directive.
-                Example: "research-phase into architect"
+                $ref: "#/$defs/stage_family_name"
+              description: "Ordered shared stage families forming the composed pipeline shape."
+            discovery_policy:
+              $ref: "#/$defs/discovery_policy_name"

@@ -1,0 +1,48 @@
+# Roadmap task spec — v0.2.0
+id: P1-024
+roadmap_version: v0.2.0
+title: "D46 command projection compiler refactor"
+decision_ref: [D19, D21, D46, D50]
+
+intent: >
+  Implement the neutral canonical command source by refactoring D46 so Azoth can
+  generate harness-native command surfaces for Claude Code, Codex, Copilot,
+  OpenCode, and Cursor from one shared command contract.
+
+problem: >
+  After P1-023 defines the neutral command contract, Azoth still needs the deploy
+  compiler to project that contract into native files. Without this slice, the
+  co-primary platform model stays conceptual and the adapter pattern remains tied
+  to a Claude-first command source.
+
+scope:
+  - "scripts/azoth-deploy.py command-source loading and projection"
+  - "Generated .claude/commands/ output"
+  - "Generated Codex command-wrapper output under .agents/skills/azoth-*"
+  - "Generated Copilot prompt output"
+  - "Generated OpenCode command output"
+  - "Regression tests for projection parity and drift"
+
+non_goals:
+  - "Redesigning command semantics during the refactor"
+  - "Rewriting unrelated agent or skill transforms"
+  - "Forcing every adapter to reach Claude-level mechanical enforcement"
+  - "Removing the legacy source path before the new path is proven"
+
+acceptance:
+  - "At least one pilot command family is generated from the neutral source end-to-end"
+  - "Generated Claude, Codex, Copilot, and OpenCode command surfaces stay behaviorally aligned"
+  - "D46 drift / parity tests cover the new command projection path"
+  - "Legacy source handling is either preserved as a transition path or explicitly deprecated with docs"
+
+dependencies: [P1-023]
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Phase 1 = one low-risk pilot command proves the projection path. Phase 2 =
+  migrate the remaining commands in batches. Phase 3 = remove the old dual-source
+  path only after drift tests and adapter outputs are stable.

@@ -1,0 +1,8 @@
+interface:
+  display_name: /dynamic-full-auto
+  short_description: 'DYNAMIC-FULL-AUTO+ session: high-autonomy auto-family execution
+    with an autonomy budget, adaptive discovery/evidence insertion, Checkpoint Γ,
+    optional eval-swarm, bounded replay, and closeout'
+  default_prompt: '$azoth-dynamic-full-auto '
+policy:
+  allow_implicit_invocation: false

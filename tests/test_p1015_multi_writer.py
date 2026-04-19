@@ -1,16 +1,8 @@
-"""
-tests/test_p1015_multi_writer.py — Test suite for P1-015 True multi-writer safety.
+"""Tests for P1-015 multi-writer mechanics.
 
-All 27 test functions are present. Tests are written test-first: they will fail
-(ImportError, AttributeError, or assertion failure) until implementation is complete.
-
-Acceptance criteria covered:
-  AC1 — Exactly one active write claim at a time
-  AC2 — Competing writer denied mechanically or explicit conflict path
-  AC3 — Claim handoff is explicit, auditable, tied to session_id
-  AC4 — Stale/abandoned claims have a recovery path that does not bypass safety
-  AC5 — Cross-harness parity documented and tested
-  Regression — backward-compat and load/status helpers
+This suite is intentionally limited to the ledger helpers, the write-claim hook,
+and the orchestrator enforcement path. Documentation, parity prose, and welcome
+rendering live in separate test surfaces so these checks stay mechanically scoped.
 """
 
 from __future__ import annotations
@@ -30,10 +22,6 @@ SCRIPT = ROOT / "scripts" / "run_ledger.py"
 SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 ORCHESTRATOR_PATH = ROOT / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
 WRITE_CLAIM_HOOK_PATH = ROOT / ".claude" / "hooks" / "write_claim_check.py"
-CURSOR_PARITY_PATH = ROOT / ".cursor" / "rules" / "claude-code-parity.mdc"
-NEXT_COMMAND_PATH = ROOT / ".claude" / "commands" / "next.md"
-SESSION_CLOSEOUT_PATH = ROOT / ".claude" / "commands" / "session-closeout.md"
-
 sys.path.insert(0, str(ROOT / "scripts"))
 
 # validate_ledger already exists; P1-015 helpers are now implemented.
@@ -60,7 +48,7 @@ def _past_expiry(seconds: int = 1) -> str:
 def _make_ledger(tmp_path: Path, write_claim: dict | None = None) -> Path:
     """Write a minimal valid ledger to tmp_path/.azoth/run-ledger.local.yaml."""
     azoth = tmp_path / ".azoth"
-    azoth.mkdir(exist_ok=True)
+    azoth.mkdir(parents=True, exist_ok=True)
     ledger_path = azoth / "run-ledger.local.yaml"
     data: dict = {"schema_version": 1, "runs": []}
     if write_claim is not None:
@@ -316,30 +304,6 @@ def test_p1015_claim_auditable_fields(tmp_path: Path) -> None:
     assert "acquired_at" in claim
 
 
-def test_p1015_next_command_acquires_claim(tmp_path: Path) -> None:
-    """next.md must document step 10b — acquire write claim before writing scope-gate."""
-    text = NEXT_COMMAND_PATH.read_text(encoding="utf-8")
-    # The updated next.md must reference the write-claim acquisition step
-    assert (
-        "write_claim" in text.lower() or "write claim" in text.lower() or "claim" in text.lower()
-    ), "next.md must document write-claim acquisition (step 10b)"
-
-
-def test_p1015_agents_next_parity(tmp_path: Path) -> None:
-    """agents/next step 10b wording must include 'claim' to signal acquisition intent."""
-    # This tests that the next.md command file mentions acquiring a claim after approval.
-    # It is satisfied by the same file as test_p1015_next_command_acquires_claim but checks
-    # the step ordering — step 10 (write scope-gate.json) must be paired with claim acquisition.
-    text = NEXT_COMMAND_PATH.read_text(encoding="utf-8")
-    # Claim must appear in the vicinity of step 10
-    step10_index = text.find("10.")
-    assert step10_index != -1, "next.md must have a step 10"
-    after_step10 = text[step10_index : step10_index + 600]
-    assert "claim" in after_step10.lower(), (
-        "Step 10 of next.md must reference write-claim acquisition (10b)"
-    )
-
-
 # ── AC4 — Stale/abandoned claims have a recovery path that does not bypass safety ─
 
 
@@ -398,99 +362,70 @@ def test_p1015_release_other_session_noop(tmp_path: Path) -> None:
     assert remaining["session_id"] == "sess-owner"
 
 
-def test_p1015_session_closeout_releases_claim(tmp_path: Path) -> None:
-    """session-closeout.md must document that W2-claim releases the write claim."""
-    text = SESSION_CLOSEOUT_PATH.read_text(encoding="utf-8")
-    # The updated session-closeout.md must mention releasing the write claim in W2
-    assert "claim" in text.lower(), "session-closeout.md W2 must document releasing the write claim"
+def test_p1015_shared_claim_blocks_parallel_worktree_writer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sibling worktrees sharing one git common-dir must coordinate through one live claim."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
+
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
+
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
+
+    mirrored = load_write_claim(worktree_b)
+    assert mirrored is not None
+    assert mirrored["session_id"] == "sess-a"
+    assert mirrored["worktree_path"] == str(worktree_a.resolve())
+
+    denied, reason = acquire_write_claim(worktree_b, "sess-b", _future_expiry(), harness="codex")
+    assert denied is False
+    assert str(worktree_a.resolve()) in reason
 
 
-# ── AC5 — Cross-harness parity documented and tested ─────────────────────────
+def test_p1015_shared_claim_release_clears_for_sibling_worktree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Releasing from one worktree clears the authoritative claim for all sibling worktrees."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
+
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
+
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
+    assert release_write_claim(worktree_a, "sess-a") is True
+    assert load_write_claim(worktree_b) is None
 
 
-def test_p1015_cursor_parity_docs(tmp_path: Path) -> None:
-    """claude-code-parity.mdc must have a section for write-claim simulation."""
-    text = CURSOR_PARITY_PATH.read_text(encoding="utf-8")
-    assert "write_claim" in text.lower() or "write claim" in text.lower(), (
-        "claude-code-parity.mdc must document write-claim simulation rule"
-    )
+def test_p1015_same_session_cannot_silently_move_claim_between_worktrees(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A live session/worktree lease must be explicitly released before the same session moves."""
+    common_dir = tmp_path / "common.git"
+    common_dir.mkdir()
+    monkeypatch.setenv("AZOTH_GIT_COMMON_DIR", str(common_dir))
 
+    worktree_a = tmp_path / "wt-a"
+    worktree_b = tmp_path / "wt-b"
+    _make_ledger(worktree_a)
+    _make_ledger(worktree_b)
 
-def test_p1015_cursor_parity_checklist(tmp_path: Path) -> None:
-    """The quick parity checklist in claude-code-parity.mdc must include a write-claim item."""
-    text = CURSOR_PARITY_PATH.read_text(encoding="utf-8")
-    # Locate the checklist section
-    checklist_index = text.lower().find("quick parity checklist")
-    assert checklist_index != -1, "Parity doc must contain 'Quick parity checklist' section"
-    checklist_section = text[checklist_index : checklist_index + 1200]
-    assert "claim" in checklist_section.lower(), (
-        "Quick parity checklist must include a write-claim check item"
-    )
+    ok, _ = acquire_write_claim(worktree_a, "sess-a", _future_expiry(), harness="codex")
+    assert ok is True
 
-
-def test_p1015_welcome_plain_write_claim(tmp_path: Path) -> None:
-    """welcome.py --plain shows a Write claim line in System Health when scope is active."""
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import importlib
-    import welcome  # noqa: F401
-
-    importlib.reload(welcome)  # ensure latest version
-    # welcome.py must expose a function that returns the write-claim display string
-    # It may be called format_write_claim_line, write_claim_status_line, or similar.
-    assert hasattr(welcome, "write_claim_status_line") or hasattr(
-        welcome, "format_write_claim_line"
-    ), "welcome.py must expose a write-claim status helper"
-
-
-def test_p1015_welcome_claim_held(tmp_path: Path) -> None:
-    """welcome.py plain renderer shows 'Write claim: HELD' when claim session matches scope."""
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import importlib
-    import welcome  # noqa: F401
-
-    importlib.reload(welcome)
-    scope = {
-        "approved": True,
-        "expires_at": _future_expiry(),
-        "session_id": "sess-w",
-        "goal": "test",
-    }
-    claim = {
-        "session_id": "sess-w",
-        "expires_at": _future_expiry(),
-        "acquired_at": "2026-04-11T10:00:00+00:00",
-    }
-    fn = getattr(welcome, "write_claim_status_line", None) or getattr(
-        welcome, "format_write_claim_line", None
-    )
-    assert fn is not None
-    line = fn(scope, claim)
-    assert "HELD" in line.upper() or "held" in line.lower(), (
-        f"Expected 'HELD' in write-claim status line, got: {line!r}"
-    )
-
-
-def test_p1015_welcome_no_claim(tmp_path: Path) -> None:
-    """welcome.py plain renderer shows 'Write claim: none' when no claim is present."""
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import importlib
-    import welcome  # noqa: F401
-
-    importlib.reload(welcome)
-    scope = {
-        "approved": True,
-        "expires_at": _future_expiry(),
-        "session_id": "sess-w",
-        "goal": "test",
-    }
-    fn = getattr(welcome, "write_claim_status_line", None) or getattr(
-        welcome, "format_write_claim_line", None
-    )
-    assert fn is not None
-    line = fn(scope, None)
-    assert "none" in line.lower() or "no claim" in line.lower(), (
-        f"Expected 'none' in write-claim status line, got: {line!r}"
-    )
+    denied, reason = acquire_write_claim(worktree_b, "sess-a", _future_expiry(), harness="codex")
+    assert denied is False
+    assert "another worktree" in reason
 
 
 # ── Regression ────────────────────────────────────────────────────────────────
@@ -575,6 +510,47 @@ def test_p1015_evaluate_write_claim_no_claim(tmp_path: Path) -> None:
     assert result.allowed is True, "No claim in ledger must allow write"
 
 
+def test_p1015_evaluate_write_claim_empty_requesting_session_denies(tmp_path: Path) -> None:
+    """Sessionless writes fail closed unless an explicit upstream exemption allows them."""
+    hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
+    if hook_dir not in sys.path:
+        sys.path.insert(0, hook_dir)
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    from write_claim_check import evaluate_write_claim  # type: ignore[import]
+
+    claim = {
+        "session_id": "sess-owner",
+        "expires_at": _future_expiry(),
+        "acquired_at": "2026-04-11T10:00:00+00:00",
+    }
+    _make_ledger(tmp_path, write_claim=claim)
+    result = evaluate_write_claim(tmp_path, requesting_session="")
+    assert result.allowed is False
+    assert "requesting session is missing" in result.deny_reason
+
+
+def test_p1015_evaluate_write_claim_empty_requesting_session_allows_with_exemption(
+    tmp_path: Path,
+) -> None:
+    """Trusted bootstrap/admin paths may opt in to explicit sessionless write exemptions."""
+    hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
+    if hook_dir not in sys.path:
+        sys.path.insert(0, hook_dir)
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    from write_claim_check import evaluate_write_claim  # type: ignore[import]
+
+    claim = {
+        "session_id": "sess-owner",
+        "expires_at": _future_expiry(),
+        "acquired_at": "2026-04-11T10:00:00+00:00",
+    }
+    _make_ledger(tmp_path, write_claim=claim)
+    result = evaluate_write_claim(tmp_path, requesting_session="", allow_sessionless=True)
+    assert result.allowed is True
+
+
 def test_p1015_evaluate_write_claim_session_match(tmp_path: Path) -> None:
     """evaluate_write_claim allows write when requesting session is the claim holder."""
     hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
@@ -613,8 +589,8 @@ def test_p1015_evaluate_write_claim_expired_allow(tmp_path: Path) -> None:
     assert result.allowed is True, "Expired claim must not block a new writer"
 
 
-def test_p1015_import_error_fail_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """evaluate_write_claim fails open (allowed=True) when run_ledger cannot be imported."""
+def test_p1015_import_error_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """evaluate_write_claim blocks writes when run_ledger cannot be imported safely."""
     hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
     if hook_dir not in sys.path:
         sys.path.insert(0, hook_dir)
@@ -625,5 +601,25 @@ def test_p1015_import_error_fail_open(tmp_path: Path, monkeypatch: pytest.Monkey
     # `from run_ledger import ...` even when the module was previously cached.
     monkeypatch.setitem(sys.modules, "run_ledger", None)
     result = evaluate_write_claim(tmp_path, requesting_session="sess-test")
-    assert result.allowed is True, "ImportError must fail open (allow)"
-    assert "[write-claim] WARNING" in result.deny_reason
+    assert result.allowed is False, "ImportError must fail closed"
+    assert "[write-claim] BLOCKED" in result.deny_reason
+
+
+def test_p1015_invalid_foreign_claim_expiry_denies(tmp_path: Path) -> None:
+    """Malformed foreign claims must block writes until repaired."""
+    hook_dir = str(WRITE_CLAIM_HOOK_PATH.parent)
+    if hook_dir not in sys.path:
+        sys.path.insert(0, hook_dir)
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    from write_claim_check import evaluate_write_claim  # type: ignore[import]
+
+    claim = {
+        "session_id": "sess-owner",
+        "expires_at": "not-a-date",
+        "acquired_at": "2026-04-11T10:00:00+00:00",
+    }
+    _make_ledger(tmp_path, write_claim=claim)
+    result = evaluate_write_claim(tmp_path, requesting_session="sess-intruder")
+    assert result.allowed is False
+    assert "invalid expires_at" in result.deny_reason

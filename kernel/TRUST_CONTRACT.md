@@ -21,18 +21,20 @@ reporting, and recoverable actions.
 ## 1. Entropy Ceiling
 
 Every agent action has a bounded blast radius. The ceiling prevents any
-single turn from creating unrecoverable damage.
+single scope-gated session from creating unrecoverable damage. Limits are
+cumulative within a session (keyed to `session_id` in `.azoth/scope-gate.json`)
+and reset when the scope card changes.
 
-### Per-Turn Limits
+### Session-Scoped Limits
 
 | Resource | Limit | Escalation |
 |----------|-------|------------|
-| Files modified | 10 per turn | Checkpoint + human approval for more |
-| Files created | 10 per turn | Checkpoint + human approval for more |
+| Files modified | 10 per session | Checkpoint + human approval for more |
+| Files created | 10 per session | Checkpoint + human approval for more |
 | Files deleted | 0 without approval | Always requires human signal |
-| Lines changed | 1000 per turn | Checkpoint + human approval for more |
+| Lines changed | 1000 per session | Checkpoint + human approval for more |
 | New dependencies | 0 without approval | Always requires human signal |
-| Governance files | 0 withoIut approval | Always requires human signal |
+| Governance files | 0 without approval | Always requires human signal |
 | Kernel files | 0 without approval | Always requires human signal |
 
 ### Entropy Measurement

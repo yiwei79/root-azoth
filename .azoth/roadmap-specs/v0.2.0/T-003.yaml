@@ -1,0 +1,41 @@
+# Roadmap task spec — v0.2.0
+id: T-003
+roadmap_version: v0.2.0
+title: "Co-primary command migration batch 2 — delivery/orchestration commands"
+decision_ref: [D19, D21, D23, D44, D46]
+
+intent: >
+  Migrate the delivery-facing and orchestration-heavy command family after the
+  scope/orientation batch proves the neutral path at real command-family scale.
+
+problem: >
+  The highest-risk command semantics live in delivery and orchestration paths.
+  Leaving them on the legacy bridge after the pilot would keep the initiative in
+  a half-migrated state and postpone the hardest parity guarantees indefinitely.
+
+scope:
+  - "Canonical migration for /deliver, /plan, /test, /auto, /deliver-full, /eval, /eval-swarm"
+  - "Projection parity across Claude Code, Codex, Copilot, OpenCode, and Cursor"
+  - "Regression coverage for stage semantics, gate semantics, and quality-review routing"
+
+non_goals:
+  - "Closeout/memory command migration"
+  - "Changing pipeline semantics merely to simplify projection"
+  - "Adapter-specific carve-outs that bypass the canonical contract"
+
+acceptance:
+  - "The delivery/orchestration command family projects from the neutral command path"
+  - "Governed semantics remain behaviorally aligned across projected command surfaces"
+  - "Tests cover the migrated family’s stage and gate behavior under the new path"
+
+dependencies: [T-002]
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /auto
+
+elasticity: >
+  Phase 1 = migrate lean delivery commands first. Phase 2 = migrate governed
+  orchestration commands once the shared helpers settle. Phase 3 = use the
+  resulting parity evidence as the gate into the closeout/memory batch.

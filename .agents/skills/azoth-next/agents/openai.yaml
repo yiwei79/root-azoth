@@ -1,0 +1,7 @@
+interface:
+  display_name: /next
+  short_description: Show the next priority task from the roadmap and suggest how
+    to proceed
+  default_prompt: '$azoth-next '
+policy:
+  allow_implicit_invocation: false

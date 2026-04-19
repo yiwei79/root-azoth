@@ -57,6 +57,23 @@ properties:
           Optional IDE/harness label (e.g. claude-code, cursor, copilot, opencode,
           antigravity). Mechanical enforcement applies in Claude Code; other harnesses
           simulate the check via behavioral parity rules.
+      worktree_path:
+        type: string
+        minLength: 1
+        description: >
+          Absolute path of the worktree that currently owns the write lease. This is
+          advisory audit metadata used for parallel-worktree handoff and conflict
+          messages.
+      branch:
+        type: string
+        minLength: 1
+        description: "Optional current git branch for the lease-owning worktree."
+      git_common_dir:
+        type: string
+        minLength: 1
+        description: >
+          Optional git common-dir path used to derive the shared cross-worktree lease
+          identity when multiple worktrees of the same repo are active.
 
   sessions:
     type: array
@@ -213,7 +230,26 @@ $defs:
         items:
           type: string
           minLength: 1
+          pattern: "^[a-z][a-z0-9_-]*$"
         description: "Ordered list of pipeline stage names completed so far."
+
+      active_stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+        description: "Current stage anchor for stage-aware resume."
+
+      pending_stage_ids:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          pattern: "^[a-z][a-z0-9_-]*$"
+        description: "Remaining stage ids for the current pipeline checkpoint."
+
+      pause_reason:
+        type: string
+        enum: [human-gate, handoff, retry]
+        description: "Why the run is paused when status=paused."
 
       waves:
         type: array

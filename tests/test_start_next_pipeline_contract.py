@@ -1,4 +1,4 @@
-"""Drift guard: scope approval must still route through pipeline selection."""
+"""Drift guards for resume, scope approval, and pipeline selection contracts."""
 
 from __future__ import annotations
 
@@ -23,12 +23,13 @@ def _read(rel: str) -> str:
 )
 def test_start_resume_requires_pipeline_or_auto(rel: str) -> None:
     text = _read(rel)
-    assert "selected delivery pipeline" in text, f"{rel}: missing pipeline-resume guidance"
+    assert "/resume" in text, f"{rel}: missing /resume guidance"
     assert "/auto" in text, f"{rel}: missing /auto default guidance"
     assert "Stage 0" in text, f"{rel}: missing Stage 0 guidance"
-    assert "do not jump straight to implementation" in text, (
-        f"{rel}: missing direct-implementation prohibition"
-    )
+    assert (
+        "without a second scope-approval wall" in text
+        or "do not jump straight to implementation" in text
+    ), f"{rel}: missing resume continuity guidance"
 
 
 @pytest.mark.parametrize(
@@ -49,3 +50,18 @@ def test_next_scope_approval_requires_pipeline_selection(rel: str) -> None:
         "For standard scopes, Stage 0 / pipeline selection still applies",
     ):
         assert needle in text, f"{rel}: missing {needle!r}"
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        ".claude/commands/next.md",
+        ".github/prompts/next.prompt.md",
+        ".opencode/commands/next.md",
+    ],
+)
+def test_next_refuses_to_overwrite_live_scope(rel: str) -> None:
+    text = _read(rel)
+    assert "route to `/resume`, `/park`, or `/session-closeout` instead" in text, (
+        f"{rel}: missing active-scope hard stop guidance"
+    )

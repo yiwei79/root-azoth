@@ -1,6 +1,11 @@
 # Command Reference
 
-> Quick reference for all Azoth slash commands.
+> Quick reference for Azoth commands across slash-native and skill-routed surfaces.
+
+Claude/Cursor/OpenCode can use slash-style command text directly. In Codex, calm
+flow prefers `/skills` with `$azoth-start` as the daily entry surface; compatibility
+wrappers and raw slash tokens still work, but routed workflow commands normalize
+back through the same start-centered control plane.
 
 ## Pipeline Commands
 
@@ -14,6 +19,7 @@
 - **Gates**: 1 fused Declaration (scope + pipeline in one approval)
 - **Lightweight path**: known-pattern + non-governance → informational auto-proceed
 - **Stages**: 3-6 depending on classification (see auto-router rules)
+- **Codex canonical route**: `$azoth-start pipeline_command=auto <goal>`
 
 ---
 
@@ -27,6 +33,7 @@
 - **Gates**: 1 human gate (final approval)
 - **Stages**: pipeline-gate → planner → test-builder → builder → architect-review
 - **Use when**: Work is already scoped and approved, non-governance
+- **Codex canonical route**: `$azoth-start pipeline_command=deliver <goal>`
 
 ---
 
@@ -40,6 +47,7 @@
 - **Gates**: 3 human gates (goal, design, delivery)
 - **Stages**: goal-clarify → architect → governance-review → planner → test-builder → builder → architect-review
 - **Use when**: Touching kernel/, governance rules, or making breaking changes
+- **Codex canonical route**: `$azoth-start pipeline_command=deliver-full <goal>`
 
 ---
 
@@ -68,6 +76,9 @@
 
 Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom goal.
 
+In Codex calm flow, prefer `$azoth-start`, `$azoth-start next`, `$azoth-start closeout`,
+or `$azoth-start <goal>` for the same routes.
+
 ---
 
 ### `/next`
@@ -79,6 +90,7 @@ Routes to: `next`, `resume`, `intake`, `promote`, `eval`, `roadmap`, or custom g
 ```
 
 Writes `.azoth/scope-gate.json` after human approval. Not needed when using `/auto` (fused Declaration handles it).
+In Codex, the canonical daily equivalent is `$azoth-start next`.
 
 ---
 
@@ -90,6 +102,9 @@ Writes `.azoth/scope-gate.json` after human approval. Not needed when using `/au
 ```
 
 Performs W1-W4: episode capture, state update, memory mirror, version bump.
+In Codex calm flow, prefer `$azoth-start closeout` or use `$azoth-session-closeout`
+directly. W3 is best-effort and may log `W3 deferred`; repo-local W1/W2/W4 remain
+authoritative.
 
 ---
 
@@ -109,6 +124,13 @@ Performs W1-W4: episode capture, state update, memory mirror, version bump.
 
 ### `/roadmap`
 **Roadmap dashboard.** Shows versioned phases and upcoming work.
+
+### `/hookmode [status|calm|verbose|verbo]`
+**Codex hook profile switcher.** Inspect or change the local Codex hook mode.
+
+- **Default**: no argument shows the current mode and sync state
+- **`calm`**: restore the low-noise Codex default
+- **`verbose` / `verbo`**: enable the fuller automatic Codex hook profile locally
 
 ---
 

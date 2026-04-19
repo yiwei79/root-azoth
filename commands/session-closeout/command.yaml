@@ -1,0 +1,45 @@
+schema_version: 1
+name: session-closeout
+display_name: /session-closeout
+description: Unified eval + close + sync — run at the end of every session
+agent: orchestrator
+azoth_effect: write
+
+body:
+  mode: canonical_markdown
+  source_path: commands/session-closeout/body.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/session-closeout.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/session-closeout.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/session-closeout.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/session-closeout.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-session-closeout/SKILL.md
+    metadata_path: .agents/skills/azoth-session-closeout/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/session-closeout.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/session-closeout.md
+
+migration:
+  phase: canonical_body_batch_3_initiative_exit
+  runtime_source_of_truth: commands/session-closeout/command.yaml
+  notes:
+    - T-004 moves /session-closeout onto the neutral command path.
+    - .claude/commands/session-closeout.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-004.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

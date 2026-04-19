@@ -1,0 +1,7 @@
+interface:
+  display_name: /worktree-sync
+  short_description: Protocol-aware worktree sync for producer handoffs and integrate
+    runs
+  default_prompt: '$azoth-worktree-sync '
+policy:
+  allow_implicit_invocation: false

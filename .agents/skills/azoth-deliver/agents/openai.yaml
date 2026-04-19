@@ -1,0 +1,6 @@
+interface:
+  display_name: /deliver
+  short_description: Lean pipeline for pre-approved, additive work
+  default_prompt: '$azoth-deliver '
+policy:
+  allow_implicit_invocation: false

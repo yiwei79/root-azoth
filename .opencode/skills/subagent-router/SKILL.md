@@ -93,6 +93,11 @@ archetype contract, not by this routing policy.
 Architect's own internal sub-invocations during Stage 2 (e.g. context-map,
 research-orchestrator calls within an investigation phase) are out-of-scope for this router.
 Those are governed by the architect archetype contract separately.
+
+However, the governed **Stage 2 architect-design stage itself is in scope** for this router.
+When a pipeline requires `deliver_full_s2_architect`, the orchestrator must spawn the
+architect next or fail closed before any inline architect brief is produced.
+
 This router applies only to inter-stage delegation between pipeline stages.
 
 ## Spawn Prompt Contract (BL-011)
@@ -114,6 +119,9 @@ stage_id: <string>   # e.g. deliver_full_s3 — see §Stage briefs
 subagent_type: <architect|planner|builder|reviewer|evaluator|...>
 trigger: <review-independence|context-isolation|context-budget|parallel-execution>
 model_tier: premium | standard | fast  # optional — set by orchestrator, resolved by router
+execution_budget:               # optional — omit for leaf-only execution
+  child_fanout_cap: <int>       # only for designated queen agents
+  depth_remaining: <int>        # decrement before spawning children
 goal: |
   <one paragraph: what the user asked for>
 inputs:
@@ -126,6 +134,11 @@ Optional: one line `role_hint:` repeating the canonical D21 audit string for tha
 **`model_tier` resolution**: the orchestrator sets `model_tier` based on risk and complexity
 (see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
 model identifier at spawn time. If omitted, defaults to `standard`.
+
+**`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
+`orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
+The root orchestrator owns the global execution budget and should reserve capacity for queen
+children instead of saturating all slots with direct leaf tasks.
 
 ### Orchestrator forward payload (mandatory)
 
@@ -189,6 +202,14 @@ document that validates against `pipelines/stage-summary.schema.yaml`:
 
 The orchestrator passes this file forward; do not rely on long prose alone at stage boundaries.
 
+When the stage is part of a bounded replay / revise-and-continue loop, also include:
+
+- `replay_iteration`
+- `replay_target_stage`
+- `finding_class`
+- `threshold_limit`
+- `lineage_artifacts`
+
 ## Stage briefs: deliver-full
 
 Use `stage_id` with `pipeline: deliver-full`.
@@ -196,6 +217,7 @@ Use `stage_id` with `pipeline: deliver-full`.
 
 | stage_id          | subagent_type | trigger             | Canonical `role_hint` (D21 audit)                                                                                                          |
 | ----------------- | ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `deliver_full_s2_architect` | architect | context-isolation | `Agent(subagent_type=architect): Produce the governed design brief as a fresh-context stage — trigger: context-isolation` |
 | `deliver_full_s3` | reviewer      | review-independence | `Agent(subagent_type=reviewer): Critique the brief for governance gaps, entropy leakage, HITL misplacement — trigger: review-independence` |
 | `deliver_full_s4` | planner       | context-isolation   | `Agent(subagent_type=planner): Convert approved design into deterministic tasks — trigger: context-isolation`                              |
 | `deliver_full_s5` | builder       | review-independence | `Agent(subagent_type=builder): Design tests from plan's test strategy — trigger: review-independence`                                      |
@@ -264,4 +286,3 @@ skill to determine the correct subagent_type
 - **Governance review** — verify that each agent-gated stage has a trigger citation
 
 D21 remains the architecture anchor for the isolation rules in this router.
-

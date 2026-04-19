@@ -28,7 +28,8 @@ root-azoth repo state:
 ├── CLAUDE.md                      ← Agent reads this first (auto)
 ├── docs/AZOTH_ARCHITECTURE.md     ← 53 decisions, full blueprint
 ├── docs/DECISIONS_INDEX.md        ← D1–D53 status tracking
-├── .claude/commands/              ← 14 commands (bootstrap, next, intake, etc.)
+├── commands/                      ← 15 neutral command contracts (live deploy input)
+├── .claude/commands/              ← generated command mirrors for the current Azoth surface
 ├── .claude/settings.json          ← Kernel write-protection active
 ├── .azoth/roadmap.yaml            ← Phase goals + task backlog
 ├── .azoth/inbox/                  ← Governed insight intake channel
@@ -56,8 +57,9 @@ root-azoth repo state:
 |----------|--------|---------|
 | Architecture plan (53 decisions) | ✅ Complete | Blueprint for all 6 phases |
 | Kernel (4 files, immutable) | ✅ Active | BOOTLOADER, GOVERNANCE, TRUST_CONTRACT, PROMOTION_RUBRIC |
-| 14 skills | ✅ Active | context-map, orientation, subagent-router, etc. (see CLAUDE.md) |
-| 14 slash commands | ✅ Active | bootstrap, next, intake, eval, plan, session-closeout, etc. |
+| Shared skills | ✅ Active | context-map, orientation, subagent-router, etc. (see CLAUDE.md) |
+| 15 neutral command contracts | ✅ Active | `commands/<name>/command.yaml` is the live authored contract layer; `start`, `next`, `resume`, and `session-closeout` already author their bodies in `commands/`, while some other families still bridge through `legacy_claude_markdown` |
+| Generated workflow entries | ✅ Active | Claude/Cursor use generated command mirrors directly; Codex uses `$azoth-start` as the calm-flow daily surface and exposes compatibility wrappers through `/skills` |
 | Insight Inbox Protocol (D29-D33) | ✅ Active | Governed channel for external insights |
 | Root scaffold identity (D34-D38) | ✅ Active | Private root-azoth → public azoth split |
 | Bootstrap loop (D39-D41) | ✅ Active | Roadmap + /next + preflight + decisions index |

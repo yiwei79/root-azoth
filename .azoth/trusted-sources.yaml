@@ -39,3 +39,27 @@ sources:
     require_approval: human
     added_date: "2026-04-08"
     added_by: human
+
+  - id: codex-review
+    name: "Codex Code Review — PR review sweep"
+    description: "Structured review findings from Codex reviewing Azoth PRs"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-14"
+    added_by: human
+
+  - id: copilot-review
+    name: "Copilot PR Review — automated code review"
+    description: "Automated code review findings from GitHub Copilot PR review (distinct from pr-code-review; source ID used in batch reviews)"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-14"
+    added_by: human
+
+  - id: github-copilot-review
+    name: "GitHub Copilot Review — automated code review"
+    description: "Automated review findings emitted with the github-copilot-review source id in inbox batch files"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-04-17"
+    added_by: human

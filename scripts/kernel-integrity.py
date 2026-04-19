@@ -75,6 +75,8 @@ def _parse_checksum_lines(content: str) -> dict[str, str]:
         if len(digest) != 64 or any(c not in "0123456789abcdefABCDEF" for c in digest):
             continue
         key = path_part.replace("\\", "/")
+        if not key:
+            continue
         out[key] = digest.lower()
     return out
 

@@ -1,5 +1,5 @@
 ---
-description: "Capture a cross-session learning as a structured episode"
+description: Capture a cross-session learning as a structured episode
 azoth_effect: write
 agent: orchestrator
 ---

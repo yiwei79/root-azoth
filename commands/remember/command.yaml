@@ -1,0 +1,42 @@
+schema_version: 1
+name: remember
+display_name: /remember
+description: Capture a cross-session learning as a structured episode
+agent: orchestrator
+azoth_effect: write
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/remember.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/remember.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/remember.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/remember.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/remember.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-remember/SKILL.md
+    metadata_path: .agents/skills/azoth-remember/agents/openai.yaml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/remember.md
+
+migration:
+  phase: canonical_body_batch_3_initiative_exit
+  runtime_source_of_truth: commands/remember/command.yaml
+  notes:
+    - T-004 moves /remember onto the neutral command path.
+    - .claude/commands/remember.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-004.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

@@ -16,11 +16,13 @@ Covers:
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import uuid
 from pathlib import Path
 
 import pytest
+import yaml
 
 try:
     import tomllib
@@ -43,15 +45,22 @@ transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
 transform_agent_opencode = _mod.transform_agent_opencode
+transform_command_claude = _mod.transform_command_claude
 transform_command_copilot = _mod.transform_command_copilot
+transform_command_codex_skill = _mod.transform_command_codex_skill
+transform_command_gemini = _mod.transform_command_gemini
 transform_command_opencode = _mod.transform_command_opencode
 iter_codex_adapter_deployments = _mod.iter_codex_adapter_deployments
 deploy_codex_adapter = _mod.deploy_codex_adapter
+lint_codex_hooks = _mod.lint_codex_hooks
 iter_cursor_rule_deployments = _mod.iter_cursor_rule_deployments
 deploy_cursor_rules = _mod.deploy_cursor_rules
 load_agents = _mod.load_agents
 load_commands = _mod.load_commands
 load_skills = _mod.load_skills
+gemini_command_name = _mod.gemini_command_name
+shared_skill_name = _mod.shared_skill_name
+transform_shared_skill = _mod.transform_shared_skill
 write_file = _mod.write_file
 main = _mod.main
 
@@ -423,6 +432,60 @@ def _write_minimal_command(root: Path) -> None:
     )
 
 
+def _write_contract_command(root: Path) -> None:
+    legacy_path = root / ".claude" / "commands" / "next.md"
+    legacy_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_path.write_text(
+        "---\n"
+        'description: "Legacy next description"\n'
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    contract_path = root / "commands" / "next" / "command.yaml"
+    contract_path.parent.mkdir(parents=True, exist_ok=True)
+    contract_path.write_text(
+        "schema_version: 1\n"
+        "name: next\n"
+        "display_name: /next\n"
+        "description: Canonical next description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "body:\n"
+        "  mode: legacy_claude_markdown\n"
+        "  source_path: .claude/commands/next.md\n"
+        "projection:\n"
+        "  claude:\n"
+        "    output_path: .claude/commands/next.md\n",
+        encoding="utf-8",
+    )
+
+
+def _write_canonical_contract_command(root: Path) -> None:
+    command_path = root / "commands" / "start" / "command.yaml"
+    command_path.parent.mkdir(parents=True, exist_ok=True)
+    command_path.write_text(
+        "schema_version: 1\n"
+        "name: start\n"
+        "display_name: /start\n"
+        "description: Canonical start description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "body:\n"
+        "  mode: canonical_markdown\n"
+        "  source_path: commands/start/body.md\n"
+        "projection:\n"
+        "  claude:\n"
+        "    output_path: .claude/commands/start.md\n",
+        encoding="utf-8",
+    )
+    body_path = root / "commands" / "start" / "body.md"
+    body_path.write_text("# /start\n\nUse the canonical body.\n", encoding="utf-8")
+
+
 def _write_minimal_skill(root: Path) -> None:
     path = root / "skills" / "context-map" / "SKILL.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -534,6 +597,9 @@ def test_iter_codex_adapter_deployments_maps_templates() -> None:
             'approval_policy = "on-request"\n', encoding="utf-8"
         )
         (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(
+            '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+        )
         (adapter / "user_prompt_submit_router.py.template").write_text(
             "#!/usr/bin/env python3\n", encoding="utf-8"
         )
@@ -555,9 +621,11 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
     try:
         config = 'approval_policy = "on-request"\n'
         hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         n, _ = deploy_codex_adapter(root, dry_run=False)
         assert n == 3
@@ -568,6 +636,92 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         ) == router
     finally:
         shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_uses_verbose_template_when_local_marker_is_set() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        (root / ".codex").mkdir(parents=True, exist_ok=True)
+        (root / ".codex" / "hooks.mode.local").write_text("verbose\n", encoding="utf-8")
+
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+
+        assert n == 3
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == verbose_hooks
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_lint_codex_hooks_allows_bash_pretooluse_permission_decision_script(tmp_path: Path) -> None:
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".claude" / "hooks").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".claude" / "hooks" / "pip-install-guard.py").write_text(
+        "print('permissionDecision')\n",
+        encoding="utf-8",
+    )
+    hooks_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": 'python3 "$(git rev-parse --show-toplevel)/.claude/hooks/pip-install-guard.py"',
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert lint_codex_hooks(tmp_path) == []
+
+
+def test_lint_codex_hooks_warns_for_unsupported_pretooluse_surface(tmp_path: Path) -> None:
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True, exist_ok=True)
+    hooks_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Edit|Write",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "python3 .claude/hooks/edit_pretooluse_orchestrator.py",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    warnings = lint_codex_hooks(tmp_path)
+    assert any("unsupported non-Bash or Write/Edit interception" in warning for warning in warnings)
+    assert any("only emits Bash" in warning for warning in warnings)
 
 
 def test_iter_cursor_rule_deployments_maps_templates() -> None:
@@ -615,6 +769,96 @@ def test_deploy_cursor_rules_writes_matching_content(
 # ── Deployed command parity (D46 / BL-023) ────────────────────────────────────
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+BL051_SPEC_PATH = _REPO_ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "BL-051.yaml"
+BL051_CLAUDE_MD_PATH = _REPO_ROOT / "CLAUDE.md"
+BL051_ORCHESTRATOR_ARCHETYPE_PATH = _REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md"
+BL051_REQUIRED_RUBRIC_LINES = (
+    "Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.",
+    "Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.",
+    "Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.",
+    "Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.",
+)
+
+
+def _copy_repo_fixture_entry(relative_path: str, root: Path) -> None:
+    source = _REPO_ROOT / relative_path
+    destination = root / relative_path
+    if source.is_dir():
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+
+
+def _stage_bl051_deploy_fixture(root: Path) -> None:
+    for relative_path in (
+        "agents/tier1-core/orchestrator.agent.md",
+        "kernel/templates/platform-adapters/codex",
+        "kernel/templates/platform-adapters/gemini",
+    ):
+        _copy_repo_fixture_entry(relative_path, root)
+
+
+def test_bl051_spec_file_exists_and_has_required_shape() -> None:
+    assert BL051_SPEC_PATH.is_file(), f"missing {BL051_SPEC_PATH.relative_to(_REPO_ROOT)}"
+
+    data = yaml.safe_load(BL051_SPEC_PATH.read_text(encoding="utf-8"))
+    assert isinstance(data, dict), "BL-051 spec must be a YAML mapping"
+    assert data.get("id") == "BL-051"
+    assert isinstance(data.get("title"), str) and data["title"].strip(), (
+        "BL-051 spec must define a non-empty title"
+    )
+    deploy_assertions = data.get("deploy_assertions")
+    assert isinstance(deploy_assertions, list), "BL-051 spec must define deploy_assertions"
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in deploy_assertions, f"BL-051 spec missing deploy_assertion: {line!r}"
+
+
+def test_bl051_claude_md_contains_required_rubric_lines() -> None:
+    content = BL051_CLAUDE_MD_PATH.read_text(encoding="utf-8")
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in content, f"CLAUDE.md missing BL-051 rubric line: {line!r}"
+
+
+def test_bl051_orchestrator_archetype_contains_required_rubric_lines() -> None:
+    content = BL051_ORCHESTRATOR_ARCHETYPE_PATH.read_text(encoding="utf-8")
+    for line in BL051_REQUIRED_RUBRIC_LINES:
+        assert line in content, f"orchestrator.agent.md missing BL-051 rubric line: {line!r}"
+
+
+def test_bl051_style_rubric_lines_propagate_to_deployed_orchestrator_outputs(
+    tmp_path: Path,
+) -> None:
+    _stage_bl051_deploy_fixture(tmp_path)
+
+    rc = main(
+        [
+            "--root",
+            str(tmp_path),
+            "--platforms",
+            "claude",
+            "copilot",
+            "opencode",
+            "codex",
+            "gemini",
+            "--copilot-agent-location",
+            "both",
+        ]
+    )
+
+    assert rc == 0
+
+    for output_path in (
+        tmp_path / ".claude" / "agents" / "orchestrator.md",
+        tmp_path / ".github" / "agents" / "orchestrator.agent.md",
+        tmp_path / ".opencode" / "agents" / "orchestrator.md",
+        tmp_path / ".codex" / "agents" / "orchestrator.toml",
+        tmp_path / ".gemini" / "agents" / "orchestrator.md",
+    ):
+        assert output_path.is_file(), f"missing deployed orchestrator output: {output_path}"
+        content = output_path.read_text(encoding="utf-8")
+        for line in BL051_REQUIRED_RUBRIC_LINES:
+            assert line in content, f"{output_path.name} missing BL-051 rubric line: {line!r}"
 
 
 def test_deployed_copilot_prompts_match_transform() -> None:
@@ -633,6 +877,33 @@ def test_deployed_copilot_prompts_match_transform() -> None:
         )
 
 
+def test_deployed_claude_contract_commands_match_transform() -> None:
+    """Contract-backed `.claude/commands/*.md` outputs must match the Claude transform."""
+    commands = [cmd for cmd in load_commands(_REPO_ROOT) if "contract" in cmd]
+    assert commands, "expected at least one contract-backed command"
+    for cmd in commands:
+        contract = cmd["contract"]
+        claude_projection = contract.get("projection", {}).get("claude", {})
+        dest = _REPO_ROOT / str(claude_projection["output_path"])
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        expected = transform_command_claude(cmd)
+        if actual == expected:
+            continue
+        if cmd["contract"]["body"]["mode"] == "legacy_claude_markdown":
+            actual_meta, actual_body = parse_frontmatter(actual)
+            expected_meta, expected_body = parse_frontmatter(expected)
+            assert actual_meta == expected_meta and actual_body == expected_body, (
+                f"Claude command semantic drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+            )
+            continue
+        assert actual == expected, (
+            f"Claude command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
 def test_deployed_opencode_commands_match_transform() -> None:
     """`.opencode/commands/*.md` must match `transform_command_opencode` output."""
     commands = load_commands(_REPO_ROOT)
@@ -646,6 +917,52 @@ def test_deployed_opencode_commands_match_transform() -> None:
         actual = dest.read_text(encoding="utf-8")
         assert actual == expected, (
             f"OpenCode command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_codex_command_wrappers_match_transform() -> None:
+    """Codex command wrapper skills must match `transform_command_codex_skill` output."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected command sources"
+    for cmd in commands:
+        dest = _REPO_ROOT / ".agents" / "skills" / f"azoth-{cmd['name']}" / "SKILL.md"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == transform_command_codex_skill(cmd), (
+            f"Codex command skill drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_gemini_commands_match_transform() -> None:
+    """`.gemini/commands/*.toml` must match the Gemini transform with stable names."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        expected = transform_command_gemini(cmd)
+        deployed_name = gemini_command_name(cmd["name"])
+        dest = _REPO_ROOT / ".gemini" / "commands" / f"{deployed_name}.toml"
+        assert dest.is_file(), (
+            f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        actual = dest.read_text(encoding="utf-8")
+        assert actual == expected, (
+            f"Gemini command drift for {cmd['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
+def test_deployed_gemini_removes_legacy_conflicting_command_names() -> None:
+    """Gemini command remaps must retire the old conflicting filenames."""
+    commands = load_commands(_REPO_ROOT)
+    assert commands, "expected .claude/commands/*.md"
+    for cmd in commands:
+        deployed_name = gemini_command_name(cmd["name"])
+        if deployed_name == cmd["name"]:
+            continue
+        legacy_dest = _REPO_ROOT / ".gemini" / "commands" / f"{cmd['name']}.toml"
+        assert not legacy_dest.exists(), (
+            f"legacy Gemini command still present at {legacy_dest.relative_to(_REPO_ROOT)}"
         )
 
 
@@ -666,24 +983,61 @@ def test_deployed_codex_agents_match_transform() -> None:
 
 
 def test_deployed_codex_skill_mirror_matches_canonical() -> None:
-    """`.agents/skills/<name>/SKILL.md` must mirror canonical repo skills for Codex discovery."""
+    """`.agents/skills/` must mirror the shared-surface transform used by Codex/Gemini/Antigravity."""
     skills = load_skills(_REPO_ROOT)
     assert skills, "expected skills/**/SKILL.md"
     for skill in skills:
-        dest = _REPO_ROOT / ".agents" / "skills" / skill["name"] / "SKILL.md"
+        dest = _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
         assert dest.is_file(), (
             f"missing {dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
         )
-        assert dest.read_text(encoding="utf-8") == skill["raw"], (
-            f"Codex skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        assert dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
         )
+
+
+def test_deployed_gemini_uses_shared_agents_skill_surface() -> None:
+    """Gemini CLI must use the shared `.agents/skills/` mirror and retire `.gemini/skills/`."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
+    for skill in skills:
+        shared_dest = (
+            _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        )
+        assert shared_dest.is_file(), (
+            f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert shared_dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Gemini shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+        legacy_dest = _REPO_ROOT / ".gemini" / "skills" / skill["name"] / "SKILL.md"
+        assert not legacy_dest.exists(), (
+            f"legacy Gemini skill mirror still present at {legacy_dest.relative_to(_REPO_ROOT)}"
+        )
+
+
+def test_deployed_agents_skill_surface_has_no_stale_non_azoth_entries() -> None:
+    """`.agents/skills/` must be an Azoth-managed mirror, not an append-only cache."""
+    expected = {shared_skill_name(skill["name"]) for skill in load_skills(_REPO_ROOT)}
+    skill_root = _REPO_ROOT / ".agents" / "skills"
+    assert skill_root.is_dir(), "missing .agents/skills — run: python3 scripts/azoth-deploy.py"
+    unexpected = sorted(
+        path.name
+        for path in skill_root.iterdir()
+        if path.is_dir() and path.name not in expected and not path.name.startswith("azoth-")
+    )
+    assert unexpected == [], (
+        ".agents/skills contains stale non-Azoth entries: "
+        + ", ".join(unexpected)
+        + " — run python3 scripts/azoth-deploy.py"
+    )
 
 
 # ── P1-013: Orchestrator binding tests ──────────────────────────────────────
 
 _PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
 
-_SESSION_ENTRY_CMD_NAMES = ("start", "next")
+_SESSION_ENTRY_CMD_NAMES = ("start", "next", "resume")
 
 _REQUIRED_ORCHESTRATOR_SECTIONS = (
     "## Inline vs Orchestrate",
@@ -773,7 +1127,7 @@ def test_deployed_copilot_prompts_match_transform_with_orchestrator() -> None:
 
 
 def test_source_session_entry_commands_have_orchestrator_agent_field() -> None:
-    """T6: source .claude/commands/start.md and next.md must have agent: orchestrator."""
+    """T6: source session-entry commands must have agent: orchestrator."""
     for name in _SESSION_ENTRY_CMD_NAMES:
         src = _REPO_ROOT / ".claude" / "commands" / f"{name}.md"
         assert src.is_file(), f"missing source command {name}.md"
@@ -828,6 +1182,73 @@ def test_orchestrator_archetype_line_count_ceiling() -> None:
     )
 
 
+def test_orchestrator_requires_official_source_research_for_current_external_facts() -> None:
+    content = (_REPO_ROOT / "agents" / "tier1-core" / "orchestrator.agent.md").read_text(
+        encoding="utf-8"
+    )
+    assert "official-source research pass before analysis, routing, or edits" in content
+    assert "latest/current external facts are material" in content
+
+
+def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
+    assert "Wave A is mandatory" in content
+    assert "official sources before Checkpoint" in content
+    assert "max_threads: 10, max_depth: 2" in content
+
+
+def test_subagent_router_defines_execution_budget_for_bounded_nesting() -> None:
+    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
+    for needle in (
+        "execution_budget",
+        "child_fanout_cap",
+        "depth_remaining",
+        "leaf-only",
+        "`research-orchestrator`",
+        "`architect`",
+    ):
+        assert needle in content, f"skills/subagent-router/SKILL.md missing {needle!r}"
+
+
+def test_adaptive_swarm_sources_drop_fixed_fanout_numbers() -> None:
+    for rel in (
+        "agents/tier1-core/orchestrator.agent.md",
+        "skills/dynamic-full-auto/SKILL.md",
+        ".claude/workflows/enterprise/e2e-swarm-eval-loop.md",
+    ):
+        content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "active platform execution budget" in content, f"{rel} missing budget-driven wording"
+        assert "≤7" not in content, f"{rel} still contains stale fixed fan-out wording"
+    dynamic = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
+    assert "4–7" not in dynamic
+    assert "4-7" not in dynamic
+
+
+def test_all_source_commands_have_orchestrator_agent_binding() -> None:
+    """T11: every .claude/commands/*.md must have agent: orchestrator to prevent
+    Copilot agent reset when invoking any Azoth command."""
+    cmd_dir = _REPO_ROOT / ".claude" / "commands"
+    assert cmd_dir.is_dir(), "missing .claude/commands/"
+    missing = []
+    for path in sorted(cmd_dir.glob("*.md")):
+        meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if meta.get("agent") != "orchestrator":
+            missing.append(path.name)
+    assert not missing, f"source commands missing agent: orchestrator: {missing}"
+
+
+def test_all_copilot_prompts_have_orchestrator_agent_binding() -> None:
+    """T12: every .github/prompts/*.prompt.md must have agent: orchestrator."""
+    prompt_dir = _REPO_ROOT / ".github" / "prompts"
+    assert prompt_dir.is_dir(), "missing .github/prompts/"
+    missing = []
+    for path in sorted(prompt_dir.glob("*.prompt.md")):
+        meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if meta.get("agent") != "orchestrator":
+            missing.append(path.name)
+    assert not missing, f"Copilot prompts missing agent: orchestrator: {missing}"
+
+
 # ── --check mode ──────────────────────────────────────────────────────────────
 
 
@@ -841,6 +1262,177 @@ def test_check_mode_clean_returns_zero(tmp_path: Path) -> None:
 
     rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
     assert rc == 0
+
+
+def test_load_commands_prefers_canonical_contract_and_resolves_body(tmp_path: Path) -> None:
+    _write_contract_command(tmp_path)
+    commands = load_commands(tmp_path)
+    assert len(commands) == 1
+    cmd = commands[0]
+    assert cmd["name"] == "next"
+    assert cmd["meta"]["description"] == "Canonical next description"
+    assert cmd["contract_path"] == "commands/next/command.yaml"
+    assert cmd["body_source_path"] == ".claude/commands/next.md"
+    assert cmd["body"].startswith("# /next")
+    assert "Legacy next description" not in cmd["body"]
+
+
+def test_transform_command_codex_skill_uses_contract_path_when_present(tmp_path: Path) -> None:
+    _write_contract_command(tmp_path)
+    cmd = load_commands(tmp_path)[0]
+    rendered = transform_command_codex_skill(cmd)
+    assert "commands/next/command.yaml" in rendered
+    assert ".claude/commands/next.md" in rendered
+
+
+def test_load_commands_resolves_canonical_markdown_body(tmp_path: Path) -> None:
+    command_path = tmp_path / "commands" / "start" / "command.yaml"
+    command_path.parent.mkdir(parents=True, exist_ok=True)
+    command_path.write_text(
+        "schema_version: 1\n"
+        "name: start\n"
+        "display_name: /start\n"
+        "description: Canonical start description\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "body:\n"
+        "  mode: canonical_markdown\n"
+        "  source_path: commands/start/body.md\n",
+        encoding="utf-8",
+    )
+    body_path = tmp_path / "commands" / "start" / "body.md"
+    body_path.write_text("# /start\n\nUse the canonical body.\n", encoding="utf-8")
+
+    commands = load_commands(tmp_path)
+    assert len(commands) == 1
+    cmd = commands[0]
+    assert cmd["name"] == "start"
+    assert cmd["contract_path"] == "commands/start/command.yaml"
+    assert cmd["body_source_path"] == "commands/start/body.md"
+    assert cmd["body"].startswith("# /start")
+    assert "canonical body" in cmd["body"]
+
+
+@pytest.mark.parametrize(
+    ("command_name", "body_source_path"),
+    [
+        ("deliver", ".claude/commands/deliver.md"),
+        ("deliver-full", ".claude/commands/deliver-full.md"),
+        ("auto", ".claude/commands/auto.md"),
+        ("plan", ".claude/commands/plan.md"),
+        ("test", ".claude/commands/test.md"),
+        ("eval", ".claude/commands/eval.md"),
+        ("eval-swarm", ".claude/commands/eval-swarm.md"),
+        ("hookmode", ".claude/commands/hookmode.md"),
+        ("session-closeout", "commands/session-closeout/body.md"),
+        ("remember", ".claude/commands/remember.md"),
+        ("sync", ".claude/commands/sync.md"),
+        ("roadmap", ".claude/commands/roadmap.md"),
+    ],
+)
+def test_migrated_commands_load_from_canonical_contracts(
+    command_name: str, body_source_path: str
+) -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    cmd = commands[command_name]
+    assert cmd["contract_path"] == f"commands/{command_name}/command.yaml"
+    assert cmd["body_source_path"] == body_source_path
+    assert cmd["body"].startswith(f"# /{command_name}")
+
+
+def test_ini_plt_006_exit_commands_are_canonicalized() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    for command_name in ("session-closeout", "remember", "sync", "roadmap", "hookmode"):
+        assert "contract" in commands[command_name], (
+            f"INI-PLT-006 exit evidence missing canonical contract for {command_name}"
+        )
+
+
+def test_t003_delivery_orchestration_family_is_canonicalized() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    for command_name in (
+        "deliver",
+        "plan",
+        "test",
+        "auto",
+        "deliver-full",
+        "eval",
+        "eval-swarm",
+    ):
+        assert "contract" in commands[command_name], (
+            f"T-003 migration incomplete: expected canonical contract for {command_name}"
+        )
+
+
+@pytest.mark.parametrize(
+    ("command_name", "azoth_effect", "gemini_output_path"),
+    [
+        ("plan", "read", ".gemini/commands/workspace.plan.toml"),
+        ("test", "write", ".gemini/commands/test.toml"),
+        ("eval-swarm", "mixed", ".gemini/commands/eval-swarm.toml"),
+    ],
+)
+def test_bl057_residual_bundle_contract_metadata_is_complete_and_consistent(
+    command_name: str, azoth_effect: str, gemini_output_path: str
+) -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    cmd = commands[command_name]
+    contract = cmd["contract"]
+
+    assert contract["schema_version"] == 1
+    assert contract["name"] == command_name
+    assert contract["display_name"] == f"/{command_name}"
+    assert contract["agent"] == "orchestrator"
+    assert contract["azoth_effect"] == azoth_effect
+
+    assert contract["body"] == {
+        "mode": "legacy_claude_markdown",
+        "source_path": f".claude/commands/{command_name}.md",
+    }
+    assert cmd["contract_path"] == f"commands/{command_name}/command.yaml"
+    assert cmd["body_source_path"] == f".claude/commands/{command_name}.md"
+
+    assert contract["migration"]["phase"] == "canonical_body_batch_2_residual_bundle"
+    assert contract["migration"]["runtime_source_of_truth"] == cmd["contract_path"]
+    assert any("BL-057" in note for note in contract["migration"]["notes"])
+    assert any(cmd["body_source_path"] in note for note in contract["migration"]["notes"])
+
+    assert contract["references"] == [
+        ".azoth/roadmap-specs/v0.2.0/T-003.yaml",
+        "docs/CANONICAL_COMMAND_CONTRACT.md",
+    ]
+
+    assert contract["projection"] == {
+        "claude": {
+            "kind": "native_command_markdown",
+            "output_path": f".claude/commands/{command_name}.md",
+        },
+        "cursor": {
+            "kind": "claude_command_toggle_surface",
+            "output_path": f".claude/commands/{command_name}.md",
+        },
+        "copilot": {
+            "kind": "prompt_markdown",
+            "output_path": f".github/prompts/{command_name}.prompt.md",
+        },
+        "opencode": {
+            "kind": "native_command_markdown",
+            "output_path": f".opencode/commands/{command_name}.md",
+        },
+        "codex": {
+            "kind": "skill_wrapper",
+            "output_path": f".agents/skills/azoth-{command_name}/SKILL.md",
+            "metadata_path": f".agents/skills/azoth-{command_name}/agents/openai.yaml",
+        },
+        "gemini": {
+            "kind": "native_command_toml",
+            "output_path": gemini_output_path,
+        },
+        "antigravity": {
+            "kind": "workflow_markdown",
+            "output_path": f".agents/workflows/{command_name}.md",
+        },
+    }
 
 
 def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
@@ -857,6 +1449,72 @@ def test_check_mode_stale_returns_one(tmp_path: Path) -> None:
     agent_mirror.write_text("corrupted content", encoding="utf-8")
 
     rc = main(["--root", str(tmp_path), "--platforms", "copilot", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_legacy_claude_formatting_only_drift_returns_zero(tmp_path: Path) -> None:
+    """Legacy Claude outputs accept parsed-frontmatter parity with an exact body match."""
+    _write_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "next.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "description: Canonical next description\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
+    assert rc == 0
+
+
+def test_check_mode_legacy_claude_substantive_drift_returns_one(tmp_path: Path) -> None:
+    """Legacy Claude outputs still fail when contract-governed frontmatter drifts."""
+    _write_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "next.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: mixed\n"
+        "description: Drifted next description\n"
+        "---\n\n"
+        "# /next\n\nUse the legacy body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
+    assert rc == 1
+
+
+def test_check_mode_canonical_claude_formatting_only_drift_returns_one(tmp_path: Path) -> None:
+    """Canonical Claude outputs remain byte-exact in check mode."""
+    _write_canonical_contract_command(tmp_path)
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude"])
+    assert rc == 0
+
+    deployed = tmp_path / ".claude" / "commands" / "start.md"
+    deployed.write_text(
+        "---\n"
+        "agent: orchestrator\n"
+        "azoth_effect: read\n"
+        "description: Canonical start description\n"
+        "---\n\n"
+        "# /start\n\nUse the canonical body.\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["--root", str(tmp_path), "--platforms", "claude", "--check"])
     assert rc == 1
 
 

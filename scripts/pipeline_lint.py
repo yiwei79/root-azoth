@@ -35,6 +35,25 @@ VALID_SCOPE = {"kernel", "skills", "agents", "pipelines", "docs", "mixed"}
 VALID_RISK = {"governance-change", "breaking-change", "additive", "cosmetic"}
 VALID_COMPLEXITY = {"simple", "medium", "complex"}
 VALID_KNOWLEDGE = {"known-pattern", "needs-research", "novel", "instruction-refinement"}
+VALID_REFERENCE_PRESETS = {"full", "deliver", "hotfix", "docs", "research", "review", "refactor"}
+VALID_SHARED_STAGE_FAMILIES = {
+    "context-recall",
+    "discovery-evidence-research",
+    "architect-design",
+    "review",
+    "plan",
+    "execute",
+    "quality-gate",
+    "closeout",
+}
+VALID_DISCOVERY_TRIGGERS = {
+    "low-solution-confidence",
+    "conflicting-memory-or-pattern-evidence",
+    "cross-surface-drift",
+    "latest-context-dependency",
+    "gate-finding-evidence-insufficient",
+}
+VALID_DISCOVERY_POLICY = {"skip", "conditional", "required"}
 
 
 class ValidationError(Exception):
@@ -82,6 +101,10 @@ def validate_composition_rules(rules: Any) -> None:
         raise ValidationError("composition_rules must be a mapping")
     if "classification" not in rules:
         raise ValidationError("composition_rules missing 'classification'")
+    if "shared_stage_families" not in rules:
+        raise ValidationError("composition_rules missing 'shared_stage_families'")
+    if "discovery_triggers" not in rules:
+        raise ValidationError("composition_rules missing 'discovery_triggers'")
     if "rules" not in rules:
         raise ValidationError("composition_rules missing 'rules'")
     clf = rules["classification"]
@@ -97,13 +120,78 @@ def validate_composition_rules(rules: Any) -> None:
             raise ValidationError(
                 f"composition_rules.classification.{field} '{clf[field]}' not in {valid}"
             )
+    shared_stage_families = rules["shared_stage_families"]
+    if not isinstance(shared_stage_families, list) or len(shared_stage_families) == 0:
+        raise ValidationError("composition_rules.shared_stage_families must be a non-empty list")
+    if len(shared_stage_families) != len(set(shared_stage_families)):
+        raise ValidationError("composition_rules.shared_stage_families must not contain duplicates")
+    for family in shared_stage_families:
+        if family not in VALID_SHARED_STAGE_FAMILIES:
+            raise ValidationError(
+                f"composition_rules.shared_stage_families entry '{family}' not in "
+                f"{VALID_SHARED_STAGE_FAMILIES}"
+            )
+    discovery_triggers = rules["discovery_triggers"]
+    if not isinstance(discovery_triggers, list) or len(discovery_triggers) == 0:
+        raise ValidationError("composition_rules.discovery_triggers must be a non-empty list")
+    if len(discovery_triggers) != len(set(discovery_triggers)):
+        raise ValidationError("composition_rules.discovery_triggers must not contain duplicates")
+    for trigger in discovery_triggers:
+        if trigger not in VALID_DISCOVERY_TRIGGERS:
+            raise ValidationError(
+                f"composition_rules.discovery_triggers entry '{trigger}' not in "
+                f"{VALID_DISCOVERY_TRIGGERS}"
+            )
     if not isinstance(rules["rules"], list) or len(rules["rules"]) == 0:
         raise ValidationError("composition_rules.rules must be a non-empty list")
     for i, rule in enumerate(rules["rules"]):
         if "condition" not in rule:
             raise ValidationError(f"composition_rules.rules[{i}] missing 'condition'")
-        if "pipeline" not in rule:
-            raise ValidationError(f"composition_rules.rules[{i}] missing 'pipeline'")
+        if "reference_preset" not in rule:
+            raise ValidationError(f"composition_rules.rules[{i}] missing 'reference_preset'")
+        if "stage_families" not in rule:
+            raise ValidationError(f"composition_rules.rules[{i}] missing 'stage_families'")
+        if "discovery_policy" not in rule:
+            raise ValidationError(f"composition_rules.rules[{i}] missing 'discovery_policy'")
+        if "pipeline" in rule:
+            raise ValidationError(
+                f"composition_rules.rules[{i}] uses legacy key 'pipeline'; use "
+                "'reference_preset' + 'stage_families'"
+            )
+        if "inject" in rule:
+            raise ValidationError(
+                f"composition_rules.rules[{i}] uses legacy key 'inject'; use 'discovery_policy'"
+            )
+        if rule["reference_preset"] not in VALID_REFERENCE_PRESETS:
+            raise ValidationError(
+                f"composition_rules.rules[{i}].reference_preset "
+                f"'{rule['reference_preset']}' not in {VALID_REFERENCE_PRESETS}"
+            )
+        stage_families = rule["stage_families"]
+        if not isinstance(stage_families, list) or len(stage_families) == 0:
+            raise ValidationError(
+                f"composition_rules.rules[{i}].stage_families must be a non-empty list"
+            )
+        if len(stage_families) != len(set(stage_families)):
+            raise ValidationError(
+                f"composition_rules.rules[{i}].stage_families must not contain duplicates"
+            )
+        for family in stage_families:
+            if family not in VALID_SHARED_STAGE_FAMILIES:
+                raise ValidationError(
+                    f"composition_rules.rules[{i}].stage_families entry '{family}' not in "
+                    f"{VALID_SHARED_STAGE_FAMILIES}"
+                )
+            if family not in shared_stage_families:
+                raise ValidationError(
+                    f"composition_rules.rules[{i}].stage_families entry '{family}' must be "
+                    "declared in composition_rules.shared_stage_families"
+                )
+        if rule["discovery_policy"] not in VALID_DISCOVERY_POLICY:
+            raise ValidationError(
+                f"composition_rules.rules[{i}].discovery_policy "
+                f"'{rule['discovery_policy']}' not in {VALID_DISCOVERY_POLICY}"
+            )
 
 
 def validate_pipeline(data: Any) -> None:
@@ -119,10 +207,12 @@ def validate_pipeline(data: Any) -> None:
         raise ValidationError("stages must be a non-empty list")
     for stage in data["stages"]:
         validate_stage(stage)
-    if "composition_rules" in data:
-        if data["preset"] != "auto":
-            raise ValidationError("composition_rules is only valid when preset=auto")
+    if data["preset"] == "auto":
+        if "composition_rules" not in data:
+            raise ValidationError("preset 'auto' requires composition_rules")
         validate_composition_rules(data["composition_rules"])
+    elif "composition_rules" in data:
+        raise ValidationError("composition_rules is only valid when preset=auto")
 
 
 def main() -> int:

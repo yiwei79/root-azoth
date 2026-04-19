@@ -1,5 +1,6 @@
 ---
 description: Structured planning without execution
+agent: orchestrator
 ---
 
 # /plan $ARGUMENTS

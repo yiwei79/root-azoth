@@ -40,20 +40,29 @@ Run at the beginning of any session to get a full project snapshot before decidi
    - **Last Session** — most recent episode summary
    - **START** — context-sensitive routing options
 
+1. **Surface relevant memory** (context-recall)
+
+   Before routing, invoke `context-recall` via `skills/context-recall/SKILL.md`.
+   Extract 3-5 goal tags for the current session, use the skill's scoring flow to
+   surface the top 1-3 relevant M3 episodes and M2 patterns, then route with that
+   context in view. See `skills/context-recall/SKILL.md` for the full scoring
+   algorithm and output format.
+
 2. **Read the user's selection and route accordingly**
 
    | Input | Action |
    |-------|--------|
-   | `resume` | Scope gate is already active — resume the approved goal through the selected delivery pipeline; if none was explicitly selected, use `/auto` and run Stage 0 first (do not jump straight to implementation) |
-   | `next` | Run `/next` to open a scope card for the next priority task |
+   | `resume` | Run `/resume` — continue the active approved scope, or reopen the parked same-thread session without a second scope-approval wall. If no checkpoint exists, `/auto` remains the default and must start at Stage 0 |
+   | `resume <session_id>` | Run `/resume <session_id>` — reopen that parked session directly and restore its saved pipeline checkpoint when present. If no checkpoint exists, `/auto` remains the default and must start at Stage 0 |
+   | `next` | Run `/next` to open a scope card for the next priority task. If another live scope exists, stop and route to `/resume`, `/park`, or `/session-closeout` instead |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |
    | `eval` | Run `/eval` — quality gate (**0.85** baseline); **escalates to `/eval-swarm`** when workflow/content triggers multi-branch or high-stakes review (see `eval.md`) |
    | `roadmap` | Run `/roadmap` — D48 versioned roadmap dashboard (`scripts/roadmap_dashboard.py`) |
    | `plan` | Run `/plan` — structured autonomy / planning |
    | `remember` | Run `/remember` — quick M3 episode capture without full closeout |
-   | `closeout` | Run `/session-closeout` — W1–W4 batch, version bump when applicable, `.azoth/session-state.md` handoff |
-   | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset |
+   | `closeout` | Run `/session-closeout` — W1–W4 batch, always-fire patch bump, `.azoth/session-state.md` handoff. In Codex calm flow, the equivalent daily route is `$azoth-start closeout` or `$azoth-session-closeout` |
+   | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset. In Codex calm flow, the canonical start-centered equivalent is `$azoth-start pipeline_command=auto <goal>` |
 
    **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.
 
@@ -67,6 +76,7 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
 - `/start` is orientation only — it does not write files or open a scope gate
 - **Claude Code:** When `hooks.SessionStart` is configured in `.claude/settings.json` (P5-007), the welcome script runs on session `startup` and `resume`. Output is injected once into context **and** mirrored to **`.azoth/session-orientation.txt`**. Use **`Read`** on that file only when showing **verbatim plain** orientation in chat; avoid redundant reads otherwise. **Bash** `welcome.py` (Rich) is fine for the designed UI — output may be **collapsed** in the IDE; **expand** to see the full menu. **See `CLAUDE.md` core rule 9.**
+- **Codex:** `$azoth-start` is the canonical daily entry surface. Use `$azoth-start`, `$azoth-start next`, `$azoth-start closeout`, or `$azoth-start pipeline_command=<auto|deliver|deliver-full> <goal>`. Literal `/start`, `/next`, `/auto`, and `/deliver-full` text remains compatibility fallback and should normalize back through the same calm-flow path.
 - **Cursor:** SessionStart hooks do not run. For the **full Rich UI**, run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel). **Bash** in chat also works—**expand** output if collapsed. Plain text: **`Read`** `.azoth/session-orientation.txt` or `welcome.py --plain`. See `CLAUDE.md` rules 8–9.
-- The `resume` option appears only when a non-expired scope gate exists
+- The `resume` option appears when a non-expired scope gate exists or the current thread has a parked `session-state.md` handoff
 - If no scope gate exists, `/next` is the normal first step

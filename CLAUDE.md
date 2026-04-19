@@ -20,7 +20,7 @@ alignment point.
 
 **Version**: v0.1.2
 **Primary platform**: Claude Code (CLI + VS Code extension)
-**Also compatible**: Codex (via `.codex/` + `.agents/` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
+**Also compatible**: Codex (skill-routed via `.codex/` + `.agents/skills/azoth-*` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
 
 ## Project Routing
@@ -71,6 +71,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 6. **Architecture-first**. Read `docs/AZOTH_ARCHITECTURE.md` before making structural changes.
 7. **Effect labels**. Every `.claude/commands/*.md` file declares `azoth_effect: read | write | mixed` in its frontmatter (`kernel/GOVERNANCE.md`). If a prompt can trigger **Write/Edit** (build path), it must be clearly marked — never hide implementation behind read-only wording.
 8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
+   **Codex:** Azoth commands are not native repo slash commands in Codex. Use `/skills` or `$azoth-auto`, `$azoth-next`, `$azoth-start`, etc.; the generated `.agents/skills/azoth-*` wrappers are the discoverable Codex command surface. Raw `/auto`-style tokens are a compatibility fallback only. The default Codex adapter is **instruction-first, skill-routed**, with a single narrow `UserPromptSubmit` compatibility hook; governance and non-Bash tool discipline remain behavioral in `.codex/config.toml`.
 9. **SessionStart orientation (Claude Code):** `hooks.SessionStart` runs **`.claude/hooks/session_start_welcome.py`**, which invokes **`welcome.py --plain`** with correct repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and **injects** the same text into model context. Treat that as the **single mechanical source**; avoid duplicating the full blob with **`Read`** unless the user needs verbatim output in chat.
    - **Default (token-efficient):** Use the injected SessionStart text as-is. Short proactive routing (e.g. “try `/next` for P5-004”) is **OK** without re-pasting the entire dashboard.
    - **Verbatim in chat:** When the user asks for the **full** snapshot, **verbatim** orientation, or **paste the file**, then **`Read` `.azoth/session-orientation.txt`** and put the **entire file** in one fenced code block — **or** quote the injected block exactly. **Do not** answer those requests with only a bullet summary.
@@ -84,6 +85,11 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
    - **No overhead on direct coding requests:** If the user's intent is unambiguously a direct coding or implementation request (e.g. "fix this function", "explain this error", "write a unit test"), skip pipeline classification and respond directly. The orchestrator persona governs goal-level navigation and pipeline entry — not routine code assistance.
    - **Gray-zone requests (ambiguous scope):** When intent falls between clearly direct and clearly multi-stage — e.g. "improve this function" (one-line rename or cross-file refactor?), or "update the auth module" (targeted patch or unknown blast radius?) — apply the Goal Clarification protocol: ask one focused question to resolve scope before acting. Default to **Orchestrate** if scope remains unclear after one clarification. See `agents/tier1-core/orchestrator.agent.md` §Goal Clarification.
    - **Normative source:** `agents/tier1-core/orchestrator.agent.md`; platform binding details in `docs/platform-guides/orchestrator-default-entry.md`.
+11. **BL-051 human-facing response style.**
+   - Default to paragraph-led, information-dense explanations for human-facing non-operational responses; use bullets only when the content is inherently list-shaped.
+   - Use contrastive reasoning to make tradeoffs explicit instead of presenting disconnected facts in human-facing explanations.
+   - Preserve terse operational modes for status updates, approvals, gates, and explicit short-output requests.
+   - Keep agent-to-agent artifacts optimized for determinism and parseability, including BL-011 spawn payloads, BL-012 stage summaries, evaluator scorecards, planner task tables, reviewer findings blocks, and schema-bound YAML/JSON/TOML outputs.
 
 ### Development Workflow
 
@@ -116,6 +122,58 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 - **First-pass quality**: When generating structured content from a source framework (agent
   archetypes, skills, pipeline schemas), match the depth and richness of the source on the
   first pass. Simplified stubs that require a second enrichment pass are a quality failure.
+
+#### Branch Model (D54)
+
+Two permanent branches; all other branches are short-lived:
+
+```
+main                  ← stable releases only (tagged on squash-merge from phase branch)
+phase/v0.2.0-p2       ← active integration branch; receives all merges for current phase
+  └── patch/<bl-id>   ← one branch per backlog item; deleted immediately after merge
+  └── feat/<slug>     ← ad-hoc feature work; deleted immediately after merge
+```
+
+Rules:
+- **Never commit directly to `main`** — it only receives squash-merges from a completed
+  phase branch, accompanied by a version tag.
+- **One active phase branch at a time** — when a phase closes, the phase branch merges to
+  `main` and is deleted; the next phase opens a new `phase/v0.2.0-pN` branch.
+- **Short-lived feature/patch branches** — open on scope approval, merge (or squash) within
+  the same session or next, delete immediately. Never let stale branches accumulate.
+- **Merge with `--no-ff`** into the phase branch to preserve feature history.
+- **Tag phases** with `git tag v0.2.0-p2-close` before the squash to `main` (user-confirmed,
+  never auto-pushed).
+
+#### Worktree Policy (D54)
+
+The scope gate, run-ledger write claim, and deploy hooks are all repo-root-relative —
+multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
+
+- **Normal BL work**: single checkout, switch branches with `git checkout`.
+- **Parallel exploratory sessions**: `git stash` + branch switch, not a worktree.
+- **Genuinely parallel builds** (e.g. testing platform X while implementing Y): a worktree
+  is acceptable, but the writer token stays singleton across sibling worktrees. Azoth now
+  coordinates that lease through a shared cross-worktree claim keyed by the repo's git
+  common-dir and mirrored into each local `.azoth/run-ledger.local.yaml`. In practice:
+  one worktree may hold the live write claim, while other worktrees should stay in
+  discovery/review mode until the claim is released or handed off; close the worktree
+  before `/session-closeout`.
+- **Worktrees must be closed before closeout** — the `/worktree-sync` skill handles the
+  checkpoint; the `.claude/worktrees/` registry tracks open ones.
+
+#### Merge Hygiene (D54)
+
+- **Run `azoth-deploy.py` before committing after any merge** — the pre-commit hook
+  enforces mirror parity; running it manually avoids the abort-fix-recommit cycle.
+- **State file conflict resolution order** (`.azoth/`, `azoth.yaml`, `.claude/settings.json`):
+  1. Version numbers: keep the higher value (HEAD wins on the destination branch).
+  2. Backlog/decisions state: keep HEAD (destination branch has the authoritative record).
+  3. `episodes.jsonl`: append-merge all new episodes from both sides, sorted by ID.
+  4. `bootloader-state.md`: keep HEAD; add a merge note if session context from the
+     incoming branch is worth recording.
+- **Stale branch audit**: after any merge, run `git branch --merged <phase-branch>` and
+  delete anything that appears (except `main` and the phase branch itself).
 
 ## Orientation & roadmap
 

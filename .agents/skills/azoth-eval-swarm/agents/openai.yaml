@@ -1,0 +1,7 @@
+interface:
+  display_name: /eval-swarm
+  short_description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave
+    iteration
+  default_prompt: '$azoth-eval-swarm '
+policy:
+  allow_implicit_invocation: false

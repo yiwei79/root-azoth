@@ -8,9 +8,23 @@ agent: orchestrator
 
 The default pipeline. Classify the goal and compose the optimal pipeline.
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify `.azoth/scope-gate.json` exists and is approved before write work.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Stage 0: Goal Classification
 
-Classify `$ARGUMENTS` along four dimensions:
+Stage 0 is intake plus classification. Before composing the pipeline, load the
+latest context the run depends on:
+
+1. read back relevant memory when the goal is pipeline-improvement,
+   instruction-refinement, or a replay after a failed quality gate
+2. inspect the latest repo-state evidence for the touched surfaces
+3. include known platform/runtime constraints in the composition decision
+
+Then classify `$ARGUMENTS` along four dimensions:
 
 ```yaml
 classification:
@@ -22,7 +36,21 @@ classification:
 
 ## Pipeline Composition (D23)
 
-Invoke the `auto-router` skill.
+Invoke the `auto-router` skill. Treat the selected row as the conservative base
+composition, then compose from the shared stage-family vocabulary:
+
+- `context-recall`
+- optional `discovery / evidence / research`
+- `architect / design`
+- `review`
+- `plan`
+- `execute`
+- `quality gate`
+- `closeout`
+
+`/auto` remains the owning pipeline. Governed or high-risk work may cause
+`/auto` to choose the heaviest internal path, but the command does not force a
+redirect to `/deliver-full`.
 
 ## Subagent Assignment
 
@@ -57,6 +85,7 @@ and pipeline composition in a single approval:
 ...
 
 **Rationale**: {why this pipeline was chosen}
+**Adaptive Controls**: discovery insertion: {enabled|not needed} | replay threshold: {2|3}
 
 Approve scope + pipeline? [yes / adjust / abort]
 > On approval: orchestrator writes `.azoth/scope-gate.json` and `.azoth/pipeline-gate.json`
@@ -133,8 +162,10 @@ After human approval of the Declaration:
    }
    ```
 
-   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
-   `delivery_pipeline == governed` OR `target_layer == M1`):
+   **Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if the scope
+   is governed via `governance_mode == governed`, legacy
+   `delivery_pipeline == governed`, fused `/auto` selection
+   `delivery_pipeline == deliver-full`, or `target_layer == M1`):
    ```json
    {
      "session_id": "<must match scope-gate.json>",
@@ -171,8 +202,26 @@ After human approval of the Declaration:
    design / adjust scope / abort). Wait for a human signal such as **proceed**,
    **revise-then-continue**, or **abort** before continuing. **Do not** treat “pipeline
    started” as overriding a failed review gate.
+   When the human does approve continuation on a governed run, consume that approval in the
+   same run through `scripts/run_ledger.py` by promoting the next executable stage from the
+   paused human-gate checkpoint. Another declaration/status card by itself is not valid
+   downstream progress.
+   When the finding is a valid revise-and-continue case, rewrite the active run queue
+   fail-closed so the approved upstream revision stage is inserted ahead of the current
+   gate-owning review stage. If lineage proof is missing, ambiguous, or already rewritten,
+   stop and escalate instead of narrating progress.
+6. **Self-iterative quality (bounded replay):** Route failed findings to the lowest
+   legitimate upstream corrective stage instead of improvising inline revisions:
+   - architecture / scope / governance / contract → replay `architect`
+   - planning / test-strategy / handoff completeness → replay `planner`
+   - implementation / failing acceptance → replay `builder`
+   - evidence insufficiency → insert discovery / evidence before replaying design or planning
 
-6. **Evaluator stage — `/eval` routing (E1–E6):** When the **composed pipeline** includes an
+   Default replay thresholds are `2` for non-governed runs and `3` for governed or
+   high-stakes runs. When the threshold is exhausted, stop replay and present a
+   recomposition decision rather than continuing an ad hoc loop.
+
+7. **Evaluator stage — `/eval` routing (E1–E6):** When the **composed pipeline** includes an
    **evaluator** stage (or the orchestrator runs a **final quality gate** equivalent to
    `/eval` before declaring success), **before** spawning evaluator work:
    - `Read` `.claude/commands/eval.md` and evaluate triggers **E1–E6** using the active

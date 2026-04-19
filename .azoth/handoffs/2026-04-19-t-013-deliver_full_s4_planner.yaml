@@ -1,0 +1,26 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s4
+agent: planner
+status: complete
+entropy: YELLOW
+gate_outcome: pass
+session_id: 2026-04-19-t-013
+done:
+  - Produced a bounded implementation slice for T-013 centered on `scripts/worktree_sync.py`, `tests/test_worktree_sync.py`, and the `/worktree-sync` operator surfaces.
+  - Specified reconcile-before-verify sequencing so shared-state policy runs after sandbox merge and before promotion.
+  - Defined concrete tests for governed provenance, allowlist enforcement, append-only preservation, derived counter recompute, and T-012 rerun preservation.
+decisions:
+  - Keep the implementation inside the existing `worktree_sync.py` seam to stay within the session entropy budget.
+  - Treat absent `initiative_refs` as an empty list in canonical scope-fingerprint normalization.
+  - Keep closeout code unchanged and use `tests/test_do_closeout.py` only as a regression reference.
+open: []
+artifact_refs:
+  - .azoth/handoffs/2026-04-19-t-013-architecture-brief.md
+  - .azoth/handoffs/2026-04-19-t-013-deliver_full_s2_architect.yaml
+  - .azoth/handoffs/2026-04-19-t-013-deliver_full_s3_reviewer.yaml
+  - scripts/worktree_sync.py
+  - .claude/commands/worktree-sync.md
+  - docs/playbook/05-parallel-sessions.md
+  - tests/test_worktree_sync.py
+next: Hand off to builder to implement the approved reconcile contract and run the targeted pytest commands.

@@ -12,6 +12,14 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPTS_DIR = REPO_ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from research_sufficiency import (  # noqa: E402
+    evaluate_research_sufficiency,
+    validate_research_evidence_reference,
+)
 
 _WRITE_TOOL_NAMES = {"write", "create_file", "createfile"}
 _EDIT_TOOL_NAMES = {
@@ -24,6 +32,7 @@ _EDIT_TOOL_NAMES = {
     "apply_patch",
 }
 _PATCH_TARGET_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: ([^\n]+)$", re.MULTILINE)
+_PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
 
 _REMINDER = (
     "[scope-gate] Write/Edit blocked — no approved scope card found.\n"
@@ -37,7 +46,7 @@ _REMINDER = (
 _GOVERNED_REMINDER = (
     "[pipeline-gate] Write/Edit blocked — governed scope requires pipeline gate.\n"
     "\n"
-    "Your scope-gate.json indicates M1 or delivery_pipeline: governed. You must run one of "
+    "Your scope-gate.json indicates M1 or governed delivery. You must run one of "
     "`/deliver-full`, `/auto`, or `/deliver` and execute **Stage 0 — Pipeline gate** first: "
     "Write `.azoth/pipeline-gate.json` with `session_id` matching scope-gate and the correct "
     "`pipeline` key. The PreToolUse hook enforces this (D51 mechanical layer).\n"
@@ -75,43 +84,57 @@ def _path_from_value(value: object) -> str:
 
 
 def _first_path_from_files(value: object) -> str:
+    paths = _paths_from_files(value)
+    return paths[0] if paths else ""
+
+
+def _paths_from_files(value: object) -> list[str]:
+    paths: list[str] = []
     if not isinstance(value, list):
-        return ""
+        return paths
     for item in value:
         if isinstance(item, str):
             path_str = _path_from_value(item)
             if path_str:
-                return path_str
+                paths.append(path_str)
             continue
         if not isinstance(item, dict):
             continue
         for key in ("file_path", "filePath", "path", "uri"):
             path_str = _path_from_value(item.get(key))
             if path_str:
-                return path_str
-    return ""
+                paths.append(path_str)
+                break
+    return paths
 
 
-def extract_target_path_str(payload: dict) -> str:
+def extract_target_path_strs(payload: dict) -> list[str]:
     tool_input = tool_input_dict(payload)
+    paths: list[str] = []
     for key in ("file_path", "filePath", "path", "uri"):
         path_str = _path_from_value(tool_input.get(key))
         if path_str:
-            return path_str
+            paths.append(path_str)
 
-    files_path = _first_path_from_files(tool_input.get("files"))
-    if files_path:
-        return files_path
+    paths.extend(_paths_from_files(tool_input.get("files")))
 
     for key in ("input", "patch"):
         patch_text = tool_input.get(key)
         if not isinstance(patch_text, str):
             continue
-        match = _PATCH_TARGET_RE.search(patch_text)
-        if match:
-            return match.group(1).split(" -> ", 1)[0].strip()
+        for match in _PATCH_TARGET_RE.finditer(patch_text):
+            paths.append(match.group(1).split(" -> ", 1)[0].strip())
 
-    return ""
+    deduped: list[str] = []
+    for path_str in paths:
+        if path_str and path_str not in deduped:
+            deduped.append(path_str)
+    return deduped
+
+
+def extract_target_path_str(payload: dict) -> str:
+    paths = extract_target_path_strs(payload)
+    return paths[0] if paths else ""
 
 
 def extract_write_content(tool_input: dict) -> str | None:
@@ -166,8 +189,32 @@ def parse_expires_at(raw: str) -> datetime | None:
         return None
 
 
+def governance_mode(data: dict) -> str:
+    mode = str(data.get("governance_mode") or "").strip()
+    if mode in {"standard", "governed"}:
+        return mode
+    if str(data.get("target_layer") or "").strip() == "M1":
+        return "governed"
+    legacy = str(data.get("delivery_pipeline") or "").strip()
+    if legacy == "governed":
+        return "governed"
+    if legacy == "standard":
+        return "standard"
+    return "standard"
+
+
 def is_governed_scope(data: dict) -> bool:
-    return data.get("delivery_pipeline") == "governed" or data.get("target_layer") == "M1"
+    return governance_mode(data) == "governed"
+
+
+def selected_pipeline_command(scope_data: dict) -> str:
+    candidate = str(scope_data.get("pipeline_command") or "").strip()
+    if candidate:
+        return candidate
+    legacy = str(scope_data.get("delivery_pipeline") or "").strip()
+    if legacy in _PIPELINE_COMMANDS:
+        return legacy
+    return ""
 
 
 def pipeline_gate_path(repo_root: Path) -> Path:
@@ -177,7 +224,11 @@ def pipeline_gate_path(repo_root: Path) -> Path:
     return repo_root / ".azoth" / "pipeline-gate.json"
 
 
-def pipeline_gate_ok(pg_path: Path, scope_data: dict) -> bool:
+def _research_evidence_ok(pg: dict) -> bool:
+    return bool(validate_research_evidence_reference(pg).get("ok"))
+
+
+def pipeline_gate_ok(pg_path: Path, scope_data: dict, repo_root: Path) -> bool:
     sid = scope_data.get("session_id")
     if not sid or not pg_path.is_file():
         return False
@@ -187,13 +238,38 @@ def pipeline_gate_ok(pg_path: Path, scope_data: dict) -> bool:
         return False
     if pg.get("approved") is not True:
         return False
+    pipeline_name = str(pg.get("pipeline_command") or pg.get("pipeline") or "").strip()
+    if pipeline_name not in _PIPELINE_COMMANDS:
+        return False
     if pg.get("session_id") != sid:
+        return False
+    opened_at = parse_expires_at(str(pg.get("opened_at", "")))
+    if opened_at is None:
         return False
     exp = parse_expires_at(str(pg.get("expires_at", "")))
     if exp is None:
         return False
+    scope_exp = parse_expires_at(str(scope_data.get("expires_at", "")))
+    if scope_exp is not None and exp != scope_exp:
+        return False
+    if opened_at > exp:
+        return False
     if datetime.now(timezone.utc) >= exp:
         return False
+    selected_pipeline = selected_pipeline_command(scope_data)
+    if selected_pipeline and selected_pipeline != pipeline_name:
+        return False
+    if not _research_evidence_ok(pg):
+        return False
+    reference = validate_research_evidence_reference(pg)
+    evidence_path = reference.get("evidence_path")
+    if isinstance(evidence_path, str) and evidence_path:
+        evaluate_research_sufficiency(
+            repo_root=repo_root,
+            evidence_path=evidence_path,
+            goal=str(scope_data.get("goal") or "").strip() or None,
+            backlog_id=str(scope_data.get("backlog_id") or "").strip() or None,
+        )
     return True
 
 
@@ -247,22 +323,45 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if normalized_write_action(payload) is None:
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
-    file_path_str = extract_target_path_str(payload)
-    target = resolved_target(root, file_path_str)
+    targets = [
+        target
+        for target in (
+            resolved_target(root, path_str) for path_str in extract_target_path_strs(payload)
+        )
+        if target is not None
+    ]
 
-    if target is not None:
+    def _is_scope_bootstrap_target(target: Path) -> bool:
         try:
-            if target == gate_path.resolve():
-                return ScopeGateResult(allowed=True, skip_entropy=True)
+            return target.resolve() == gate_path.resolve()
         except (OSError, ValueError):
-            pass
+            return False
 
-    # Allow writes to Claude Code's external memory dir (e.g. ~/.claude/…/memory/ — W3 in session-closeout).
-    # The scope gate governs repo changes; external memory is system maintenance, not repo drift.
-    if target is not None and target.is_relative_to(Path.home() / ".claude"):
+    def _is_post_scope_exempt_target(target: Path) -> bool:
+        try:
+            resolved = target.resolve()
+            if resolved == pg_path.resolve():
+                return True
+        except (OSError, ValueError):
+            return False
+        return False
+
+    if targets and all(_is_scope_bootstrap_target(target) for target in targets):
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
-    est_path = entropy_state_path(root)
+    # Claude Code plan-mode writes to ~/.claude/plans/ before any scope card exists.
+    # Exempting only this specific sub-path avoids a bootstrap deadlock (BL-064).
+    _claude_plans_root = (Path.home() / ".claude" / "plans").resolve()
+
+    def _is_claude_plans_path(target: Path) -> bool:
+        try:
+            target.resolve().relative_to(_claude_plans_root)
+            return True
+        except (ValueError, OSError):
+            return False
+
+    if targets and all(_is_claude_plans_path(target) for target in targets):
+        return ScopeGateResult(allowed=True, skip_entropy=True)
 
     if not gate_path.exists():
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
@@ -283,21 +382,22 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if datetime.now(timezone.utc) >= exp_scope:
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 
-    if is_governed_scope(data):
-        is_pg_write = False
-        if target is not None:
-            try:
-                is_pg_write = target == pg_path.resolve()
-            except (OSError, ValueError):
-                pass
-        if not is_pg_write and not pipeline_gate_ok(pg_path, data):
-            return ScopeGateResult(allowed=False, deny_reason=_GOVERNED_REMINDER)
+    session_id = str(data.get("session_id") or "").strip()
+    if not session_id:
+        return ScopeGateResult(allowed=False, deny_reason="scope-gate.json missing session_id")
 
-    if target is not None:
-        try:
-            if target == est_path.resolve():
-                return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=True)
-        except (OSError, ValueError):
-            pass
+    if targets and all(_is_post_scope_exempt_target(target) for target in targets):
+        return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=True)
+
+    is_pg_write = any(
+        (lambda target: target.resolve() == pg_path.resolve() if target is not None else False)(
+            target
+        )
+        for target in targets
+    )
+
+    if is_governed_scope(data):
+        if not is_pg_write and not pipeline_gate_ok(pg_path, data, root):
+            return ScopeGateResult(allowed=False, deny_reason=_GOVERNED_REMINDER)
 
     return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=False)

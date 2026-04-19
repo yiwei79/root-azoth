@@ -1,0 +1,77 @@
+schema_version: 1
+name: start
+display_name: /start
+description: Session welcome dashboard — orient, then route to your next action
+agent: orchestrator
+azoth_effect: read
+
+execution:
+  kind: orientation
+  waits_for_human_signal: selection
+  emits:
+    - welcome_dashboard
+    - route_selection
+
+arguments:
+  accepts_arguments: true
+  syntax: /start [selection]
+
+state:
+  reads:
+    - azoth.yaml
+    - .azoth/backlog.yaml
+    - .azoth/scope-gate.json
+    - .azoth/session-state.md
+    - .azoth/memory/episodes.jsonl
+    - .azoth/memory/patterns.yaml
+    - .azoth/session-orientation.txt
+  outputs:
+    - welcome_dashboard
+    - route_selection
+
+governance:
+  preconditions:
+    - orientation_only
+    - no_scope_write
+  approval_mode: none
+  pipeline_gate_behavior: route_only
+  target_layer_rule: none
+
+body:
+  mode: canonical_markdown
+  source_path: commands/start/body.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/start.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/start.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/start.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/start.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-start/SKILL.md
+    metadata_path: .agents/skills/azoth-start/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/start.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/start.md
+
+migration:
+  phase: canonical_body_batch_1
+  runtime_source_of_truth: commands/start/command.yaml
+  notes:
+    - Batch T-002 moves /start onto the neutral command path.
+    - .claude/commands/start.md is now a deployed output, not the authored semantic source.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-002.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

@@ -1,5 +1,6 @@
 ---
 description: Review promotion candidates from M3 episodes to M2 patterns
+agent: orchestrator
 ---
 
 # /promote $ARGUMENTS
@@ -45,6 +46,19 @@ Review promotion candidates and apply the Promotion Rubric.
    
    Approve? [yes / not-yet / reject]
    ```
+
+4b. **Optional reinforcement_count update**:
+   - If the human explicitly confirms that an existing lesson has recurred, require an exact episode id.
+   - Use the active `session_id` from `.azoth/scope-gate.json`; do not invent or reuse a prior session id.
+   - Run the exact-id helper only after that confirmation:
+     ```bash
+     python3 scripts/reinforcement_count.py ep-173 --session-id <active-session-id> --source promote
+     ```
+   - Alternatively, carry that same confirmed id into closeout via:
+     ```bash
+     python3 scripts/do_closeout.py --reinforce-episode ep-173
+     ```
+   - Never infer episode ids from tags or prose, and never increment the same prior episode more than once per session.
 
 5. **If approved**: Write to `.azoth/memory/patterns.yaml` (M3 → M2)
    or implement in appropriate location (M2 → M1)

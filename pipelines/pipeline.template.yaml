@@ -116,7 +116,8 @@ output: alignment-summary
 # ── Auto-Pipeline Composition Rules (preset: auto only) ───────────────────
 # composition_rules is only valid when preset: auto (D23).
 # The Architect classifies the goal and evaluates rules top-to-bottom.
-# First matching condition wins. Include a catch-all default as the last rule.
+# First matching condition wins. The selected row exposes a conservative
+# reference preset, ordered stage families, and a discovery policy.
 #
 # composition_rules:
 #   classification:
@@ -124,15 +125,66 @@ output: alignment-summary
 #     risk: governance-change | breaking-change | additive | cosmetic
 #     complexity: simple | medium | complex
 #     knowledge: known-pattern | needs-research | novel | instruction-refinement
+#   shared_stage_families:
+#     - context-recall
+#     - discovery-evidence-research
+#     - architect-design
+#     - review
+#     - plan
+#     - execute
+#     - quality-gate
+#     - closeout
+#   discovery_triggers:
+#     - low-solution-confidence
+#     - conflicting-memory-or-pattern-evidence
+#     - cross-surface-drift
+#     - latest-context-dependency
+#     - gate-finding-evidence-insufficient
 #   rules:
 #     - condition: "risk == governance-change"
-#       pipeline: [architect, planner, builder, evaluator, architect]
+#       reference_preset: full
+#       stage_families:
+#         - architect-design
+#         - review
+#         - plan
+#         - execute
+#         - quality-gate
+#         - closeout
+#       discovery_policy: conditional
 #     - condition: "scope == kernel"
-#       pipeline: [architect, planner, builder, evaluator, architect]
+#       reference_preset: full
+#       stage_families:
+#         - architect-design
+#         - review
+#         - plan
+#         - execute
+#         - quality-gate
+#         - closeout
+#       discovery_policy: conditional
 #     - condition: "knowledge == needs-research"
-#       pipeline: [architect, planner, builder, architect]
-#       inject: "research-phase into architect"
+#       reference_preset: research
+#       stage_families:
+#         - discovery-evidence-research
+#         - architect-design
+#         - plan
+#         - execute
+#         - quality-gate
+#         - closeout
+#       discovery_policy: required
 #     - condition: "complexity == simple AND risk == cosmetic"
-#       pipeline: [planner, builder, architect]
+#       reference_preset: hotfix
+#       stage_families:
+#         - plan
+#         - execute
+#         - closeout
+#       discovery_policy: skip
 #     - condition: "default"
-#       pipeline: [architect, planner, builder, evaluator, architect]
+#       reference_preset: full
+#       stage_families:
+#         - architect-design
+#         - review
+#         - plan
+#         - execute
+#         - quality-gate
+#         - closeout
+#       discovery_policy: conditional

@@ -18,9 +18,11 @@ Every Azoth session follows three phases:
    5 min                 30-120 min             5 min
 ```
 
+Codex note: the same lifecycle is start-centered. Use `$azoth-start`, `$azoth-start next`, `$azoth-start pipeline_command=<...> <goal>`, and `$azoth-start closeout`. `$azoth-session-closeout` remains a direct wrapper, while literal slash tokens are compatibility fallback in Codex, not the primary daily path.
+
 ---
 
-## Phase 1: Orient (`/start`)
+## Phase 1: Orient (`/start`, or `$azoth-start` in Codex)
 
 ```
 You: /start
@@ -43,7 +45,8 @@ The welcome dashboard shows you:
 ├─────────────────────────────────────────────────┤
 │  What next?                                      │
 │    • next    — pick top backlog item              │
-│    • resume  — continue prior session             │
+│    • resume  — reopen parked current session      │
+│    • resume <id> — reopen another parked session  │
 │    • intake  — process queued insights            │
 │    • /auto   — freeform goal                      │
 └─────────────────────────────────────────────────┘
@@ -54,9 +57,12 @@ The welcome dashboard shows you:
 | Command | When to use |
 |---------|-------------|
 | `next` | Pick the highest-priority backlog item |
-| `resume <id>` | Continue an interrupted session |
+| `resume` | Reopen the parked session for this thread without a second scope approval |
+| `resume <id>` | Reopen an interrupted parked session from another thread |
 | `intake` | Process insight files from `.azoth/inbox/` |
 | `/auto <goal>` | Start with a specific goal |
+
+In Codex, route those same choices through `$azoth-start ...` instead of splitting the daily path into `/start -> /next -> /auto`.
 
 ---
 
@@ -93,7 +99,7 @@ The scope gate has a **2-hour TTL**. The orchestrator now manages this actively:
   ──────────           ──────
   > 15 min remaining   Keep going normally.
   < 15 min remaining   TTL card: extend / checkpoint / abort.
-  Expired              Pipeline halts. Re-scope with /next.
+  Expired              Pipeline halts. Re-scope with /next or /resume.
 ```
 
 **In-place extension**: the orchestrator can extend TTL by 1 hour mid-pipeline
@@ -104,6 +110,34 @@ so you always know.
 
 Each stage runs in sequence with typed handoffs:
 
+```
+
+### Stage-aware resume
+
+When a session is parked, Azoth separates three concerns:
+
+- Scope restoration via `.azoth/scope-gate.json`
+- Pipeline checkpoint restoration via `.azoth/run-ledger.local.yaml`
+- Cross-IDE mirror state via `.azoth/session-state.md`
+
+`/resume` restores the approved scope directly; it does not ask for a second
+scope-approval card. If a saved run checkpoint exists, Azoth restores the saved
+pipeline gate and resumes from the stored stage or human gate. If no checkpoint
+exists, `/resume` restores scope only and routes back to pipeline selection,
+with `/auto` Stage 0 as the default recommendation.
+
+Checkpoint mirror shape:
+
+```yaml
+session_id: abc-123
+state: parked
+pipeline: auto
+pipeline_position: 2
+current_stage_id: architect_review
+completed_stages: [planner]
+pending_stages: [builder_apply, reviewer_gate]
+pause_reason: human-gate
+active_run_id: run-123
 ```
                     Typed YAML Handoff
                     ─────────────────
@@ -146,11 +180,15 @@ Closeout performs 4 write phases:
 ├───────────────────────────────────────────────────────┤
 │  W2: STATE                                            │
 │  Update bootloader-state.md, close scope gate,        │
-│  refresh session-state.md for cross-IDE handoff.       │
+│  refresh session-state.md for cross-IDE handoff,       │
+│  preserving any stage-aware resume checkpoint fields.  │
+│  For roadmap/planning sessions, also sync initiative   │
+│  and backlog continuity so the next action is a real   │
+│  queued item, not only a spec or stale pointer.        │
 ├───────────────────────────────────────────────────────┤
 │  W3: MEMORY MIRROR                                    │
-│  Sync to ~/.claude/projects/.../memory/ so Claude     │
-│  Code sessions can read Copilot-authored state.        │
+│  Best-effort sync to ~/.claude/projects/.../memory/   │
+│  and log `W3 deferred` when the path is unavailable.  │
 ├───────────────────────────────────────────────────────┤
 │  W4: VERSION                                          │
 │  Bump patch version (e.g., 0.1.1.31 → 0.1.1.32).     │
@@ -163,10 +201,13 @@ Closeout performs 4 write phases:
 - **Memory**: Future sessions read past episodes to avoid repeating mistakes
 - **Continuity**: `bootloader-state.md` tells the next session exactly where
   things left off
-- **Cross-IDE**: If you switch from Copilot to Claude Code (or vice versa),
-  the handoff state travels with you
+- **Cross-IDE**: If you switch between Codex, Claude Code, Copilot, or another
+  supported adapter, the repo-local handoff state and any saved pipeline checkpoint
+  travel with you; W3 is a best-effort Claude memory mirror
 - **Versioning**: Every session bumps the patch version — you always know
   what changed when
+
+In Codex, W3 is supplemental: W2 repo-local state wins if W2 and W3 diverge, and W3 deferral must never block W4.
 
 ---
 

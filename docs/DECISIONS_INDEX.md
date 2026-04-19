@@ -1,9 +1,11 @@
 # Architecture Decisions Index
 
-Machine-readable index of all architecture decisions (D1–D52).
+Machine-readable index of all architecture decisions (D1–D54).
 Agents use this to check compliance and track implementation status.
 
 See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
+See `docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md` for the co-primary platform strategy
+and unified governance model.
 
 ## Status Legend
 
@@ -69,13 +71,14 @@ See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.
 | D51 | Formalized M2→M1 promotion path | ✅ implemented | kernel/GOVERNANCE.md + kernel/PROMOTION_RUBRIC.md | 3 |
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007); Phase 5: `.claude/hooks/session_start_welcome.py`, `.azoth/session-orientation.txt` (runtime), `CLAUDE.md` rule 9 | 4 |
 | D53 | Auto-versioning policy: delivery-triggered version increments | ✅ implemented | `scripts/version-bump.py` (--patch / --phase / --release) + roadmap `active_version`; /session-closeout + /deliver-full `--patch` (BL-009); `--release` closes v0.0.7→v0.1.0 and activates v0.2.0 | 4 |
+| D54 | Branch model + worktree policy | ✅ implemented | `CLAUDE.md` §Git Conventions (Branch Model, Worktree Policy, Merge Hygiene); two permanent branches (`main`, `phase/v0.2.0-pN`); short-lived `patch/<bl-id>` + `feat/<slug>` branches deleted on merge; zero-worktree default with run-ledger claim required for parallel worktrees | 8 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 38 |
+| ✅ implemented | 39 |
 | 🔧 partial | 9 |
 | 📋 planned | 5 |
 | 🔄 superseded | 1 |
-| **Total** | **53** |
+| **Total** | **54** |

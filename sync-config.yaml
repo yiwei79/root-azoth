@@ -72,10 +72,12 @@ product_extraction:
     # Consumer `.azoth/kernel/` is created by install from `kernel/` (D42), not by copying this tree.
     - ".azoth/"
     - ".claude/commands/"          # Scaffold dev commands, not consumer commands
+    - ".claude/hooks/"             # Scaffold-only Claude Code hook scripts, not consumer install artifacts
     - ".claude/settings.json"      # Scaffold dev settings
     - ".claude/settings.local.json"
     - ".github/"                   # Scaffold CI/CD; public repo gets its own minimal CI (P4-004)
     - "kernel/templates/"           # Raw scaffold .template files — consumers get rendered copies via install (D42)
+    - "research_antigravity_parity/"  # Scaffold research workspace, not public product content
     - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
     - "tests/"                     # Scaffold tests (product gets its own)
     - "workspace/"

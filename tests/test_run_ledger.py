@@ -22,7 +22,16 @@ EXAMPLE = ROOT / ".azoth" / "run-ledger.local.yaml.example"
 SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from run_ledger import load_active_run, load_open_sessions, load_session, validate_ledger  # noqa: E402
+import run_ledger as run_ledger_module  # noqa: E402
+from run_ledger import (  # noqa: E402
+    consume_human_gate_approval,
+    load_active_run,
+    load_open_sessions,
+    load_resumable_sessions,
+    load_session,
+    upsert_session,
+    validate_ledger,
+)
 
 
 # ── 1. Schema file ─────────────────────────────────────────────────────────────
@@ -199,10 +208,34 @@ def test_validate_accepts_sessions_and_run_metadata() -> None:
                 "created_at": "2026-04-10T10:00:00+00:00",
                 "updated_at": "2026-04-10T10:30:00+00:00",
                 "next_action": "resume this later",
+                "active_stage_id": "architect_brief",
+                "pending_stage_ids": ["builder_apply", "reviewer_gate"],
+                "pause_reason": "human-gate",
             }
         ],
     }
     assert validate_ledger(data) == []
+
+
+def test_validate_rejects_invalid_pause_reason() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-1",
+                "mode": "auto",
+                "goal": "Test goal",
+                "status": "paused",
+                "created_at": "2026-04-10T10:00:00+00:00",
+                "updated_at": "2026-04-10T10:30:00+00:00",
+                "next_action": "resume this later",
+                "pause_reason": "approval-card",
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("pause_reason" in error for error in errors)
 
 
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
@@ -306,6 +339,14 @@ def _append(ledger: Path, **kwargs: str) -> subprocess.CompletedProcess[str]:
         value = kwargs.get(field)
         if value is not None:
             cmd += [f"--{field.replace('_', '-')}", value]
+    active_stage_id = kwargs.get("active_stage_id")
+    if active_stage_id is not None:
+        cmd += ["--active-stage-id", active_stage_id]
+    for stage_id in kwargs.get("pending_stage_ids", []):
+        cmd += ["--pending-stage-id", stage_id]
+    pause_reason = kwargs.get("pause_reason")
+    if pause_reason is not None:
+        cmd += ["--pause-reason", pause_reason]
     for stage in kwargs.get("stages", []):
         cmd += ["--stage-completed", stage]
     if "wave" in kwargs:
@@ -388,6 +429,347 @@ def test_append_writes_session_metadata(tmp_path: Path) -> None:
     assert data["runs"][0]["session_id"] == "2026-04-10-p1-001-copilot-152000"
     assert data["runs"][0]["backlog_id"] == "P1-001"
     assert data["runs"][0]["ide"] == "copilot"
+
+
+def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    result = _append(
+        ledger,
+        run_id="run-stage-aware",
+        active_stage_id="architect_brief",
+        pending_stage_ids=["builder_apply", "reviewer_gate"],
+        pause_reason="human-gate",
+        stages=["planner_stage0"],
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["active_stage_id"] == "architect_brief"
+    assert run["pending_stage_ids"] == ["builder_apply", "reviewer_gate"]
+    assert run["pause_reason"] == "human-gate"
+    assert run["stages_completed"] == ["planner_stage0"]
+
+
+def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-human-gate",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "session_id": "2026-04-18-bl-056",
+                        "backlog_id": "BL-056",
+                        "ide": "codex",
+                        "stages_completed": ["auto_s1_architect", "auto_s2_reviewer"],
+                        "active_stage_id": "auto_s3_planner",
+                        "pending_stage_ids": ["auto_s4_evaluator", "auto_s5_builder"],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = consume_human_gate_approval(tmp_path, run_id="run-human-gate")
+
+    assert updated["status"] == "active"
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    assert updated["pending_stage_ids"] == ["auto_s5_builder"]
+    assert "pause_reason" not in updated
+    assert updated["stages_completed"] == [
+        "auto_s1_architect",
+        "auto_s2_reviewer",
+        "auto_s3_planner",
+    ]
+    assert "auto_s4_evaluator" in updated["next_action"]
+
+
+def test_consume_human_gate_approval_fails_closed_when_no_pending_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-no-pending",
+                        "mode": "deliver-full",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "active_stage_id": "deliver_full_s4",
+                        "pending_stage_ids": [],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="pending_stage_ids"):
+        consume_human_gate_approval(tmp_path, run_id="run-no-pending")
+
+
+def test_consume_human_gate_approval_honors_ledger_path_override(tmp_path: Path) -> None:
+    ledger = tmp_path / "alt-ledger.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-alt-human-gate",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "active_stage_id": "auto_s3_planner",
+                        "pending_stage_ids": ["auto_s4_evaluator"],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = consume_human_gate_approval(
+        tmp_path,
+        run_id="run-alt-human-gate",
+        ledger_path=ledger,
+    )
+
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["status"] == "active"
+    assert persisted["active_stage_id"] == "auto_s4_evaluator"
+
+
+def test_rewrite_request_changes_replay_requeues_upstream_revision_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-replay",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "session_id": "2026-04-18-bl-056",
+                        "backlog_id": "BL-056",
+                        "ide": "codex",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder", "auto_s6_architect_review"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-replay")
+
+    assert updated["status"] == "paused"
+    assert updated["pause_reason"] == "human-gate"
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    assert updated["pending_stage_ids"] == [
+        "auto_s3_planner",
+        "auto_s4_evaluator",
+        "auto_s5_builder",
+        "auto_s6_architect_review",
+    ]
+    assert "auto_s3_planner" in updated["next_action"]
+
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["pending_stage_ids"] == updated["pending_stage_ids"]
+    assert persisted["pause_reason"] == "human-gate"
+
+
+def test_rewrite_request_changes_replay_fails_closed_without_lineage_proof(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-missing-lineage",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await reviewer disposition.",
+                        "active_stage_id": "auto_s2_reviewer",
+                        "pending_stage_ids": ["auto_s3_planner"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="lineage"):
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-missing-lineage")
+
+
+def test_rewrite_request_changes_replay_fails_closed_on_unsupported_shape(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-unsupported-shape",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "stages_completed": ["auto_s4_evaluator"],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="unsupported"):
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-unsupported-shape")
+
+
+def test_rewrite_request_changes_replay_fails_closed_on_duplicate_rewrite(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-duplicate-rewrite",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval before replay.",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": [
+                            "auto_s3_planner",
+                            "auto_s4_evaluator",
+                            "auto_s5_builder",
+                        ],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="already rewritten|duplicate"):
+        run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-duplicate-rewrite")
+
+
+def test_rewrite_request_changes_replay_honors_ledger_path_override(tmp_path: Path) -> None:
+    ledger = tmp_path / "alt-ledger.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-alt-replay",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = run_ledger_module.rewrite_request_changes_replay(
+        tmp_path,
+        run_id="run-alt-replay",
+        ledger_path=ledger,
+    )
+
+    assert updated["pause_reason"] == "human-gate"
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["pending_stage_ids"] == [
+        "auto_s3_planner",
+        "auto_s4_evaluator",
+        "auto_s5_builder",
+    ]
 
 
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────
@@ -503,6 +885,93 @@ def test_load_open_sessions_filters_closed_and_sorts_newest_first(tmp_path: Path
     assert [entry["session_id"] for entry in sessions] == ["newer-active", "older-parked"]
 
 
+def test_load_resumable_sessions_excludes_active_session_without_live_scope(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "stale-active",
+                        "backlog_id": "BL-053",
+                        "goal": "BL-053: stale active session",
+                        "status": "active",
+                        "ide": "codex",
+                        "next_action": "should not resume",
+                        "updated_at": "2026-04-18T10:00:00+00:00",
+                    },
+                    {
+                        "session_id": "parked-session",
+                        "backlog_id": "BL-052",
+                        "goal": "BL-052: parked session",
+                        "status": "parked",
+                        "ide": "codex",
+                        "next_action": "safe to resume",
+                        "updated_at": "2026-04-18T09:00:00+00:00",
+                    },
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    sessions = load_resumable_sessions(tmp_path)
+    assert [entry["session_id"] for entry in sessions] == ["parked-session"]
+
+
+def test_load_resumable_sessions_keeps_active_session_with_matching_live_scope(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "session_id": "live-active",
+                "goal": "BL-053: administrative finalize",
+                "expires_at": "2099-04-18T12:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.dump(
+            {
+                "schema_version": 1,
+                "sessions": [
+                    {
+                        "session_id": "parked-session",
+                        "backlog_id": "BL-052",
+                        "goal": "BL-052: parked session",
+                        "status": "parked",
+                        "ide": "codex",
+                        "next_action": "safe to resume",
+                        "updated_at": "2026-04-18T09:00:00+00:00",
+                    },
+                    {
+                        "session_id": "live-active",
+                        "backlog_id": "BL-053",
+                        "goal": "BL-053: administrative finalize",
+                        "status": "active",
+                        "ide": "codex",
+                        "next_action": "continue current scope",
+                        "updated_at": "2026-04-18T10:00:00+00:00",
+                    },
+                ],
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    sessions = load_resumable_sessions(tmp_path)
+    assert [entry["session_id"] for entry in sessions] == ["live-active", "parked-session"]
+
+
 def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
     azoth = tmp_path / ".azoth"
     azoth.mkdir()
@@ -517,7 +986,7 @@ def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
                         "goal": "Resume target",
                         "status": "parked",
                         "ide": "claude-code",
-                        "next_action": "resume via /next",
+                        "next_action": "resume via /resume",
                         "updated_at": "2026-04-10T09:00:00+00:00",
                     }
                 ],
@@ -529,6 +998,59 @@ def test_load_session_returns_matching_entry(tmp_path: Path) -> None:
     session = load_session(tmp_path, "target-session")
     assert session is not None
     assert session["backlog_id"] == "P1-005"
+
+
+def test_upsert_session_creates_registry_when_missing(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+
+    created, entry = upsert_session(
+        tmp_path,
+        session_id="sess-park",
+        backlog_id="AD-HOC",
+        goal="Park this session",
+        status="parked",
+        ide="claude-code",
+        next_action="Resume later",
+        updated_at="2026-04-16T18:00:00+00:00",
+    )
+
+    assert created is True
+    assert entry["status"] == "parked"
+    ledger = yaml.safe_load((azoth / "run-ledger.local.yaml").read_text(encoding="utf-8"))
+    assert ledger["sessions"][0]["session_id"] == "sess-park"
+    assert ledger["sessions"][0]["next_action"] == "Resume later"
+
+
+def test_park_session_subcommand_creates_or_updates_entry(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    ledger.write_text("schema_version: 1\nruns: []\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "park-session",
+            "sess-park",
+            "AD-HOC",
+            "--goal",
+            "Branch hygiene",
+            "--ide",
+            "claude-code",
+            "--next-action",
+            "Resume the interrupted Claude session.",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "parked" in result.stdout
+    saved = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    assert saved["sessions"][0]["session_id"] == "sess-park"
+    assert saved["sessions"][0]["status"] == "parked"
 
 
 # ── 20–22. welcome.py plain renderer ──────────────────────────────────────────

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,6 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from architecture_proposal_validate import (  # noqa: E402
     ArchitectureProposalValidationError,
+    _load_backlog_ids,
+    _load_decision_ids,
     validate_architecture_proposal,
 )
 
@@ -112,3 +115,63 @@ def test_jsonl_round_trip_line() -> None:
     line = json.dumps(doc)
     back = json.loads(line)
     validate_architecture_proposal(back)
+
+
+def test_repo_aware_validation_accepts_live_backlog_and_decision_refs() -> None:
+    validate_architecture_proposal(
+        _minimal(backlog_id="T-010", decision_refs=["D21"]),
+        backlog_ids=_load_backlog_ids(),
+        decision_ids=_load_decision_ids(),
+    )
+
+
+def test_repo_aware_validation_rejects_unknown_backlog_id() -> None:
+    with pytest.raises(ArchitectureProposalValidationError, match="backlog_id"):
+        validate_architecture_proposal(
+            _minimal(backlog_id="NOT-REAL-001", decision_refs=["D21"]),
+            backlog_ids=_load_backlog_ids(),
+            decision_ids=_load_decision_ids(),
+        )
+
+
+def test_repo_aware_validation_rejects_unknown_decision_ref() -> None:
+    with pytest.raises(ArchitectureProposalValidationError, match=r"decision_refs\[0\]"):
+        validate_architecture_proposal(
+            _minimal(backlog_id="T-010", decision_refs=["D9999"]),
+            backlog_ids=_load_backlog_ids(),
+            decision_ids=_load_decision_ids(),
+        )
+
+
+def test_cli_rejects_schema_valid_file_with_unknown_backlog_id(tmp_path: Path) -> None:
+    path = tmp_path / "proposal.yaml"
+    path.write_text(
+        yaml.safe_dump(_minimal(backlog_id="NOT-REAL-001", decision_refs=["D21"])),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "architecture_proposal_validate.py"), str(path)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1
+    assert "backlog_id" in result.stderr
+
+
+def test_cli_rejects_schema_valid_file_with_unknown_decision_ref(tmp_path: Path) -> None:
+    path = tmp_path / "proposal.yaml"
+    path.write_text(
+        yaml.safe_dump(_minimal(backlog_id="T-010", decision_refs=["D9999"])),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "architecture_proposal_validate.py"), str(path)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1
+    assert "decision_refs[0]" in result.stderr

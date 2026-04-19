@@ -1,6 +1,7 @@
 ---
 description: Process queued insights from .azoth/inbox/ through the governed intake
   protocol
+agent: orchestrator
 ---
 
 # /intake
@@ -78,15 +79,19 @@ When human signals `yes` on the Backlog axis:
 1. **Dedup check**: scan `.azoth/backlog.yaml` for any item where `source` matches this
    insight's `id`. If found, warn and skip the draft — item already exists.
 
-2. **Draft a YAML block** for human review:
+2. **Resolve the next backlog id**: run
+   `python3 scripts/roadmap_task_id.py --namespace backlog` and use the returned
+   `BL-###` value in the draft below instead of counting manually.
+
+3. **Draft a YAML block** for human review:
 
    ```yaml
-   - id: BL-{next available number}
+   - id: {output from `roadmap_task_id.py --namespace backlog`}
      title: "{derived from insight summary}"
      source: {insight id}
      target_layer: "{inferred: M1 | skills | infrastructure | docs}"
      delivery_pipeline: "{governed | standard}"
-     status: active
+     status: pending
      target_version: "{active_version from roadmap.yaml}"
      priority: {suggested integer}
      created_date: "{today YYYY-MM-DD}"
@@ -95,9 +100,9 @@ When human signals `yes` on the Backlog axis:
        {one-paragraph description derived from insight recommended_action}
    ```
 
-3. Human approves or edits the draft.
+4. Human approves or edits the draft.
 
-4. On approval: append to `.azoth/backlog.yaml` under `items:`.
+5. On approval: append to `.azoth/backlog.yaml` under `items:`.
 
 ### Step 4: Process
 

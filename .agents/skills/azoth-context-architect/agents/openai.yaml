@@ -1,0 +1,7 @@
+interface:
+  display_name: /context-architect
+  short_description: Map dependencies, blast radius, and change sequencing before
+    implementation
+  default_prompt: '$azoth-context-architect '
+policy:
+  allow_implicit_invocation: false

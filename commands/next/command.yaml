@@ -1,0 +1,72 @@
+schema_version: 1
+name: next
+display_name: /next
+description: Show the next priority task from the roadmap and suggest how to proceed
+agent: orchestrator
+azoth_effect: mixed
+
+execution:
+  kind: scope_card
+  waits_for_human_signal: approved
+  emits:
+    - scope_card
+
+arguments:
+  accepts_arguments: false
+  syntax: /next
+
+state:
+  reads:
+    - .azoth/scope-gate.json
+    - .azoth/run-ledger.local.yaml
+    - .azoth/backlog.yaml
+    - .azoth/roadmap.yaml
+    - docs/DECISIONS_INDEX.md
+    - .azoth/memory/episodes.jsonl
+  writes_on_approval:
+    - .azoth/scope-gate.json
+    - .azoth/run-ledger.local.yaml
+    - .azoth/backlog.yaml
+  outputs:
+    - scope_card
+
+governance:
+  preconditions:
+    - refuse_if_live_scope_exists
+    - exclude_backlog_items_claimed_by_other_sessions
+  approval_mode: explicit_human_scope_approval
+  pipeline_gate_behavior: select_pipeline_after_scope_approval
+  target_layer_rule: never_mix_m1_and_non_m1
+
+body:
+  mode: canonical_markdown
+  source_path: commands/next/body.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/next.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/next.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/next.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/next.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-next/SKILL.md
+    metadata_path: .agents/skills/azoth-next/openai.yaml
+
+migration:
+  phase: canonical_body_batch_1
+  runtime_source_of_truth: commands/next/command.yaml
+  notes:
+    - T-002 promotes /next from pilot bridge to canonical body ownership.
+    - .claude/commands/next.md is now a deployed output, not the authored semantic source.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/P1-023.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

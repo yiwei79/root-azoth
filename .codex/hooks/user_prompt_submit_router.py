@@ -1,80 +1,18 @@
 #!/usr/bin/env python3
-"""UserPromptSubmit hook for Azoth workflow token routing in Codex."""
+"""UserPromptSubmit hook for Azoth calm-flow routing in Codex."""
 
 from __future__ import annotations
 
-import json
-import re
 import sys
 from pathlib import Path
 
-COMMAND_RE = re.compile(
-    r"(?<!\S)/("
-    r"deliver-full|dynamic-full-auto|session-closeout|review-insights|roadmap|"
-    r"deliver|start|next|plan|eval|intake|promote|auto"
-    r")\b"
-)
-
-PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
-
-
-def _emit(additional_context: str) -> None:
-    print(
-        json.dumps(
-            {
-                "hookSpecificOutput": {
-                    "hookEventName": "UserPromptSubmit",
-                    "additionalContext": additional_context,
-                }
-            }
-        )
-    )
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts"))
+from codex_control_plane import main as control_plane_main  # noqa: E402
 
 
 def main() -> int:
-    raw = sys.stdin.read()
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
-        return 0
-
-    prompt = payload.get("prompt")
-    if not isinstance(prompt, str) or not prompt.strip():
-        return 0
-
-    match = COMMAND_RE.search(prompt)
-    if not match:
-        return 0
-
-    name = match.group(1)
-    command_path = Path(".claude") / "commands" / f"{name}.md"
-    if not command_path.is_file():
-        return 0
-
-    guidance = [
-        f"Azoth workflow token detected: `/{name}`.",
-        f"Read `{command_path.as_posix()}` and follow that repository command contract instead of improvising.",
-    ]
-
-    if name in PIPELINE_COMMANDS:
-        guidance.extend(
-            [
-                "Keep the orchestrator in the main thread.",
-                "Use staged subagents when the command or `skills/subagent-router/SKILL.md` requires isolation.",
-                "For write-enabled or governed stages, follow the gate procedure in the command doc before editing.",
-            ]
-        )
-    elif name == "session-closeout":
-        guidance.append(
-            "During closeout, treat W1/W2/W4 under `.azoth/` as authoritative, attempt W3, and log `W3 deferred` if blocked."
-        )
-    elif name in {"start", "next"}:
-        guidance.append(
-            "Honor the existing scope/pipeline state under `.azoth/` before proposing new work."
-        )
-
-    _emit(" ".join(guidance))
-    return 0
+    return control_plane_main()
 
 
 if __name__ == "__main__":

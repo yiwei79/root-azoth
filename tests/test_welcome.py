@@ -21,7 +21,7 @@ import welcome  # noqa: E402
 
 def _item(
     id: str,
-    status: str = "active",
+    status: str = "pending",
     priority: int = 1,
     blocked_by: list[str] | None = None,
 ) -> dict:
@@ -68,6 +68,12 @@ def test_completed_variant_counts_as_done_for_blockers() -> None:
 
 def test_filter_excludes_deferred() -> None:
     items = [_item("A", status="deferred"), _item("B")]
+    result = welcome.filter_unblocked_items(items, set())
+    assert [x["id"] for x in result] == ["B"]
+
+
+def test_filter_excludes_active_claimed_items() -> None:
+    items = [_item("A", status="active"), _item("B")]
     result = welcome.filter_unblocked_items(items, set())
     assert [x["id"] for x in result] == ["B"]
 
@@ -628,13 +634,13 @@ schema_version: 1
 items:
   - id: T-001
     title: First task
-    status: active
+    status: pending
     priority: 1
     target_layer: infrastructure
     delivery_pipeline: standard
   - id: T-002
     title: Second task
-    status: active
+    status: pending
     priority: 2
     target_layer: M1
     delivery_pipeline: governed
@@ -657,6 +663,45 @@ items:
     assert "T-001" in output
     assert "T-002" in output
     assert "T-DONE" not in output
+
+
+def test_render_with_backlog_hides_active_items(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """render_dashboard() should not surface claimed active backlog items."""
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    backlog_content = """
+schema_version: 1
+items:
+  - id: T-ACTIVE
+    title: Claimed task
+    status: active
+    priority: 1
+    target_layer: infrastructure
+    delivery_pipeline: standard
+  - id: T-PENDING
+    title: Pending task
+    status: pending
+    priority: 2
+    target_layer: infrastructure
+    delivery_pipeline: standard
+"""
+    (azoth_dir / "backlog.yaml").write_text(backlog_content)
+
+    buf = io.StringIO()
+    from rich.console import Console
+
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard()
+
+    output = buf.getvalue()
+    assert "T-ACTIVE" not in output
+    assert "T-PENDING" in output
 
 
 def test_render_governed_scope_shows_pipeline_gate_open(
@@ -889,7 +934,7 @@ def test_welcome_plain_no_crash_when_no_initiatives_key(
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())  # must not raise
 
 
-def test_welcome_plain_shows_next_resume_for_parked_sessions(
+def test_welcome_plain_shows_resume_for_parked_sessions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
@@ -917,8 +962,48 @@ def test_welcome_plain_shows_next_resume_for_parked_sessions(
     monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
     welcome.render_dashboard_plain(welcome.gather_dashboard_state())
     out = buf.getvalue()
-    assert "next resume sid-parked" in out
+    assert "resume sid-parked" in out
+    assert "/resume" in out
     assert "resume   → continue approved scope" not in out
+
+
+def test_welcome_plain_hides_stale_active_session_from_resume_options(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\n"
+        "sessions:\n"
+        "  - session_id: sid-stale\n"
+        "    backlog_id: BL-053\n"
+        "    goal: Stale active session\n"
+        "    status: active\n"
+        "    ide: codex\n"
+        "    next_action: should not be resumable\n"
+        "    updated_at: 2026-04-18T11:00:00+00:00\n"
+        "  - session_id: sid-parked\n"
+        "    backlog_id: BL-052\n"
+        "    goal: Resume me\n"
+        "    status: parked\n"
+        "    ide: codex\n"
+        "    next_action: Resume this parked session\n"
+        "    updated_at: 2026-04-18T10:00:00+00:00\n"
+        "runs: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "resume sid-parked" in out
+    assert "resume sid-stale" not in out
 
 
 def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirror(

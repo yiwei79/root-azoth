@@ -1,40 +1,59 @@
 ---
 name: dynamic-full-auto
 description: |
-  DYNAMIC-FULL-AUTO+ with queen-controlled adaptive routing: situational extra waves, pivots,
-  post-digest re-classification via `skills/auto-router/SKILL.md` (D23), optional `/eval-swarm`
-  (≥0.90) before writes, merge to `SWARM_RESEARCH_DIGEST.yaml`, `scripts/swarm_research_digest.py`.
-  BL-011 spawns; scope/pipeline gates unchanged (D50).
+  DYNAMIC-FULL-AUTO+ as the high-autonomy posture of the shared auto-family engine:
+  declare an autonomy budget, adaptively insert discovery/evidence/research when needed,
+  re-classify via `skills/auto-router/SKILL.md` (D23), apply bounded replay, and continue
+  end-to-end under the same gates. BL-011 spawns; scope/pipeline gates unchanged (D50).
 ---
 
 # Dynamic Full Auto (DYNAMIC-FULL-AUTO+)
 
-Optional **session mode** for high-throughput, read-mostly discovery: parallel online research,
-parallel repo exploration, one machine-readable aggregate digest, then hand off to normal
-`/auto`, `/deliver`, or `/deliver-full` for gated implementation.
+Optional **session mode** for high-autonomy end-to-end execution. `dynamic-full-auto`
+uses the same orchestrator-centered engine as `/auto`, but starts with an explicit
+**autonomy budget** and may continue through discovery insertion, re-classification,
+execution, quality gates, bounded replay, and closeout without requiring a new human
+prompt at every step.
 
-This is **not** a replacement for `/auto` governance. It **compresses** the research and
-reconnaissance phases using the same **swarm-coordination** iron laws (single-message fan-out,
-queen aggregation, no worker-to-worker chatter).
+This mode is **not** defined by discovery. Discovery, evidence gathering, and research
+are shared auto-family capabilities that can appear in `/auto`, `/deliver`,
+`/deliver-full`, or `dynamic-full-auto` whenever the latest context demands them.
 
-The orchestrator is **not** bound to a single A→B→merge line: it **observes signals** after each
-wave and **re-routes** (repeat, skip, insert eval, re-classify, or abort). That is the
-**dynamic** in the name.
+The orchestrator is **not** bound to a single A→B→merge line: it observes signals after
+each wave and can repeat, skip, insert eval, re-classify, replay upstream, or abort.
+That is the **dynamic** in the name. The distinction is that `dynamic-full-auto` keeps
+continuation authority for the full run once the autonomy budget is approved.
 
 ## Overview
 
 ```
-Human opt-in
-  → [Wave A*] parallel researcher (repeat/partial/skip per signals below)
-  → [Wave B*] parallel explore   (repeat/partial/skip per signals below)
-  → Queen merge + validate digest
-  → [Checkpoint Γ] Re-run Stage 0 classification + auto-router (D23) — may change pipeline
-  → [Optional Wave C] /eval-swarm — parallel Task(evaluator), threshold 0.9, anti-bias spawns
-  → Delivery: /auto | /deliver | /deliver-full under approved scope + gates
+Human opt-in + autonomy budget
+  → Stage 0 intake + latest-context read-back
+  → [Wave A/B*] discovery / evidence / research when signals warrant it
+  → Queen merge + validate digest when a digest is needed
+  → [Checkpoint Γ] Re-run Stage 0 classification + auto-router (D23)
+  → architect / review / plan / execute / quality gate
+  → bounded replay or recomposition when gates fail
+  → closeout
 ```
 
 `*` Waves are **elastic**: the queen may run **Wave A2**, **B-only**, **A-only**, or **short-circuit**
-to merge when the situation warrants (see decision table).
+to merge when the situation warrants. Wave A is mandatory when latest/current external
+facts are material and must use official sources before Checkpoint Γ or delivery.
+
+## Autonomy Budget
+
+At session start, declare:
+
+- goal
+- selected mode = `dynamic-full-auto`
+- replay threshold
+- whether discovery / evidence insertion may happen automatically
+- recomposition stop conditions
+- required human-gate boundaries
+
+After approval, the orchestrator may continue end-to-end until a required human gate,
+threshold stop, or explicit abort condition is reached.
 
 **Digest artifact (canonical path):**
 
@@ -124,7 +143,9 @@ in `meta` or a one-line orchestrator log).
 
 
 **Skip rules:** If `knowledge: known-pattern` **and** explore confirms no unknowns, queen may **skip
-Wave A** or run a **single** researcher pack for confirmation. If research is exhaustive but repo is
+Wave A** or run a **single** researcher pack for confirmation. **Exception:** if the task depends on
+latest/current external facts (platform behavior, APIs, policies, enums, specs), Wave A is mandatory
+and must use official sources before Checkpoint Γ or delivery. If research is exhaustive but repo is
 tiny, **skip Wave B** with explicit justification in `explore_swarm_summary.findings`.
 
 ## In-between pipeline routing (post-digest → delivery)
@@ -141,7 +162,7 @@ tiny, **skip Wave B** with explicit justification in `explore_swarm_summary.find
   Only when Wave C is actually selected because the quality bar needs **≥ 0.90**, parallel
   independent work is present, or **eval.md** escalation triggers fire:
   - `**Read` `.claude/workflows/enterprise/e2e-swarm-eval-loop.md`** and `**.claude/commands/eval-swarm.md`**.  
-  - Spawn **one message**, **≤7** `Task(subagent_type=evaluator, readonly=true)` with **minimal**
+  - Spawn **one message**, parallel evaluator Tasks within the **active platform execution budget** with **minimal**
   YAML: `pipeline: e2e-swarm-eval`, `stage_id`, `artifacts` paths, `threshold: 0.9`,
   `acceptance:` bullets — **no** builder chat log, **no** author narrative (anti-bias).  
   - Queen aggregates scores; **FAIL** → Wave D fix with **fresh** planner/builder Tasks, then
@@ -182,8 +203,9 @@ not override mechanical PreToolUse in Claude Code or simulated gates in Cursor.
 ## Wave A — Online Research Swarm
 
 1. Partition topics (e.g. durability, supervisor YAML, multi-eval independence, memory elasticity).
-2. In **one orchestrator message**, spawn **4–7** `Task(subagent_type=researcher)` (or
-  `research-orchestrator` fan-out if you centralize briefing) with **disjoint** briefs.
+2. In **one orchestrator message**, spawn `Task(subagent_type=researcher)` workers within the
+  **active platform execution budget**. If you centralize briefing through `research-orchestrator`,
+  reserve child capacity instead of filling every slot with direct researchers.
 3. Each worker returns **structured YAML** (or markdown containing a YAML block) with:
   `id` or `research_pack_id`, `topic`, `sources: [{title, url}]`, `implications_for_azoth`,
    `risks`.
@@ -224,10 +246,10 @@ summaries inside governed pipelines.
 
 | Aspect      | DYNAMIC-FULL-AUTO+                               | `/auto`                                  |
 | ----------- | ------------------------------------------------ | ---------------------------------------- |
-| Goal        | Digest + reconnaissance                          | Composed delivery + gated writes         |
+| Goal        | Autonomous end-to-end completion under an approved budget | Composed delivery + gated writes |
 | Parallelism | Research + explore swarms first                  | Stage-isolated `Task` per pipeline row   |
-| Human       | Opt-in once for **this mode**; **during discovery/digest** there is **no extra** human pipeline-declaration step *until* Checkpoint Γ — **not** “no gates for the whole session.” After Γ, same declaration + review semantics as `/auto` for the **delivery** pipeline. | Declaration + review stops as documented for the composed delivery table |
-| Outputs     | `SWARM_RESEARCH_DIGEST.yaml`                     | Merged code/config under scope           |
+| Human       | Opt-in once for the autonomy budget; required human gates still stop the run. | Declaration + review stops as documented for the composed delivery table |
+| Outputs     | Completed delivery plus any supporting digest artifacts | Merged code/config under scope |
 
 
 **Writes vs “mid-run”:** Any **Write/Edit** (including mutating the digest on disk) still requires valid **`.azoth/scope-gate.json`** (and **`.azoth/pipeline-gate.json`** when governed, with **`pipeline`** set to the delivery command you will actually run: `"auto"` \| `"deliver"` \| `"deliver-full"` — **do not** assume `auto` if the handoff is `/deliver` or `/deliver-full` per `.claude/commands/dynamic-full-auto.md` **Gates**). *Mode contract* means the **discovery/digest phases** do not add a **second** `/auto`-style pipeline table **before** Γ; it does **not** exempt tool writes from D50.
@@ -249,6 +271,15 @@ summaries inside governed pipelines.
 4. **Digest writes** — `append-pack` / file edits to the digest are **writes**; scope-gate must **approve** that work (often the same card as discovery; if TTL expires, **`/next`** before continuing).
 5. **Checkpoint Γ + delivery** — Same logical flow as Claude Code; **`pipeline-gate.json`** must set `"pipeline"` to match the **next** delivery command (`"auto"` \| `"deliver"` \| `"deliver-full"`).
 6. **`/next`** — Use before gated implementation if scope is missing or expired; do not invent parallel workflows — see `.claude/commands/next.md`.
+
+## Happy path — Codex
+
+1. Codex's default Azoth adapter is **instruction-first**: the main control plane lives in `.codex/config.toml`, while `.codex/hooks.json` keeps only a narrow `UserPromptSubmit` compatibility hook for literal workflow tokens. Scope-gate and entropy enforcement for non-Bash `Write`/`Edit` still rely on `developer_instructions`.
+2. **Network is disabled** in `workspace-write` sandbox (`network_access = false`). **Wave A researcher tasks cannot fetch external URLs.** Research must use pre-seeded context, local files, or be delegated to a platform with network access (Claude Code, Copilot).
+3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 10, max_depth: 2`) enables bounded nested researcher/explore tasks within the sandbox, but without external fetches. Only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1; otherwise prefer flat fan-out.
+4. **Digest writes** — Same scope-gate contract: validate `.azoth/scope-gate.json` before any write, including `append-pack` to the digest.
+5. **Checkpoint Γ + delivery** — Same logical flow; `pipeline-gate.json` must match the delivery command.
+6. **Integrity checks** — `scripts/kernel-integrity.py` remains available as an explicit utility, but it is no longer wired into the default Codex hook path.
 
 ## Lazy Eval Loading
 

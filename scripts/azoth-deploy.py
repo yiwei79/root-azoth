@@ -7,10 +7,14 @@ Transforms:
                                                 →  .github/agents/<name>.agent.md      (GitHub Copilot compatibility mirror)
                         →  .opencode/agents/<name>.md          (OpenCode)
                         →  .codex/agents/<name>.toml           (Codex custom agents)
-  .claude/commands/*.md →  .github/prompts/<name>.prompt.md   (Copilot)
+  commands/<name>/command.yaml
+                        →  .claude/commands/<name>.md          (Claude Code, when contract-backed)
+                        →  .github/prompts/<name>.prompt.md    (Copilot)
                         →  .opencode/commands/<name>.md        (OpenCode)
-  skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
-                        →  .agents/skills/<name>/SKILL.md     (Codex / Antigravity shared skill path)
+                        →  .agents/skills/azoth-<name>/...     (Codex explicit command-wrapper skills)
+  .claude/commands/*.md →  same deploy targets as legacy fallback when no canonical contract exists
+    skills/**/SKILL.md    →  .opencode/skills/<name>/SKILL.md   (OpenCode per-subdirectory)
+                                                →  .agents/skills/<name>/SKILL.md     (Codex / Gemini / Antigravity shared skill path)
   kernel/templates/platform-adapters/cursor/*.mdc.template
                         →  .cursor/rules/<name>.mdc            (Cursor IDE always-on rules)
   kernel/templates/platform-adapters/codex/*.template
@@ -34,13 +38,19 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+CODEX_HOOKS_MODE_MARKER = Path(".codex/hooks.mode.local")
+CODEX_HOOKS_DEFAULT_TEMPLATE = "hooks.json.template"
+CODEX_HOOKS_VERBOSE_TEMPLATE = "hooks.verbose.json.template"
 
 
 # ── Frontmatter helpers ──────────────────────────────────────────────────────
@@ -67,6 +77,11 @@ def render_frontmatter(data: dict[str, Any]) -> str:
         + yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
         + "---\n\n"
     )
+
+
+def render_yaml_document(data: dict[str, Any]) -> str:
+    """Render a plain YAML document with stable formatting."""
+    return yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 # ── Posture → OpenCode permission mapping ────────────────────────────────────
@@ -186,17 +201,91 @@ def load_agents(root: Path) -> list[dict[str, Any]]:
     return agents
 
 
+def _normalize_command_meta(
+    contract: dict[str, Any],
+    legacy_meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the metadata fields consumed by deploy transforms."""
+    meta: dict[str, Any] = {}
+    for field in ("description", "agent", "azoth_effect"):
+        value = contract.get(field)
+        if value is not None:
+            meta[field] = value
+    if legacy_meta:
+        for field in ("description", "agent", "azoth_effect"):
+            if field not in meta and field in legacy_meta:
+                meta[field] = legacy_meta[field]
+    return meta
+
+
+def _load_command_contract(root: Path, path: Path) -> dict[str, Any]:
+    """Load one canonical command contract plus its resolved markdown body."""
+    contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(contract, dict):
+        raise ValueError(f"{path}: command contract root must be a mapping")
+
+    name = str(contract.get("name") or path.parent.name).strip()
+    if not name:
+        raise ValueError(f"{path}: command contract missing name")
+
+    body_cfg = contract.get("body") or {}
+    if not isinstance(body_cfg, dict):
+        raise ValueError(f"{path}: body must be a mapping")
+
+    body_mode = str(body_cfg.get("mode") or "").strip()
+    body_source_path: Path | None = None
+    legacy_meta: dict[str, Any] | None = None
+
+    if body_mode == "legacy_claude_markdown":
+        source_rel = str(body_cfg.get("source_path") or "").strip()
+        if not source_rel:
+            raise ValueError(f"{path}: legacy_claude_markdown requires body.source_path")
+        body_source_path = root / source_rel
+        legacy_text = body_source_path.read_text(encoding="utf-8")
+        legacy_meta, body = parse_frontmatter(legacy_text)
+    elif body_mode == "canonical_markdown":
+        source_rel = str(body_cfg.get("source_path") or "").strip()
+        body_source_path = root / source_rel if source_rel else path.parent / "body.md"
+        body = body_source_path.read_text(encoding="utf-8")
+    else:
+        raise ValueError(f"{path}: unsupported body.mode {body_mode!r}")
+
+    return {
+        "path": path,
+        "name": name,
+        "meta": _normalize_command_meta(contract, legacy_meta),
+        "body": body,
+        "contract": contract,
+        "contract_path": path.relative_to(root).as_posix(),
+        "body_source_path": body_source_path.relative_to(root).as_posix()
+        if body_source_path is not None
+        else None,
+    }
+
+
 def load_commands(root: Path) -> list[dict[str, Any]]:
-    """Load all commands from .claude/commands/*.md."""
+    """Load commands with canonical contracts taking precedence over legacy markdown."""
+    commands_by_name: dict[str, dict[str, Any]] = {}
+
     cmd_dir = root / ".claude" / "commands"
-    if not cmd_dir.is_dir():
-        return []
-    commands = []
-    for path in sorted(cmd_dir.glob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        meta, body = parse_frontmatter(text)
-        commands.append({"path": path, "name": path.stem, "meta": meta, "body": body})
-    return commands
+    if cmd_dir.is_dir():
+        for path in sorted(cmd_dir.glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            meta, body = parse_frontmatter(text)
+            commands_by_name[path.stem] = {
+                "path": path,
+                "name": path.stem,
+                "meta": meta,
+                "body": body,
+            }
+
+    contract_dir = root / "commands"
+    if contract_dir.is_dir():
+        for path in sorted(contract_dir.glob("*/command.yaml")):
+            command = _load_command_contract(root, path)
+            commands_by_name[command["name"]] = command
+
+    return [commands_by_name[name] for name in sorted(commands_by_name)]
 
 
 def load_skills(root: Path) -> list[dict[str, Any]]:
@@ -299,7 +388,172 @@ def transform_agent_codex(agent: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def transform_agent_gemini(agent: dict[str, Any]) -> str:
+    """
+    Gemini CLI agent format (.gemini/agents/<name>.md).
+    YAML frontmatter: name, description, kind (local), tools, model, max_turns.
+    Body becomes the agent's system prompt.
+
+    Tool name mapping strategy:
+    - Azoth generic names (read, bash, ...) → Gemini CLI canonical names
+    - Subagent references (researcher, evaluator, ...) → dropped; Gemini CLI
+      subagents cannot call other subagents — multi-agent coordination must
+      happen at the top-level session via @agent-name syntax.
+    - Claude-Code-specific or Azoth-internal aliases (task, explore, research)
+      → dropped (no Gemini equivalent).
+    - If no valid tools remain after filtering → fall back to ["*"].
+    """
+    meta = agent["meta"]
+    fm: dict[str, Any] = {
+        "name": meta["name"],
+        "description": _description(meta),
+        "kind": "local",
+    }
+    # Map Azoth generic tool names to Gemini CLI canonical tool names.
+    # Empty list = drop the tool (no Gemini equivalent or not valid for subagents).
+    _TOOL_MAP: dict[str, list[str]] = {
+        # File system
+        "read": ["read_file", "read_many_files"],
+        "grep": ["grep_search"],
+        "glob": ["glob"],
+        "ls": ["list_directory"],
+        "edit": ["replace"],
+        "write": ["write_file"],
+        # Shell
+        "bash": ["run_shell_command"],
+        "test-runner": ["run_shell_command"],
+        # Web
+        "web": ["google_web_search", "web_fetch"],
+        "web-search": ["google_web_search"],
+        "web-fetch": ["web_fetch"],
+        "search": ["grep_search"],
+        # Claude Code-specific / Azoth-internal → drop
+        "task": [],
+        "explore": [],
+        "research": [],
+        # Subagent references → drop (Gemini subagents cannot call other subagents;
+        # orchestration happens at the main session level via @agent-name syntax)
+        "researcher": [],
+        "evaluator": [],
+        "prompt-engineer": [],
+        "research-orchestrator": [],
+        "architect": [],
+        "planner": [],
+        "builder": [],
+        "reviewer": [],
+        "agent-crafter": [],
+        "context-architect": [],
+    }
+    if tools := meta.get("tools"):
+        gemini_tools: list[str] = []
+        for t in tools:
+            mapped = _TOOL_MAP.get(t)
+            if mapped is not None:
+                gemini_tools.extend(mapped)
+            else:
+                gemini_tools.append(t)
+        # Deduplicate while preserving order.
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for t in gemini_tools:
+            if t and t not in seen:
+                deduped.append(t)
+                seen.add(t)
+        fm["tools"] = deduped if deduped else ["*"]
+    else:
+        # Default: broad access for tier 1-2, read-only for tier 3-4.
+        tier = int(meta.get("tier", 3))
+        if tier <= 2:
+            fm["tools"] = [
+                "read_file",
+                "read_many_files",
+                "grep_search",
+                "glob",
+                "list_directory",
+                "replace",
+                "write_file",
+                "run_shell_command",
+                "google_web_search",
+                "web_fetch",
+            ]
+        else:
+            fm["tools"] = [
+                "read_file",
+                "read_many_files",
+                "grep_search",
+                "glob",
+                "list_directory",
+                "google_web_search",
+                "web_fetch",
+            ]
+    if "model" in meta:
+        fm["model"] = meta["model"]
+    # Conservative defaults for subagent execution limits.
+    fm["max_turns"] = 30
+    fm["timeout_mins"] = 10
+    return render_frontmatter(fm) + agent["body"]
+
+
 # ── Command transformations ──────────────────────────────────────────────────
+
+
+def transform_command_claude(command: dict[str, Any]) -> str:
+    """
+    Claude Code command format (.claude/commands/<name>.md).
+    Contract-backed commands render fresh frontmatter; legacy commands pass through.
+    """
+    if "contract" not in command:
+        path = command["path"]
+        return Path(path).read_text(encoding="utf-8")
+
+    fm: dict[str, Any] = {}
+    if desc := command["meta"].get("description"):
+        fm["description"] = desc
+    if effect := command["meta"].get("azoth_effect"):
+        fm["azoth_effect"] = effect
+    if agent := command["meta"].get("agent"):
+        fm["agent"] = agent
+    return render_frontmatter(fm) + command["body"]
+
+
+def _uses_legacy_claude_command_check(command: dict[str, Any]) -> bool:
+    """Return True when Claude check mode should allow legacy semantic parity."""
+    contract = command.get("contract")
+    if not isinstance(contract, dict):
+        return False
+    body_cfg = contract.get("body")
+    if not isinstance(body_cfg, dict):
+        return False
+    return body_cfg.get("mode") == "legacy_claude_markdown"
+
+
+def check_claude_command_file(
+    path: Path,
+    command: dict[str, Any],
+    content: str,
+    root: Path,
+) -> bool:
+    """Check one contract-backed Claude command output without widening generic file parity."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if not path.is_file():
+        print(f"  [missing] {rel}")
+        return False
+
+    actual = path.read_text(encoding="utf-8")
+    if actual == content:
+        return True
+
+    if _uses_legacy_claude_command_check(command):
+        actual_meta, actual_body = parse_frontmatter(actual)
+        expected_meta, expected_body = parse_frontmatter(content)
+        if actual_meta == expected_meta and actual_body == expected_body:
+            return True
+
+    print(f"  [stale] {rel}")
+    return False
 
 
 def transform_command_copilot(command: dict[str, Any]) -> str:
@@ -337,6 +591,174 @@ def transform_command_antigravity(command: dict[str, Any]) -> str:
     Frontmatter is stripped, as Antigravity rules and workflows are plain markdown.
     """
     return command["body"]
+
+
+def transform_command_gemini(command: dict[str, Any]) -> str:
+    """
+    Gemini CLI custom command format (.gemini/commands/<name>.toml).
+    Uses TOML with a `prompt` field (multiline literal string) and optional
+    `description`. Shell injection (!{...}) and file injection (@{...}) are
+    available but not used here — commands rely on the model following the
+    prompt instructions to read files.
+    """
+    name = gemini_command_name(command["name"])
+    desc = str(command["meta"].get("description") or f"Azoth /{name} workflow")
+    body = command["body"]
+    lines = [
+        f"# Azoth /{name} command — generated by azoth-deploy.py",
+        f'description = "{_toml_escape_basic(desc)}"',
+        "prompt = " + _toml_multiline_literal(body),
+    ]
+    return "\n".join(lines) + "\n"
+
+
+_GEMINI_COMMAND_NAME_MAP: dict[str, str] = {
+    "dynamic-full-auto": "workspace.dynamic-full-auto",
+    "plan": "workspace.plan",
+    "remember": "workspace.remember",
+}
+
+
+def gemini_command_name(command_name: str) -> str:
+    """Return the deployed Gemini command name.
+
+    Gemini CLI merges workspace commands with built-ins and discovered skill
+    commands. A small set of Azoth commands collide consistently in live
+    sessions, so the Gemini-specific surface deploys stable names that avoid
+    runtime renaming while keeping canonical Azoth command names unchanged in
+    `.claude/commands/` and other platform adapters.
+    """
+    return _GEMINI_COMMAND_NAME_MAP.get(command_name, command_name)
+
+
+_SHARED_SKILL_NAME_MAP: dict[str, str] = {
+    "remember": "azoth-memory-capture",
+    "structured-autonomy-plan": "azoth-structured-autonomy-plan",
+}
+
+
+def shared_skill_name(skill_name: str) -> str:
+    """Return the deployed name for a skill on the shared `.agents/skills/` surface."""
+    return _SHARED_SKILL_NAME_MAP.get(skill_name, skill_name)
+
+
+def transform_shared_skill(skill: dict[str, Any]) -> str:
+    """Render a skill for the shared `.agents/skills/` surface.
+
+    Some generic canonical skill names collide with user-global Gemini skill
+    catalogs. The shared surface uses collision-safe deployed names while the
+    source repository keeps the canonical skill directory and semantics.
+    """
+    deployed_name = shared_skill_name(skill["name"])
+    if deployed_name == skill["name"]:
+        return skill["raw"]
+    meta = dict(skill["meta"])
+    meta["name"] = deployed_name
+    description = str(meta.get("description") or "").strip()
+    prefix = f"Shared-surface deployment name for Azoth's `{skill['name']}` skill."
+    meta["description"] = f"{prefix} {description}".strip()
+    return render_frontmatter(meta) + skill["body"]
+
+
+def codex_command_skill_name(command: dict[str, Any]) -> str:
+    """Stable Codex skill name for an Azoth command wrapper."""
+    return f"azoth-{command['name']}"
+
+
+def transform_command_codex_skill(command: dict[str, Any]) -> str:
+    """
+    Codex skill wrapper for Azoth commands.
+
+    Codex does not document repo-defined slash-command registration, so each
+    Azoth command gets an explicit skill wrapper for `/skills` / `$skill`
+    discovery while keeping the `.claude/commands/*.md` file as the source of
+    truth for execution semantics.
+    """
+    name = command["name"]
+    skill_name = codex_command_skill_name(command)
+    description = str(
+        command["meta"].get("description")
+        or f"Explicit Codex wrapper for Azoth's `/{name}` workflow."
+    )
+    fm = {
+        "name": skill_name,
+        "description": (
+            f"Explicit Codex entrypoint for Azoth's `/{name}` workflow. "
+            f"Use when the user wants to run `/{name}` in Codex via `/skills` or `${skill_name}`."
+        ),
+        # NOTE: `agent:` is intentionally absent from this frontmatter dict.
+        # Codex skill metadata (SKILL.md frontmatter + openai.yaml) has no recognized
+        # `agent:` routing field — there is no platform mechanism to bind a skill
+        # invocation to a named agent via TOML/YAML metadata. The `agent:` binding from
+        # the source command's frontmatter is preserved as advisory body prose below
+        # (see `lines.append(f"- Preserve the command's `agent: {agent}` binding.")`),
+        # so the model receives it as instructional context even though Codex cannot
+        # enforce it mechanically (hook-soft platform, D46).
+    }
+
+    lines = [
+        f"Use this skill as the Codex-visible entrypoint for Azoth's `/{name}` workflow.",
+        "",
+        "Codex does not register repository-defined slash commands in its built-in `/` command picker.",
+        f"This skill is the explicit Codex-native equivalent of typing `/{name}`.",
+        "",
+        "Execution contract:",
+    ]
+    if contract_path := command.get("contract_path"):
+        lines.append(f"- Read `{contract_path}` and treat it as the source of truth.")
+        if body_source_path := command.get("body_source_path"):
+            lines.append(
+                f"- Read the body source referenced by that contract: `{body_source_path}`."
+            )
+    else:
+        lines.append(f"- Read `.claude/commands/{name}.md` and follow it as the source of truth.")
+    lines.extend(
+        [
+            f"- Treat the rest of the user's prompt after `${skill_name}` as `$ARGUMENTS`.",
+            "- Preserve the command's stage structure, gate rules, evaluation rules, and referenced skills/agents.",
+        ]
+    )
+    if agent := command["meta"].get("agent"):
+        lines.append(f"- Preserve the command's `agent: {agent}` binding.")
+    if effect := command["meta"].get("azoth_effect"):
+        lines.append(f"- Respect the command's `azoth_effect: {effect}` contract.")
+    lines.extend(
+        [
+            f"- If the user typed literal `/{name}` in prompt text instead, apply the same workflow contract.",
+            "",
+            "Command metadata:",
+            (
+                f"- Contract path: `{contract_path}`"
+                if contract_path
+                else f"- Source path: `.claude/commands/{name}.md`"
+            ),
+            (
+                f"- Body source path: `{command['body_source_path']}`"
+                if command.get("body_source_path")
+                else None
+            ),
+            f"- Description: {description}",
+        ]
+    )
+    return render_frontmatter(fm) + "\n".join(line for line in lines if line is not None) + "\n"
+
+
+def transform_command_codex_skill_metadata(command: dict[str, Any]) -> str:
+    """Optional Codex UI metadata for Azoth command-wrapper skills."""
+    name = command["name"]
+    skill_name = codex_command_skill_name(command)
+    description = str(command["meta"].get("description") or f"Azoth `/{name}` workflow")
+    data = {
+        "interface": {
+            "display_name": f"/{name}",
+            "short_description": description,
+            "default_prompt": f"${skill_name} ",
+        },
+        "policy": {
+            "allow_implicit_invocation": False,
+        },
+    }
+    return render_yaml_document(data)
 
 
 # ── AGENTS.md generation ─────────────────────────────────────────────────────
@@ -393,7 +815,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "All agents operate under the Azoth Trust Contract:",
         "",
-        "- **Entropy ceiling**: max 10 files changed per turn",
+        "- **Entropy ceiling**: max 10 files changed per session",
         "- **Human gates**: kernel / governance changes always require human approval",
         "- **Posture tiers**: `always_do` / `ask_first` / `never_auto`",
         "  (see `kernel/TRUST_CONTRACT.md`)",
@@ -404,9 +826,10 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "|----------|--------|----------|--------|-----------|",
         "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
         "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
+        "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
-        "| Codex | `.codex/agents/*.toml` | literal Azoth tokens + `.claude/commands/` contract | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
+        "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
@@ -471,9 +894,10 @@ def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tu
 def iter_codex_adapter_deployments(root: Path) -> list[tuple[Path, Path]]:
     """Map Codex adapter templates to their deployed .codex destinations."""
     adapter = root / CODEX_ADAPTER_DIR
+    hooks_template_name = _codex_hooks_template_name(root)
     return [
         (adapter / "config.toml.template", root / ".codex" / "config.toml"),
-        (adapter / "hooks.json.template", root / ".codex" / "hooks.json"),
+        (adapter / hooks_template_name, root / ".codex" / "hooks.json"),
         (
             adapter / "user_prompt_submit_router.py.template",
             root / ".codex" / "hooks" / "user_prompt_submit_router.py",
@@ -493,6 +917,112 @@ def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> t
             stale += 1
         count += 1
     return count, stale
+
+
+def _codex_hooks_template_name(root: Path) -> str:
+    """Choose the deployed Codex hooks template based on the local mode marker."""
+    marker = root / CODEX_HOOKS_MODE_MARKER
+    if not marker.is_file():
+        return CODEX_HOOKS_DEFAULT_TEMPLATE
+    if marker.read_text(encoding="utf-8").strip() == "verbose":
+        return CODEX_HOOKS_VERBOSE_TEMPLATE
+    return CODEX_HOOKS_DEFAULT_TEMPLATE
+
+
+# ── Codex hook compatibility lint ────────────────────────────────────────────
+
+# Scripts known to depend on unsupported Codex PreToolUse semantics.
+_CODEX_UNSAFE_SCRIPTS: set[str] = {
+    "edit_pretooluse_orchestrator.py",
+    "scope-gate.py",
+}
+
+
+def lint_codex_hooks(root: Path) -> list[str]:
+    """Check .codex/hooks.json for Codex hook protocol violations.
+
+    Returns a list of warning strings (empty = clean).
+
+    Checks:
+    1. PreToolUse hooks must not use scripts that depend on unsupported non-Bash interception.
+    2. Stop hook scripts must not print non-JSON text to stdout (need --quiet).
+    3. PreToolUse/PostToolUse matchers should include Bash or they will not fire today.
+    """
+    hooks_path = root / ".codex" / "hooks.json"
+    if not hooks_path.is_file():
+        return []
+
+    try:
+        data = json.loads(hooks_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return ["  [error] .codex/hooks.json is not valid JSON"]
+
+    hooks_section = data.get("hooks", {})
+    warnings: list[str] = []
+
+    for hook_type, hook_groups in hooks_section.items():
+        if not isinstance(hook_groups, list):
+            continue
+        for group in hook_groups:
+            hook_list = group.get("hooks", [])
+            if not isinstance(hook_list, list):
+                continue
+            for hook in hook_list:
+                cmd = hook.get("command", "")
+                if not isinstance(cmd, str):
+                    continue
+
+                # Check 1: known unsupported PreToolUse scripts
+                if hook_type == "PreToolUse":
+                    for unsafe in _CODEX_UNSAFE_SCRIPTS:
+                        if unsafe in cmd:
+                            warnings.append(
+                                f"  [codex-hook] PreToolUse: {unsafe} depends on unsupported "
+                                f"non-Bash or Write/Edit interception in Codex"
+                            )
+
+                # Check 2: Stop hooks without --quiet for scripts that print to stdout
+                if hook_type == "Stop" and "notify.py" in cmd and "--quiet" not in cmd:
+                    warnings.append(
+                        "  [codex-hook] Stop: notify.py prints to stdout without --quiet "
+                        "— Codex parses Stop stdout as JSON"
+                    )
+
+                # Check 3: current Codex Pre/Post runtime only emits Bash tool events
+                matcher = group.get("matcher")
+                if hook_type in {"PreToolUse", "PostToolUse"} and isinstance(matcher, str):
+                    if "Bash" not in matcher:
+                        warnings.append(
+                            f"  [codex-hook] {hook_type}: matcher {matcher!r} will not fire "
+                            "today — current Codex runtime only emits Bash"
+                        )
+
+    return warnings
+
+
+def _resolve_hook_script(root: Path, cmd: str) -> Path | None:
+    """Best-effort resolve a hook command string to a script Path."""
+    # Handle: python3 "$(git rev-parse --show-toplevel)/path/to/script.py"
+    # Extract the path after the last git-root marker
+    if "$(git rev-parse --show-toplevel)" in cmd:
+        # Extract relative path from the git-root-relative command
+        parts = cmd.split("$(git rev-parse --show-toplevel)")
+        if len(parts) >= 2:
+            rel = parts[-1].strip().strip('"').strip("'").lstrip("/")
+            # Strip trailing arguments
+            rel = rel.split('" ')[0].split("' ")[0]
+            if " --" in rel:
+                rel = rel.split(" --")[0].strip()
+            return root / rel
+    # Handle: python3 path/to/script.py
+    tokens = cmd.split()
+    for token in reversed(tokens):
+        token = token.strip('"').strip("'")
+        if token.endswith(".py"):
+            candidate = root / token
+            if candidate.is_file():
+                return candidate
+    return None
 
 
 # ── File writing ─────────────────────────────────────────────────────────────
@@ -525,9 +1055,95 @@ def write_file(path: Path, content: str, root: Path, dry_run: bool, *, check: bo
     return True
 
 
+def remove_file(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated file no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_dir():
+        return False
+    path.unlink()
+    parent = path.parent
+    while parent != root and parent.exists():
+        try:
+            parent.rmdir()
+        except OSError:
+            break
+        parent = parent.parent
+    print(f"  [remove] {rel}")
+    return True
+
+
+def remove_tree(path: Path, root: Path, dry_run: bool, *, check: bool = False) -> bool:
+    """Ensure a previously generated directory tree no longer exists."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = path
+    if check:
+        if path.exists():
+            print(f"  [obsolete] {rel}")
+            return False
+        return True
+    if dry_run:
+        if path.exists():
+            print(f"  [dry-run remove] {rel}")
+        return True
+    if not path.exists():
+        return True
+    if path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+    print(f"  [remove] {rel}")
+    return True
+
+
+def prune_agents_skill_surface(
+    root: Path,
+    expected_skill_names: set[str],
+    dry_run: bool,
+    *,
+    check: bool = False,
+) -> tuple[int, int]:
+    """Retire stale non-Azoth skills from the shared `.agents/skills/` surface.
+
+    The shared Gemini/Codex/Antigravity skill surface is Azoth-managed. Canonical
+    skills live under `skills/`, while `azoth-*` folders are reserved for wrapper
+    skills and bootstrap-specific entries. Everything else is treated as stale.
+    """
+    skills_root = root / ".agents" / "skills"
+    if not skills_root.is_dir():
+        return 0, 0
+    count = 0
+    stale = 0
+    for skill_dir in sorted(skills_root.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        name = skill_dir.name
+        if name in expected_skill_names or name.startswith("azoth-"):
+            continue
+        if not remove_tree(skill_dir, root, dry_run, check=check):
+            stale += 1
+        count += 1
+    return count, stale
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────
 
-ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity")
+ALL_PLATFORMS = ("claude", "copilot", "opencode", "cursor", "codex", "antigravity", "gemini")
 COPILOT_AGENT_LOCATIONS = ("github", "claude", "both")
 
 
@@ -664,11 +1280,46 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
 
+        if "gemini" in platforms:
+            for agent in agents:
+                name = agent["meta"]["name"]
+                if not write_file(
+                    root / ".gemini" / "agents" / f"{name}.md",
+                    transform_agent_gemini(agent),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
         print()
 
     # ── Commands ─────────────────────────────────────────────────────────────
     if commands:
         print("── commands ────────────────────────────────────────────────────")
+
+        if "claude" in platforms or "cursor" in platforms:
+            for cmd in commands:
+                contract = cmd.get("contract")
+                if not isinstance(contract, dict):
+                    continue
+                claude_projection = contract.get("projection", {}).get("claude", {})
+                if not isinstance(claude_projection, dict):
+                    continue
+                output_rel = str(claude_projection.get("output_path") or "").strip()
+                if not output_rel:
+                    continue
+                dest_path = root / output_rel
+                content = transform_command_claude(cmd)
+                in_sync = (
+                    check_claude_command_file(dest_path, cmd, content, root)
+                    if check
+                    else write_file(dest_path, content, root, dry_run, check=False)
+                )
+                if not in_sync:
+                    stale += 1
+                count += 1
 
         if "copilot" in platforms:
             for cmd in commands:
@@ -706,10 +1357,59 @@ def main(argv: list[str] | None = None) -> int:
                     stale += 1
                 count += 1
 
+        if "codex" in platforms:
+            for cmd in commands:
+                skill_dir = root / ".agents" / "skills" / codex_command_skill_name(cmd)
+                if not write_file(
+                    skill_dir / "SKILL.md",
+                    transform_command_codex_skill(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+                if not write_file(
+                    skill_dir / "agents" / "openai.yaml",
+                    transform_command_codex_skill_metadata(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+
+        if "gemini" in platforms:
+            for cmd in commands:
+                deployed_name = gemini_command_name(cmd["name"])
+                if not write_file(
+                    root / ".gemini" / "commands" / f"{deployed_name}.toml",
+                    transform_command_gemini(cmd),
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+                if deployed_name != cmd["name"]:
+                    if not remove_file(
+                        root / ".gemini" / "commands" / f"{cmd['name']}.toml",
+                        root,
+                        dry_run,
+                        check=check,
+                    ):
+                        stale += 1
+                    count += 1
+
         print()
 
     # ── Skills ───────────────────────────────────────────────────────────────
-    if skills and ("opencode" in platforms or "antigravity" in platforms or "codex" in platforms):
+    if skills and (
+        "opencode" in platforms
+        or "antigravity" in platforms
+        or "codex" in platforms
+        or "gemini" in platforms
+    ):
         print("── skills ──────────────────────────────────────────────────────")
         for skill in skills:
             if "opencode" in platforms:
@@ -722,16 +1422,34 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     stale += 1
                 count += 1
-            if "antigravity" in platforms or "codex" in platforms:
+            if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
                 if not write_file(
-                    root / ".agents" / "skills" / skill["name"] / "SKILL.md",
-                    skill["raw"],
+                    root / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md",
+                    transform_shared_skill(skill),
                     root,
                     dry_run,
                     check=check,
                 ):
                     stale += 1
                 count += 1
+            if "gemini" in platforms:
+                if not remove_file(
+                    root / ".gemini" / "skills" / skill["name"] / "SKILL.md",
+                    root,
+                    dry_run,
+                    check=check,
+                ):
+                    stale += 1
+                count += 1
+        if "antigravity" in platforms or "codex" in platforms or "gemini" in platforms:
+            n, s = prune_agents_skill_surface(
+                root,
+                {shared_skill_name(skill["name"]) for skill in skills},
+                dry_run,
+                check=check,
+            )
+            count += n
+            stale += s
         print()
 
     # ── Cursor rules (kernel templates) ──────────────────────────────────────
@@ -758,6 +1476,11 @@ def main(argv: list[str] | None = None) -> int:
                 f"  [warning] no template files under {CODEX_ADAPTER_DIR}",
                 file=sys.stderr,
             )
+        # Lint Codex hooks for protocol compatibility
+        hook_warnings = lint_codex_hooks(root)
+        for w in hook_warnings:
+            print(w, file=sys.stderr)
+            stale += 1
         print()
 
     # ── Antigravity rules (kernel templates) ─────────────────────────────────
@@ -775,6 +1498,33 @@ def main(argv: list[str] | None = None) -> int:
                 dest = dest_dir / out_name
                 content = path.read_text(encoding="utf-8")
                 if not write_file(dest, content, root, dry_run, check=check):
+                    stale += 1
+                n += 1
+            count += n
+        print()
+
+    # ── Gemini CLI adapter (kernel templates) ────────────────────────────────
+    if "gemini" in platforms:
+        print("── gemini adapter ──────────────────────────────────────────────")
+        gemini_adapter = root / "kernel/templates/platform-adapters/gemini"
+        if not gemini_adapter.is_dir():
+            print(f"  [warning] no template files under {gemini_adapter}", file=sys.stderr)
+        else:
+            n = 0
+            # Deploy GEMINI.md context file to project root
+            gemini_md_tmpl = gemini_adapter / "GEMINI.md.template"
+            if gemini_md_tmpl.is_file():
+                content = gemini_md_tmpl.read_text(encoding="utf-8")
+                if not write_file(root / "GEMINI.md", content, root, dry_run, check=check):
+                    stale += 1
+                n += 1
+            # Deploy settings.json to .gemini/
+            settings_tmpl = gemini_adapter / "settings.json.template"
+            if settings_tmpl.is_file():
+                content = settings_tmpl.read_text(encoding="utf-8")
+                if not write_file(
+                    root / ".gemini" / "settings.json", content, root, dry_run, check=check
+                ):
                     stale += 1
                 n += 1
             count += n

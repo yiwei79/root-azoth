@@ -40,12 +40,42 @@ ROOT = Path(__file__).resolve().parent.parent
 
 _VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
 _ACTIVE_POST_RELEASE_RE = re.compile(r"^v0\.2\.0-p(\d+)$")
+_TASK_ID_POLICY_BLOCK = (
+    "task_id_policy:\n"
+    "  legacy_milestones:\n"
+    "    - milestone: v0.2.0\n"
+    "      prefix: P1\n"
+    "      width: 3\n"
+    "      frozen: true\n"
+    "  future_default:\n"
+    "    prefix: T\n"
+    "    width: 3\n"
+)
 
 # ── File I/O helpers ──────────────────────────────────────────────────────────
 
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _settings_path_for(azoth_path: Path) -> Path:
+    """Return the settings path paired with the selected azoth.yaml root."""
+    return azoth_path.resolve().parent / ".claude" / "settings.json"
+
+
+def _sync_settings_version(new_version: str, *, settings_path: Path) -> None:
+    """Update AZOTH_VERSION in the paired .claude/settings.json if it exists."""
+    if not settings_path.is_file():
+        return
+    text = settings_path.read_text(encoding="utf-8")
+    updated = re.sub(
+        r'"AZOTH_VERSION":\s*"[^"]*"',
+        f'"AZOTH_VERSION": "{new_version}"',
+        text,
+    )
+    if updated != text:
+        settings_path.write_text(updated, encoding="utf-8")
 
 
 def _write(path: Path, content: str) -> None:
@@ -165,6 +195,19 @@ def _ensure_azoth_milestone_post_release(text: str) -> str:
             flags=re.MULTILINE,
         )
     return text
+
+
+def _ensure_task_id_policy(text: str) -> str:
+    """Ensure roadmap.yaml includes the machine-readable task-id namespace policy."""
+    if re.search(r"^task_id_policy:\s*$", text, re.MULTILINE):
+        return text
+    return re.sub(
+        r"^(active_version:\s*.*\n)",
+        lambda m: m.group(1) + "\n" + _TASK_ID_POLICY_BLOCK,
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
 
 
 def _ensure_completed_date_in_block(text: str, version_id: str, iso_date: str) -> str:
@@ -341,6 +384,7 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, _set_azoth_version(azoth_text, new_version))
     _write(roadmap_path, new_roadmap)
 
+    _sync_settings_version(new_version, settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → {new_version}")
 
 
@@ -413,11 +457,13 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
         roadmap_text = _set_roadmap_current_phase(roadmap_text, new_phase_num)
         roadmap_text = _set_roadmap_current_phase_title(roadmap_text, new_phase_num)
         azoth_text = _set_azoth_phase_line(azoth_text, new_phase_num)
+        roadmap_text = _ensure_task_id_policy(roadmap_text)
 
     # Write both files
     _write(azoth_path, _set_azoth_version(azoth_text, new_azoth_version))
     _write(roadmap_path, roadmap_text)
 
+    _sync_settings_version(new_azoth_version, settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → {new_azoth_version} (phase advance)")
 
 
@@ -496,6 +542,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     )
     roadmap_text = _set_active_version(roadmap_text, "v0.2.0-p1")
     roadmap_text = _activate_version_block(roadmap_text, "v0.2.0-p1", current_patch=0)
+    roadmap_text = _ensure_task_id_policy(roadmap_text)
 
     azoth_text = _set_azoth_version(azoth_text, "0.1.1.0")
     azoth_text = _set_azoth_phase_line(
@@ -508,6 +555,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
     _write(azoth_path, azoth_text)
     _write(roadmap_path, roadmap_text)
 
+    _sync_settings_version("0.1.1.0", settings_path=_settings_path_for(azoth_path))
     print(f"version bumped {raw_version} → 0.1.1.0 (release)")
     print(
         'Next step (human): git tag -a v0.1.0 -m "Azoth v0.1.0 public release" '

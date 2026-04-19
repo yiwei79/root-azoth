@@ -50,6 +50,17 @@ def main() -> None:
         )
         emit_hook_response(allow=False, reason=result.deny_reason)
         return
+    if result.skip_entropy:
+        record_pretooluse_write_edit(
+            repo_root,
+            payload=payload,
+            session_id=_session_id(result.scope_data),
+            outcome="allowed",
+            denial_stage="",
+            reason="skip_entropy",
+        )
+        emit_hook_response(allow=True)
+        return
     align = evaluate_alignment_handoff(payload, repo_root=repo_root)
     if not align.allowed:
         record_pretooluse_write_edit(
@@ -90,24 +101,18 @@ def main() -> None:
             emit_hook_response(allow=False, reason=_claim_result.deny_reason)
             return
     except Exception as _wc_exc:
-        # Write-claim check must not crash the orchestrator; fail open.
-        # Record the warning so silent failures are visible in telemetry.
-        print(
-            f"[write-claim] WARNING: unexpected error in write_claim_check: {_wc_exc}",
-            file=sys.stderr,
-        )
-
-    if result.skip_entropy:
+        warning = f"[write-claim] BLOCKED — unexpected error in write_claim_check: {_wc_exc}"
         record_pretooluse_write_edit(
             repo_root,
             payload=payload,
             session_id=_session_id(result.scope_data),
-            outcome="allowed",
-            denial_stage="",
-            reason="skip_entropy",
+            outcome="denied",
+            denial_stage="write_claim",
+            reason=warning,
         )
-        emit_hook_response(allow=True)
+        emit_hook_response(allow=False, reason=warning)
         return
+
     if result.scope_data is None:
         record_pretooluse_write_edit(
             repo_root,

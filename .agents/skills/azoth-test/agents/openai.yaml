@@ -1,0 +1,6 @@
+interface:
+  display_name: /test
+  short_description: Generate unit tests for specified code
+  default_prompt: '$azoth-test '
+policy:
+  allow_implicit_invocation: false

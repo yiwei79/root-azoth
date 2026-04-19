@@ -11,7 +11,7 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p1 working slice**
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p2 working slice**
 (Phase 8 in `azoth.yaml`), and the **expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
@@ -91,33 +91,30 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 1) — continuity · swarm data plane · memory · UX 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 2) — memory · declarative swarm depth · platform strategy 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 1`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p1` for the phase-1 working slice, `current_phase: 1`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` — **P1-014** (**priority 1**, Antigravity bootstrap) leads the active v0.2.0-p1 queue; **P1-015** (**priority 2**, true multi-writer safety) is staged next but **blocked by P1-014**; **P1-003** remains the next unblocked general item after the completed **P1-001**, **P1-002**, **P1-011**, and **P1-012** slices. **P1-004 … P1-010** remain active; **P1-013** is complete (P1-013 closed); **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
-- **Workstreams (roadmap task ids):**
-  - **P1-014** — Antigravity bootstrap adapter: repo-local `.agents/` surface for standard work; bootstrap before deeper deploy-target integration.
-  - **P1-015** — True multi-writer safety: explicit write claims, conflict detection, and cross-harness enforcement after the bootstrap surface stabilizes.
-  - **P1-001** — Run ledger + resume (durable `.azoth` state; idempotency theme from digest).
-  - **P1-002** — Declarative eval/swarm wave YAML + schema (depends on P1-001 backlog completion).
-  - **P1-003** — Pipeline composition linter (`pipelines/*.pipeline.yaml`).
-  - **P1-004** — Welcome control plane: gate TTL / EXPIRED + optional ledger line (depends on P1-001).
-  - **P1-005** — Long-running session playbook vs D50 gates (docs).
-  - **P1-006** — Memory loop: W2/session-state alignment, `reinforcement_count` semantics (governed).
-  - **P1-007** — Recall elasticity: tags, decay/contradiction policy, consumer boundary.
-  - **P1-008** — `auto-router` L2 / self-improve lane (governed).
-  - **P1-009** — Cursor session-open parity vs P5-007 SessionStart.
-  - **P1-010** — Eval / eval-swarm wiring + deploy mirrors (D46); independence theme from digest RP-C.
-  - **P1-011** — Token & inference efficiency: context budget, provider caching discipline, BL-011/BL-012 leverage; digest **RP-E** + architecture **Context & token budget**.
-  - **P1-012** — **Complete** (ep-102): DFA+ friction map + honest IDE paths in `skills/dynamic-full-auto/SKILL.md` (Slice A); optional Slice B mechanical deferred.
-  - **P1-013** — **Complete** (P1-013): Explicit main-session orchestrator default — CLAUDE.md rule 10 + Copilot "Default agent persona" section closes the main-session enforcement gap for Claude Code and Copilot; instruction-surface approach supersedes deferred `.claude/settings.json` hard binding.
-  - **P5-006** — Deferred UX: compact width-aware welcome/dashboards.
+- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 2`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p2` for the phase-2 working slice, `current_phase: 2`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
+- **Execution queue:** `.azoth/backlog.yaml` currently leaves **P1-020** (verbatim-first M3) and **P1-021** (memory operation parity) deferred in `v0.2.0-p2`, while **P1-022**, **P1-023**, and **P1-024** completed the co-primary blueprint, neutral command contract, and pilot D46 projection for **INI-PLT-006**. The initiative is now operationalized as concrete follow-on slices: **T-002** (scope/orientation command migration) is the active next batch, followed by **T-003** (delivery/orchestration commands) and **T-004** (closeout/memory/maintenance + initiative exit). High-priority initiatives now include **INI-RST-001**, **INI-MEM-004**, **INI-RST-003**, and **INI-PLT-006**; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
+- **Workstreams (roadmap task ids / initiatives):**
+  - **P1-020 / INI-MEM-001** — verbatim-first M3 storage strategy; keep full signal before downstream indexing or compression policy.
+  - **P1-021 / INI-PLT-001** — memory operation parity across Claude Code, Cursor, and Copilot adapter paths.
+  - **P1-022 / INI-PLT-006** — completed: codified Claude Code + Codex as co-primary command surfaces and made the adapter contract explicit for the rest.
+  - **P1-023 / INI-PLT-006** — completed: defined the neutral canonical command contract, `commands/` source path, and initiative execution plan without refactoring D46 yet.
+  - **P1-024 / INI-PLT-006** — completed: refactored D46 to prove the pilot command projection path from `commands/next/command.yaml`.
+  - **T-002 / INI-PLT-006** — next active batch: migrate `/start`, `/next`, and `/resume` into the neutral command path and repair planning continuity.
+  - **T-003 / INI-PLT-006** — queued follow-on batch: migrate delivery and orchestration commands after the scope/orientation family is stable.
+  - **T-004 / INI-PLT-006** — queued initiative-exit batch: migrate closeout/memory/maintenance commands and certify the remaining adapter contract.
+  - **P1-015 / INI-RST-003** — true multi-writer safety remains staged behind the platform/bootstrap path.
+  - **P1-002 / INI-RST-001** — declarative swarm / eval-wave specification remains the run-state depth track after ledger foundations.
+  - **P1-009 / INI-PLT-002** — Cursor session-open parity remains a medium-priority adapter-hardening slice.
+  - **P1-011 / INI-EFF-001** — token and inference efficiency remains available once platform/memory triage settles.
+  - **P5-006 / INI-UX-001** — deferred narrow-terminal UX polish.
 
 ## Planning Sources
 
 - **Canonical phase source for planning:** this file + `azoth.yaml` (`phase` = milestone-local, `lifecycle_phase` = welcome strip) + `.azoth/roadmap.yaml` `active_version` + matching `current_phase` / `lifecycle_phase`.
 - **Root `CLAUDE.md`:** always-loaded; points here for roadmap and expanded workflow.
-- **Session cockpit (D52):** Rich dashboard and routing via `/start` → `scripts/welcome.py` (BL-007). On **Claude Code**, **P5-007** adds automatic plain orientation at session open via **SessionStart** + `**.azoth/session-orientation.txt`** mirror; see rule 9. **Cursor:** run `welcome.py` in the **integrated terminal** for the full Rich UI; **Bash** in chat + expand is an alternative. **Other IDEs without hooks:** `/start` or terminal `welcome.py`; do not assume hook injection.
+- **Session cockpit (D52):** Rich dashboard and routing via `/start` → `scripts/welcome.py` (BL-007). On **Claude Code**, **P5-007** adds automatic plain orientation at session open via **SessionStart** + `**.azoth/session-orientation.txt`** mirror; see rule 9. **Cursor:** run `welcome.py` in the **integrated terminal** for the full Rich UI; **Bash** in chat + expand is an alternative. **Codex:** use `/skills` or `$azoth-start` / `$azoth-next`; raw slash tokens are compatibility fallback, not native repo command registration. **Other IDEs without hooks:** `/start` or terminal `welcome.py`; do not assume hook injection.
 - **DYNAMIC-FULL-AUTO+:** `skills/dynamic-full-auto/SKILL.md` — parallel research + explore swarms, queen merge to **`SWARM_RESEARCH_DIGEST.yaml`**, helper `scripts/swarm_research_digest.py` (`init` / `append-pack` / `validate`). Use before gated `/auto` delivery, not as a substitute for scope/pipeline gates.
 - **Maintenance:** When phase checklists change, update **this skill**, not the root file,
 unless the change is a one-line “current phase” pointer in `CLAUDE.md`.

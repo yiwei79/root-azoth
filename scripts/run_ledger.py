@@ -14,18 +14,27 @@ Usage:
                                         [--stage-completed STAGE] ...
                                         [--wave JSON]
                                         [--ledger PATH]
+  python scripts/run_ledger.py park-session SESSION_ID BACKLOG_ID --goal GOAL
+                                        --ide IDE --next-action TEXT
+                                        [--active-run-id ID]
+                                        [--ledger PATH]
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+from session_continuity import active_scope, session_registry_entry_is_resumable
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
@@ -34,7 +43,10 @@ _STATUS_ENUM = {"active", "complete", "failed", "paused"}
 _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
+_PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+_STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
+_UNSET = object()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -62,22 +74,32 @@ def _load_ledger(path: Path) -> dict:
     return data
 
 
-def _write_ledger(path: Path, data: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-
-
-def _load_ledger_for_helpers(root: Path) -> dict | None:
-    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
-    if not ledger_path.exists():
+def _load_yaml_mapping(path: Path) -> dict | None:
+    if not path.exists():
         return None
     try:
-        with ledger_path.open(encoding="utf-8") as f:
+        with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except Exception:
         return None
     return data if isinstance(data, dict) else None
+
+
+def _write_yaml_mapping(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    tmp_path.replace(path)
+
+
+def _write_ledger(path: Path, data: dict) -> None:
+    _write_yaml_mapping(path, data)
+
+
+def _load_ledger_for_helpers(root: Path) -> dict | None:
+    ledger_path = root / ".azoth" / "run-ledger.local.yaml"
+    return _load_yaml_mapping(ledger_path)
 
 
 # ── Validator ─────────────────────────────────────────────────────────────────
@@ -207,6 +229,38 @@ def validate_ledger(data: dict) -> list[str]:
                 for j, s in enumerate(sc):
                     if not isinstance(s, str) or not s.strip():
                         errors.append(f"{prefix}.stages_completed[{j}] must be a non-empty string")
+                    elif not _STAGE_ID_RE.match(s):
+                        errors.append(
+                            f"{prefix}.stages_completed[{j}] must match stage id pattern, got {s!r}"
+                        )
+
+        active_stage_id = entry.get("active_stage_id")
+        if active_stage_id is not None:
+            if not isinstance(active_stage_id, str) or not active_stage_id.strip():
+                errors.append(f"{prefix}: active_stage_id must be a non-empty string")
+            elif not _STAGE_ID_RE.match(active_stage_id):
+                errors.append(
+                    f"{prefix}: active_stage_id must match stage id pattern, got {active_stage_id!r}"
+                )
+
+        pending_stage_ids = entry.get("pending_stage_ids")
+        if pending_stage_ids is not None:
+            if not isinstance(pending_stage_ids, list):
+                errors.append(f"{prefix}: pending_stage_ids must be a list")
+            else:
+                for j, stage_id in enumerate(pending_stage_ids):
+                    if not isinstance(stage_id, str) or not stage_id.strip():
+                        errors.append(f"{prefix}.pending_stage_ids[{j}] must be a non-empty string")
+                    elif not _STAGE_ID_RE.match(stage_id):
+                        errors.append(
+                            f"{prefix}.pending_stage_ids[{j}] must match stage id pattern, got {stage_id!r}"
+                        )
+
+        pause_reason = entry.get("pause_reason")
+        if pause_reason is not None and pause_reason not in _PAUSE_REASON_ENUM:
+            errors.append(
+                f"{prefix}: pause_reason {pause_reason!r} not in {sorted(_PAUSE_REASON_ENUM)}"
+            )
 
         # waves
         waves = entry.get("waves")
@@ -275,6 +329,14 @@ def validate_ledger(data: dict) -> list[str]:
                     f"write_claim: 'expires_at' must match ISO-8601 (YYYY-MM-DDTHH:MM:SS…), "
                     f"got {expires_val!r}"
                 )
+            for optional_field in ("worktree_path", "branch", "git_common_dir", "harness"):
+                optional_val = write_claim.get(optional_field)
+                if optional_val is not None and (
+                    not isinstance(optional_val, str) or not optional_val.strip()
+                ):
+                    errors.append(
+                        f"write_claim: '{optional_field}' must be a non-empty string when present"
+                    )
 
     return errors
 
@@ -286,8 +348,149 @@ def _ledger_path_from_root(root: Path) -> Path:
     return root / ".azoth" / "run-ledger.local.yaml"
 
 
+def _root_from_ledger_path(path: Path) -> Path:
+    if path.parent.name == ".azoth":
+        return path.parent.parent
+    return path.parent
+
+
+def _resolve_git_common_dir(root: Path) -> Path | None:
+    env_override = os.environ.get("AZOTH_GIT_COMMON_DIR")
+    if env_override:
+        return Path(env_override).expanduser().resolve()
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result is None:
+        return None
+    if result.returncode != 0:
+        return None
+    raw = result.stdout.strip()
+    if not raw:
+        return None
+    path = Path(raw)
+    if not path.is_absolute():
+        path = (root / path).resolve()
+    return path.resolve()
+
+
+def _current_branch(root: Path) -> str | None:
+    env_override = os.environ.get("AZOTH_GIT_BRANCH")
+    if env_override:
+        return env_override.strip() or None
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result is None:
+        return None
+    if result.returncode != 0:
+        return None
+    branch = result.stdout.strip()
+    return branch or None
+
+
+def shared_write_claim_path(root: Path) -> Path | None:
+    explicit_path = os.environ.get("AZOTH_SHARED_WRITE_CLAIM_PATH")
+    if explicit_path:
+        return Path(explicit_path).expanduser().resolve()
+
+    common_dir = _resolve_git_common_dir(root)
+    if common_dir is None:
+        return None
+
+    digest = hashlib.sha1(str(common_dir).encode("utf-8")).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / "azoth-write-claims" / f"{digest}.yaml"
+
+
+def _load_shared_write_claim(root: Path) -> dict | None:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None:
+        return None
+    return _load_yaml_mapping(claim_path)
+
+
+def _write_shared_write_claim(root: Path, claim: dict) -> None:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None:
+        return
+    _write_yaml_mapping(claim_path, claim)
+
+
+def _clear_shared_write_claim(root: Path) -> bool:
+    claim_path = shared_write_claim_path(root)
+    if claim_path is None or not claim_path.exists():
+        return False
+    claim_path.unlink()
+    return True
+
+
+def _write_local_claim_mirror(root: Path, claim: dict | None) -> None:
+    ledger_path = _ledger_path_from_root(root)
+    data = _load_ledger_for_helpers(root)
+    if data is None:
+        data = {"schema_version": 1, "runs": []}
+    if claim is None:
+        data.pop("write_claim", None)
+    else:
+        data["write_claim"] = claim
+    _write_ledger(ledger_path, data)
+
+
+def _parse_claim_expiry(raw_expiry: str) -> datetime | None:
+    try:
+        normalized = raw_expiry.replace("Z", "+00:00") if raw_expiry.endswith("Z") else raw_expiry
+        exp_dt = datetime.fromisoformat(normalized)
+        if exp_dt.tzinfo is None:
+            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+        return exp_dt
+    except (ValueError, TypeError):
+        return None
+
+
+def _build_write_claim(
+    root: Path,
+    *,
+    session_id: str,
+    expires_at: str,
+    harness: str | None,
+) -> dict:
+    claim: dict[str, str] = {
+        "session_id": session_id,
+        "expires_at": expires_at,
+        "acquired_at": utc_now_iso(),
+        "worktree_path": str(root.resolve()),
+    }
+    if harness is not None:
+        claim["harness"] = harness
+    branch = _current_branch(root)
+    if branch:
+        claim["branch"] = branch
+    common_dir = _resolve_git_common_dir(root)
+    if common_dir is not None:
+        claim["git_common_dir"] = str(common_dir)
+    return claim
+
+
 def load_write_claim(root: Path) -> dict | None:
     """Return the write_claim dict from the ledger, or None if absent."""
+    shared_claim = _load_shared_write_claim(root)
+    if shared_write_claim_path(root) is not None:
+        return shared_claim if isinstance(shared_claim, dict) else None
+
     data = _load_ledger_for_helpers(root)
     if data is None:
         return None
@@ -306,46 +509,49 @@ def acquire_write_claim(
     Returns (True, session_id) on success.
     Returns (False, reason) if an unexpired claim already exists for a different session.
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        data = {"schema_version": 1, "runs": []}
-
-    existing = data.get("write_claim")
+    current_worktree = str(root.resolve())
+    existing = load_write_claim(root)
     if isinstance(existing, dict):
         holder = existing.get("session_id", "")
         if holder == session_id:
-            # Re-acquire: update expiry
-            existing["expires_at"] = expires_at
-            existing["acquired_at"] = utc_now_iso()
-            if harness is not None:
-                existing["harness"] = harness
-            _write_ledger(ledger_path, data)
-            return True, session_id
-        # Check if the existing claim is expired
-        raw_exp = existing.get("expires_at", "")
-        from datetime import datetime, timezone as _tz
+            recorded_worktree = str(existing.get("worktree_path") or "").strip()
+            raw_exp = str(existing.get("expires_at") or "")
+            exp_dt = _parse_claim_expiry(raw_exp)
+            if recorded_worktree and recorded_worktree != current_worktree:
+                if exp_dt is not None and datetime.now(timezone.utc) < exp_dt:
+                    return (
+                        False,
+                        "write claim already held by this session from another worktree "
+                        f"({recorded_worktree}) until {raw_exp}; release it there first",
+                    )
+            else:
+                new_claim = _build_write_claim(
+                    root,
+                    session_id=session_id,
+                    expires_at=expires_at,
+                    harness=harness,
+                )
+                if shared_write_claim_path(root) is not None:
+                    _write_shared_write_claim(root, new_claim)
+                _write_local_claim_mirror(root, new_claim)
+                return True, session_id
 
-        try:
-            normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
-            exp_dt = datetime.fromisoformat(normalized)
-            if exp_dt.tzinfo is None:
-                exp_dt = exp_dt.replace(tzinfo=_tz.utc)
-        except (ValueError, TypeError):
-            exp_dt = None
-        if exp_dt is not None and datetime.now(_tz.utc) < exp_dt:
-            return False, f"write claim held by '{holder}' until {raw_exp}"
+        raw_exp = str(existing.get("expires_at") or "")
+        exp_dt = _parse_claim_expiry(raw_exp)
+        if exp_dt is not None and datetime.now(timezone.utc) < exp_dt:
+            holder_worktree = str(existing.get("worktree_path") or "").strip()
+            location = f" at {holder_worktree}" if holder_worktree else ""
+            return False, f"write claim held by '{holder}'{location} until {raw_exp}"
 
-    # No unexpired foreign claim — acquire it
-    new_claim: dict = {
-        "session_id": session_id,
-        "expires_at": expires_at,
-        "acquired_at": utc_now_iso(),
-    }
-    if harness is not None:
-        new_claim["harness"] = harness
-    data["write_claim"] = new_claim
-    _write_ledger(ledger_path, data)
+    new_claim = _build_write_claim(
+        root,
+        session_id=session_id,
+        expires_at=expires_at,
+        harness=harness,
+    )
+    if shared_write_claim_path(root) is not None:
+        _write_shared_write_claim(root, new_claim)
+    _write_local_claim_mirror(root, new_claim)
     return True, session_id
 
 
@@ -355,17 +561,14 @@ def release_write_claim(root: Path, session_id: str) -> bool:
     Returns True when the claim was owned by session_id and has been removed.
     Returns False (no-op) when no claim exists or the caller is not the owner.
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        return False
-    existing = data.get("write_claim")
+    existing = load_write_claim(root)
     if not isinstance(existing, dict):
         return False
     if existing.get("session_id") != session_id:
         return False
-    del data["write_claim"]
-    _write_ledger(ledger_path, data)
+    if shared_write_claim_path(root) is not None:
+        _clear_shared_write_claim(root)
+    _write_local_claim_mirror(root, None)
     return True
 
 
@@ -376,31 +579,415 @@ def resolve_stale_claims(root: Path) -> bool:
     Returns False when no claim exists or the claim is unexpired.
     Clock-only check — no external bypass signal (ADV-2).
     """
-    ledger_path = _ledger_path_from_root(root)
-    data = _load_ledger_for_helpers(root)
-    if data is None:
-        return False
-    existing = data.get("write_claim")
+    existing = load_write_claim(root)
     if not isinstance(existing, dict):
         return False
-    raw_exp = existing.get("expires_at", "")
-    from datetime import datetime, timezone as _tz
-
-    try:
-        normalized = raw_exp.replace("Z", "+00:00") if raw_exp.endswith("Z") else raw_exp
-        exp_dt = datetime.fromisoformat(normalized)
-        if exp_dt.tzinfo is None:
-            exp_dt = exp_dt.replace(tzinfo=_tz.utc)
-    except (ValueError, TypeError):
-        # Unparseable expiry — treat as expired
-        del data["write_claim"]
-        _write_ledger(ledger_path, data)
-        return True
-    if datetime.now(_tz.utc) >= exp_dt:
-        del data["write_claim"]
-        _write_ledger(ledger_path, data)
+    raw_exp = str(existing.get("expires_at") or "")
+    exp_dt = _parse_claim_expiry(raw_exp)
+    if exp_dt is None or datetime.now(timezone.utc) >= exp_dt:
+        if shared_write_claim_path(root) is not None:
+            _clear_shared_write_claim(root)
+        _write_local_claim_mirror(root, None)
         return True
     return False
+
+
+def upsert_session(
+    root: Path,
+    *,
+    session_id: str,
+    backlog_id: str,
+    goal: str,
+    status: str,
+    ide: str,
+    next_action: str,
+    updated_at: str | None = None,
+    active_run_id: str | None = None,
+    closed_at: str | None = None,
+    ledger_path: Path | None = None,
+) -> tuple[bool, dict]:
+    """Create or update a session registry entry.
+
+    Returns (created, entry).
+    """
+    if status not in _SESSION_STATUS_ENUM:
+        raise ValueError(f"status {status!r} not in {sorted(_SESSION_STATUS_ENUM)}")
+
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        data = _load_ledger(resolved_ledger_path)
+
+    sessions = data.get("sessions")
+    if not isinstance(sessions, list):
+        sessions = []
+        data["sessions"] = sessions
+
+    entry = next(
+        (
+            item
+            for item in sessions
+            if isinstance(item, dict) and str(item.get("session_id") or "") == session_id
+        ),
+        None,
+    )
+    created = entry is None
+    if entry is None:
+        entry = {"session_id": session_id}
+        sessions.append(entry)
+
+    timestamp = updated_at or utc_now_iso()
+    entry["session_id"] = session_id
+    entry["backlog_id"] = backlog_id
+    entry["goal"] = goal
+    entry["status"] = status
+    entry["ide"] = ide
+    entry["next_action"] = next_action
+    entry["updated_at"] = timestamp
+
+    if active_run_id:
+        entry["active_run_id"] = active_run_id
+    else:
+        entry.pop("active_run_id", None)
+
+    if closed_at:
+        entry["closed_at"] = closed_at
+    elif status == "closed":
+        entry["closed_at"] = timestamp
+    else:
+        entry.pop("closed_at", None)
+
+    errors = validate_ledger(data)
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    _write_ledger(resolved_ledger_path, data)
+    return created, entry
+
+
+def load_run(root: Path, run_id: str, *, ledger_path: Path | None = None) -> dict | None:
+    """Return a single run entry by run_id, or None when absent."""
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        return None
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        return None
+    for entry in runs:
+        if isinstance(entry, dict) and str(entry.get("run_id") or "") == run_id:
+            return entry
+    return None
+
+
+def upsert_run(
+    root: Path,
+    *,
+    run_id: str,
+    mode: str,
+    goal: str,
+    status: str,
+    next_action: str,
+    session_id: str | None = None,
+    backlog_id: str | None = None,
+    ide: str | None = None,
+    updated_at: str | None = None,
+    stages_completed: list[str] | object = _UNSET,
+    active_stage_id: str | None | object = _UNSET,
+    pending_stage_ids: list[str] | object = _UNSET,
+    pause_reason: str | None | object = _UNSET,
+    wave_entry: dict | object = _UNSET,
+    ledger_path: Path | None = None,
+) -> tuple[bool, dict]:
+    """Create or update a run entry.
+
+    Returns (created, entry).
+    """
+    if status not in _STATUS_ENUM:
+        raise ValueError(f"status {status!r} not in {sorted(_STATUS_ENUM)}")
+
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        data = _load_ledger(resolved_ledger_path)
+
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        runs = []
+        data["runs"] = runs
+
+    entry = next(
+        (
+            item
+            for item in runs
+            if isinstance(item, dict) and str(item.get("run_id") or "") == run_id
+        ),
+        None,
+    )
+    created = entry is None
+    if entry is None:
+        entry = {"run_id": run_id, "created_at": updated_at or utc_now_iso()}
+        runs.append(entry)
+
+    timestamp = updated_at or utc_now_iso()
+    entry["run_id"] = run_id
+    entry["mode"] = mode
+    entry["goal"] = goal
+    entry["status"] = status
+    entry["updated_at"] = timestamp
+    entry["next_action"] = next_action
+    entry.setdefault("created_at", timestamp)
+
+    for field, value in (("session_id", session_id), ("backlog_id", backlog_id), ("ide", ide)):
+        if value is not None:
+            entry[field] = value
+
+    if stages_completed is not _UNSET:
+        if stages_completed:
+            entry["stages_completed"] = list(stages_completed)
+        else:
+            entry.pop("stages_completed", None)
+
+    if active_stage_id is not _UNSET:
+        if active_stage_id:
+            entry["active_stage_id"] = active_stage_id
+        else:
+            entry.pop("active_stage_id", None)
+
+    if pending_stage_ids is not _UNSET:
+        if pending_stage_ids:
+            entry["pending_stage_ids"] = list(pending_stage_ids)
+        else:
+            entry.pop("pending_stage_ids", None)
+
+    if pause_reason is not _UNSET:
+        if pause_reason:
+            entry["pause_reason"] = pause_reason
+        else:
+            entry.pop("pause_reason", None)
+
+    if wave_entry is not _UNSET:
+        if wave_entry is not None:
+            entry.setdefault("waves", []).append(wave_entry)
+
+    errors = validate_ledger(data)
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    _write_ledger(resolved_ledger_path, data)
+    return created, entry
+
+
+def consume_human_gate_approval(
+    root: Path,
+    *,
+    run_id: str,
+    next_action: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Advance a paused human-gate run to its next executable stage.
+
+    This is the shared fail-closed runtime transition for governed approval
+    consumption. It only succeeds when the targeted run is paused specifically at
+    a human gate and still has a pending executable stage to promote.
+    """
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    entry = load_run(root, run_id, ledger_path=resolved_ledger_path)
+    if entry is None:
+        raise ValueError(f"run {run_id!r} not found")
+
+    if entry.get("status") != "paused":
+        raise ValueError("approval consumption requires a paused run")
+    if entry.get("pause_reason") != "human-gate":
+        raise ValueError("approval consumption requires pause_reason='human-gate'")
+
+    prior_stage_id = str(entry.get("active_stage_id") or "").strip()
+    if not prior_stage_id:
+        raise ValueError("approval consumption requires active_stage_id")
+
+    pending_stage_ids = entry.get("pending_stage_ids")
+    if not isinstance(pending_stage_ids, list) or not pending_stage_ids:
+        raise ValueError("approval consumption requires a non-empty pending_stage_ids list")
+
+    next_stage_id = str(pending_stage_ids[0] or "").strip()
+    if not next_stage_id:
+        raise ValueError("approval consumption requires the next pending stage id")
+
+    stages_completed = list(entry.get("stages_completed") or [])
+    if prior_stage_id not in stages_completed:
+        stages_completed.append(prior_stage_id)
+
+    promoted_next_action = (
+        next_action
+        or f"Execute next executable stage `{next_stage_id}` in pipeline "
+        f"`{entry.get('mode', 'unknown')}`."
+    )
+
+    _, updated_entry = upsert_run(
+        root,
+        run_id=run_id,
+        mode=str(entry.get("mode") or ""),
+        goal=str(entry.get("goal") or ""),
+        status="active",
+        next_action=promoted_next_action,
+        session_id=str(entry.get("session_id") or "") or None,
+        backlog_id=str(entry.get("backlog_id") or "") or None,
+        ide=str(entry.get("ide") or "") or None,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=next_stage_id,
+        pending_stage_ids=pending_stage_ids[1:],
+        pause_reason=None,
+        ledger_path=resolved_ledger_path,
+    )
+    return updated_entry
+
+
+def rewrite_request_changes_replay(
+    root: Path,
+    *,
+    run_id: str,
+    finding_class: str | None = None,
+    threshold_limit: int | None = None,
+    next_action: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Requeue the last completed upstream stage ahead of the active review stage.
+
+    This is the fail-closed runtime transition for reviewer/evaluator
+    `request-changes` dispositions. It uses only current run-ledger lineage:
+    `stages_completed[-1]`, `active_stage_id`, and `pending_stage_ids`.
+    """
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    entry = load_run(root, run_id, ledger_path=resolved_ledger_path)
+    if entry is None:
+        raise ValueError(f"run {run_id!r} not found")
+
+    current_stage_id = str(entry.get("active_stage_id") or "").strip()
+    if not current_stage_id:
+        raise ValueError("request-changes replay requires active_stage_id")
+
+    stages_completed = list(entry.get("stages_completed") or [])
+    if not stages_completed:
+        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+
+    revision_stage_id = _resolve_replay_target_stage(
+        stages_completed,
+        current_stage_id=current_stage_id,
+        finding_class=finding_class,
+    )
+    if revision_stage_id == current_stage_id:
+        raise ValueError(
+            "unsupported request-changes replay shape: revision stage matches active stage"
+        )
+    effective_threshold = threshold_limit or _default_replay_threshold(entry)
+    replay_iteration = sum(1 for stage_id in stages_completed if stage_id == revision_stage_id) + 1
+    if replay_iteration > effective_threshold:
+        raise ValueError(
+            "request-changes replay threshold exhausted; recompose scope or escalate to human"
+        )
+
+    pending_stage_ids = list(entry.get("pending_stage_ids") or [])
+    if not pending_stage_ids:
+        raise ValueError("unsupported request-changes replay shape: no downstream stages to replay")
+
+    already_rewritten = (
+        len(pending_stage_ids) >= 2
+        and pending_stage_ids[0] == revision_stage_id
+        and pending_stage_ids[1] == current_stage_id
+        and entry.get("pause_reason") == "human-gate"
+    )
+    if already_rewritten:
+        raise ValueError("request-changes replay already rewritten for this run")
+
+    if revision_stage_id in pending_stage_ids or current_stage_id in pending_stage_ids:
+        raise ValueError(
+            "unsupported request-changes replay shape: queue already contains replay stages"
+        )
+
+    finding_suffix = f" after `{finding_class}` findings" if finding_class else ""
+    replay_next_action = (
+        next_action
+        or f"Resume at human gate for stage `{current_stage_id}` in pipeline "
+        f"`{entry.get('mode', 'unknown')}`; approval replays `{revision_stage_id}`"
+        f"{finding_suffix} (iteration {replay_iteration}/{effective_threshold})."
+    )
+
+    _, updated_entry = upsert_run(
+        root,
+        run_id=run_id,
+        mode=str(entry.get("mode") or ""),
+        goal=str(entry.get("goal") or ""),
+        status="paused",
+        next_action=replay_next_action,
+        session_id=str(entry.get("session_id") or "") or None,
+        backlog_id=str(entry.get("backlog_id") or "") or None,
+        ide=str(entry.get("ide") or "") or None,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=current_stage_id,
+        pending_stage_ids=[revision_stage_id, current_stage_id, *pending_stage_ids],
+        pause_reason="human-gate",
+        ledger_path=resolved_ledger_path,
+    )
+    return updated_entry
+
+
+def _default_replay_threshold(entry: dict) -> int:
+    return 3 if str(entry.get("mode") or "").strip() == "deliver-full" else 2
+
+
+def _resolve_replay_target_stage(
+    stages_completed: list[str],
+    *,
+    current_stage_id: str,
+    finding_class: str | None,
+) -> str:
+    if not stages_completed:
+        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+
+    if not finding_class:
+        revision_stage_id = str(stages_completed[-1] or "").strip()
+        if not revision_stage_id:
+            raise ValueError("request-changes replay requires lineage proof from stages_completed")
+        return revision_stage_id
+
+    normalized = finding_class.strip().lower()
+    if normalized in {"architecture", "scope", "governance", "contract"}:
+        tokens = ("architect",)
+    elif normalized in {"planning", "test-strategy", "handoff-completeness"}:
+        tokens = ("planner",)
+    elif normalized in {"implementation", "failing-acceptance"}:
+        tokens = ("builder",)
+    elif normalized == "evidence-insufficient":
+        tokens = ("discovery", "research", "architect", "planner")
+    else:
+        raise ValueError(f"unsupported finding_class for replay routing: {finding_class!r}")
+
+    for stage_id in reversed(stages_completed):
+        candidate = str(stage_id or "").strip()
+        if (
+            candidate
+            and candidate != current_stage_id
+            and any(token in candidate for token in tokens)
+        ):
+            return candidate
+
+    raise ValueError(
+        "request-changes replay requires lineage proof for the requested finding class"
+    )
 
 
 # ── Business-logic helpers (testable without CLI) ─────────────────────────────
@@ -443,6 +1030,16 @@ def load_open_sessions(root: Path) -> list[dict]:
     return [entry for entry in load_sessions(root) if entry.get("status") in {"active", "parked"}]
 
 
+def load_resumable_sessions(root: Path) -> list[dict]:
+    """Return only sessions backed by a real resume signal, newest first."""
+    scope = active_scope(root)
+    return [
+        entry
+        for entry in load_open_sessions(root)
+        if session_registry_entry_is_resumable(root, entry, scope=scope)
+    ]
+
+
 # ── Subcommands ───────────────────────────────────────────────────────────────
 
 
@@ -477,21 +1074,33 @@ def cmd_status(args: argparse.Namespace) -> None:
         sc = run.get("stages_completed") or []
         if sc:
             print(f"  stages completed: {len(sc)}")
+        active_stage_id = run.get("active_stage_id")
+        if active_stage_id:
+            print(f"  active stage: {active_stage_id}")
     else:
         print("no active run")
     # Write-claim info
-    write_claim = data.get("write_claim")
+    write_claim = load_write_claim(_root_from_ledger_path(path))
+    claim_scope = (
+        "shared" if shared_write_claim_path(_root_from_ledger_path(path)) is not None else "local"
+    )
     if isinstance(write_claim, dict):
         holder = write_claim.get("session_id", "?")
         expires = write_claim.get("expires_at", "?")
-        print(f"Write claim: HELD by '{holder}'  expires {expires}")
+        print(f"Write claim ({claim_scope}): HELD by '{holder}'  expires {expires}")
+        worktree_path = write_claim.get("worktree_path")
+        if worktree_path:
+            print(f"  worktree: {worktree_path}")
+        branch = write_claim.get("branch")
+        if branch:
+            print(f"  branch: {branch}")
     else:
-        print("Write claim: none")
+        print(f"Write claim ({claim_scope}): none")
 
 
 def cmd_claim(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     ok, info = acquire_write_claim(root, args.session_id, args.expires_at, harness=args.harness)
     if ok:
         print(f"write claim acquired: {info}")
@@ -502,7 +1111,7 @@ def cmd_claim(args: argparse.Namespace) -> None:
 
 def cmd_release_claim(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     released = release_write_claim(root, args.session_id)
     if released:
         print(f"write claim released for session '{args.session_id}'")
@@ -513,7 +1122,7 @@ def cmd_release_claim(args: argparse.Namespace) -> None:
 
 def cmd_resolve_stale(args: argparse.Namespace) -> None:
     path: Path = args.ledger
-    root = path.parent.parent
+    root = _root_from_ledger_path(path)
     cleared = resolve_stale_claims(root)
     if cleared:
         print("stale write claim cleared")
@@ -521,13 +1130,29 @@ def cmd_resolve_stale(args: argparse.Namespace) -> None:
         print("no stale claim found")
 
 
+def cmd_park_session(args: argparse.Namespace) -> None:
+    path: Path = args.ledger
+    root = _root_from_ledger_path(path)
+    created, entry = upsert_session(
+        root,
+        session_id=args.session_id,
+        backlog_id=args.backlog_id,
+        goal=args.goal,
+        status="parked",
+        ide=args.ide,
+        next_action=args.next_action,
+        updated_at=utc_now_iso(),
+        active_run_id=args.active_run_id,
+        ledger_path=path,
+    )
+    verb = "created" if created else "updated"
+    print(f"session {entry['session_id']} {verb} as parked")
+
+
 def cmd_append(args: argparse.Namespace) -> None:
     path: Path = args.ledger
     data = _load_ledger(path)
-    if not isinstance(data.get("runs"), list):
-        data["runs"] = []
-
-    # Parse --wave JSON if provided
+    root = _root_from_ledger_path(path)
     wave_entry: dict | None = None
     if args.wave:
         try:
@@ -536,61 +1161,44 @@ def cmd_append(args: argparse.Namespace) -> None:
             _die(f"--wave is not valid JSON: {exc}")
         if not isinstance(wave_entry, dict):
             _die("--wave must be a JSON object")
-
-    now = utc_now_iso()
-    runs: list[dict] = data["runs"]
-
-    # Find existing entry with matching run_id
-    existing: dict | None = None
-    for r in runs:
-        if isinstance(r, dict) and r.get("run_id") == args.run_id:
-            existing = r
-            break
-
-    if existing is not None:
-        existing["status"] = args.status
-        existing["next_action"] = args.next_action
-        existing["updated_at"] = now
-        for field in ("session_id", "backlog_id", "ide"):
-            value = getattr(args, field)
-            if value is not None:
-                existing[field] = value
-        if args.stages_completed:
-            sc = existing.setdefault("stages_completed", [])
-            for s in args.stages_completed:
-                sc.append(s)
-        if wave_entry is not None:
-            existing.setdefault("waves", []).append(wave_entry)
-        verb = "updated"
-    else:
-        entry: dict = {
-            "run_id": args.run_id,
-            "mode": args.mode,
-            "goal": args.goal,
-            "status": args.status,
-            "created_at": now,
-            "updated_at": now,
-            "next_action": args.next_action,
-        }
-        for field in ("session_id", "backlog_id", "ide"):
-            value = getattr(args, field)
-            if value is not None:
-                entry[field] = value
-        if args.stages_completed:
-            entry["stages_completed"] = list(args.stages_completed)
-        if wave_entry is not None:
-            entry["waves"] = [wave_entry]
-        runs.append(entry)
-        verb = "created"
-
-    # Validate before writing
-    errors = validate_ledger(data)
-    if errors:
-        for e in errors:
-            print(e, file=sys.stderr)
-        _die("ledger would be invalid after mutation — not written")
-
-    _write_ledger(path, data)
+    existing = next(
+        (
+            entry
+            for entry in data.get("runs", [])
+            if isinstance(entry, dict) and str(entry.get("run_id") or "") == args.run_id
+        ),
+        None,
+    )
+    stages_completed = _UNSET
+    if args.stages_completed:
+        merged_stages = (
+            list(existing.get("stages_completed", []))
+            if isinstance(existing, dict) and isinstance(existing.get("stages_completed"), list)
+            else []
+        )
+        merged_stages.extend(args.stages_completed)
+        stages_completed = merged_stages
+    created, _ = upsert_run(
+        root,
+        run_id=args.run_id,
+        session_id=args.session_id,
+        backlog_id=args.backlog_id,
+        ide=args.ide,
+        mode=args.mode,
+        goal=args.goal,
+        status=args.status,
+        next_action=args.next_action,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=args.active_stage_id if args.active_stage_id is not None else _UNSET,
+        pending_stage_ids=(
+            args.pending_stage_ids if args.pending_stage_ids is not None else _UNSET
+        ),
+        pause_reason=args.pause_reason if args.pause_reason is not None else _UNSET,
+        wave_entry=wave_entry if wave_entry is not None else _UNSET,
+        ledger_path=path,
+    )
+    verb = "created" if created else "updated"
     print(f"run {args.run_id} {verb}")
 
 
@@ -631,6 +1239,27 @@ def main() -> None:
 
     subs.add_parser("resolve-stale", help="Clear an expired write claim (clock-only check).")
 
+    ps = subs.add_parser(
+        "park-session",
+        help="Create or update a parked session registry entry.",
+    )
+    ps.add_argument("session_id", metavar="SESSION_ID", help="Session identifier to park.")
+    ps.add_argument("backlog_id", metavar="BACKLOG_ID", help="Backlog identifier or AD-HOC.")
+    ps.add_argument("--goal", required=True, metavar="GOAL", help="Human-readable session goal.")
+    ps.add_argument("--ide", required=True, metavar="IDE", help="Harness or IDE label.")
+    ps.add_argument(
+        "--next-action",
+        required=True,
+        metavar="TEXT",
+        help="Resume instruction shown by /resume.",
+    )
+    ps.add_argument(
+        "--active-run-id",
+        metavar="RUN_ID",
+        default=None,
+        help="Optional resumable run linked to the parked session.",
+    )
+
     ap = subs.add_parser("append", help="Create or update a run entry.")
     ap.add_argument("--run-id", required=True, metavar="ID", help="Unique run identifier.")
     ap.add_argument("--session-id", metavar="SESSION_ID", help="Optional linked session id.")
@@ -658,6 +1287,26 @@ def main() -> None:
         metavar="JSON",
         help='Wave outcome as JSON object, e.g. \'{"wave": 1, "status": "pass"}\'.',
     )
+    ap.add_argument(
+        "--active-stage-id",
+        metavar="STAGE_ID",
+        default=None,
+        help="Current stage identifier for a resumable checkpoint.",
+    )
+    ap.add_argument(
+        "--pending-stage-id",
+        action="append",
+        dest="pending_stage_ids",
+        default=None,
+        metavar="STAGE_ID",
+        help="Stage id to include in pending_stage_ids (repeatable).",
+    )
+    ap.add_argument(
+        "--pause-reason",
+        choices=sorted(_PAUSE_REASON_ENUM),
+        default=None,
+        help="Why the run is paused, when applicable.",
+    )
 
     args = parser.parse_args()
     {
@@ -667,6 +1316,7 @@ def main() -> None:
         "claim": cmd_claim,
         "release-claim": cmd_release_claim,
         "resolve-stale": cmd_resolve_stale,
+        "park-session": cmd_park_session,
     }[args.command](args)
 
 

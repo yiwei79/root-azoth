@@ -6,7 +6,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 ARCH = REPO / "docs" / "AZOTH_ARCHITECTURE.md"
-NEXT = REPO / ".claude" / "commands" / "next.md"
+RESUME = REPO / ".claude" / "commands" / "resume.md"
 CLOSEOUT = REPO / ".claude" / "commands" / "session-closeout.md"
 
 
@@ -17,12 +17,12 @@ def test_architecture_has_long_running_p1_005_heading() -> None:
     assert "scope-gate" in text.lower() or "scope gate" in text.lower()
 
 
-def test_next_resume_contract_preserves_human_approval_gate() -> None:
-    text = NEXT.read_text(encoding="utf-8")
-    assert "resume <session_id>" in text
-    assert "Wait for human signal" in text
-    assert "approved" in text
-    assert "Never auto-resume by rewriting scope" in text
+def test_resume_contract_is_stage_aware_and_direct() -> None:
+    text = RESUME.read_text(encoding="utf-8")
+    assert "/resume [<session_id>]" in text
+    assert "Explicit resume intent is already the approval" in text
+    assert "saved run checkpoint" in text
+    assert "saved stage" in text
 
 
 def test_session_closeout_contract_preserves_bootloader_and_session_mirror() -> None:

@@ -1,0 +1,73 @@
+schema_version: 1
+name: eval-swarm
+display_name: /eval-swarm
+description: Strict swarm evaluation — 0.90 bar, isolated evaluators, multi-wave iteration
+agent: orchestrator
+azoth_effect: mixed
+
+execution:
+  kind: pipeline
+  waits_for_human_signal: none
+  emits:
+    - swarm_eval_report
+    - pass_fail_disposition
+
+arguments:
+  accepts_arguments: true
+  syntax: /eval-swarm [targets]
+
+state:
+  reads:
+    - .claude/workflows/enterprise/e2e-swarm-eval-loop.md
+    - skills/subagent-router/SKILL.md
+    - user-specified targets via $ARGUMENTS
+  outputs:
+    - swarm_eval_report
+    - pass_fail_disposition
+
+governance:
+  preconditions:
+    - evaluator_threads_must_be_isolated
+    - repo_files_remain_read_only
+  approval_mode: none
+  pipeline_gate_behavior: fail_branches_route_to_fix_then_re_evaluate
+  target_layer_rule: do_not_mix_builder_narrative_into_evaluator_context
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/eval-swarm.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/eval-swarm.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/eval-swarm.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/eval-swarm.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/eval-swarm.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-eval-swarm/SKILL.md
+    metadata_path: .agents/skills/azoth-eval-swarm/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/eval-swarm.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/eval-swarm.md
+
+migration:
+  phase: canonical_body_batch_2_residual_bundle
+  runtime_source_of_truth: commands/eval-swarm/command.yaml
+  notes:
+    - BL-057 closes the remaining T-003 orchestration bundle atomically.
+    - .claude/commands/eval-swarm.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-003.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md

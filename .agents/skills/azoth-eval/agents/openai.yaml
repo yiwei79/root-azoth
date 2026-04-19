@@ -1,0 +1,7 @@
+interface:
+  display_name: /eval
+  short_description: Governance quality gate — evaluate artifacts; auto-escalates
+    to swarm eval when warranted
+  default_prompt: '$azoth-eval '
+policy:
+  allow_implicit_invocation: false

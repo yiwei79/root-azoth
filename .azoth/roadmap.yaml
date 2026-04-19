@@ -4,6 +4,11 @@
 #
 # COMPATIBILITY: The top-level `current_phase` and `tasks:` fields are preserved for
 # older tooling. Prefer `active_version` + `versions[]` + `.azoth/backlog.yaml` (D48).
+# Task-id semantics: existing `v0.2.0` task ids include a stable legacy `P1-*` namespace.
+# Do not infer the current milestone-local phase from that prefix; use `active_version`,
+# the containing `versions[]` block, and backlog `target_version` for slice semantics.
+# Forward rule: keep historical `P1-*` ids frozen, but mint all new roadmap-backed work in
+# the neutral `T-{NNN}` namespace. Do not rename historical task ids in place.
 
 # ── Legacy compat fields (kept for drift tests; mirror backlog when possible) ─
 current_phase: 2
@@ -125,6 +130,15 @@ tasks:
 # ── Versioned structure (D48 + D53) — phase-aligned, delivery-triggered bumps ──
 schema_version: 2
 active_version: v0.2.0-p2
+task_id_policy:
+  legacy_milestones:
+    - milestone: v0.2.0
+      prefix: P1
+      width: 3
+      frozen: true
+  future_default:
+    prefix: T
+    width: 3
 
 # D53: Bump rules (0.0.PHASE.PATCH through v0.0.7; then 0.1.MILESTONE_PHASE.PATCH under v0.2.0)
 # - patch: 0.0.N.XX → +1 every delivery; post-1.0: 0.1.P.M → 0.1.P.M+1 + active v0.2.0-pP current_patch +1
@@ -327,16 +341,23 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 1
+    current_patch: 64
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
     note: >
       Second working phase of v0.2.0 milestone. Carries P1-017/P1-020/P1-021 from p1 plus
       high-priority initiatives: INI-RST-001 (declarative swarm spec depth), INI-MEM-004
-      (memory loop hardening), INI-RST-003 (multi-writer safety next level). Medium-priority
-      initiatives (INI-PPL-001, INI-PPL-002, INI-MEM-002, INI-MEM-003, INI-MEM-005,
-      INI-PLT-002, INI-EFF-001) available for scheduling after triage.
+      (memory loop hardening), INI-RST-003 (multi-writer safety next level), and
+      INI-PLT-006 (co-primary platform model + neutral command contract). The evidence-grounding
+      initiative INI-EVI-001 now establishes T-008/T-009/T-010 as the bounded rollout for
+      research sufficiency, capsule-bank reuse, and cross-platform hardening. Medium-priority
+      follow-on work (T-005 for the residual low-risk instruction-refinement lane, T-006
+      for first-class iterative revise-and-continue pipeline loops, INI-MEM-002, INI-MEM-003,
+      INI-MEM-005, INI-PLT-002, INI-EFF-001) remains available for scheduling after triage.
+      Existing `P1-*` task ids remain stable legacy refs inside p2, while new roadmap-backed
+      work now mints in `T-*`; phase/slice semantics come from `v0.2.0-p2`, not the task
+      prefix.
     tasks:
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
@@ -352,12 +373,66 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
+      - id: T-014
+        title: "Worktree session lifecycle UX after integration"
+        decision_ref: [D21, D50, D54]
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-RST-005"
+        status: planned
+      - id: T-KRP-A
+        title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-B
+        title: "New skill: karpathy-principles SKILL.md for injectable discipline slot"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-C
+        title: "Builder agent posture: surgical changes + simplicity-first enforcement"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-D
+        title: "Orchestrator: assumption-surfacing checkpoint at goal classification"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+      - id: T-KRP-E
+        title: "structured-autonomy-plan: goal → success-criteria gate (T-006 dependency, autonomous loop enabler)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        note: "Implement before or alongside T-006 revise-and-continue loops"
+    completed_tasks:
+      - {id: P1-022, title: "Co-primary platform model codification (Claude Code + Codex; stable adapters)", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
+      - {id: P1-023, title: "Neutral canonical command contract design", completed_date: "2026-04-17", decision_ref: [D19, D21, D46]}
+      - {id: P1-024, title: "D46 command projection compiler refactor", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50]}
+      - {id: T-001, title: "Dedicated roadmap/backlog/spec scaffolder", completed_date: "2026-04-17", decision_ref: [D47, D48, D50]}
+      - {id: T-002, title: "Co-primary command migration batch 1 — scope/orientation commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D46, D50, D52]}
 
 # ── Initiatives (schema_version: 2) ──────────────────────────────────────────
 # Phase-agnostic goal items. phase: null until triage assigns a milestone.
 # Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
 # Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+      - {id: T-003, title: "Co-primary command migration batch 2 — delivery/orchestration commands", completed_date: "2026-04-17", decision_ref: [D19, D21, D23, D44, D46]}
+      - {id: T-004, title: "Co-primary command migration batch 3 — closeout/memory/maintenance + initiative exit", completed_date: "2026-04-17", decision_ref: [D11, D19, D21, D46, D52]}
+      - {id: T-008, title: "Minimal bounded research sufficiency gate", completed_date: "2026-04-18", decision_ref: [D23, D44, D45, D46, D52]}
+      - {id: T-005, title: "Low-risk instruction-refinement lightweight lane", completed_date: "2026-04-18", decision_ref: [D23, D44]}
+      - {id: T-006, title: "First-class iterative revise-and-continue pipeline loops", completed_date: "2026-04-18", decision_ref: [D23, D44]}
+      - {id: T-009, title: "Local research capsule bank + sufficiency checker", completed_date: "2026-04-19", decision_ref: [D11, D23, D45, D46]}
+      - {id: T-011, title: "Worktree contract parity + proposal refresh", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
+      - {id: T-012, title: "Sandboxed integrate-run execution for worktree handoffs", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
+      - {id: T-010, title: "Research sufficiency platform parity + workflow hardening", completed_date: "2026-04-19", decision_ref: [D23, D46, D50, D52]}
+      - {id: T-013, title: "Deterministic reconciliation policy for shared Azoth state during worktree integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -365,9 +440,19 @@ initiatives:
     title: "Declarative swarm / eval-wave specification"
     category: run-state
     theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [declarative-swarms, eval-waves]
     phase: null
     priority: high
     task_ref: P1-002
+    slices:
+      - task_ref: P1-002
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-002.yaml"
+        phase: null
+        status: complete
+        role: historical
     blocked_by: [P1-001]
     summary: >
       YAML/schema spec for declarative swarm and eval-wave definitions alongside
@@ -380,9 +465,19 @@ initiatives:
     title: "Control-plane surfacing in welcome (gates + optional ledger)"
     category: run-state
     theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [welcome-surfacing, control-plane-ux]
     phase: null
     priority: medium
     task_ref: P1-004
+    slices:
+      - task_ref: P1-004
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-004.yaml"
+        phase: null
+        status: complete
+        role: historical
     blocked_by: [P1-001]
     summary: >
       TTL visibility and active run summary in welcome dashboard when ledger exists.
@@ -395,9 +490,19 @@ initiatives:
     title: "True multi-writer safety (write claims and lock enforcement)"
     category: run-state
     theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [write-claims, multi-writer-safety]
     phase: null
     priority: high
     task_ref: P1-015
+    slices:
+      - task_ref: P1-015
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
+        phase: null
+        status: complete
+        role: historical
     blocked_by: [P1-014]
     summary: >
       Add explicit write-claim and lock enforcement for concurrent sessions across
@@ -409,42 +514,217 @@ initiatives:
     decision_ref: [D21, D46, D50]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-015.yaml"
 
+  - id: INI-RST-004
+    title: "Roadmap/backlog/spec scaffolding"
+    category: run-state
+    theme: A
+    dimensions:
+      themes: [A]
+      categories: [run-state]
+      tracks: [roadmap-authoring, initiative-scaffolding]
+    phase: v0.2.0-p2
+    priority: medium
+    task_ref: T-001
+    slices:
+      - task_ref: T-001
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-001.yaml"
+        phase: v0.2.0-p2
+        status: complete
+        role: primary
+    summary: >
+      Add a dedicated authoring path for roadmap work so new task ids, backlog
+      rows, initiative links, and per-task specs can be scaffolded coherently
+      from one command instead of hand-editing multiple files. Builds on the
+      task_id_policy rule and the roadmap_task_id helper, but extends that into
+      a full multi-file scaffolder for the roadmap system itself.
+    decision_ref: [D47, D48, D50]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-001.yaml"
+  - id: INI-RST-005
+    title: Worktree integration workflow hardening
+    category: run-state
+    theme: A
+    dimensions:
+      themes:
+      - A
+      categories:
+      - run-state
+      tracks:
+      - worktree-integration
+      - parallel-sessions
+      - merge-reconciliation
+    phase: v0.2.0-p2
+    priority: high
+    task_ref: T-014
+    slices:
+    - task_ref: T-011
+      spec_ref: null
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-012
+      spec_ref: null
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-013
+      spec_ref: null
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-014
+      spec_ref: null
+      phase: v0.2.0-p2
+      status: active
+      role: primary
+    summary: 'Refresh the worktree-upgrade contract around current repo truth and fresh
+      external evidence, then stage the remaining delivery as three separate slices:
+      sandboxed integrate-run execution, deterministic reconciliation for shared Azoth
+      state, and post-integration lifecycle UX. T-011 is the completed planning/parity
+      slice; T-012 becomes the first implementation follow-on rather than reopening
+      historical P1-015.
+
+      '
+    decision_ref:
+    - D21
+    - D50
+    - D54
+    spec_ref: null
+
   # ── Theme B: pipeline ──────────────────────────────────────────────────────
   - id: INI-PPL-001
-    title: "auto-router L2 / self-improve lane"
+    title: auto-router L2 / self-improve lane
     category: pipeline
     theme: B
-    phase: null
+    dimensions:
+      themes:
+      - B
+      categories:
+      - pipeline
+      tracks:
+      - instruction-refinement
+      - routing
+    phase: v0.2.0-p2
     priority: medium
-    task_ref: P1-008
-    summary: >
-      Stage 0 composition_rules for refinement goals; optional L2 self-improve lane
-      in auto-router that routes low-risk refinement goals through a lighter pipeline
-      (no full planner/builder/evaluator chain). Reduces overhead for iterative work.
-    decision_ref: [D23, D44]
-    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-008.yaml"
+    task_ref: null
+    slices:
+    - task_ref: T-005
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-006
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    summary: 'P1-008 delivered the full-pipeline instruction-refinement foundation:
+      `knowledge == instruction-refinement`, Rule 4 routing, and the `l2-evidence-review`
+      inject into the architect stage. The remaining follow-on is optional low-risk
+      refinement routing: define when instruction-refinement can use a lighter lane
+      without weakening the current conservative fallback for ambiguous, governance-touching,
+      or kernel-adjacent work.
 
+      '
+    decision_ref:
+    - D23
+    - D44
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
   - id: INI-PPL-002
     title: "Eval / eval-swarm wiring drift hardening"
     category: pipeline
     theme: B
+    dimensions:
+      themes: [B]
+      categories: [pipeline]
+      tracks: [eval, drift-hardening]
     phase: null
     priority: medium
     task_ref: P1-010
+    slices:
+      - task_ref: P1-010
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
-      Tests and mirror surfaces for eval/eval-swarm stay aligned across
-      skills/agentic-eval, skills/eval-swarm, and pipeline presets. Drift detection
-      prevents silent divergence between the eval skill and its swarm escalation path.
+      P1-010 delivered the core eval/eval-swarm drift hardening across command
+      surfaces, workflow references, and deployed mirrors. This initiative remains
+      as the thematic container for future parity expansions, but no residual
+      roadmap-backed slice is currently scheduled; the linked P1-010 spec is
+      historical foundation, not open p2 follow-on work.
     decision_ref: [D46]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+  - id: INI-EVI-001
+    title: Evidence-grounded external knowledge
+    category: pipeline
+    theme: B
+    dimensions:
+      themes:
+      - B
+      - C
+      - D
+      categories:
+      - pipeline
+      - memory
+      - platform
+      tracks:
+      - research-sufficiency
+      - evidence-capsules
+      - freshness
+    phase: v0.2.0-p2
+    priority: high
+    task_ref: T-009
+    slices:
+    - task_ref: T-008
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-008.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-009
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
+      phase: v0.2.0-p2
+      status: active
+      role: primary
+    - task_ref: T-010
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-010.yaml
+      phase: v0.2.0-p2
+      status: planned
+      role: follow-on
+    summary: 'Establish a bounded but durable path for tasks that depend on external
+      facts which may have changed since training time. The initiative starts with a
+      mechanical entry gate for latest/current external-fact work, then expands into
+      reusable research capsules plus a sufficiency checker, and finally hardens the
+      cross-platform workflow surfaces so evidence-grounded behavior remains honest
+      across Codex, Claude-facing docs, and continuity tooling.
+
+      '
+    decision_ref:
+    - D11
+    - D23
+    - D44
+    - D45
+    - D46
+    - D50
+    - D52
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
 
   # ── Theme C: memory ────────────────────────────────────────────────────────
   - id: INI-MEM-001
     title: "Verbatim-first M3 storage strategy"
     category: memory
     theme: C
-    phase: v0.2.0-p1
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [verbatim-storage, m3-policy]
+    phase: v0.2.0-p2
     task_ref: P1-020
+    slices:
+      - task_ref: P1-020
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: active
+        role: primary
     priority: high
     summary: >
       Store raw episode context verbatim in M3 before any summarisation or compression.
@@ -459,8 +739,13 @@ initiatives:
     title: "Temporal validity windows for M2 patterns"
     category: memory
     theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [temporal-validity, m2-governance]
     phase: null
     priority: medium
+    slices: []
     summary: >
       Add optional `valid_from` / `valid_to` fields to M2 pattern entries with point-in-time
       query support, replacing implicit recency-by-modification-date with explicit temporal
@@ -475,8 +760,13 @@ initiatives:
     title: "Vector retrieval layer for M3 context-recall"
     category: memory
     theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [vector-retrieval, context-recall]
     phase: null
     priority: medium
+    slices: []
     summary: >
       Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic recall,
       complementing the current keyword/recency scan. Flat metadata tagging (no Python class
@@ -491,9 +781,19 @@ initiatives:
     title: "Memory loop hardening (reinforcement, closeout, session-state)"
     category: memory
     theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [memory-loop, closeout-continuity]
     phase: null
     priority: high
     task_ref: P1-006
+    slices:
+      - task_ref: P1-006
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-006.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       W2 parity for memory loop; documented reinforcement_count semantics;
       session-state handoff integrity across closeout. Keeps memory docs and
@@ -505,9 +805,19 @@ initiatives:
     title: "Elasticity: M2/M3 recall governance"
     category: memory
     theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [elasticity, recall-governance]
     phase: null
     priority: medium
     task_ref: P1-007
+    slices:
+      - task_ref: P1-007
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-007.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       Tags, decay rules, contradiction handling, and consumer boundary governance for
       M2/M3 recall. Prevents memory bloat and stale pattern surfacing without requiring
@@ -520,9 +830,19 @@ initiatives:
     title: "reinforcement_count automation (closeout + promote path)"
     category: memory
     theme: C
-    phase: null
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [reinforcement-count, closeout-automation]
+    phase: v0.2.0-p2
     priority: medium
     task_ref: P1-017
+    slices:
+      - task_ref: P1-017
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-017.yaml"
+        phase: v0.2.0-p2
+        status: active
+        role: primary
     summary: >
       Add an explicit, human-confirmed automation path for reinforcement_count so
       closeout/promote can increment prior episodes without fuzzy matching, silent
@@ -535,9 +855,19 @@ initiatives:
     title: "Phone-friendly output (narrow terminals)"
     category: ux
     theme: D
+    dimensions:
+      themes: [D]
+      categories: [ux]
+      tracks: [narrow-terminal, phone-friendly]
     phase: null
     priority: low
     task_ref: P5-006
+    slices:
+      - task_ref: P5-006
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
+        phase: null
+        status: planned
+        role: primary
     deferred_from: "v0.0.5 Phase 5 — beyond v0.1.0 roadmap (2026-04-08)"
     summary: >
       Compact/width-aware layouts for welcome dashboard and roadmap panels in narrow
@@ -550,8 +880,18 @@ initiatives:
     title: "Memory operation platform parity"
     category: platform
     theme: D
-    phase: v0.2.0-p1
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [platform-parity, memory-ops]
+    phase: v0.2.0-p2
     task_ref: P1-021
+    slices:
+      - task_ref: P1-021
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: active
+        role: primary
     priority: medium
     summary: >
       Document and validate that M3 append, M2 promote, and context-recall operations produce
@@ -566,9 +906,19 @@ initiatives:
     title: "Cursor session-open parity"
     category: platform
     theme: D
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [cursor-parity, session-open]
     phase: null
     priority: medium
     task_ref: P1-009
+    slices:
+      - task_ref: P1-009
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-009.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       Documented and validated automation path for Cursor session-open that reaches
       parity with Claude Code's SessionStart hook. Covers azoth-memory.mdc rule loading,
@@ -580,9 +930,19 @@ initiatives:
     title: "Explicit default orchestrator role across Claude Code and Copilot"
     category: platform
     theme: D
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [default-orchestrator, ownership]
     phase: null
     priority: medium
     task_ref: P1-013
+    slices:
+      - task_ref: P1-013
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-013.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       Claude Code supports a session-wide main agent, but Azoth does not currently set one,
       so `/auto` and related pipelines run in the default session agent and only reach Azoth
@@ -598,9 +958,19 @@ initiatives:
     title: "Antigravity workspace bootstrap adapter"
     category: platform
     theme: D
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [antigravity, workspace-bootstrap]
     phase: null
     priority: high
     task_ref: P1-014
+    slices:
+      - task_ref: P1-014
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-014.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       Bootstrap a practical Antigravity-native Azoth surface inside the repo using
       `.agents/rules/`, `.agents/workflows/`, and `.agents/skills/`. Target standard
@@ -613,8 +983,13 @@ initiatives:
     title: "Antigravity deploy target and install path"
     category: platform
     theme: D
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [antigravity, deploy-path]
     phase: null
     priority: medium
+    slices: []
     blocked_by: [P1-014]
     summary: >
       Extend the repo-local Antigravity bootstrap into a real install and deploy path:
@@ -625,14 +1000,103 @@ initiatives:
       operational in practice.
     decision_ref: [D19, D46]
 
+  - id: INI-PLT-006
+    title: "Co-primary platform model (Claude Code + Codex; stable adapters)"
+    category: platform
+    theme: D
+    dimensions:
+      themes: [D]
+      categories: [platform]
+      tracks: [co-primary-platforms, command-migration]
+    phase: v0.2.0-p2
+    priority: high
+    task_ref: T-002
+    slices:
+      - task_ref: T-002
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-002.yaml"
+        phase: v0.2.0-p2
+        status: complete
+        role: historical
+      - task_ref: T-003
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-003.yaml"
+        phase: v0.2.0-p2
+        status: complete
+        role: historical
+      - task_ref: T-004
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-004.yaml"
+        phase: v0.2.0-p2
+        status: complete
+        role: historical
+    summary: >
+      Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
+      model with Claude Code and Codex as co-primary command surfaces, while keeping
+      Cursor, Copilot, OpenCode, and Gemini / Antigravity on an honest adapter contract.
+      Commands remain the user-facing abstraction; pipelines stay internal execution
+      machinery. P1-024 proved the pilot projection path; T-002 through T-004
+      operationalized the migration batches and the canonical contract/projection path.
+      Follow-on Codex calm-flow runtime proof and any remaining `legacy_claude_markdown`
+      bridge cleanup continue as platform-polish work rather than evidence that every
+      migrated command, or every remaining command family, is already independent from
+      `.claude/commands/*.md`.
+    decision_ref: [D19, D21, D46, D50, D52]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-002.yaml"
+
   # ── Theme E: efficiency ────────────────────────────────────────────────────
+  - id: INI-KRP-001
+    title: "Karpathy Principles — behavioral quality layer"
+    category: efficiency
+    theme: E
+    dimensions:
+      themes: [E, A, B]
+      categories: [efficiency, run-state, pipeline]
+      tracks: [autonomous-quality, builder-discipline, goal-grounding]
+    phase: null
+    priority: high
+    research_ref: "ep-266"
+    summary: >
+      Integrate the four Andrej Karpathy LLM-coding principles (Think Before Coding,
+      Simplicity First, Surgical Changes, Goal-Driven Execution) as first-class behavioral
+      guidance across kernel instructions, skills, and agent postures. Primary payoff:
+      prerequisite scaffolding for the autonomous development loop (T-006 dependency).
+      Secondary: portable discipline layer for azoth installs downstream.
+      Research source: multica-ai/andrej-karpathy-skills (57k stars, MIT, Apr 2026).
+      Full findings in ep-266. Implementation decisions deferred — do not overfit spec
+      from research context alone; pick up with live context when activating.
+    decision_ref: [D21, D23, D51]
+    slices:
+      - task_ref: T-KRP-A
+        role: primary
+        status: planned
+      - task_ref: T-KRP-B
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-C
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-D
+        role: follow-on
+        status: planned
+      - task_ref: T-KRP-E
+        role: follow-on
+        status: planned
+
   - id: INI-EFF-001
     title: "Token & inference efficiency (context budget, caching, spawn hygiene)"
     category: efficiency
     theme: E
+    dimensions:
+      themes: [E]
+      categories: [efficiency]
+      tracks: [context-budget, caching, spawn-hygiene]
     phase: null
     priority: medium
     task_ref: P1-011
+    slices:
+      - task_ref: P1-011
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-011.yaml"
+        phase: null
+        status: complete
+        role: historical
     summary: >
       Context budget discipline (BL-012), deploy mirror pruning, provider caching
       (prompt cache headers, cache-friendly prompt ordering), and spawn hygiene

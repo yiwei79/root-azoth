@@ -8,6 +8,13 @@ agent: orchestrator
 Lean delivery pipeline. Use when the work is pre-approved and additive
 (no governance changes, no kernel modifications).
 
+## Preconditions
+
+<!-- P1-016: Antigravity compliance -->
+- Verify `.azoth/scope-gate.json` exists and is approved before write work.
+- Do NOT use this pipeline for kernel or governance changes — use `/deliver-full`.
+- See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
+
 ## Stage 0 — Pipeline gate (mechanical)
 
 Apply the canonical procedure in `docs/GATE_PROTOCOL.md`. If this command writes
@@ -65,12 +72,16 @@ Policy source: `subagent-router` skill (trigger definitions and routing table).
 - Gate 2 (Test Builder gate — architect reviews test coverage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g2`)
 - Gate 3 (Architect Review stage): `Agent(subagent_type=architect)` — trigger: review-independence (`deliver_g3`)
 - **Gate escalation:** If a review gate returns request-changes, CRITICAL/blocking findings, or `entropy: RED`, **STOP** until the human approves continuing (same pattern as `/auto` Execution §5).
+- **Governed approval consumption:** When a human approves continuation after a governed
+  human gate, consume that approval in the same run through `scripts/run_ledger.py` by
+  promoting the next executable stage from the paused checkpoint. A declaration/status
+  card alone is not valid downstream progress.
 - **Eval / swarm routing:** If the run includes an **evaluator** step or a **post-build `/eval`**
   quality pass, apply `.claude/commands/eval.md` triggers **E1–E6** before choosing baseline
   **`/eval` (0.85)** vs **`/eval-swarm` (0.9)** — same rules as `/auto` Execution §6 (parallel
   isolated evaluators when any trigger fires).
 - No review stage shall execute inline with the stage it reviews
-- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43).
+- These prose mandates are necessary but not sufficient: runtime enforcement will be added in Phase 5 (P5-001, D43). Residual risk: same-run approval consumption is wired, but revise-and-continue replay after review findings is still orchestrator-managed until `T-006`.
 
 ## Rules
 

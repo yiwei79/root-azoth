@@ -1,5 +1,6 @@
 ---
 description: Generate unit tests for specified code
+agent: orchestrator
 ---
 
 # /test $ARGUMENTS

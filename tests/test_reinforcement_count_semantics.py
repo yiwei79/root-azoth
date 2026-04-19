@@ -25,6 +25,10 @@ CLOSEOUT_MIRRORS = [
         REPO / ".agents" / "workflows" / "session-closeout.md",
         id="agents",
     ),
+    pytest.param(
+        REPO / ".gemini" / "commands" / "session-closeout.toml",
+        id="gemini",
+    ),
 ]
 
 
@@ -47,4 +51,31 @@ def test_closeout_mirror_episode_template_includes_reinforcement_count(
     assert "reinforcement_count" in text, (
         f"{mirror_path.relative_to(REPO)} episode template is missing 'reinforcement_count'. "
         "Add '\"reinforcement_count\": 0' to the episode JSON block in step 4."
+    )
+
+
+@pytest.mark.parametrize("mirror_path", CLOSEOUT_MIRRORS)
+def test_closeout_mirror_documents_w1b_reinforcement_step(
+    mirror_path: Path,
+) -> None:
+    """P1-017: each closeout mirror must document the safe in-flow W1b semantics."""
+    text = mirror_path.read_text(encoding="utf-8")
+    assert "W1b" in text, (
+        f"{mirror_path.relative_to(REPO)} is missing the W1b reinforcement step. "
+        "Add a 'W1b — Optional reinforcement_count update' block immediately after "
+        "the W1 log line in the Write Checkpoints section."
+    )
+    assert "python3 scripts/reinforcement_count.py" in text, (
+        f"{mirror_path.relative_to(REPO)} must document the standalone W1b reinforcement command."
+    )
+    assert "--session-id <active-session-id> --source closeout" in text, (
+        f"{mirror_path.relative_to(REPO)} must pin the W1b command arguments for session_id and source."
+    )
+    assert (
+        "Do **not** run `python3 scripts/do_closeout.py --reinforce-episode <ep-id>` here" in text
+    ), (
+        f"{mirror_path.relative_to(REPO)} must explicitly block the unsafe in-flow do_closeout.py reinforcement path."
+    )
+    assert "full W1-W4 closeout path" in text, (
+        f"{mirror_path.relative_to(REPO)} must explain that do_closeout.py re-enters the full closeout flow."
     )

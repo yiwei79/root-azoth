@@ -105,7 +105,7 @@ def test_orchestration_constraints_has_all_required_bullets() -> None:
         "The Orchestrator remains the final speaker for all human gates; architect gate reviews return findings to the orchestrator.",
         "Subagents return findings; Orchestrator disposes and escalates to human if needed",
         "No review stage shall execute inline with the stage it reviews",
-        "runtime enforcement will be added in Phase 5 (P5-001, D43)",
+        "shared fail-closed runtime enforcement for approval promotion and reviewer/evaluator-driven revise-and-continue replay",
         "Isolation constraint applies to agent-gated review stages (3\u20136)",
     ]
     for bullet in required:

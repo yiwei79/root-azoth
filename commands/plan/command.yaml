@@ -1,0 +1,72 @@
+schema_version: 1
+name: plan
+display_name: /plan
+description: Structured planning without execution
+agent: orchestrator
+azoth_effect: read
+
+execution:
+  kind: utility
+  waits_for_human_signal: none
+  emits:
+    - structured_plan
+    - pipeline_recommendation
+
+arguments:
+  accepts_arguments: true
+  syntax: /plan [goal]
+
+state:
+  reads:
+    - azoth.yaml
+    - user-specified targets via $ARGUMENTS
+  outputs:
+    - structured_plan
+    - pipeline_recommendation
+
+governance:
+  preconditions:
+    - planning_only
+    - no_repo_write
+  approval_mode: none
+  pipeline_gate_behavior: recommend_only
+  target_layer_rule: none
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/plan.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/plan.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/plan.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/plan.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/plan.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-plan/SKILL.md
+    metadata_path: .agents/skills/azoth-plan/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/workspace.plan.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/plan.md
+
+migration:
+  phase: canonical_body_batch_2_residual_bundle
+  runtime_source_of_truth: commands/plan/command.yaml
+  notes:
+    - BL-057 closes the remaining T-003 orchestration bundle atomically.
+    - .claude/commands/plan.md remains the authored semantic body during the bridge.
+
+references:
+  - .azoth/roadmap-specs/v0.2.0/T-003.yaml
+  - docs/CANONICAL_COMMAND_CONTRACT.md
