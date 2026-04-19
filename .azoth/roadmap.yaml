@@ -341,7 +341,7 @@ versions:
 
   - id: v0.2.0-p2
     status: active
-    current_patch: 61
+    current_patch: 62
     goal: "Memory hardening + declarative swarm depth + platform parity polish"
     phase_scope: [2]
     themes: [A, C, D]
@@ -373,13 +373,6 @@ versions:
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p1"
-      - id: T-013
-        title: "Deterministic reconciliation policy for shared Azoth state during worktree integration"
-        decision_ref: [D21, D50, D54]
-        target_layer: M1
-        delivery_pipeline: governed
-        initiative_ref: "INI-RST-005"
-        status: planned
       - id: T-014
         title: "Worktree session lifecycle UX after integration"
         decision_ref: [D21, D50, D54]
@@ -439,6 +432,7 @@ versions:
       - {id: T-011, title: "Worktree contract parity + proposal refresh", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
       - {id: T-012, title: "Sandboxed integrate-run execution for worktree handoffs", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
       - {id: T-010, title: "Research sufficiency platform parity + workflow hardening", completed_date: "2026-04-19", decision_ref: [D23, D46, D50, D52]}
+      - {id: T-013, title: "Deterministic reconciliation policy for shared Azoth state during worktree integration", completed_date: "2026-04-19", decision_ref: [D21, D50, D54]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -560,7 +554,7 @@ initiatives:
       - merge-reconciliation
     phase: v0.2.0-p2
     priority: high
-    task_ref: T-013
+    task_ref: T-014
     slices:
     - task_ref: T-011
       spec_ref: null
@@ -575,13 +569,13 @@ initiatives:
     - task_ref: T-013
       spec_ref: null
       phase: v0.2.0-p2
-      status: active
-      role: primary
+      status: complete
+      role: historical
     - task_ref: T-014
       spec_ref: null
       phase: v0.2.0-p2
-      status: planned
-      role: follow_on
+      status: active
+      role: primary
     summary: 'Refresh the worktree-upgrade contract around current repo truth and fresh
       external evidence, then stage the remaining delivery as three separate slices:
       sandboxed integrate-run execution, deterministic reconciliation for shared Azoth
@@ -595,7 +589,6 @@ initiatives:
     - D50
     - D54
     spec_ref: null
-
   - id: INI-MEM-003
     title: "Vector retrieval layer for M3 context-recall"
     category: memory

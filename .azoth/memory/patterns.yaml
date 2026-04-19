@@ -506,3 +506,37 @@ patterns:
       fail if one platform is omitted. If a field intentionally does not
       propagate, encode that boundary explicitly in tests or documentation so
       future sessions do not assume silent parity.
+
+  - id: orchestrator-goal-driven-adaptive-threshold-loops
+    approved: true
+    approved_date: "2026-04-19"
+    reinforced_by: [ep-241, ep-246, ep-276, ep-277, ep-281]
+    trigger: governed or adaptive pipeline work where a reviewer/evaluator returns scope-local request-changes and the human wants autonomous continuation
+    summary: >
+      The orchestrator should treat the declared pipeline as the fixed control
+      structure, then adapt inside it by routing findings to the lowest
+      legitimate upstream corrective stage, replaying that stage through fresh
+      subagents, and carrying typed handoffs forward until the gate passes or a
+      numeric loop threshold is reached. This is not free-form retrying: it is
+      goal-driven adaptive routing with bounded authority, explicit replay
+      evidence, and a deterministic stop or recomposition point.
+    why_it_matters: >
+      ep-241 established the preference for minimal-upstream corrective routing
+      instead of reflexively bouncing everything to architect. ep-246 made the
+      iterative loop a governed pipeline requirement rather than an ad hoc
+      convenience. ep-276 and ep-277 showed why loops need thresholds and an
+      explicit recomposition branch once churn stops teaching anything new.
+      ep-281 validated the stronger capability in practice: T-013 stayed inside
+      the declared deliver-full pipeline, used visible subagent handoffs,
+      recorded replay artifacts, and reached a pass outcome through bounded
+      architect-reviewer replays rather than inline improvisation.
+    how_to_apply: >
+      When a pipeline gate returns actionable request-changes, first classify
+      whether the finding belongs to architect, planner, builder, or another
+      legitimate upstream stage. Replay only that stage, record the revised
+      artifact and approval evidence on disk, rerun the blocked gate through a
+      fresh subagent, and keep the handoff trail visible in-thread. Always set
+      or inherit a numeric loop threshold. If the threshold is hit, stop the
+      blind replay cycle and either escalate to the human or recompose the run
+      into a narrower approved slice. Never use adaptive-loop authority to
+      collapse the pipeline back into inline orchestrator execution.

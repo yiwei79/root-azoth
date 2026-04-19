@@ -14,7 +14,9 @@ This command preserves Azoth's **single-integrator** parallel-session contract:
 - if the target branch worktree is dirty or another integration pass is in flight, stop
 - producer branches are refreshed against the local target branch before any sync commit is created
 
-No governance evaluation. No session close. Just sync under the parallel-session protocol.
+No governance evaluation during producer sync. No session close. Integrate runs remain
+mechanical by default, except for a pre-approved governed reconciliation substep when
+the selected queued handoff carries tracked shared-state approval metadata.
 
 ## Intent Detection
 
@@ -54,7 +56,9 @@ Use when this worktree is on a feature, patch, or detached producer branch.
 7. **Register the handoff**:
    - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --record-producer-handoff`
    - This must run only after the producer branch is clean at the intended handoff commit
-   - The backend writes a shared handoff record keyed by the git common dir so any later integrate run can resolve it immediately
+   - The backend writes an append-only shared handoff record keyed by the git common dir
+   - Each ready handoff carries a deterministic `handoff_id` derived from `{target_branch, producer_branch, queued_head_sha}`
+   - Capture that `handoff_id` in the report whenever possible so later integrate runs can target the exact queued handoff
 
 8. **Report**:
    ```
@@ -89,29 +93,42 @@ short-lived and transactional rather than a permanently open session.
 4. **Resolve exactly one ready producer handoff**:
    - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --next-ready-handoff`
    - If the human names a specific producer branch, pass `--producer-branch <branch>`
+   - If the human already has the exact queue record, pass `--handoff-id <id>`
+   - `--next-ready-handoff --json` surfaces the selected `handoff_id`
+   - Branch-only selection is allowed only when it matches exactly one unresolved handoff; otherwise STOP and rerun with `--handoff-id`
    - STOP if no ready producer handoff is queued for the target branch
 
 5. **Integrate exactly one producer branch**:
-   - merge the selected ready producer branch into a temporary integration worktree rooted at the target tip
+   - execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --integrate-ready-handoff [--producer-branch <branch>] [--handoff-id <id>]`
+   - use `--verify-command "<cmd>"` (repeatable) for the targeted regeneration/tests that must pass inside the sandbox worktree before promotion
+   - the backend merges the selected ready handoff's queued `head_sha`, not the live producer branch tip, into a temporary integration worktree rooted at the target tip
+   - after merge succeeds, the backend runs deterministic shared-state reconciliation in the sandbox before any verification commands
+   - if the handoff carries tracked governed approval metadata, that reconciliation may invoke a pre-approved governed reconciliation substep for allowlisted backlog/roadmap rows
    - do not treat a permanently open integrator worktree as required state
-   - resolve conflicts deliberately, especially in shared Azoth state surfaces
+   - if merge or verification fails, the target branch must remain unchanged and the sandbox path is reported for inspection
+   - if reconciliation fails, the target branch must remain unchanged, the queue stays unresolved, and the sandbox path is reported for inspection
+   - if promotion already succeeded but queue write-back failed, rerunning the same `handoff_id` repairs queue state without creating a second merge
 
 6. **Run required post-merge regeneration/tests**:
-   - if command/agent/skill/platform-adapter parity changed, run the required sync or deploy step
-   - run the targeted verification for the merged slice
+   - pass those checks through `--verify-command` so they run inside the temporary integration worktree before promotion
+   - if command/agent/skill/platform-adapter parity changed, include the required sync or deploy step in the verification set
 
 7. **Mark the handoff integrated**:
-   - After the merge succeeds, execute `python3 scripts/worktree_sync.py [--target-branch <branch>] --mark-integrated <producer_branch>`
+   - successful sandbox integration updates the handoff queue automatically
+   - `--mark-integrated [<producer_branch>] --handoff-id <id>` remains available for legacy/manual flows
+   - branch-only `--mark-integrated <producer_branch>` is valid only when exactly one unresolved handoff matches that branch; otherwise STOP and use `--handoff-id`
 
 8. **Promote the tested result**:
-   - fast-forward the live target branch to the tested merge commit
+   - on successful verification, the backend fast-forwards the live target branch to the tested merge commit
    - push if needed
-   - clean up the temporary integration workspace
+   - clean up the temporary integration workspace only on success
+   - preserve the sandbox worktree on any failure so the operator can inspect or recover it
 
 9. **Report**:
    ```
    ## Integrate Run Complete
    - Branch integrated: {producer_branch}
+   - Handoff: {handoff_id}
    - Target branch: {target_branch}
    - Commit: {SHA}
    - Verification: {tests_or_checks}
@@ -120,7 +137,8 @@ short-lived and transactional rather than a permanently open session.
 
 ## Rules
 
-- This is a MECHANICAL command — no evaluation, no episodes, no governance
+- This is a MECHANICAL command for producer syncs and ordinary integrate runs
+- A queued handoff with tracked governed approval metadata may trigger a pre-approved governed reconciliation substep for allowlisted shared state; that does not authorize broader governance work
 - Review staged files before committing — exclude secrets, large binaries
 - If there are uncommitted kernel changes, WARN and ask human before staging
 - Use specific file paths in `git add`, not `-A`
@@ -128,6 +146,7 @@ short-lived and transactional rather than a permanently open session.
 - Preserve the **single integrator** contract from `docs/playbook/05-parallel-sessions.md`
 - Producer sessions must not merge themselves into the target branch while another integrator pass is active
 - Producer sessions must refresh against the local target branch **before** creating the sync commit
+- Integrate runs must resolve and clear queue state by exact `handoff_id`
 - Integrate runs merge **one** producer branch at a time, then stop so other sessions can refresh
 - Single integrator means **one integration operation at a time**, not one permanently open session
 - If integration is unsafe, fail closed and explain why instead of improvising around a dirty target tree

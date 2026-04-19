@@ -1,0 +1,20 @@
+artifact_kind: design-gate-approval
+artifact_scope: pipeline-replay-only
+session_id: 2026-04-19-t-013
+stage_id: deliver_full_s2_architect
+gate: design-approval
+actor_type: human
+approved: true
+decision: approved
+approval_mode: delegated-revise-and-continue
+loop_iteration: 3
+loop_threshold: 3
+approved_at: 2026-04-19T16:02:00Z
+backlog_id: T-013
+goal: "T-013: Deterministic reconciliation policy for shared Azoth state during worktree integration"
+approval_note: >
+  Human explicitly delegated the orchestrator to run the iterative revise-and-continue
+  loop through the governed pipeline, with the orchestrator making continuation
+  decisions autonomously up to a threshold of 3 loops. This artifact proves the
+  pipeline design gate was consumed for loop 3/3; it is not the tracked governed
+  approval capsule used by integrate-run queue metadata.

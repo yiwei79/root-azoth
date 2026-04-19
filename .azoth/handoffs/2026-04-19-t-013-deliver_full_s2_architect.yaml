@@ -1,0 +1,29 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s2_architect
+agent: architect
+stage_kind: research
+status: complete
+entropy: YELLOW
+gate_outcome: Revised architecture brief now separates local pipeline design-gate evidence from the tracked governed approval capsule and defines a deterministic scope-fingerprint contract for the final reviewer rerun.
+session_id: 2026-04-19-t-013
+done:
+  - Recorded explicit loop-3 human design-gate evidence for the architect replay so downstream reviewer and planner stages can prove the required human gate was consumed.
+  - Revised the T-013 brief to distinguish repo-local pipeline replay approval from the tracked governed approval capsule carried by the queued producer commit.
+  - Defined the exact canonical payload used to recompute `scope_fingerprint`, keeping the mechanical versus governed reconcile split and preserving T-012 fail-closed rerun behavior.
+decisions:
+  - Final-delivery approvals remain an append-only event log and may only suppress exact-record duplicates or future immutable event-id duplicates.
+  - Backlog and roadmap reconciliation require explicit allowlist metadata mirrored from a tracked governed approval capsule at `.azoth/governed-state-approvals/<session_id>-<backlog_id>.yaml`.
+  - Queue metadata may mirror approved scope fields, but the integrator must recompute `scope_fingerprint` from the capsule payload instead of trusting producer-supplied scope hashes.
+  - /worktree-sync must state when it is invoking a governed reconciliation substep rather than implying all integrate behavior is non-governance.
+open:
+  - Confirm whether exact-record equality is sufficient for approval-log dedupe in the near term or whether a first-class immutable event id should be added immediately.
+  - Verify the revised governed contract still keeps lifecycle UX and closeout follow-ons deferred to T-014.
+artifact_refs:
+  - .azoth/handoffs/2026-04-19-t-013-architecture-brief.md
+  - .azoth/handoffs/2026-04-19-t-013-design-approval-loop-3.yaml
+  - scripts/worktree_sync.py
+  - .claude/commands/worktree-sync.md
+  - docs/playbook/05-parallel-sessions.md
+  - .azoth/final-delivery-approvals.jsonl
+next: Replay deliver_full_s3 with the revised brief, the loop-3 design-gate artifact, and the tracked governed approval capsule contract attached.
