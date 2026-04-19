@@ -30,8 +30,8 @@ and entropy gates must short-circuit and allow it.
 ## Pipeline-gate write (governed work only)
 
 **Before the first Write/Edit** to the repo in this run: `Read` `.azoth/scope-gate.json`.
-If `delivery_pipeline` is `governed` **or** `target_layer` is `M1`, `Write`
-`.azoth/pipeline-gate.json` so the PreToolUse hook allows subsequent edits:
+If any governed signal is present, `Write` `.azoth/pipeline-gate.json` so the
+PreToolUse hook allows subsequent edits:
 
 ```json
 {
@@ -47,11 +47,17 @@ Set `"pipeline"` to the delivery command you will actually run (`"auto"` | `"del
 `"deliver-full"`). Do **not** assume `"auto"` if the handoff is `/deliver` or
 `/deliver-full`.
 
-If the scope is **not** governed (standard additive work without M1 backlog), **omit**
-this file unless it already exists from a prior step. Note that `delivery_pipeline`
-values emitted by `/auto` scope-gate templates are `auto`, `deliver`, or `deliver-full`
-— not `governed`. The `governed` trigger applies to `/deliver-full` flows where
-`target_layer == M1`. Standard `/auto` runs rarely write pipeline-gate.json.
+Treat the scope as governed when **any** of the following is true:
+
+- `governance_mode == governed`
+- legacy `delivery_pipeline == governed`
+- fused `/auto` scope-gates record the chosen pipeline as `delivery_pipeline == deliver-full`
+- `target_layer == M1`
+
+If none of those governed signals are present, **omit** this file unless it
+already exists from a prior step. This bridge wording matters because `/next`
+still emits legacy governed/standard scope cards, while fused `/auto`
+declarations may record the chosen pipeline name directly.
 
 If `pipeline-gate.json` already exists with the same `session_id`, update `opened_at`
 only.
@@ -93,10 +99,17 @@ Required same-run mutation after approval consumption:
 Updating only narration or a status/declaration card is insufficient. If the next
 stage cannot be promoted mechanically, fail closed and stop.
 
-Residual risk remains intentionally visible: this same-run promotion path hardens
-paused governed human gates, but reviewer/evaluator-driven revise-and-continue loops
-are still orchestrator-managed rather than a first-class runtime replay primitive.
-Future roadmap task `T-006` is the follow-on for that iterative loop behavior.
+Reviewer/evaluator-driven revise-and-continue loops now use the same fail-closed
+runtime discipline:
+
+- require lineage proof from the active run entry (`stages_completed[-1]`,
+  `active_stage_id`, `pending_stage_ids`)
+- rewrite the queue as `[revision_stage, gate_stage, *downstream]`
+- keep the current review stage as the gate-owning `active_stage_id`
+- set `status: paused` and `pause_reason: human-gate`
+- require the same human approval consumption path to promote the replay target
+
+If lineage proof is missing, ambiguous, or already rewritten, fail closed and stop.
 
 ## Governed closeout approval evidence
 
@@ -149,7 +162,9 @@ writes `.azoth/scope-gate.json` with 7 core required fields
 (`session_id`, `goal`, `approved`, `approved_by`, `expires_at`, `backlog_id`,
 `target_layer`) plus one mode field (`delivery_pipeline` during the bridge, or
 `governance_mode` on the normalized path), and optionally `.azoth/pipeline-gate.json`
-(for governed work). This replaces the separate
+(for governed work). When `/auto` uses `delivery_pipeline`, that field may carry
+the chosen pipeline name (`auto | deliver | deliver-full`) instead of the legacy
+`governed | standard` scope classification. This replaces the separate
 `/next` → `/auto` two-step flow.
 
 The fused Declaration eliminates one human gate (scope approval) from the `/auto` happy

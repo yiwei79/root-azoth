@@ -669,9 +669,14 @@ def upsert_session(
     return created, entry
 
 
-def load_run(root: Path, run_id: str) -> dict | None:
+def load_run(root: Path, run_id: str, *, ledger_path: Path | None = None) -> dict | None:
     """Return a single run entry by run_id, or None when absent."""
-    data = _load_ledger_for_helpers(root)
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
     if data is None:
         return None
     runs = data.get("runs")
@@ -799,7 +804,7 @@ def consume_human_gate_approval(
     a human gate and still has a pending executable stage to promote.
     """
     resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
-    entry = load_run(root, run_id)
+    entry = load_run(root, run_id, ledger_path=resolved_ledger_path)
     if entry is None:
         raise ValueError(f"run {run_id!r} not found")
 
@@ -845,6 +850,84 @@ def consume_human_gate_approval(
         active_stage_id=next_stage_id,
         pending_stage_ids=pending_stage_ids[1:],
         pause_reason=None,
+        ledger_path=resolved_ledger_path,
+    )
+    return updated_entry
+
+
+def rewrite_request_changes_replay(
+    root: Path,
+    *,
+    run_id: str,
+    next_action: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Requeue the last completed upstream stage ahead of the active review stage.
+
+    This is the fail-closed runtime transition for reviewer/evaluator
+    `request-changes` dispositions. It uses only current run-ledger lineage:
+    `stages_completed[-1]`, `active_stage_id`, and `pending_stage_ids`.
+    """
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    entry = load_run(root, run_id, ledger_path=resolved_ledger_path)
+    if entry is None:
+        raise ValueError(f"run {run_id!r} not found")
+
+    current_stage_id = str(entry.get("active_stage_id") or "").strip()
+    if not current_stage_id:
+        raise ValueError("request-changes replay requires active_stage_id")
+
+    stages_completed = list(entry.get("stages_completed") or [])
+    if not stages_completed:
+        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+
+    revision_stage_id = str(stages_completed[-1] or "").strip()
+    if not revision_stage_id:
+        raise ValueError("request-changes replay requires lineage proof from stages_completed")
+    if revision_stage_id == current_stage_id:
+        raise ValueError(
+            "unsupported request-changes replay shape: revision stage matches active stage"
+        )
+
+    pending_stage_ids = list(entry.get("pending_stage_ids") or [])
+    if not pending_stage_ids:
+        raise ValueError("unsupported request-changes replay shape: no downstream stages to replay")
+
+    already_rewritten = (
+        len(pending_stage_ids) >= 2
+        and pending_stage_ids[0] == revision_stage_id
+        and pending_stage_ids[1] == current_stage_id
+        and entry.get("pause_reason") == "human-gate"
+    )
+    if already_rewritten:
+        raise ValueError("request-changes replay already rewritten for this run")
+
+    if revision_stage_id in pending_stage_ids or current_stage_id in pending_stage_ids:
+        raise ValueError(
+            "unsupported request-changes replay shape: queue already contains replay stages"
+        )
+
+    replay_next_action = (
+        next_action
+        or f"Resume at human gate for stage `{current_stage_id}` in pipeline "
+        f"`{entry.get('mode', 'unknown')}`; approval replays `{revision_stage_id}`."
+    )
+
+    _, updated_entry = upsert_run(
+        root,
+        run_id=run_id,
+        mode=str(entry.get("mode") or ""),
+        goal=str(entry.get("goal") or ""),
+        status="paused",
+        next_action=replay_next_action,
+        session_id=str(entry.get("session_id") or "") or None,
+        backlog_id=str(entry.get("backlog_id") or "") or None,
+        ide=str(entry.get("ide") or "") or None,
+        updated_at=utc_now_iso(),
+        stages_completed=stages_completed,
+        active_stage_id=current_stage_id,
+        pending_stage_ids=[revision_stage_id, current_stage_id, *pending_stage_ids],
+        pause_reason="human-gate",
         ledger_path=resolved_ledger_path,
     )
     return updated_entry

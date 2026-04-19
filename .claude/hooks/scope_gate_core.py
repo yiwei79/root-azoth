@@ -8,10 +8,15 @@ import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPTS_DIR = REPO_ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from research_sufficiency import evaluate_research_sufficiency, validate_research_evidence_reference
 
 _WRITE_TOOL_NAMES = {"write", "create_file", "createfile"}
 _EDIT_TOOL_NAMES = {
@@ -25,9 +30,6 @@ _EDIT_TOOL_NAMES = {
 }
 _PATCH_TARGET_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: ([^\n]+)$", re.MULTILINE)
 _PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
-_RESEARCH_EVIDENCE_KIND = "repo-local"
-_RESEARCH_EVIDENCE_REQUIRED_FIELDS = frozenset({"kind", "session_id", "path"})
-_WINDOWS_DRIVE_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 _REMINDER = (
     "[scope-gate] Write/Edit blocked — no approved scope card found.\n"
@@ -220,42 +222,10 @@ def pipeline_gate_path(repo_root: Path) -> Path:
 
 
 def _research_evidence_ok(pg: dict) -> bool:
-    research_required = pg.get("research_required")
-    if not isinstance(research_required, bool):
-        return False
-    if research_required is False:
-        return True
-
-    evidence = pg.get("research_evidence")
-    if not isinstance(evidence, dict):
-        return False
-    if _RESEARCH_EVIDENCE_REQUIRED_FIELDS - set(evidence.keys()):
-        return False
-
-    kind = str(evidence.get("kind") or "").strip()
-    if kind != _RESEARCH_EVIDENCE_KIND:
-        return False
-
-    evidence_session_id = str(evidence.get("session_id") or "").strip()
-    if evidence_session_id != str(pg.get("session_id") or "").strip():
-        return False
-
-    evidence_path = str(evidence.get("path") or "").strip()
-    if not evidence_path:
-        return False
-    if Path(evidence_path).is_absolute() or _WINDOWS_DRIVE_ABSOLUTE_RE.match(evidence_path):
-        return False
-    parsed_path = urlparse(evidence_path)
-    if parsed_path.scheme:
-        return False
-    normalized_parts = PurePosixPath(evidence_path.replace("\\", "/")).parts
-    if ".." in normalized_parts:
-        return False
-
-    return True
+    return bool(validate_research_evidence_reference(pg).get("ok"))
 
 
-def pipeline_gate_ok(pg_path: Path, scope_data: dict) -> bool:
+def pipeline_gate_ok(pg_path: Path, scope_data: dict, repo_root: Path) -> bool:
     sid = scope_data.get("session_id")
     if not sid or not pg_path.is_file():
         return False
@@ -288,6 +258,15 @@ def pipeline_gate_ok(pg_path: Path, scope_data: dict) -> bool:
         return False
     if not _research_evidence_ok(pg):
         return False
+    reference = validate_research_evidence_reference(pg)
+    evidence_path = reference.get("evidence_path")
+    if isinstance(evidence_path, str) and evidence_path:
+        evaluate_research_sufficiency(
+            repo_root=repo_root,
+            evidence_path=evidence_path,
+            goal=str(scope_data.get("goal") or "").strip() or None,
+            backlog_id=str(scope_data.get("backlog_id") or "").strip() or None,
+        )
     return True
 
 
@@ -404,7 +383,7 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     )
 
     if is_governed_scope(data):
-        if not is_pg_write and not pipeline_gate_ok(pg_path, data):
+        if not is_pg_write and not pipeline_gate_ok(pg_path, data, root):
             return ScopeGateResult(allowed=False, deny_reason=_GOVERNED_REMINDER)
 
     return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=False)

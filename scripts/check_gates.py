@@ -16,6 +16,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import re
 import sys
@@ -52,8 +53,6 @@ PIPELINE_GATE_CORE_REQUIRED_FIELDS = frozenset(
 
 PIPELINE_GATE_MODE_FIELDS = frozenset({"pipeline", "pipeline_command"})
 PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
-RESEARCH_EVIDENCE_REQUIRED_FIELDS = frozenset({"kind", "session_id", "path"})
-RESEARCH_EVIDENCE_KIND = "repo-local"
 WINDOWS_DRIVE_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 
@@ -101,7 +100,7 @@ def _scope_selected_pipeline(scope_gate: dict) -> str:
     return ""
 
 
-def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
+def _validate_research_evidence_fallback(gate: dict) -> Tuple[bool, str]:
     research_required = gate.get("research_required")
     if not isinstance(research_required, bool):
         return False, "❌ BLOCKED — pipeline-gate.json research_required must be a boolean."
@@ -116,7 +115,7 @@ def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
             "research_required is true.",
         )
 
-    missing = RESEARCH_EVIDENCE_REQUIRED_FIELDS - set(evidence.keys())
+    missing = {"kind", "session_id", "path"} - set(evidence.keys())
     if missing:
         return (
             False,
@@ -125,11 +124,10 @@ def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
         )
 
     kind = str(evidence.get("kind") or "").strip()
-    if kind != RESEARCH_EVIDENCE_KIND:
+    if kind != "repo-local":
         return (
             False,
-            "❌ BLOCKED — pipeline-gate.json research_evidence.kind must equal "
-            f"{RESEARCH_EVIDENCE_KIND!r}.",
+            "❌ BLOCKED — pipeline-gate.json research_evidence.kind must equal 'repo-local'.",
         )
 
     evidence_session_id = str(evidence.get("session_id") or "").strip()
@@ -165,6 +163,53 @@ def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
         )
 
     return True, ""
+
+
+def _validate_research_evidence(gate: dict) -> Tuple[bool, str]:
+    module = _load_research_sufficiency_module()
+    validate = getattr(module, "validate_research_evidence_reference", None) if module else None
+    if not callable(validate):
+        return _validate_research_evidence_fallback(gate)
+
+    result = validate(gate)
+    if result["ok"]:
+        return True, ""
+    return False, f"❌ BLOCKED — {result['reasons'][0]}"
+
+
+def _load_research_sufficiency_module():
+    try:
+        return importlib.import_module("research_sufficiency")
+    except ModuleNotFoundError:
+        return None
+
+
+def _evaluate_research_capsule_advisory(root: Path, gate: dict, scope: dict | None) -> dict | None:
+    research_required = gate.get("research_required")
+    if research_required is not True:
+        return None
+
+    module = _load_research_sufficiency_module()
+    if module is None:
+        return None
+
+    validate = getattr(module, "validate_research_evidence_reference", None)
+    evaluate = getattr(module, "evaluate_research_sufficiency", None)
+    if not callable(validate) or not callable(evaluate):
+        return None
+
+    reference = validate(gate)
+    evidence_path = reference.get("evidence_path")
+    if not reference.get("ok") or not isinstance(evidence_path, str) or not evidence_path:
+        return None
+    goal = str((scope or {}).get("goal") or "").strip() or None
+    backlog_id = str((scope or {}).get("backlog_id") or "").strip() or None
+    return evaluate(
+        repo_root=root,
+        evidence_path=evidence_path,
+        goal=goal,
+        backlog_id=backlog_id,
+    )
 
 
 def check_scope_gate_fields(
@@ -264,6 +309,13 @@ def check_pipeline_gate(
         research_valid, research_message = _validate_research_evidence(gate)
         if not research_valid:
             return False, research_message
+        advisory = _evaluate_research_capsule_advisory(
+            root or Path(__file__).resolve().parent.parent,
+            gate,
+            scope,
+        )
+    else:
+        advisory = None
 
     # Validate session_id consistency with scope-gate
     if scope is not None:
@@ -296,7 +348,11 @@ def check_pipeline_gate(
             f"gate has '{gate.get('session_id')}'.",
         )
 
-    return True, f"✅ Pipeline gate valid — pipeline: {pipeline_name}"
+    message = f"✅ Pipeline gate valid — pipeline: {pipeline_name}"
+    if advisory and advisory.get("outcome") != "research_sufficient":
+        message = f"{message} (advisory: {advisory.get('outcome')})"
+
+    return True, message
 
 
 def check_all_gates(

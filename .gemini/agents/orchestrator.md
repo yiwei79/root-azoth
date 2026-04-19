@@ -124,8 +124,10 @@ write gate files in this exact order before the first pipeline stage:
 }
 ```
 
-**Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if
-`delivery_pipeline == governed` OR `target_layer == M1`):
+**Step 2 — Conditionally write `.azoth/pipeline-gate.json`** (only if the scope
+is governed via `governance_mode == governed`, legacy
+`delivery_pipeline == governed`, fused `/auto` selection
+`delivery_pipeline == deliver-full`, or `target_layer == M1`):
 ```json
 {
   "session_id": "<must match scope-gate.json>",
@@ -272,6 +274,10 @@ Gate types and required behavior:
 - **Auto-test gate**: all tests must pass; failure is a blocker.
 
 Never treat "pipeline started" as overriding a failed gate. Gate escalation is always safer than proceeding.
+When a reviewer/evaluator requests changes but scope remains valid, rewrite the active
+run queue fail-closed using the run-ledger replay helper so the approved upstream
+revision stage becomes the next promotable stage; if lineage proof is missing or the
+queue is already rewritten, stop and escalate instead of narrating progress.
 
 If a subagent returns without a conforming BL-012 typed YAML block, treat the stage as incomplete: surface the raw return to the human and do not advance the pipeline until the human signals whether to retry the stage or abort.
 
@@ -283,7 +289,7 @@ Before any evaluator stage, compute which triggers fire. If **any** trigger is t
 |---------|-----------|--------|
 | **E1** | ≥2 independent deliverables or branches in pipeline | eval-swarm: parallel judges |
 | **E2** | Pipeline includes multi-file or cross-layer work | eval-swarm: scope-aware review |
-| **E3** | `delivery_pipeline == governed` or `target_layer == M1` | eval-swarm: governance scrutiny |
+| **E3** | `governance_mode == governed`, legacy `delivery_pipeline == governed`, fused `/auto` selection `delivery_pipeline == deliver-full`, or `target_layer == M1` | eval-swarm: governance scrutiny |
 | **E4** | Entropy estimate ≥ yellow zone or file count > 10 | eval-swarm: blast radius check |
 | **E5** | Prior eval returned CONDITIONAL/FAIL or reviewer flagged issues | eval-swarm: fresh evaluators |
 | **E6** | Human signal ("parallel", "swarm") or stacked backlog IDs | eval-swarm: explicit request |

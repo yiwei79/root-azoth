@@ -22,6 +22,7 @@ EXAMPLE = ROOT / ".azoth" / "run-ledger.local.yaml.example"
 SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 
 sys.path.insert(0, str(ROOT / "scripts"))
+import run_ledger as run_ledger_module  # noqa: E402
 from run_ledger import (  # noqa: E402
     consume_human_gate_approval,
     load_active_run,
@@ -526,6 +527,252 @@ def test_consume_human_gate_approval_fails_closed_when_no_pending_stage(tmp_path
 
     with pytest.raises(ValueError, match="pending_stage_ids"):
         consume_human_gate_approval(tmp_path, run_id="run-no-pending")
+
+
+def test_consume_human_gate_approval_honors_ledger_path_override(tmp_path: Path) -> None:
+    ledger = tmp_path / "alt-ledger.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-alt-human-gate",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval.",
+                        "active_stage_id": "auto_s3_planner",
+                        "pending_stage_ids": ["auto_s4_evaluator"],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = consume_human_gate_approval(
+        tmp_path,
+        run_id="run-alt-human-gate",
+        ledger_path=ledger,
+    )
+
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["status"] == "active"
+    assert persisted["active_stage_id"] == "auto_s4_evaluator"
+
+
+def test_rewrite_request_changes_replay_requeues_upstream_revision_stage(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    ledger = azoth / "run-ledger.local.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-replay",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "session_id": "2026-04-18-bl-056",
+                        "backlog_id": "BL-056",
+                        "ide": "codex",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder", "auto_s6_architect_review"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = run_ledger_module.rewrite_request_changes_replay(tmp_path, run_id="run-replay")
+
+    assert updated["status"] == "paused"
+    assert updated["pause_reason"] == "human-gate"
+    assert updated["active_stage_id"] == "auto_s4_evaluator"
+    assert updated["pending_stage_ids"] == [
+        "auto_s3_planner",
+        "auto_s4_evaluator",
+        "auto_s5_builder",
+        "auto_s6_architect_review",
+    ]
+    assert "auto_s3_planner" in updated["next_action"]
+
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["pending_stage_ids"] == updated["pending_stage_ids"]
+    assert persisted["pause_reason"] == "human-gate"
+
+
+def test_rewrite_request_changes_replay_fails_closed_without_lineage_proof(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-missing-lineage",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await reviewer disposition.",
+                        "active_stage_id": "auto_s2_reviewer",
+                        "pending_stage_ids": ["auto_s3_planner"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="lineage"):
+        run_ledger_module.rewrite_request_changes_replay(
+            tmp_path, run_id="run-missing-lineage"
+        )
+
+
+def test_rewrite_request_changes_replay_fails_closed_on_unsupported_shape(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-unsupported-shape",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "stages_completed": ["auto_s4_evaluator"],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="unsupported"):
+        run_ledger_module.rewrite_request_changes_replay(
+            tmp_path, run_id="run-unsupported-shape"
+        )
+
+
+def test_rewrite_request_changes_replay_fails_closed_on_duplicate_rewrite(
+    tmp_path: Path,
+) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "run-ledger.local.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-duplicate-rewrite",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "paused",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await human approval before replay.",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": [
+                            "auto_s3_planner",
+                            "auto_s4_evaluator",
+                            "auto_s5_builder",
+                        ],
+                        "pause_reason": "human-gate",
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="already rewritten|duplicate"):
+        run_ledger_module.rewrite_request_changes_replay(
+            tmp_path, run_id="run-duplicate-rewrite"
+        )
+
+
+def test_rewrite_request_changes_replay_honors_ledger_path_override(tmp_path: Path) -> None:
+    ledger = tmp_path / "alt-ledger.yaml"
+    ledger.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "runs": [
+                    {
+                        "run_id": "run-alt-replay",
+                        "mode": "auto",
+                        "goal": "BL-056",
+                        "status": "active",
+                        "created_at": "2026-04-18T09:00:00+00:00",
+                        "updated_at": "2026-04-18T09:05:00+00:00",
+                        "next_action": "Await evaluator disposition.",
+                        "stages_completed": [
+                            "auto_s1_architect",
+                            "auto_s2_reviewer",
+                            "auto_s3_planner",
+                        ],
+                        "active_stage_id": "auto_s4_evaluator",
+                        "pending_stage_ids": ["auto_s5_builder"],
+                    }
+                ],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    updated = run_ledger_module.rewrite_request_changes_replay(
+        tmp_path,
+        run_id="run-alt-replay",
+        ledger_path=ledger,
+    )
+
+    assert updated["pause_reason"] == "human-gate"
+    persisted = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert persisted["pending_stage_ids"] == ["auto_s3_planner", "auto_s4_evaluator", "auto_s5_builder"]
+
 
 
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────

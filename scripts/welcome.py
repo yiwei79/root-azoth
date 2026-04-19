@@ -550,13 +550,13 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
                 markers.append("mirror")
             marker_text = f" [{'|'.join(markers)}]" if markers else ""
             lines.append(f"    {session_id}{marker_text}  ({status}, {ide})")
-            lines.append(f"      {backlog_id} -> {(entry.get('next_action') or '')[:60]}")
+            lines.append(f"      {backlog_id} -> {(entry.get('next_action') or '')[:120]}")
 
     active_run = state.get("run_ledger")
     if active_run:
         run_id = active_run.get("run_id", "?")
         mode = active_run.get("mode", "?")
-        next_action = (active_run.get("next_action") or "")[:60]
+        next_action = (active_run.get("next_action") or "")[:120]
         lines.append(f"  \u25cf Active run  {run_id}  ({mode})  \u2192 {next_action}")
 
     lines.append("")
@@ -806,7 +806,7 @@ def render_dashboard() -> None:
     if active_run:
         run_id = active_run.get("run_id", "?")
         mode = active_run.get("mode", "?")
-        next_action = (active_run.get("next_action") or "")[:60]
+        next_action = (active_run.get("next_action") or "")[:120]
         health_lines.append(
             f":blue_circle: [bold]Active run[/bold]  [cyan]{run_id}[/cyan]"
             f"  [dim]({mode})[/dim]  \u2192 {next_action}"

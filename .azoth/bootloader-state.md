@@ -1,14 +1,14 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.55 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 52
+0.1.2.59 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 56
 
 ## Last Session
-- **Session**: 2026-04-18-t-005
-- **Goal**: T-005: Low-risk instruction-refinement lightweight lane
+- **Session**: 2026-04-19-t-009
+- **Goal**: T-009: Local research capsule bank + sufficiency checker
 - **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-265 (success)
+- **Episode**: ep-267 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -19,4 +19,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.
