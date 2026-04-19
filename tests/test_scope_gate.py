@@ -644,7 +644,9 @@ def test_t16dd_governed_scope_write_allowed_with_same_session_repo_local_researc
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "allow"
 
@@ -678,7 +680,9 @@ def test_t16dde_governed_scope_write_allows_advisory_capsule_content_in_phase1(
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "allow"
 
@@ -711,7 +715,9 @@ def test_t16ddf_governed_scope_write_allows_missing_required_questions_in_phase1
         encoding="utf-8",
     )
 
-    output = _run("Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path)
+    output = _run(
+        "Write", gate_path, file_path=str(tmp_path / "src.txt"), pipeline_gate_path=pg_path
+    )
 
     assert _decision(output) == "allow"
 

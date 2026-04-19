@@ -589,6 +589,173 @@ initiatives:
     - D50
     - D54
     spec_ref: null
+
+  # ── Theme B: pipeline ──────────────────────────────────────────────────────
+  - id: INI-PPL-001
+    title: auto-router L2 / self-improve lane
+    category: pipeline
+    theme: B
+    dimensions:
+      themes:
+      - B
+      categories:
+      - pipeline
+      tracks:
+      - instruction-refinement
+      - routing
+    phase: v0.2.0-p2
+    priority: medium
+    task_ref: null
+    slices:
+    - task_ref: T-005
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-006
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-006.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    summary: 'P1-008 delivered the full-pipeline instruction-refinement foundation:
+      `knowledge == instruction-refinement`, Rule 4 routing, and the `l2-evidence-review`
+      inject into the architect stage. The remaining follow-on is optional low-risk
+      refinement routing: define when instruction-refinement can use a lighter lane
+      without weakening the current conservative fallback for ambiguous, governance-touching,
+      or kernel-adjacent work.
+
+      '
+    decision_ref:
+    - D23
+    - D44
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
+  - id: INI-PPL-002
+    title: "Eval / eval-swarm wiring drift hardening"
+    category: pipeline
+    theme: B
+    dimensions:
+      themes: [B]
+      categories: [pipeline]
+      tracks: [eval, drift-hardening]
+    phase: null
+    priority: medium
+    task_ref: P1-010
+    slices:
+      - task_ref: P1-010
+        spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+        phase: null
+        status: complete
+        role: historical
+    summary: >
+      P1-010 delivered the core eval/eval-swarm drift hardening across command
+      surfaces, workflow references, and deployed mirrors. This initiative remains
+      as the thematic container for future parity expansions, but no residual
+      roadmap-backed slice is currently scheduled; the linked P1-010 spec is
+      historical foundation, not open p2 follow-on work.
+    decision_ref: [D46]
+    spec_ref: ".azoth/roadmap-specs/v0.2.0/P1-010.yaml"
+  - id: INI-EVI-001
+    title: Evidence-grounded external knowledge
+    category: pipeline
+    theme: B
+    dimensions:
+      themes:
+      - B
+      - C
+      - D
+      categories:
+      - pipeline
+      - memory
+      - platform
+      tracks:
+      - research-sufficiency
+      - evidence-capsules
+      - freshness
+    phase: v0.2.0-p2
+    priority: high
+    task_ref: T-009
+    slices:
+    - task_ref: T-008
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-008.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-009
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
+      phase: v0.2.0-p2
+      status: active
+      role: primary
+    - task_ref: T-010
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-010.yaml
+      phase: v0.2.0-p2
+      status: planned
+      role: follow-on
+    summary: 'Establish a bounded but durable path for tasks that depend on external
+      facts which may have changed since training time. The initiative starts with a
+      mechanical entry gate for latest/current external-fact work, then expands into
+      reusable research capsules plus a sufficiency checker, and finally hardens the
+      cross-platform workflow surfaces so evidence-grounded behavior remains honest
+      across Codex, Claude-facing docs, and continuity tooling.
+
+      '
+    decision_ref:
+    - D11
+    - D23
+    - D44
+    - D45
+    - D46
+    - D50
+    - D52
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
+
+  # ── Theme C: memory ────────────────────────────────────────────────────────
+  - id: INI-MEM-001
+    title: "Verbatim-first M3 storage strategy"
+    category: memory
+    theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [verbatim-storage, m3-policy]
+    phase: v0.2.0-p2
+    task_ref: P1-020
+    slices:
+      - task_ref: P1-020
+        spec_ref: null
+        phase: v0.2.0-p2
+        status: active
+        role: primary
+    priority: high
+    summary: >
+      Store raw episode context verbatim in M3 before any summarisation or compression.
+      Building the episodic index on full signal avoids the compress-before-index regression
+      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth M3
+      is currently append-only JSONL with no vector index; this initiative scopes the policy
+      and tooling to enforce verbatim storage as the baseline.
+    research_ref: "RP-MEM-A"
+    decision_ref: [D11, D45]
+
+  - id: INI-MEM-002
+    title: "Temporal validity windows for M2 patterns"
+    category: memory
+    theme: C
+    dimensions:
+      themes: [C]
+      categories: [memory]
+      tracks: [temporal-validity, m2-governance]
+    phase: null
+    priority: medium
+    slices: []
+    summary: >
+      Add optional `valid_from` / `valid_to` fields to M2 pattern entries with point-in-time
+      query support, replacing implicit recency-by-modification-date with explicit temporal
+      scoping. Inspired by mempalace's SQLite triple store
+      (`AND (valid_from IS NULL OR valid_from <= ?) AND (valid_to IS NULL OR valid_to >= ?)`).
+      D42 kernel immutability: invalidation of M2 patterns remains HITL-only; this initiative
+      adds temporal metadata, not auto-expiry.
+    research_ref: "RP-MEM-C"
+    decision_ref: [D11, D42]
+
   - id: INI-MEM-003
     title: "Vector retrieval layer for M3 context-recall"
     category: memory

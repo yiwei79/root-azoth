@@ -344,7 +344,9 @@ class TestInvalidPipelines:
     def test_rule_stage_family_must_be_subset_of_shared_stage_families(self) -> None:
         pipeline = copy.deepcopy(AUTO_PIPELINE)
         pipeline["composition_rules"]["shared_stage_families"].remove("review")
-        with pytest.raises(ValidationError, match="must be declared in composition_rules.shared_stage_families"):
+        with pytest.raises(
+            ValidationError, match="must be declared in composition_rules.shared_stage_families"
+        ):
             validate_pipeline(pipeline)
 
     def test_legacy_pipeline_key_rejected(self) -> None:

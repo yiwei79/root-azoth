@@ -119,10 +119,7 @@ def validate_research_evidence_reference(gate: Mapping[str, object]) -> dict:
         return {
             "ok": False,
             "evidence_path": None,
-            "reasons": [
-                "pipeline-gate.json research_evidence missing fields: "
-                f"{sorted(missing)}."
-            ],
+            "reasons": [f"pipeline-gate.json research_evidence missing fields: {sorted(missing)}."],
         }
 
     kind = str(evidence.get("kind") or "").strip()
@@ -131,8 +128,7 @@ def validate_research_evidence_reference(gate: Mapping[str, object]) -> dict:
             "ok": False,
             "evidence_path": None,
             "reasons": [
-                "pipeline-gate.json research_evidence.kind must equal "
-                f"{RESEARCH_EVIDENCE_KIND!r}."
+                f"pipeline-gate.json research_evidence.kind must equal {RESEARCH_EVIDENCE_KIND!r}."
             ],
         }
 
@@ -191,9 +187,7 @@ def evaluate_research_sufficiency(
     if normalized_path.parent != RESEARCH_BANK_DIR:
         return {
             "outcome": "research_missing",
-            "reasons": [
-                "Research capsule must live under .azoth/research/ for Phase 1 reuse."
-            ],
+            "reasons": ["Research capsule must live under .azoth/research/ for Phase 1 reuse."],
         }
 
     if normalized_path.suffix != ".json":
@@ -284,8 +278,7 @@ def evaluate_research_sufficiency(
             return {
                 "outcome": "research_missing",
                 "reasons": [
-                    "Research question status must be one of "
-                    f"{sorted(QUESTION_ALLOWED_STATUSES)}."
+                    f"Research question status must be one of {sorted(QUESTION_ALLOWED_STATUSES)}."
                 ],
             }
 
@@ -313,8 +306,7 @@ def evaluate_research_sufficiency(
     ]
     if missing_required_questions:
         refresh_reasons.append(
-            "Research capsule missing required questions: "
-            f"{missing_required_questions}."
+            f"Research capsule missing required questions: {missing_required_questions}."
         )
 
     for question_id in required_questions:
@@ -324,13 +316,9 @@ def evaluate_research_sufficiency(
         status = str(details["status"])
         fresh_until = details["fresh_until"]
         if status == "conflicting":
-            refresh_reasons.append(
-                f"Research question {question_id} is conflicting."
-            )
+            refresh_reasons.append(f"Research question {question_id} is conflicting.")
         elif isinstance(fresh_until, datetime) and fresh_until <= now:
-            refresh_reasons.append(
-                f"Research question {question_id} is stale."
-            )
+            refresh_reasons.append(f"Research question {question_id} is stale.")
 
     if refresh_reasons:
         return {"outcome": "research_refresh_needed", "reasons": refresh_reasons}
