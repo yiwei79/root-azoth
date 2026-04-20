@@ -2559,3 +2559,54 @@ items:
     contract or dashboard dependency yet; this is a continuity surface only.
 
     '
+- id: BL-067
+  title: Bounded replay metadata co-presence hardening
+  source: intake-2026-04-20
+  source_insight: aeef1067-3b2c-4b2a-8100-83a378b6af87
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-20'
+  description: 'Harden the bounded-replay metadata contract so stage summaries cannot
+    emit partial replay bundles without an explicit policy. Align pipelines/stage-summary.schema.yaml,
+    validation hooks, and subagent-router guidance so replay_iteration implies the
+    companion routing and threshold fields, or document and test partial-presence
+    semantics deliberately.
+
+    '
+- id: BL-068
+  title: Codex deliver-full Stage 2 spawn-or-fail-closed parity
+  source: intake-2026-04-20
+  source_insight: SRF-2026-04-19-CODEX-DELIVER-FULL-SUBAGENT-001, 32354597-1b89-437a-a98d-a045563928b5
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-20'
+  description: 'Make the Codex governed deliver-full entry path enforce the Stage
+    2 architect ownership rule mechanically. The Codex orchestrator surface must require
+    deliver_full_s2_architect next or fail closed before any inline architecture brief
+    is produced, and the Codex skill-routed path needs regression coverage proving
+    the main session cannot satisfy Stage 2 inline.
+
+    '
+- id: BL-069
+  title: Already-closed session-closeout re-entry guard
+  source: intake-2026-04-20
+  source_insight: SRF-2026-04-18-CLOSEOUT-REENTRY-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-20'
+  description: 'Add an explicit already-closed preflight guard to scripts/do_closeout.py
+    so rerunning closeout for an already closed session fails closed before W1-W4
+    side effects. Cover the selected-session and scope/session-state pair paths with
+    regression tests so duplicate episode append and duplicate patch bump cannot recur
+    silently.
+
+    '
