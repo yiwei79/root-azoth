@@ -1,0 +1,18 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-20-closeout-sync-codex-wt-e95e-2c7807aa
+backlog_id: AD-HOC
+goal: "AD-HOC: formal closeout and final producer sync for session identity vs write scope decoupling"
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: "2026-04-20T20:45:00Z"
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+    - AD-HOC
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: ed5431de8c29d8f83409ba340b61967b4461f4a9815daa78f29330eb58b2dc00
