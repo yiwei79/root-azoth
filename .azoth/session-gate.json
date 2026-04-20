@@ -1,0 +1,9 @@
+{
+  "session_id": "2026-04-20-adhoc-research-anthropic-s-official-coordination-and-c",
+  "goal": "Research Anthropic\u2019s official coordination and Claude Code automation surfaces only from primary Anthropic sources. Focus on: multi-agent coordination patterns, subagents vs agent teams, hooks, routines, background tasks, persistence/resume, and human-control/approval surfaces. Return a concise synthesis with 5-8 bullets, including what most resembles Azoth and what would be risky to copy. Include source links and concrete dates where available.",
+  "session_mode": "exploratory",
+  "opened_at": "2026-04-20T21:36:21+00:00",
+  "updated_at": "2026-04-20T21:36:21+00:00",
+  "status": "active",
+  "approved_by": "system"
+}
