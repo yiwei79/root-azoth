@@ -1,0 +1,19 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-20-bl-068
+backlog_id: BL-068
+goal: "BL-068: Codex deliver-full Stage 2 spawn-or-fail-closed parity"
+pipeline: auto
+approved_stage_id: final-delivery
+actor_type: human
+decision: approved
+approved_at: '2026-04-20T22:21:32Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - BL-068
+  roadmap_task_refs:
+  - BL-068
+  initiative_refs: []
+scope_fingerprint: cff55ec597a75c1330add1923756a61366140104f2d7cdaf424118b62ab52614
