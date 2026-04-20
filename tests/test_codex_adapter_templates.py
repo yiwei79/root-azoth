@@ -232,6 +232,10 @@ def _copy_router_fixture(tmp_path: Path) -> Path:
         (REPO / "scripts" / "session_continuity.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
+    (tmp_path / "scripts" / "session_gate.py").write_text(
+        (REPO / "scripts" / "session_gate.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
     return tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py"
 
 

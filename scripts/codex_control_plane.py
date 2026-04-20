@@ -21,6 +21,7 @@ from session_continuity import resolve_transition
 PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
 SKILL_COMMAND_RE = re.compile(r"^\s*\$azoth-([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
+NONLEADING_COMMAND_MENTION_RE = re.compile(r"(?<!\S)/([a-z][a-z0-9-]*)\b")
 PIPELINE_OVERRIDE_RE = re.compile(
     r"^\s*pipeline_command=(dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
     re.DOTALL,
@@ -117,6 +118,13 @@ def _emit_json(payload: dict[str, Any]) -> None:
 def _looks_like_actionable_freeform(prompt: str) -> bool:
     stripped = prompt.strip().lower()
     return any(stripped.startswith(prefix) for prefix in _ACTIONABLE_PREFIXES)
+
+
+def _mentions_command_token_only(prompt: str) -> bool:
+    stripped = prompt.strip()
+    return bool(stripped) and not stripped.startswith("/") and bool(
+        NONLEADING_COMMAND_MENTION_RE.search(stripped)
+    )
 
 
 def _extract_session_id(arguments: str) -> tuple[str, str]:
@@ -244,6 +252,9 @@ def parse_prompt(root: Path, prompt: str) -> ParsedPrompt | None:
     match = SKILL_COMMAND_RE.match(stripped)
     if match:
         return _parsed_command_prompt(root, prompt, name=match.group(1), arguments=match.group(2))
+
+    if _mentions_command_token_only(prompt):
+        return None
 
     if not _looks_like_actionable_freeform(prompt):
         return None
