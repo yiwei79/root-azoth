@@ -30,6 +30,7 @@ from rich.text import Text
 
 from run_ledger import load_active_run as load_active_ledger_run
 from run_ledger import load_resumable_sessions
+from session_gate import active_session_gate, normalized_session_mode
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
 
@@ -421,6 +422,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     roadmap_data = load_yaml(ROOT / ".azoth" / "roadmap.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
+    session_gate = active_session_gate(ROOT)
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
     session_state = load_yaml(ROOT / ".azoth" / "session-state.md")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
@@ -444,6 +446,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "roadmap": roadmap_data,
         "backlog_data": backlog_data,
         "scope": scope,
+        "session_gate": session_gate,
         "pipeline_gate": pipeline_gate,
         "session_state": session_state,
         "episodes": episodes,
@@ -492,6 +495,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     """Structured plain text: same information density as Rich, no markup."""
     azoth = state["azoth"]
     scope = state["scope"]
+    session_gate = state["session_gate"]
     pipeline_gate = state["pipeline_gate"]
     session_state = state["session_state"]
     episodes = state["episodes"]
@@ -602,6 +606,12 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         lines.append("  Scope: EXPIRED  (run /next to open a new scope card)")
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
+        if session_gate:
+            session_mode = normalized_session_mode(session_gate)
+            lines.append(
+                f"  Session: ACTIVE  ({session_mode}, {session_gate.get('session_id', '?')})"
+            )
+            lines.append(f"    Goal: {session_gate.get('goal', '')}")
 
     if continuity:
         status, detail = continuity
@@ -700,8 +710,15 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("  roadmap  → /roadmap — versioned roadmap dashboard (D48)")
     lines.append("  plan     → /plan — structured autonomy / planning")
     lines.append("  remember → /remember — quick M3 capture (no full closeout)")
-    lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
-    lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
+    if session_gate and normalized_session_mode(session_gate) == "exploratory" and not is_scope_active(
+        scope, complete_ids
+    ):
+        lines.append("  closeout → /session-closeout — light closeout for exploratory session")
+    else:
+        lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
+    lines.append(
+        "  <goal>   → /start route — exploratory goals open a session; delivery goals escalate to /auto"
+    )
     lines.append(
         "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only"
     )
@@ -720,6 +737,7 @@ def render_dashboard() -> None:
     state = gather_dashboard_state()
     azoth = state["azoth"]
     scope = state["scope"]
+    session_gate = state["session_gate"]
     pipeline_gate = state["pipeline_gate"]
     session_state = state["session_state"]
     episodes = state["episodes"]
@@ -839,6 +857,12 @@ def render_dashboard() -> None:
         )
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
+        if session_gate:
+            session_mode = normalized_session_mode(session_gate)
+            health_lines.append(
+                f":speech_balloon: [cyan]Session: ACTIVE[/cyan]  "
+                f"[dim]{session_mode}, {session_gate.get('session_id', '?')}[/dim]"
+            )
 
     if continuity:
         status, detail = continuity
@@ -963,8 +987,14 @@ def render_dashboard() -> None:
         "[bold cyan]roadmap[/bold cyan]  :right_arrow: /roadmap — versioned roadmap dashboard (D48)",
         "[bold cyan]plan[/bold cyan]     :right_arrow: /plan — structured autonomy / planning",
         "[bold cyan]remember[/bold cyan] :right_arrow: /remember — quick M3 capture (not full closeout)",
-        "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff",
-        "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
+        (
+            "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — light closeout for exploratory session"
+            if session_gate
+            and normalized_session_mode(session_gate) == "exploratory"
+            and not is_scope_active(scope, complete_ids)
+            else "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff"
+        ),
+        "[bold cyan]<goal>[/bold cyan]   :right_arrow: /start route — exploratory goals open a session; delivery goals escalate to /auto",
         "[bold magenta]codex[/bold magenta]    :right_arrow: primary /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)

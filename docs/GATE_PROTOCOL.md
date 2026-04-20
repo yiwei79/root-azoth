@@ -1,7 +1,33 @@
 # Gate Protocol — Mechanical Enforcement Steps
 
-This document is the canonical reference for scope-gate and pipeline-gate enforcement
-in `/auto`, `/deliver`, and `/deliver-full`. All three commands reference this file.
+This document is the canonical reference for session-gate, scope-gate, and pipeline-gate
+enforcement in `/auto`, `/deliver`, and `/deliver-full`. All three commands reference this file.
+
+## Session-gate layer
+
+`.azoth/session-gate.json` is the lightweight session envelope for exploratory chat,
+research, planning, and other no-scope work. It is **not** delivery authorization.
+
+Required fields:
+
+- `session_id`
+- `goal`
+- `session_mode: exploratory | delivery`
+- `opened_at`
+- `updated_at`
+- `status: active | closed`
+- `approved_by: system | human`
+
+When an active exploratory session exists without an approved scope gate, Write/Edit is
+still restricted. The only allowed lifecycle writes are:
+
+- `.azoth/session-gate.json`
+- `.azoth/run-ledger.local.yaml`
+- `.azoth/session-state.md`
+- `.azoth/bootloader-state.md`
+- `.azoth/memory/episodes.jsonl`
+
+Any other write must stop and escalate into `/auto` so `.azoth/scope-gate.json` is opened.
 
 ## Scope-gate check
 
@@ -13,7 +39,7 @@ and verifies:
 - `session_id` matches the active session
 
 If the scope-gate is missing, expired, or unapproved, **stop** and ask the human to
-run `/next` to declare intent and receive an approved scope card.
+run `/next` or `/auto` to declare delivery intent and receive an approved scope card.
 
 ### Scope-gate exemptions
 
@@ -22,7 +48,7 @@ These are **administrative/bootstrap** writes, not normal implementation writes:
 
 - writing or editing `.azoth/scope-gate.json` itself (scope bootstrap)
 - writing `.azoth/pipeline-gate.json` itself (pipeline bootstrap for governed work)
-- W3 mirror writes under `~/.claude/.../memory/`
+- writing bounded exploratory lifecycle files while `.azoth/session-gate.json` is active
 
 When a write is classified as one of these exemptions, downstream alignment, write-claim,
 and entropy gates must short-circuit and allow it.
@@ -170,6 +196,10 @@ the chosen pipeline name (`auto | deliver | deliver-full`) instead of the legacy
 The fused Declaration eliminates one human gate (scope approval) from the `/auto` happy
 path without reducing governance surface: all mandatory gates (kernel, governance, M2→M1,
 final delivery) remain unconditionally enforced.
+
+If a matching exploratory `.azoth/session-gate.json` is already active for the same goal,
+the delivery declaration must reuse that `session_id` when writing `.azoth/scope-gate.json`.
+Escalation into delivery does not mint a second session identity.
 
 After a governed human gate is approved, `/auto`, `/deliver`, and `/deliver-full`
 must advance to the next executable stage in the same run via the shared

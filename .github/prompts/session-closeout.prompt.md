@@ -6,14 +6,16 @@ agent: orchestrator
 
 # /session-closeout
 
-Run this command before ending any session. It evaluates the session, performs the
-W1–W4 closeout writes, and surfaces any queued inbox items.
+Run this command before ending any session. It evaluates the session, resolves whether
+the active state is a delivery scope or an exploratory session, performs the matching
+closeout path, and surfaces any queued inbox items.
 
 ## Preconditions
 
 <!-- P1-016: Antigravity compliance -->
-- Verify session scope was maintained throughout (check `.azoth/scope-gate.json`).
-- Ensure all write work stayed within approved scope and entropy bounds.
+- Resolve the active session first: use a live approved `.azoth/scope-gate.json` when one
+  exists; otherwise fall back to an active `.azoth/session-gate.json` for exploratory work.
+- If a delivery scope exists, verify session scope was maintained throughout.
 - See `docs/antigravity-compliance-matrix.md` for platform parity gaps.
 
 ## Part A: Evaluate Session Outputs
@@ -48,12 +50,18 @@ Prepare a short end-of-session summary covering:
    ```
 4. If a pattern is reinforced across 2+ episodes, propose M3 → M2 promotion. Never auto-promote.
 
+### Closeout Modes
+
+- **Full closeout** = active delivery scope (`.azoth/scope-gate.json`) present. Run W1–W4.
+- **Light closeout** = active exploratory session (`.azoth/session-gate.json`) present but no active scope gate. Run W1 + W2-lite only.
+- **No active session** = stop softly and route to `/remember` or a new exploratory session instead of pretending there is a real delivery closeout to run.
+
 ### Write Checkpoints (W1 → W2 → W3 → W4)
 
 Execute in order. After each write, log its status before proceeding to the next.
 If any write is denied or fails, stop and follow the **On Failure** guidance below.
 
-**Governed closeout precondition:** If the active scope is governed or `target_layer: M1`,
+**Governed closeout precondition:** Full closeout only. If the active scope is governed or `target_layer: M1`,
 `scripts/do_closeout.py` must validate the latest matching human final-delivery approval in
 `.azoth/final-delivery-approvals.jsonl` before W1. Approval evidence is consume-only during
 closeout: read it, validate it, and leave it unchanged. Failures must stop before the first
@@ -80,10 +88,13 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 - If no recurrence is confirmed, skip W1b silently — it is always optional.
 - Log: `W1b ✓ reinforcement_count incremented for {ep-id} — proceeding to W2` (or `W1b skipped — proceeding to W2`)
 
-**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + `.azoth/scope-gate.json`
+**W2 — Update session state** → `.azoth/bootloader-state.md` + `.azoth/run-ledger.local.yaml` + gate closure
 
 - Update `bootloader-state.md` with session outcome (phase, what changed, open decisions).
+- Carry `session_mode: exploratory | delivery` through the session registry and `.azoth/session-state.md`.
+- **Light closeout:** close `.azoth/session-gate.json` with `status: closed` and `closed_at`; skip delivery-only continuity and versioning work.
 - If the session changed roadmap / backlog / initiative planning state, run a
+  **full-closeout only**
   continuity audit before closing:
   - move finished slices into backlog `status: complete` and roadmap `completed_tasks`
     where applicable
@@ -103,7 +114,7 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 - **W2-claim — Release write claim**: If a write claim is held by this session in
   `.azoth/run-ledger.local.yaml`, release it now via `release_write_claim` / `run_ledger.py`.
   If already absent, treat it as a no-op.
-- Close the scope gate: write `.azoth/scope-gate.json` with `approved: false` and add
+- **Full closeout:** close the scope gate by writing `.azoth/scope-gate.json` with `approved: false` and add
   `closed_at` (ISO-8601 timestamp). Preserve all other fields so the gate is auditable.
 - Cross-IDE handoff: if the session used **`.azoth/session-state.md`**, refresh it (active task,
   files touched, next action, pending decisions) with the same `session_id` as the selected
@@ -112,9 +123,11 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
   `pause_reason`, `active_run_id`) instead of collapsing continuity to prose only; if unused,
   log `session-state skipped` in the alignment summary.
 - Keep W2 authoritative: if any later mirror diverges from repo-local state, W2 wins.
-- Log: `W2 ✓ bootloader-state.md updated, write claim released, scope gate closed — proceeding to W3`
+- Log: `W2 ✓ bootloader-state.md updated, write claim released, gate closed` and proceed to W3 only for full closeout.
 
 **W3 — Update Claude Code memory** → `~/.claude/projects/<project-key>/memory/`
+
+Full closeout only.
 
 - W3 is a supplemental mirror of the repo-local closeout snapshot for Claude Code memory.
   `.azoth/` remains authoritative; if W2 and W3 diverge, W2 wins.
@@ -125,6 +138,8 @@ W1–W4 mutation. See `docs/GATE_PROTOCOL.md`.
 - Log: `W3 ✓ memory updated — proceeding to W4`
 
 **W4 — Bump patch version and refresh orientation cache** → `python scripts/version-bump.py --patch`
+
+Full closeout only.
 
 - Run `python scripts/version-bump.py --patch` from the repo root
 - This always fires — every closeout increments the patch version
@@ -170,7 +185,7 @@ Check the insight inbox and inform the human. Do NOT process insights during clo
 
 ## Output
 
-Present a close summary with: outcome, entropy, episodes captured, promotion proposals,
+Present a close summary with: outcome, session mode, entropy, episodes captured, promotion proposals,
 alignment needed, and next action.
 
 ## Rules

@@ -15,6 +15,8 @@ from typing import Any
 import yaml
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
 from run_ledger import release_write_claim, upsert_run, upsert_session
+from session_gate import active_session_gate, close_session_gate, normalized_session_mode
+from session_continuity import active_scope
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
 
@@ -104,6 +106,8 @@ def is_governed_scope(scope: dict[str, Any]) -> bool:
 
 
 def closeout_pipeline_label(scope: dict[str, Any]) -> str:
+    if normalized_session_mode(scope) == "exploratory":
+        return "exploratory"
     candidate = selected_pipeline_command(scope)
     if candidate:
         return candidate
@@ -897,6 +901,7 @@ def update_session_registry(
     )
     backlog_id = str(scope.get("backlog_id") or "AD-HOC")
     goal = str(scope.get("goal") or "Session closeout")
+    session_mode = str(scope.get("session_mode") or "delivery")
     ide = str(
         (
             (matching_session.get("ide") if isinstance(matching_session, dict) else None)
@@ -924,6 +929,7 @@ def update_session_registry(
             status="parked",
             ide=ide,
             next_action=next_action,
+            session_mode=session_mode,
             updated_at=timestamp,
             active_run_id=str(resumable_run.get("run_id") or preferred_run_id or ""),
         )
@@ -956,6 +962,7 @@ def update_session_registry(
             status="closed",
             ide=ide,
             next_action=next_action,
+            session_mode=session_mode,
             updated_at=timestamp,
             closed_at=timestamp,
         )
@@ -1016,6 +1023,7 @@ def update_bootloader_state(
     next_action: str,
     session_status: str,
     pending_decisions: list[str],
+    full_closeout: bool,
 ) -> None:
     azoth_data = load_yaml(repo_root / "azoth.yaml")
     active_version, current_patch = _active_version_snapshot(repo_root)
@@ -1023,6 +1031,7 @@ def update_bootloader_state(
     phase = azoth_data.get("phase", "unknown")
     goal = str(scope.get("goal") or "Session closeout")
     pipeline = closeout_pipeline_label(scope)
+    session_mode = str(scope.get("session_mode") or "delivery")
 
     lines = [
         "# Azoth Bootloader State",
@@ -1036,14 +1045,23 @@ def update_bootloader_state(
         "## Last Session",
         f"- **Session**: {scope.get('session_id', 'unknown-session')}",
         f"- **Goal**: {goal}",
+        f"- **Session mode**: {session_mode}",
         f"- **Pipeline**: {pipeline}",
         f"- **Outcome**: {session_status}",
         f"- **Episode**: {latest_episode.get('id', 'unknown')} ({latest_episode.get('type', 'unknown')})",
         "",
         "## Key Changes This Session",
         "1. W1 appended the closeout episode.",
-        "2. W2 closed the scope gate and refreshed repo-local handoff state.",
-        "3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.",
+        (
+            "2. W2 closed the scope gate and refreshed repo-local handoff state."
+            if full_closeout
+            else "2. W2 closed the exploratory session gate and refreshed repo-local handoff state."
+        ),
+        (
+            "3. W3/W4 should mirror and finalize this closeout state without changing W2 authority."
+            if full_closeout
+            else "3. Light closeout stopped after W2-lite; no W3/W4 mirror or version bump ran."
+        ),
         "",
         "## Open Decisions",
     ]
@@ -1118,6 +1136,7 @@ def write_session_state(
     approved_scope: str,
     next_action: str,
     selected_ide: str | None = None,
+    session_mode: str = "delivery",
     create_if_missing: bool = False,
     checkpoint: dict[str, Any] | None = None,
 ) -> str:
@@ -1126,6 +1145,7 @@ def write_session_state(
         return "W2: .azoth/session-state.md not present (W2 handoff artifact skipped)"
     session_state = {
         "session_id": session_id,
+        "session_mode": session_mode,
         "state": state,
         "last_ide": str(selected_ide or "unknown"),
         "timestamp": timestamp,
@@ -1153,12 +1173,19 @@ def update_session_state(
     clear_checkpoint: bool = False,
 ) -> str:
     goal = str(scope.get("goal") or "Session closeout")
+    session_mode = str(scope.get("session_mode") or "delivery")
     pending_decisions = existing_session_state.get("pending_decisions")
     if not isinstance(pending_decisions, list):
         pending_decisions = []
     state = "parked" if session_status == "parked" else "closed"
-    active_task = f"Parked — {goal}" if state == "parked" else f"Closed — {goal}"
-    approved_scope = goal if state == "parked" else f"Completed: {goal}"
+    if session_mode == "exploratory":
+        active_task = (
+            f"Exploratory — {goal}" if state == "parked" else f"Closed exploratory — {goal}"
+        )
+        approved_scope = "Exploratory session (no write scope)"
+    else:
+        active_task = f"Parked — {goal}" if state == "parked" else f"Closed — {goal}"
+        approved_scope = goal if state == "parked" else f"Completed: {goal}"
     return write_session_state(
         repo_root,
         session_id=str(scope.get("session_id") or "unknown-session"),
@@ -1170,6 +1197,7 @@ def update_session_state(
         approved_scope=approved_scope,
         next_action=next_action,
         selected_ide=str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
+        session_mode=session_mode,
         checkpoint={} if clear_checkpoint else extract_session_checkpoint(existing_session_state),
     )
 
@@ -1250,23 +1278,51 @@ def run_closeout(
     administrative_finalize: bool = False,
 ) -> None:
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
-    enforce_governed_closeout_approval(repo_root, scope)
+    session_gate = active_session_gate(repo_root)
+    live_scope = active_scope(repo_root)
+    if live_scope:
+        session_context = dict(live_scope)
+        session_context.setdefault("session_mode", "delivery")
+        if (
+            session_gate
+            and str(session_gate.get("session_id") or "") == str(live_scope.get("session_id") or "")
+        ):
+            session_context["session_mode"] = normalized_session_mode(session_gate)
+        full_closeout = True
+    elif session_gate:
+        session_context = {
+            "session_id": str(session_gate.get("session_id") or "unknown-session"),
+            "goal": str(session_gate.get("goal") or "Exploratory session"),
+            "backlog_id": "AD-HOC",
+            "session_mode": normalized_session_mode(session_gate),
+            "approved_by": str(session_gate.get("approved_by") or "system"),
+        }
+        full_closeout = False
+    else:
+        raise CloseoutError(
+            "No active session to close. Run `/remember` or start a new exploratory session first."
+        )
+
+    if full_closeout:
+        enforce_governed_closeout_approval(repo_root, scope)
     reinforce_episode_ids = reinforce_episode_ids or []
     validate_reinforcement_targets(repo_root, reinforce_episode_ids)
 
     timestamp = utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    session_id = str(scope.get("session_id") or "unknown-session")
-    backlog_id = str(scope.get("backlog_id") or "").strip()
+    session_id = str(session_context.get("session_id") or "unknown-session")
+    backlog_id = str(session_context.get("backlog_id") or "").strip()
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
     session_state_path = repo_root / ".azoth" / "session-state.md"
     existing_session_state = load_yaml(session_state_path)
     authoritative_files = [
         ".azoth/memory/episodes.jsonl",
         ".azoth/bootloader-state.md",
-        ".azoth/scope-gate.json",
-        "azoth.yaml",
     ]
-    if backlog_id and backlog_id != "AD-HOC":
+    if full_closeout:
+        authoritative_files.extend([".azoth/scope-gate.json", "azoth.yaml"])
+    else:
+        authoritative_files.append(".azoth/session-gate.json")
+    if full_closeout and backlog_id and backlog_id != "AD-HOC":
         authoritative_files.extend([".azoth/backlog.yaml", ".azoth/roadmap.yaml"])
     if ledger_path.exists():
         authoritative_files.append(".azoth/run-ledger.local.yaml")
@@ -1275,7 +1331,7 @@ def run_closeout(
 
     _episode_id, latest_episode, episode_count = append_episode(
         repo_root,
-        scope,
+        session_context,
         timestamp,
         files_changed=authoritative_files,
     )
@@ -1297,21 +1353,26 @@ def run_closeout(
             f"(count={result.reinforcement_count})"
         )
     selected_ide = str(existing_session_state.get("last_ide") or "")
-    close_scope_gate(repo_root, timestamp)
+    if full_closeout:
+        close_scope_gate(repo_root, timestamp)
+    else:
+        close_session_gate(repo_root, timestamp=timestamp, session_id=session_id)
+        print("W2-lite: exploratory session gate closed")
     next_action, session_status, registry_note = update_session_registry(
         repo_root,
-        scope=scope,
+        scope=session_context,
         timestamp=timestamp,
         selected_ide=selected_ide or None,
         administrative_finalize=administrative_finalize,
     )
     print(registry_note)
-    update_planning_completion(
-        repo_root,
-        scope=scope,
-        timestamp=timestamp,
-        session_status=session_status,
-    )
+    if full_closeout:
+        update_planning_completion(
+            repo_root,
+            scope=session_context,
+            timestamp=timestamp,
+            session_status=session_status,
+        )
     if release_write_claim(repo_root, session_id):
         print(f"W2: write claim released for session '{session_id}'")
     else:
@@ -1333,7 +1394,7 @@ def run_closeout(
     active_files = authoritative_files.copy()
     session_state_note = update_session_state(
         repo_root,
-        scope=scope,
+        scope=session_context,
         timestamp=timestamp,
         session_status=session_status,
         active_files=active_files,
@@ -1346,7 +1407,7 @@ def run_closeout(
     print("W2 handoff artifact: .azoth/session-state.md")
     update_bootloader_state(
         repo_root,
-        scope=scope,
+        scope=session_context,
         latest_episode=latest_episode,
         next_action=next_action,
         session_status=session_status,
@@ -1355,14 +1416,19 @@ def run_closeout(
             if isinstance(existing_session_state.get("pending_decisions"), list)
             else []
         ),
+        full_closeout=full_closeout,
     )
-    update_episode_count(repo_root, episode_count)
+    if full_closeout:
+        update_episode_count(repo_root, episode_count)
     try:
-        write_claude_memory_mirror(
-            repo_root,
-            latest_episode=latest_episode,
-            next_action=next_action,
-        )
+        if full_closeout:
+            write_claude_memory_mirror(
+                repo_root,
+                latest_episode=latest_episode,
+                next_action=next_action,
+            )
+        else:
+            print("W3 disposition: skipped (light closeout)")
     except Exception as exc:
         print(
             "W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout "
@@ -1370,12 +1436,16 @@ def run_closeout(
         )
         print("W3 disposition: deferred")
     else:
-        print("W3 disposition: completed")
+        if full_closeout:
+            print("W3 disposition: completed")
     print(f"Next operator action: {next_action}")
-    finalize_closeout_artifacts(
-        repo_root,
-        administrative_finalize=administrative_finalize,
-    )
+    if full_closeout:
+        finalize_closeout_artifacts(
+            repo_root,
+            administrative_finalize=administrative_finalize,
+        )
+    else:
+        print("W4 disposition: skipped (light closeout)")
 
 
 def main() -> int:

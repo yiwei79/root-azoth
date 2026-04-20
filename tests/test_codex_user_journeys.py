@@ -76,6 +76,89 @@ def test_freeform_continue_and_new_goal_receive_continuity_guidance(tmp_path: Pa
     assert "replace decision" in new_goal_directive.additional_context
 
 
+def test_freeform_continue_without_live_session_stays_noop(tmp_path: Path) -> None:
+    directive = directive_for_prompt(tmp_path, "continue this task")
+
+    assert directive is None
+    assert not (tmp_path / ".azoth" / "session-gate.json").exists()
+
+
+def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(tmp_path: Path) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, "explore the closeout UX architecture", cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+
+    assert hook["updatedInput"] == "$azoth-start explore the closeout UX architecture"
+    assert "Exploratory intent detected" in hook["additionalContext"]
+
+    session_gate = json.loads((tmp_path / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    assert session_gate["status"] == "active"
+    assert session_gate["session_mode"] == "exploratory"
+    assert session_gate["goal"] == "explore the closeout UX architecture"
+
+    scope_gate = json.loads((tmp_path / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
+    assert scope_gate == {}
+
+
+def test_delivery_route_carries_matching_exploratory_session_id_in_routed_input(tmp_path: Path) -> None:
+    seed_azoth_repo(
+        tmp_path,
+        session_gate={
+            "session_id": "sess-explore",
+            "goal": "fix closeout control plane",
+            "session_mode": "exploratory",
+            "opened_at": "2026-04-20T10:00:00+00:00",
+            "updated_at": "2026-04-20T10:00:00+00:00",
+            "status": "active",
+            "approved_by": "system",
+        },
+    )
+
+    directive = directive_for_prompt(tmp_path, "fix closeout control plane")
+    assert directive is not None
+    assert (
+        directive.updated_input
+        == "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane"
+    )
+    assert "Carry its `session_id` forward" in directive.additional_context
+
+
+def test_start_route_preserves_explicit_session_id_in_canonical_input() -> None:
+    directive = directive_for_prompt(
+        REPO,
+        "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane",
+    )
+
+    assert directive is not None
+    assert (
+        directive.updated_input
+        == "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane"
+    )
+
+
+def test_start_route_respects_explicit_session_id_for_continuity_conflicts(tmp_path: Path) -> None:
+    seed_azoth_repo(
+        tmp_path,
+        scope={
+            "approved": True,
+            "expires_at": future_timestamp(hours=2),
+            "goal": "BL-123: Continue calm flow work",
+            "session_id": "sess-live",
+            "backlog_id": "BL-123",
+            "governance_mode": "standard",
+            "pipeline_command": "auto",
+        },
+    )
+
+    directive = directive_for_prompt(
+        tmp_path,
+        "$azoth-start pipeline_command=auto session_id=sess-other BL-123: Continue calm flow work",
+    )
+
+    assert directive is not None
+    assert "Do not silently retarget it" in directive.additional_context
+
+
 def test_normalized_governed_state_renders_pipeline_gate_and_start_snapshot(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

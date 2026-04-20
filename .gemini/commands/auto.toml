@@ -145,6 +145,11 @@ After human approval of the Declaration:
 1. **Post-Approval Gate-Write (fused):** After human approves the Declaration (or
    informational Declaration auto-proceeds), write gate files in this exact order:
 
+   If the routed Codex input already includes `session_id=<id>`, treat that id as
+   authoritative for this declaration. When `.azoth/session-gate.json` is active for the
+   same goal, the scope bootstrap must reuse that exploratory `session_id` instead of
+   minting a new one.
+
    **Step 1 — Write `.azoth/scope-gate.json`** (always):
    ```json
    {

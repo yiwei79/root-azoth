@@ -10,6 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from session_gate import (
+    active_session_gate,
+    classify_goal_intent,
+    ensure_exploratory_session,
+    matching_exploratory_session,
+)
 from session_continuity import resolve_transition
 
 PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
@@ -37,6 +43,21 @@ _ACTIONABLE_PREFIXES = (
     "update",
     "refactor",
     "change",
+    "patch",
+    "wire",
+    "migrate",
+    "edit",
+    "explore",
+    "research",
+    "brainstorm",
+    "plan",
+    "explain",
+    "diagnose",
+    "compare",
+    "think through",
+    "let's think through",
+    "lets think through",
+    "walk through",
 )
 _CONTINUE_PREFIXES = ("continue", "resume", "keep going", "let's continue", "lets continue")
 _NEW_GOAL_PREFIXES = ("start a new goal", "start new goal", "new goal", "start ")
@@ -51,6 +72,7 @@ class ParsedPrompt:
     effective_route_name: str = ""
     effective_pipeline_command: str = ""
     prompt_goal: str = ""
+    requested_session_id: str = ""
     is_freeform: bool = False
 
 
@@ -97,22 +119,40 @@ def _looks_like_actionable_freeform(prompt: str) -> bool:
     return any(stripped.startswith(prefix) for prefix in _ACTIONABLE_PREFIXES)
 
 
-def _start_argument_parts(arguments: str) -> tuple[str, str, str]:
+def _extract_session_id(arguments: str) -> tuple[str, str]:
     stripped = arguments.strip()
     if not stripped:
-        return "", "", ""
+        return "", ""
+    match = re.match(r"^session_id=([A-Za-z0-9._:-]+)\b(.*)$", stripped, re.DOTALL)
+    if not match:
+        return "", stripped
+    return match.group(1), match.group(2).strip()
+
+
+def _start_argument_parts(arguments: str) -> tuple[str, str, str, str]:
+    stripped = arguments.strip()
+    if not stripped:
+        return "", "", "", ""
     override_match = PIPELINE_OVERRIDE_RE.match(stripped)
     if override_match:
         pipeline = override_match.group(1)
-        goal = override_match.group(2).strip()
-        return pipeline, "", goal
+        session_id, goal = _extract_session_id(override_match.group(2))
+        return pipeline, "", goal, session_id
     token, _, remainder = stripped.partition(" ")
     if token in {"next", "resume", "closeout"}:
-        return "", token, remainder.strip()
-    return "", "", stripped
+        session_id, goal = _extract_session_id(remainder)
+        return "", token, goal, session_id
+    session_id, goal = _extract_session_id(stripped)
+    return "", "", goal, session_id
 
 
-def _canonical_start_input(*, pipeline_command: str = "", keyword: str = "", goal: str = "") -> str:
+def _canonical_start_input(
+    *,
+    pipeline_command: str = "",
+    keyword: str = "",
+    goal: str = "",
+    session_id: str = "",
+) -> str:
     if keyword == "closeout":
         return "$azoth-session-closeout"
     parts = ["$azoth-start"]
@@ -120,6 +160,8 @@ def _canonical_start_input(*, pipeline_command: str = "", keyword: str = "", goa
         parts.append(f"pipeline_command={pipeline_command}")
     elif keyword:
         parts.append(keyword)
+    if session_id:
+        parts.append(f"session_id={session_id}")
     if goal:
         parts.append(goal)
     return " ".join(parts).strip()
@@ -161,7 +203,7 @@ def _parsed_command_prompt(
             effective_route_name="session-closeout",
         )
     if name == "start":
-        pipeline_command, keyword, goal = _start_argument_parts(arguments)
+        pipeline_command, keyword, goal, session_id = _start_argument_parts(arguments)
         effective_route_name = "session-closeout" if keyword == "closeout" else "start"
         return ParsedPrompt(
             raw_prompt=prompt,
@@ -171,10 +213,12 @@ def _parsed_command_prompt(
                 pipeline_command=pipeline_command,
                 keyword=keyword,
                 goal=goal,
+                session_id=session_id,
             ),
             effective_route_name=effective_route_name,
             effective_pipeline_command=pipeline_command,
             prompt_goal=goal,
+            requested_session_id=session_id,
         )
     if _command_contract(root, name) is None:
         return None
@@ -242,6 +286,7 @@ def _transition_guidance(
             command_name=parsed.source_command,
             command_args=parsed.prompt_goal or parsed.raw_arguments,
             prompt_goal=parsed.prompt_goal,
+            requested_session_id=parsed.requested_session_id or None,
         )
 
     if not decision.active_session_id or decision.action == "new":
@@ -316,6 +361,18 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
     guidance.append(
         "For write-enabled or governed stages, follow the gate procedure before editing."
     )
+    exploratory_gate = matching_exploratory_session(root, parsed.prompt_goal)
+    if (
+        exploratory_gate
+        and (
+            not parsed.prompt_goal
+            or str(exploratory_gate.get("goal") or "").strip() == parsed.prompt_goal.strip()
+        )
+    ):
+        guidance.append(
+            "A matching exploratory session is already active. Reuse its `session_id` when "
+            "the delivery flow writes `.azoth/scope-gate.json` so exploration → delivery stays one session."
+        )
     return guidance
 
 
@@ -365,11 +422,66 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
         return None
 
     if parsed.is_freeform:
+        command_name, prompt_goal = _freeform_transition_inputs(parsed.raw_prompt)
+        decision = resolve_transition(
+            root,
+            command_name=command_name,
+            prompt_goal=prompt_goal,
+        )
         transition = _transition_guidance(root, parsed)
-        if not transition:
+        if decision.action in {"replace", "conflict", "extend"}:
+            guidance = [transition, _governed_write_reminder()] if transition else []
+            return PromptDirective(additional_context=" ".join(guidance))
+        if command_name == "resume":
+            guidance = [transition] if transition else []
+            if guidance:
+                return PromptDirective(additional_context=" ".join(guidance))
             return None
-        guidance = [transition, _governed_write_reminder()]
-        return PromptDirective(additional_context=" ".join(guidance))
+
+        goal = prompt_goal or parsed.raw_prompt.strip()
+        if not goal:
+            return None
+
+        intent = classify_goal_intent(goal)
+        if intent == "exploratory":
+            gate = ensure_exploratory_session(root, goal=goal)
+            guidance = [
+                f"Exploratory intent detected for `{goal}`.",
+                f"Opened `.azoth/session-gate.json` for session `{gate['session_id']}`.",
+                "Treat this as a real no-scope session: memory capture and light closeout are allowed, "
+                "but ordinary repo edits must stop and escalate into `/auto` first.",
+                "Normalize this request through `$azoth-start` so the Codex control plane stays start-centered.",
+            ]
+            if transition:
+                guidance.append(transition)
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(goal=goal),
+            )
+
+        guidance = [
+            f"Delivery intent detected for `{goal}`.",
+            "Normalize this request through `$azoth-start pipeline_command=auto ...` so the default delivery path remains explicit.",
+        ]
+        exploratory_gate = matching_exploratory_session(root, goal)
+        session_id = ""
+        if exploratory_gate:
+            session_id = str(exploratory_gate.get("session_id") or "").strip()
+            guidance.append(
+                "A matching exploratory session is already active. Carry its `session_id` forward "
+                "in the routed input and write `.azoth/scope-gate.json` with that same session."
+            )
+        if transition:
+            guidance.append(transition)
+            guidance.append(_governed_write_reminder())
+        return PromptDirective(
+            additional_context=" ".join(guidance),
+            updated_input=_canonical_start_input(
+                pipeline_command="auto",
+                goal=goal,
+                session_id=session_id,
+            ),
+        )
 
     if parsed.effective_route_name == "session-closeout":
         guidance = _closeout_guidance(root, parsed)

@@ -41,6 +41,7 @@ LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
 
 _STATUS_ENUM = {"active", "complete", "failed", "paused"}
 _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
+_SESSION_MODE_ENUM = {"exploratory", "delivery"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
 _PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
@@ -153,6 +154,12 @@ def validate_ledger(data: dict) -> list[str]:
                 elif status not in _SESSION_STATUS_ENUM:
                     errors.append(
                         f"{prefix}: status {status!r} not in {sorted(_SESSION_STATUS_ENUM)}"
+                    )
+
+                session_mode = entry.get("session_mode")
+                if session_mode is not None and session_mode not in _SESSION_MODE_ENUM:
+                    errors.append(
+                        f"{prefix}: session_mode {session_mode!r} not in {sorted(_SESSION_MODE_ENUM)}"
                     )
 
                 updated_at = entry.get("updated_at")
@@ -601,6 +608,7 @@ def upsert_session(
     status: str,
     ide: str,
     next_action: str,
+    session_mode: str | None = "delivery",
     updated_at: str | None = None,
     active_run_id: str | None = None,
     closed_at: str | None = None,
@@ -648,6 +656,10 @@ def upsert_session(
     entry["ide"] = ide
     entry["next_action"] = next_action
     entry["updated_at"] = timestamp
+    if session_mode is not None:
+        if session_mode not in _SESSION_MODE_ENUM:
+            raise ValueError(f"session_mode {session_mode!r} not in {sorted(_SESSION_MODE_ENUM)}")
+        entry["session_mode"] = session_mode
 
     if active_run_id:
         entry["active_run_id"] = active_run_id

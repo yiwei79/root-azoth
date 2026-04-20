@@ -119,6 +119,7 @@ After merging:
 - confirm the exact `handoff_id` was cleared from the unresolved queue
 - automatic cleanup after a successful integrate run covers queue state updates and temporary sandbox worktrees
 - automatic cleanup after a successful integrate run also covers safe local producer branch pruning, including removing an attached clean producer worktree before deleting its obsolete branch
+- manual cleanup is still required for any remote branches or local producer state that falls outside those safe automatic checks
 - remote branch cleanup remains out of scope; dirty producer worktrees or moved branch tips must be reported and left in place
 - close out the integration step
 - notify remaining producer sessions to refresh from the new target branch

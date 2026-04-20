@@ -20,6 +20,7 @@ from research_sufficiency import (  # noqa: E402
     evaluate_research_sufficiency,
     validate_research_evidence_reference,
 )
+from session_gate import active_session_gate, is_exploratory_write_target  # noqa: E402
 
 _WRITE_TOOL_NAMES = {"write", "create_file", "createfile"}
 _EDIT_TOOL_NAMES = {
@@ -53,6 +54,26 @@ _GOVERNED_REMINDER = (
     "\n"
     "Do not implement governed backlog work inline without the delivery pipeline + subagent routing. "
     "After Stage 0, Write/Edit to other paths is allowed until scope expires."
+)
+
+_EXPLORATORY_REMINDER = (
+    "[session-gate] Write/Edit blocked — exploratory session has no delivery scope.\n"
+    "\n"
+    "Azoth now allows a lightweight exploratory session without `.azoth/scope-gate.json`, "
+    "but that exemption is limited to bounded lifecycle surfaces only: "
+    "`.azoth/session-gate.json`, `.azoth/run-ledger.local.yaml`, `.azoth/session-state.md`, "
+    "`.azoth/bootloader-state.md`, and `.azoth/memory/episodes.jsonl`.\n"
+    "\n"
+    "To edit normal repo content, escalate into `/auto`, approve the delivery declaration, "
+    "and write `.azoth/scope-gate.json` before retrying."
+)
+
+_ACTIVE_SESSION_MISMATCH_REMINDER = (
+    "[session-gate] Write/Edit blocked — active session does not match delivery scope.\n"
+    "\n"
+    "The active `.azoth/session-gate.json` and `.azoth/scope-gate.json` must agree on "
+    "`session_id` before normal repo writes proceed. Re-open delivery scope from the active "
+    "session or close the stale session/scope state before retrying."
 )
 
 
@@ -363,7 +384,15 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     if targets and all(_is_claude_plans_path(target) for target in targets):
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
+    exploratory_session = active_session_gate(root)
+    if exploratory_session and targets and all(
+        is_exploratory_write_target(root, target) for target in targets
+    ):
+        return ScopeGateResult(allowed=True, scope_data=exploratory_session, skip_entropy=True)
+
     if not gate_path.exists():
+        if exploratory_session:
+            return ScopeGateResult(allowed=False, deny_reason=_EXPLORATORY_REMINDER)
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 
     try:
@@ -372,6 +401,8 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         return ScopeGateResult(allowed=False, deny_reason="scope-gate.json is malformed")
 
     if data.get("approved") is not True:
+        if exploratory_session:
+            return ScopeGateResult(allowed=False, deny_reason=_EXPLORATORY_REMINDER)
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 
     exp_scope = parse_expires_at(str(data.get("expires_at", "")))
@@ -380,11 +411,15 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
             allowed=False, deny_reason="scope-gate.json expires_at is invalid ISO 8601"
         )
     if datetime.now(timezone.utc) >= exp_scope:
+        if exploratory_session:
+            return ScopeGateResult(allowed=False, deny_reason=_EXPLORATORY_REMINDER)
         return ScopeGateResult(allowed=False, deny_reason=_REMINDER)
 
     session_id = str(data.get("session_id") or "").strip()
     if not session_id:
         return ScopeGateResult(allowed=False, deny_reason="scope-gate.json missing session_id")
+    if exploratory_session and str(exploratory_session.get("session_id") or "").strip() != session_id:
+        return ScopeGateResult(allowed=False, deny_reason=_ACTIVE_SESSION_MISMATCH_REMINDER)
 
     if targets and all(_is_post_scope_exempt_target(target) for target in targets):
         return ScopeGateResult(allowed=True, scope_data=data, skip_entropy=True)
