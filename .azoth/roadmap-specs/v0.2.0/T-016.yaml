@@ -1,0 +1,46 @@
+id: T-016
+roadmap_version: v0.2.0
+title: Codex seamless permissions profile (repo-local execpolicy)
+decision_ref:
+- D19
+- D46
+- D50
+- D52
+intent: >
+  Deliver a repo-local, opt-in Codex permission profile for Azoth that reduces
+  repetitive approval friction without widening the sandbox or pretending that
+  full-access is safe.
+problem: >
+  Codex currently leaves Azoth operators choosing between `approval_policy = "on-request"`
+  with frequent human interrupts and dangerously broad execution modes that collapse
+  too much trust into one toggle. Azoth needs a safer middle layer: a repo-local,
+  workspace-write, network-off profile that allows a narrow set of high-frequency
+  read-only commands while still prompting or forbidding higher-risk paths.
+scope:
+- "kernel/templates/platform-adapters/codex/config.toml.template and seamless companion template"
+- "kernel/templates/platform-adapters/codex/azoth-seamless.star.template"
+- "scripts/azoth-deploy.py Codex projection updates"
+- "scripts/codex_hooks_mode.py local mode switching for calm vs seamless"
+- "Codex-facing docs and parity tests, including `codex execpolicy check` examples"
+non_goals:
+- "Managed `requirements.toml` policy or `guardian_subagent` enforcement in this slice"
+- "Switching the repo default away from calm"
+- "Widening sandbox access beyond `workspace-write` or enabling network"
+- "Treating mutating shell wrappers as trusted commands"
+acceptance:
+- "A generated `.codex/rules/azoth-seamless.star` file exists and is projected by `scripts/azoth-deploy.py`"
+- "A seamless Codex config template exists with `approval_policy = \"untrusted\"`, `sandbox_mode = \"workspace-write\"`, network disabled, and the generated rules file wired in"
+- "`scripts/codex_hooks_mode.py` supports `status`, `set calm`, and `set seamless` while preserving the existing verbose hook overlay"
+- "Parity tests prove the Codex adapter projection includes the seamless config/rules surfaces and the live repo mirrors stay in sync"
+- "At least one verification path uses `codex execpolicy check` to prove one allow, one prompt, and one forbidden example"
+- "Codex docs explain calm vs seamless and explicitly defer enterprise-managed approval policy to a later slice"
+dependencies: []
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = repo-local seamless profile, generated rules, local activation, docs,
+  and parity tests. Phase 2 = optional enterprise-managed policy wiring
+  (`requirements.toml`, `guardian_subagent`) once the repo-local profile proves
+  stable in practice.

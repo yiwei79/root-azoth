@@ -34,6 +34,7 @@ Thumbs.db
 *.swp
 *.swo
 .codex/hooks.mode.local
+.codex/permission_profile.local
 
 # pytest workspace-local temp (sandbox-safe)
 tests/_tmp_deploy/

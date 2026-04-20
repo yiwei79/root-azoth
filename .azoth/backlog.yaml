@@ -2559,3 +2559,33 @@ items:
     contract or dashboard dependency yet; this is a continuity surface only.
 
     '
+- id: T-016
+  title: Codex seamless permissions profile (repo-local execpolicy)
+  source: codex-seamless-permissions-2026-04-20
+  roadmap_ref: T-016
+  initiative_ref: INI-PLT-006
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-20'
+  completed_date: '2026-04-20'
+  decision_ref:
+  - D19
+  - D46
+  - D50
+  - D52
+  blocked_by: []
+  description: 'Add a repo-local, opt-in Codex permission profile that sits between
+    noisy `on-request` and unsafe full-access operation. Deliverables: (1) canonical
+    Codex adapter templates for a seamless `workspace-write` + network-off profile;
+    (2) a generated `.codex/rules/azoth-seamless.star` execpolicy allow/prompt/forbidden
+    ruleset; (3) local mode switching via `scripts/codex_hooks_mode.py` with `status`,
+    `set calm`, and `set seamless`; (4) deploy/parity tests plus real `codex execpolicy
+    check` examples for representative allow/prompt/forbidden commands; (5) Codex-facing
+    docs that make calm vs seamless explicit and defer managed `requirements.toml`
+    / `guardian_subagent` work to a later enterprise slice. Non-goal: no sandbox widening,
+    no network enablement, and no blanket trust of mutating shell commands.
+
+    '

@@ -1,0 +1,19 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-20-t-016
+backlog_id: T-016
+goal: "T-016: Codex seamless permissions profile (repo-local execpolicy)"
+pipeline: auto
+approved_stage_id: final-delivery
+actor_type: human
+decision: approved
+approved_at: '2026-04-20T20:14:27Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - T-016
+  roadmap_task_refs:
+  - T-016
+  initiative_refs: []
+scope_fingerprint: 50a7b693c871ef8d5f5a1a1be81320eb538980b26d0c96694f6c4c8a86248fe4

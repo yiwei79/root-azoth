@@ -21,4 +21,4 @@ Execution contract:
 Command metadata:
 - Contract path: `commands/hookmode/command.yaml`
 - Body source path: `.claude/commands/hookmode.md`
-- Description: Inspect or switch the local Codex hook profile
+- Description: Inspect or switch the local Codex operating mode

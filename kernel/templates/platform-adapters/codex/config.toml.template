@@ -1,3 +1,4 @@
+# Azoth Codex permission profile: calm
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 commit_attribution = ""

@@ -48,9 +48,11 @@ from typing import Any
 
 import yaml
 
-CODEX_HOOKS_MODE_MARKER = Path(".codex/hooks.mode.local")
 CODEX_HOOKS_DEFAULT_TEMPLATE = "hooks.json.template"
 CODEX_HOOKS_VERBOSE_TEMPLATE = "hooks.verbose.json.template"
+CODEX_CONFIG_DEFAULT_TEMPLATE = "config.toml.template"
+CODEX_CONFIG_SEAMLESS_TEMPLATE = "config.seamless.toml.template"
+CODEX_RULES_TEMPLATE = "azoth-seamless.star.template"
 
 
 # ── Frontmatter helpers ──────────────────────────────────────────────────────
@@ -894,10 +896,15 @@ def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tu
 def iter_codex_adapter_deployments(root: Path) -> list[tuple[Path, Path]]:
     """Map Codex adapter templates to their deployed .codex destinations."""
     adapter = root / CODEX_ADAPTER_DIR
-    hooks_template_name = _codex_hooks_template_name(root)
     return [
-        (adapter / "config.toml.template", root / ".codex" / "config.toml"),
-        (adapter / hooks_template_name, root / ".codex" / "hooks.json"),
+        (adapter / CODEX_CONFIG_DEFAULT_TEMPLATE, root / ".codex" / "config.toml"),
+        (adapter / CODEX_CONFIG_SEAMLESS_TEMPLATE, root / ".codex" / "config.seamless.toml"),
+        (adapter / CODEX_HOOKS_DEFAULT_TEMPLATE, root / ".codex" / "hooks.json"),
+        (adapter / CODEX_HOOKS_VERBOSE_TEMPLATE, root / ".codex" / "hooks.verbose.json"),
+        (
+            adapter / CODEX_RULES_TEMPLATE,
+            root / ".codex" / "rules" / "azoth-seamless.star",
+        ),
         (
             adapter / "user_prompt_submit_router.py.template",
             root / ".codex" / "hooks" / "user_prompt_submit_router.py",
@@ -917,16 +924,6 @@ def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> t
             stale += 1
         count += 1
     return count, stale
-
-
-def _codex_hooks_template_name(root: Path) -> str:
-    """Choose the deployed Codex hooks template based on the local mode marker."""
-    marker = root / CODEX_HOOKS_MODE_MARKER
-    if not marker.is_file():
-        return CODEX_HOOKS_DEFAULT_TEMPLATE
-    if marker.read_text(encoding="utf-8").strip() == "verbose":
-        return CODEX_HOOKS_VERBOSE_TEMPLATE
-    return CODEX_HOOKS_DEFAULT_TEMPLATE
 
 
 # ── Codex hook compatibility lint ────────────────────────────────────────────
