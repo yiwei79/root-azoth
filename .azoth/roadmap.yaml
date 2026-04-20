@@ -425,18 +425,24 @@ versions:
 
   - id: v0.2.0-p3
     status: active
-    current_patch: 1
-    goal: "Carry-forward hardening: memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
+    current_patch: 2
+    goal: "Carry-forward hardening: incomplete p2 work, memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
     phase_scope: [3]
     themes: [A, C, D]
     note: >
       Third working phase of the v0.2.0 milestone. This slice intentionally closes p2 as
-      complete enough and carries forward the remaining hardening work without pivoting into
-      a new initiative family. Focus: verbatim-first M3 policy/tooling, memory operation parity,
-      roadmap/initiative authoring ergonomics, and bounded external evidence refresh for the
-      worktree lane. INI-KRP-001 remains explicitly unphased; phase 3 is a carry-forward
-      hardening slice, not a Karpathy-principles activation.
+      complete enough and carries forward every incomplete task from p2 without collapsing
+      the distinction between active phase work and the unscheduled initiative pool. Focus:
+      reinforcement_count automation, verbatim-first M3 policy/tooling, memory operation
+      parity, roadmap/initiative authoring ergonomics, and bounded external evidence refresh
+      for the worktree lane. Unphased initiatives remain phase-null and visible in the
+      initiative pool until a later slice explicitly schedules them; p3 carries concrete
+      follow-on tasks, not blanket ownership of every open initiative.
     tasks:
+      - id: P1-017
+        title: "reinforcement_count automation (closeout + promote path)"
+        decision_ref: [D11, D49, D51]
+        carried_from: "v0.2.0-p2"
       - id: P1-020
         title: "Verbatim-first M3 storage strategy"
         decision_ref: [D11, D45]
@@ -446,6 +452,42 @@ versions:
         title: "Memory operation platform parity"
         decision_ref: [D42, D46, D52]
         initiative_ref: "INI-PLT-001"
+        carried_from: "v0.2.0-p2"
+      - id: T-KRP-A
+        title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        carried_from: "v0.2.0-p2"
+      - id: T-KRP-B
+        title: "New skill: karpathy-principles SKILL.md for injectable discipline slot"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        carried_from: "v0.2.0-p2"
+      - id: T-KRP-C
+        title: "Builder agent posture: surgical changes + simplicity-first enforcement"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        carried_from: "v0.2.0-p2"
+      - id: T-KRP-D
+        title: "Orchestrator: assumption-surfacing checkpoint at goal classification"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        carried_from: "v0.2.0-p2"
+      - id: T-KRP-E
+        title: "structured-autonomy-plan: goal → success-criteria gate (T-006 dependency, autonomous loop enabler)"
+        target_layer: M1
+        delivery_pipeline: governed
+        initiative_ref: "INI-KRP-001"
+        status: planned
+        note: "Implement before or alongside T-006 revise-and-continue loops"
         carried_from: "v0.2.0-p2"
       - id: BL-062
         title: "scripts/initiative_scaffold.py — one-command initiative + task stub creation"
@@ -1116,18 +1158,23 @@ initiatives:
     decision_ref: [D21, D23, D51]
     slices:
       - task_ref: T-KRP-A
+        phase: null
         role: primary
         status: planned
       - task_ref: T-KRP-B
+        phase: null
         role: follow-on
         status: planned
       - task_ref: T-KRP-C
+        phase: null
         role: follow-on
         status: planned
       - task_ref: T-KRP-D
+        phase: null
         role: follow-on
         status: planned
       - task_ref: T-KRP-E
+        phase: null
         role: follow-on
         status: planned
 

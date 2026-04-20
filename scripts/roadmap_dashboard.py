@@ -160,7 +160,26 @@ def _format_task_block(
     return lines
 
 
-def build_version_body(version: Any) -> str:
+def _phase_initiatives_for_version(
+    roadmap: dict[str, Any], version_id: str
+) -> list[dict[str, Any]]:
+    """Return non-complete initiatives explicitly assigned to a roadmap version."""
+    raw = roadmap.get("initiatives")
+    if not isinstance(raw, list):
+        return []
+    items: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        if item.get("phase") != version_id:
+            continue
+        if item.get("status") in ("complete", "completed"):
+            continue
+        items.append(item)
+    return items
+
+
+def build_version_body(version: Any, roadmap: dict[str, Any] | None = None) -> str:
     """Build markdown-rich body text for one roadmap version block."""
     if not isinstance(version, dict):
         return (
@@ -196,14 +215,25 @@ def build_version_body(version: Any) -> str:
         version.get("completed_tasks"), block_label="completed_tasks"
     )
     pending, pw = _normalize_task_entries(version.get("tasks"), block_label="tasks")
+    phase_initiatives = []
+    if isinstance(roadmap, dict):
+        phase_initiatives = _phase_initiatives_for_version(roadmap, str(version.get("id", "?")))
 
-    if completed or pending or cw or pw:
+    if completed or pending or cw or pw or phase_initiatives:
         lines.append("")
 
     lines.extend(_format_task_block("Delivered", completed, done=True, schema_warnings=cw))
-    if (completed or cw) and (pending or pw):
+    if (completed or cw) and (pending or pw or phase_initiatives):
         lines.append("")
     lines.extend(_format_task_block("Upcoming", pending, done=False, schema_warnings=pw))
+    if phase_initiatives:
+        if pending or pw:
+            lines.append("")
+        lines.append("[bold]Initiatives[/bold]")
+        for item in phase_initiatives:
+            iid = escape(str(item.get("id", "?")))
+            title = escape(str(item.get("title", "")))
+            lines.append(f"  :large_blue_circle: [cyan]{iid}[/]  {title}")
 
     return "\n".join(lines)
 
@@ -226,7 +256,7 @@ def render_header(data: Any) -> Panel:
     return Panel(header, box=box.HEAVY)
 
 
-def render_version_panel(version: Any) -> Panel:
+def render_version_panel(version: Any, roadmap: dict[str, Any] | None = None) -> Panel:
     """Single bordered panel for one `versions[]` entry."""
     if not isinstance(version, dict):
         return Panel(
@@ -237,7 +267,7 @@ def render_version_panel(version: Any) -> Panel:
         )
     vid = version.get("id", "?")
     st = version.get("status", "?")
-    body = build_version_body(version)
+    body = build_version_body(version, roadmap=roadmap)
     ss = _status_style(st)
     title_bar = f"[bold]{escape(str(vid))}[/]  [{ss}]{escape(str(st))}[/{ss}]"
     return Panel(
@@ -366,7 +396,7 @@ def render_dashboard(
             )
             out.print()
             continue
-        out.print(render_version_panel(v))
+        out.print(render_version_panel(v, roadmap=data))
         out.print()
 
     out.print(Panel(FOOTER, box=box.MINIMAL))
