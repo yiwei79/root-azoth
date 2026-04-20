@@ -21,6 +21,11 @@ CODEX_ONLY_STYLE_LINES = (
     "Do not paragraph-dump. Do not produce decorative verbosity. Do not let visual structure become clutter.",
     "Keep machine-facing artifacts terse and plain: BL-011 spawn payloads, BL-012 stage summaries, gates, evaluator scorecards, and schema-bound YAML/JSON/TOML stay optimized for determinism, not presentation flourish.",
 )
+DELIVER_FULL_STAGE2_RULE = "deliver_full_s2_architect"
+DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage 2"
+DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
+    "Declaration, gate write, or status card does not count as Stage 2 execution"
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -199,6 +204,9 @@ def test_codex_router_redirects_deliver_full_token_to_start_centered_route() -> 
     assert "commands/start/command.yaml" in ctx
     assert "commands/deliver-full/command.yaml" in ctx
     assert ".agents/skills/azoth-start/SKILL.md" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=deliver-full harden codex adapter"
@@ -213,6 +221,9 @@ def test_codex_router_warns_pipeline_tokens_need_staged_delegation_not_inline_fa
     assert "staged pipeline execution" in ctx
     assert "not permission to improvise the work inline" in ctx
     assert "STOP after the Declaration and ask the human" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
 
 
 def _copy_router_fixture(tmp_path: Path) -> Path:
@@ -283,6 +294,9 @@ def test_codex_router_canonical_start_fails_closed_when_staged_delegation_is_una
     assert "pipeline_command=deliver-full" in ctx
     assert "Staged delegation is unavailable in this runtime" in ctx
     assert "STOP after the Declaration and ask the human" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=deliver-full harden codex adapter"
@@ -296,6 +310,26 @@ def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> No
     assert "staged pipeline execution and staged delegation" in text
     assert "STOP after the Declaration and ask the human" in text
     assert "Never silently continue inline as a fallback" in text
+    assert DELIVER_FULL_STAGE2_RULE in text
+    assert DELIVER_FULL_STAGE2_NEGATIVE in text
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in text
+
+
+def test_codex_config_templates_and_orchestrator_projection_lock_deliver_full_stage2_rule() -> None:
+    paths = (
+        CODEX_DIR / "config.toml.template",
+        CODEX_DIR / "config.seamless.toml.template",
+        REPO / ".codex" / "config.toml",
+        REPO / ".codex" / "config.seamless.toml",
+        REPO / ".codex" / "agents" / "orchestrator.toml",
+    )
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        assert DELIVER_FULL_STAGE2_RULE in text, f"{path.name} missing Stage 2 rule"
+        assert DELIVER_FULL_STAGE2_NEGATIVE in text, f"{path.name} missing negative proof"
+        assert (
+            DELIVER_FULL_STAGE2_DECLARATION_ONLY in text
+        ), f"{path.name} missing declaration-only proof"
 
 
 def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
