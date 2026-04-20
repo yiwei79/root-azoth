@@ -60,7 +60,7 @@ def copy_codex_router_fixture(tmp_path: Path, *, with_agents: bool = False) -> P
         (REPO / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    for script_name in ("codex_control_plane.py", "session_continuity.py"):
+    for script_name in ("codex_control_plane.py", "session_continuity.py", "session_gate.py"):
         (tmp_path / "scripts" / script_name).write_text(
             (REPO / "scripts" / script_name).read_text(encoding="utf-8"),
             encoding="utf-8",
@@ -77,6 +77,7 @@ def seed_azoth_repo(
     tmp_path: Path,
     *,
     scope: dict[str, Any] | None = None,
+    session_gate: dict[str, Any] | None = None,
     pipeline_gate: dict[str, Any] | None = None,
     session_state: dict[str, Any] | None = None,
     run_ledger: dict[str, Any] | None = None,
@@ -123,6 +124,7 @@ def seed_azoth_repo(
         },
     )
     write_json(azoth_dir / "scope-gate.json", scope or {})
+    write_json(azoth_dir / "session-gate.json", session_gate or {})
     write_json(azoth_dir / "pipeline-gate.json", pipeline_gate or {})
     if session_state is not None:
         write_yaml(azoth_dir / "session-state.md", session_state)

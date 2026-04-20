@@ -122,6 +122,11 @@ $defs:
         minLength: 1
         description: "Human-readable goal for this session."
 
+      session_mode:
+        type: string
+        enum: [exploratory, delivery]
+        description: "exploratory = no write scope yet; delivery = pipeline-owned work session."
+
       status:
         type: string
         enum: [active, parked, closed]

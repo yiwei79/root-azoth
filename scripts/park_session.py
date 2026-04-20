@@ -425,6 +425,7 @@ def park_session(
         status="parked",
         ide=selected_ide,
         next_action=next_action,
+        session_mode="delivery",
         updated_at=when,
         active_run_id=resolved_active_run_id,
     )
@@ -657,6 +658,7 @@ def resume_session(
         status="active",
         ide=selected_ide,
         next_action=next_action,
+        session_mode="delivery",
         updated_at=when,
         active_run_id=active_run_id,
     )
@@ -698,6 +700,7 @@ def resume_session(
                 status="active",
                 ide=selected_ide,
                 next_action=next_action,
+                session_mode="delivery",
                 updated_at=when,
                 active_run_id=active_run_id,
             )

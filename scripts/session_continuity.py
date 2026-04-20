@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from session_gate import active_session_gate
+
 
 PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
 _EXTEND_THRESHOLD_SECONDS = 30 * 60
@@ -155,10 +157,11 @@ def resolve_transition(
         now = datetime.now(timezone.utc)
 
     scope = active_scope(root)
-    active_session_id = str(scope.get("session_id") or "").strip()
-    active_goal = str(scope.get("goal") or "").strip()
+    active_session = scope or active_session_gate(root)
+    active_session_id = str(active_session.get("session_id") or "").strip()
+    active_goal = str(active_session.get("goal") or "").strip()
     if not active_session_id:
-        return TransitionDecision(action="new", reason="no-active-scope")
+        return TransitionDecision(action="new", reason="no-active-session")
 
     if requested_session_id:
         if requested_session_id == active_session_id:
@@ -185,6 +188,28 @@ def resolve_transition(
         return TransitionDecision(
             action="replace",
             reason="next-with-live-scope",
+            active_session_id=active_session_id,
+            active_goal=active_goal,
+        )
+
+    if not scope:
+        if requested_goal and _looks_like_same_goal(requested_goal, active_goal):
+            return TransitionDecision(
+                action="resume",
+                reason="matching-exploratory-goal",
+                active_session_id=active_session_id,
+                active_goal=active_goal,
+            )
+        if requested_goal:
+            return TransitionDecision(
+                action="replace",
+                reason="different-exploratory-goal",
+                active_session_id=active_session_id,
+                active_goal=active_goal,
+            )
+        return TransitionDecision(
+            action="resume",
+            reason="active-exploratory-session",
             active_session_id=active_session_id,
             active_goal=active_goal,
         )

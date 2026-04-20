@@ -401,6 +401,92 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     ]
 
 
+def test_exploratory_light_closeout_closes_session_without_version_bump(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, delivery_pipeline="standard", include_session_state=True)
+    (repo_root / ".azoth" / "scope-gate.json").write_text("{}", encoding="utf-8")
+    (repo_root / ".azoth" / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-123",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    do_closeout.run_closeout(repo_root)
+
+    episodes = (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8")
+    assert episodes.strip()
+    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    assert session_gate["status"] == "closed"
+    session_state = yaml.safe_load((repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8"))
+    assert session_state["session_mode"] == "exploratory"
+    assert session_state["approved_scope"] == "Exploratory session (no write scope)"
+    assert version_bump_calls == []
+
+
+def test_exploratory_light_closeout_wins_over_stale_approved_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, delivery_pipeline="standard", include_session_state=True)
+    stale_scope = {
+        "approved": True,
+        "expires_at": "2020-01-01T00:00:00+00:00",
+        "session_id": "sess-stale",
+        "goal": "BL-123: stale scope",
+        "backlog_id": "BL-123",
+        "delivery_pipeline": "standard",
+    }
+    (repo_root / ".azoth" / "scope-gate.json").write_text(
+        json.dumps(stale_scope),
+        encoding="utf-8",
+    )
+    (repo_root / ".azoth" / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-123",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    do_closeout.run_closeout(repo_root)
+
+    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    assert session_gate["status"] == "closed"
+    session_state = yaml.safe_load((repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8"))
+    assert session_state["session_mode"] == "exploratory"
+    assert version_bump_calls == []
+
+
 def test_governed_closeout_keeps_last_version_completion_inside_versions_section(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

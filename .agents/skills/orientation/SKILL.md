@@ -91,17 +91,23 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 3) — carry-forward hardening 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 2) — memory · declarative swarm depth · platform strategy 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `version: 0.1.3.0`, `phase: 3`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p3` for the phase-3 working slice, `current_phase: 3`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** remains the planning digest surface.
-- **Execution queue:** `v0.2.0-p2` is intentionally closed as complete enough. Phase 3 carries forward the remaining hardening work instead of opening a new initiative family: **P1-020** (verbatim-first M3), **P1-021** (memory operation parity), **BL-062** (initiative scaffolder), **BL-063** (roadmap dashboard cross-sections), and **BL-065** (worktree evidence refresh). **INI-KRP-001** remains explicitly unphased; do not treat phase 3 as the Karpathy activation wave.
+- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 2`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p2` for the phase-2 working slice, `current_phase: 2`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
+- **Execution queue:** `.azoth/backlog.yaml` currently leaves **P1-020** (verbatim-first M3) and **P1-021** (memory operation parity) deferred in `v0.2.0-p2`, while **P1-022**, **P1-023**, and **P1-024** completed the co-primary blueprint, neutral command contract, and pilot D46 projection for **INI-PLT-006**. The initiative is now operationalized as concrete follow-on slices: **T-002** (scope/orientation command migration) is the active next batch, followed by **T-003** (delivery/orchestration commands) and **T-004** (closeout/memory/maintenance + initiative exit). High-priority initiatives now include **INI-RST-001**, **INI-MEM-004**, **INI-RST-003**, and **INI-PLT-006**; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
 - **Workstreams (roadmap task ids / initiatives):**
-  - **P1-020 / INI-MEM-001** — active carry-forward: verbatim-first M3 storage strategy.
-  - **P1-021 / INI-PLT-001** — active carry-forward: memory operation parity across Claude Code, Cursor, and Copilot adapter paths.
-  - **BL-062 / INI-KRP-001** — backlog-only tooling follow-on: automate initiative and task stub scaffolding without phasing the Karpathy initiative itself.
-  - **BL-063 / INI-KRP-001** — backlog-only tooling follow-on: add roadmap dashboard cross-section filters for theme/track views.
-  - **BL-065 / INI-RST-005** — backlog-only maintenance follow-on: refresh bounded external evidence for the completed worktree-upgrade lane when assumptions age.
-  - **P1-022 / P1-023 / P1-024 / INI-PLT-006** — completed phase-2 foundation for the co-primary command contract and projection path.
+  - **P1-020 / INI-MEM-001** — verbatim-first M3 storage strategy; keep full signal before downstream indexing or compression policy.
+  - **P1-021 / INI-PLT-001** — memory operation parity across Claude Code, Cursor, and Copilot adapter paths.
+  - **P1-022 / INI-PLT-006** — completed: codified Claude Code + Codex as co-primary command surfaces and made the adapter contract explicit for the rest.
+  - **P1-023 / INI-PLT-006** — completed: defined the neutral canonical command contract, `commands/` source path, and initiative execution plan without refactoring D46 yet.
+  - **P1-024 / INI-PLT-006** — completed: refactored D46 to prove the pilot command projection path from `commands/next/command.yaml`.
+  - **T-002 / INI-PLT-006** — next active batch: migrate `/start`, `/next`, and `/resume` into the neutral command path and repair planning continuity.
+  - **T-003 / INI-PLT-006** — queued follow-on batch: migrate delivery and orchestration commands after the scope/orientation family is stable.
+  - **T-004 / INI-PLT-006** — queued initiative-exit batch: migrate closeout/memory/maintenance commands and certify the remaining adapter contract.
+  - **P1-015 / INI-RST-003** — true multi-writer safety remains staged behind the platform/bootstrap path.
+  - **P1-002 / INI-RST-001** — declarative swarm / eval-wave specification remains the run-state depth track after ledger foundations.
+  - **P1-009 / INI-PLT-002** — Cursor session-open parity remains a medium-priority adapter-hardening slice.
+  - **P1-011 / INI-EFF-001** — token and inference efficiency remains available once platform/memory triage settles.
   - **P5-006 / INI-UX-001** — deferred narrow-terminal UX polish.
 
 ## Planning Sources

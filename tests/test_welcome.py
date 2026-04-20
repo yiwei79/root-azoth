@@ -141,6 +141,43 @@ def test_scope_inactive_missing_expires_at() -> None:
     assert welcome.is_scope_active({"approved": True}) is False
 
 
+def test_welcome_plain_surfaces_active_exploratory_session_without_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n", encoding="utf-8")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n", encoding="utf-8")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "memory" / "episodes.jsonl").write_text("", encoding="utf-8")
+    (azoth_dir / "scope-gate.json").write_text("{}", encoding="utf-8")
+    (azoth_dir / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-explore",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text("schema_version: 1\nruns: []\n", encoding="utf-8")
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Session: ACTIVE  (exploratory, sess-explore)" in out
+    assert "light closeout for exploratory session" in out
+
+
 def test_scope_active_naive_future_datetime() -> None:
     """Naive datetime (no tz) in the future should be treated as UTC and count as active."""
     naive_future = (datetime.utcnow() + timedelta(hours=1)).isoformat()
