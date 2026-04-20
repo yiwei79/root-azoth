@@ -1,0 +1,167 @@
+proposal_schema_version: 1
+created_at: "2026-04-20T01:15:00+02:00"
+session_id: "2026-04-20-codex-model-selection-seed"
+backlog_id: "T-015"
+title: "Codex intelligent model selection"
+summary: >
+  Azoth's current `model_tier` contract preserves portable intent, but Codex co-primary
+  parity now needs a real host-aware selection architecture rather than an implied
+  or hard-coded tier-to-model mapping. This proposal defines a forward-compatible
+  selector design for Codex: the orchestrator and BL-011 spawn contract continue
+  to express intent, a Codex-specific inventory/policy layer resolves against the
+  models and capabilities currently available, and the selector chooses the best
+  viable model per agent instance with quality first and latency/cost as bounded
+  tie-breakers. Current model-family observations are included as directional evidence
+  only; they are not the long-term interface.
+status: draft
+decision_refs:
+  - D19
+  - D21
+  - D23
+  - D46
+  - D52
+scope_layers:
+  - agents
+  - pipelines
+  - docs
+details:
+  evidence_basis:
+    repo_local:
+      observed_on: "2026-04-20"
+      sources:
+        - path: ".codex/agents/orchestrator.toml"
+          finding: >
+            Codex currently states that the orchestrator sets `model_tier` and that
+            subagent-router resolves it to a concrete model identifier, but no concrete
+            Codex-side policy or capability contract exists yet.
+        - path: "agents/tier1-core/orchestrator.agent.md"
+          finding: >
+            The canonical orchestration contract applies `model_tier` to every spawn,
+            but the tier remains too coarse to capture task-specific reasoning depth,
+            context pressure, tool needs, or autonomy horizon.
+        - path: ".agents/skills/subagent-router/SKILL.md"
+          finding: >
+            BL-011 already has a stable spawn contract and can carry richer selector
+            inputs later without abandoning the portable `model_tier` field.
+        - path: ".codex/config.toml"
+          finding: >
+            Codex is instruction-first, calm-by-default, bounded by workspace-write,
+            and network-disabled in this repo. That makes model judgment quality and
+            reliable tool-stage behavior more important than raw token speed alone.
+        - path: "docs/platform-guides/codex-guide.md"
+          finding: >
+            Codex is a co-primary Azoth host with a calm-flow orientation rather than
+            a degraded Claude adapter, so Codex-specific execution-quality policy is
+            architecturally justified.
+    external_directional:
+      observed_on: "2026-04-20"
+      sources:
+        - title: "Introducing GPT-5.4"
+          url: "https://openai.com/index/introducing-gpt-5-4/"
+          finding: >
+            Current OpenAI positioning suggests the strongest long-horizon coding/workflow
+            models should anchor orchestrator/design/review lanes, with fast mode and
+            tool/computer-use strengths supporting complex Codex work.
+        - title: "Introducing GPT-5.3-Codex-Spark"
+          url: "https://openai.com/index/introducing-gpt-5-3-codex-spark/"
+          finding: >
+            Current realtime/ultra-fast models appear better suited to bounded leaf
+            lanes and latency-sensitive iteration than to the main Azoth control plane.
+        - title: "GPT-5.4 model docs"
+          url: "https://developers.openai.com/api/docs/models/gpt-5.4/"
+          finding: >
+            OpenAI exposes evolving model aliases, context windows, reasoning-effort
+            options, and tool capabilities, which supports a capability-aware selector
+            better than a pinned snapshot-id contract.
+  problem:
+    intent_gap: >
+      `model_tier` currently signals only coarse quality/cost intent and cannot
+      distinguish stage-specific needs such as deep planning, tool-heavy verification,
+      long-horizon orchestration, or narrow latency-sensitive leaves.
+    resolution_gap: >
+      Azoth documentation implies that Codex resolves tier to a concrete model, but
+      there is no real Codex policy artifact, no explicit capability inventory, and
+      no tested deterministic resolver behavior.
+    forward_compatibility_gap: >
+      Hard-coding today’s model names or snapshots would force recurring manual
+      retuning as aliases, availability, model families, and capability trade-offs
+      change over time.
+  design:
+    objective_order:
+      primary: "quality / reliability"
+      secondary: "latency"
+      tertiary: "cost"
+      note: >
+        Lower latency and lower cost are optimization goals only after capability
+        and quality fit are satisfied for the current stage and risk profile.
+    layers:
+      intent_layer:
+        statement: >
+          Keep `model_tier` as a backward-compatible portable intent signal, but
+          enrich BL-011 spawn metadata with selector-relevant inputs.
+        future_inputs:
+          - "stage_kind"
+          - "reasoning_depth_needed"
+          - "autonomy_horizon"
+          - "context_size_pressure"
+          - "tool_or_computer_use_need"
+          - "verification_strictness"
+          - "latency_sensitivity"
+      host_inventory_layer:
+        statement: >
+          Codex maintains a host-local inventory of available model aliases and
+          capabilities rather than treating a small set of hand-picked model IDs
+          as the stable contract.
+        requirements:
+          - "Prefer aliases or capability classes over pinned snapshots"
+          - "Record context-window, reasoning, tool, and latency-class features"
+          - "Permit graceful fallback when inventory data is partial or stale"
+      selector_layer:
+        statement: >
+          Score candidate models per agent instance and choose the best viable fit
+          for that specific stage, not one model for the entire pipeline.
+        scoring_dimensions:
+          - "capability fit"
+          - "quality / reliability fit"
+          - "latency fit"
+          - "cost fit"
+          - "context-window fit"
+          - "tool / computer-use fit"
+      feedback_layer:
+        statement: >
+          Capture selector outcomes, fallback events, and observed failure modes into
+          M3/M2 so the policy improves with evidence instead of ad hoc human retuning.
+  directional_current_policy:
+    statement: >
+      Current evidence suggests a quality-first Codex default should usually resolve
+      toward the strongest long-horizon coding/workflow model available for orchestrator,
+      architect, planner, reviewer, and other control-plane-heavy lanes. Ultra-fast
+      realtime models should remain bounded leaf options for latency-sensitive exploration,
+      cosmetic/docs work, or narrowly scoped subagents. This is directional guidance,
+      not the future-proof normative interface.
+  follow_on_slices:
+    - id: "Slice A"
+      title: "Codex policy artifact"
+      deliverables:
+        - "Add a Codex-specific selector policy/config surface"
+        - "Define candidate capability fields and fallback rules"
+    - id: "Slice B"
+      title: "Spawn contract + resolver plumbing"
+      deliverables:
+        - "Extend BL-011 spawn metadata with explicit selector inputs"
+        - "Implement resolver path from orchestrator/subagent-router into concrete model choice"
+    - id: "Slice C"
+      title: "Evaluation and regression"
+      deliverables:
+        - "Add deterministic selection and fallback tests"
+        - "Prevent hard-coded snapshot/model drift from becoming the main contract"
+        - "Capture selector evidence for future policy tuning"
+    - id: "Slice D"
+      title: "Optional portability follow-on"
+      deliverables:
+        - "Generalize beyond Codex only after the Codex co-primary proof is stable"
+  non_goals:
+    - "No runtime selector implementation in this proposal slice"
+    - "No deploy changes or command/agent mirror rewrites"
+    - "No normative future contract that depends on a fixed set of named current models"
+    - "No automatic promotion into AZOTH_ARCHITECTURE.md or DECISIONS_INDEX.md"
