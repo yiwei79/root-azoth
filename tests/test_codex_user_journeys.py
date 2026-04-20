@@ -22,6 +22,12 @@ import do_closeout  # noqa: E402
 import park_session  # noqa: E402
 from codex_control_plane import directive_for_prompt  # noqa: E402
 
+DELIVER_FULL_STAGE2_RULE = "deliver_full_s2_architect"
+DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage 2"
+DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
+    "Declaration, gate write, or status card does not count as Stage 2 execution"
+)
+
 
 def test_pipeline_aliases_normalize_to_the_same_start_centered_route() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
@@ -37,6 +43,26 @@ def test_pipeline_aliases_normalize_to_the_same_start_centered_route() -> None:
         hook = payload["hookSpecificOutput"]
         assert hook["updatedInput"] == canonical
         assert "pipeline_command=deliver-full" in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_RULE in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_NEGATIVE in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in hook["additionalContext"]
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "/deliver-full harden codex adapter",
+        "$azoth-deliver-full harden codex adapter",
+        "$azoth-start pipeline_command=deliver-full harden codex adapter",
+    ),
+)
+def test_governed_deliver_full_aliases_share_stage2_invariant(prompt: str) -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    payload = run_router(router, prompt, cwd=REPO)
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
 
 
 def test_freeform_continue_and_new_goal_receive_continuity_guidance(tmp_path: Path) -> None:

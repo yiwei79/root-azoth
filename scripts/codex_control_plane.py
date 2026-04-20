@@ -361,6 +361,14 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
             "This is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
         ]
     )
+    if pipeline == "deliver-full":
+        guidance.extend(
+            [
+                "For governed `/deliver-full`, the next legal stage is spawned `deliver_full_s2_architect`.",
+                "For governed `/deliver-full`, inline architecture prose does not satisfy Stage 2.",
+                "For governed `/deliver-full`, a Declaration, gate write, or status card does not count as Stage 2 execution.",
+            ]
+        )
     if not staged_delegation_available(root):
         guidance.append(
             "Staged delegation is unavailable in this runtime. STOP after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms."

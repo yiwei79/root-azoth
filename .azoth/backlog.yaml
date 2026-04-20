@@ -2582,10 +2582,11 @@ items:
   source_insight: SRF-2026-04-19-CODEX-DELIVER-FULL-SUBAGENT-001, 32354597-1b89-437a-a98d-a045563928b5
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 1
   created_date: '2026-04-20'
+  completed_date: '2026-04-20'
   description: 'Make the Codex governed deliver-full entry path enforce the Stage
     2 architect ownership rule mechanically. The Codex orchestrator surface must require
     deliver_full_s2_architect next or fail closed before any inline architecture brief
