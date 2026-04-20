@@ -1,0 +1,20 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-20-intake-approved-bundle
+backlog_id: AD-HOC
+goal: Process approved 2026-04-20 intake bundle into governed backlog items and inbox state
+pipeline: governed
+approved_stage_id: manual_worktree_sync_repair
+actor_type: human
+decision: approved
+approved_at: '2026-04-20T20:05:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - BL-067
+  - BL-068
+  - BL-069
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: 9fe10b57466810172c7e72d757c62de828b258c36518fff89266b6bf25159ad6
