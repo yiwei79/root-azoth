@@ -1,6 +1,6 @@
 interface:
   display_name: /hookmode
-  short_description: Inspect or switch the local Codex hook profile
+  short_description: Inspect or switch the local Codex operating mode
   default_prompt: '$azoth-hookmode '
 policy:
   allow_implicit_invocation: false

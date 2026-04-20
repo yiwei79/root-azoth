@@ -1,7 +1,7 @@
 schema_version: 1
 name: hookmode
 display_name: /hookmode
-description: Inspect or switch the local Codex hook profile
+description: Inspect or switch the local Codex operating mode
 agent: orchestrator
 azoth_effect: write
 

@@ -502,7 +502,16 @@ def _write_codex_templates(root: Path) -> None:
         'approval_policy = "on-request"\n',
         encoding="utf-8",
     )
+    (adapter / "config.seamless.toml.template").write_text(
+        'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n',
+        encoding="utf-8",
+    )
     (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
+    (adapter / "hooks.verbose.json.template").write_text('{"hooks": {"SessionStart": []}}\n', encoding="utf-8")
+    (adapter / "azoth-seamless.star.template").write_text(
+        'prefix_rule(pattern=["git", "status"])\n',
+        encoding="utf-8",
+    )
     (adapter / "user_prompt_submit_router.py.template").write_text(
         "#!/usr/bin/env python3\n",
         encoding="utf-8",
@@ -580,7 +589,10 @@ def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
     assert (tmp_path / ".codex" / "agents" / "architect.toml").is_file()
     assert (tmp_path / ".agents" / "skills" / "context-map" / "SKILL.md").is_file()
     assert (tmp_path / ".codex" / "config.toml").is_file()
+    assert (tmp_path / ".codex" / "config.seamless.toml").is_file()
     assert (tmp_path / ".codex" / "hooks.json").is_file()
+    assert (tmp_path / ".codex" / "hooks.verbose.json").is_file()
+    assert (tmp_path / ".codex" / "rules" / "azoth-seamless.star").is_file()
     assert (tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py").is_file()
 
 
@@ -596,18 +608,27 @@ def test_iter_codex_adapter_deployments_maps_templates() -> None:
         (adapter / "config.toml.template").write_text(
             'approval_policy = "on-request"\n', encoding="utf-8"
         )
+        (adapter / "config.seamless.toml.template").write_text(
+            'approval_policy = "untrusted"\n', encoding="utf-8"
+        )
         (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(
             '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+        )
+        (adapter / "azoth-seamless.star.template").write_text(
+            'prefix_rule(pattern=["git", "status"])\n', encoding="utf-8"
         )
         (adapter / "user_prompt_submit_router.py.template").write_text(
             "#!/usr/bin/env python3\n", encoding="utf-8"
         )
         pairs = iter_codex_adapter_deployments(root)
-        assert len(pairs) == 3
+        assert len(pairs) == 6
         dests = {p[1].as_posix() for p in pairs}
         assert root.joinpath(".codex", "config.toml").as_posix() in dests
+        assert root.joinpath(".codex", "config.seamless.toml").as_posix() in dests
         assert root.joinpath(".codex", "hooks.json").as_posix() in dests
+        assert root.joinpath(".codex", "hooks.verbose.json").as_posix() in dests
+        assert root.joinpath(".codex", "rules", "azoth-seamless.star").as_posix() in dests
         assert root.joinpath(".codex", "hooks", "user_prompt_submit_router.py").as_posix() in dests
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -620,17 +641,26 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
+        seamless_config = 'approval_policy = "untrusted"\n'
         hooks = '{"hooks": {}}\n'
         verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         n, _ = deploy_codex_adapter(root, dry_run=False)
-        assert n == 3
+        assert n == 6
         assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "config.seamless.toml").read_text(encoding="utf-8") == seamless_config
         assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks.verbose.json").read_text(encoding="utf-8") == verbose_hooks
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
         assert (root / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(
             encoding="utf-8"
         ) == router
@@ -638,27 +668,70 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         shutil.rmtree(root, ignore_errors=True)
 
 
-def test_deploy_codex_adapter_uses_verbose_template_when_local_marker_is_set() -> None:
+def test_deploy_codex_adapter_ignores_local_hook_marker_for_tracked_outputs() -> None:
     repo = Path(__file__).resolve().parent.parent
     root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
     adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
+        seamless_config = 'approval_policy = "untrusted"\n'
         hooks = '{"hooks": {}}\n'
         verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         (root / ".codex").mkdir(parents=True, exist_ok=True)
         (root / ".codex" / "hooks.mode.local").write_text("verbose\n", encoding="utf-8")
 
         n, _ = deploy_codex_adapter(root, dry_run=False)
 
-        assert n == 3
-        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == verbose_hooks
+        assert n == 6
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks.verbose.json").read_text(encoding="utf-8") == verbose_hooks
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_ignores_local_permission_marker_for_tracked_outputs() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        seamless_config = 'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n'
+        hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        (root / ".codex").mkdir(parents=True, exist_ok=True)
+        (root / ".codex" / "permission_profile.local").write_text("seamless\n", encoding="utf-8")
+
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+
+        assert n == 6
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "config.seamless.toml").read_text(encoding="utf-8") == seamless_config
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

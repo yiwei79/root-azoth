@@ -425,7 +425,7 @@ versions:
 
   - id: v0.2.0-p3
     status: active
-    current_patch: 2
+    current_patch: 3
     goal: "Carry-forward hardening: incomplete p2 work, memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
     phase_scope: [3]
     themes: [A, C, D]
@@ -508,6 +508,8 @@ versions:
 # Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
 # Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+    completed_tasks:
+      - {id: T-016, title: "Codex seamless permissions profile (repo-local execpolicy)", completed_date: "2026-04-20", decision_ref: [D19, D46, D50, D52]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -1092,91 +1094,61 @@ initiatives:
       install should coexist. Keep this unphased until the workspace bootstrap proves
       operational in practice.
     decision_ref: [D19, D46]
-
   - id: INI-PLT-006
-    title: "Co-primary platform model (Claude Code + Codex; stable adapters)"
+    title: Co-primary platform model (Claude Code + Codex; stable adapters)
     category: platform
     theme: D
     dimensions:
-      themes: [D]
-      categories: [platform]
-      tracks: [co-primary-platforms, command-migration]
-    phase: v0.2.0-p2
+      themes:
+      - D
+      categories:
+      - platform
+      tracks:
+      - co-primary-platforms
+      - command-migration
+    phase: v0.2.0-p3
     priority: high
-    task_ref: T-002
+    task_ref: T-016
     slices:
-      - task_ref: T-002
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-002.yaml"
-        phase: v0.2.0-p2
-        status: complete
-        role: historical
-      - task_ref: T-003
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-003.yaml"
-        phase: v0.2.0-p2
-        status: complete
-        role: historical
-      - task_ref: T-004
-        spec_ref: ".azoth/roadmap-specs/v0.2.0/T-004.yaml"
-        phase: v0.2.0-p2
-        status: complete
-        role: historical
-    summary: >
-      Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
+    - task_ref: T-002
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-002.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-003
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-003.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-004
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-004.yaml
+      phase: v0.2.0-p2
+      status: complete
+      role: historical
+    - task_ref: T-016
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-016.yaml
+      phase: v0.2.0-p3
+      status: complete
+      role: current
+    summary: 'Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
       model with Claude Code and Codex as co-primary command surfaces, while keeping
       Cursor, Copilot, OpenCode, and Gemini / Antigravity on an honest adapter contract.
       Commands remain the user-facing abstraction; pipelines stay internal execution
-      machinery. P1-024 proved the pilot projection path; T-002 through T-004
-      operationalized the migration batches and the canonical contract/projection path.
-      Follow-on Codex calm-flow runtime proof and any remaining `legacy_claude_markdown`
+      machinery. P1-024 proved the pilot projection path; T-002 through T-004 operationalized
+      the migration batches and the canonical contract/projection path. Follow-on Codex
+      calm-flow runtime proof, repo-local permission UX, and any remaining `legacy_claude_markdown`
       bridge cleanup continue as platform-polish work rather than evidence that every
       migrated command, or every remaining command family, is already independent from
       `.claude/commands/*.md`.
-    decision_ref: [D19, D21, D46, D50, D52]
-    spec_ref: ".azoth/roadmap-specs/v0.2.0/T-002.yaml"
 
-  # ── Theme E: efficiency ────────────────────────────────────────────────────
-  - id: INI-KRP-001
-    title: "Karpathy Principles — behavioral quality layer"
-    category: efficiency
-    theme: E
-    dimensions:
-      themes: [E, A, B]
-      categories: [efficiency, run-state, pipeline]
-      tracks: [autonomous-quality, builder-discipline, goal-grounding]
-    phase: null
-    priority: high
-    research_ref: "ep-266"
-    summary: >
-      Integrate the four Andrej Karpathy LLM-coding principles (Think Before Coding,
-      Simplicity First, Surgical Changes, Goal-Driven Execution) as first-class behavioral
-      guidance across kernel instructions, skills, and agent postures. Primary payoff:
-      prerequisite scaffolding for the autonomous development loop (T-006 dependency).
-      Secondary: portable discipline layer for azoth installs downstream.
-      Research source: multica-ai/andrej-karpathy-skills (57k stars, MIT, Apr 2026).
-      Full findings in ep-266. Implementation decisions deferred — do not overfit spec
-      from research context alone; pick up with live context when activating.
-    decision_ref: [D21, D23, D51]
-    slices:
-      - task_ref: T-KRP-A
-        phase: null
-        role: primary
-        status: planned
-      - task_ref: T-KRP-B
-        phase: null
-        role: follow-on
-        status: planned
-      - task_ref: T-KRP-C
-        phase: null
-        role: follow-on
-        status: planned
-      - task_ref: T-KRP-D
-        phase: null
-        role: follow-on
-        status: planned
-      - task_ref: T-KRP-E
-        phase: null
-        role: follow-on
-        status: planned
+      '
+    decision_ref:
+    - D19
+    - D21
+    - D46
+    - D50
+    - D52
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-016.yaml
 
   - id: INI-EFF-001
     title: "Token & inference efficiency (context budget, caching, spawn hygiene)"

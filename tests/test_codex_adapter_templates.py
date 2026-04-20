@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -39,6 +40,8 @@ def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
     "name",
     [
         "config.toml.template",
+        "config.seamless.toml.template",
+        "azoth-seamless.star.template",
         "hooks.json.template",
         "hooks.verbose.json.template",
         "user_prompt_submit_router.py.template",
@@ -52,7 +55,10 @@ def test_codex_template_exists(name: str) -> None:
 def test_live_codex_adapter_mirrors_templates() -> None:
     mapping = {
         "config.toml.template": REPO / ".codex" / "config.toml",
+        "config.seamless.toml.template": REPO / ".codex" / "config.seamless.toml",
         "hooks.json.template": REPO / ".codex" / "hooks.json",
+        "hooks.verbose.json.template": REPO / ".codex" / "hooks.verbose.json",
+        "azoth-seamless.star.template": REPO / ".codex" / "rules" / "azoth-seamless.star",
         "user_prompt_submit_router.py.template": REPO
         / ".codex"
         / "hooks"
@@ -73,6 +79,13 @@ def test_codex_hook_template_keeps_only_user_prompt_submit() -> None:
     assert set(hooks.keys()) == {"UserPromptSubmit"}
 
 
+def test_codex_seamless_config_uses_untrusted_with_rules() -> None:
+    content = (CODEX_DIR / "config.seamless.toml.template").read_text(encoding="utf-8")
+    assert 'approval_policy = "untrusted"' in content
+    assert 'rules = [".codex/rules/azoth-seamless.star"]' in content
+    assert 'sandbox_mode = "workspace-write"' in content
+
+
 def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:
     hooks = json.loads((CODEX_DIR / "hooks.verbose.json.template").read_text(encoding="utf-8"))[
         "hooks"
@@ -84,6 +97,41 @@ def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:
         "PostToolUse",
         "Stop",
     }
+
+
+def test_codex_seamless_execpolicy_rules_cover_allow_prompt_and_forbidden() -> None:
+    rules = (CODEX_DIR / "azoth-seamless.star.template").read_text(encoding="utf-8")
+    assert 'prefix_rule(pattern=["git", "status"]' in rules
+    assert 'pattern=["git", "diff", "--no-index"]' in rules
+    assert 'decision="prompt"' in rules
+    assert 'decision="forbidden"' in rules
+
+
+def test_codex_seamless_execpolicy_check_examples() -> None:
+    codex = shutil.which("codex")
+    if not codex:
+        pytest.skip("codex binary not available")
+
+    rules_path = REPO / ".codex" / "rules" / "azoth-seamless.star"
+    assert rules_path.is_file(), (
+        "missing deployed .codex/rules/azoth-seamless.star — run: python3 scripts/azoth-deploy.py --platforms codex"
+    )
+
+    def _check(*command: str) -> dict[str, object]:
+        proc = subprocess.run(
+            [codex, "execpolicy", "check", "--rules", str(rules_path), *command],
+            text=True,
+            capture_output=True,
+            check=False,
+            cwd=REPO,
+        )
+        assert proc.returncode == 0, proc.stderr
+        return json.loads(proc.stdout.splitlines()[-1])
+
+    assert _check("git", "status")["decision"] == "allow"
+    assert _check("git", "diff", "--no-index", "a", "b")["decision"] == "prompt"
+    assert _check("git", "commit", "-m", "test")["decision"] == "prompt"
+    assert _check("rm", "-rf", "tmp")["decision"] == "forbidden"
 
 
 def test_codex_router_adds_context_for_auto_token() -> None:
