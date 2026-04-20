@@ -37,7 +37,7 @@ layers:
 # Memory system
 memory:
   episodes: 295
-  patterns: 20
+  patterns: 24
   last_sync: null
 
 # Platform compatibility
