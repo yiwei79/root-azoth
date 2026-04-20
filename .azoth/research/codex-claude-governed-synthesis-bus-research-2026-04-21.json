@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "source_session_id": "2026-04-20-adhoc-research-anthropic-s-official-coordination-and-c",
+  "goal": "Research Codex automations vs Claude routines for Azoth governed synthesis bus and continuation layer",
+  "captured_at": "2026-04-20T22:22:10Z",
+  "refreshed_at": "2026-04-20T22:22:10Z",
+  "refresh_summary": "First durable capture of the April 2026 automation-control-plane research. This capsule preserves the current thesis, the three-lane model, and the next research threads so future passes can refine or digest them instead of rebuilding context from chat history.",
+  "volatility": "mixed",
+  "limitations": [
+    "OpenAI and Anthropic automation surfaces are temporally unstable; claims were checked against official pages observed on 2026-04-21 local time.",
+    "Repo-local findings describe the current Azoth snapshot only and may age as control-plane and automation slices land.",
+    "This capsule is discovery-only. It does not authorize implementation, governance mutation, or unattended side effects."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this Codex-vs-Claude automation research capsule be reused for follow-on architecture and proposal work?",
+      "status": "answered",
+      "answered_at": "2026-04-20T22:22:10Z",
+      "fresh_until": "2026-05-21T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-goal-research-codex-automations-vs-claude-routines-fo",
+      "question": "What is the strongest current framing for Azoth after comparing Codex automations with Claude routines and continuation surfaces?",
+      "status": "answered",
+      "answered_at": "2026-04-20T22:22:10Z",
+      "fresh_until": "2026-05-21T00:00:00Z"
+    }
+  ],
+  "thesis": "Azoth should not become a raw message bus. The strongest current framing is a governed synthesis bus plus continuation layer: orchestrator-subagent for active reasoning, shared state for durable truth, narrow producer automations for evidence, thread-bound wakeups for continuation, and only a bounded advance-by-contract lane for automatic progression.",
+  "decisions_locked": {
+    "primary_framing": "governed synthesis bus plus continuation layer",
+    "research_bank_shape": "three-lane model",
+    "claude_routines_role": "future experimental ingress lane",
+    "starting_posture": "evidence producers plus wakeup mechanisms",
+    "additional_research_thread": "pre-authorized merge feature"
+  },
+  "lane_model": {
+    "evidence_producers": "Narrow automations or routines gather facts, statuses, alerts, review outcomes, and other evidence. They are not authorities by default.",
+    "wakeup_and_continuation": "Thread-bound wakeups or equivalent continuation surfaces re-enter an existing run, check objective predicates, and either continue, report, or stop.",
+    "automatic_advance": "Automatic advancement is only safe as advance-by-contract: same approved goal, same or narrower scope, predeclared next stage, objective stop conditions, and fail-closed behavior on ambiguity."
+  },
+  "automatic_advance_constraints": [
+    "No scope extension without a new explicit human approval.",
+    "No direct memory or governance mutation from producer automations.",
+    "No silent continuation after request-changes, critical review findings, expired gates, or stale continuation predicates.",
+    "No autonomous side effects based on narrative inference alone; the next executable stage must already be represented in durable state."
+  ],
+  "platform_comparison": {
+    "codex_default_role": "Best default control plane for Azoth's current posture because thread automations preserve conversation continuity, background automations report into Triage, and the surface already fits review-and-reentry more naturally than cloud-fresh autonomous sessions.",
+    "claude_default_role": "Not the default continuation layer. Claude scheduled tasks and routines are still valuable comparison surfaces, with routines especially interesting as a future ingress worker lane.",
+    "claude_future_experimental_ingress_lane": "Claude routines look strongest when the problem is external event ingress or cloud-triggered work initiation, not when the main requirement is durable in-thread continuation under the current Azoth trust model."
+  },
+  "preliminary_merge_research": {
+    "current_position": "Pre-authorized merge is worth researching, but it should not enter the first automatic-advance lane unless the merge policy becomes explicit, mechanically checkable, and fail-closed.",
+    "candidate_predicates": [
+      "Required checks are green.",
+      "The PR is mergeable according to the host.",
+      "No blocking review threads or unresolved required changes remain.",
+      "The governing approval has not expired and still covers the intended merge action.",
+      "No new critical findings or scope drift appeared after the last approved checkpoint."
+    ],
+    "main_risks": [
+      "Confusing outdated or non-blocking review comments with real blockers.",
+      "Advancing from stale CI or stale review state.",
+      "Letting automation infer policy exceptions that should remain human-owned."
+    ]
+  },
+  "sources": [
+    {
+      "kind": "industry-official",
+      "title": "Codex automations documentation",
+      "url": "https://developers.openai.com/codex/app/automations",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Official OpenAI developer documentation observed on 2026-04-21",
+      "findings": [
+        "Codex distinguishes thread automations from standalone or project automations.",
+        "Thread automations are the closest match to wakeup-style continuation because they reuse an existing conversation thread.",
+        "Standalone and project automations align more naturally with recurring producer lanes and review surfaces such as Triage."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Codex for (almost) everything",
+      "url": "https://openai.com/index/codex-for-almost-everything/",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "OpenAI product post published 2026-04-16",
+      "findings": [
+        "OpenAI explicitly described Codex automations as able to reuse existing conversation threads and wake automatically for long-term work.",
+        "That product framing reinforces Codex as a continuation primitive rather than only a scheduler."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Introducing the Codex app",
+      "url": "https://openai.com/index/introducing-the-codex-app/",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "OpenAI launch post published 2026-02-02",
+      "findings": [
+        "The launch framing positioned automations as background work whose results flow back into a review queue.",
+        "This strengthens the evidence-producer and review-reentry interpretation."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Multi-agent coordination patterns",
+      "url": "https://claude.com/blog/multi-agent-coordination-patterns",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Anthropic post published 2026-04-10",
+      "findings": [
+        "Anthropic recommends starting with orchestrator-subagent for the broadest range of problems.",
+        "The article presents message bus as useful for event-driven pipelines and shared state as useful for collaborative accumulation.",
+        "It also warns that message-bus routing can fail silently and that shared-state systems need explicit termination conditions."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Claude Code scheduled tasks",
+      "url": "https://code.claude.com/docs/en/scheduled-tasks",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Anthropic documentation observed on 2026-04-21",
+      "findings": [
+        "Scheduled tasks and loop-style polling are the closest Claude continuation analogue to Codex thread wakeups.",
+        "These surfaces are useful for bounded re-entry but are still distinct from routines."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Claude Code routines",
+      "url": "https://code.claude.com/docs/en/web-scheduled-tasks",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Anthropic documentation observed on 2026-04-21",
+      "findings": [
+        "Routines are triggered by schedule, API, or GitHub events and run on Anthropic-managed infrastructure.",
+        "Routines are better understood as cloud-triggered ingress workers than as thread-preserving continuation.",
+        "The documentation states there are no approval prompts during a run, which increases autonomy but sits in tension with Azoth's current trust posture."
+      ]
+    }
+  ],
+  "repo_findings": [
+    "Azoth today is already closest to orchestrator-subagent plus shared-state continuity, not a raw message-bus runtime.",
+    "The repo already carries an emergent narrow-producer plus separate-synthesizer pattern for automation-driven insight generation.",
+    "Durable waiting and re-entry already appear as a real need in the PR publish reflections, especially around CI polling and review completion.",
+    "The current Codex adapter is intentionally fail-closed about staged delegation and should remain so if automation-backed continuation expands.",
+    "Run-ledger and resume semantics already provide the strongest local foundation for bounded automatic advancement."
+  ],
+  "repo_evidence": [
+    {
+      "path": "docs/CO_PRIMARY_PLATFORM_BLUEPRINT.md",
+      "findings": [
+        "Azoth is protocol-first with Codex and Claude Code as co-primary platforms.",
+        "The shared state layer is explicit and harness-specific mechanics are only the enforcement layer."
+      ]
+    },
+    {
+      "path": ".codex/config.toml",
+      "findings": [
+        "Codex parity mode already requires staged pipeline execution and a stop when staged delegation is unavailable.",
+        "That existing contract argues against silent automation-driven inline collapse."
+      ]
+    },
+    {
+      "path": ".agents/workflows/auto.md",
+      "findings": [
+        "Human gates stop the pipeline, and governed continuation must consume approval through the run ledger rather than narrative continuation.",
+        "Replay is bounded and fail-closed rather than open-ended."
+      ]
+    },
+    {
+      "path": "scripts/run_ledger.py",
+      "findings": [
+        "The run ledger already models paused human gates, pending stages, and explicit approval consumption.",
+        "This is the strongest local anchor for a future advance-by-contract lane."
+      ]
+    },
+    {
+      "path": ".azoth/inbox/processed/session-automation-insight-synthesizer-2026-04-18.jsonl",
+      "findings": [
+        "The repo already records the design judgment that narrow domain automations should feed a separate synthesis authority before anything reaches the governed inbox."
+      ]
+    },
+    {
+      "path": ".azoth/inbox/processed/session-reflection-pr-autonomous-publish-2026-04-19.jsonl",
+      "findings": [
+        "The repo already records durable waiting and re-entry as necessary for PR publish flows and identifies merge policy as a separate explicit concern."
+      ]
+    }
+  ],
+  "open_research_threads": [
+    "Define the exact contract for a wakeup-triggered continuation record: dedupe key, evidence payload, stop conditions, and freshness windows.",
+    "Research a pre-authorized merge policy that is narrow enough to be mechanical and fail-closed rather than narrative or discretionary.",
+    "Clarify whether Codex thread automations can act as the default continuation lane while Claude routines remain a future ingress lane.",
+    "Decide how synthesis authority should summarize repeated low-level signals without turning the inbox into a noisy event sink."
+  ],
+  "recommended_reuse_for": [
+    "architecture proposal drafting",
+    "automation control-plane design",
+    "pre-authorized merge policy research",
+    "cross-harness continuation experiments"
+  ]
+}
