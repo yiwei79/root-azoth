@@ -80,6 +80,18 @@ def _run_cmd(cwd: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _unmerged_paths(repo: Path) -> list[str]:
+    result = _run_git(repo, "diff", "--name-only", "--diff-filter=U", check=False)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "git diff failed")
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def _merge_in_progress(repo: Path) -> bool:
+    result = _run_git(repo, "rev-parse", "-q", "--verify", "MERGE_HEAD", check=False)
+    return result.returncode == 0
+
+
 def _resolve_git_common_dir(repo: Path) -> Path | None:
     env_override = os.environ.get("AZOTH_GIT_COMMON_DIR")
     if env_override:
@@ -862,12 +874,15 @@ def _persist_reconciled_state(sandbox_dir: Path) -> None:
         raise RuntimeError(
             add_result.stderr.strip() or add_result.stdout.strip() or "git add failed"
         )
-    commit_result = _run_git(sandbox_dir, "commit", "--amend", "--no-edit", check=False)
+    if _merge_in_progress(sandbox_dir):
+        commit_result = _run_git(sandbox_dir, "commit", "--no-edit", check=False)
+    else:
+        commit_result = _run_git(sandbox_dir, "commit", "--amend", "--no-edit", check=False)
     if commit_result.returncode != 0:
         raise RuntimeError(
             commit_result.stderr.strip()
             or commit_result.stdout.strip()
-            or "git commit --amend failed"
+            or "git commit failed"
         )
 
 
@@ -1695,15 +1710,33 @@ def integrate_ready_handoff(
             check=False,
         )
         if merge_result.returncode != 0:
+            try:
+                unmerged_paths = _unmerged_paths(sandbox_dir)
+            except RuntimeError as exc:
+                detail = str(exc)
+                print(
+                    "worktree-sync: sandbox integrate-run blocked — merge hit conflicts.\n"
+                    f"Sandbox preserved at {sandbox_dir}\n{detail}",
+                    file=sys.stderr,
+                )
+                return 1
+            if not unmerged_paths or any(path not in set(RECONCILED_PATHS) for path in unmerged_paths):
+                detail = (
+                    merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge failed"
+                )
+                print(
+                    "worktree-sync: sandbox integrate-run blocked — merge hit conflicts.\n"
+                    f"Sandbox preserved at {sandbox_dir}\n{detail}",
+                    file=sys.stderr,
+                )
+                return 1
+
+            # Allow the deterministic reconciliation step to overwrite conflicts only in
+            # known shared-state files such as episodes.jsonl and azoth.yaml.
+        if merge_result.returncode != 0:
             detail = (
-                merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge failed"
+                merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge conflicted only in reconciled paths"
             )
-            print(
-                "worktree-sync: sandbox integrate-run blocked — merge hit conflicts.\n"
-                f"Sandbox preserved at {sandbox_dir}\n{detail}",
-                file=sys.stderr,
-            )
-            return 1
 
         try:
             _reconcile_shared_state(

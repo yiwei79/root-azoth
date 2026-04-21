@@ -1123,6 +1123,109 @@ def test_integrate_ready_handoff_runs_reconcile_before_verify_commands(tmp_path:
     assert "  episodes: 2" in (tmp_path / "azoth.yaml").read_text(encoding="utf-8")
 
 
+def test_integrate_ready_handoff_reconciles_merge_conflicts_in_reconciled_files(
+    tmp_path: Path,
+) -> None:
+    _init_repo(tmp_path)
+    _seed_shared_state(tmp_path)
+    _run_git(tmp_path, "add", "azoth.yaml", "docs/DECISIONS_INDEX.md", ".azoth")
+    _run_git(tmp_path, "commit", "-m", "seed shared state")
+    _setup_phase_and_feature(tmp_path)
+
+    _write_jsonl(
+        tmp_path / ".azoth" / "memory" / "episodes.jsonl",
+        [
+            {"id": "ep-001", "summary": "target", "timestamp": "2026-04-19T00:00:00Z"},
+            {"id": "ep-002", "summary": "producer", "timestamp": "2026-04-19T01:00:00Z"},
+        ],
+    )
+    (tmp_path / "azoth.yaml").write_text(
+        "\n".join(
+            [
+                "name: root-azoth",
+                "decisions: 99",
+                "memory:",
+                "  episodes: 99",
+                "  patterns: 0",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_git(tmp_path, "add", ".azoth/memory/episodes.jsonl", "azoth.yaml")
+    _run_git(tmp_path, "commit", "-m", "producer shared-state update")
+
+    _run_git(tmp_path, "checkout", "phase/v0.2.0-p2")
+    _write_jsonl(
+        tmp_path / ".azoth" / "memory" / "episodes.jsonl",
+        [
+            {"id": "ep-001", "summary": "target", "timestamp": "2026-04-19T00:00:00Z"},
+            {"id": "ep-003", "summary": "target-branch", "timestamp": "2026-04-19T02:00:00Z"},
+        ],
+    )
+    (tmp_path / "azoth.yaml").write_text(
+        "\n".join(
+            [
+                "name: root-azoth",
+                "decisions: 7",
+                "memory:",
+                "  episodes: 7",
+                "  patterns: 0",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_git(tmp_path, "add", ".azoth/memory/episodes.jsonl", "azoth.yaml")
+    _run_git(tmp_path, "commit", "-m", "target shared-state update")
+
+    queue_path = tmp_path.parent / f"{tmp_path.name}-shared-handoffs.jsonl"
+    producer_head = _run_git(tmp_path, "rev-parse", "feat/test-producer").stdout.strip()
+    handoff_id = worktree_sync_mod._handoff_id(
+        "phase/v0.2.0-p2", "feat/test-producer", producer_head
+    )
+    _write_jsonl(
+        queue_path,
+        [
+            {
+                "event": "producer-ready",
+                "recorded_at": "2026-04-19T16:00:00Z",
+                "producer_branch": "feat/test-producer",
+                "target_branch": "phase/v0.2.0-p2",
+                "head_sha": producer_head,
+                "handoff_id": handoff_id,
+            }
+        ],
+    )
+
+    _run_git(tmp_path, "checkout", "phase/v0.2.0-p2")
+    env = {"AZOTH_WORKTREE_HANDOFF_QUEUE_PATH": str(queue_path)}
+    verify_command = (
+        f'{sys.executable} -c "import json, pathlib; '
+        "episodes = [json.loads(line) for line in pathlib.Path('.azoth/memory/episodes.jsonl').read_text().splitlines() if line.strip()]; "
+        "assert {item['id'] for item in episodes} == {'ep-001', 'ep-002', 'ep-003'}; "
+        "manifest = pathlib.Path('azoth.yaml').read_text(); "
+        "assert 'decisions: 3' in manifest; "
+        "assert '  episodes: 3' in manifest\""
+    )
+    integrate_result = _run_sync(
+        tmp_path,
+        "--target-branch",
+        "phase/v0.2.0-p2",
+        "--integrate-ready-handoff",
+        "--handoff-id",
+        handoff_id,
+        "--verify-command",
+        verify_command,
+        "--json",
+        env=env,
+    )
+
+    assert integrate_result.returncode == 0, integrate_result.stderr
+    payload = json.loads(integrate_result.stdout)
+    assert payload["verification_count"] == 1
+
+
 def test_integrate_ready_handoff_fails_closed_on_handoffs_approval_path(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     backlog = (
