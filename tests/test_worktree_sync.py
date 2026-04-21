@@ -1219,6 +1219,178 @@ def test_merge_episode_records_dedupes_exact_rows_but_keeps_legacy_id_collisions
     ]
 
 
+def test_merge_episode_records_keeps_verbatim_payload_on_new_rows() -> None:
+    target = [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "first",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        }
+    ]
+    producer = [
+        {
+            "id": "ep-130",
+            "session_id": "new",
+            "summary": "third",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "third"},
+            },
+        }
+    ]
+
+    merged = worktree_sync_mod._merge_episode_records(target, producer)
+
+    assert merged == [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "first",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        },
+        {
+            "id": "ep-130",
+            "session_id": "new",
+            "summary": "third",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "third"},
+            },
+        },
+    ]
+
+
+def test_merge_episode_records_reconciles_same_id_verbatim_rewrite_from_producer() -> None:
+    target = [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "first",
+            "reinforcement_count": 0,
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        }
+    ]
+    producer = [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "first",
+            "reinforcement_count": 1,
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+                "reinforced_by_sessions": ["sess-002"],
+                "last_reinforced_session": "sess-002",
+                "last_reinforced_source": "closeout",
+            },
+        }
+    ]
+
+    merged = worktree_sync_mod._merge_episode_records(target, producer)
+
+    assert merged == producer
+
+
+def test_merge_episode_records_rejects_non_reinforcement_same_id_rewrite() -> None:
+    target = [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "first",
+            "reinforcement_count": 0,
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        }
+    ]
+    producer = [
+        {
+            "id": "ep-112",
+            "session_id": "capture",
+            "summary": "rewritten",
+            "reinforcement_count": 0,
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        }
+    ]
+
+    with pytest.raises(ValueError, match="non-audited rewrite"):
+        worktree_sync_mod._merge_episode_records(target, producer)
+
+
+def test_merge_episode_records_rejects_legacy_same_id_rewrite() -> None:
+    target = [{"id": "ep-112", "session_id": "capture", "summary": "first"}]
+    producer = [{"id": "ep-112", "session_id": "capture", "summary": "rewritten"}]
+
+    with pytest.raises(ValueError, match="ambiguous same-id rewrite"):
+        worktree_sync_mod._merge_episode_records(target, producer)
+
+
+def test_merge_episode_records_rejects_duplicate_verbatim_backed_target_identity() -> None:
+    target = [
+        {
+            "id": "ep-112",
+            "session_id": "capture-a",
+            "summary": "first",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        },
+        {
+            "id": "ep-112",
+            "session_id": "capture-b",
+            "summary": "first",
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {"goal": "first"},
+            },
+        },
+    ]
+
+    with pytest.raises(ValueError, match="duplicate verbatim-backed"):
+        worktree_sync_mod._merge_episode_records(target, [])
+
+
+def test_merge_episode_records_rejects_duplicate_new_producer_episode_id() -> None:
+    producer = [
+        {"id": "ep-112", "session_id": "producer-a", "summary": "first"},
+        {"id": "ep-112", "session_id": "producer-b", "summary": "second"},
+    ]
+
+    with pytest.raises(ValueError, match="ambiguous same-id rewrite"):
+        worktree_sync_mod._merge_episode_records([], producer)
+
+
+def test_merge_allowlisted_items_rejects_duplicate_producer_rows() -> None:
+    producer = [
+        {"id": "T-013", "status": "active", "title": "Allowed task"},
+        {"id": "T-013", "status": "active", "title": "Allowed task"},
+    ]
+
+    with pytest.raises(ValueError, match="duplicate allowlisted producer row"):
+        worktree_sync_mod._merge_allowlisted_items(
+            [],
+            producer,
+            allowed_ids={"T-013"},
+            protected_fields=("title",),
+            status_field="status",
+        )
+
+
 def test_integrate_ready_handoff_fails_closed_on_non_allowlisted_backlog_change(
     tmp_path: Path,
 ) -> None:

@@ -23,6 +23,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from episode_store import EpisodeStoreError, merge_episode_records as merge_episode_records_shared
+from episode_store import rewrite_episode_records
 
 KEEP_TARGET_PATHS = (
     ".azoth/scope-gate.json",
@@ -358,6 +360,12 @@ def _load_jsonl_text(raw: str | None) -> list[dict[str, Any]]:
 
 
 def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
+    if path.name == "episodes.jsonl":
+        try:
+            rewrite_episode_records(path, records)
+        except EpisodeStoreError as exc:
+            raise ValueError(str(exc)) from exc
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for record in records:
@@ -368,18 +376,10 @@ def _write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
 def _merge_episode_records(
     target_records: list[dict[str, Any]], producer_records: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    merged: list[dict[str, Any]] = []
-    seen_payloads: set[str] = set()
-    for record in [*target_records, *producer_records]:
-        episode_id = str(record.get("id") or "").strip()
-        if not episode_id:
-            raise ValueError("episodes.jsonl record missing id")
-        fingerprint = _sha256_hex(_canonical_json_bytes(record))
-        if fingerprint in seen_payloads:
-            continue
-        seen_payloads.add(fingerprint)
-        merged.append(record)
-    return merged
+    try:
+        return merge_episode_records_shared(target_records, producer_records)
+    except EpisodeStoreError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 def _merge_approval_records(
@@ -452,8 +452,11 @@ def _merge_allowlisted_items(
 
     for producer_item in producer_items:
         item_id = str(producer_item.get("id") or "").strip()
-        if item_id and item_id in allowed_ids and item_id not in seen:
+        if item_id and item_id in allowed_ids:
+            if item_id in seen:
+                raise ValueError(f"duplicate allowlisted producer row {item_id!r}")
             merged.append(producer_item)
+            seen.add(item_id)
     return merged
 
 
