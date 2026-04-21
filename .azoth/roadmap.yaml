@@ -425,7 +425,7 @@ versions:
 
   - id: v0.2.0-p3
     status: active
-    current_patch: 2
+    current_patch: 3
     goal: "Carry-forward hardening: incomplete p2 work, memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
     phase_scope: [3]
     themes: [A, C, D]
@@ -493,10 +493,6 @@ versions:
         title: "scripts/initiative_scaffold.py — one-command initiative + task stub creation"
         initiative_ref: "INI-KRP-001"
         carried_from: "v0.2.0-p2"
-      - id: BL-063
-        title: "roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view"
-        initiative_ref: "INI-KRP-001"
-        carried_from: "v0.2.0-p2"
       - id: BL-065
         title: "Worktree-upgrade external evidence refresh lane"
         initiative_ref: "INI-RST-005"
@@ -508,6 +504,8 @@ versions:
 # Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
 # Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+    completed_tasks:
+      - {id: BL-063, title: "roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view", completed_date: "2026-04-21", decision_ref: []}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────

@@ -393,3 +393,491 @@ def test_render_dashboard_no_crash_when_no_initiatives(tmp_path: Path) -> None:
     buf = io.StringIO()
     c = Console(record=True, width=120, file=buf)
     roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)  # must not raise
+
+
+def test_filter_roadmap_cross_section_theme_uses_initiative_links() -> None:
+    data = {
+        "active_version": "v0.2.0",
+        "versions": [
+            {
+                "id": "v0.2.0-p1",
+                "status": "complete",
+                "goal": "Phase 1",
+                "completed_tasks": [
+                    {"id": "P1-011", "title": "Historical efficiency task"},
+                    {"id": "P1-020", "title": "Historical memory task"},
+                ],
+                "tasks": [],
+            },
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "goal": "Phase 3",
+                "completed_tasks": [],
+                "tasks": [
+                    {"id": "T-KRP-A", "title": "Karpathy follow-on"},
+                    {"id": "P1-020", "title": "Memory carry-forward"},
+                ],
+            },
+        ],
+        "initiatives": [
+            {
+                "id": "INI-KRP-001",
+                "title": "Karpathy",
+                "category": "efficiency",
+                "phase": None,
+                "dimensions": {"themes": ["E"], "tracks": ["autonomous-quality"]},
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            },
+            {
+                "id": "INI-EFF-001",
+                "title": "Token efficiency",
+                "category": "efficiency",
+                "phase": None,
+                "dimensions": {"themes": ["E"], "tracks": ["context-budget"]},
+                "task_ref": "P1-011",
+                "slices": [{"task_ref": "P1-011", "status": "complete", "role": "historical"}],
+            },
+            {
+                "id": "INI-MEM-001",
+                "title": "Memory",
+                "category": "memory",
+                "phase": None,
+                "dimensions": {"themes": ["C"], "tracks": ["verbatim-storage"]},
+                "task_ref": "P1-020",
+                "slices": [{"task_ref": "P1-020", "status": "planned", "role": "primary"}],
+            },
+        ],
+    }
+
+    filtered = roadmap_dashboard.filter_roadmap_cross_section(data, theme="E")
+    initiative_ids = [item["id"] for item in filtered["initiatives"]]
+    assert initiative_ids == ["INI-KRP-001", "INI-EFF-001"]
+    version_ids = [version["id"] for version in filtered["versions"]]
+    assert version_ids == ["v0.2.0-p1", "v0.2.0-p3"]
+    assert [task["id"] for task in filtered["versions"][0]["completed_tasks"]] == ["P1-011"]
+    assert [task["id"] for task in filtered["versions"][1]["tasks"]] == ["T-KRP-A"]
+
+
+def test_filter_roadmap_cross_section_drops_version_prose_with_unmatched_refs() -> None:
+    data = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "goal": "Ship T-E-001 now; T-M-001 remains deferred.",
+                "note": "Coordinate INI-E-001 with INI-M-001 before closeout.",
+                "completed_tasks": [],
+                "tasks": [
+                    {"id": "T-E-001", "title": "Efficiency slice"},
+                    {"id": "T-M-001", "title": "Memory slice"},
+                ],
+            }
+        ],
+        "initiatives": [
+            {
+                "id": "INI-E-001",
+                "title": "Efficiency",
+                "category": "efficiency",
+                "phase": None,
+                "task_ref": "T-E-001",
+                "dimensions": {"themes": ["E"], "tracks": ["context-budget"]},
+            },
+            {
+                "id": "INI-M-001",
+                "title": "Memory",
+                "category": "memory",
+                "phase": None,
+                "task_ref": "T-M-001",
+                "dimensions": {"themes": ["C"], "tracks": ["verbatim-storage"]},
+            },
+        ],
+    }
+
+    filtered = roadmap_dashboard.filter_roadmap_cross_section(data, theme="E")
+    version = filtered["versions"][0]
+    assert [task["id"] for task in version["tasks"]] == ["T-E-001"]
+    assert "goal" not in version
+    assert "note" not in version
+
+
+def test_filter_roadmap_cross_section_drops_generic_version_prose_in_filtered_mode() -> None:
+    data = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "goal": "Phase 3 coordinates roadmap stabilization work.",
+                "note": "This milestone closes the loop on related platform follow-ons.",
+                "completed_tasks": [],
+                "tasks": [
+                    {"id": "T-E-001", "title": "Efficiency slice"},
+                ],
+            }
+        ],
+        "initiatives": [
+            {
+                "id": "INI-E-001",
+                "title": "Efficiency",
+                "category": "efficiency",
+                "phase": None,
+                "task_ref": "T-E-001",
+                "dimensions": {"themes": ["E"], "tracks": ["context-budget"]},
+            }
+        ],
+    }
+
+    filtered = roadmap_dashboard.filter_roadmap_cross_section(data, theme="E")
+    version = filtered["versions"][0]
+    assert [task["id"] for task in version["tasks"]] == ["T-E-001"]
+    assert "goal" not in version
+    assert "note" not in version
+
+
+def test_filter_roadmap_cross_section_sanitizes_task_row_text_with_unmatched_refs() -> None:
+    data = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "goal": "Phase 3",
+                "completed_tasks": [],
+                "tasks": [
+                    {
+                        "id": "T-E-001",
+                        "title": "Efficiency slice paired with T-M-001",
+                        "note": "Coordinate with INI-M-001 before closeout.",
+                        "deferred_from": "T-M-001",
+                    },
+                    {"id": "T-M-001", "title": "Memory slice"},
+                ],
+            }
+        ],
+        "initiatives": [
+            {
+                "id": "INI-E-001",
+                "title": "Efficiency",
+                "category": "efficiency",
+                "phase": None,
+                "task_ref": "T-E-001",
+                "dimensions": {"themes": ["E"], "tracks": ["context-budget"]},
+            },
+            {
+                "id": "INI-M-001",
+                "title": "Memory",
+                "category": "memory",
+                "phase": None,
+                "task_ref": "T-M-001",
+                "dimensions": {"themes": ["C"], "tracks": ["verbatim-storage"]},
+            },
+        ],
+    }
+
+    filtered = roadmap_dashboard.filter_roadmap_cross_section(data, theme="E")
+    task = filtered["versions"][0]["tasks"][0]
+    assert task["id"] == "T-E-001"
+    assert "T-M-001" not in task["title"]
+    assert "paired with" in task["title"]
+    assert roadmap_dashboard.FILTERED_REF_PLACEHOLDER in task["title"]
+    assert "INI-M-001" not in task["note"]
+    assert "Coordinate with" in task["note"]
+    assert roadmap_dashboard.FILTERED_REF_PLACEHOLDER in task["note"]
+    assert task["deferred_from"] == roadmap_dashboard.FILTERED_REF_PLACEHOLDER
+
+
+def test_render_dashboard_theme_filter_shows_only_matching_items(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "versions:\n"
+        "  - id: v0.2.0-p1\n"
+        "    status: complete\n"
+        "    goal: Phase 1\n"
+        "    completed_tasks:\n"
+        "      - id: P1-011\n"
+        "        title: Historical efficiency task\n"
+        "      - id: P1-020\n"
+        "        title: Historical memory task\n"
+        "    tasks: []\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: active\n"
+        "    goal: Phase 3\n"
+        "    completed_tasks: []\n"
+        "    tasks:\n"
+        "      - id: T-KRP-A\n"
+        "        title: Karpathy follow-on\n"
+        "      - id: P1-020\n"
+        "        title: Memory carry-forward\n"
+        "initiatives:\n"
+        "  - id: INI-KRP-001\n"
+        "    title: Karpathy\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      categories: [efficiency]\n"
+        "      tracks: [autonomous-quality]\n"
+        "    slices:\n"
+        "      - task_ref: T-KRP-A\n"
+        "        status: planned\n"
+        "        role: primary\n"
+        "  - id: INI-EFF-001\n"
+        "    title: Token efficiency\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    task_ref: P1-011\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      categories: [efficiency]\n"
+        "      tracks: [context-budget]\n"
+        "    slices:\n"
+        "      - task_ref: P1-011\n"
+        "        status: complete\n"
+        "        role: historical\n"
+        "  - id: INI-MEM-001\n"
+        "    title: Memory\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    task_ref: P1-020\n"
+        "    dimensions:\n"
+        "      themes: [C]\n"
+        "      categories: [memory]\n"
+        "      tracks: [verbatim-storage]\n"
+        "    slices:\n"
+        "      - task_ref: P1-020\n"
+        "        status: planned\n"
+        "        role: primary\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=console, theme="E")
+    out = console.export_text()
+    assert "theme=E" in out
+    assert "INI-KRP-001" in out
+    assert "INI-EFF-001" in out
+    assert "T-KRP-A" in out
+    assert "P1-011" in out
+    assert "INI-MEM-001" not in out
+    assert "P1-020" not in out
+
+
+def test_render_dashboard_theme_filter_hides_version_prose_leaks(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0-p3\n"
+        "versions:\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: active\n"
+        "    goal: Ship T-E-001 now; T-M-001 remains deferred.\n"
+        "    note: Coordinate INI-E-001 with INI-M-001 before closeout.\n"
+        "    completed_tasks: []\n"
+        "    tasks:\n"
+        "      - id: T-E-001\n"
+        "        title: Efficiency slice\n"
+        "      - id: T-M-001\n"
+        "        title: Memory slice\n"
+        "initiatives:\n"
+        "  - id: INI-E-001\n"
+        "    title: Efficiency\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    task_ref: T-E-001\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      tracks: [context-budget]\n"
+        "  - id: INI-M-001\n"
+        "    title: Memory\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    task_ref: T-M-001\n"
+        "    dimensions:\n"
+        "      themes: [C]\n"
+        "      tracks: [verbatim-storage]\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=console, theme="E")
+    out = console.export_text()
+    assert "theme=E" in out
+    assert "T-E-001" in out
+    assert "Ship T-E-001 now; T-M-001 remains deferred." not in out
+    assert "Coordinate INI-E-001 with INI-M-001 before closeout." not in out
+    assert "T-M-001" not in out
+    assert "INI-M-001" not in out
+
+
+def test_render_dashboard_theme_filter_sanitizes_task_row_ref_text(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0-p3\n"
+        "versions:\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: active\n"
+        "    goal: Phase 3\n"
+        "    completed_tasks: []\n"
+        "    tasks:\n"
+        "      - id: T-E-001\n"
+        "        title: Efficiency slice paired with T-M-001\n"
+        "        note: Coordinate with INI-M-001 before closeout.\n"
+        "        deferred_from: T-M-001\n"
+        "      - id: T-M-001\n"
+        "        title: Memory slice\n"
+        "initiatives:\n"
+        "  - id: INI-E-001\n"
+        "    title: Efficiency\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    task_ref: T-E-001\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      tracks: [context-budget]\n"
+        "  - id: INI-M-001\n"
+        "    title: Memory\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    task_ref: T-M-001\n"
+        "    dimensions:\n"
+        "      themes: [C]\n"
+        "      tracks: [verbatim-storage]\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=console, theme="E")
+    out = console.export_text()
+    assert "T-E-001" in out
+    assert "paired with" in out
+    assert roadmap_dashboard.FILTERED_REF_PLACEHOLDER in out
+    assert "T-M-001" not in out
+    assert "INI-M-001" not in out
+
+
+def test_render_dashboard_without_filter_keeps_version_prose_refs(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0-p3\n"
+        "versions:\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: active\n"
+        "    goal: Ship T-E-001 now; T-M-001 remains deferred.\n"
+        "    note: Coordinate INI-E-001 with INI-M-001 before closeout.\n"
+        "    completed_tasks: []\n"
+        "    tasks:\n"
+        "      - id: T-E-001\n"
+        "        title: Efficiency slice\n"
+        "      - id: T-M-001\n"
+        "        title: Memory slice\n"
+        "initiatives:\n"
+        "  - id: INI-E-001\n"
+        "    title: Efficiency\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    task_ref: T-E-001\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      tracks: [context-budget]\n"
+        "  - id: INI-M-001\n"
+        "    title: Memory\n"
+        "    category: memory\n"
+        "    phase: null\n"
+        "    task_ref: T-M-001\n"
+        "    dimensions:\n"
+        "      themes: [C]\n"
+        "      tracks: [verbatim-storage]\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=console)
+    out = console.export_text()
+    assert "Ship T-E-001 now; T-M-001 remains deferred." in out
+    assert "Coordinate INI-E-001 with INI-M-001 before closeout." in out
+    assert "T-M-001" in out
+    assert "INI-M-001" in out
+
+
+def test_render_dashboard_track_filter_shows_only_matching_items(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "versions:\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: active\n"
+        "    goal: Phase 3\n"
+        "    tasks:\n"
+        "      - id: T-KRP-A\n"
+        "        title: Karpathy follow-on\n"
+        "      - id: P1-011\n"
+        "        title: Token efficiency\n"
+        "    completed_tasks: []\n"
+        "initiatives:\n"
+        "  - id: INI-KRP-001\n"
+        "    title: Karpathy\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      categories: [efficiency]\n"
+        "      tracks: [autonomous-quality]\n"
+        "    slices:\n"
+        "      - task_ref: T-KRP-A\n"
+        "        status: planned\n"
+        "        role: primary\n"
+        "  - id: INI-EFF-001\n"
+        "    title: Token efficiency\n"
+        "    category: efficiency\n"
+        "    phase: null\n"
+        "    task_ref: P1-011\n"
+        "    dimensions:\n"
+        "      themes: [E]\n"
+        "      categories: [efficiency]\n"
+        "      tracks: [context-budget]\n"
+        "    slices:\n"
+        "      - task_ref: P1-011\n"
+        "        status: complete\n"
+        "        role: historical\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    console = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(
+        roadmap_path=roadmap_yaml,
+        console=console,
+        track="autonomous-quality",
+    )
+    out = console.export_text()
+    assert "track=autonomous-quality" in out
+    assert "INI-KRP-001" in out
+    assert "T-KRP-A" in out
+    assert "INI-EFF-001" not in out
+    assert "P1-011" not in out
