@@ -1,0 +1,18 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-21-bl-069
+backlog_id: BL-069
+goal: "BL-069: Already-closed session-closeout re-entry guard"
+pipeline: governed
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-21T20:45:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - BL-069
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: 2fc5d7e811805f9ad79673c2a03efbe7ee64caba61bcbd4f6b2ebe3251c26773
