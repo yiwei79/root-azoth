@@ -653,3 +653,62 @@ patterns:
       next stage is already unblocked by visible stage output, continue automatically;
       do not stop for another human nudge unless a real gate, conflict, or missing
       approval blocks progression.
+
+  - id: worktree-sync-governed-handoffs-require-producer-side-approval-capsules
+    approved: true
+    approved_date: "2026-04-21"
+    reinforced_by: [ep-297, ep-305]
+    trigger: any `/worktree-sync` producer handoff that touches governed shared state
+    summary: >
+      In Azoth, governed-state approval for a producer handoff must travel with
+      the queued producer commit itself. If a producer branch changes governed
+      shared state, the handoff is not integration-ready unless it already
+      contains the matching `.azoth/scope-gate.json` and tracked
+      `.azoth/governed-state-approvals/<session_id>-<backlog_id>.yaml`
+      approval capsule. Surfacing this only at integrate time is too late.
+    why_it_matters: >
+      ep-297 showed that fail-closed reconciliation is correct but the UX is
+      wrong when approval requirements first appear during the integrator pass,
+      after the queue handoff is already in motion. ep-305 reinforced the
+      concrete repair rule: human approval in conversation is not enough for
+      governed shared-state reconciliation; the approval capsule must be
+      committed on the producer branch before queueing. Without this pattern,
+      integrate runs block late and force avoidable repair loops.
+    how_to_apply: >
+      Before queueing a producer handoff that changes governed shared state,
+      verify that the branch contains a matching approved scope gate and tracked
+      governed-state approval capsule. If either artifact is missing, stop on
+      the producer side, tell the operator exactly what is missing, and fix or
+      narrow the branch before handoff creation. Treat late integrator discovery
+      of missing approval evidence as a workflow UX bug, not as the first place
+      the requirement should surface.
+
+  - id: temporally-unstable-platform-questions-require-official-source-verification-first
+    approved: true
+    approved_date: "2026-04-21"
+    reinforced_by: [ep-200, ep-202, ep-239]
+    trigger: any task involving latest/current platform behavior, protocol details, policy, or parity claims
+    summary: >
+      For platform behavior, protocol, policy, or parity work that depends on
+      current external facts, the first move is official-source verification,
+      not repo-local analysis. Do not patch against remembered or inferred
+      platform behavior when the question is temporally unstable; verify the
+      live contract first, then reason and implement from that evidence.
+    why_it_matters: >
+      ep-200 recorded production failures caused by shipping low-confidence,
+      unverified assumptions about Codex enums and hook protocol details.
+      ep-202 showed the recovery path needed mechanical hardening because
+      runtime discovery was too expensive. ep-239 reinforced the workflow rule
+      itself: even when the repo already contains local platform guides, those
+      guides may be the object under audit and cannot substitute for
+      official-source verification. Skipping this step causes drift, wrong
+      fixes, and human trust loss.
+    how_to_apply: >
+      If the task asks about latest/current platform facts or any behavior
+      likely to have changed, declare the external-verification step explicitly
+      and complete it before architecture, coding, or parity claims. Treat
+      low-confidence training-data recall and repo-local documentation as
+      provisional until checked against official sources or live runtime
+      evidence. Likely M1 homes: orchestrator entry behavior,
+      dynamic-full-auto research gating, and platform guidance docs via
+      governed delivery.
