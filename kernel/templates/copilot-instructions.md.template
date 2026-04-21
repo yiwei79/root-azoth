@@ -21,6 +21,13 @@ This project uses the Azoth governance framework:
 - **Tests**: Run before every delivery
 - **Quality gate**: Every output passes evaluation
 
+## Memory Operation Parity
+
+- `context-recall` reads `.azoth/memory/episodes.jsonl` and `.azoth/memory/patterns.yaml`
+- `/remember` and `/session-closeout` W1 append new episodes to `.azoth/memory/episodes.jsonl`
+- `/promote` is the human-approved path that writes `.azoth/memory/patterns.yaml`
+- Repo-local `.azoth/*` state is authoritative; `~/.claude/projects/<project-key>/memory/` is a Claude Code mirror only
+
 ## Quick Reference
 
 - Architecture: `docs/` (if present)

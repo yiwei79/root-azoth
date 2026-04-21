@@ -425,7 +425,7 @@ versions:
 
   - id: v0.2.0-p3
     status: active
-    current_patch: 2
+    current_patch: 3
     goal: "Carry-forward hardening: incomplete p2 work, memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
     phase_scope: [3]
     themes: [A, C, D]
@@ -447,11 +447,6 @@ versions:
         title: "Verbatim-first M3 storage strategy"
         decision_ref: [D11, D45]
         initiative_ref: "INI-MEM-001"
-        carried_from: "v0.2.0-p2"
-      - id: P1-021
-        title: "Memory operation platform parity"
-        decision_ref: [D42, D46, D52]
-        initiative_ref: "INI-PLT-001"
         carried_from: "v0.2.0-p2"
       - id: T-KRP-A
         title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)"
@@ -508,6 +503,8 @@ versions:
 # Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
 # Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+    completed_tasks:
+      - {id: P1-021, title: "Memory operation platform parity", completed_date: "2026-04-21", decision_ref: [D42, D46, D52]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -968,32 +965,39 @@ initiatives:
       width < 80 columns without breaking structured output.
     decision_ref: [D48, D52]
     spec_ref: ".azoth/roadmap-specs/v0.2.0/P5-006.yaml"
-
   - id: INI-PLT-001
-    title: "Memory operation platform parity"
+    title: Memory operation platform parity
     category: platform
     theme: D
     dimensions:
-      themes: [D]
-      categories: [platform]
-      tracks: [platform-parity, memory-ops]
+      themes:
+      - D
+      categories:
+      - platform
+      tracks:
+      - platform-parity
+      - memory-ops
     phase: v0.2.0-p3
     task_ref: P1-021
     slices:
-      - task_ref: P1-021
-        spec_ref: null
-        phase: v0.2.0-p3
-        status: planned
-        role: primary
+    - task_ref: P1-021
+      spec_ref: null
+      phase: v0.2.0-p3
+      status: complete
+      role: historical
     priority: medium
-    summary: >
-      Document and validate that M3 append, M2 promote, and context-recall operations produce
-      consistent, tested results across Claude Code, Cursor, and Copilot adapter paths.
-      Mempalace highlighted production-vs-benchmark divergence (hybrid retrieval only in
-      benchmark scripts, not searcher.py). Azoth must not ship memory features that work in
-      the development surface but silently degrade under adapter paths.
-    research_ref: "RP-PLT-A"
-    decision_ref: [D42, D46, D52]
+    summary: 'Document and validate that M3 append, M2 promote, and context-recall operations
+      produce consistent, tested results across Claude Code, Cursor, and Copilot adapter
+      paths. Mempalace highlighted production-vs-benchmark divergence (hybrid retrieval
+      only in benchmark scripts, not searcher.py). Azoth must not ship memory features
+      that work in the development surface but silently degrade under adapter paths.
+
+      '
+    research_ref: RP-PLT-A
+    decision_ref:
+    - D42
+    - D46
+    - D52
 
   - id: INI-PLT-002
     title: "Cursor session-open parity"

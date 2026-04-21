@@ -1551,11 +1551,12 @@ items:
   roadmap_ref: P1-021
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   deferred_from: v0.2.0-p1
   priority: 3
   created_date: '2026-04-12'
+  completed_date: '2026-04-21'
   decision_ref:
   - D42
   - D46
