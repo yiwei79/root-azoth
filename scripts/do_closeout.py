@@ -179,6 +179,90 @@ def enforce_governed_closeout_approval(
         )
 
 
+def _scope_gate_indicates_closed(scope: dict[str, Any], *, session_id: str) -> bool:
+    if str(scope.get("session_id") or "").strip() != session_id:
+        return False
+    if scope.get("approved") is False:
+        return True
+    scope_status = str(scope.get("scope_status") or "").strip().lower()
+    if scope_status and scope_status != "active":
+        return True
+    return bool(str(scope.get("closed_at") or "").strip())
+
+
+def _session_state_indicates_closed(
+    session_state: dict[str, Any],
+    *,
+    session_id: str,
+) -> bool:
+    return (
+        str(session_state.get("session_id") or "").strip() == session_id
+        and str(session_state.get("state") or "").strip().lower() == "closed"
+    )
+
+
+def _session_registry_status(repo_root: pathlib.Path, *, session_id: str) -> str:
+    ledger = load_yaml(repo_root / ".azoth" / "run-ledger.local.yaml")
+    sessions = ledger.get("sessions")
+    if not isinstance(sessions, list):
+        return ""
+    for entry in reversed(sessions):
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("session_id") or "").strip() != session_id:
+            continue
+        return str(entry.get("status") or "").strip().lower()
+    return ""
+
+
+def enforce_not_already_closed_session(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    session_state: dict[str, Any],
+) -> None:
+    session_id = str(scope.get("session_id") or "").strip()
+    if not session_id:
+        return
+
+    session_state_closed = _session_state_indicates_closed(
+        session_state,
+        session_id=session_id,
+    )
+    session_registry_status = _session_registry_status(
+        repo_root,
+        session_id=session_id,
+    )
+    session_registry_closed = session_registry_status == "closed"
+    if not session_registry_closed and not (session_state_closed and _scope_gate_indicates_closed(scope, session_id=session_id)):
+        return
+
+    scope_closed = _scope_gate_indicates_closed(scope, session_id=session_id)
+    scope_names_same_session = str(scope.get("session_id") or "").strip() == session_id
+    if session_registry_closed:
+        if not scope_names_same_session:
+            return
+    elif not scope_closed:
+        return
+
+    reason_parts: list[str] = []
+    if scope_closed:
+        reason_parts.append("scope-gate")
+    elif scope_names_same_session and scope.get("approved") is True:
+        reason_parts.append("scope-gate still names the session")
+    if session_state_closed:
+        reason_parts.append("session-state")
+    if session_registry_closed:
+        reason_parts.append("session registry")
+
+    joined = " + ".join(reason_parts) or "closeout state"
+    raise CloseoutError(
+        f"Closeout blocked: session '{session_id}' is already closed ({joined}). "
+        "Do not re-run W1-W4 for a finished session; run `/next` to select the next "
+        "scoped task."
+    )
+
+
 def _next_episode_id(episodes: list[dict[str, Any]]) -> str:
     last_num = 0
     for episode in episodes:
@@ -1304,6 +1388,14 @@ def run_closeout(
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
     session_gate = active_session_gate(repo_root)
     live_scope = active_scope(repo_root)
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    existing_session_state = load_yaml(session_state_path)
+    if live_scope or not session_gate:
+        enforce_not_already_closed_session(
+            repo_root,
+            scope=scope,
+            session_state=existing_session_state,
+        )
     if live_scope:
         session_context = dict(live_scope)
         session_context.setdefault("session_mode", "delivery")
@@ -1340,8 +1432,6 @@ def run_closeout(
     session_id = str(session_context.get("session_id") or "unknown-session")
     backlog_id = str(session_context.get("backlog_id") or "").strip()
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
-    session_state_path = repo_root / ".azoth" / "session-state.md"
-    existing_session_state = load_yaml(session_state_path)
     authoritative_files = [
         ".azoth/memory/episodes.jsonl",
         ".azoth/bootloader-state.md",
