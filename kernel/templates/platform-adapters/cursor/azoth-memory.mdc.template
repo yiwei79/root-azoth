@@ -15,6 +15,8 @@ At the start of every chat in this workspace, read the following files to restor
 
 **Claude Code parity:** PreToolUse hooks from `.claude/settings.json` do **not** run in Cursor. The always-applied rule `claude-code-parity.mdc` (same folder) mandates simulated scope-gate and pipeline-gate checks before writes — obey it on every turn that edits files.
 
+**Memory operations parity:** Use the repo-local Azoth memory contract directly in Cursor. `context-recall` is the canonical read path from `.azoth/memory/episodes.jsonl` (M3) and `.azoth/memory/patterns.yaml` (M2). `/remember` and `/session-closeout` W1 append new episodes to `.azoth/memory/episodes.jsonl` only — never rewrite prior entries. `/promote` is the governed M3→M2 path and must wait for explicit human approval before editing `.azoth/memory/patterns.yaml`. Do not treat `~/.claude/projects/<project-key>/memory/` as authoritative in Cursor; that W3 surface is a Claude Code mirror only.
+
 After reading, briefly confirm what active context was loaded before responding to the user's first message.
 
 **Session end (`/session-closeout`):** Repo files (episodes, bootloader, session-state, scope gate) are **authoritative** for Cursor, Copilot, and OpenCode. Claude Code also updates **`~/.claude/projects/<project-key>/memory/`** (W3) as a **mirror** of that same snapshot — see `claude-code-parity.mdc` and `docs/AZOTH_ARCHITECTURE.md` (Cross-IDE session memory parity).

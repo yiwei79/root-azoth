@@ -30,6 +30,13 @@ In freeform chat (any message that is not an explicit pipeline slash command), t
 - Also attempt W3 Claude-memory mirroring to `~/.claude/projects/<project-key>/memory/` so future Claude Code sessions can read Copilot-authored closeout state.
 - This mirror is **supplemental only**: Copilot should still read/write the repo-local Azoth memory surfaces first, and if W3 diverges from `.azoth/*`, the repo-local state wins.
 
+## Memory operation parity
+
+- `context-recall` is the canonical read path for memory-backed planning and session routing. Read `.azoth/memory/episodes.jsonl` and `.azoth/memory/patterns.yaml` directly rather than inventing a Copilot-only memory store.
+- `/remember` and `/session-closeout` W1 append new episodes to `.azoth/memory/episodes.jsonl`; treat M3 as append-only.
+- `/promote` is the governed M3→M2 path. Only write `.azoth/memory/patterns.yaml` after explicit human approval of the promotion.
+- Repo-local `.azoth/*` memory files remain authoritative for Copilot. `~/.claude/projects/<project-key>/memory/` exists only as a best-effort Claude Code mirror.
+
 ## Pull request reviews
 
 When asked to review a PR or when `@copilot` is tagged for review:

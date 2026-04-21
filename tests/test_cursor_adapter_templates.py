@@ -41,3 +41,16 @@ def test_live_cursor_rules_mirror_templates() -> None:
         assert deployed.read_text(encoding="utf-8") == template.read_text(encoding="utf-8"), (
             f"{out_name} drift — run: python3 scripts/azoth-deploy.py --platforms cursor"
         )
+
+
+def test_cursor_memory_template_documents_memory_operation_parity() -> None:
+    text = (CURSOR_DIR / "azoth-memory.mdc.template").read_text(encoding="utf-8")
+    for token in (
+        "context-recall",
+        "/remember",
+        "/promote",
+        ".azoth/memory/episodes.jsonl",
+        ".azoth/memory/patterns.yaml",
+        "~/.claude/projects/<project-key>/memory/",
+    ):
+        assert token in text, f"cursor memory template must mention {token}"

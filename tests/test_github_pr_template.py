@@ -50,3 +50,29 @@ def test_copilot_instructions_document_closeout_memory_mirror() -> None:
     assert "/session-closeout" in text
     assert ".azoth" in text
     assert "~/.claude/projects/<project-key>/memory/" in text
+
+
+def test_copilot_instructions_document_memory_operation_parity() -> None:
+    text = (REPO / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    for token in (
+        "context-recall",
+        "/remember",
+        "/promote",
+        ".azoth/memory/episodes.jsonl",
+        ".azoth/memory/patterns.yaml",
+    ):
+        assert token in text, f"copilot instructions must mention {token}"
+
+
+def test_copilot_instructions_template_documents_memory_operation_parity() -> None:
+    text = (REPO / "kernel" / "templates" / "copilot-instructions.md.template").read_text(
+        encoding="utf-8"
+    )
+    for token in (
+        "context-recall",
+        "/remember",
+        "/promote",
+        ".azoth/memory/episodes.jsonl",
+        ".azoth/memory/patterns.yaml",
+    ):
+        assert token in text, f"copilot instructions template must mention {token}"
