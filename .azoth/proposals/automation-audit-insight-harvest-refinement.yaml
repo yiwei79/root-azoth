@@ -1,0 +1,122 @@
+proposal_schema_version: 1
+created_at: "2026-04-21T20:14:20+02:00"
+session_id: "2026-04-21-automation-integrator-audit"
+backlog_id: "P6-002"
+title: "Automation audit insight-harvest heuristic"
+summary: >
+  Draft L2 refinement proposal for a gap surfaced during the 2026-04-21
+  automation worktree audit. The architecture judgment around integration was
+  correct, but the audit treated mergeability as the only architect question and
+  initially missed that non-integrable automation lanes still contained durable
+  evidence worth routing through Azoth's governed inbox path. This proposal adds
+  an explicit two-axis audit heuristic so evidence lanes are harvested without
+  weakening the producer/worktree-sync contract.
+status: draft
+decision_refs:
+  - D21
+  - D23
+  - D32
+  - D44
+scope_layers:
+  - agents
+  - workflows
+  - docs
+details:
+  problem: >
+    Current automation/worktree audits naturally center on "integrate or do not
+    integrate." That protects `/worktree-sync`, but it is incomplete for Azoth
+    because some automation lanes are report or evidence producers rather than
+    producer handoffs. When the audit stops at merge disposition, useful signals
+    can remain stranded in automation memory until a human explicitly asks for
+    insight capture.
+  evidence_basis:
+    repo_local:
+      observed_on: "2026-04-21"
+      sources:
+        - path: ".azoth/memory/episodes.jsonl"
+          finding: >
+            `ep-308` records a concrete failure: the audit correctly rejected bulk
+            integration of automation worktrees but failed to proactively surface
+            that some non-mergeable automation sessions still carried durable
+            insight worth governed capture.
+        - path: ".azoth/inbox/session-reflection-automation-audit-2026-04-21.jsonl"
+          finding: >
+            The later synthesis recovered two legitimate insights from automation
+            evidence after the initial audit missed them, proving the gap was in
+            audit procedure rather than in the source material.
+        - path: ".azoth/handoffs/2026-04-21-automation-worktree-audit-architect-note.md"
+          finding: >
+            The architect note correctly separates stale detached worktrees from
+            the one salvageable code lane, but it did not originally carry a
+            parallel insight-harvest checkpoint.
+        - path: ".agents/workflows/intake.md"
+          finding: >
+            Azoth already has a governed path for external insight triage through
+            `.azoth/inbox/`; the missing behavior is recognizing when automation
+            audit output should be routed there.
+  proposed_refinement:
+    heuristic_name: "Two-axis automation audit"
+    mandatory_questions:
+      - >
+        Integration readiness: is any automation lane a current, queueable,
+        verification-backed producer handoff, or does it contain code worth
+        selectively salvaging onto a fresh producer branch?
+      - >
+        Insight harvest: did any automation lane produce durable evidence or a
+        reusable pattern that should be written to `.azoth/inbox/` for `/intake`,
+        even if the lane is not mergeable?
+    decision_contract:
+      - >
+        Merge-ready producer lane: use the existing producer/integrator path only
+        when the work satisfies the current worktree-sync contract.
+      - >
+        Salvage-only code lane: recreate the narrow useful diff on a fresh branch
+        from the active integration target instead of syncing the stale worktree.
+      - >
+        Insight-only evidence lane: synthesize governed JSONL insights for
+        `/intake`; do not treat the open worktree itself as an integration signal.
+      - >
+        No-code, no-insight lane: report as cleanup-only and avoid inbox noise.
+    fail_closed_rules:
+      - "Do not run `/worktree-sync` on a lane solely because automation opened a worktree."
+      - "Do not treat inbox-worthy evidence as permission to integrate stale detached state."
+      - "Do not bypass `/intake`; evidence capture is governed triage input, not direct memory promotion."
+  expected_improvement:
+    - >
+      Preserve the producer contract while reducing false negatives for insight
+      harvest during automation audits.
+    - >
+      Make architect audits complete even when the right code decision is "do not
+      integrate."
+    - >
+      Keep automation lanes narrow: code lanes follow producer rules, evidence
+      lanes follow inbox/intake rules.
+  candidate_surfaces:
+    - ".codex/agents/orchestrator.toml"
+    - ".codex/agents/architect.toml"
+    - ".agents/workflows/worktree-sync.md"
+    - ".agents/workflows/intake.md"
+  validation_replay:
+    - >
+      Replayed against the 2026-04-21 audit, the heuristic would still reject
+      direct integration of all four automation worktrees while also routing two
+      evidence lanes into governed inbox synthesis and classifying one lane as
+      no-new-insight cleanup-only.
+    - >
+      The heuristic keeps the `1325` lane in salvage-only status rather than
+      misclassifying it as a valid worktree-sync producer.
+  non_goals:
+    - "Do not broaden `/worktree-sync` into a generic insight-processing command."
+    - "Do not auto-promote automation findings directly into M3 or backlog items."
+    - "Do not treat every automation memory file as durable signal without synthesis."
+    - "Do not apply instruction changes automatically from this proposal alone."
+  recommended_follow_up:
+    shape: >
+      If approved, implement as a low-risk instruction refinement: add the
+      two-axis audit checkpoint to architect/orchestrator guidance, clarify the
+      worktree-sync boundary, and keep `/intake` as the governed destination for
+      insight-only automation output.
+    likely_verification:
+      - "Replay the refinement against `ep-308` and confirm the missed insight is now caught."
+      - "Confirm evidence-only automation lanes are never described as merge candidates."
+      - "Confirm the revised instruction text still fails closed on unsafe integration."
