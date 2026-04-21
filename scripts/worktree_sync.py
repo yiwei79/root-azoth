@@ -414,6 +414,13 @@ def _merge_allowlisted_items(
 ) -> list[dict[str, Any]]:
     target_index = {str(item.get("id") or "").strip(): item for item in target_items}
     producer_index = {str(item.get("id") or "").strip(): item for item in producer_items}
+    producer_allowed_counts: dict[str, int] = {}
+    for producer_item in producer_items:
+        item_id = str(producer_item.get("id") or "").strip()
+        if item_id and item_id in allowed_ids:
+            producer_allowed_counts[item_id] = producer_allowed_counts.get(item_id, 0) + 1
+            if producer_allowed_counts[item_id] > 1:
+                raise ValueError(f"duplicate allowlisted producer row {item_id!r}")
     union_ids = {item_id for item_id in [*target_index.keys(), *producer_index.keys()] if item_id}
 
     changed_ids = {
@@ -454,7 +461,7 @@ def _merge_allowlisted_items(
         item_id = str(producer_item.get("id") or "").strip()
         if item_id and item_id in allowed_ids:
             if item_id in seen:
-                raise ValueError(f"duplicate allowlisted producer row {item_id!r}")
+                continue
             merged.append(producer_item)
             seen.add(item_id)
     return merged

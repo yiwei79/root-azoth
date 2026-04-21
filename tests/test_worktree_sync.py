@@ -1391,6 +1391,21 @@ def test_merge_allowlisted_items_rejects_duplicate_producer_rows() -> None:
         )
 
 
+def test_merge_allowlisted_items_accepts_existing_target_row_update() -> None:
+    target = [{"id": "BL-069", "status": "pending", "title": "Allowed task"}]
+    producer = [{"id": "BL-069", "status": "complete", "title": "Allowed task"}]
+
+    merged = worktree_sync_mod._merge_allowlisted_items(
+        target,
+        producer,
+        allowed_ids={"BL-069"},
+        protected_fields=("title",),
+        status_field="status",
+    )
+
+    assert merged == producer
+
+
 def test_integrate_ready_handoff_fails_closed_on_non_allowlisted_backlog_change(
     tmp_path: Path,
 ) -> None:
