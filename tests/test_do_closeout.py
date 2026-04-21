@@ -225,6 +225,128 @@ def test_governed_closeout_rejects_malformed_approval_log(
     assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
 
 
+def test_governed_closeout_rejects_already_closed_scope_and_session_state_pair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    scope_path = repo_root / ".azoth" / "scope-gate.json"
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["approved"] = False
+    scope["closed_at"] = "2026-04-18T21:55:01Z"
+    scope_path.write_text(json.dumps(scope), encoding="utf-8")
+    _update_backlog_item(repo_root, "BL-123", status="complete", completed_date="2026-04-18")
+
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    session_state = yaml.safe_load(session_state_path.read_text(encoding="utf-8"))
+    session_state["state"] = "closed"
+    session_state["active_task"] = "Closed — BL-123: Governed closeout"
+    session_state["approved_scope"] = "Completed: BL-123: Governed closeout"
+    session_state["next_action"] = do_closeout.default_next_action()
+    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
+
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="already closed") as excinfo:
+        do_closeout.run_closeout(repo_root)
+
+    assert "sess-123" in str(excinfo.value)
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert json.loads(scope_path.read_text(encoding="utf-8"))["approved"] is False
+    assert "status: complete" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+
+
+def test_governed_closeout_rejects_scope_when_session_registry_already_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=False)
+    _update_backlog_item(repo_root, "BL-123", status="complete", completed_date="2026-04-18")
+
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["sessions"][0]["status"] = "closed"
+    ledger["sessions"][0]["closed_at"] = "2026-04-18T21:55:01Z"
+    ledger["sessions"][0]["next_action"] = do_closeout.default_next_action()
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="already closed") as excinfo:
+        do_closeout.run_closeout(repo_root)
+
+    assert "sess-123" in str(excinfo.value)
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
+
+
+def test_governed_closeout_allows_live_scope_when_only_session_state_is_stale_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    session_state = yaml.safe_load(session_state_path.read_text(encoding="utf-8"))
+    session_state["state"] = "closed"
+    session_state["active_task"] = "Closed — stale mirror"
+    session_state["approved_scope"] = "Completed: stale mirror"
+    session_state["next_action"] = do_closeout.default_next_action()
+    session_state_path.write_text(yaml.safe_dump(session_state, sort_keys=False), encoding="utf-8")
+
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd, check))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    episode_lines = (
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .strip()
+        .splitlines()
+    )
+    assert len(episode_lines) == 1
+    scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
+    assert scope["approved"] is False
+    assert version_bump_calls == [
+        ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
+    ]
+
+
 @pytest.mark.parametrize(
     ("records", "expected_message"),
     [
