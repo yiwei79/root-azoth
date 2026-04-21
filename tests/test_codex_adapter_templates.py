@@ -15,6 +15,9 @@ CODEX_DIR = REPO / "kernel" / "templates" / "platform-adapters" / "codex"
 CODEX_ONLY_STYLE_LINES = (
     "Codex-only human-facing response style (BL-051 follow-on, not shared-platform canon):",
     "For human-facing non-operational output in Codex, prefer short titled sections over large prose blocks when that improves scanability.",
+    "During longer reasoning or tool-use work, emit a brief public work-state cue before or between tool waves. Keep it to one short sentence naming the current action or decision; do not simulate hidden reasoning or narrate every micro-step.",
+    "For end-of-work human communication, prefer a scan-first finish: start with a direct outcome sentence, then use 2-4 short titled sections or labeled lines such as `Result`, `What changed`, `Why it matters`, and `Next` only when they improve reading speed.",
+    "Separate scoped task outcome from session or admin state. If the task is done but closeout, approval, or optional follow-up remains, say that explicitly in the first two lines.",
     "Selective emojis are allowed as navigational markers for summaries, approvals, status framing, and next steps; do not use them decoratively.",
     "Use tables for comparisons, options, gate state, pipeline declarations, and tradeoffs only when the table will stay narrow inside the chat column.",
     "If a table would become wide, wrap awkwardly, or cause horizontal scrolling, do not use it; switch to bullets, short labeled lines, or a two-part comparison instead.",

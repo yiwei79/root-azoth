@@ -33,7 +33,10 @@ What counts as **operational / machine-facing** output:
 Codex guidance for human-facing output:
 
 - Prefer short titled sections over long paragraph walls.
+- During longer reasoning or tool-use work, emit a brief public work-state cue: one short sentence naming the current action or decision. Do not try to dump private chain-of-thought.
 - Use hierarchy on purpose: a brief orienting sentence, then bullets or a compact table only when they genuinely improve scanning.
+- For end-of-work communication, start with a direct outcome sentence, then use 2-4 short titled sections or labeled lines only when they improve reading speed.
+- Separate the scoped task outcome from session or admin state. If the work is done but closeout or approval remains, say that explicitly up front.
 - Use **selective** emojis as navigational markers, not decoration.
 - Use tables for comparisons, options, gate state, and pipeline declarations only when they stay visually narrow in the chat column.
 - If a table would overflow, wrap badly, or introduce horizontal scrolling, switch to bullets, labeled lines, or a short contrastive comparison instead.
@@ -48,6 +51,26 @@ Codex guidance for operational output:
 This split is deliberate: Codex should feel more scannable and supportive in human chat
 without weakening Azoth’s deterministic pipeline artifacts or silently changing the
 shared Claude/Copilot/OpenCode/Gemini house style.
+
+## Why Claude Can Feel Different
+
+Part of the Claude interaction style people notice is **host behavior**, not only prompt text.
+
+- Claude surfaces configurable communication styles and summarized thinking in the product.
+- Codex now exposes two relevant product controls of its own:
+  - `/personality` in the app, CLI, and IDE extension
+  - `Settings > General > Follow-up behavior` in the app for more live steering while work is in progress
+
+Recommended Codex setup when you want the closest Azoth-hosted approximation to the
+"brief progress cue + easy final summary" feel:
+
+- Choose the more conversational / empathetic Codex personality if you want a warmer collaborator style.
+- Enable Follow-up behavior when you want more live interaction during longer-running work.
+- Keep the Azoth Codex communication layer enabled so repo-local summaries still separate
+  task outcome from session/admin state and preserve terse machine-facing artifacts.
+
+This layered model matters: Azoth can shape the repo-local communication contract, but it
+should not pretend to expose hidden reasoning or reimplement product-level UI affordances.
 
 ## Daily Flow
 
