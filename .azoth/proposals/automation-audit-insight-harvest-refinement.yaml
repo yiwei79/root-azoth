@@ -1,34 +1,38 @@
 proposal_schema_version: 1
 created_at: "2026-04-21T20:14:20+02:00"
 session_id: "2026-04-21-automation-integrator-audit"
-backlog_id: "P6-002"
-title: "Automation audit insight-harvest heuristic"
+backlog_id: "P6-003"
+title: "Nightly automation architect audit and approval-to-handoff workflow"
 summary: >
-  Draft L2 refinement proposal for a gap surfaced during the 2026-04-21
-  automation worktree audit. The architecture judgment around integration was
-  correct, but the audit treated mergeability as the only architect question and
-  initially missed that non-integrable automation lanes still contained durable
-  evidence worth routing through Azoth's governed inbox path. This proposal adds
-  an explicit two-axis audit heuristic so evidence lanes are harvested without
-  weakening the producer/worktree-sync contract.
+  Draft architecture proposal for a lower-friction automation control plane.
+  The 2026-04-21 automation audit showed that Azoth needs more than a
+  two-axis insight-harvest heuristic: the nightly automation itself should act
+  as the architect-audit layer, present one executive summary plus explicit
+  dispositions, and then hand approved items into a single apply step that
+  routes insights through governed intake semantics and materializes approved
+  code or proposal actions as fresh producer handoffs. This keeps inbox and
+  worktree-sync as the authoritative primitives while removing the current
+  architect-audit -> /intake -> local integration ritual as a required manual
+  sequence.
 status: draft
 decision_refs:
   - D21
-  - D23
   - D32
-  - D44
+  - D23
+  - D50
 scope_layers:
-  - agents
-  - workflows
-  - docs
+  - mixed
 details:
   problem: >
-    Current automation/worktree audits naturally center on "integrate or do not
-    integrate." That protects `/worktree-sync`, but it is incomplete for Azoth
-    because some automation lanes are report or evidence producers rather than
-    producer handoffs. When the audit stops at merge disposition, useful signals
-    can remain stranded in automation memory until a human explicitly asks for
-    insight capture.
+    The current path from nightly automation findings to durable Azoth action is
+    too ceremony-heavy. In practice it tends to require a separate architect
+    audit conversation, then `/intake` for insights, then a local session to
+    create or integrate clean producer handoffs. That preserves safety, but it
+    creates enough friction that useful nightly audit output risks being delayed
+    or dropped. Azoth needs a workflow where the automation itself performs the
+    architect audit, the human gives one approval decision, and the follow-on
+    apply step uses existing governed primitives internally instead of requiring
+    the human to manually hop between them.
   evidence_basis:
     repo_local:
       observed_on: "2026-04-21"
@@ -38,7 +42,9 @@ details:
             `ep-308` records a concrete failure: the audit correctly rejected bulk
             integration of automation worktrees but failed to proactively surface
             that some non-mergeable automation sessions still carried durable
-            insight worth governed capture.
+            insight worth governed capture. The deeper lesson was not only
+            "remember the insight axis" but also that the current manual ritual
+            makes these transfers too easy to miss.
         - path: ".azoth/inbox/session-reflection-automation-audit-2026-04-21.jsonl"
           finding: >
             The later synthesis recovered two legitimate insights from automation
@@ -46,77 +52,152 @@ details:
             audit procedure rather than in the source material.
         - path: ".azoth/handoffs/2026-04-21-automation-worktree-audit-architect-note.md"
           finding: >
-            The architect note correctly separates stale detached worktrees from
-            the one salvageable code lane, but it did not originally carry a
-            parallel insight-harvest checkpoint.
+            The architect note correctly separated stale detached worktrees from
+            the one salvageable code lane, but reaching that result still
+            required an extra explicit architect pass rather than a single
+            nightly audit control-plane output.
         - path: ".agents/workflows/intake.md"
           finding: >
             Azoth already has a governed path for external insight triage through
-            `.azoth/inbox/`; the missing behavior is recognizing when automation
-            audit output should be routed there.
-  proposed_refinement:
-    heuristic_name: "Two-axis automation audit"
-    mandatory_questions:
+            `.azoth/inbox/`; the missing behavior is not the existence of intake,
+            but the lack of a low-friction workflow that can use intake semantics
+            as a substep after one approval.
+        - path: ".agents/workflows/worktree-sync.md"
+          finding: >
+            Azoth already has the clean producer-handoff and single-integrator
+            mechanics required for approved actions. The missing behavior is a
+            workflow that turns approved audit items into isolated producer
+            branches without the human manually orchestrating each intermediate
+            step.
+        - path: "docs/playbook/05-parallel-sessions.md"
+          finding: >
+            The single-integrator contract remains the correct landing model, so
+            any lower-friction automation design must still materialize fresh
+            producer handoffs and integrate one at a time.
+  desired_outcomes:
+    - >
+      A nightly 9 PM automation that performs the architect audit itself and
+      emits one executive audit summary with explicit per-item dispositions.
+    - >
+      One human approval surface that can approve, skip, defer, or cleanup
+      multiple audit items at once.
+    - >
+      An apply step that uses governed inbox semantics for insight items and
+      fresh producer branches for proposal/code items, without making the human
+      run separate architect, intake, and integration rituals by hand.
+    - >
+      A fail-closed default where nightly runs do not open producer worktrees or
+      queue merges unless and until the human approves a specific follow-on
+      action.
+  proposed_workflow:
+    audit_stage:
       - >
-        Integration readiness: is any automation lane a current, queueable,
-        verification-backed producer handoff, or does it contain code worth
-        selectively salvaging onto a fresh producer branch?
+        Run nightly as a cron automation at 9 PM against the repo workspace.
       - >
-        Insight harvest: did any automation lane produce durable evidence or a
-        reusable pattern that should be written to `.azoth/inbox/` for `/intake`,
-        even if the lane is not mergeable?
-    decision_contract:
+        Scan current automation worktrees, trusted automation memory artifacts,
+        and any queued/open producer evidence relevant to the audit window.
       - >
-        Merge-ready producer lane: use the existing producer/integrator path only
-        when the work satisfies the current worktree-sync contract.
+        Apply the existing two-axis audit logic internally for each item:
+        integration readiness and insight harvest.
       - >
-        Salvage-only code lane: recreate the narrow useful diff on a fresh branch
-        from the active integration target instead of syncing the stale worktree.
+        Emit one executive audit summary plus structured item rows classified as
+        `insight-only`, `proposal`, `code-salvage`, `cleanup-only`, or
+        `no-action`.
+    approval_stage:
       - >
-        Insight-only evidence lane: synthesize governed JSONL insights for
-        `/intake`; do not treat the open worktree itself as an integration signal.
+        Present one human-facing approval card or summary response surface so
+        the human can approve several items in one pass, for example
+        "approve 1 and 3, cleanup 4, skip 2".
       - >
-        No-code, no-insight lane: report as cleanup-only and avoid inbox noise.
-    fail_closed_rules:
-      - "Do not run `/worktree-sync` on a lane solely because automation opened a worktree."
-      - "Do not treat inbox-worthy evidence as permission to integrate stale detached state."
-      - "Do not bypass `/intake`; evidence capture is governed triage input, not direct memory promotion."
+        Treat this as the primary human gate; do not require a separate manual
+        architect audit session before approval.
+    apply_stage:
+      - >
+        For `insight-only` items, route the approved content through governed
+        intake semantics. The human should not need to manually run a separate
+        `/intake` ritual when the approval already occurred inside the audit
+        workflow.
+      - >
+        For `proposal` or `code-salvage` items, materialize fresh producer
+        branches from the current `phase/v0.2.0-p3` tip, commit only the
+        approved action, and record clean producer handoffs with
+        `/worktree-sync`.
+      - >
+        Default apply behavior should be queue-only: create inbox results or
+        producer handoffs, but do not auto-integrate unless the human explicitly
+        chooses a land-now mode.
+  approval_contract:
+    - >
+      The nightly audit must produce stable item identifiers so approval can be
+      expressed compactly and unambiguously.
+    - >
+      Approval decides disposition, not implementation shape: the apply stage
+      still owns fresh branch creation, clean commits, handoff recording, and
+      any governed write path.
+    - >
+      Items that touch shared Azoth control-plane state remain subject to the
+      existing governed and single-integrator rules even when approved.
+  fail_closed_rules:
+    - "Do not let the nightly audit open producer worktrees by default."
+    - "Do not let the nightly audit run `/worktree-sync` before explicit human approval."
+    - "Do not treat approval of one item as permission to sweep all open automation worktrees."
+    - "Do not bypass inbox/intake governance semantics for insight-only items."
+    - "Do not integrate multiple approved producer handoffs concurrently."
   expected_improvement:
     - >
-      Preserve the producer contract while reducing false negatives for insight
-      harvest during automation audits.
+      Preserve the producer contract while reducing the human choreography needed
+      to turn nightly audit results into durable Azoth action.
     - >
-      Make architect audits complete even when the right code decision is "do not
-      integrate."
+      Make the nightly automation itself the architect-audit layer instead of
+      requiring an extra explicit architect pass before the real workflow begins.
     - >
-      Keep automation lanes narrow: code lanes follow producer rules, evidence
-      lanes follow inbox/intake rules.
+      Keep automation lanes narrow: evidence remains inbox-governed, code and
+      proposals become fresh producer handoffs, and integration stays
+      single-writer.
   candidate_surfaces:
-    - ".codex/agents/orchestrator.toml"
-    - ".codex/agents/architect.toml"
-    - ".agents/workflows/worktree-sync.md"
+    - ".azoth/trusted-sources.yaml"
     - ".agents/workflows/intake.md"
+    - ".agents/workflows/worktree-sync.md"
+    - "docs/playbook/05-parallel-sessions.md"
+    - "new audit/apply workflow surface for nightly automation approval and action routing"
   validation_replay:
     - >
       Replayed against the 2026-04-21 audit, the heuristic would still reject
-      direct integration of all four automation worktrees while also routing two
-      evidence lanes into governed inbox synthesis and classifying one lane as
-      no-new-insight cleanup-only.
+      direct integration of all four automation worktrees, but the nightly audit
+      itself would have produced the executive summary and explicit item
+      dispositions without needing a separate manual architect pass.
     - >
-      The heuristic keeps the `1325` lane in salvage-only status rather than
-      misclassifying it as a valid worktree-sync producer.
+      Under the proposed approval-to-apply workflow, the two useful evidence
+      lanes would have been approved once and routed through governed intake
+      semantics, while the `1325` optimization would have been recreated as a
+      fresh producer handoff from `phase/v0.2.0-p3` rather than leaving the
+      human to manually bridge that step.
+  open_questions:
+    - >
+      Should the apply step be a new first-class command, a second automation,
+      or an internal reusable workflow invoked from multiple entrypoints?
+    - >
+      Should "land-now" integration be allowed as an explicit opt-in mode, or
+      should approved items always stop at inbox integration / producer handoff
+      creation and leave the final integrate run separate?
+    - >
+      Does this workflow merit a dedicated trusted source distinct from
+      `session-reflection`, or should the audit automation continue to emit under
+      an existing trusted source with stronger source metadata?
   non_goals:
-    - "Do not broaden `/worktree-sync` into a generic insight-processing command."
-    - "Do not auto-promote automation findings directly into M3 or backlog items."
-    - "Do not treat every automation memory file as durable signal without synthesis."
-    - "Do not apply instruction changes automatically from this proposal alone."
+    - "Do not make nightly automation a freeform autonomous merge agent."
+    - "Do not open or queue producer worktrees for every scanned automation lane."
+    - "Do not replace the inbox or worktree-sync primitives; compose them."
+    - "Do not auto-promote all nightly findings directly into M3, backlog, or p3."
   recommended_follow_up:
     shape: >
-      If approved, implement as a low-risk instruction refinement: add the
-      two-axis audit checkpoint to architect/orchestrator guidance, clarify the
-      worktree-sync boundary, and keep `/intake` as the governed destination for
-      insight-only automation output.
+      If approved, implement in two slices: first define the nightly audit
+      bundle plus approval contract; then add the apply workflow that routes
+      approved insight items through governed intake semantics and approved
+      code/proposal items into fresh producer handoffs from the current target
+      branch.
     likely_verification:
-      - "Replay the refinement against `ep-308` and confirm the missed insight is now caught."
-      - "Confirm evidence-only automation lanes are never described as merge candidates."
-      - "Confirm the revised instruction text still fails closed on unsafe integration."
+      - "Replay the workflow against the 2026-04-21 audit and confirm one approval can route all approved items correctly."
+      - "Confirm nightly audit runs never open producer worktrees before approval."
+      - "Confirm approved proposal/code items become fresh clean handoffs rather than stale worktree syncs."
+      - "Confirm single-integrator guarantees remain intact when several approved items are queued."

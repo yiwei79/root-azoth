@@ -36,6 +36,7 @@ from session_continuity import selected_pipeline_command
 
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
+_YAML_SAFE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
         return {}
     try:
         with path.open() as f:
-            return yaml.safe_load(f) or {}
+            return yaml.load(f, Loader=_YAML_SAFE_LOADER) or {}
     except Exception:
         return {}
 
