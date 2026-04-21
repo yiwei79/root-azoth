@@ -56,6 +56,7 @@ def _build_repo(
 
     scope_gate = {
         "approved": True,
+        "approved_by": "human",
         "expires_at": _future(),
         "session_id": session_id,
         "goal": f"{backlog_id}: Governed closeout",
@@ -313,6 +314,9 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo_root = _build_repo(tmp_path, include_session_state=True)
+    expected_verbatim_payload = json.loads(
+        (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8")
+    )
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     approvals_before = _write_approvals(
@@ -355,6 +359,8 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert ".azoth/run-ledger.local.yaml" in episode["context"]["files_changed"]
     assert ".azoth/bootloader-state.md" in episode["context"]["files_changed"]
     assert ".azoth/session-state.md" in episode["context"]["files_changed"]
+    assert episode["context"]["verbatim_source"] == "scope-gate.json"
+    assert episode["context"]["verbatim_payload"] == expected_verbatim_payload
 
     scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
     assert scope["approved"] is False
@@ -421,6 +427,9 @@ def test_exploratory_light_closeout_closes_session_without_version_bump(
         ),
         encoding="utf-8",
     )
+    expected_verbatim_payload = json.loads(
+        (repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
     version_bump_calls: list[tuple[list[str], Path, bool]] = []
     monkeypatch.setattr(
         do_closeout.subprocess,
@@ -430,8 +439,17 @@ def test_exploratory_light_closeout_closes_session_without_version_bump(
 
     do_closeout.run_closeout(repo_root)
 
-    episodes = (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8")
-    assert episodes.strip()
+    episodes = [
+        json.loads(line)
+        for line in (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert episodes
+    episode = episodes[-1]
+    assert episode["context"]["verbatim_source"] == "session-gate.json"
+    assert episode["context"]["verbatim_payload"] == expected_verbatim_payload
     session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
     assert session_gate["status"] == "closed"
     session_state = yaml.safe_load((repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8"))
@@ -835,6 +853,44 @@ def test_governed_closeout_rejects_unknown_reinforcement_id_before_mutation(
     assert (repo_root / ".azoth" / "session-orientation.txt").exists()
 
 
+def test_governed_closeout_rejects_ambiguous_reinforcement_id_before_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
+    episodes_path.write_text(
+        "\n".join(
+            [
+                json.dumps({"id": "ep-010", "session_id": "older-a", "reinforcement_count": 0, "context": {}}),
+                json.dumps({"id": "ep-010", "session_id": "older-b", "reinforcement_count": 1, "context": {}}),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    scope_before = (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8")
+    backlog_before = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    episodes_before = episodes_path.read_text(encoding="utf-8")
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(do_closeout.ReinforcementValidationError, match="ambiguous reinforce"):
+        do_closeout.run_closeout(repo_root, reinforce_episode_ids=["ep-010"])
+
+    assert episodes_path.read_text(encoding="utf-8") == episodes_before
+    assert (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8") == scope_before
+    assert (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8") == backlog_before
+
+
 def test_governed_closeout_can_reinforce_exact_prior_episode_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -859,7 +915,13 @@ def test_governed_closeout_can_reinforce_exact_prior_episode_once(
                 "goal": "Prior lesson",
                 "summary": "Older reinforced lesson.",
                 "reinforcement_count": 0,
-                "context": {},
+                "context": {
+                    "verbatim_source": "scope-gate.json",
+                    "verbatim_payload": {
+                        "session_id": "older-session",
+                        "goal": "Prior lesson",
+                    },
+                },
             }
         )
         + "\n",
@@ -882,6 +944,11 @@ def test_governed_closeout_can_reinforce_exact_prior_episode_once(
 
     assert prior["reinforcement_count"] == 1
     assert prior["context"]["reinforced_by_sessions"] == ["sess-123"]
+    assert prior["context"]["verbatim_source"] == "scope-gate.json"
+    assert prior["context"]["verbatim_payload"] == {
+        "session_id": "older-session",
+        "goal": "Prior lesson",
+    }
     assert new_episode["reinforcement_count"] == 0
 
 

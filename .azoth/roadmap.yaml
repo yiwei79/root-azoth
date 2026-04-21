@@ -425,7 +425,7 @@ versions:
 
   - id: v0.2.0-p3
     status: active
-    current_patch: 2
+    current_patch: 3
     goal: "Carry-forward hardening: incomplete p2 work, memory policy, platform parity, roadmap tooling, and bounded evidence refresh"
     phase_scope: [3]
     themes: [A, C, D]
@@ -442,11 +442,6 @@ versions:
       - id: P1-017
         title: "reinforcement_count automation (closeout + promote path)"
         decision_ref: [D11, D49, D51]
-        carried_from: "v0.2.0-p2"
-      - id: P1-020
-        title: "Verbatim-first M3 storage strategy"
-        decision_ref: [D11, D45]
-        initiative_ref: "INI-MEM-001"
         carried_from: "v0.2.0-p2"
       - id: P1-021
         title: "Memory operation platform parity"
@@ -508,6 +503,8 @@ versions:
 # Grouped by theme then category. IDs: INI-{CATEGORY_PREFIX}-{NNN}
 # Themes: A=run-state, B=pipeline, C=memory, D=ux/platform, E=efficiency
 # Terminology: initiative (goal-level) ≠ backlog item (concrete, ready-to-pick) ≠ scope (active, gated).
+    completed_tasks:
+      - {id: P1-020, title: "Verbatim-first M3 storage strategy", completed_date: "2026-04-21", decision_ref: [D11, D45]}
 initiatives:
 
   # ── Theme A: run-state ─────────────────────────────────────────────────────
@@ -803,31 +800,37 @@ initiatives:
 
   # ── Theme C: memory ────────────────────────────────────────────────────────
   - id: INI-MEM-001
-    title: "Verbatim-first M3 storage strategy"
+    title: Verbatim-first M3 storage strategy
     category: memory
     theme: C
     dimensions:
-      themes: [C]
-      categories: [memory]
-      tracks: [verbatim-storage, m3-policy]
+      themes:
+      - C
+      categories:
+      - memory
+      tracks:
+      - verbatim-storage
+      - m3-policy
     phase: v0.2.0-p3
     task_ref: P1-020
     slices:
-      - task_ref: P1-020
-        spec_ref: null
-        phase: v0.2.0-p3
-        status: planned
-        role: primary
+    - task_ref: P1-020
+      spec_ref: null
+      phase: v0.2.0-p3
+      status: complete
+      role: historical
     priority: high
-    summary: >
-      Store raw episode context verbatim in M3 before any summarisation or compression.
+    summary: 'Store raw episode context verbatim in M3 before any summarisation or compression.
       Building the episodic index on full signal avoids the compress-before-index regression
-      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth M3
-      is currently append-only JSONL with no vector index; this initiative scopes the policy
-      and tooling to enforce verbatim storage as the baseline.
-    research_ref: "RP-MEM-A"
-    decision_ref: [D11, D45]
+      observed in mempalace (96.6% → 84.2% when compression precedes ingestion). Azoth
+      M3 is currently append-only JSONL with no vector index; this initiative scopes
+      the policy and tooling to enforce verbatim storage as the baseline.
 
+      '
+    research_ref: RP-MEM-A
+    decision_ref:
+    - D11
+    - D45
   - id: INI-MEM-002
     title: "Temporal validity windows for M2 patterns"
     category: memory

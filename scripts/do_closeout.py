@@ -13,6 +13,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 import yaml
+from episode_store import (
+    append_episode_record,
+    load_episode_records,
+    with_verbatim_context,
+)
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
 from run_ledger import release_write_claim, upsert_run, upsert_session
 from session_gate import active_session_gate, close_session_gate, normalized_session_mode
@@ -192,9 +197,11 @@ def append_episode(
     timestamp: str,
     *,
     files_changed: list[str],
+    verbatim_source: str,
+    verbatim_payload: dict[str, Any],
 ) -> tuple[str, dict[str, Any], int]:
     episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
-    episodes = load_jsonl(episodes_path)
+    episodes = load_episode_records(episodes_path)
     new_id = _next_episode_id(episodes)
 
     new_episode = {
@@ -210,10 +217,14 @@ def append_episode(
         "m2_candidate": False,
         "context": {"files_changed": files_changed},
     }
+    new_episode = with_verbatim_context(
+        new_episode,
+        source=verbatim_source,
+        payload=verbatim_payload,
+    )
 
     episodes_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(episodes_path, "a", encoding="utf-8") as handle:
-        handle.write(json.dumps(new_episode) + "\n")
+    append_episode_record(episodes_path, new_episode, require_verbatim=True)
 
     print(f"W1: Appended episode {new_id} to {episodes_path}")
     return new_id, new_episode, len(episodes) + 1
@@ -226,8 +237,14 @@ def validate_reinforcement_targets(
     if not reinforce_episode_ids:
         return
 
-    episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
-    existing_ids = {str(episode.get("id") or "") for episode in episodes}
+    episodes = load_episode_records(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+    id_counts: dict[str, int] = {}
+    for episode in episodes:
+        episode_id = str(episode.get("id") or "")
+        if not episode_id:
+            continue
+        id_counts[episode_id] = id_counts.get(episode_id, 0) + 1
+    existing_ids = set(id_counts)
     missing_ids = [
         episode_id for episode_id in reinforce_episode_ids if episode_id not in existing_ids
     ]
@@ -236,6 +253,13 @@ def validate_reinforcement_targets(
         raise ReinforcementValidationError(
             "Closeout blocked: unknown reinforce episode id(s): "
             f"{quoted_ids}. Confirm exact existing episode ids before running closeout."
+        )
+    ambiguous_ids = sorted({episode_id for episode_id in reinforce_episode_ids if id_counts.get(episode_id, 0) > 1})
+    if ambiguous_ids:
+        quoted_ids = ", ".join(repr(episode_id) for episode_id in ambiguous_ids)
+        raise ReinforcementValidationError(
+            "Closeout blocked: ambiguous reinforce episode id(s): "
+            f"{quoted_ids}. Duplicate episode ids must be repaired before reinforcement."
         )
 
 
@@ -1214,7 +1238,7 @@ def write_claude_memory_mirror(
     azoth_data = load_yaml(repo_root / "azoth.yaml")
     active_version, current_patch = _active_version_snapshot(repo_root)
     if latest_episode is None:
-        episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        episodes = load_episode_records(repo_root / ".azoth" / "memory" / "episodes.jsonl")
         latest_episode = episodes[-1] if episodes else {}
     next_step = next_action or default_next_action()
 
@@ -1289,6 +1313,8 @@ def run_closeout(
         ):
             session_context["session_mode"] = normalized_session_mode(session_gate)
         full_closeout = True
+        verbatim_source = "scope-gate.json"
+        verbatim_payload = dict(scope)
     elif session_gate:
         session_context = {
             "session_id": str(session_gate.get("session_id") or "unknown-session"),
@@ -1298,6 +1324,8 @@ def run_closeout(
             "approved_by": str(session_gate.get("approved_by") or "system"),
         }
         full_closeout = False
+        verbatim_source = "session-gate.json"
+        verbatim_payload = dict(session_gate)
     else:
         raise CloseoutError(
             "No active session to close. Run `/remember` or start a new exploratory session first."
@@ -1334,6 +1362,8 @@ def run_closeout(
         session_context,
         timestamp,
         files_changed=authoritative_files,
+        verbatim_source=verbatim_source,
+        verbatim_payload=verbatim_payload,
     )
     for episode_id in reinforce_episode_ids:
         try:

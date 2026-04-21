@@ -61,6 +61,39 @@ def test_increment_reinforcement_count_targets_exact_episode_id(tmp_path: Path) 
     assert episodes[0]["context"]["last_reinforced_source"] == "promote"
 
 
+def test_increment_reinforcement_count_preserves_verbatim_context(tmp_path: Path) -> None:
+    episodes_path = _episodes_path(tmp_path)
+    _write_episode(
+        episodes_path,
+        {
+            "id": "ep-010",
+            "reinforcement_count": 0,
+            "context": {
+                "verbatim_source": "scope-gate.json",
+                "verbatim_payload": {
+                    "session_id": "older-session",
+                    "goal": "Prior lesson",
+                },
+            },
+        },
+    )
+
+    reinforcement_count.increment_reinforcement_count(
+        tmp_path,
+        "ep-010",
+        "2026-04-14-bl-041",
+        source="closeout",
+    )
+
+    episodes = _read_episodes(episodes_path)
+    assert episodes[0]["context"]["verbatim_source"] == "scope-gate.json"
+    assert episodes[0]["context"]["verbatim_payload"] == {
+        "session_id": "older-session",
+        "goal": "Prior lesson",
+    }
+    assert episodes[0]["context"]["last_reinforced_session"] == "2026-04-14-bl-041"
+
+
 def test_increment_reinforcement_count_is_idempotent_per_session(tmp_path: Path) -> None:
     episodes_path = _episodes_path(tmp_path)
     _write_episode(
@@ -105,4 +138,42 @@ def test_increment_reinforcement_count_requires_exact_existing_id(tmp_path: Path
             "ep-999",
             "2026-04-14-bl-041",
             source="promote",
+        )
+
+
+def test_increment_reinforcement_count_rejects_ambiguous_duplicate_episode_id(
+    tmp_path: Path,
+) -> None:
+    episodes_path = _episodes_path(tmp_path)
+    _write_episode(episodes_path, {"id": "ep-010", "reinforcement_count": 0, "context": {}})
+    _write_episode(episodes_path, {"id": "ep-010", "reinforcement_count": 2, "context": {}})
+
+    with pytest.raises(reinforcement_count.ReinforcementError, match="episode id is ambiguous"):
+        reinforcement_count.increment_reinforcement_count(
+            tmp_path,
+            "ep-010",
+            "2026-04-14-bl-041",
+            source="closeout",
+        )
+
+
+def test_increment_reinforcement_count_rejects_malformed_reinforcement_audit_metadata(
+    tmp_path: Path,
+) -> None:
+    episodes_path = _episodes_path(tmp_path)
+    _write_episode(
+        episodes_path,
+        {
+            "id": "ep-010",
+            "reinforcement_count": 0,
+            "context": {"reinforced_by_sessions": "bad-shape"},
+        },
+    )
+
+    with pytest.raises(reinforcement_count.ReinforcementError, match="must be a list"):
+        reinforcement_count.increment_reinforcement_count(
+            tmp_path,
+            "ep-010",
+            "2026-04-14-bl-041",
+            source="closeout",
         )
