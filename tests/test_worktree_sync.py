@@ -1442,6 +1442,18 @@ def test_merge_episode_records_rejects_legacy_same_id_rewrite() -> None:
         worktree_sync_mod._merge_episode_records(target, producer)
 
 
+def test_merge_episode_records_remaps_cross_session_id_collision() -> None:
+    target = [{"id": "ep-112", "session_id": "target-session", "summary": "first"}]
+    producer = [{"id": "ep-112", "session_id": "producer-session", "summary": "second"}]
+
+    merged = worktree_sync_mod._merge_episode_records(target, producer)
+
+    assert merged == [
+        {"id": "ep-112", "session_id": "target-session", "summary": "first"},
+        {"id": "ep-113", "session_id": "producer-session", "summary": "second"},
+    ]
+
+
 def test_merge_episode_records_rejects_duplicate_verbatim_backed_target_identity() -> None:
     target = [
         {

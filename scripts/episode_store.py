@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,23 @@ class EpisodeStoreError(RuntimeError):
 
 def _canonical_json_text(payload: object) -> str:
     return json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+
+
+def _episode_numeric_suffix(episode_id: str) -> int | None:
+    match = re.fullmatch(r"ep-(\d+)", episode_id)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def _next_episode_id(existing_ids: set[str]) -> str:
+    last_num = 0
+    for episode_id in existing_ids:
+        suffix = _episode_numeric_suffix(episode_id)
+        if suffix is None:
+            continue
+        last_num = max(last_num, suffix)
+    return f"ep-{last_num + 1:03d}"
 
 
 def _reconcilable_episode_key(record: dict[str, Any]) -> tuple[str, str, str] | None:
@@ -246,6 +264,7 @@ def merge_episode_records(
     seen_payloads: set[str] = set()
     reconciled_indexes: dict[tuple[str, str, str], int] = {}
     target_ids: set[str] = set()
+    target_session_ids_by_id: dict[str, set[str]] = {}
     target_fingerprints: set[str] = set()
     producer_fingerprints: set[str] = set()
 
@@ -262,6 +281,9 @@ def merge_episode_records(
         merged.append(record)
         if episode_id:
             target_ids.add(episode_id)
+            session_id = str(record.get("session_id") or "").strip()
+            if session_id:
+                target_session_ids_by_id.setdefault(episode_id, set()).add(session_id)
         reconcilable_key = _reconcilable_episode_key(record)
         if reconcilable_key is not None:
             if reconcilable_key in reconciled_indexes:
@@ -270,6 +292,8 @@ def merge_episode_records(
                     f"for id '{reconcilable_key[0]}'"
                 )
             reconciled_indexes[reconcilable_key] = len(merged) - 1
+
+    baseline_target_ids = set(target_ids)
 
     for index, record in enumerate(producer_records, start=len(target_records) + 1):
         validate_episode_record(record, label=f"episode[{index}]")
@@ -294,6 +318,24 @@ def merge_episode_records(
             seen_payloads.add(fingerprint)
             continue
         if episode_id in target_ids:
+            if episode_id not in baseline_target_ids:
+                raise EpisodeStoreError(
+                    f"episode[{index}] attempts an ambiguous same-id rewrite of existing episode id '{episode_id}'"
+                )
+            producer_session_id = str(record.get("session_id") or "").strip()
+            target_session_ids = target_session_ids_by_id.get(episode_id, set())
+            if producer_session_id and producer_session_id not in target_session_ids:
+                remapped = dict(record)
+                remapped["id"] = _next_episode_id(target_ids)
+                fingerprint = _canonical_json_text(remapped)
+                seen_payloads.add(fingerprint)
+                merged.append(remapped)
+                target_ids.add(str(remapped["id"]))
+                target_session_ids_by_id.setdefault(str(remapped["id"]), set()).add(producer_session_id)
+                reconcilable_key = _reconcilable_episode_key(remapped)
+                if reconcilable_key is not None:
+                    reconciled_indexes[reconcilable_key] = len(merged) - 1
+                continue
             raise EpisodeStoreError(
                 f"episode[{index}] attempts an ambiguous same-id rewrite of existing episode id '{episode_id}'"
             )
@@ -301,6 +343,9 @@ def merge_episode_records(
         merged.append(record)
         if episode_id:
             target_ids.add(episode_id)
+            session_id = str(record.get("session_id") or "").strip()
+            if session_id:
+                target_session_ids_by_id.setdefault(episode_id, set()).add(session_id)
         if reconcilable_key is not None:
             reconciled_indexes[reconcilable_key] = len(merged) - 1
     return merged

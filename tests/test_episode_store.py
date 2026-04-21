@@ -161,6 +161,38 @@ def test_merge_episode_records_rejects_legacy_same_id_rewrite() -> None:
         episode_store.merge_episode_records(target, producer)
 
 
+def test_merge_episode_records_remaps_cross_session_id_collision() -> None:
+    target = [
+        episode_store.with_verbatim_context(
+            _episode(id="ep-112", session_id="target-session", summary="target"),
+            source="scope-gate.json",
+            payload={"goal": "target"},
+        )
+    ]
+    producer = [
+        episode_store.with_verbatim_context(
+            _episode(id="ep-112", session_id="producer-session", summary="producer"),
+            source="scope-gate.json",
+            payload={"goal": "producer"},
+        )
+    ]
+
+    merged = episode_store.merge_episode_records(target, producer)
+
+    assert merged == [
+        episode_store.with_verbatim_context(
+            _episode(id="ep-112", session_id="target-session", summary="target"),
+            source="scope-gate.json",
+            payload={"goal": "target"},
+        ),
+        episode_store.with_verbatim_context(
+            _episode(id="ep-113", session_id="producer-session", summary="producer"),
+            source="scope-gate.json",
+            payload={"goal": "producer"},
+        ),
+    ]
+
+
 def test_merge_episode_records_rejects_duplicate_verbatim_backed_target_identity() -> None:
     target = [
         episode_store.with_verbatim_context(
