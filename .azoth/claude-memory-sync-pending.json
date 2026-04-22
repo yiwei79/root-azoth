@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
-  "status": "pending",
-  "updated_at": "2026-04-22T20:50:13Z",
+  "status": "synced",
+  "updated_at": "2026-04-22T22:46:56Z",
   "source": "session-closeout",
-  "session_id": "2026-04-22-t-krp-a",
-  "goal": "T-KRP-A: CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)",
-  "latest_episode_id": "ep-329",
+  "session_id": "2026-04-23-t-017",
+  "goal": "T-017: Codex selector policy + task-definition lane",
+  "latest_episode_id": "ep-331",
   "latest_episode_summary": "Completed session closeout via scripts/do_closeout.py (W1-W4).",
   "next_action": "Run `/next` to select the next scoped task.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'"
+  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'",
+  "synced_at": "2026-04-22T22:46:56Z"
 }

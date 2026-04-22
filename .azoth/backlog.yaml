@@ -2721,10 +2721,11 @@ items:
   source: codex-selector-policy-task-definition-2026-04-22
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-22'
+  completed_date: '2026-04-22'
   description: 'Define the first real follow-on slice after the `T-015` seed: a
     Codex-local selector policy and task-definition lane that preserves portable
     `model_tier` intent while specifying richer selector inputs, inventory/capability

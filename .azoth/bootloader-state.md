@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.9 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 9
+0.1.3.10 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 10
 
 ## Last Session
-- **Session**: 2026-04-22-t-krp-a
-- **Goal**: T-KRP-A: CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)
+- **Session**: 2026-04-23-t-017
+- **Goal**: T-017: Codex selector policy + task-definition lane
 - **Session mode**: delivery
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-329 (success)
+- **Episode**: ep-331 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
