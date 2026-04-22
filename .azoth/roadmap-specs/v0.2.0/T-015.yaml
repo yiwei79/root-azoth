@@ -22,8 +22,8 @@ problem: >
   drift as model families evolve.
 scope:
   - ".azoth/backlog.yaml seed row for T-015"
-  - ".azoth/roadmap.yaml p3-era task wiring plus INI-PLT-006 follow-on linkage"
   - ".azoth/roadmap-specs/v0.2.0/T-015.yaml"
+  - ".azoth/research/codex-model-tiering-research-2026-04-22.json"
   - ".azoth/proposals/codex-intelligent-model-selection.yaml"
   - "Directional evidence from current OpenAI/Codex model families recorded in proposal details, without making them the normative long-term interface"
 non_goals:
@@ -32,8 +32,9 @@ non_goals:
   - "Running deploy updates, command projection changes, or agent-surface rewrites"
   - "Generalizing the selector architecture beyond Codex before the co-primary proof is stable"
 acceptance:
-  - "T-015 exists as a roadmap-backed seed under INI-PLT-006 with `target_version: v0.2.0-p3`"
-  - "INI-PLT-006 explicitly references intelligent Codex model selection as a planned phase-3 follow-on rather than an active implementation slice"
+  - "T-015 exists as a backlog-backed planning seed under `INI-PLT-006` with `target_version: v0.2.0-p3`"
+  - "The proposal and research capsule keep intelligent Codex model selection positioned as a planned follow-on rather than active implementation work"
+  - "A task-scoped reusable research capsule exists under `.azoth/research/` with freshness, volatility, limitations, and reuse questions for T-015"
   - "A draft L3 proposal exists under `.azoth/proposals/` and validates against `pipelines/architecture-proposal.schema.yaml`"
   - "The proposal keeps `model_tier` as a portable intent signal and replaces naive tier-to-model mapping with an intent layer, host inventory layer, selector layer, and feedback layer"
   - "The proposal states a quality-first objective, uses current model-family evidence only as directional input, and avoids defining the future contract in terms of a small fixed set of named models"
