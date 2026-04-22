@@ -31,7 +31,11 @@ The orchestrator still reasons over the latest context before execution:
 - discovery / evidence / research is a **cross-cutting insertion capability**
   that `/auto` may add when confidence is low or evidence is missing.
 - the selected row is a **reference composition / conservative template**, not
-  permission to skip gates or collapse ownership into inline orchestration.
+  permission to skip gates or collapse required staged ownership into inline
+  orchestration. In `/auto` and `dynamic-full-auto`, the orchestrator may keep
+  a bounded non-agent-gated slice inline only when it explicitly records why
+  inline is more beneficial than spawning and what signal would force a return
+  to staged delegation.
 
 Without this skill, the Architect has no canonical reference and must guess at
 pipeline shape. This causes ad-hoc selection that bypasses the governed rules in

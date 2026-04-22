@@ -601,14 +601,16 @@ patterns:
     approved: true
     approved_date: "2026-04-20"
     reinforced_by: [ep-242, ep-262, ep-273, ep-275]
-    trigger: any governed `/auto`, `/deliver`, or `/deliver-full` run after the pipeline has been declared and approved
+    trigger: any governed `/deliver-full` run, or any `/auto` / `dynamic-full-auto` run whose approved next stage depends on fresh-context ownership
     summary: >
-      In Azoth, pipeline approval is not permission to keep thinking inline in
-      the orchestrator thread. Once a governed pipeline is declared and the
-      human approves it, the next work must flow through the declared staged
-      delegation path with real stage execution boundaries. Continuing inline
-      architect, reviewer, or planner work after approval is a contract breach,
-      even if no code has been written yet.
+      In Azoth, pipeline approval is not permission to bypass the declared
+      control plane or keep thinking inline by default. Once a pipeline is
+      declared and approved, any stage whose contract depends on fresh-context
+      ownership must still execute through that staged delegation path with real
+      stage boundaries. For `/auto` and `dynamic-full-auto`, the orchestrator
+      may keep a bounded slice inline only when it explicitly states why inline
+      execution is more beneficial than spawning and no required agent-gated,
+      review-independent, or human-gated stage is being skipped.
     why_it_matters: >
       ep-242 showed the exact failure class after an approved `/auto` run for
       BL-052: the orchestrator kept working inline until the human stopped it.
@@ -616,15 +618,20 @@ patterns:
       pipeline gates were already in place. ep-273 and ep-275 reinforced that
       the bug was structural rather than incidental: even with explicit gates
       written, the orchestrator still slid back into inline architect analysis
-      instead of handing work to the next real pipeline stage. Without this
-      rule, approval theater replaces actual staged execution.
+      instead of handing work to the next real pipeline stage. The lesson is
+      not "never inline anything"; it is that inline work must never quietly
+      replace a required staged boundary. Without that distinction, approval
+      theater replaces actual staged execution.
     how_to_apply: >
-      After pipeline approval, stop inline authoring and hand control to the
-      next declared stage immediately. If the approved pipeline requires fresh
-      stage subagents, spawn or route to them before doing more analysis in the
-      main thread. If the runtime cannot honor the declared stage contract, say
-      so explicitly, stop, and recompose or re-approve the run instead of
-      silently continuing inline.
+      After pipeline approval, hand control to the next declared stage by
+      default. If that stage requires fresh-context subagents, spawn or route
+      to it before doing more analysis in the main thread. For `/auto` or
+      `dynamic-full-auto`, inline execution is acceptable only for a bounded
+      slice where the orchestrator records why inline is cheaper, clearer, or
+      safer than spawning, what the bounds of that inline slice are, and what
+      signal will force a return to staged delegation. If the runtime cannot
+      honor a required staged contract, say so explicitly, stop, and recompose
+      or re-approve the run instead of silently continuing inline.
 
   - id: pipeline-approval-should-advance-execution-state
     approved: true
