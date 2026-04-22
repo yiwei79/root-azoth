@@ -13,7 +13,6 @@ whole_initiative_approved: false
 shared_state_allowlist:
   backlog_ids:
   - T-015
-  roadmap_task_refs:
-  - T-015
+  roadmap_task_refs: []
   initiative_refs: []
-scope_fingerprint: f189b01778f7bcd5e43b7b65122850ec3fd234216aa8c7bb2455f08983c5af2f
+scope_fingerprint: d991bca4feaf3554143aef759af00ea22f41b2fc78024b958fac678fd3a52367
