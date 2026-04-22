@@ -6,7 +6,9 @@ description: Explicit Codex entrypoint for Azoth's `/start` workflow. Use when t
 
 Use this skill as the Codex-visible entrypoint for Azoth's `/start` workflow.
 
-Codex does not register repository-defined slash commands in its built-in `/` command picker.
+Codex uses skills as the custom command surface for Azoth workflows.
+In the Codex app, enabled skills may appear in the slash command list.
+In Codex CLI/IDE, use `/skills` or `$azoth-start`.
 This skill is the explicit Codex-native equivalent of typing `/start`.
 
 Execution contract:

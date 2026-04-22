@@ -900,6 +900,83 @@ def test_gather_unphased_initiatives_skips_non_dict() -> None:
     assert result[0]["id"] == "INI-MEM-001"
 
 
+def test_gather_unphased_initiatives_skips_phase_null_history_only_items() -> None:
+    data = {
+        "initiatives": [
+            {
+                "id": "INI-HIST-001",
+                "title": "Historical only",
+                "priority": "high",
+                "phase": None,
+                "slices": [{"task_ref": "P1-020", "status": "complete", "role": "historical"}],
+            },
+            {
+                "id": "INI-LIVE-001",
+                "title": "Live",
+                "priority": "medium",
+                "phase": None,
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            },
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert [item["id"] for item in result] == ["INI-LIVE-001"]
+
+
+def test_repaired_planning_state_keeps_p3_upcoming_clean_and_makes_t_krp_a_next() -> None:
+    import roadmap_dashboard
+
+    roadmap = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p2",
+                "status": "complete",
+                "tasks": [],
+                "completed_tasks": [{"id": "P1-017", "title": "Reinforcement automation"}],
+                "deferred_tasks": [{"id": "T-KRP-A", "title": "Karpathy kernel slice"}],
+            },
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "completed_tasks": [{"id": "P1-020", "title": "Verbatim-first M3"}],
+                "tasks": [{"id": "T-KRP-A", "title": "Karpathy kernel slice"}],
+            },
+        ],
+        "initiatives": [
+            {
+                "id": "INI-KRP-001",
+                "title": "Karpathy",
+                "category": "efficiency",
+                "phase": None,
+                "priority": "high",
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            }
+        ],
+    }
+    backlog_items = [
+        {"id": "BL-059", "status": "complete", "priority": 3},
+        {
+            "id": "T-KRP-A",
+            "status": "pending",
+            "priority": 1,
+            "target_layer": "M1",
+            "delivery_pipeline": "governed",
+            "roadmap_ref": "T-KRP-A",
+        },
+    ]
+
+    complete_ids = {item["id"] for item in backlog_items if item.get("status") == "complete"}
+    candidates = welcome.filter_unblocked_items(backlog_items, complete_ids)
+    assert candidates[0]["id"] == "T-KRP-A"
+
+    body = roadmap_dashboard.build_version_body(roadmap["versions"][1], roadmap=roadmap)
+    assert "P1-020" in body
+    assert "T-KRP-A" in body
+    upcoming = body.split("[bold]Upcoming[/bold]", 1)[1]
+    assert "P1-020" not in upcoming
+
+
 # ── welcome backlog-panel fallback to initiatives ─────────────────────────────
 
 

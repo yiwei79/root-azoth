@@ -97,13 +97,13 @@ def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs()
     initiatives = {item["id"]: item for item in road.get("initiatives") or []}
 
     ppl001 = initiatives["INI-PPL-001"]
-    assert ppl001.get("task_ref") not in completed_ids, (
-        "INI-PPL-001 is schedulable follow-on work and must point at a live residual task, "
-        "not a completed seed task."
-    )
-    assert str(ppl001.get("spec_ref") or "").endswith("/T-005.yaml"), (
-        "INI-PPL-001 should point at the residual T-005 spec."
-    )
+    assert ppl001.get("phase") is None
+    assert ppl001.get("task_ref") is None
+    assert ppl001.get("spec_ref") is None
+    slices = ppl001.get("slices") or []
+    assert [item.get("task_ref") for item in slices] == ["T-005", "T-006"]
+    assert all(item.get("status") == "complete" for item in slices)
+    assert all(item.get("role") == "historical" for item in slices)
     backlog_t005 = _find_backlog_item(backlog, "T-005")
     assert backlog_t005 is not None, "T-005 must exist in backlog.yaml"
     assert backlog_t005.get("initiative_ref") == "INI-PPL-001", (
@@ -147,12 +147,17 @@ def test_evidence_grounding_initiative_is_multi_dimensional_and_slice_backed() -
     }
     slices = evi001.get("slices") or []
     assert [item.get("task_ref") for item in slices] == ["T-008", "T-009", "T-010"]
-    # T-008 is the historical seed slice (complete); T-009 is now the primary active slice.
+    # The evidence-grounding rollout is complete, so the initiative should now be
+    # historical-only rather than scheduled against a stale slice alias.
+    assert evi001.get("phase") is None
+    assert evi001.get("task_ref") is None
+    assert evi001.get("spec_ref") is None
     assert slices[0]["role"] == "historical"
     assert slices[0]["status"] == "complete"
-    assert slices[1]["role"] == "primary"
-    assert slices[1]["status"] == "active"
-    assert slices[2]["status"] == "planned"
+    assert slices[1]["role"] == "historical"
+    assert slices[1]["status"] == "complete"
+    assert slices[2]["role"] == "historical"
+    assert slices[2]["status"] == "complete"
 
 
 def test_all_initiatives_expose_dimensions_and_slices() -> None:

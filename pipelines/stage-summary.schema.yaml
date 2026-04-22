@@ -161,3 +161,30 @@ properties:
     type: string
     maxLength: 600
     description: "What happens next or what signal unblocks."
+
+dependentRequired:
+  replay_iteration:
+    - replay_target_stage
+    - finding_class
+    - threshold_limit
+    - lineage_artifacts
+  replay_target_stage:
+    - replay_iteration
+    - finding_class
+    - threshold_limit
+    - lineage_artifacts
+  finding_class:
+    - replay_iteration
+    - replay_target_stage
+    - threshold_limit
+    - lineage_artifacts
+  threshold_limit:
+    - replay_iteration
+    - replay_target_stage
+    - finding_class
+    - lineage_artifacts
+  lineage_artifacts:
+    - replay_iteration
+    - replay_target_stage
+    - finding_class
+    - threshold_limit

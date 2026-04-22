@@ -403,17 +403,36 @@ def resume_menu_state(
 _INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
 
+def _slice_is_actionable(slice_item: dict[str, Any]) -> bool:
+    status = str(slice_item.get("status") or "").strip().casefold()
+    role = str(slice_item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
+def _initiative_has_actionable_open_slice(initiative: dict[str, Any]) -> bool:
+    slices = initiative.get("slices")
+    if isinstance(slices, list) and slices:
+        return any(isinstance(item, dict) and _slice_is_actionable(item) for item in slices)
+    return str(initiative.get("status") or "").strip().casefold() not in {"complete", "completed"}
+
+
 def load_active_run(root: Path) -> dict[str, Any] | None:
     """Return the last active entry from run-ledger.local.yaml, or None if absent."""
     return load_active_ledger_run(root)
 
 
 def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Return phase-agnostic initiatives sorted by priority (high→medium→low). Skips non-dict entries."""
+    """Return actionable phase-null initiatives sorted by priority (high→medium→low)."""
     raw = roadmap_data.get("initiatives")
     if not raw or not isinstance(raw, list):
         return []
-    result = [item for item in raw if isinstance(item, dict) and item.get("phase") is None]
+    result = [
+        item
+        for item in raw
+        if isinstance(item, dict)
+        and item.get("phase") is None
+        and _initiative_has_actionable_open_slice(item)
+    ]
     return sorted(result, key=lambda x: _INITIATIVE_PRIO.get(str(x.get("priority", "")), 9))
 
 
@@ -721,7 +740,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         "  <goal>   → /start route — exploratory goals open a session; delivery goals escalate to /auto"
     )
     lines.append(
-        "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only"
+        "  codex    → app: slash list for enabled azoth-* skills; CLI/IDE: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens remain compatibility fallback"
     )
     lines.append("")
     lines.append(sep)
@@ -996,7 +1015,7 @@ def render_dashboard() -> None:
             else "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff"
         ),
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /start route — exploratory goals open a session; delivery goals escalate to /auto",
-        "[bold magenta]codex[/bold magenta]    :right_arrow: primary /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only",
+        "[bold magenta]codex[/bold magenta]    :right_arrow: app slash list for enabled azoth-* skills; CLI/IDE: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens remain compatibility fallback",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 

@@ -701,7 +701,9 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
     lines = [
         f"Use this skill as the Codex-visible entrypoint for Azoth's `/{name}` workflow.",
         "",
-        "Codex does not register repository-defined slash commands in its built-in `/` command picker.",
+        "Codex uses skills as the custom command surface for Azoth workflows.",
+        "In the Codex app, enabled skills may appear in the slash command list.",
+        f"In Codex CLI/IDE, use `/skills` or `${skill_name}`.",
         f"This skill is the explicit Codex-native equivalent of typing `/{name}`.",
         "",
         "Execution contract:",
@@ -831,7 +833,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
-        "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
+        "| Codex | `.codex/agents/*.toml` | skills (`azoth-*`; app slash list, CLI `/skills`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]

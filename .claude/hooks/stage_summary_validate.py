@@ -36,6 +36,15 @@ VALID_AGENTS = frozenset(
         "context-architect",
     }
 )
+REPLAY_FIELDS = frozenset(
+    {
+        "replay_iteration",
+        "replay_target_stage",
+        "finding_class",
+        "threshold_limit",
+        "lineage_artifacts",
+    }
+)
 
 
 class StageSummaryValidationError(Exception):
@@ -96,6 +105,14 @@ def validate_stage_summary(doc: Any, *, label: str = "document") -> None:
     }
     if extra:
         raise StageSummaryValidationError(f"{label}: unknown keys {sorted(extra)}")
+    replay_keys = REPLAY_FIELDS.intersection(doc)
+    if replay_keys and replay_keys != REPLAY_FIELDS:
+        missing_replay_keys = sorted(REPLAY_FIELDS - replay_keys)
+        present_replay_keys = sorted(replay_keys)
+        raise StageSummaryValidationError(
+            f"{label}: replay metadata must include all five replay fields together; "
+            f"present={present_replay_keys}, missing={missing_replay_keys}"
+        )
     for arr_key in ("done", "decisions", "open"):
         if arr_key in doc:
             v = doc[arr_key]

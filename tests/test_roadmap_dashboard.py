@@ -106,6 +106,25 @@ def test_build_version_body_includes_tasks() -> None:
     assert "Delivered" in body
 
 
+def test_build_version_body_includes_carried_forward_section() -> None:
+    version = {
+        "id": "v0.2.0-p2",
+        "status": "complete",
+        "completed_tasks": [],
+        "tasks": [],
+        "deferred_tasks": [
+            {
+                "id": "T-KRP-A",
+                "title": "Karpathy follow-on",
+                "deferred_to": "v0.2.0-p3",
+            }
+        ],
+    }
+    body = roadmap_dashboard.build_version_body(version)
+    assert "Carried Forward" in body
+    assert "T-KRP-A" in body
+
+
 def test_render_dashboard_smoke() -> None:
     import io
 
@@ -307,6 +326,59 @@ def test_gather_initiatives_uncategorized_fallback() -> None:
     assert result["uncategorized"][0]["id"] == "INI-XYZ-001"
 
 
+def test_gather_initiatives_filters_phase_null_history_only_entries() -> None:
+    data = {
+        "initiatives": [
+            {
+                "id": "INI-HIST-001",
+                "title": "Historical only",
+                "category": "memory",
+                "phase": None,
+                "slices": [{"task_ref": "P1-020", "status": "complete", "role": "historical"}],
+            },
+            {
+                "id": "INI-LIVE-001",
+                "title": "Live",
+                "category": "memory",
+                "phase": None,
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            },
+        ]
+    }
+    result = roadmap_dashboard.gather_initiatives(data)
+    assert [item["id"] for item in result["memory"]] == ["INI-LIVE-001"]
+
+
+def test_build_drift_warnings_detects_stale_open_tasks_and_scheduled_initiatives() -> None:
+    roadmap = {
+        "versions": [
+            {
+                "id": "v0.2.0-p2",
+                "status": "complete",
+                "tasks": [{"id": "P1-020", "title": "Stale open task"}],
+                "completed_tasks": [],
+            }
+        ],
+        "initiatives": [
+            {
+                "id": "INI-MEM-001",
+                "phase": "v0.2.0-p2",
+                "task_ref": "P1-020",
+                "slices": [{"task_ref": "P1-020", "status": "complete", "role": "historical"}],
+            }
+        ],
+    }
+    backlog = {
+        "items": [
+            {"id": "P1-020", "roadmap_ref": "P1-020", "status": "complete"},
+        ]
+    }
+    warnings = roadmap_dashboard.build_drift_warnings(roadmap, backlog=backlog)
+    assert any("backlog-complete" in warning for warning in warnings)
+    assert any("version is complete" in warning for warning in warnings)
+    assert any("INI-MEM-001" in warning for warning in warnings)
+
+
 # ── initiatives: render_initiatives_panel ────────────────────────────────────
 
 
@@ -370,6 +442,51 @@ def test_render_dashboard_shows_initiatives_zone(tmp_path: Path) -> None:
     c = Console(record=True, width=120, file=buf)
     roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)
     out = c.export_text()
+    assert "INI-MEM-001" in out
+
+
+def test_render_dashboard_shows_drift_warning_panel(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    roadmap_yaml = tmp_path / "roadmap.yaml"
+    backlog_yaml = tmp_path / "backlog.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0-p3\n"
+        "versions:\n"
+        "  - id: v0.2.0-p3\n"
+        "    status: complete\n"
+        "    tasks:\n"
+        "      - id: P1-020\n"
+        "        title: Stale open task\n"
+        "    completed_tasks: []\n"
+        "initiatives:\n"
+        "  - id: INI-MEM-001\n"
+        "    title: Memory\n"
+        "    phase: v0.2.0-p3\n"
+        "    task_ref: P1-020\n"
+        "    slices:\n"
+        "      - task_ref: P1-020\n"
+        "        status: complete\n"
+        "        role: historical\n",
+        encoding="utf-8",
+    )
+    backlog_yaml.write_text(
+        "schema_version: 1\n"
+        "items:\n"
+        "  - id: P1-020\n"
+        "    roadmap_ref: P1-020\n"
+        "    status: complete\n",
+        encoding="utf-8",
+    )
+    buf = io.StringIO()
+    c = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)
+    out = c.export_text()
+    assert "Planning Drift Warnings" in out
+    assert "P1-020" in out
     assert "INI-MEM-001" in out
 
 
@@ -663,8 +780,8 @@ def test_render_dashboard_theme_filter_shows_only_matching_items(tmp_path: Path)
     out = console.export_text()
     assert "theme=E" in out
     assert "INI-KRP-001" in out
-    assert "INI-EFF-001" in out
     assert "T-KRP-A" in out
+    assert "INI-EFF-001" not in out
     assert "P1-011" in out
     assert "INI-MEM-001" not in out
     assert "P1-020" not in out

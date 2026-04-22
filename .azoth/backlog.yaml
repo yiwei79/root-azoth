@@ -2535,15 +2535,17 @@ items:
   initiative_ref: INI-RST-005
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 4
   created_date: '2026-04-19'
+  completed_date: '2026-04-22'
   description: 'Refresh the bounded external evidence that informs the worktree-upgrade
     initiative when assumptions age or tool behavior changes. Re-check official Git
     documentation first, then bounded academic workflow/evaluation sources, and write
-    the updated findings back into the local research capsule/digest rather than leaving
-    them as chat-only context.
+    the updated findings back into the local research capsule rather than leaving
+    them as chat-only context. Update the shared digest too only when the refresh
+    changes shared conclusions, decomposition, or roadmap-facing synthesis.
 
     '
 - id: BL-066
@@ -2569,10 +2571,11 @@ items:
   source_insight: aeef1067-3b2c-4b2a-8100-83a378b6af87
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-20'
+  completed_date: '2026-04-22'
   description: 'Harden the bounded-replay metadata contract so stage summaries cannot
     emit partial replay bundles without an explicit policy. Align pipelines/stage-summary.schema.yaml,
     validation hooks, and subagent-router guidance so replay_iteration implies the
@@ -2616,6 +2619,28 @@ items:
     silently.
 
     '
+- id: BL-070
+  title: Governed session-closeout terminal-finalize routing hardening
+  source: 2026-04-22-t-krp-a-spec-hydration
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-22'
+  decision_ref:
+  - D50
+  - D52
+  - D53
+  description: 'Harden scripts/do_closeout.py so a final-approved governed closeout
+    does not park a merely resumable terminal run, and so any follow-up administrative
+    finalize cannot drift onto a stale exploratory session-gate after the delivery
+    scope is already closed. Preserve legitimate parked semantics for truly resumable
+    work, but make terminal governed delivery land in one authoritative closed state
+    without duplicate closeout episodes, stale pending decisions, or accidental second-path
+    lifecycle mutation.
+
+    '
 - id: T-016
   title: Codex seamless permissions profile (repo-local execpolicy)
   source: codex-seamless-permissions-2026-04-20
@@ -2646,3 +2671,20 @@ items:
     no network enablement, and no blanket trust of mutating shell commands.
 
     '
+- id: T-KRP-A
+  title: 'CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding,
+    Simplicity First, Surgical Changes, Goal-Driven Execution)'
+  source: BL-059-follow-on
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-22'
+  completed_date: '2026-04-22'
+  description: Hydrate the first BL-059 Karpathy follow-on slice by turning the planned
+    roadmap stub into backlog/spec state. This slice starts INI-KRP-001 at the lowest-effort,
+    highest-reach entry point by embedding the Karpathy behavioral layer into CLAUDE.md
+    before wider skill and agent rollout.
+  roadmap_ref: T-KRP-A
+  initiative_ref: INI-KRP-001

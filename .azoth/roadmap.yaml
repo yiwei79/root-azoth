@@ -248,15 +248,15 @@ initiatives:
     tracks:
     - roadmap-authoring
     - initiative-scaffolding
-  phase: v0.2.0-p2
+  phase: null
   priority: medium
-  task_ref: T-001
+  task_ref: null
   slices:
   - task_ref: T-001
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-001.yaml
     phase: v0.2.0-p2
     status: complete
-    role: primary
+    role: historical
   summary: 'Add a dedicated authoring path for roadmap work so new task ids, backlog
     rows, initiative links, and per-task specs can be scaffolded coherently from one
     command instead of hand-editing multiple files. Builds on the task_id_policy rule
@@ -268,7 +268,7 @@ initiatives:
   - D47
   - D48
   - D50
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-001.yaml
+  spec_ref: null
 - id: INI-RST-005
   title: Worktree integration workflow hardening
   category: run-state
@@ -282,7 +282,7 @@ initiatives:
     - worktree-integration
     - parallel-sessions
     - merge-reconciliation
-  phase: v0.2.0-p3
+  phase: null
   priority: high
   task_ref: null
   slices:
@@ -358,7 +358,7 @@ initiatives:
     tracks:
     - instruction-refinement
     - routing
-  phase: v0.2.0-p2
+  phase: null
   priority: medium
   task_ref: null
   slices:
@@ -383,7 +383,7 @@ initiatives:
   decision_ref:
   - D23
   - D44
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-005.yaml
+  spec_ref: null
 - id: INI-PPL-002
   title: Eval / eval-swarm wiring drift hardening
   category: pipeline
@@ -432,9 +432,9 @@ initiatives:
     - research-sufficiency
     - evidence-capsules
     - freshness
-  phase: v0.2.0-p2
+  phase: null
   priority: high
-  task_ref: T-009
+  task_ref: null
   slices:
   - task_ref: T-008
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-008.yaml
@@ -444,13 +444,13 @@ initiatives:
   - task_ref: T-009
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
     phase: v0.2.0-p2
-    status: active
-    role: primary
+    status: complete
+    role: historical
   - task_ref: T-010
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-010.yaml
     phase: v0.2.0-p2
-    status: planned
-    role: follow-on
+    status: complete
+    role: historical
   summary: 'Establish a bounded but durable path for tasks that depend on external
     facts which may have changed since training time. The initiative starts with a
     mechanical entry gate for latest/current external-fact work, then expands into
@@ -467,7 +467,7 @@ initiatives:
   - D46
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-009.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -480,14 +480,14 @@ initiatives:
     tracks:
     - verbatim-storage
     - m3-policy
-  phase: v0.2.0-p3
-  task_ref: P1-020
+  phase: null
+  task_ref: null
   slices:
   - task_ref: P1-020
     spec_ref: null
     phase: v0.2.0-p3
-    status: planned
-    role: primary
+    status: complete
+    role: historical
   priority: high
   summary: 'Store raw episode context verbatim in M3 before any summarisation or compression.
     Building the episodic index on full signal avoids the compress-before-index regression
@@ -627,15 +627,15 @@ initiatives:
     tracks:
     - reinforcement-count
     - closeout-automation
-  phase: v0.2.0-p2
+  phase: null
   priority: medium
-  task_ref: P1-017
+  task_ref: null
   slices:
   - task_ref: P1-017
     spec_ref: .azoth/roadmap-specs/v0.2.0/P1-017.yaml
     phase: v0.2.0-p2
-    status: active
-    role: primary
+    status: complete
+    role: historical
   summary: 'Add an explicit, human-confirmed automation path for reinforcement_count
     so closeout/promote can increment prior episodes without fuzzy matching, silent
     edits, or duplicate increments in the same session.
@@ -645,7 +645,7 @@ initiatives:
   - D11
   - D49
   - D51
-  spec_ref: .azoth/roadmap-specs/v0.2.0/P1-017.yaml
+  spec_ref: null
 - id: INI-UX-001
   title: Phone-friendly output (narrow terminals)
   category: ux
@@ -689,14 +689,14 @@ initiatives:
     tracks:
     - platform-parity
     - memory-ops
-  phase: v0.2.0-p3
-  task_ref: P1-021
+  phase: null
+  task_ref: null
   slices:
   - task_ref: P1-021
     spec_ref: null
     phase: v0.2.0-p3
-    status: planned
-    role: primary
+    status: complete
+    role: historical
   priority: medium
   summary: 'Document and validate that M3 append, M2 promote, and context-recall operations
     produce consistent, tested results across Claude Code, Cursor, and Copilot adapter
@@ -850,9 +850,9 @@ initiatives:
     tracks:
     - co-primary-platforms
     - command-migration
-  phase: v0.2.0-p2
+  phase: null
   priority: high
-  task_ref: T-002
+  task_ref: null
   slices:
   - task_ref: T-002
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-002.yaml
@@ -886,7 +886,7 @@ initiatives:
   - D46
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-002.yaml
+  spec_ref: null
 - id: INI-KRP-001
   title: Karpathy Principles — behavioral quality layer
   category: efficiency
@@ -924,12 +924,12 @@ initiatives:
   slices:
   - task_ref: T-KRP-A
     phase: null
-    role: primary
-    status: planned
+    role: historical
+    status: complete
   - task_ref: T-KRP-B
     phase: null
-    role: follow-on
-    status: planned
+    role: primary
+    status: active
   - task_ref: T-KRP-C
     phase: null
     role: follow-on
@@ -942,6 +942,8 @@ initiatives:
     phase: null
     role: follow-on
     status: planned
+  task_ref: T-KRP-B
+  spec_ref: null
 - id: INI-EFF-001
   title: Token & inference efficiency (context budget, caching, spawn hygiene)
   category: efficiency
@@ -1138,7 +1140,8 @@ versions:
   goal: 'Phase 5: Trust Layer'
   phase_scope:
   - 5
-  tasks:
+  tasks: []
+  completed_tasks:
   - id: P5-001
     title: Commit-time governance enforcement hooks
     decision_ref: D43
@@ -1157,7 +1160,6 @@ versions:
     title: 'Session start hook: auto-trigger /start on session open'
     decision_ref: D52
     note: Phase 5 component of D52; BL-007 delivers the /start skill in v0.0.3
-  completed_tasks: []
 - id: v0.0.6
   status: complete
   final_patch: 9
@@ -1168,14 +1170,14 @@ versions:
     Publishing, public CI, and extraction closure are Phase 7 (v0.0.7).
 
     '
-  tasks:
+  tasks: []
+  completed_tasks:
   - id: P6-001
     title: Agent Crafter
   - id: P6-002
     title: L2 prompt optimization
   - id: P6-003
     title: L3 human-gated architecture proposals
-  completed_tasks: []
 - id: v0.0.7
   status: complete
   completed_date: '2026-04-08'
@@ -1188,7 +1190,8 @@ versions:
     Phase 7 active after Phase 6 (v0.0.6) completion.
 
     '
-  tasks:
+  tasks: []
+  completed_tasks:
   - id: P4-003
     title: CI for drift detection
     decision_ref: null
@@ -1203,7 +1206,6 @@ versions:
     deferred_from: v0.0.4 Phase 4 — Phase 7 scheduling (2026-04)
     note: Public product repo + mechanical extraction; aligns with v0.1.0 release
       gate
-  completed_tasks: []
 - id: v0.1.0
   status: complete
   completed_date: '2026-04-08'
@@ -1435,62 +1437,7 @@ versions:
 
     '
   pending_task_refs: []
-  tasks:
-  - id: P1-017
-    title: reinforcement_count automation (closeout + promote path)
-    decision_ref:
-    - D11
-    - D49
-    - D51
-    carried_from: v0.2.0-p1
-  - id: P1-020
-    title: Verbatim-first M3 storage strategy
-    decision_ref:
-    - D11
-    - D45
-    initiative_ref: INI-MEM-001
-    carried_from: v0.2.0-p1
-  - id: P1-021
-    title: Memory operation platform parity
-    decision_ref:
-    - D42
-    - D46
-    - D52
-    initiative_ref: INI-PLT-001
-    carried_from: v0.2.0-p1
-  - id: T-KRP-A
-    title: 'CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding,
-      Simplicity First, Surgical Changes, Goal-Driven Execution)'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-  - id: T-KRP-B
-    title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-  - id: T-KRP-C
-    title: 'Builder agent posture: surgical changes + simplicity-first enforcement'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-  - id: T-KRP-D
-    title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-  - id: T-KRP-E
-    title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
-      autonomous loop enabler)'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    note: Implement before or alongside T-006 revise-and-continue loops
+  tasks: []
   completed_tasks:
   - id: P1-022
     title: Co-primary platform model codification (Claude Code + Codex; stable adapters)
@@ -1617,9 +1564,40 @@ versions:
     - D21
     - D50
     - D54
+  - id: P1-017
+    title: reinforcement_count automation (closeout + promote path)
+    completed_date: '2026-04-16'
+    decision_ref:
+    - D11
+    - D49
+    - D51
+  deferred_tasks:
+  - id: T-KRP-A
+    title: 'CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding,
+      Simplicity First, Surgical Changes, Goal-Driven Execution)'
+    deferred_to: v0.2.0-p3
+    reason: Karpathy initiative activated after p2 closeout; keep the p2 boundary
+      historical while routing live work into p3.
+  - id: T-KRP-B
+    title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
+    deferred_to: v0.2.0-p3
+    reason: Follow-on Karpathy slice scheduled after the p2 boundary.
+  - id: T-KRP-C
+    title: 'Builder agent posture: surgical changes + simplicity-first enforcement'
+    deferred_to: v0.2.0-p3
+    reason: Follow-on Karpathy slice scheduled after the p2 boundary.
+  - id: T-KRP-D
+    title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
+    deferred_to: v0.2.0-p3
+    reason: Follow-on Karpathy slice scheduled after the p2 boundary.
+  - id: T-KRP-E
+    title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
+      autonomous loop enabler)'
+    deferred_to: v0.2.0-p3
+    reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 2
+  current_patch: 10
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1628,48 +1606,15 @@ versions:
   - A
   - C
   - D
-  note: 'Third working phase of the v0.2.0 milestone. This slice intentionally closes
-    p2 as complete enough and carries forward every incomplete task from p2 without
-    collapsing the distinction between active phase work and the unscheduled initiative
-    pool. Focus: reinforcement_count automation, verbatim-first M3 policy/tooling,
-    memory operation parity, roadmap/initiative authoring ergonomics, and bounded
-    external evidence refresh for the worktree lane. Unphased initiatives remain phase-null
-    and visible in the initiative pool until a later slice explicitly schedules them;
-    p3 carries concrete follow-on tasks, not blanket ownership of every open initiative.
+  note: 'Third working phase of the v0.2.0 milestone. Phase-2 carry-forward drift
+    has been repaired so the live queue now reflects only the remaining Karpathy follow-on
+    slices (T-KRP-A through T-KRP-E). Completed memory/platform carry-forward work
+    stays in history, while unscheduled initiatives remain phase-null until explicitly
+    scheduled into a future slice.
 
     '
   pending_task_refs: []
   tasks:
-  - id: P1-017
-    title: reinforcement_count automation (closeout + promote path)
-    decision_ref:
-    - D11
-    - D49
-    - D51
-    carried_from: v0.2.0-p2
-  - id: P1-020
-    title: Verbatim-first M3 storage strategy
-    decision_ref:
-    - D11
-    - D45
-    initiative_ref: INI-MEM-001
-    carried_from: v0.2.0-p2
-  - id: P1-021
-    title: Memory operation platform parity
-    decision_ref:
-    - D42
-    - D46
-    - D52
-    initiative_ref: INI-PLT-001
-    carried_from: v0.2.0-p2
-  - id: T-KRP-A
-    title: 'CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding,
-      Simplicity First, Surgical Changes, Goal-Driven Execution)'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    carried_from: v0.2.0-p2
   - id: T-KRP-B
     title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
     target_layer: M1
@@ -1700,11 +1645,20 @@ versions:
     status: planned
     note: Implement before or alongside T-006 revise-and-continue loops
     carried_from: v0.2.0-p2
-  - id: BL-065
-    title: Worktree-upgrade external evidence refresh lane
-    initiative_ref: INI-RST-005
-    carried_from: v0.2.0-p2
   completed_tasks:
+  - id: P1-021
+    title: Memory operation platform parity
+    completed_date: '2026-04-21'
+    decision_ref:
+    - D42
+    - D46
+    - D52
+  - id: P1-020
+    title: Verbatim-first M3 storage strategy
+    completed_date: '2026-04-21'
+    decision_ref:
+    - D11
+    - D45
   - id: BL-062
     title: scripts/initiative_scaffold.py — one-command initiative + task stub creation
     completed_date: '2026-04-22'
@@ -1714,3 +1668,8 @@ versions:
       view'
     completed_date: '2026-04-21'
     decision_ref: []
+  - id: BL-065
+    title: Worktree-upgrade external evidence refresh lane
+    completed_date: '2026-04-22'
+    decision_ref: []
+  - {id: T-KRP-A, title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)", completed_date: "2026-04-22", decision_ref: []}

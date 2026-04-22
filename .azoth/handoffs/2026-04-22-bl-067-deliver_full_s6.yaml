@@ -1,0 +1,42 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s6
+agent: builder
+stage_kind: build
+status: complete
+entropy: YELLOW
+gate_outcome: "Agent gate: BL-067 replay-bundle hardening is complete in the approved four surfaces, and targeted stage-summary regression coverage passed for architect review."
+session_id: 2026-04-22-bl-067
+done:
+  - "Extended `tests/test_stage_summary_schema.py` with replay-bundle regressions that inspect `pipelines/stage-summary.schema.yaml` directly and prove hook acceptance for zero replay fields and the full five-field bundle."
+  - "Added a top-level `dependentRequired` rule to `pipelines/stage-summary.schema.yaml` so any replay field requires `replay_iteration`, `replay_target_stage`, `finding_class`, `threshold_limit`, and `lineage_artifacts` to co-occur."
+  - "Hardened `.claude/hooks/stage_summary_validate.py` to reject any partial replay bundle before handoff write time while preserving acceptance for non-replay summaries and complete replay metadata."
+  - "Updated `.agents/skills/subagent-router/SKILL.md` so replay guidance now states that non-replay stages omit all five fields and bounded replay stages must emit the full bundle together."
+  - "Attempted `pytest tests/test_stage_summary_schema.py`, found `pytest` unavailable on PATH (`zsh:1: command not found: pytest`), then ran `python3 -m pytest tests/test_stage_summary_schema.py` successfully with `9 passed`."
+decisions:
+  - "Kept the implementation bounded to `tests/test_stage_summary_schema.py`, `pipelines/stage-summary.schema.yaml`, `.claude/hooks/stage_summary_validate.py`, and `.agents/skills/subagent-router/SKILL.md`; no other surfaces were edited."
+  - "Used `dependentRequired` for schema-level co-presence so the raw YAML contract names the same five replay fields that the hook enforces procedurally."
+  - "Kept regression coverage test-local instead of expanding fixtures, because the approved BL-067 slice required direct schema-structure assertions rather than broader fixture churn."
+open:
+  - "Any producer that still emits partial replay metadata will now fail closed against the hardened schema and hook and will need a separate remediation outside this bounded scope."
+artifact_refs:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s5.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+replay_iteration: 1
+replay_target_stage: deliver_full_s2_architect
+finding_class: test-strategy
+threshold_limit: 3
+lineage_artifacts:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s5.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+next: "Stage 7 architect review should verify the bounded scope held, accept the passing replay-bundle regression evidence, and treat any downstream partial-replay producer failures as a separate follow-up."

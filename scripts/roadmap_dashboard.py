@@ -28,6 +28,7 @@ from rich.text import Text
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ROADMAP = ROOT / ".azoth" / "roadmap.yaml"
+DEFAULT_BACKLOG = ROOT / ".azoth" / "backlog.yaml"
 
 FOOTER = (
     "[dim]Canonical roadmap data: `versions[]` (D48). The legacy top-level `tasks:` "
@@ -341,6 +342,25 @@ def load_roadmap(path: Path | None = None) -> dict[str, Any]:
     return load_roadmap_diag(path).data
 
 
+def load_backlog(path: Path | None = None) -> dict[str, Any]:
+    """Load backlog YAML; return empty dict if missing or invalid."""
+    p = path or DEFAULT_BACKLOG
+    if not p.exists():
+        return {}
+    try:
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _backlog_path_for_roadmap(roadmap_path: Path) -> Path:
+    sibling = roadmap_path.with_name("backlog.yaml")
+    if sibling.exists():
+        return sibling
+    return DEFAULT_BACKLOG
+
+
 def _empty_roadmap_panel_body(path: Path, reason: str | None) -> str:
     """Human-facing copy when ``data`` is empty (missing, parse error, wrong shape)."""
     r = reason or "unknown"
@@ -390,6 +410,102 @@ def _normalize_task_entries(
         else:
             warnings.append(f"{block_label}[{i}]: expected mapping, got {type(item).__name__}")
     return valid, warnings
+
+
+def _completed_backlog_task_ids(backlog: dict[str, Any]) -> set[str]:
+    completed: set[str] = set()
+    items = backlog.get("items")
+    if not isinstance(items, list):
+        return completed
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("status") or "").casefold() not in {"complete", "completed"}:
+            continue
+        task_id = str(item.get("roadmap_ref") or item.get("id") or "").strip()
+        if task_id:
+            completed.add(task_id)
+    return completed
+
+
+def _initiative_alias_slice(initiative: dict[str, Any]) -> dict[str, Any] | None:
+    alias = str(initiative.get("task_ref") or "").strip()
+    if not alias:
+        return None
+    slices = initiative.get("slices")
+    if not isinstance(slices, list):
+        return None
+    for item in slices:
+        if isinstance(item, dict) and str(item.get("task_ref") or "").strip() == alias:
+            return item
+    return None
+
+
+def _slice_is_actionable(slice_item: dict[str, Any]) -> bool:
+    status = str(slice_item.get("status") or "").strip().casefold()
+    role = str(slice_item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
+def _initiative_has_actionable_open_slice(initiative: dict[str, Any]) -> bool:
+    slices = initiative.get("slices")
+    if isinstance(slices, list) and slices:
+        return any(isinstance(item, dict) and _slice_is_actionable(item) for item in slices)
+    return str(initiative.get("status") or "").strip().casefold() not in {"complete", "completed"}
+
+
+def _scheduled_initiative_points_at_stale_slice(initiative: dict[str, Any]) -> bool:
+    if initiative.get("phase") is None:
+        return False
+    alias_slice = _initiative_alias_slice(initiative)
+    if alias_slice is not None:
+        return not _slice_is_actionable(alias_slice)
+    return not _initiative_has_actionable_open_slice(initiative)
+
+
+def build_drift_warnings(
+    roadmap: dict[str, Any],
+    *,
+    backlog: dict[str, Any] | None = None,
+) -> list[str]:
+    warnings: list[str] = []
+    completed_backlog_ids = _completed_backlog_task_ids(backlog or {})
+
+    for version in roadmap.get("versions") or []:
+        if not isinstance(version, dict):
+            continue
+        version_id = str(version.get("id") or "?")
+        tasks, _ = _normalize_task_entries(version.get("tasks"), block_label="tasks")
+        open_task_ids = [str(task.get("id") or "").strip() for task in tasks if task.get("id")]
+        stale_ids = [task_id for task_id in open_task_ids if task_id in completed_backlog_ids]
+        if stale_ids:
+            warnings.append(
+                f"{version_id}: backlog-complete task(s) still listed in tasks — "
+                f"{', '.join(stale_ids)}"
+            )
+        if str(version.get("status") or "").strip().casefold() == "complete" and open_task_ids:
+            warnings.append(
+                f"{version_id}: version is complete but still has open task(s) — "
+                f"{', '.join(open_task_ids)}"
+            )
+
+    for initiative in roadmap.get("initiatives") or []:
+        if not isinstance(initiative, dict):
+            continue
+        if not _scheduled_initiative_points_at_stale_slice(initiative):
+            continue
+        initiative_id = str(initiative.get("id") or "?")
+        phase = str(initiative.get("phase") or "?")
+        alias = str(initiative.get("task_ref") or "").strip()
+        if alias:
+            warnings.append(
+                f"{initiative_id}: scheduled phase {phase} still points at completed or "
+                f"historical slice {alias}"
+            )
+        else:
+            warnings.append(f"{initiative_id}: scheduled phase {phase} has no live primary slice")
+
+    return warnings
 
 
 def _format_task_block(
@@ -482,16 +598,20 @@ def build_version_body(version: Any, roadmap: dict[str, Any] | None = None) -> s
     completed, cw = _normalize_task_entries(
         version.get("completed_tasks"), block_label="completed_tasks"
     )
+    deferred, dw = _normalize_task_entries(version.get("deferred_tasks"), block_label="deferred_tasks")
     pending, pw = _normalize_task_entries(version.get("tasks"), block_label="tasks")
     phase_initiatives = []
     if isinstance(roadmap, dict):
         phase_initiatives = _phase_initiatives_for_version(roadmap, str(version.get("id", "?")))
 
-    if completed or pending or cw or pw or phase_initiatives:
+    if completed or deferred or pending or cw or dw or pw or phase_initiatives:
         lines.append("")
 
     lines.extend(_format_task_block("Delivered", completed, done=True, schema_warnings=cw))
-    if (completed or cw) and (pending or pw or phase_initiatives):
+    if (completed or cw) and (deferred or dw or pending or pw or phase_initiatives):
+        lines.append("")
+    lines.extend(_format_task_block("Carried Forward", deferred, done=False, schema_warnings=dw))
+    if (deferred or dw) and (pending or pw or phase_initiatives):
         lines.append("")
     lines.extend(_format_task_block("Upcoming", pending, done=False, schema_warnings=pw))
     if phase_initiatives:
@@ -584,9 +704,29 @@ def gather_initiatives(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
             continue
         if item.get("status") in ("complete", "completed"):
             continue
+        if not _initiative_has_actionable_open_slice(item):
+            continue
         cat = str(item.get("category", "uncategorized"))
         by_category.setdefault(cat, []).append(item)
     return by_category
+
+
+def render_drift_warnings_panel(warnings: list[str]) -> Panel | None:
+    if not warnings:
+        return None
+    lines = [
+        "[yellow]Roadmap drift detected.[/] `/roadmap` still renders authored roadmap state,",
+        "[yellow]so repair the source data instead of relying on silent suppression.[/]",
+        "",
+    ]
+    for warning in warnings:
+        lines.append(f"- {escape(warning)}")
+    return Panel(
+        "\n".join(lines),
+        title="[bold]Planning Drift Warnings[/]",
+        border_style="yellow",
+        box=box.ROUNDED,
+    )
 
 
 def render_initiatives_panel(
@@ -660,6 +800,14 @@ def render_dashboard(
 
     out.print(render_header(filtered_data, theme_filter=theme, track_filter=track))
     out.print()
+
+    backlog_data = load_backlog(_backlog_path_for_roadmap(path))
+    drift_panel = render_drift_warnings_panel(
+        build_drift_warnings(filtered_data, backlog=backlog_data)
+    )
+    if drift_panel is not None:
+        out.print(drift_panel)
+        out.print()
 
     ini_panel = render_initiatives_panel(gather_initiatives(filtered_data))
     if ini_panel is not None:

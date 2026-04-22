@@ -827,9 +827,72 @@ def test_governed_closeout_completes_real_roadmap_ref_task(
 
     do_closeout.run_closeout(repo_root)
 
-    roadmap_text = (repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
-    assert "      - id: P1-017\n" not in roadmap_text
-    assert '{id: P1-017, title: "Governed closeout", completed_date:' in roadmap_text
+    roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
+    version = next(item for item in roadmap["versions"] if item["id"] == "v0.2.0-p1")
+    assert all(task["id"] != "P1-017" for task in version["tasks"])
+    completed = next(item for item in version["completed_tasks"] if item["id"] == "P1-017")
+    assert completed["title"] == "Governed closeout"
+    assert completed["completed_date"]
+
+
+def test_governed_closeout_removes_stale_open_copies_from_older_versions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-041")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-041",
+        roadmap_ref="P1-020",
+        target_version="v0.2.0-p3",
+    )
+    (repo_root / ".azoth" / "roadmap.yaml").write_text(
+        "\n".join(
+            [
+                "active_version: v0.2.0-p3",
+                "versions:",
+                "  - id: v0.2.0-p2",
+                "    status: complete",
+                "    final_patch: 10",
+                "    tasks:",
+                "      - id: P1-020",
+                '        title: "Verbatim-first M3 storage strategy"',
+                "    completed_tasks: []",
+                "  - id: v0.2.0-p3",
+                "    status: active",
+                "    current_patch: 2",
+                "    tasks:",
+                "      - id: P1-020",
+                '        title: "Verbatim-first M3 storage strategy"',
+                "    completed_tasks: []",
+                "initiatives: []",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
+    p2 = next(item for item in roadmap["versions"] if item["id"] == "v0.2.0-p2")
+    p3 = next(item for item in roadmap["versions"] if item["id"] == "v0.2.0-p3")
+    assert all(task["id"] != "P1-020" for task in p2["tasks"])
+    assert all(task["id"] != "P1-020" for task in p3["tasks"])
+    assert next(item for item in p3["completed_tasks"] if item["id"] == "P1-020")
 
 
 def test_governed_closeout_retargets_initiative_alias_to_next_pending_slice(
@@ -921,6 +984,77 @@ def test_governed_closeout_retargets_initiative_alias_to_next_pending_slice(
             "status": "active",
             "role": "primary",
         },
+    ]
+
+
+def test_governed_closeout_demotes_scheduled_initiative_when_last_slice_completes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="BL-041")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "BL-041",
+        roadmap_ref="P1-020",
+        initiative_ref="INI-MEM-001",
+        target_version="v0.2.0-p3",
+    )
+    (repo_root / ".azoth" / "roadmap.yaml").write_text(
+        "\n".join(
+            [
+                "active_version: v0.2.0-p3",
+                "versions:",
+                "  - id: v0.2.0-p3",
+                "    status: active",
+                "    current_patch: 3",
+                "    tasks:",
+                "      - id: P1-020",
+                '        title: "Verbatim-first M3 storage strategy"',
+                "    completed_tasks: []",
+                "initiatives:",
+                "  - id: INI-MEM-001",
+                '    title: "Verbatim-first M3 storage strategy"',
+                "    category: memory",
+                "    theme: C",
+                "    phase: v0.2.0-p3",
+                "    task_ref: P1-020",
+                "    slices:",
+                "      - task_ref: P1-020",
+                "        phase: v0.2.0-p3",
+                "        status: planned",
+                "        role: primary",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
+    initiative = roadmap["initiatives"][0]
+    assert initiative["phase"] is None
+    assert initiative["task_ref"] is None
+    assert initiative["slices"] == [
+        {
+            "task_ref": "P1-020",
+            "phase": "v0.2.0-p3",
+            "status": "complete",
+            "role": "historical",
+        }
     ]
 
 
@@ -1364,3 +1498,45 @@ def test_governed_closeout_runs_w3_before_w4(
     do_closeout.run_closeout(repo_root)
 
     assert order == ["W3", "W4"]
+
+
+def test_w3_deferral_writes_pending_sync_artifact_and_still_runs_w4(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    order: list[str] = []
+
+    def _fake_w3(*args: object, **kwargs: object) -> None:
+        order.append("W3")
+        raise PermissionError("sandbox denied home write")
+
+    def _fake_w4(*args: object, **kwargs: object) -> None:
+        order.append("W4")
+
+    monkeypatch.setattr(do_closeout, "write_claude_memory_mirror", _fake_w3)
+    monkeypatch.setattr(do_closeout, "run_version_bump", _fake_w4)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    assert order == ["W3", "W4"]
+    pending_path = repo_root / do_closeout.CLAUDE_MEMORY_SYNC_PENDING
+    pending = json.loads(pending_path.read_text(encoding="utf-8"))
+    assert pending["status"] == "pending"
+    assert pending["source"] == "session-closeout"
+    assert pending["session_id"] == "sess-123"
+    assert pending["latest_episode_id"].startswith("ep-")
+    assert pending["target_dir"] == str(do_closeout.claude_project_memory_dir(repo_root))
+    assert "sandbox denied home write" in pending["reason"]

@@ -1,0 +1,6 @@
+interface:
+  display_name: /sync-claude-memory
+  short_description: Replay deferred W3 Claude-memory mirroring from repo-local Azoth state
+  default_prompt: '$azoth-sync-claude-memory '
+policy:
+  allow_implicit_invocation: false

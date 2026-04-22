@@ -1,0 +1,40 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s2_architect
+agent: architect
+stage_kind: research
+status: complete
+entropy: YELLOW
+gate_outcome: "Human gate: approve the replayed BL-067 Stage 2 design so deliver_full_s3 can review the amended schema-and-hook regression contract."
+session_id: 2026-04-22-bl-067
+done:
+  - "Re-read the reviewer block, BL-012 schema, hook validator, no-jsonschema test harness, router contract, and governed gate docs from fresh context."
+  - "Confirmed the writable implementation scope remains bounded to four surfaces: schema, hook validator, targeted regression tests, and subagent-router guidance."
+  - "Replaced the prior Stage 2 artifact pair with an authoritative brief and typed handoff that explicitly require separate schema-layer and hook-layer regression evidence."
+decisions:
+  - "BL-067 must enforce replay metadata as an all-or-nothing five-field bundle across both the YAML schema and the Python hook validator."
+  - "The regression plan must prove schema parity in tests/test_stage_summary_schema.py by asserting the schema file contains the replay-bundle conditional, not by relying only on hook-path examples."
+  - "Focused test-local coverage is sufficient; tests/fixtures/stage_summary_valid.yaml stays unchanged if the test file proves both schema enforcement and hook rejection of partial bundles."
+  - "Deliver-full, gate-protocol, and prior replay artifacts remain read-only lineage evidence; implementation scope does not expand beyond the four approved contract surfaces."
+open:
+  - "If any producer outside the covered tests still emits partial replay metadata, the hardened contract will fail closed and may require a follow-up remediation after BL-067 lands."
+  - "The no-jsonschema harness protects schema structure rather than executing full JSON Schema instance validation, so the schema-conditional assertion must stay explicit and load-bearing."
+artifact_refs:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - tests/test_stage_summary_schema.py
+  - .agents/skills/subagent-router/SKILL.md
+replay_iteration: 1
+replay_target_stage: deliver_full_s2_architect
+finding_class: test-strategy
+threshold_limit: 3
+lineage_artifacts:
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s3.yaml
+  - .claude/commands/deliver-full.md
+  - docs/GATE_PROTOCOL.md
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - tests/test_stage_summary_schema.py
+  - .agents/skills/subagent-router/SKILL.md
+next: "Await human design approval, then route this amended Stage 2 handoff back to deliver_full_s3 for governance review of the explicit schema-hook parity evidence requirement."

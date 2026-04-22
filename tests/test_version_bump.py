@@ -40,6 +40,8 @@ def _make_env(
     active_version: str = "v0.0.3",
     current_patch: int = 5,
     pending_task_refs: list[str] | None = None,
+    tasks_content: str = "[]",
+    initiatives_content: str = "[]",
 ) -> tuple[Path, Path]:
     """Write minimal azoth.yaml and roadmap.yaml fixtures into *base* and return
     their paths as (azoth_p, roadmap_p)."""
@@ -68,6 +70,7 @@ def _make_env(
             current_patch: {current_patch}
             goal: "Phase 3"
             pending_task_refs: {pending_task_refs_str}
+            tasks: {tasks_content}
 
           - id: v0.0.4
             status: planned
@@ -88,6 +91,8 @@ def _make_env(
           - id: v0.1.0
             status: target
             goal: "Public release"
+
+        initiatives: {initiatives_content}
     """)
 
     azoth_p = base / "azoth.yaml"
@@ -297,21 +302,53 @@ def test_phase_activates_backlog_version_block(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T5 — --phase exits 1 when pending_task_refs is non-empty; output contains "refused"
+# T5 — --phase exits 1 when active-version tasks remain, even if pending_task_refs is empty
 # ---------------------------------------------------------------------------
 
 
-def test_phase_refused_when_pending_tasks(tmp_path: Path) -> None:
+def test_phase_refused_when_active_version_tasks_remain(tmp_path: Path) -> None:
     azoth_p, roadmap_p = _make_env(
         tmp_path / "t5",
-        pending_task_refs=["BL-009", "P3-004"],
+        pending_task_refs=[],
+        tasks_content='[{id: BL-009, title: "Open task"}]',
     )
     result = _run("--phase", azoth_p, roadmap_p)
     assert result.returncode == 1, (
-        f"Expected exit 1 when pending_task_refs non-empty; got {result.returncode}"
+        f"Expected exit 1 when active-version tasks remain; got {result.returncode}"
     )
     combined = result.stdout + result.stderr
     assert "refused" in combined.lower(), f"Expected 'refused' in output; got: {combined!r}"
+    assert "versions[].tasks" in combined
+
+
+def test_phase_ignores_legacy_pending_task_refs_when_tasks_are_empty(tmp_path: Path) -> None:
+    azoth_p, roadmap_p = _make_env(
+        tmp_path / "t5b",
+        pending_task_refs=["BL-009", "P3-004"],
+        tasks_content="[]",
+    )
+    result = _run("--phase", azoth_p, roadmap_p)
+    assert result.returncode == 0, (
+        f"Expected success when only legacy pending_task_refs remain; got {result.returncode}"
+    )
+
+
+def test_phase_refused_when_scheduled_live_initiative_remains(tmp_path: Path) -> None:
+    azoth_p, roadmap_p = _make_env(
+        tmp_path / "t5c",
+        pending_task_refs=[],
+        tasks_content="[]",
+        initiatives_content=(
+            "[{id: INI-MEM-001, phase: v0.0.3, task_ref: BL-009, "
+            "slices: [{task_ref: BL-009, status: planned, role: primary}]}]"
+        ),
+    )
+    result = _run("--phase", azoth_p, roadmap_p)
+    assert result.returncode == 1, (
+        f"Expected exit 1 when scheduled live initiative remains; got {result.returncode}"
+    )
+    combined = result.stdout + result.stderr
+    assert "INI-MEM-001" in combined
 
 
 # ---------------------------------------------------------------------------
@@ -516,6 +553,50 @@ def test_patch_post_release_phased_version(tmp_path: Path) -> None:
     r = yaml.safe_load(roadmap_p.read_text())
     v = next(x for x in r["versions"] if x["id"] == "v0.2.0-p1")
     assert v["current_patch"] == 1
+
+
+# ---------------------------------------------------------------------------
+# T10b2 — Post-release patch also works when roadmap version blocks use zero indent
+# ---------------------------------------------------------------------------
+
+
+def test_patch_post_release_zero_indent_version_blocks(tmp_path: Path) -> None:
+    base = tmp_path / "t10b2"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    _write_settings(base, "0.1.3.3", phase="3")
+    azoth_p.write_text("version: 0.1.3.3\nphase: 3\nmilestone: v0.2.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.2.0-p3
+
+            versions:
+            - id: v0.2.0-p2
+              status: complete
+              final_patch: 2
+              goal: "Previous"
+            - id: v0.2.0-p3
+              status: active
+              current_patch: 3
+              goal: "Current"
+              tasks:
+                - id: P1-017
+                  title: "Nested task should not terminate the version block"
+            - id: v0.2.0-p4
+              status: planned
+              goal: "Next"
+            """
+        ),
+        encoding="utf-8",
+    )
+    result = _run("--patch", azoth_p, roadmap_p)
+    assert result.returncode == 0, result.stderr
+    assert yaml.safe_load(azoth_p.read_text())["version"] == "0.1.3.4"
+    roadmap = yaml.safe_load(roadmap_p.read_text())
+    current = next(x for x in roadmap["versions"] if x["id"] == "v0.2.0-p3")
+    assert current["current_patch"] == 4
 
 
 # ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ from session_continuity import selected_pipeline_command
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
+CLAUDE_MEMORY_SYNC_PENDING = pathlib.Path(".azoth") / "claude-memory-sync-pending.json"
 _SESSION_STATE_CHECKPOINT_FIELDS = (
     "pipeline",
     "pipeline_position",
@@ -572,6 +573,12 @@ def _initiative_slices(initiative: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _slice_is_live(item: dict[str, Any]) -> bool:
+    status = str(item.get("status") or "").strip().casefold()
+    role = str(item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
 def _rewrite_initiative_block(
     roadmap_path: pathlib.Path,
     *,
@@ -627,32 +634,41 @@ def _sync_initiative_alias_after_task_completion(
                 item["role"] = "historical"
             changed = True
 
-    if current_alias == roadmap_task_id:
-        next_slice = next(
-            (
-                item
-                for item in slices
-                if str(item.get("task_ref") or "").strip() != roadmap_task_id
-                and str(item.get("task_ref") or "").strip() not in completed_ids
-                and str(item.get("status") or "") not in {"complete", "historical"}
-            ),
-            None,
-        )
-        if next_slice is not None:
+    next_slice = next((item for item in slices if _slice_is_live(item)), None)
+    if next_slice is not None:
+        next_task_ref = str(next_slice.get("task_ref") or "").strip()
+        next_spec_ref = next_slice.get("spec_ref")
+        next_phase = next_slice.get("phase")
+        if (
+            current_alias != next_task_ref
+            or initiative.get("spec_ref") != next_spec_ref
+            or initiative.get("phase") != next_phase
+            or str(next_slice.get("role") or "") != "primary"
+            or str(next_slice.get("status") or "") != "active"
+        ):
             for item in slices:
                 if item is next_slice:
                     item["role"] = "primary"
                     item["status"] = "active"
-                elif str(item.get("role") or "") == "primary":
+                elif str(item.get("status") or "").strip().casefold() in {"complete", "completed"}:
                     item["role"] = "historical"
-            initiative["task_ref"] = next_slice.get("task_ref")
-            initiative["spec_ref"] = next_slice.get("spec_ref")
-            initiative["phase"] = next_slice.get("phase")
+                elif str(item.get("role") or "").strip() == "primary":
+                    item["role"] = "follow-on"
+            initiative["task_ref"] = next_task_ref or None
+            initiative["spec_ref"] = next_spec_ref
+            initiative["phase"] = next_phase
             changed = True
             print(
                 f"W2c: initiative {initiative['id']} retargeted to next slice "
                 f"{initiative['task_ref']}"
             )
+    elif initiative.get("phase") is not None or current_alias or initiative.get("spec_ref") is not None:
+        initiative["phase"] = None
+        initiative["task_ref"] = None
+        if "spec_ref" in initiative:
+            initiative["spec_ref"] = None
+        changed = True
+        print(f"W2c: initiative {initiative['id']} demoted to phase-null history")
 
     if not changed:
         return False
@@ -756,6 +772,93 @@ def _remove_multiline_task_entry(block: str, task_id: str) -> tuple[str, bool]:
     return "".join(lines[:start_idx] + lines[end_idx:]), True
 
 
+def _remove_task_from_section(
+    block: str,
+    *,
+    section_name: str,
+    task_id: str,
+) -> tuple[str, bool]:
+    bounds = _find_section_bounds(block, section_name)
+    if bounds is None:
+        return block, False
+
+    start, end = bounds
+    section_block = block[start:end]
+    new_section, removed = _remove_multiline_task_entry(section_block, task_id)
+    if not removed:
+        inline_entry = re.search(
+            rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*(?:\n|$)',
+            section_block,
+            flags=re.MULTILINE,
+        )
+        if inline_entry:
+            new_section = (
+                section_block[: inline_entry.start()] + section_block[inline_entry.end() :]
+            )
+            removed = True
+
+    if not removed:
+        return block, False
+
+    header_match = re.search(
+        rf"^(\s*){re.escape(section_name)}:\s*(?:null|\[\])?\s*$",
+        new_section,
+        flags=re.MULTILINE,
+    )
+    assert header_match is not None
+    if not re.search(r"^\s*-\s+(?:id:|\{id:)", new_section[header_match.end() :], re.MULTILINE):
+        new_section = f"{header_match.group(1)}{section_name}: []\n"
+
+    return block[:start] + new_section + block[end:], True
+
+
+def _remove_stale_open_task_copies(
+    repo_root: pathlib.Path,
+    *,
+    roadmap_task_id: str,
+    target_version: str,
+) -> bool:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    roadmap = load_yaml(roadmap_path)
+    versions = roadmap.get("versions")
+    if not isinstance(versions, list):
+        return False
+
+    ordered_version_ids = [
+        str(version.get("id") or "")
+        for version in versions
+        if isinstance(version, dict) and str(version.get("id") or "")
+    ]
+    if target_version not in ordered_version_ids:
+        return False
+
+    target_index = ordered_version_ids.index(target_version)
+    candidate_version_ids = ordered_version_ids[:target_index]
+    text = roadmap_path.read_text(encoding="utf-8")
+    changed = False
+
+    for version_id in candidate_version_ids:
+        bounds = _find_version_block(text, version_id)
+        if bounds is None:
+            continue
+        start, end = bounds
+        block = text[start:end]
+        new_block, removed = _remove_task_from_section(
+            block,
+            section_name="tasks",
+            task_id=roadmap_task_id,
+        )
+        if not removed:
+            continue
+        text = text[:start] + new_block + text[end:]
+        changed = True
+        print(f"W2c: removed stale open copy of {roadmap_task_id} from {version_id} tasks")
+
+    if changed:
+        roadmap_path.write_text(text, encoding="utf-8")
+    return changed
+
+
 def _mark_roadmap_task_complete(
     repo_root: pathlib.Path,
     *,
@@ -778,25 +881,21 @@ def _mark_roadmap_task_complete(
     task_id = roadmap_task_id
     changed = False
 
-    block, removed_task = _remove_multiline_task_entry(block, task_id)
+    block, removed_task = _remove_task_from_section(
+        block,
+        section_name="tasks",
+        task_id=task_id,
+    )
     if removed_task:
         changed = True
 
-    deferred_bounds = _find_section_bounds(block, "deferred_tasks")
-    if deferred_bounds is not None:
-        deferred_start, deferred_end = deferred_bounds
-        deferred_block = block[deferred_start:deferred_end]
-        deferred_entry = re.search(
-            rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*(?:\n|$)',
-            deferred_block,
-            flags=re.MULTILINE,
-        )
-        if deferred_entry:
-            deferred_block = (
-                deferred_block[: deferred_entry.start()] + deferred_block[deferred_entry.end() :]
-            )
-            block = block[:deferred_start] + deferred_block + block[deferred_end:]
-            changed = True
+    block, removed_deferred = _remove_task_from_section(
+        block,
+        section_name="deferred_tasks",
+        task_id=task_id,
+    )
+    if removed_deferred:
+        changed = True
 
     completed_pattern = rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
     completed_entry = re.search(completed_pattern, block, flags=re.MULTILINE)
@@ -905,12 +1004,19 @@ def update_planning_completion(
     )
     if roadmap_changed:
         changed_paths.append(".azoth/roadmap.yaml")
-        initiative_changed = _sync_initiative_alias_after_task_completion(
-            repo_root,
-            roadmap_task_id=roadmap_task_id,
-        )
-        if initiative_changed and ".azoth/roadmap.yaml" not in changed_paths:
-            changed_paths.append(".azoth/roadmap.yaml")
+    stale_copy_changed = _remove_stale_open_task_copies(
+        repo_root,
+        roadmap_task_id=roadmap_task_id,
+        target_version=target_version,
+    )
+    if stale_copy_changed and ".azoth/roadmap.yaml" not in changed_paths:
+        changed_paths.append(".azoth/roadmap.yaml")
+    initiative_changed = _sync_initiative_alias_after_task_completion(
+        repo_root,
+        roadmap_task_id=roadmap_task_id,
+    )
+    if initiative_changed and ".azoth/roadmap.yaml" not in changed_paths:
+        changed_paths.append(".azoth/roadmap.yaml")
     return changed_paths
 
 
@@ -1105,6 +1211,53 @@ def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
         normalized = f"/{normalized}"
     project_key = "-" + normalized.lstrip("/").replace("/", "-")
     return pathlib.Path.home() / ".claude" / "projects" / project_key / "memory"
+
+
+def write_claude_memory_sync_pending(
+    repo_root: pathlib.Path,
+    *,
+    session_id: str,
+    goal: str,
+    latest_episode: dict[str, Any] | None,
+    next_action: str,
+    error: str,
+) -> pathlib.Path:
+    pending_path = repo_root / CLAUDE_MEMORY_SYNC_PENDING
+    episode = latest_episode or {}
+    payload = {
+        "schema_version": 1,
+        "status": "pending",
+        "updated_at": utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": "session-closeout",
+        "session_id": session_id,
+        "goal": goal,
+        "latest_episode_id": str(episode.get("id") or ""),
+        "latest_episode_summary": str(episode.get("summary") or ""),
+        "next_action": next_action,
+        "target_dir": str(claude_project_memory_dir(repo_root)),
+        "reason": error,
+    }
+    pending_path.parent.mkdir(parents=True, exist_ok=True)
+    pending_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return pending_path
+
+
+def mark_claude_memory_sync_pending_synced(
+    repo_root: pathlib.Path,
+    *,
+    synced_at: str | None = None,
+) -> pathlib.Path | None:
+    pending_path = repo_root / CLAUDE_MEMORY_SYNC_PENDING
+    if not pending_path.exists():
+        return None
+    payload = load_json(pending_path)
+    payload["schema_version"] = 1
+    payload["status"] = "synced"
+    timestamp = synced_at or utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload["synced_at"] = timestamp
+    payload["updated_at"] = timestamp
+    pending_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return pending_path
 
 
 def _active_version_snapshot(repo_root: pathlib.Path) -> tuple[str, int | None]:
@@ -1550,13 +1703,22 @@ def run_closeout(
         else:
             print("W3 disposition: skipped (light closeout)")
     except Exception as exc:
+        pending_path = write_claude_memory_sync_pending(
+            repo_root,
+            session_id=session_id,
+            goal=str(session_context.get("goal") or "Session closeout"),
+            latest_episode=latest_episode,
+            next_action=next_action,
+            error=str(exc),
+        )
         print(
-            "W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout "
-            f"in Claude Code ({exc})"
+            "W3 deferred — run `python3 scripts/sync_claude_memory.py` with host "
+            f"write access (or rerun closeout in Claude Code). Pending artifact: {pending_path} ({exc})"
         )
         print("W3 disposition: deferred")
     else:
         if full_closeout:
+            mark_claude_memory_sync_pending_synced(repo_root)
             print("W3 disposition: completed")
     print(f"Next operator action: {next_action}")
     if full_closeout:

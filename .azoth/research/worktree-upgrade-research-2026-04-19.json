@@ -3,11 +3,11 @@
   "source_session_id": "2026-04-19-worktree-upgrade-research",
   "goal": "T-011: Worktree contract parity + proposal refresh",
   "captured_at": "2026-04-19T16:30:00+00:00",
-  "refreshed_at": "2026-04-19T20:01:00+00:00",
-  "refresh_summary": "Revalidated the bounded external evidence set for BL-065. The stored worktree conclusions still hold; official Git docs remain the normative anchor, and the sparse-checkout citation now points to the current manual path rather than a pinned 2.36.0 page.",
+  "refreshed_at": "2026-04-22T14:23:07+00:00",
+  "refresh_summary": "Revalidated the bounded external evidence set for BL-065. The stored worktree conclusions still hold: the official git-worktree manual now shows its last update in 2.54.0 on 2026-04-20, while git-sparse-checkout remains last updated in 2.52.0 with 2.53.0 reporting no changes.",
   "volatility": "mixed",
   "limitations": [
-    "Official Git documentation is treated as normative for worktree behavior as observed on 2026-04-19.",
+    "Official Git documentation is treated as normative for worktree behavior as observed on 2026-04-22.",
     "Academic multi-agent sources are directional architecture input, not hard product requirements.",
     "Repo-local findings describe current Azoth behavior in this repository snapshot and may age as implementation lands."
   ],
@@ -16,15 +16,15 @@
       "question_id": "phase-1-reuse",
       "question": "Can this worktree-upgrade research capsule be reused for the next worktree planning slice?",
       "status": "answered",
-      "answered_at": "2026-04-19T20:01:00+00:00",
-      "fresh_until": "2026-05-19T20:01:00+00:00"
+      "answered_at": "2026-04-22T14:23:07+00:00",
+      "fresh_until": "2026-05-22T14:23:07+00:00"
     },
     {
       "question_id": "phase-1-slice-t-011-t-011-worktree-contract-parity-proposal-refresh",
       "question": "What is implemented now versus planned next for the T-011 worktree contract parity slice?",
       "status": "answered",
-      "answered_at": "2026-04-19T20:01:00+00:00",
-      "fresh_until": "2026-05-19T20:01:00+00:00"
+      "answered_at": "2026-04-22T14:23:07+00:00",
+      "fresh_until": "2026-05-22T14:23:07+00:00"
     }
   ],
   "sources": [
@@ -32,8 +32,8 @@
       "kind": "industry-official",
       "title": "git-worktree manual",
       "url": "https://git-scm.com/docs/git-worktree.html",
-      "freshness_observed_at": "2026-04-19",
-      "published_context": "Official Git documentation (manual last updated in 2.53.0 as observed on 2026-04-19)",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official Git documentation (manual last updated in 2.54.0 on 2026-04-20 as observed on 2026-04-22)",
       "findings": [
         "The current git-worktree manual still frames linked worktrees as explicit lifecycle objects created with `git worktree add` and cleaned up with `git worktree remove`.",
         "Per-worktree configuration support (`extensions.worktreeConfig`) reinforces keeping temporary integration state isolated."
@@ -43,8 +43,8 @@
       "kind": "industry-official",
       "title": "git-sparse-checkout manual",
       "url": "https://git-scm.com/docs/git-sparse-checkout",
-      "freshness_observed_at": "2026-04-19",
-      "published_context": "Official Git documentation (manual last updated in 2.52.0; 2.53.0 reports no changes)",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official Git documentation (manual last updated in 2.52.0 on 2025-11-17; 2.53.0 reports no changes, as observed on 2026-04-22)",
       "findings": [
         "The current sparse-checkout manual explicitly says the `set` subcommand upgrades the repository to worktree-specific config when needed so one worktree's sparsity changes do not alter another's.",
         "Azoth can safely model sandbox integration state as ephemeral per-worktree state instead of canonical repo truth."

@@ -36,6 +36,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 
 _VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
@@ -268,21 +270,24 @@ def _set_active_version(text: str, new_version: str) -> str:
 def _find_block(text: str, version_id: str) -> tuple[int, int]:
     """Return (start, end) byte offsets of the version block for *version_id*.
 
-    The block begins at the '  - id: {version_id}' line and ends just before
-    the next '  - id:' line (or end-of-string).
+    The block begins at the version's ``- id:`` line and ends just before the
+    next peer version block with the same indent (or end-of-string).
     """
-    # Match the exact block start: two-space indent + "- id: " + version_id
+    # Match the exact block start and preserve whatever indent the roadmap uses
+    # for top-level version entries (some files use two spaces; others use none).
     start_pattern = re.compile(
-        r"^(  - id: " + re.escape(version_id) + r"\n)",
+        r"^(?P<indent>[ \t]*)- id: " + re.escape(version_id) + r"\n",
         re.MULTILINE,
     )
     m = start_pattern.search(text)
     if not m:
-        _die(f"could not find version block '  - id: {version_id}' in roadmap.yaml")
+        _die(f"could not find version block '- id: {version_id}' in roadmap.yaml")
     block_start = m.start()
+    block_indent = re.escape(m.group("indent"))
 
-    # Find the next "  - id:" after this point
-    next_block = re.search(r"^  - id:", text[m.end() :], re.MULTILINE)
+    # Find the next peer "- id:" after this point. Matching the captured indent
+    # avoids confusing nested task entries with version blocks.
+    next_block = re.search(rf"^{block_indent}- id:", text[m.end() :], re.MULTILINE)
     if next_block:
         block_end = m.end() + next_block.start()
     else:
@@ -330,6 +335,70 @@ def _get_current_patch_from_block(text: str, version_id: str) -> int:
     if not m:
         _die(f"could not find 'current_patch:' in block '{version_id}' of roadmap.yaml")
     return int(m.group(1))
+
+
+def _load_roadmap_mapping(text: str) -> dict:
+    try:
+        data = yaml.safe_load(text) or {}
+    except yaml.YAMLError as exc:
+        _die(f"could not parse roadmap.yaml for phase guard: {exc}")
+    if not isinstance(data, dict):
+        _die("roadmap.yaml root must be a mapping")
+    return data
+
+
+def _roadmap_version_entry(data: dict, version_id: str) -> dict:
+    versions = data.get("versions")
+    if not isinstance(versions, list):
+        _die("roadmap.yaml must contain versions: []")
+    for version in versions:
+        if isinstance(version, dict) and str(version.get("id") or "") == version_id:
+            return version
+    _die(f"roadmap.yaml missing active version block {version_id!r}")
+
+
+def _active_version_open_tasks(data: dict, version_id: str) -> list[str]:
+    version = _roadmap_version_entry(data, version_id)
+    tasks = version.get("tasks")
+    if not isinstance(tasks, list):
+        return []
+    ids: list[str] = []
+    for item in tasks:
+        if not isinstance(item, dict):
+            continue
+        task_id = str(item.get("id") or "").strip()
+        if task_id:
+            ids.append(task_id)
+    return ids
+
+
+def _slice_is_live(slice_item: dict) -> bool:
+    status = str(slice_item.get("status") or "").strip().casefold()
+    role = str(slice_item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
+def _scheduled_live_initiatives(data: dict, version_id: str) -> list[str]:
+    live: list[str] = []
+    initiatives = data.get("initiatives")
+    if not isinstance(initiatives, list):
+        return live
+    for initiative in initiatives:
+        if not isinstance(initiative, dict):
+            continue
+        if str(initiative.get("phase") or "").strip() != version_id:
+            continue
+        initiative_id = str(initiative.get("id") or "").strip() or "?"
+        slices = initiative.get("slices")
+        if isinstance(slices, list) and slices:
+            if any(isinstance(item, dict) and _slice_is_live(item) for item in slices):
+                live.append(initiative_id)
+            continue
+        alias = str(initiative.get("task_ref") or "").strip()
+        status = str(initiative.get("status") or "").strip().casefold()
+        if alias or status not in {"complete", "completed"}:
+            live.append(initiative_id)
+    return live
 
 
 def _activate_version_block(
@@ -418,11 +487,24 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     if active_version == "v0.0.7":
         _die("--phase refused: active_version is v0.0.7; use --release to advance to v0.1.0")
 
-    # Guard: pending_task_refs must be empty
-    pending = _get_pending_task_refs(roadmap_text, active_version)
-    if pending:
-        refs_str = ", ".join(pending)
-        _die(f"--phase refused: pending_task_refs is non-empty for {active_version}: {refs_str}")
+    roadmap_data = _load_roadmap_mapping(roadmap_text)
+
+    # Guard: versions[].tasks is the canonical open-work list for phase advancement.
+    open_tasks = _active_version_open_tasks(roadmap_data, active_version)
+    if open_tasks:
+        refs_str = ", ".join(open_tasks)
+        _die(
+            f"--phase refused: active version {active_version} still has open "
+            f"tasks in versions[].tasks: {refs_str}"
+        )
+
+    live_initiatives = _scheduled_live_initiatives(roadmap_data, active_version)
+    if live_initiatives:
+        refs_str = ", ".join(live_initiatives)
+        _die(
+            f"--phase refused: active version {active_version} still has scheduled "
+            f"live initiative(s): {refs_str}"
+        )
 
     if active_post_release_phase is not None:
         if (a, b, c) != (0, 1, active_post_release_phase):
