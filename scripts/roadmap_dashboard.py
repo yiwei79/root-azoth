@@ -8,11 +8,14 @@ status, phase scope, goals, notes, and task lists (completed vs pending).
 Usage:
   python scripts/roadmap_dashboard.py
   python scripts/roadmap_dashboard.py --roadmap /path/to/roadmap.yaml
+  python scripts/roadmap_dashboard.py --theme E
+  python scripts/roadmap_dashboard.py --track autonomous-quality
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -32,6 +35,8 @@ FOOTER = (
 )
 
 MAX_SCHEMA_WARNINGS = 25
+ROADMAP_REF_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9.]*-[A-Za-z0-9][A-Za-z0-9.-]*")
+FILTERED_REF_PLACEHOLDER = "other-slice work"
 
 
 class RoadmapLoadDiag(NamedTuple):
@@ -39,6 +44,269 @@ class RoadmapLoadDiag(NamedTuple):
 
     data: dict[str, Any]
     empty_reason: str | None  # None iff data is non-empty; else diagnostic tag/message
+
+
+def _normalize_str_list(raw: Any) -> list[str]:
+    """Normalize a scalar-or-list field into a list of non-empty strings."""
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        items = raw
+    else:
+        items = [raw]
+    values: list[str] = []
+    for item in items:
+        text = str(item).strip()
+        if text:
+            values.append(text)
+    return values
+
+
+def _unique_folded(values: list[str]) -> list[str]:
+    """Deduplicate while preserving first-seen casing/order."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        key = value.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(value)
+    return out
+
+
+def _initiative_dimension_values(initiative: dict[str, Any], key: str) -> list[str]:
+    """Return normalized initiative dimension values, falling back to legacy top-level fields."""
+    values: list[str] = []
+    if key == "themes":
+        values.extend(_normalize_str_list(initiative.get("theme")))
+    dims = initiative.get("dimensions")
+    if isinstance(dims, dict):
+        values.extend(_normalize_str_list(dims.get(key)))
+    return _unique_folded(values)
+
+
+def initiative_matches_filters(
+    initiative: dict[str, Any],
+    *,
+    theme: str | None = None,
+    track: str | None = None,
+) -> bool:
+    """True when an initiative matches the requested cross-section filters."""
+    if not isinstance(initiative, dict):
+        return False
+    if theme:
+        themes = {value.casefold() for value in _initiative_dimension_values(initiative, "themes")}
+        if theme.casefold() not in themes:
+            return False
+    if track:
+        tracks = {value.casefold() for value in _initiative_dimension_values(initiative, "tracks")}
+        if track.casefold() not in tracks:
+            return False
+    return True
+
+
+def _task_refs_for_initiative(initiative: dict[str, Any]) -> set[str]:
+    """Collect every task id linked to an initiative across primary and slice refs."""
+    refs: set[str] = set()
+    for raw in _normalize_str_list(initiative.get("task_ref")):
+        refs.add(raw)
+    slices = initiative.get("slices")
+    if isinstance(slices, list):
+        for item in slices:
+            if not isinstance(item, dict):
+                continue
+            for raw in _normalize_str_list(item.get("task_ref")):
+                refs.add(raw)
+    return refs
+
+
+def _task_refs_from_entries(raw: Any) -> set[str]:
+    """Collect task ids from a version or legacy task list."""
+    refs: set[str] = set()
+    if not isinstance(raw, list):
+        return refs
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        task_id = str(item.get("id", "")).strip()
+        if task_id:
+            refs.add(task_id)
+    return refs
+
+
+def _roadmap_known_refs(data: dict[str, Any]) -> set[str]:
+    """Collect initiative/task ids that may appear in roadmap narrative prose."""
+    refs = _task_refs_from_entries(data.get("tasks"))
+
+    raw_initiatives = data.get("initiatives")
+    if isinstance(raw_initiatives, list):
+        for item in raw_initiatives:
+            if not isinstance(item, dict):
+                continue
+            initiative_id = str(item.get("id", "")).strip()
+            if initiative_id:
+                refs.add(initiative_id)
+            refs.update(_task_refs_for_initiative(item))
+
+    raw_versions = data.get("versions")
+    if isinstance(raw_versions, list):
+        for version in raw_versions:
+            if not isinstance(version, dict):
+                continue
+            for block in ("completed_tasks", "tasks", "deferred_tasks"):
+                refs.update(_task_refs_from_entries(version.get(block)))
+            pending_refs = version.get("pending_task_refs")
+            if isinstance(pending_refs, list):
+                refs.update(str(ref).strip() for ref in pending_refs if str(ref).strip())
+
+    return refs
+
+
+def _excluded_roadmap_refs(
+    *,
+    matched_refs: set[str],
+    known_refs: set[str],
+) -> set[str]:
+    """Return known roadmap refs that are outside the active filtered cross-section."""
+    matched_folded = {ref.casefold() for ref in matched_refs if ref}
+    return {ref.casefold() for ref in known_refs if ref and ref.casefold() not in matched_folded}
+
+
+def _sanitize_filtered_ref_text(value: Any, *, excluded_refs: set[str]) -> str:
+    """Replace off-slice roadmap refs inside filtered task text with neutral prose."""
+    text = str(value).strip()
+    if not text or not excluded_refs:
+        return text
+
+    def _replace(match: re.Match[str]) -> str:
+        token = match.group(0)
+        if token.casefold() in excluded_refs:
+            return FILTERED_REF_PLACEHOLDER
+        return token
+
+    sanitized = ROADMAP_REF_TOKEN_RE.sub(_replace, text)
+    placeholder = re.escape(FILTERED_REF_PLACEHOLDER)
+    sanitized = re.sub(
+        rf"{placeholder}(?:\s*(?:,|/|and|or)\s*{placeholder})+",
+        FILTERED_REF_PLACEHOLDER,
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    sanitized = re.sub(r"\s{2,}", " ", sanitized)
+    sanitized = re.sub(r"\s+([,.;:])", r"\1", sanitized)
+    return sanitized.strip()
+
+
+def _sanitize_filtered_task_entry(
+    task: dict[str, Any], *, excluded_refs: set[str]
+) -> dict[str, Any]:
+    """Sanitize task fields that can mention roadmap refs outside the filtered slice."""
+    if not excluded_refs:
+        return task
+    task_copy = dict(task)
+    for field in ("title", "note", "deferred_from"):
+        value = task_copy.get(field)
+        if value:
+            task_copy[field] = _sanitize_filtered_ref_text(value, excluded_refs=excluded_refs)
+    return task_copy
+
+
+def _sanitize_filtered_version(
+    version: dict[str, Any], *, excluded_refs: set[str]
+) -> dict[str, Any]:
+    """Make filtered version panels strict slice summaries."""
+    version_copy = dict(version)
+    version_copy.pop("goal", None)
+    version_copy.pop("note", None)
+    for block in ("completed_tasks", "tasks", "deferred_tasks"):
+        entries = version_copy.get(block)
+        if isinstance(entries, list):
+            version_copy[block] = [
+                _sanitize_filtered_task_entry(item, excluded_refs=excluded_refs)
+                if isinstance(item, dict)
+                else item
+                for item in entries
+            ]
+    return version_copy
+
+
+def filter_roadmap_cross_section(
+    data: dict[str, Any],
+    *,
+    theme: str | None = None,
+    track: str | None = None,
+) -> dict[str, Any]:
+    """Return a roadmap view filtered by initiative dimensions and linked task refs."""
+    if not theme and not track:
+        return data
+
+    filtered = dict(data)
+    raw_initiatives = data.get("initiatives")
+    initiatives = raw_initiatives if isinstance(raw_initiatives, list) else []
+    matched_initiatives = [
+        item
+        for item in initiatives
+        if isinstance(item, dict) and initiative_matches_filters(item, theme=theme, track=track)
+    ]
+    filtered["initiatives"] = matched_initiatives
+
+    matched_task_refs: set[str] = set()
+    for initiative in matched_initiatives:
+        matched_task_refs.update(_task_refs_for_initiative(initiative))
+    matched_initiative_refs = {
+        str(item.get("id", "")).strip()
+        for item in matched_initiatives
+        if str(item.get("id", "")).strip()
+    }
+    known_refs = _roadmap_known_refs(data)
+    excluded_refs = _excluded_roadmap_refs(
+        matched_refs=matched_task_refs | matched_initiative_refs,
+        known_refs=known_refs,
+    )
+
+    versions_raw = data.get("versions")
+    if not isinstance(versions_raw, list):
+        return filtered
+
+    filtered_versions: list[Any] = []
+    for version in versions_raw:
+        if not isinstance(version, dict):
+            continue
+        version_id = str(version.get("id", ""))
+        phase_matches = any(
+            isinstance(item, dict)
+            and item.get("phase") == version_id
+            and item.get("status") not in ("complete", "completed")
+            for item in matched_initiatives
+        )
+
+        version_copy = dict(version)
+        matched_any = phase_matches
+
+        for block in ("completed_tasks", "tasks", "deferred_tasks"):
+            entries = version.get(block)
+            if isinstance(entries, list):
+                filtered_entries = [
+                    item
+                    for item in entries
+                    if isinstance(item, dict) and str(item.get("id", "")) in matched_task_refs
+                ]
+                version_copy[block] = filtered_entries
+                matched_any = matched_any or bool(filtered_entries)
+
+        pending_refs = version.get("pending_task_refs")
+        if isinstance(pending_refs, list):
+            filtered_refs = [ref for ref in pending_refs if str(ref) in matched_task_refs]
+            version_copy["pending_task_refs"] = filtered_refs
+            matched_any = matched_any or bool(filtered_refs)
+
+        if matched_any:
+            version_copy = _sanitize_filtered_version(version_copy, excluded_refs=excluded_refs)
+            filtered_versions.append(version_copy)
+
+    filtered["versions"] = filtered_versions
+    return filtered
 
 
 def load_roadmap_diag(path: Path | None = None) -> RoadmapLoadDiag:
@@ -238,7 +506,12 @@ def build_version_body(version: Any, roadmap: dict[str, Any] | None = None) -> s
     return "\n".join(lines)
 
 
-def render_header(data: Any) -> Panel:
+def render_header(
+    data: Any,
+    *,
+    theme_filter: str | None = None,
+    track_filter: str | None = None,
+) -> Panel:
     """Top banner: active_version + schema hint."""
     if not isinstance(data, dict):
         return Panel(
@@ -253,6 +526,14 @@ def render_header(data: Any) -> Panel:
     header.append("·  active_version ", style="dim")
     header.append(str(av), style="bold cyan")
     header.append("  ·  D48 + D53", style="dim")
+    if theme_filter or track_filter:
+        header.append("  ·  cross-section ", style="dim")
+        filters: list[str] = []
+        if theme_filter:
+            filters.append(f"theme={theme_filter}")
+        if track_filter:
+            filters.append(f"track={track_filter}")
+        header.append(" / ".join(filters), style="bold magenta")
     return Panel(header, box=box.HEAVY)
 
 
@@ -340,6 +621,8 @@ def render_dashboard(
     roadmap_path: Path | None = None,
     *,
     console: Console | None = None,
+    theme: str | None = None,
+    track: str | None = None,
 ) -> None:
     """Print full roadmap dashboard to console."""
     path = roadmap_path or DEFAULT_ROADMAP
@@ -358,15 +641,32 @@ def render_dashboard(
         )
         return
 
-    out.print(render_header(data))
+    filtered_data = filter_roadmap_cross_section(data, theme=theme, track=track)
+
+    if (theme or track) and not filtered_data.get("initiatives") and not filtered_data.get("versions"):
+        filters: list[str] = []
+        if theme:
+            filters.append(f"theme={theme}")
+        if track:
+            filters.append(f"track={track}")
+        out.print(
+            Panel(
+                f"[yellow]No roadmap items matched:[/] {escape(', '.join(filters))}",
+                title="Roadmap cross-section",
+                box=box.HEAVY,
+            )
+        )
+        return
+
+    out.print(render_header(filtered_data, theme_filter=theme, track_filter=track))
     out.print()
 
-    ini_panel = render_initiatives_panel(gather_initiatives(data))
+    ini_panel = render_initiatives_panel(gather_initiatives(filtered_data))
     if ini_panel is not None:
         out.print(ini_panel)
         out.print()
 
-    versions_raw = data.get("versions")
+    versions_raw = filtered_data.get("versions")
     if versions_raw is None:
         versions_iter: list[Any] = []
     elif not isinstance(versions_raw, list):
@@ -396,7 +696,7 @@ def render_dashboard(
             )
             out.print()
             continue
-        out.print(render_version_panel(v, roadmap=data))
+        out.print(render_version_panel(v, roadmap=filtered_data))
         out.print()
 
     out.print(Panel(FOOTER, box=box.MINIMAL))
@@ -411,8 +711,20 @@ def main() -> None:
         default=None,
         help=f"Path to roadmap.yaml (default: {DEFAULT_ROADMAP})",
     )
+    parser.add_argument(
+        "--theme",
+        type=str,
+        default=None,
+        help="Filter to roadmap initiatives/tasks matching a theme code (for example: E).",
+    )
+    parser.add_argument(
+        "--track",
+        type=str,
+        default=None,
+        help="Filter to roadmap initiatives/tasks matching a dimension track.",
+    )
     args = parser.parse_args()
-    render_dashboard(roadmap_path=args.roadmap)
+    render_dashboard(roadmap_path=args.roadmap, theme=args.theme, track=args.track)
 
 
 if __name__ == "__main__":

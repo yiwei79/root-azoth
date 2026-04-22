@@ -2492,10 +2492,11 @@ items:
   source: ep-266
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 4
   created_date: '2026-04-19'
+  completed_date: '2026-04-21'
   description: 'Initiative schema has dimensions.themes and dimensions.tracks fields,
     but roadmap_dashboard.py renders a flat version-ordered list with no cross-section
     view. Add --theme E / --track autonomous-quality flags to render all initiatives
