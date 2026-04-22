@@ -13,6 +13,7 @@ whole_initiative_approved: false
 shared_state_allowlist:
   backlog_ids:
   - BL-063
-  roadmap_task_refs: []
+  roadmap_task_refs:
+  - BL-063
   initiative_refs: []
-scope_fingerprint: 09bf5a1d41cb1c622b3af104cbfc82d4fba4241a9f9f861895b5257372750a56
+scope_fingerprint: 10034dc7845fbcdeb627d794ab8af697d19dd9ebb0021a2f79e56ff039a55d23
