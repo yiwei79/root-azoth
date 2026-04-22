@@ -361,6 +361,10 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
             "This is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
         ]
     )
+    if pipeline in {"auto", "dynamic-full-auto"}:
+        guidance.append(
+            "Within an approved `/auto` or `dynamic-full-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning and no required fresh-context, review-independence, or human gate is being bypassed."
+        )
     if pipeline == "deliver-full":
         guidance.extend(
             [

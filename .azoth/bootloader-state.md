@@ -1,22 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.1 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 1
+0.1.3.2 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 2
 
 ## Last Session
-- **Session**: 2026-04-20-adhoc-roadmap-carry-forward-semantics
-- **Goal**: AD-HOC: correct roadmap carry-forward semantics so incomplete phase tasks move forward while unscheduled initiatives remain phase-null
-- **Pipeline**: standard
+- **Session**: 2026-04-22-adhoc-auto-inline-judgment-refinement
+- **Goal**: AD-HOC: align auto-family inline execution policy around justified orchestrator judgment
+- **Session mode**: delivery
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-296 (decision)
+- **Episode**: ep-314 (success)
 
 ## Key Changes This Session
-1. Corrected roadmap carry-forward semantics so `v0.2.0-p3` owns incomplete p2 tasks without absorbing unphased initiatives.
-2. Kept the roadmap dashboard enhancement that renders explicitly phased initiatives inside version panels.
-3. Confirmed the next operational work is still backlog-backed, with `P1-017` available to scope from `/next`.
+1. W1 appended the closeout episode.
+2. W2 closed the scope gate and refreshed repo-local handoff state.
+3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.
 
 ## Open Decisions
 - None.
 
 ## Next Action
-- Run `/next` to scope `P1-017` or another `v0.2.0-p3` carry-forward task.
+- Run `/next` to select the next scoped task.

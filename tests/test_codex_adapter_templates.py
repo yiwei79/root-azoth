@@ -29,6 +29,9 @@ DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage
 DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
     "Declaration, gate write, or status card does not count as Stage 2 execution"
 )
+AUTO_INLINE_JUSTIFICATION = (
+    "Within an approved `/auto` or `dynamic-full-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -150,9 +153,26 @@ def test_codex_router_adds_context_for_auto_token() -> None:
     assert "/auto" in ctx
     assert "commands/start/command.yaml" in ctx
     assert "pipeline_command=auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=auto investigate drift"
+    )
+
+
+def test_codex_router_adds_context_for_dynamic_full_auto_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/dynamic-full-auto investigate drift", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/dynamic-full-auto" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/dynamic-full-auto/command.yaml" in ctx
+    assert "pipeline_command=dynamic-full-auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=dynamic-full-auto investigate drift"
     )
 
 
@@ -181,9 +201,28 @@ def test_codex_router_adds_context_from_non_root_cwd() -> None:
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/auto" in ctx
     assert "commands/start/command.yaml" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=auto investigate drift"
+    )
+
+
+def test_codex_router_preserves_dynamic_full_auto_start_centered_route() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(
+        _run_router(router, "/start pipeline_command=dynamic-full-auto investigate drift", cwd=REPO)
+    )
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/start" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/dynamic-full-auto/command.yaml" in ctx
+    assert "pipeline_command=dynamic-full-auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=dynamic-full-auto investigate drift"
     )
 
 
@@ -311,6 +350,7 @@ def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> No
     assert config.is_file(), "missing deployed Codex config"
     text = config.read_text(encoding="utf-8")
     assert "staged pipeline execution and staged delegation" in text
+    assert AUTO_INLINE_JUSTIFICATION in text
     assert "STOP after the Declaration and ask the human" in text
     assert "Never silently continue inline as a fallback" in text
     assert DELIVER_FULL_STAGE2_RULE in text
