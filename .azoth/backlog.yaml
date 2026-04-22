@@ -2688,3 +2688,31 @@ items:
     before wider skill and agent rollout.
   roadmap_ref: T-KRP-A
   initiative_ref: INI-KRP-001
+- id: T-015
+  title: Codex intelligent model selection seed and proposal
+  source: codex-model-selection-2026-04-20
+  roadmap_ref: T-015
+  initiative_ref: INI-PLT-006
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 4
+  created_date: '2026-04-20'
+  decision_ref:
+  - D19
+  - D21
+  - D23
+  - D46
+  - D52
+  blocked_by: []
+  description: 'Seed a Codex-first, phase-3-aware architecture/design lane for intelligent
+    model selection so Azoth can preserve portable `model_tier` intent while gaining
+    a real host-aware selector policy for Codex. This slice is planning-only: wire
+    the roadmap/backlog seed, keep a reusable local research capsule for the current
+    model-family evidence, and maintain a draft architecture proposal that favors
+    alias- and capability-based resolution over hard-coded snapshot or tier-to-model
+    mappings. Non-goal: do not implement runtime model selection or change spawned
+    model behavior in this slice.
+
+    '

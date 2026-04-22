@@ -1,0 +1,19 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-22-adhoc-codex-model-tiering-research
+backlog_id: AD-HOC
+goal: "AD-HOC: research Codex model tiering behavior, validate the existing T-015 seed/proposal state, and recommend a better per-subagent model and reasoning policy."
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-22T21:05:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - T-015
+  roadmap_task_refs:
+  - T-015
+  initiative_refs: []
+scope_fingerprint: f189b01778f7bcd5e43b7b65122850ec3fd234216aa8c7bb2455f08983c5af2f

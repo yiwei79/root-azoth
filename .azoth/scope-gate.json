@@ -1,0 +1,12 @@
+{
+  "approved": false,
+  "expires_at": "2026-04-22T21:42:33+00:00",
+  "goal": "AD-HOC: research Codex model tiering behavior, validate the existing T-015 seed/proposal state, and recommend a better per-subagent model and reasoning policy.",
+  "session_id": "2026-04-22-adhoc-codex-model-tiering-research",
+  "approved_by": "human",
+  "backlog_id": "AD-HOC",
+  "delivery_pipeline": "standard",
+  "pipeline_command": "dynamic-full-auto",
+  "target_layer": "infrastructure",
+  "closed_at": "2026-04-22T20:19:29Z"
+}

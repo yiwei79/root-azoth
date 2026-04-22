@@ -869,6 +869,11 @@ initiatives:
     phase: v0.2.0-p2
     status: complete
     role: historical
+  - task_ref: T-015
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-015.yaml
+    phase: v0.2.0-p3
+    status: seeded
+    role: planned
   summary: 'Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
     model with Claude Code and Codex as co-primary command surfaces, while keeping
     Cursor, Copilot, OpenCode, and Gemini / Antigravity on an honest adapter contract.
@@ -878,6 +883,9 @@ initiatives:
     calm-flow runtime proof and any remaining `legacy_claude_markdown` bridge cleanup
     continue as platform-polish work rather than evidence that every migrated command,
     or every remaining command family, is already independent from `.claude/commands/*.md`.
+    T-015 is seeded as a planned phase-3 research/architecture follow-on for intelligent
+    Codex model selection; it is intentionally not part of the current active implementation
+    queue.
 
     '
   decision_ref:
