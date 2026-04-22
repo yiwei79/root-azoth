@@ -1,0 +1,11 @@
+{
+  "approved": false,
+  "expires_at": "2026-04-21T23:48:09+00:00",
+  "goal": "BL-063: roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view",
+  "session_id": "2026-04-21-bl-063",
+  "approved_by": "human",
+  "backlog_id": "BL-063",
+  "delivery_pipeline": "standard",
+  "target_layer": "infrastructure",
+  "closed_at": "2026-04-21T22:24:02Z"
+}
