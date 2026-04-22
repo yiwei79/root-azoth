@@ -1,0 +1,18 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-21-bl-063
+backlog_id: BL-063
+goal: "BL-063: roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional view"
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-22T07:36:59Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - BL-063
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: 09bf5a1d41cb1c622b3af104cbfc82d4fba4241a9f9f861895b5257372750a56
