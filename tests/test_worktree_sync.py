@@ -1506,6 +1506,61 @@ def test_merge_allowlisted_items_rejects_duplicate_producer_rows() -> None:
         )
 
 
+def test_reconcile_versioned_roadmap_moves_allowlisted_task_to_completed() -> None:
+    baseline = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "current_patch": 2,
+                "goal": "Carry-forward",
+                "tasks": [
+                    {"id": "BL-062", "title": "Task 62"},
+                    {"id": "BL-063", "title": "Task 63"},
+                ],
+                "completed_tasks": [],
+                "pending_task_refs": [],
+            }
+        ],
+    }
+    producer = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "current_patch": 3,
+                "goal": "Carry-forward",
+                "tasks": [
+                    {"id": "BL-062", "title": "Task 62"},
+                ],
+                "completed_tasks": [
+                    {
+                        "id": "BL-063",
+                        "title": "Task 63",
+                        "completed_date": "2026-04-21",
+                        "decision_ref": [],
+                    }
+                ],
+                "pending_task_refs": [],
+            }
+        ],
+    }
+
+    merged = worktree_sync_mod._reconcile_versioned_roadmap(
+        baseline,
+        producer,
+        allowed_ids={"BL-063"},
+    )
+
+    version = merged["versions"][0]
+    assert version["current_patch"] == 2
+    assert [item["id"] for item in version["tasks"]] == ["BL-062"]
+    assert [item["id"] for item in version["completed_tasks"]] == ["BL-063"]
+    assert version["completed_tasks"][0]["completed_date"] == "2026-04-21"
+
+
 def test_merge_allowlisted_items_accepts_existing_target_row_update() -> None:
     target = [{"id": "BL-069", "status": "pending", "title": "Allowed task"}]
     producer = [{"id": "BL-069", "status": "complete", "title": "Allowed task"}]

@@ -479,6 +479,202 @@ def _merge_allowlisted_items(
     return merged
 
 
+def _roadmap_rows_by_id(
+    rows: list[dict[str, Any]],
+    *,
+    label: str,
+) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        row_id = str(row.get("id") or "").strip()
+        if not row_id:
+            raise ValueError(f"{label} contains a row without id")
+        if row_id in index:
+            raise ValueError(f"{label} contains duplicate row {row_id!r}")
+        index[row_id] = row
+    return index
+
+
+def _normalize_roadmap_task_lists(
+    version_block: dict[str, Any],
+    *,
+    label: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    tasks = version_block.get("tasks")
+    completed = version_block.get("completed_tasks")
+    if tasks is None:
+        tasks = []
+    if completed is None:
+        completed = []
+    if not isinstance(tasks, list) or not isinstance(completed, list):
+        raise ValueError(f"{label} task collections must be lists")
+    return tasks, completed
+
+
+def _merge_versioned_roadmap_lists(
+    baseline_tasks: list[dict[str, Any]],
+    baseline_completed: list[dict[str, Any]],
+    producer_tasks: list[dict[str, Any]],
+    producer_completed: list[dict[str, Any]],
+    *,
+    allowed_ids: set[str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    baseline_tasks_by_id = _roadmap_rows_by_id(baseline_tasks, label="baseline roadmap tasks")
+    baseline_completed_by_id = _roadmap_rows_by_id(
+        baseline_completed, label="baseline roadmap completed_tasks"
+    )
+    producer_tasks_by_id = _roadmap_rows_by_id(producer_tasks, label="producer roadmap tasks")
+    producer_completed_by_id = _roadmap_rows_by_id(
+        producer_completed, label="producer roadmap completed_tasks"
+    )
+
+    duplicate_baseline_ids = sorted(set(baseline_tasks_by_id) & set(baseline_completed_by_id))
+    if duplicate_baseline_ids:
+        raise ValueError(
+            "baseline roadmap duplicates task refs across tasks/completed_tasks: "
+            + ", ".join(duplicate_baseline_ids)
+        )
+    duplicate_producer_ids = sorted(set(producer_tasks_by_id) & set(producer_completed_by_id))
+    if duplicate_producer_ids:
+        raise ValueError(
+            "producer roadmap duplicates task refs across tasks/completed_tasks: "
+            + ", ".join(duplicate_producer_ids)
+        )
+
+    baseline_locations = {
+        **{row_id: ("tasks", row) for row_id, row in baseline_tasks_by_id.items()},
+        **{row_id: ("completed_tasks", row) for row_id, row in baseline_completed_by_id.items()},
+    }
+    producer_locations = {
+        **{row_id: ("tasks", row) for row_id, row in producer_tasks_by_id.items()},
+        **{row_id: ("completed_tasks", row) for row_id, row in producer_completed_by_id.items()},
+    }
+    union_ids = set(baseline_locations) | set(producer_locations)
+    unauthorized = sorted(
+        row_id
+        for row_id in union_ids
+        if row_id not in allowed_ids and baseline_locations.get(row_id) != producer_locations.get(row_id)
+    )
+    if unauthorized:
+        raise ValueError(
+            "non-allowlisted roadmap task refs changed: " + ", ".join(unauthorized)
+        )
+
+    merged_tasks: list[dict[str, Any]] = []
+    merged_completed: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def _append(destination: str, row: dict[str, Any]) -> None:
+        if destination == "tasks":
+            merged_tasks.append(row)
+        else:
+            merged_completed.append(row)
+
+    for destination, rows in (("tasks", baseline_tasks), ("completed_tasks", baseline_completed)):
+        for row in rows:
+            row_id = str(row.get("id") or "").strip()
+            if row_id in seen:
+                continue
+            if row_id in allowed_ids and row_id in producer_locations:
+                producer_destination, producer_row = producer_locations[row_id]
+                if row_id in baseline_locations:
+                    baseline_row = baseline_locations[row_id][1]
+                    for field in ("id", "title"):
+                        if baseline_row.get(field) != producer_row.get(field):
+                            raise ValueError(
+                                f"allowlisted roadmap task ref {row_id!r} changed protected field {field!r}"
+                            )
+                _append(producer_destination, producer_row)
+            else:
+                _append(destination, row)
+            seen.add(row_id)
+
+    for row_id, (destination, row) in producer_locations.items():
+        if row_id in seen or row_id not in allowed_ids:
+            continue
+        _append(destination, row)
+        seen.add(row_id)
+
+    return merged_tasks, merged_completed
+
+
+def _reconcile_versioned_roadmap(
+    baseline: dict[str, Any],
+    producer: dict[str, Any],
+    *,
+    allowed_ids: set[str],
+) -> dict[str, Any]:
+    baseline_versions = baseline.get("versions")
+    producer_versions = producer.get("versions")
+    if not isinstance(baseline_versions, list) or not isinstance(producer_versions, list):
+        raise ValueError("roadmap.yaml versions must be lists")
+
+    baseline_meta = {key: value for key, value in baseline.items() if key != "versions"}
+    producer_meta = {key: value for key, value in producer.items() if key != "versions"}
+    if baseline_meta != producer_meta:
+        raise ValueError("roadmap selectors changed outside explicit task-level governance")
+
+    producer_versions_by_id = _roadmap_rows_by_id(producer_versions, label="producer roadmap versions")
+    merged_versions: list[dict[str, Any]] = []
+    seen_versions: set[str] = set()
+
+    for baseline_version in baseline_versions:
+        version_id = str(baseline_version.get("id") or "").strip()
+        if not version_id:
+            raise ValueError("baseline roadmap version block is missing id")
+        producer_version = producer_versions_by_id.get(version_id)
+        if producer_version is None:
+            raise ValueError(f"producer roadmap is missing version block {version_id!r}")
+        seen_versions.add(version_id)
+
+        baseline_tasks, baseline_completed = _normalize_roadmap_task_lists(
+            baseline_version, label=f"baseline roadmap version {version_id}"
+        )
+        producer_tasks, producer_completed = _normalize_roadmap_task_lists(
+            producer_version, label=f"producer roadmap version {version_id}"
+        )
+
+        baseline_version_meta = {
+            key: value
+            for key, value in baseline_version.items()
+            if key not in {"tasks", "completed_tasks", "current_patch"}
+        }
+        producer_version_meta = {
+            key: value
+            for key, value in producer_version.items()
+            if key not in {"tasks", "completed_tasks", "current_patch"}
+        }
+        if baseline_version_meta != producer_version_meta:
+            raise ValueError("roadmap selectors changed outside explicit task-level governance")
+
+        merged_tasks, merged_completed = _merge_versioned_roadmap_lists(
+            baseline_tasks,
+            baseline_completed,
+            producer_tasks,
+            producer_completed,
+            allowed_ids=allowed_ids,
+        )
+
+        merged_version = {
+            key: value
+            for key, value in baseline_version.items()
+            if key not in {"tasks", "completed_tasks"}
+        }
+        merged_version["tasks"] = merged_tasks
+        merged_version["completed_tasks"] = merged_completed
+        merged_versions.append(merged_version)
+
+    extra_versions = sorted(set(producer_versions_by_id) - seen_versions)
+    if extra_versions:
+        raise ValueError(
+            "producer roadmap added unexpected version blocks: " + ", ".join(extra_versions)
+        )
+
+    merged = dict(baseline_meta)
+    merged["versions"] = merged_versions
+    return merged
+
+
 def _scope_payload_from_capsule(capsule: dict[str, Any]) -> dict[str, Any]:
     allowlist = capsule.get("shared_state_allowlist")
     if not isinstance(allowlist, dict):
@@ -709,25 +905,30 @@ def _reconcile_roadmap(
         raise ValueError("roadmap reconciliation requires roadmap.yaml on both sides")
     baseline = _load_yaml_mapping_text(baseline_raw, label="target roadmap")
     producer = _load_yaml_mapping_text(producer_raw, label="producer roadmap")
-    baseline_tasks = baseline.get("tasks")
-    producer_tasks = producer.get("tasks")
-    if not isinstance(baseline_tasks, list) or not isinstance(producer_tasks, list):
-        raise ValueError("roadmap.yaml tasks must be lists")
-    baseline_meta = {key: value for key, value in baseline.items() if key != "tasks"}
-    producer_meta = {key: value for key, value in producer.items() if key != "tasks"}
-    if baseline_meta != producer_meta:
-        raise ValueError("roadmap selectors changed outside explicit task-level governance")
-
     scope_payload = capsule["_validated_scope_payload"]
     allowlist = scope_payload["shared_state_allowlist"]
-    merged = dict(baseline_meta)
-    merged["tasks"] = _merge_allowlisted_items(
-        baseline_tasks,
-        producer_tasks,
-        allowed_ids=set(allowlist["roadmap_task_refs"]),
-        protected_fields=("id", "title"),
-        status_field="status",
-    )
+    roadmap_task_refs = set(allowlist["roadmap_task_refs"])
+    if isinstance(baseline.get("tasks"), list) and isinstance(producer.get("tasks"), list):
+        baseline_tasks = baseline.get("tasks") or []
+        producer_tasks = producer.get("tasks") or []
+        baseline_meta = {key: value for key, value in baseline.items() if key != "tasks"}
+        producer_meta = {key: value for key, value in producer.items() if key != "tasks"}
+        if baseline_meta != producer_meta:
+            raise ValueError("roadmap selectors changed outside explicit task-level governance")
+        merged = dict(baseline_meta)
+        merged["tasks"] = _merge_allowlisted_items(
+            baseline_tasks,
+            producer_tasks,
+            allowed_ids=roadmap_task_refs,
+            protected_fields=("id", "title"),
+            status_field="status",
+        )
+    else:
+        merged = _reconcile_versioned_roadmap(
+            baseline,
+            producer,
+            allowed_ids=roadmap_task_refs,
+        )
     _write_text_or_remove(
         sandbox_dir,
         ".azoth/roadmap.yaml",
