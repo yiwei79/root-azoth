@@ -1645,7 +1645,33 @@ versions:
     status: planned
     note: Implement before or alongside T-006 revise-and-continue loops
     carried_from: v0.2.0-p2
+  - id: T-017
+    title: Codex selector policy + task-definition lane
+    decision_ref:
+    - D19
+    - D21
+    - D23
+    - D46
+    - D52
+    initiative_ref: INI-PLT-006
   completed_tasks:
+  - id: T-015
+    title: Codex intelligent model selection seed and proposal
+    completed_date: '2026-04-20'
+    decision_ref:
+    - D19
+    - D21
+    - D23
+    - D46
+    - D52
+  - id: T-016
+    title: Codex seamless permissions profile (repo-local execpolicy)
+    completed_date: '2026-04-20'
+    decision_ref:
+    - D19
+    - D46
+    - D50
+    - D52
   - id: P1-021
     title: Memory operation platform parity
     completed_date: '2026-04-21'

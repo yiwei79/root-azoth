@@ -8,10 +8,10 @@ decision_ref:
 - D46
 - D52
 intent: >
-  Seed a Codex-first, phase-3-aware architecture/design lane for intelligent model
-  selection so Azoth can preserve portable `model_tier` intent while gaining a
-  real host-aware selector policy for Codex. This slice should produce the roadmap
-  seed and a draft L3 architecture proposal only; implementation follows later.
+  Completed historical seed slice for the Codex-first intelligent model-selection
+  direction. This task existed to create the initial roadmap/spec/proposal artifacts
+  so later slices could define and implement a real selector policy without hard-coding
+  today’s model names as the contract.
 problem: >
   Azoth currently documents `model_tier: premium | standard | fast` as a portable
   spawn contract and says Codex resolves that tier to a concrete model identifier,
@@ -22,8 +22,8 @@ problem: >
   drift as model families evolve.
 scope:
   - ".azoth/backlog.yaml seed row for T-015"
+  - ".azoth/roadmap.yaml historical continuity entry for T-015"
   - ".azoth/roadmap-specs/v0.2.0/T-015.yaml"
-  - ".azoth/research/codex-model-tiering-research-2026-04-22.json"
   - ".azoth/proposals/codex-intelligent-model-selection.yaml"
   - "Directional evidence from current OpenAI/Codex model families recorded in proposal details, without making them the normative long-term interface"
 non_goals:
@@ -32,20 +32,16 @@ non_goals:
   - "Running deploy updates, command projection changes, or agent-surface rewrites"
   - "Generalizing the selector architecture beyond Codex before the co-primary proof is stable"
 acceptance:
-  - "T-015 exists as a backlog-backed planning seed under `INI-PLT-006` with `target_version: v0.2.0-p3`"
-  - "The proposal and research capsule keep intelligent Codex model selection positioned as a planned follow-on rather than active implementation work"
-  - "A task-scoped reusable research capsule exists under `.azoth/research/` with freshness, volatility, limitations, and reuse questions for T-015"
-  - "A draft L3 proposal exists under `.azoth/proposals/` and validates against `pipelines/architecture-proposal.schema.yaml`"
-  - "The proposal keeps `model_tier` as a portable intent signal and replaces naive tier-to-model mapping with an intent layer, host inventory layer, selector layer, and feedback layer"
-  - "The proposal states a quality-first objective, uses current model-family evidence only as directional input, and avoids defining the future contract in terms of a small fixed set of named models"
-  - "The proposal decomposes follow-on work into policy artifact, spawn/resolver plumbing, evaluation/regression, and optional later portability slices"
+  - "T-015 exists as a completed historical seed under INI-PLT-006 with truthful roadmap/backlog continuity"
+  - "A draft L3 proposal exists under `.azoth/proposals/` and validates against `pipelines/architecture-proposal.schema.yaml` once the historical seed row is present"
+  - "The seed establishes the quality-first, inventory-aware direction without pretending to implement runtime selector behavior"
+  - "The live follow-on work is explicitly deferred to later slices such as `T-017` rather than being silently folded back into this seed"
 dependencies: []
 delivery:
   target_layer: infrastructure
   delivery_pipeline: standard
   suggested_command: /deliver
 elasticity: >
-  Phase 1 = seed the roadmap/backlog/spec surfaces and draft the Codex architecture
-  proposal. Phase 2 = define the Codex policy artifact and richer selector metadata.
-  Phase 3 = implement spawn/resolver plumbing and regression coverage in separate
-  follow-on slices once the design is approved.
+  Phase 1 = this completed seed created the initial roadmap/spec/proposal surfaces.
+  Phase 2 = follow-on policy/task-definition work such as `T-017`. Phase 3 = later
+  resolver plumbing and regression coverage once the policy slice is approved.

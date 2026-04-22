@@ -1,0 +1,22 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-22-model-tiering-task-definition
+backlog_id: AD-HOC
+goal: "AD-HOC: hydrate Codex model-tiering findings and define the next selector slice"
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-22T21:15:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - T-015
+  - T-017
+  roadmap_task_refs:
+  - T-015
+  - T-016
+  - T-017
+  initiative_refs: []
+scope_fingerprint: af92fc694ca059c641785fb92dc9f939d65bae5cebc05b4248f074e72889e97c

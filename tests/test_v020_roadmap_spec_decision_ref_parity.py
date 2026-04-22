@@ -61,6 +61,9 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-011",
         "P1-012",
         "P1-013",
+        "T-015",
+        "T-016",
+        "T-017",
         "T-005",
         "T-008",
         "T-009",
@@ -77,6 +80,41 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
             f"{tid}: spec decision_ref {spec['decision_ref']!r} != "
             f"roadmap {task.get('decision_ref')!r}"
         )
+
+
+def test_codex_model_selection_follow_on_continuity() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+    backlog = yaml.safe_load(BACKLOG.read_text(encoding="utf-8"))
+
+    p3 = next(block for block in road["versions"] if block.get("id") == "v0.2.0-p3")
+    active_tasks = {item["id"]: item for item in p3.get("tasks") or []}
+    completed_tasks = {item["id"]: item for item in p3.get("completed_tasks") or []}
+
+    assert "T-017" in active_tasks, "v0.2.0-p3 should expose T-017 as the live follow-on row."
+    assert active_tasks["T-017"].get("initiative_ref") == "INI-PLT-006"
+    assert active_tasks["T-017"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
+
+    assert "T-015" in completed_tasks, "v0.2.0-p3 should retain T-015 as completed history."
+    assert "T-016" in completed_tasks, "v0.2.0-p3 should retain T-016 as completed history."
+    assert completed_tasks["T-015"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
+    assert completed_tasks["T-016"].get("decision_ref") == ["D19", "D46", "D50", "D52"]
+
+    backlog_t015 = _find_backlog_item(backlog, "T-015")
+    backlog_t017 = _find_backlog_item(backlog, "T-017")
+    assert backlog_t015 is not None, "T-015 must exist in backlog.yaml as the restored seed row."
+    assert backlog_t017 is not None, "T-017 must exist in backlog.yaml as the live selector-policy row."
+    assert backlog_t015.get("status") == "complete"
+    assert backlog_t015.get("roadmap_ref") == "T-015"
+    assert backlog_t017.get("initiative_ref") == "INI-PLT-006"
+    assert backlog_t017.get("roadmap_ref") == "T-017"
+
+
+def test_codex_permissions_follow_on_history_is_preserved() -> None:
+    backlog = yaml.safe_load(BACKLOG.read_text(encoding="utf-8"))
+
+    backlog_t016 = _find_backlog_item(backlog, "T-016")
+    assert backlog_t016 is not None, "T-016 must exist in backlog.yaml."
+    assert backlog_t016.get("status") == "complete"
 
 
 def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs() -> None:

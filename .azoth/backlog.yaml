@@ -2690,15 +2690,16 @@ items:
   initiative_ref: INI-KRP-001
 - id: T-015
   title: Codex intelligent model selection seed and proposal
-  source: codex-model-selection-2026-04-20
+  source: codex-model-selection-seed-2026-04-20
   roadmap_ref: T-015
   initiative_ref: INI-PLT-006
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
-  priority: 4
+  priority: 3
   created_date: '2026-04-20'
+  completed_date: '2026-04-20'
   decision_ref:
   - D19
   - D21
@@ -2706,13 +2707,40 @@ items:
   - D46
   - D52
   blocked_by: []
-  description: 'Seed a Codex-first, phase-3-aware architecture/design lane for intelligent
-    model selection so Azoth can preserve portable `model_tier` intent while gaining
-    a real host-aware selector policy for Codex. This slice is planning-only: wire
-    the roadmap/backlog seed, keep a reusable local research capsule for the current
-    model-family evidence, and maintain a draft architecture proposal that favors
-    alias- and capability-based resolution over hard-coded snapshot or tier-to-model
-    mappings. Non-goal: do not implement runtime model selection or change spawned
-    model behavior in this slice.
+  description: 'Seed the Codex-first intelligent model-selection direction for Azoth
+    as a roadmap-backed planning artifact. Deliverables: (1) establish `T-015` as
+    the bounded seed under `INI-PLT-006`; (2) write the draft L3 proposal under `.azoth/proposals/`;
+    (3) capture the inventory-aware, quality-first selector direction without hard-coding
+    a fixed set of model ids as the long-term contract. Non-goal: no runtime selector
+    implementation, no spawned-model behavior changes, and no deploy/runtime surface
+    rewrites in this seed slice.
 
     '
+- id: T-017
+  title: Codex selector policy + task-definition lane
+  source: codex-selector-policy-task-definition-2026-04-22
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-22'
+  description: 'Define the first real follow-on slice after the `T-015` seed: a
+    Codex-local selector policy and task-definition lane that preserves portable
+    `model_tier` intent while specifying richer selector inputs, inventory/capability
+    metadata, fallback rules, and acceptance criteria for later resolver plumbing.
+    Deliverables: (1) roadmap/backlog continuity that restores `T-015` as a completed
+    historical seed; (2) a concrete `T-017` spec for the selector-policy lane; (3)
+    a light refresh of the draft architecture proposal so it still anchors to `T-015`
+    while naming `T-017` as the live follow-on. Non-goal: no runtime resolver implementation,
+    no model-routing code changes, and no broad regression/deploy work in this slice.
+
+    '
+  roadmap_ref: T-017
+  initiative_ref: INI-PLT-006
+  decision_ref:
+  - D19
+  - D21
+  - D23
+  - D46
+  - D52
