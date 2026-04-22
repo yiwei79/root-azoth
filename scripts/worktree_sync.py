@@ -908,7 +908,13 @@ def _reconcile_roadmap(
     scope_payload = capsule["_validated_scope_payload"]
     allowlist = scope_payload["shared_state_allowlist"]
     roadmap_task_refs = set(allowlist["roadmap_task_refs"])
-    if isinstance(baseline.get("tasks"), list) and isinstance(producer.get("tasks"), list):
+    if isinstance(baseline.get("versions"), list) and isinstance(producer.get("versions"), list):
+        merged = _reconcile_versioned_roadmap(
+            baseline,
+            producer,
+            allowed_ids=roadmap_task_refs,
+        )
+    elif isinstance(baseline.get("tasks"), list) and isinstance(producer.get("tasks"), list):
         baseline_tasks = baseline.get("tasks") or []
         producer_tasks = producer.get("tasks") or []
         baseline_meta = {key: value for key, value in baseline.items() if key != "tasks"}
@@ -924,11 +930,7 @@ def _reconcile_roadmap(
             status_field="status",
         )
     else:
-        merged = _reconcile_versioned_roadmap(
-            baseline,
-            producer,
-            allowed_ids=roadmap_task_refs,
-        )
+        raise ValueError("roadmap.yaml must use either versioned tasks or top-level tasks")
     _write_text_or_remove(
         sandbox_dir,
         ".azoth/roadmap.yaml",
