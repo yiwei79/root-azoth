@@ -1700,15 +1700,15 @@ versions:
     status: planned
     note: Implement before or alongside T-006 revise-and-continue loops
     carried_from: v0.2.0-p2
-  - id: BL-062
-    title: scripts/initiative_scaffold.py — one-command initiative + task stub creation
-    initiative_ref: INI-KRP-001
-    carried_from: v0.2.0-p2
   - id: BL-065
     title: Worktree-upgrade external evidence refresh lane
     initiative_ref: INI-RST-005
     carried_from: v0.2.0-p2
   completed_tasks:
+  - id: BL-062
+    title: scripts/initiative_scaffold.py — one-command initiative + task stub creation
+    completed_date: '2026-04-22'
+    decision_ref: []
   - id: BL-063
     title: 'roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional
       view'
