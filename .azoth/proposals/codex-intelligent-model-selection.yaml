@@ -164,6 +164,62 @@ details:
           - "One edit should retune future model choices without touching canonical agent text"
           - "Fallback order should degrade by capability class, not by ad hoc name substitution"
           - "Refreshes should update the policy artifact and research capsule, not every spawn site"
+      task_definition_lane:
+        statement: >
+          The selector policy lane should define the normalized task contract that sits
+          between portable BL-011 spawn intent and any future Codex resolver implementation.
+          `model_tier` stays portable, but Codex can only select deterministically once
+          the richer selector inputs and inventory fields are named explicitly.
+        selector_inputs_contract:
+          required:
+            - "model_tier"
+            - "agent_role"
+            - "stage_kind"
+            - "reasoning_depth_needed"
+            - "autonomy_horizon"
+            - "context_size_pressure"
+            - "tool_or_computer_use_need"
+            - "verification_strictness"
+            - "latency_sensitivity"
+          optional:
+            - "quality_bar"
+            - "cost_sensitivity"
+            - "interactive_vs_batch"
+            - "expected_child_fanout"
+        inventory_metadata_expectations:
+          required:
+            - "alias"
+            - "capability_class"
+            - "quality_band"
+            - "reasoning_effort_levels"
+            - "supports_tools"
+            - "supports_computer_use"
+            - "context_window_class"
+            - "latency_class"
+            - "availability_state"
+          optional:
+            - "preferred_reasoning_defaults"
+            - "fallback_aliases"
+            - "provider_notes"
+      deterministic_resolution:
+        selection_order:
+          - "1. Normalize the spawn/task input into the selector input contract."
+          - "2. Filter out aliases that are unavailable or missing any mandatory capability for the stage."
+          - "3. Choose the lowest capability class that still satisfies the stage's required quality/reliability bar."
+          - "4. Within that capability class, rank by capability fit and quality fit first."
+          - "5. Use latency fit and then cost fit only as bounded tie-breakers among otherwise acceptable candidates."
+          - "6. Resolve `reasoning_effort` after alias selection using stage-family defaults and explicit escalation rules."
+        fallback_policy:
+          - "Fallback degrades by declared capability class and policy order, not by ad hoc model-name substitution."
+          - "If inventory metadata is partial, use only the documented fields that remain trustworthy and record the degraded confidence."
+          - "If no alias satisfies mandatory stage requirements, fail closed and escalate instead of silently selecting a weaker lane."
+        tie_break_rule:
+          primary: "capability and quality fit"
+          secondary: "latency"
+          tertiary: "cost"
+          note: >
+            This preserves the quality-first policy while still allowing deterministic
+            leaf-worker downshifts when multiple candidates satisfy the same quality bar.
       feedback_layer:
         statement: >
           Capture selector outcomes, fallback events, and observed failure modes into

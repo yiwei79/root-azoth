@@ -17,23 +17,27 @@ problem: >
   task-definition layer for how Codex should choose models per agent instance. Today’s
   repo surfaces still expose only `model_tier: premium | standard | fast`, and there
   is no explicit policy artifact defining selector inputs, capability classes, alias
-  handling, fallback rules, or the boundary between symbolic intent and concrete host-local
-  model selection.
+  handling, fallback rules, tie-break order, or the boundary between symbolic intent and
+  concrete host-local model selection. The initiative continuity is also incomplete:
+  `INI-PLT-006` should show `T-015` as the completed seed and `T-017` as the active
+  follow-on instead of leaving the selector lane implicit.
 scope:
-  - "`.azoth/backlog.yaml` and `.azoth/roadmap.yaml` continuity for `T-015` historical seed + `T-017` live follow-on"
+  - "`.azoth/roadmap.yaml` initiative continuity for `T-015` historical seed + `T-017` live follow-on"
   - "`.azoth/roadmap-specs/v0.2.0/T-017.yaml` with the real selector-policy task definition"
   - "Light refresh of `.azoth/proposals/codex-intelligent-model-selection.yaml` to name `T-017` as the live follow-on while keeping `backlog_id: T-015`"
-  - "Definition of selector inputs such as stage kind, reasoning depth, autonomy horizon, context pressure, tool need, verification strictness, and latency sensitivity"
-  - "Definition of Codex-local inventory/capability and deterministic fallback rules as policy-level artifacts, not runtime implementation"
+  - "Definition of the task-definition lane: required selector inputs such as stage kind, reasoning depth, autonomy horizon, context pressure, tool need, verification strictness, and latency sensitivity"
+  - "Definition of Codex-local inventory/capability metadata expectations and deterministic selection, tie-break, and fallback rules as policy-level artifacts, not runtime implementation"
 non_goals:
   - "No runtime selector implementation or spawned-model routing changes in Codex surfaces"
   - "No edits to `.codex/agents/orchestrator.toml`, `.agents/skills/subagent-router/SKILL.md`, or other runtime control-plane files in this slice"
   - "No deploy/mirror regeneration or command/agent projection work"
   - "No hard-coded future contract that depends on a small fixed set of named current models"
 acceptance:
-  - "`T-015` is restored as a completed historical seed in backlog/roadmap continuity and `T-017` is the active `INI-PLT-006` follow-on"
+  - "`T-015` is restored as a completed historical seed in roadmap continuity and `T-017` is the active `INI-PLT-006` follow-on"
   - "`T-017` defines the selector-policy lane as inventory-aware, capability-based, and quality-first while preserving `model_tier` as a backward-compatible symbolic intent surface"
-  - "`T-017` explicitly defines selector inputs, inventory/capability metadata expectations, and deterministic fallback/tie-break behavior"
+  - "`T-017` names the task-definition lane explicitly: which selector inputs remain portable, which Codex-local inputs are normalized, and which inventory metadata fields the host-local policy artifact must expose"
+  - "`T-017` explicitly defines deterministic selection behavior: filter by mandatory capabilities first, rank by capability and quality fit first, then use latency and cost only as bounded tie-breakers"
+  - "`T-017` explicitly defines deterministic fallback behavior: degrade by capability class and alias policy, never by ad hoc name substitution, and fail closed rather than silently dropping below stage-critical requirements"
   - "The refreshed proposal still validates against `backlog_id: T-015` and names `T-017` as the live follow-on rather than silently reusing the seed as unfinished work"
   - "The slice remains bounded to roadmap/spec/proposal continuity and does not change runtime selector behavior"
 dependencies: []
