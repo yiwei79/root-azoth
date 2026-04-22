@@ -1619,7 +1619,7 @@ versions:
     - D54
 - id: v0.2.0-p3
   status: active
-  current_patch: 2
+  current_patch: 3
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1700,10 +1700,6 @@ versions:
     status: planned
     note: Implement before or alongside T-006 revise-and-continue loops
     carried_from: v0.2.0-p2
-  - id: BL-062
-    title: scripts/initiative_scaffold.py — one-command initiative + task stub creation
-    initiative_ref: INI-KRP-001
-    carried_from: v0.2.0-p2
   - id: BL-065
     title: Worktree-upgrade external evidence refresh lane
     initiative_ref: INI-RST-005
@@ -1713,4 +1709,8 @@ versions:
     title: 'roadmap_dashboard.py: --theme / --track cross-section filters for multi-dimensional
       view'
     completed_date: '2026-04-21'
+    decision_ref: []
+  - id: BL-062
+    title: 'scripts/initiative_scaffold.py — one-command initiative + task stub creation'
+    completed_date: '2026-04-22'
     decision_ref: []

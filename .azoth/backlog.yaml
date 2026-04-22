@@ -2474,10 +2474,11 @@ items:
   source: ep-266
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-19'
+  completed_date: '2026-04-22'
   description: 'Creating INI-KRP-001 required manually editing roadmap.yaml and backlog.yaml
     across multiple sections — error-prone multi-file coordination with no automation.
     A scaffold script modeled on roadmap_scaffold.py should accept --id INI-KRP-001
