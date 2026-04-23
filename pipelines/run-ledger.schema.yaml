@@ -256,6 +256,16 @@ $defs:
         enum: [human-gate, handoff, retry]
         description: "Why the run is paused when status=paused."
 
+      stage_spawns:
+        type: array
+        items:
+          $ref: "#/$defs/stage_spawn_entry"
+
+      stage_summaries:
+        type: array
+        items:
+          $ref: "#/$defs/stage_summary_evidence_entry"
+
       waves:
         type: array
         items:
@@ -270,6 +280,70 @@ $defs:
 
   # Cross-reference: wave_entry.stage_id + wave_label link to swarm-eval-wave.schema.yaml wave_def.stage_id
   # and wave_def.wave respectively. These fields are optional (F3: advisory, not enforcement — BL-034).
+  stage_spawn_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, spawned_at]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      spawned_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+
+  stage_summary_evidence_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, summary_recorded_at, summary_status, summary_disposition]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      summary_recorded_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      summary_status:
+        type: string
+        enum: [complete, blocked, needs-input]
+      summary_disposition:
+        type: string
+        minLength: 1
+
   wave_entry:
     type: object
     additionalProperties: false

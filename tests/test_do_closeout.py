@@ -181,6 +181,73 @@ def _set_version_tasks(repo_root: Path, version_id: str, tasks: list[dict[str, o
     roadmap_path.write_text(yaml.safe_dump(roadmap, sort_keys=False), encoding="utf-8")
 
 
+def _unresolved_stage_run(
+    *,
+    run_id: str,
+    session_id: str,
+    backlog_id: str,
+    mode: str = "auto",
+    status: str = "paused",
+) -> dict[str, object]:
+    return {
+        "run_id": run_id,
+        "session_id": session_id,
+        "backlog_id": backlog_id,
+        "ide": "codex",
+        "mode": mode,
+        "goal": "Governed run",
+        "status": status,
+        "created_at": "2026-04-23T10:00:00+00:00",
+        "updated_at": "2026-04-23T10:01:00+00:00",
+        "next_action": "Await builder summary.",
+        "stage_spawns": [
+            {
+                "run_id": run_id,
+                "stage_id": "auto_s4_builder",
+                "subagent_type": "builder",
+                "trigger": "context-budget",
+                "role_hint": "Agent(subagent_type=builder): Implement — trigger: context-budget",
+                "dependency_summary_refs": ["auto_s3_planner"],
+                "spawned_at": "2026-04-23T10:01:00+00:00",
+            }
+        ],
+    }
+
+
+def _set_ledger_runs(repo_root: Path, runs: list[dict[str, object]]) -> None:
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["runs"] = runs
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+
+def _assert_closeout_rejects_before_mutation(
+    repo_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    expected_message: str,
+) -> None:
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match=expected_message):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
+
+
 def test_governed_closeout_requires_approval_evidence_before_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -202,7 +269,9 @@ def test_governed_closeout_requires_approval_evidence_before_mutation(
         ]
         is True
     )
-    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(
+        encoding="utf-8"
+    )
     assert "write_claim:" in (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(
         encoding="utf-8"
     )
@@ -524,6 +593,441 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     assert "Last episode: ep-001" in project_status
     assert f"Next action: {do_closeout.default_next_action()}" in project_status
     assert "Project Status" in memory_index
+    assert version_bump_calls == [
+        ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
+    ]
+
+
+def test_governed_closeout_blocks_unresolved_stage_spawn_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    _set_ledger_runs(
+        repo_root,
+        [_unresolved_stage_run(run_id="run-unresolved-stage", session_id="sess-123", backlog_id="BL-123")],
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="unresolved governed run evidence"):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
+
+
+def test_governed_closeout_rejects_malformed_run_ledger_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    (repo_root / ".azoth" / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\nruns: [\n",
+        encoding="utf-8",
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="Could not read/parse YAML"):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (repo_root / ".azoth" / "session-orientation.txt").exists()
+
+
+def test_governed_closeout_rejects_non_list_run_ledger_runs_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["runs"] = {"run_id": "run-malformed"}
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="runs must be a list"):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+
+
+def test_governed_closeout_rejects_malformed_stage_spawns_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-malformed-stage-spawns",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_spawns"] = {"stage_id": "auto_s4_builder"}
+    _set_ledger_runs(repo_root, [run])
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="stage_spawns must be a list"):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+
+
+def test_governed_closeout_rejects_paired_malformed_stage_evidence_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-malformed-paired-stage-evidence",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_summaries"] = [
+        {
+            "run_id": "run-malformed-paired-stage-evidence",
+            "stage_id": "auto_s4_builder",
+            "subagent_type": "builder",
+            "trigger": "context-budget",
+            "role_hint": "Agent(subagent_type=builder): Implement — trigger: context-budget",
+            "dependency_summary_refs": ["auto_s3_planner"],
+            "summary_recorded_at": "2026-04-23T10:04:00+00:00",
+            "summary_status": "complete",
+        }
+    ]
+    _set_ledger_runs(repo_root, [run])
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(
+        do_closeout.CloseoutError,
+        match="malformed governed run evidence ledger.*stage_summaries\\[0\\]",
+    ):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+    assert (
+        json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))[
+            "approved"
+        ]
+        is True
+    )
+
+
+def test_governed_closeout_rejects_paired_wrong_run_id_evidence_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-wrong-paired-run-id",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_spawns"][0]["run_id"] = "wrong-run"
+    run["stage_summaries"] = [
+        {
+            "run_id": "wrong-run",
+            "stage_id": "auto_s4_builder",
+            "subagent_type": "builder",
+            "trigger": "context-budget",
+            "role_hint": "Agent(subagent_type=builder): Implement — trigger: context-budget",
+            "dependency_summary_refs": ["auto_s3_planner"],
+            "summary_recorded_at": "2026-04-23T10:04:00+00:00",
+            "summary_status": "complete",
+            "summary_disposition": "approved",
+        }
+    ]
+    _set_ledger_runs(repo_root, [run])
+
+    _assert_closeout_rejects_before_mutation(
+        repo_root,
+        monkeypatch,
+        expected_message="malformed governed run evidence ledger.*stage_spawns\\[0\\]: run_id",
+    )
+
+
+@pytest.mark.parametrize(
+    ("dependency_summary_refs", "expected_message"),
+    [
+        ("auto_s3_planner", "dependency_summary_refs must be a list"),
+        (["auto_s3_planner", 123], "dependency_summary_refs\\[1\\] must be a non-empty string"),
+    ],
+)
+def test_governed_closeout_rejects_paired_malformed_dependency_refs_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    dependency_summary_refs: object,
+    expected_message: str,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-malformed-dependency-refs",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_spawns"][0]["dependency_summary_refs"] = dependency_summary_refs
+    run["stage_summaries"] = [
+        {
+            "run_id": "run-malformed-dependency-refs",
+            "stage_id": "auto_s4_builder",
+            "subagent_type": "builder",
+            "trigger": "context-budget",
+            "role_hint": "Agent(subagent_type=builder): Implement — trigger: context-budget",
+            "dependency_summary_refs": dependency_summary_refs,
+            "summary_recorded_at": "2026-04-23T10:04:00+00:00",
+            "summary_status": "complete",
+            "summary_disposition": "approved",
+        }
+    ]
+    _set_ledger_runs(repo_root, [run])
+
+    _assert_closeout_rejects_before_mutation(
+        repo_root,
+        monkeypatch,
+        expected_message=f"malformed governed run evidence ledger.*{expected_message}",
+    )
+
+
+def test_governed_closeout_ignores_unrelated_unresolved_stage_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    _set_ledger_runs(
+        repo_root,
+        [_unresolved_stage_run(run_id="run-other-session", session_id="other-session", backlog_id="BL-999")],
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == [
+        ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
+    ]
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(
+        encoding="utf-8"
+    ).strip()
+
+
+def test_governed_closeout_ignores_same_session_terminal_historical_runs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    _set_ledger_runs(
+        repo_root,
+        [
+            _unresolved_stage_run(
+                run_id="run-same-session-complete",
+                session_id="sess-123",
+                backlog_id="BL-123",
+                status="complete",
+            ),
+            _unresolved_stage_run(
+                run_id="run-same-session-failed",
+                session_id="sess-123",
+                backlog_id="BL-123",
+                status="failed",
+            ),
+        ],
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == [
+        ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
+    ]
+
+
+def test_governed_closeout_ignores_same_session_non_governed_modes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    _set_ledger_runs(
+        repo_root,
+        [
+            _unresolved_stage_run(
+                run_id="run-same-session-eval",
+                session_id="sess-123",
+                backlog_id="BL-123",
+                mode="eval-swarm",
+                status="paused",
+            )
+        ],
+    )
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
     ]

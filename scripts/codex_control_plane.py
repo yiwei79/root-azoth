@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 from session_gate import (
-    active_session_gate,
     classify_goal_intent,
     ensure_exploratory_session,
     matching_exploratory_session,
@@ -359,6 +358,7 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
         [
             "Keep the orchestrator in the main thread.",
             "This is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
+            "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`; before protected downstream stages, run `scripts/run_ledger.py require-stage-evidence` and fail closed on missing, mismatched, blocked, or needs-input evidence.",
         ]
     )
     if pipeline in {"auto", "dynamic-full-auto"}:

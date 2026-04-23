@@ -19,7 +19,12 @@ from episode_store import (
     with_verbatim_context,
 )
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
-from run_ledger import release_write_claim, upsert_run, upsert_session
+from run_ledger import (
+    assert_no_unresolved_governed_run_evidence,
+    release_write_claim,
+    upsert_run,
+    upsert_session,
+)
 from session_gate import active_session_gate, close_session_gate, normalized_session_mode
 from session_continuity import active_scope
 from session_continuity import governance_mode as normalized_governance_mode
@@ -90,8 +95,11 @@ def load_jsonl(path: pathlib.Path) -> list[dict[str, Any]]:
 def load_yaml(path: pathlib.Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with open(path, "r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle) or {}
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise CloseoutError(f"Could not read/parse YAML in {path}: {exc}") from exc
     if not isinstance(data, dict):
         raise CloseoutError(f"Expected YAML mapping in {path}")
     return data
@@ -178,6 +186,23 @@ def enforce_governed_closeout_approval(
             "Governed closeout blocked: latest matching final-delivery record must be "
             "actor_type=human and approved=true."
         )
+
+
+def enforce_governed_closeout_stage_evidence(
+    repo_root: pathlib.Path,
+    scope: dict[str, Any],
+) -> None:
+    if not is_governed_scope(scope):
+        return
+
+    session_id = str(scope.get("session_id") or "").strip()
+    if not session_id:
+        raise CloseoutError("Governed closeout blocked: scope-gate.json is missing session_id.")
+
+    try:
+        assert_no_unresolved_governed_run_evidence(repo_root, session_id=session_id)
+    except ValueError as exc:
+        raise CloseoutError(f"Governed closeout blocked: {exc}") from exc
 
 
 def _scope_gate_indicates_closed(scope: dict[str, Any], *, session_id: str) -> bool:
@@ -1662,6 +1687,7 @@ def run_closeout(
 
     if full_closeout:
         enforce_governed_closeout_approval(repo_root, scope)
+        enforce_governed_closeout_stage_evidence(repo_root, scope)
     reinforce_episode_ids = reinforce_episode_ids or []
     validate_reinforcement_targets(repo_root, reinforce_episode_ids)
 

@@ -137,6 +137,31 @@ runtime discipline:
 
 If lineage proof is missing, ambiguous, or already rewritten, fail closed and stop.
 
+## Ledger-backed staged delegation evidence
+
+For `/auto`, `dynamic-full-auto`, `/deliver`, and `/deliver-full`, protected downstream
+progress also requires paired run-ledger evidence for every delegated stage. The
+orchestrator records:
+
+- `stage_spawns[]` when a subagent is spawned
+- `stage_summaries[]` when that subagent returns a typed stage summary
+
+Both entries bind `run_id`, `stage_id`, `subagent_type`, `trigger`, `role_hint`, and
+`dependency_summary_refs`. `stage_spawns[]` carries `spawned_at`; `stage_summaries[]`
+carries `summary_recorded_at`, `summary_status`, and `summary_disposition`.
+
+Before spawning a protected downstream stage, run:
+
+```bash
+python3 scripts/run_ledger.py require-stage-evidence \
+  --run-id <run_id> \
+  --stage-id <upstream_stage_id>
+```
+
+The helper uses the latest matching spawn and summary evidence. Missing records,
+metadata mismatch, blocked/needs-input status, or request-changes style dispositions
+fail closed. A status card or declaration does not substitute for ledger evidence.
+
 ## Governed closeout approval evidence
 
 Before `scripts/do_closeout.py` performs any governed W1–W4 mutation, it must read
@@ -157,6 +182,11 @@ active `scope-gate.json.session_id` with:
 mirror field. The file is **consume-only** during closeout: read it, validate it, and
 leave it unchanged. Missing files, malformed JSONL, missing matching records, agent-only
 records, or a later denial for the same session must all fail closed before W1.
+
+After approval evidence passes and still before W1, closeout checks matching live/paused
+governed runs for unresolved stage evidence. It blocks only runs for the same
+`scope-gate.json.session_id`; unrelated historical, complete, failed, or non-governed runs
+do not block closeout.
 
 ## Why this gate exists
 
