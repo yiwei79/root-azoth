@@ -2858,10 +2858,11 @@ items:
   source: t-krp-c-builder-posture-research-2026-04-23
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 1
   created_date: '2026-04-23'
+  completed_date: '2026-04-23'
   description: 'Hydrate the third INI-KRP-001 follow-on slice by turning the planned
     T-KRP-C roadmap stub into backlog/spec state. This slice should refine the canonical
     Builder agent posture so implementation stages enforce simplicity-first, surgical-change,

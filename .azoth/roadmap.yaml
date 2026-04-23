@@ -1610,7 +1610,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 20
+  current_patch: 21
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1628,13 +1628,6 @@ versions:
     '
   pending_task_refs: []
   tasks:
-  - id: T-KRP-C
-    title: 'Builder agent posture: surgical changes + simplicity-first enforcement'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    carried_from: v0.2.0-p2
   - id: T-KRP-D
     title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
     target_layer: M1
@@ -1698,3 +1691,4 @@ versions:
   - {id: T-KRP-A, title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)", completed_date: "2026-04-22", decision_ref: []}
   - {id: T-017, title: "Codex selector policy + task-definition lane", completed_date: "2026-04-22", decision_ref: [D19, D21, D23, D46, D52]}
   - {id: T-KRP-B, title: "New skill: karpathy-principles SKILL.md for injectable discipline slot", completed_date: "2026-04-23", decision_ref: [D21, D23, D44, D51]}
+  - {id: T-KRP-C, title: "Builder agent posture: surgical changes + simplicity-first enforcement", completed_date: "2026-04-23", decision_ref: [D21, D23, D26, D44, D51]}
