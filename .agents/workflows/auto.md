@@ -62,6 +62,16 @@ contract in `skills/subagent-router/SKILL.md` §§Spawn Prompt Contract, Stage s
 and Orchestrator forward payload. Use `pipeline: auto`, a stable `stage_id` per row (see
 §Stage briefs: auto), and keep the spawn body to the compact YAML plus required handoff data.
 
+Before spawning a protected downstream stage, the orchestrator MUST record the upstream
+spawn and summary evidence in `.azoth/run-ledger.local.yaml`:
+
+1. record the subagent spawn with `scripts/run_ledger.py record-spawn`
+2. record the returned typed stage summary with `scripts/run_ledger.py record-summary`
+3. require paired evidence with `scripts/run_ledger.py require-stage-evidence`
+
+Evidence binds stage identity, routing metadata, dependency refs, timestamps, status, and disposition.
+Missing, mismatched, blocked, or needs-input evidence is a fail-closed condition.
+
 ## Declaration
 
 Present the composed pipeline to human as a **fused Declaration** combining scope card
@@ -183,13 +193,15 @@ After human approval of the Declaration:
    monitor entropy, produce alignment summary at each stage boundary.
 3. **Typed stage summary (BL-012):** When a stage completes, the subagent MUST emit YAML
   that conforms to `pipelines/stage-summary.schema.yaml`; `stage_id` must match the spawn
-  and the orchestrator treats that YAML as the machine-readable handoff.
+  and the orchestrator treats that YAML as the machine-readable handoff. The orchestrator
+  records the summary in the run ledger before any protected downstream spawn.
 4. **Orchestrator handoff (mandatory):** Before spawning the **next** subagent (`Task` /
    `Agent`), the orchestrator MUST attach every **upstream typed stage summary** the next
    stage needs under `inputs.prior_stage_summaries` per `skills/subagent-router/SKILL.md`
    §Orchestrator forward payload. **Evaluators** MUST receive the full YAML for the stage
    they evaluate (e.g. planner). Subagents do not share chat context; omitting this payload
-   is an orchestrator error and invalidates the evaluator gate.
+   is an orchestrator error and invalidates the evaluator gate. The run ledger must contain
+   matching `stage_spawns` and `stage_summaries` evidence for each forwarded dependency.
 5. **Review disposition & human escalation:** After **reviewer** (or any audit stage that
    critiques upstream work), parse the return for disposition. **STOP** and **do not** spawn
    planner, evaluator, or builder for the rest of the composed pipeline until the human
