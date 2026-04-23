@@ -2624,7 +2624,7 @@ items:
   source: 2026-04-22-t-krp-a-spec-hydration
   target_layer: M1
   delivery_pipeline: governed
-  status: pending
+  status: active
   target_version: v0.2.0-p3
   priority: 2
   created_date: '2026-04-22'
@@ -2745,3 +2745,26 @@ items:
   - D23
   - D46
   - D52
+- id: BL-071
+  title: Reintroduce shared CSafeLoader YAML helper for hot scripts
+  source: automation-performance-audit-2026-04-23
+  source_insight: SRF-2026-04-23-AUTO-PERF-001
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-23'
+  decision_ref:
+  - D52
+  description: 'Investigate and, if current mainline measurements confirm it, reintroduce
+    a shared YAML loading helper that uses PyYAML CSafeLoader when available for hot
+    Azoth scripts. The 2026-04-23 performance automation measured `welcome.py --plain`
+    at 0.4730s versus a prior 0.1845s post-optimization baseline and profiled YAML
+    parsing as the dominant cost, but it also noted that the previous optimization
+    was not visible in current git history. Deliverables: confirm the regression on
+    the active branch, add or restore a small `scripts/yaml_helpers.py` safe-load wrapper
+    if warranted, route the hot scripts through it, and verify with focused tests plus
+    before/after timings. Non-goal: no broad performance refactor without fresh measurements.
+
+    '

@@ -852,7 +852,7 @@ initiatives:
     - command-migration
   phase: null
   priority: high
-  task_ref: T-017
+  task_ref: null
   slices:
   - task_ref: T-002
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-002.yaml
@@ -877,16 +877,17 @@ initiatives:
   - task_ref: T-017
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-017.yaml
     phase: v0.2.0-p3
-    status: pending
+    status: complete
+    role: historical
   summary: 'Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
     model with Claude Code and Codex as co-primary command surfaces, while keeping
     Cursor, Copilot, OpenCode, and Gemini / Antigravity on an honest adapter contract.
     Commands remain the user-facing abstraction; pipelines stay internal execution
     machinery. P1-024 proved the pilot projection path; T-002 through T-004 operationalized
     the migration batches and the canonical contract/projection path. T-015 added the
-    bounded Codex model-selection seed under this initiative, and T-017 is now the live
-    follow-on that defines the selector-policy and task-definition lane before any runtime
-    resolver work. Follow-on Codex calm-flow runtime proof and any remaining
+    bounded Codex model-selection seed under this initiative, and T-017 then shipped
+    the selector-policy and task-definition lane before any runtime resolver work.
+    Follow-on Codex calm-flow runtime proof and any remaining
     `legacy_claude_markdown` bridge cleanup continue as platform-polish work rather than
     evidence that every migrated command, or every remaining command family, is already
     independent from `.claude/commands/*.md`.

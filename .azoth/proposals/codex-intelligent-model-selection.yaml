@@ -259,9 +259,9 @@ details:
     - "No deploy changes or command/agent mirror rewrites"
     - "No normative future contract that depends on a fixed set of named current models"
     - "No automatic promotion into AZOTH_ARCHITECTURE.md or DECISIONS_INDEX.md"
-  live_follow_on:
+  shipped_follow_on:
     backlog_id: "T-017"
     title: "Codex selector policy + task-definition lane"
     note: >
-      `T-015` remains the historical seed/proposal anchor. `T-017` is the active
-      follow-on that defines the selector-policy lane before any runtime resolver work.
+      `T-015` remains the historical seed/proposal anchor. `T-017` shipped the
+      selector-policy and task-definition lane before any runtime resolver work.
