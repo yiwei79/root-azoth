@@ -25,6 +25,7 @@ from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
 from rich.text import Text
+from yaml_helpers import safe_load_yaml, safe_load_yaml_path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ROADMAP = ROOT / ".azoth" / "roadmap.yaml"
@@ -320,7 +321,7 @@ def load_roadmap_diag(path: Path | None = None) -> RoadmapLoadDiag:
     except OSError as exc:
         return RoadmapLoadDiag({}, f"read_error: {exc}")
     try:
-        data = yaml.safe_load(text)
+        data = safe_load_yaml(text)
     except yaml.YAMLError as exc:
         return RoadmapLoadDiag({}, f"yaml_parse_error: {exc}")
     except Exception as exc:  # pragma: no cover - defensive
@@ -348,7 +349,7 @@ def load_backlog(path: Path | None = None) -> dict[str, Any]:
     if not p.exists():
         return {}
     try:
-        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        data = safe_load_yaml_path(p) or {}
     except Exception:
         return {}
     return data if isinstance(data, dict) else {}

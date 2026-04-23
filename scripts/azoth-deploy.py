@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from yaml_helpers import safe_load_yaml
 
 CODEX_HOOKS_DEFAULT_TEMPLATE = "hooks.json.template"
 CODEX_HOOKS_VERBOSE_TEMPLATE = "hooks.verbose.json.template"
@@ -67,7 +68,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
         end = text.index("\n---", 3)
     except ValueError:
         return {}, text
-    meta = yaml.safe_load(text[3:end]) or {}
+    meta = safe_load_yaml(text[3:end]) or {}
     body = text[end + 4 :].lstrip("\n")
     return meta, body
 
@@ -222,7 +223,7 @@ def _normalize_command_meta(
 
 def _load_command_contract(root: Path, path: Path) -> dict[str, Any]:
     """Load one canonical command contract plus its resolved markdown body."""
-    contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    contract = safe_load_yaml(path.read_text(encoding="utf-8")) or {}
     if not isinstance(contract, dict):
         raise ValueError(f"{path}: command contract root must be a mapping")
 

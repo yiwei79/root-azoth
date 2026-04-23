@@ -2752,10 +2752,11 @@ items:
   source_insight: SRF-2026-04-23-AUTO-PERF-001
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-23'
+  completed_date: '2026-04-23'
   decision_ref:
   - D52
   description: 'Investigate and, if current mainline measurements confirm it, reintroduce
@@ -2767,5 +2768,26 @@ items:
     the active branch, add or restore a small `scripts/yaml_helpers.py` safe-load wrapper
     if warranted, route the hot scripts through it, and verify with focused tests plus
     before/after timings. Non-goal: no broad performance refactor without fresh measurements.
+
+    '
+- id: BL-072
+  title: Reconcile live scope, resume eligibility, and session registry state
+  source: ep-334
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 4
+  created_date: '2026-04-23'
+  description: 'Resume and continuation logic should not fail just because one control-plane
+    surface drifted while other authoritative live-session evidence still exists.
+    Deliverables: (1) define the reconciliation rule across `.azoth/scope-gate.json`,
+    `.azoth/run-ledger.local.yaml`, `.azoth/session-state.md`, and `.azoth/pipeline-gate.json`
+    for live-session restore; (2) update `/resume` and related helpers so an approved
+    live scope or equivalent authoritative proof can reopen the session or trigger
+    a deterministic repair path; (3) add regression coverage for partial-state drift
+    so resume/closeout transitions cannot silently leave the control plane split-brained.
+    Non-goal: no broad workflow redesign beyond restoring truthful session continuity
+    and operator-facing diagnostics.
 
     '

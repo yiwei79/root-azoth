@@ -20,8 +20,6 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
-import yaml
 from rich import box
 from rich.columns import Columns
 from rich.console import Console
@@ -33,10 +31,10 @@ from run_ledger import load_resumable_sessions
 from session_gate import active_session_gate, normalized_session_mode
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
+from yaml_helpers import safe_load_yaml_path
 
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
-_YAML_SAFE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -51,8 +49,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        with path.open() as f:
-            return yaml.load(f, Loader=_YAML_SAFE_LOADER) or {}
+        return safe_load_yaml_path(path) or {}
     except Exception:
         return {}
 

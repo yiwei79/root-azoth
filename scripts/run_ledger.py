@@ -35,10 +35,10 @@ from pathlib import Path
 
 import yaml
 from session_continuity import active_scope, session_registry_entry_is_resumable
+from yaml_helpers import safe_load_yaml_path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
-_YAML_SAFE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 _STATUS_ENUM = {"active", "complete", "failed", "paused"}
 _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
@@ -67,8 +67,7 @@ def _load_ledger(path: Path) -> dict:
     if not path.exists():
         return {"schema_version": 1, "runs": []}
     try:
-        with path.open(encoding="utf-8") as f:
-            data = yaml.load(f, Loader=_YAML_SAFE_LOADER)
+        data = safe_load_yaml_path(path)
     except Exception as exc:
         _die(f"could not parse ledger YAML: {exc}")
     if not isinstance(data, dict):
@@ -80,8 +79,7 @@ def _load_yaml_mapping(path: Path) -> dict | None:
     if not path.exists():
         return None
     try:
-        with path.open(encoding="utf-8") as f:
-            data = yaml.load(f, Loader=_YAML_SAFE_LOADER)
+        data = safe_load_yaml_path(path)
     except Exception:
         return None
     return data if isinstance(data, dict) else None
