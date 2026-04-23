@@ -1,0 +1,94 @@
+id: T-KRP-C
+roadmap_version: v0.2.0
+title: 'Builder agent posture: surgical changes + simplicity-first enforcement'
+decision_ref:
+- D21
+- D23
+- D26
+- D44
+- D51
+intent: >
+  Hydrate the governed Builder posture slice for INI-KRP-001 so a later approved
+  M1 delivery can make implementation stages explicitly enforce simplicity-first,
+  surgical-change, and goal-driven verification behavior without broadening this
+  planning repair into implementation.
+problem: >
+  T-KRP-A established the always-on root behavioral layer and T-KRP-B added the
+  injectable karpathy-principles skill, but the Builder agent still lacks a
+  task-specific governed slice for translating those principles into implementation
+  posture. Without a hydrated T-KRP-C backlog/spec entry, /next cannot truthfully
+  open the next Karpathy follow-on even though roadmap.yaml shows it as the active
+  initiative slice.
+scope:
+- 'Refine the canonical Builder agent posture so future implementation stages state
+  the approved goal, owned surfaces, expected changed files, and out-of-scope surfaces
+  before editing.'
+- 'Make simplicity-first behavior explicit for Builder: prefer existing repo helpers,
+  patterns, and generated-source flows; add abstractions only when they remove real
+  repeated complexity or match an established local pattern.'
+- 'Make surgical-change behavior explicit for Builder: avoid drive-by cleanup, preserve
+  unrelated dirty state, and keep every changed line traceable to the approved scope.'
+- 'Make goal-driven execution explicit for Builder: choose the narrowest meaningful
+  verification first, run relevant tests or parity checks, and report blockers honestly
+  when verification cannot run.'
+- 'Require Builder final reports to name changed paths, goal mapping, validation commands,
+  outcomes, residual risk, and any intentionally deferred adjacent work.'
+- 'If the future implementation changes canonical builder posture, regenerate generated
+  mirrors only through `python3 scripts/azoth-deploy.py` and verify deploy parity.'
+non_goals:
+- 'No direct implementation edits to builder agent posture files in this planning-repair
+  run.'
+- 'No manual edits to generated builder mirrors such as `.claude/agents/builder.md` or
+  `.codex/agents/builder.toml`.'
+- 'No orchestrator assumption-surfacing checkpoint; reserve that for T-KRP-D.'
+- 'No structured-autonomy-plan goal-to-success-criteria gate; reserve that for T-KRP-E.'
+- 'No hook-level enforcement or trust-contract mutation unless a later scope explicitly
+  reclassifies the work and receives human approval.'
+- 'No broad rewrite of all agent archetypes or global prompt surfaces.'
+acceptance:
+- 'The T-KRP-C backlog row exists with `target_layer: M1`, `delivery_pipeline: governed`,
+  `status: pending`, and `target_version: v0.2.0-p3` so `/next` can select it truthfully.'
+- 'This spec names the task-scoped research capsule `.azoth/research/t-krp-c-builder-posture-research-2026-04-23.json`
+  as planning evidence for the future governed Builder posture delivery.'
+- 'The future governed implementation updates canonical Builder posture only, then refreshes
+  generated mirrors through `scripts/azoth-deploy.py` if those mirrors are affected.'
+- 'Builder guidance includes both a pre-edit scope statement and a final verification/reporting
+  checklist.'
+- 'The future delivery keeps T-KRP-D and T-KRP-E explicitly deferred.'
+- 'The future delivery validates generated parity and targeted agent surfaces with `python3
+  scripts/azoth-deploy.py --check` and focused tests.'
+- 'The future delivery records model-tier and stage-handoff auditability for research,
+  exploration, review/eval, and any corrective replay stages.'
+- 'Implementation does not begin unless a fresh T-KRP-C scope gate is approved and the
+  required governed pipeline gate is present.'
+dependencies:
+- T-009
+- T-KRP-A
+- T-KRP-B
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: Phase 1 = hydrate backlog/spec/research state. Phase 2 = implement canonical
+  Builder posture under a fresh governed M1 delivery scope.
+research_evidence:
+  kind: repo-local
+  path: .azoth/research/t-krp-c-builder-posture-research-2026-04-23.json
+  outcome: research_sufficient
+readiness:
+  current_scope_gate: planning_repair_only
+  current_pipeline_gate: dynamic_full_auto_research_required
+  implementation_authorized: false
+  implementation_boundary: >
+    This session authorizes planning hydration only. Builder posture implementation
+    requires a later T-KRP-C governed scope and pipeline gate.
+expected_validation:
+  tests:
+  - tests/test_agents.py
+  - tests/test_azoth_deploy.py
+  - tests/test_codex_adapter_templates.py
+  commands:
+  - python3 scripts/azoth-deploy.py --check
+  - PYTHONPATH=scripts python3 -m pytest tests/test_agents.py tests/test_azoth_deploy.py tests/test_codex_adapter_templates.py -q
+  quality_gate:
+  - stage6-rubric or equivalent review of Builder posture clarity if the future delivery changes agent instruction content

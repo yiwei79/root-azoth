@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.17 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 17
+0.1.3.20 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 20
 
 ## Last Session
-- **Session**: intake-2026-04-23
-- **Goal**: AD-HOC: process architect-approved intake bundle
+- **Session**: 2026-04-23-adhoc-deploy-parity-fix
+- **Goal**: AD-HOC: refresh generated surfaces to fix azoth-deploy parity failures
 - **Session mode**: delivery
-- **Pipeline**: standard
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-350 (success)
+- **Episode**: ep-354 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.
