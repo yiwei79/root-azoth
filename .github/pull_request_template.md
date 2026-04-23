@@ -4,12 +4,13 @@
 
 ## Testing
 
-<!-- e.g. `python3 -m pytest -q` — note any skipped/xfail expectations. -->
+<!-- e.g. `python3 scripts/pre_pr_fast_fail.py` and/or `python3 -m pytest -q` — note any skipped/xfail expectations. -->
 
 ## Checklist
 
 - [ ] Aligns with [`docs/AZOTH_ARCHITECTURE.md`](../docs/AZOTH_ARCHITECTURE.md) and current phase
 - [ ] No unauthorized [`kernel/`](../kernel/) edits (unless this PR is an approved promotion / scope card)
+- [ ] Ran `python3 scripts/pre_pr_fast_fail.py` for parity-sensitive changes, or documented why it was not applicable
 - [ ] After changing canonical `skills/`, `agents/`, or `.claude/commands/`, ran `python3 scripts/azoth-deploy.py` (parity)
 
 ---
