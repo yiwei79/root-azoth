@@ -2792,3 +2792,24 @@ items:
     and operator-facing diagnostics.
 
     '
+- id: T-KRP-B
+  title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
+  source: t-krp-b-karpathy-principles-skill-research-2026-04-23
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-23'
+  description: Hydrate the second INI-KRP-001 follow-on slice by turning the planned
+    T-KRP-B roadmap stub into backlog/spec state. This slice should add a dedicated
+    Azoth karpathy-principles skill as an injectable discipline slot, using the task-scoped
+    research capsule under .azoth/research as planning evidence while keeping actual
+    implementation behind a later governed M1 delivery scope.
+  roadmap_ref: T-KRP-B
+  initiative_ref: INI-KRP-001
+  decision_ref:
+  - D21
+  - D23
+  - D44
+  - D51
