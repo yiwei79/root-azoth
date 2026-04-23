@@ -2624,10 +2624,11 @@ items:
   source: 2026-04-22-t-krp-a-spec-hydration
   target_layer: M1
   delivery_pipeline: governed
-  status: active
+  status: complete
   target_version: v0.2.0-p3
   priority: 2
   created_date: '2026-04-22'
+  completed_date: '2026-04-23'
   decision_ref:
   - D50
   - D52
