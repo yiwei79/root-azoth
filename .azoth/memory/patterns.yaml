@@ -719,3 +719,35 @@ patterns:
       evidence. Likely M1 homes: orchestrator entry behavior,
       dynamic-full-auto research gating, and platform guidance docs via
       governed delivery.
+
+  - id: orchestrator-final-delivery-reports-need-executive-quality-synthesis
+    approved: true
+    approved_date: "2026-04-23"
+    reinforced_by: [ep-337, ep-341, ep-342]
+    trigger: any final delivery gate, pipeline close, or orchestrator status report that summarizes completed work for the human
+    summary: >
+      In Azoth, the orchestrator's final delivery report is an operator-facing
+      synthesis artifact, not a raw pipeline transcript. It should lead with an
+      executive read of what shipped, why it matters, and what remains open;
+      surface evaluator score visibility when a numeric score exists; and when
+      no numeric evaluator score was produced, say that plainly while showing
+      the strongest available quality evidence.
+    why_it_matters: >
+      ep-337 established that the final orchestrator report should explain the
+      delivered outcome and expose evaluator score visibility so the human does
+      not need to parse internal pipeline details. ep-341 refined the rule for
+      final delivery gates: show the numeric evaluator score when it exists,
+      and clearly distinguish absent scores from other PASS evidence such as
+      architect review, tests, and gate validation. ep-342 made the
+      communication standard explicit: operator-facing delivery summaries should
+      use concise hierarchy, compact tables for scores or evidence, and
+      residual-risk rows when comparison matters.
+    how_to_apply: >
+      At final delivery, start with a short executive read that names what was
+      delivered and the practical outcome. Then present quality evidence in a
+      compact structured form: evaluator score if available, otherwise a
+      clearly labeled "no separate numeric evaluator score" row plus supporting
+      evidence such as architect PASS, tests, gate validation, and known
+      residual blockers. Keep agent-to-agent artifacts deterministic, but make
+      the human-facing orchestrator closeout polished enough that the operator
+      can understand the outcome without reading the full stage transcript.

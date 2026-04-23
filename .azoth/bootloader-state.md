@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.15 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 15
+0.1.3.16 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 16
 
 ## Last Session
-- **Session**: 2026-04-23-t-krp-b
-- **Goal**: T-KRP-B: New skill: karpathy-principles SKILL.md for injectable discipline slot
+- **Session**: 2026-04-23-promote-application-path-router
+- **Goal**: AD-HOC: promote final-delivery reporting pattern and draft promote application-path router proposal
 - **Session mode**: delivery
-- **Pipeline**: governed
+- **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-343 (success)
+- **Episode**: ep-345 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

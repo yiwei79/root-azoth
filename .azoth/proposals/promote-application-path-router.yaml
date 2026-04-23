@@ -1,0 +1,195 @@
+proposal_schema_version: 1
+created_at: "2026-04-23T19:36:33Z"
+session_id: "2026-04-23-promote-final-delivery-reporting"
+backlog_id: "P6-003"
+title: "Promote application-path router for Azoth self-improvement"
+summary: >
+  Draft architecture proposal for evolving `/promote` from a narrow M3-to-M2
+  pattern-writing workflow into an explicit self-improvement router. The idea
+  is that after a candidate is approved, `/promote` should help classify the
+  next application path: keep in M2, create an M1 backlog item, update an
+  instruction/agent/command surface, add mechanical checks, route to research,
+  or reinforce an exact prior episode. This draft is intentionally not an
+  implementation plan; it exists so a future session can research, challenge,
+  and refine whether this belongs in `/promote`, another command, or a broader
+  memory-loop workflow.
+status: draft
+decision_refs:
+  - D11
+  - D21
+  - D23
+  - D49
+  - D51
+scope_layers:
+  - mixed
+details:
+  problem: >
+    Azoth's current `/promote` flow can correctly move reinforced M3 evidence
+    into M2 patterns, but the operator still has to reason manually about what
+    that learning should do next. Some learnings should remain memory-only,
+    some should become M1 backlog items, some should update command or agent
+    instructions, some need mechanical enforcement, and some need research
+    before any implementation. Without an explicit application-path step,
+    promotion can feel like "write to patterns.yaml and stop" even when the
+    deeper self-improvement loop needs a downstream destination.
+  motivating_example:
+    date: "2026-04-23"
+    source_pattern: "orchestrator-final-delivery-reports-need-executive-quality-synthesis"
+    source_episode: "ep-344"
+    observation: >
+      The approved final-delivery reporting pattern had several plausible
+      application paths: immediate manual use, canonical orchestrator
+      instruction changes, delivery-command final-report sections,
+      evaluator-score handoff conventions, or closeout/reporting support.
+      The human clarified that the important question was not only this one
+      pattern, but how `/promote` and Azoth self-improvement should expose such
+      paths systematically.
+  proposed_direction:
+    - >
+      Extend the promotion decision output with an "application path" section
+      after the standard evidence and Promotion Rubric result.
+    - >
+      Treat application path selection as a routing decision, not automatic
+      implementation. Human approval is still required before writes beyond the
+      approved promotion target.
+    - >
+      Preserve `/promote` as a memory/governance command by default; any M1
+      implementation path should create or recommend a backlog item and route
+      through the appropriate governed pipeline.
+  candidate_application_paths:
+    memory_only:
+      description: >
+        Keep the approved learning in M2 and rely on context-recall/readback to
+        influence future sessions.
+      when_to_use: >
+        The pattern is useful but not yet mature enough, mechanical enough, or
+        broadly enough scoped to change M1 behavior.
+    reinforcement:
+      description: >
+        Increment an exact prior episode's reinforcement_count when the human
+        explicitly confirms the same lesson recurred.
+      when_to_use: >
+        The candidate is not a new pattern but recurrence evidence for an
+        existing exact episode or lesson.
+    instruction_candidate:
+      description: >
+        Recommend a future update to an instruction surface such as an
+        orchestrator archetype, agent definition, command body, or skill.
+      when_to_use: >
+        The pattern should alter agent behavior but does not require a hook,
+        validator, schema, or runtime state machine.
+    mechanical_candidate:
+      description: >
+        Recommend a future test, hook, validator, schema rule, CLI guard, or
+        generated parity check.
+      when_to_use: >
+        The learning is repeatedly violated despite memory or prose
+        instructions, or correctness depends on deterministic enforcement.
+    backlog_candidate:
+      description: >
+        Draft or recommend an M1/M2 backlog item for a later scoped delivery
+        session.
+      when_to_use: >
+        The pattern has a clear implementation destination but should not be
+        implemented during the current promote pass.
+    research_candidate:
+      description: >
+        Create or recommend a future research/challenge session before
+        implementation.
+      when_to_use: >
+        The idea is promising but has architectural tradeoffs, unclear
+        ownership, or risk of overfitting from one recent workflow.
+    proposal_candidate:
+      description: >
+        Capture the design space in `.azoth/proposals/` for later refinement.
+      when_to_use: >
+        The learning points at a broad workflow change but needs synthesis
+        before becoming a backlog item.
+  possible_output_shape:
+    example: >
+      After "Approve? [yes / not-yet / reject]", the approved path could show:
+      "Application path: M2 now; research_candidate next; possible future
+      M1 surfaces: .claude/commands/promote.md, scripts/reinforcement_count.py,
+      .agents/skills/context-recall/SKILL.md; no implementation in this pass."
+    fields:
+      - "selected_path"
+      - "why_this_path"
+      - "not_selected_paths"
+      - "future_surfaces"
+      - "governance_requirement"
+      - "suggested_next_session"
+  research_questions:
+    - >
+      Should application-path routing live inside `/promote`, or should
+      `/promote` stay narrowly M3-to-M2 while another command owns downstream
+      self-improvement routing?
+    - >
+      How much should `/promote` suggest automatically before it risks
+      overstepping the "Never auto-promote" rule?
+    - >
+      What is the right boundary between "recommend a backlog item" and
+      "write a backlog item" after a promotion is approved?
+    - >
+      Can application-path routing reuse existing intake triage axes, or does
+      promotion need its own smaller routing vocabulary?
+    - >
+      How should the feature avoid duplicate churn when an existing M2 pattern
+      already names likely M1 homes?
+    - >
+      Should proposal creation be an explicit human-approved path, or is a
+      draft proposal acceptable when the user asks to preserve the idea for
+      future research?
+  challenge_points:
+    - >
+      Risk of overloading `/promote`: if it becomes both promotion, planning,
+      backlog creation, and proposal drafting, the command may lose its simple
+      auditability.
+    - >
+      Risk of premature M1 pressure: every useful pattern could start looking
+      like a required implementation, even when M2 readback is enough.
+    - >
+      Risk of duplicate routing: intake already routes insights across memory,
+      backlog, and action; promotion routing should not recreate an inconsistent
+      second triage system.
+    - >
+      Risk of false precision: application paths may look deterministic even
+      when the evidence is still weak or context-specific.
+  candidate_surfaces:
+    - ".claude/commands/promote.md"
+    - ".agents/skills/azoth-promote/SKILL.md"
+    - ".azoth/memory/patterns.yaml"
+    - ".azoth/memory/episodes.jsonl"
+    - "kernel/PROMOTION_RUBRIC.md"
+    - "scripts/reinforcement_count.py"
+    - ".agents/skills/context-recall/SKILL.md"
+    - ".agents/skills/azoth-memory-capture/SKILL.md"
+  validation_replay:
+    - >
+      Replay against ep-337, ep-341, and ep-342. Expected result: `/promote`
+      should approve M3-to-M2 as repo-local, then recommend "M2 now,
+      research/proposal candidate next" rather than directly editing
+      orchestrator or delivery command surfaces.
+    - >
+      Replay against earlier pipeline-compliance promotion candidates. Expected
+      result: when a pattern already exists in M2 with likely M1 homes, routing
+      should avoid proposing a duplicate pattern and instead surface the
+      existing pattern plus any missing follow-on action.
+    - >
+      Replay against a pure recurrence case. Expected result: the command should
+      ask for an exact episode id before reinforcement_count updates and should
+      not infer the id from tags or prose.
+  non_goals:
+    - "Do not auto-promote M2 patterns into M1."
+    - "Do not make `/promote` write backlog items without an explicit human-approved path."
+    - "Do not replace `/intake`; keep external insight triage distinct from promotion of already-captured M3 evidence."
+    - "Do not implement command, script, or kernel changes from this draft."
+  recommended_follow_up:
+    shape: >
+      Run a dedicated research/challenge session that maps the current memory
+      loop, compares `/intake` triage with `/promote` routing, replays several
+      recent promotions, and decides whether to refine this into a backlog item,
+      revise the proposal, or reject the feature as too much command surface.
+    likely_outputs:
+      - "A refined proposal with accepted/rejected application paths."
+      - "A candidate backlog item only if the research supports implementation."
+      - "A testable output contract for `/promote` if the feature proceeds."
