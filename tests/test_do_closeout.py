@@ -1208,7 +1208,7 @@ def test_governed_closeout_can_reinforce_exact_prior_episode_once(
     assert new_episode["reinforcement_count"] == 0
 
 
-def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
+def test_governed_closeout_closes_terminal_governed_run_instead_of_parking(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo_root = _build_repo(
@@ -1233,23 +1233,29 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
 
     do_closeout.run_closeout(repo_root)
 
-    expected_next_action = "Resume wave 2 review."
+    expected_next_action = do_closeout.default_next_action()
     ledger = yaml.safe_load(
         (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
     )
     session_entry = ledger["sessions"][0]
-    assert session_entry["status"] == "parked"
-    assert session_entry["active_run_id"] == "run-123"
+    run_entry = ledger["runs"][0]
+    assert session_entry["status"] == "closed"
+    assert "active_run_id" not in session_entry
     assert session_entry["next_action"] == expected_next_action
-    assert "closed_at" not in session_entry
+    assert "closed_at" in session_entry
+    assert run_entry["status"] == "complete"
+    assert run_entry["next_action"] == expected_next_action
+    assert "active_stage_id" not in run_entry
+    assert "pending_stage_ids" not in run_entry
 
     session_state = yaml.safe_load(
         (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
     )
-    assert session_state["state"] == "parked"
-    assert session_state["active_task"] == "Parked — BL-123: Governed closeout"
-    assert session_state["approved_scope"] == "BL-123: Governed closeout"
+    assert session_state["state"] == "closed"
+    assert session_state["active_task"] == "Closed — BL-123: Governed closeout"
+    assert session_state["approved_scope"] == "Completed: BL-123: Governed closeout"
     assert session_state["next_action"] == expected_next_action
+    assert "active_run_id" not in session_state
 
     bootloader_state = (repo_root / ".azoth" / "bootloader-state.md").read_text(encoding="utf-8")
     assert expected_next_action in bootloader_state
@@ -1259,7 +1265,7 @@ def test_governed_closeout_uses_resumable_run_next_action_for_w2_and_w3(
     assert f"Next action: {expected_next_action}" in project_status
 
 
-def test_governed_closeout_preserves_checkpoint_fields_in_session_state(
+def test_governed_closeout_clears_checkpoint_fields_in_session_state_when_terminal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo_root = _build_repo(
@@ -1287,13 +1293,16 @@ def test_governed_closeout_preserves_checkpoint_fields_in_session_state(
     session_state = yaml.safe_load(
         (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
     )
-    assert session_state["pipeline"] == "auto"
-    assert session_state["pipeline_position"] == 2
-    assert session_state["current_stage_id"] == "architect_review"
-    assert session_state["completed_stages"] == ["planner"]
-    assert session_state["pending_stages"] == ["builder_apply", "reviewer_gate"]
-    assert session_state["pause_reason"] == "human-gate"
-    assert session_state["active_run_id"] == "run-123"
+    for field in (
+        "pipeline",
+        "pipeline_position",
+        "current_stage_id",
+        "completed_stages",
+        "pending_stages",
+        "pause_reason",
+        "active_run_id",
+    ):
+        assert field not in session_state
 
 
 def test_governed_administrative_finalize_closes_resumable_session_without_version_bump(
@@ -1346,6 +1355,142 @@ def test_governed_administrative_finalize_closes_resumable_session_without_versi
     assert "active_run_id" not in session_state
 
     assert version_bump_calls == []
+
+
+def test_governed_administrative_finalize_prefers_closed_delivery_scope_over_stale_exploratory_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    scope_path = repo_root / ".azoth" / "scope-gate.json"
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["approved"] = False
+    scope["closed_at"] = "2026-04-18T21:55:01Z"
+    scope_path.write_text(json.dumps(scope), encoding="utf-8")
+
+    (repo_root / ".azoth" / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "stale-exploratory",
+                "goal": "Explore unrelated closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+
+    def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
+        version_bump_calls.append((cmd, cwd, check))
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", _fake_run)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root, administrative_finalize=True)
+
+    episodes = [
+        json.loads(line)
+        for line in (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert episodes[-1]["context"]["verbatim_source"] == "scope-gate.json"
+    assert episodes[-1]["session_id"] == "sess-123"
+
+    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    assert session_gate["session_id"] == "stale-exploratory"
+    assert session_gate["status"] == "active"
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    session_entry = ledger["sessions"][0]
+    assert session_entry["session_id"] == "sess-123"
+    assert session_entry["status"] == "closed"
+    assert session_entry["next_action"] == (
+        "Administrative finalize complete — run `/next` to select the next scoped task."
+    )
+
+    assert version_bump_calls == []
+
+
+def test_governed_administrative_finalize_fails_closed_before_exploratory_fallback_when_delivery_session_is_already_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=False)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    scope_path = repo_root / ".azoth" / "scope-gate.json"
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["approved"] = False
+    scope["closed_at"] = "2026-04-18T21:55:01Z"
+    scope_path.write_text(json.dumps(scope), encoding="utf-8")
+
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    ledger["sessions"][0]["status"] = "closed"
+    ledger["sessions"][0]["closed_at"] = "2026-04-18T21:55:01Z"
+    ledger["sessions"][0]["next_action"] = do_closeout.default_next_action()
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+    session_gate_path = repo_root / ".azoth" / "session-gate.json"
+    session_gate_path.write_text(
+        json.dumps(
+            {
+                "session_id": "stale-exploratory",
+                "goal": "Explore unrelated closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+
+    with pytest.raises(
+        do_closeout.CloseoutError,
+        match="Refusing exploratory fallback before W1",
+    ):
+        do_closeout.run_closeout(repo_root, administrative_finalize=True)
+
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    session_gate = json.loads(session_gate_path.read_text(encoding="utf-8"))
+    assert session_gate["status"] == "active"
 
 
 def test_governed_closeout_closes_stale_active_run_instead_of_parking(

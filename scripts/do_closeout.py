@@ -1073,6 +1073,66 @@ def _open_run_for_session(
     return open_runs[-1]
 
 
+def _administrative_finalize_delivery_scope(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+) -> dict[str, Any] | None:
+    session_id = str(scope.get("session_id") or "").strip()
+    backlog_id = str(scope.get("backlog_id") or "").strip()
+    if not session_id or not backlog_id or backlog_id == "AD-HOC":
+        return None
+    if not _scope_gate_indicates_closed(scope, session_id=session_id):
+        return None
+
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = load_yaml(ledger_path) if ledger_path.exists() else {"schema_version": 1, "runs": []}
+    sessions = ledger.get("sessions")
+    matching_session = None
+    if isinstance(sessions, list):
+        matching_session = next(
+            (
+                entry
+                for entry in sessions
+                if isinstance(entry, dict) and str(entry.get("session_id") or "") == session_id
+            ),
+            None,
+        )
+
+    preferred_run_id = (
+        str(matching_session.get("active_run_id") or "")
+        if isinstance(matching_session, dict)
+        else ""
+    ) or None
+    open_run = _open_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
+    resumable_run = _resumable_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
+    session_status = str(matching_session.get("status") or "").strip().lower()
+    if session_status == "closed":
+        return None
+    if matching_session is None and open_run is None and resumable_run is None:
+        return None
+
+    session_context = dict(scope)
+    session_context.setdefault("session_mode", "delivery")
+    return session_context
+
+
+def _closed_delivery_scope_requires_fail_closed(scope: dict[str, Any]) -> bool:
+    session_id = str(scope.get("session_id") or "").strip()
+    backlog_id = str(scope.get("backlog_id") or "").strip()
+    if not session_id or not backlog_id or backlog_id == "AD-HOC":
+        return False
+    return _scope_gate_indicates_closed(scope, session_id=session_id)
+
+
 def update_session_registry(
     repo_root: pathlib.Path,
     *,
@@ -1124,12 +1184,13 @@ def update_session_registry(
             or "unknown"
         )
     )
+    terminal_governed_closeout = is_governed_scope(scope) and not administrative_finalize
     closed_next_action = (
         "Administrative finalize complete — run `/next` to select the next scoped task."
         if administrative_finalize
         else default_next_action()
     )
-    if resumable_run is not None and not administrative_finalize:
+    if resumable_run is not None and not administrative_finalize and not terminal_governed_closeout:
         next_action = str(
             resumable_run.get("next_action")
             or (matching_session.get("next_action") if isinstance(matching_session, dict) else None)
@@ -1541,9 +1602,26 @@ def run_closeout(
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
     session_gate = active_session_gate(repo_root)
     live_scope = active_scope(repo_root)
+    administrative_scope = (
+        _administrative_finalize_delivery_scope(repo_root, scope=scope)
+        if administrative_finalize and not live_scope
+        else None
+    )
+    if (
+        administrative_finalize
+        and not live_scope
+        and administrative_scope is None
+        and _closed_delivery_scope_requires_fail_closed(scope)
+    ):
+        session_id = str(scope.get("session_id") or "unknown-session")
+        raise CloseoutError(
+            "Administrative finalize blocked: closed delivery scope "
+            f"'{session_id}' has no matching open delivery session state. "
+            "Refusing exploratory fallback before W1."
+        )
     session_state_path = repo_root / ".azoth" / "session-state.md"
     existing_session_state = load_yaml(session_state_path)
-    if live_scope or not session_gate:
+    if live_scope or administrative_scope or not session_gate:
         enforce_not_already_closed_session(
             repo_root,
             scope=scope,
@@ -1557,6 +1635,12 @@ def run_closeout(
             and str(session_gate.get("session_id") or "") == str(live_scope.get("session_id") or "")
         ):
             session_context["session_mode"] = normalized_session_mode(session_gate)
+        full_closeout = True
+        verbatim_source = "scope-gate.json"
+        verbatim_payload = dict(scope)
+    elif administrative_scope:
+        session_context = dict(administrative_scope)
+        session_context.setdefault("session_mode", "delivery")
         full_closeout = True
         verbatim_source = "scope-gate.json"
         verbatim_payload = dict(scope)
