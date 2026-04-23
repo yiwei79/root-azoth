@@ -941,12 +941,12 @@ initiatives:
     status: complete
   - task_ref: T-KRP-B
     phase: null
-    role: primary
-    status: active
+    role: historical
+    status: complete
   - task_ref: T-KRP-C
     phase: null
-    role: follow-on
-    status: planned
+    role: primary
+    status: active
   - task_ref: T-KRP-D
     phase: null
     role: follow-on
@@ -955,7 +955,7 @@ initiatives:
     phase: null
     role: follow-on
     status: planned
-  task_ref: T-KRP-B
+  task_ref: T-KRP-C
   spec_ref: null
 - id: INI-EFF-001
   title: Token & inference efficiency (context budget, caching, spawn hygiene)
@@ -1610,7 +1610,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 15
+  current_patch: 16
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1628,13 +1628,6 @@ versions:
     '
   pending_task_refs: []
   tasks:
-  - id: T-KRP-B
-    title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    carried_from: v0.2.0-p2
   - id: T-KRP-C
     title: 'Builder agent posture: surgical changes + simplicity-first enforcement'
     target_layer: M1
@@ -1704,3 +1697,4 @@ versions:
     decision_ref: []
   - {id: T-KRP-A, title: "CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution)", completed_date: "2026-04-22", decision_ref: []}
   - {id: T-017, title: "Codex selector policy + task-definition lane", completed_date: "2026-04-22", decision_ref: [D19, D21, D23, D46, D52]}
+  - {id: T-KRP-B, title: "New skill: karpathy-principles SKILL.md for injectable discipline slot", completed_date: "2026-04-23", decision_ref: [D21, D23, D44, D51]}

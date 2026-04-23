@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.14 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 14
+0.1.3.15 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 15
 
 ## Last Session
-- **Session**: 2026-04-23-adhoc-t-krp-b-planning-replay
-- **Goal**: AD-HOC: T-KRP-B targeted research bank refinement and roadmap hydration replay
+- **Session**: 2026-04-23-t-krp-b
+- **Goal**: T-KRP-B: New skill: karpathy-principles SKILL.md for injectable discipline slot
 - **Session mode**: delivery
-- **Pipeline**: standard
+- **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-340 (success)
+- **Episode**: ep-343 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
