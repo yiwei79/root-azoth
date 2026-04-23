@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.13 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 13
+0.1.3.14 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 14
 
 ## Last Session
-- **Session**: 2026-04-23-bl-072
-- **Goal**: BL-072: Reconcile live scope, resume eligibility, and session registry state
+- **Session**: 2026-04-23-adhoc-t-krp-b-planning-replay
+- **Goal**: AD-HOC: T-KRP-B targeted research bank refinement and roadmap hydration replay
 - **Session mode**: delivery
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-336 (success)
+- **Episode**: ep-340 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
