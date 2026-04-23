@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.12 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 12
+0.1.3.13 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 13
 
 ## Last Session
-- **Session**: 2026-04-23-bl-071
-- **Goal**: BL-071: Reintroduce shared CSafeLoader YAML helper for hot scripts
+- **Session**: 2026-04-23-bl-072
+- **Goal**: BL-072: Reconcile live scope, resume eligibility, and session registry state
 - **Session mode**: delivery
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-335 (success)
+- **Episode**: ep-336 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

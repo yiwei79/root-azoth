@@ -2775,10 +2775,11 @@ items:
   source: ep-334
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 4
   created_date: '2026-04-23'
+  completed_date: '2026-04-23'
   description: 'Resume and continuation logic should not fail just because one control-plane
     surface drifted while other authoritative live-session evidence still exists.
     Deliverables: (1) define the reconciliation rule across `.azoth/scope-gate.json`,
