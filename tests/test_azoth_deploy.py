@@ -44,6 +44,7 @@ UNIVERSAL_NEVER_AUTO = _mod.UNIVERSAL_NEVER_AUTO
 transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
+transform_agent_gemini = _mod.transform_agent_gemini
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_claude = _mod.transform_command_claude
 transform_command_copilot = _mod.transform_command_copilot
@@ -205,6 +206,23 @@ _ARCHITECT = {
     "body": "# Architect\n\nYou are the Architect.\n",
 }
 
+BUILDER_DEPLOY_MARKERS = [
+    "## Scope Discipline",
+    "State the approved goal, owned surfaces, expected changed files, and out-of-scope surfaces before editing.",
+    "Prefer existing repo helpers, patterns, and generated-source flows before adding new abstractions.",
+    "Avoid drive-by cleanup; preserve unrelated dirty state; keep every changed line traceable to the approved scope.",
+    "Choose the narrowest meaningful verification first, then run the relevant tests or parity checks.",
+    "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
+]
+
+
+def _canonical_builder() -> dict:
+    agents = load_agents(Path(__file__).resolve().parent.parent)
+    for agent in agents:
+        if agent["meta"].get("name") == "builder":
+            return agent
+    raise AssertionError("canonical builder agent not found")
+
 
 def test_claude_agent_required_fields() -> None:
     out = transform_agent_claude(_ARCHITECT)
@@ -285,6 +303,20 @@ def test_codex_agent_model_optional() -> None:
     out_with_model = transform_agent_codex(agent_with_model)
     data_with_model = tomllib.loads(out_with_model)
     assert data_with_model["model"] == "gpt-5.4"
+
+
+def test_builder_posture_projects_to_agent_transforms() -> None:
+    builder = _canonical_builder()
+    outputs = {
+        "claude": transform_agent_claude(builder),
+        "copilot": transform_agent_copilot(builder),
+        "opencode": transform_agent_opencode(builder),
+        "codex": tomllib.loads(transform_agent_codex(builder))["developer_instructions"],
+        "gemini": transform_agent_gemini(builder),
+    }
+    for platform, output in outputs.items():
+        for marker in BUILDER_DEPLOY_MARKERS:
+            assert marker in output, f"{platform} builder output missing marker: {marker}"
 
 
 # ── transform_agent_opencode ─────────────────────────────────────────────────

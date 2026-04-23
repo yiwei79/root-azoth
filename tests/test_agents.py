@@ -61,6 +61,14 @@ REQUIRED_SECTIONS = [
     "## Constraints",
 ]
 
+BUILDER_POSTURE_MARKERS = [
+    "State the approved goal, owned surfaces, expected changed files, and out-of-scope surfaces before editing.",
+    "Prefer existing repo helpers, patterns, and generated-source flows before adding new abstractions.",
+    "Avoid drive-by cleanup; preserve unrelated dirty state; keep every changed line traceable to the approved scope.",
+    "Choose the narrowest meaningful verification first, then run the relevant tests or parity checks.",
+    "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
+]
+
 
 def _agent_path(agent_name: str) -> Path:
     """Return the path to an agent's .agent.md file."""
@@ -251,6 +259,11 @@ class TestAgentContent:
         assert len(lines) >= 60, (
             f"{agent_name}.agent.md has {len(lines)} lines — minimum 60 expected for enriched agents"
         )
+
+    def test_builder_enforces_surgical_simplicity_posture(self) -> None:
+        content = _agent_path("builder").read_text(encoding="utf-8")
+        for marker in BUILDER_POSTURE_MARKERS:
+            assert marker in content, f"builder.agent.md missing posture marker: {marker}"
 
 
 # ---------------------------------------------------------------------------
