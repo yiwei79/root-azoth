@@ -37,7 +37,12 @@ EXPECTED_SKILLS = [
     "cursor-review-insights",
     "dynamic-full-auto",
     "orientation",
+    "karpathy-principles",
 ]
+
+INJECTABLE_ONLY_SKILLS = {
+    "karpathy-principles",
+}
 
 EXTRACTED_SKILLS = [
     "context-map",
@@ -58,6 +63,7 @@ NEW_SKILLS = [
     "cursor-review-insights",
     "dynamic-full-auto",
     "orientation",
+    "karpathy-principles",
 ]
 
 
@@ -218,7 +224,7 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 10, "Should have 10 new skills"
+        assert len(NEW_SKILLS) == 11, "Should have 11 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_skill_index_lists_all_expected_skills(self) -> None:
@@ -239,10 +245,18 @@ class TestSkillConsistency:
                 )
 
     def test_architecture_references_all_skills(self) -> None:
-        """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""
+        """CLAUDE.md should reference non-injectable skill slugs (BL-013)."""
         claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
-        for slug in EXPECTED_SKILLS:
+        for slug in sorted(set(EXPECTED_SKILLS) - INJECTABLE_ONLY_SKILLS):
             assert slug in claude_md, f"CLAUDE.md must reference skill slug {slug!r}"
+
+    def test_injectable_only_skills_are_not_added_to_root_architecture(self) -> None:
+        """Injectable-only skills stay opt-in instead of expanding the root instruction surface."""
+        claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
+        for slug in sorted(INJECTABLE_ONLY_SKILLS):
+            assert slug not in claude_md, (
+                f"Injectable-only skill {slug!r} must not be added to CLAUDE.md"
+            )
 
     def test_azoth_yaml_skill_count(self) -> None:
         """azoth.yaml should reflect correct skill count."""
@@ -270,6 +284,47 @@ class TestSkillConsistency:
         assert "L1" in content
         assert "L2" in content
         assert "L3" in content
+
+    def test_karpathy_principles_content_contract(self) -> None:
+        """T-KRP-B: injectable discipline skill must carry the scoped Karpathy contract."""
+        skill_md = SKILLS_DIR / "karpathy-principles" / "SKILL.md"
+        assert skill_md.is_file(), "T-KRP-B requires skills/karpathy-principles/SKILL.md"
+
+        content = skill_md.read_text(encoding="utf-8")
+        lowered = content.lower()
+        fm = TestSkillFrontmatter._parse_frontmatter("karpathy-principles")
+
+        assert fm.get("name") == "karpathy-principles"
+        assert "governance_anchor" in fm, (
+            "karpathy-principles frontmatter must include a governance_anchor"
+        )
+        for section in (
+            "## Overview",
+            "## When to Use",
+            "## Integration",
+        ):
+            assert section.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing required section: {section}"
+            )
+        for principle in (
+            "Think Before Coding",
+            "Simplicity First",
+            "Surgical Changes",
+            "Goal-Driven Execution",
+        ):
+            assert principle.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing principle: {principle}"
+            )
+        for phrase in (
+            "stage6-rubric",
+            "usage pattern",
+            "T-KRP-C",
+            "T-KRP-D",
+            "T-KRP-E",
+        ):
+            assert phrase.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing T-KRP-B contract phrase: {phrase}"
+            )
 
 
 class TestP1007RecallGovernance:

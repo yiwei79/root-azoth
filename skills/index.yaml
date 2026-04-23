@@ -68,6 +68,11 @@ skills:
       - subagent-router
       - orientation
 
+  - name: karpathy-principles
+    description: Injectable discipline slot for coding, review, planning, or refactoring stages that need assumption surfacing, simplicity pressure, surgical diffs, and stage6-rubric-verifiable success criteria.
+    depends_on:
+      - stage6-rubric
+
   - name: orientation
     description: Load the v0.2.0 slice roadmap, backlog alignment, per-task specs, and expanded workflow when planning or editing `.azoth/roadmap.yaml` / backlog.
     depends_on: []
