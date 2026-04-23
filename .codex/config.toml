@@ -58,4 +58,4 @@ max_threads = 10
 max_depth = 2
 
 [sandbox_workspace_write]
-network_access = false
+network_access = true
