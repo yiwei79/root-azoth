@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.16 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 16
+0.1.3.17 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 17
 
 ## Last Session
-- **Session**: 2026-04-23-promote-application-path-router
-- **Goal**: AD-HOC: promote final-delivery reporting pattern and draft promote application-path router proposal
+- **Session**: intake-2026-04-23
+- **Goal**: AD-HOC: process architect-approved intake bundle
 - **Session mode**: delivery
 - **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-345 (success)
+- **Episode**: ep-350 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

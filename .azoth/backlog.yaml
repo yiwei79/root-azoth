@@ -2814,3 +2814,40 @@ items:
   - D23
   - D44
   - D51
+- id: BL-073
+  title: Fail-closed guard for Codex /auto staged delegation
+  source: intake-2026-04-23
+  source_insight: SRF-2026-04-23-002
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-23'
+  decision_ref:
+  - D21
+  - D23
+  - D50
+  description: 'Add a mechanical fail-closed path for Codex `/auto` after approval:
+    before planner, builder, reviewer, or evaluator work proceeds, verify a matching
+    spawned stage and typed prior-stage summary exists. If not, pause the run, record
+    a human-gate/replay state in the run ledger, and require explicit stage replay
+    before implementation or closeout can continue.
+
+    '
+- id: BL-074
+  title: Pre-PR fast-fail checks for generated artifact and contract drift
+  source: intake-2026-04-23
+  source_insight: e4ed026f-5f15-4727-8815-30cd95e0fa9f
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-23'
+  description: 'Create a lightweight pre-PR fast-fail path for parity-sensitive work:
+    run formatting checks, refresh generated artifacts when mirror surfaces changed,
+    and assert roadmap/.gitignore contract expectations before PR CI has to discover
+    predictable drift.
+
+    '
