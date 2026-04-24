@@ -7,12 +7,13 @@ summary: >
   Draft architecture proposal for treating Azoth's M2-to-M1 path as a
   governed learning control loop rather than a `/promote`-local feature. The
   target loop is: M3 evidence to M2 pattern, M2 pattern to a Learning
-  Application Decision, decision to scoped readback, proposal, backlog, L2
-  refinement, or M1 candidate work, then closeout evaluation that reinforces or
-  revises the learning. This proposal changes governance/design artifacts only.
-  It preserves the draft-only policy: Azoth may recommend and prepare
-  downstream artifacts, but M1 changes still require a backlog item, explicit
-  human approval, `/next`, and `/deliver-full`.
+  Application Decision, decision to M2 readback, exact reinforcement, L2
+  refinement, proposal planning, backlog planning, or M1 candidate
+  recommendation, then closeout evaluation that reinforces or revises the
+  learning. This proposal changes governance/design artifacts only. It
+  preserves the draft-only policy: Azoth may recommend downstream artifacts,
+  but D51 still requires a backlog item, explicit human approval, `/next`, and
+  `/deliver-full` before any M1 implementation.
 status: draft
 decision_refs:
   - D11
@@ -29,12 +30,12 @@ details:
   problem: >
     Azoth can capture M3 episodes and promote recurring evidence into M2
     patterns, but the post-promotion application step is still mostly manual.
-    Some patterns should remain operational memory, some should reinforce exact
-    prior evidence, some should become L2 instruction-refinement work, some
-    need architecture proposals or planning backlog items, and only a smaller
-    subset should graduate toward M1. Without a common decision model, each
-    command risks inventing its own partial router and the self-improvement loop
-    remains less auditable than the rest of Azoth.
+    Some patterns should remain M2 readback, some should reinforce exact prior
+    evidence, some should become L2 instruction-refinement work, some need
+    proposal or backlog planning, and only a smaller subset should become M1
+    candidate recommendations. Without a common decision model, each command
+    risks inventing its own partial router and the self-improvement loop remains
+    less auditable than the rest of Azoth.
   architecture_thesis: >
     The optimal design is not to make `/promote` a larger command that owns all
     downstream learning. Azoth should define one Learning Application Decision
@@ -59,13 +60,13 @@ details:
         source: "Post-promotion or planning-time routing judgment"
         exit_condition: "A path is selected with evidence, owner, gate, and rejected alternatives."
       - name: "scoped_application"
-        source: "Existing proposal, backlog, L2 refinement, M1 candidate, or readback path"
+        source: "Existing proposal planning, backlog planning, L2 refinement, M1 candidate recommendation, or M2 readback path"
         exit_condition: "Work is completed, deferred, or rejected through normal Azoth gates."
       - name: "closeout_feedback"
         source: "Session closeout and future promote/intake sweeps"
         exit_condition: "The pattern is reinforced, contradicted, revised, or retired."
   application_paths:
-    readback_only:
+    m2_readback:
       description: >
         Keep the approved pattern in M2 and rely on context-recall/readback to
         influence future planning and execution.
@@ -73,7 +74,7 @@ details:
         The pattern is useful, but prose memory is enough for now or evidence is
         not mature enough to justify a scoped implementation.
       gate: "No write beyond the approved M2 update."
-    reinforce:
+    exact_reinforcement:
       description: >
         Add recurrence evidence to an exact prior episode or pattern without
         creating a duplicate pattern or downstream work item.
@@ -90,7 +91,7 @@ details:
         hypothesis, but the change is still behavioral/instructional rather
         than a kernel procedure.
       gate: "Human-approved L2 proposal, then `/auto` with instruction-refinement."
-    proposal:
+    proposal_planning:
       description: >
         Capture an architecture-level design space in `.azoth/proposals/` for
         research, challenge, and refinement before implementation.
@@ -106,14 +107,16 @@ details:
         The pattern has a clear operational destination but does not require a
         kernel/governance M1 change.
       gate: "Human-approved backlog append; later `/next` scope card."
-    m1_candidate:
+    m1_candidate_recommendation:
       description: >
         Recommend a `target_layer: M1` backlog candidate for a procedure,
         governance, kernel, command, skill, or agent change.
       use_when: >
         The pattern is validated across sessions, belongs in a durable Azoth
         procedure, and memory/readback alone is insufficient.
-      gate: "`target_layer: M1`, human approval, `/next`, and `/deliver-full`."
+      gate: >
+        Recommendation only until D51 flow creates or approves `target_layer:
+        M1`, human approval, `/next`, and `/deliver-full`.
     not_yet:
       description: >
         Preserve the evidence without taking downstream action.
@@ -135,7 +138,7 @@ details:
     context_recall: >
       `context-recall` closes the write-only memory failure mode by pulling
       relevant M3 episodes and M2 patterns into planning. It is the default
-      execution-time path for readback-only patterns.
+      execution-time path for m2_readback patterns.
     next: >
       `/next` remains the scoped-work gate. It should surface relevant M2
       patterns, proposal references, and M1 boundaries when choosing and
@@ -156,6 +159,7 @@ details:
       - "M2 readback is the default application path until evidence proves it is insufficient."
       - "M1 candidates require cross-session validation and a concrete procedure home."
       - "M1 changes must happen between sessions through scoped delivery, not inline during promotion."
+      - "A `/promote` route may recommend M1 candidacy, but D51 forbids direct implementation from the promotion flow."
     required_path:
       - "Create or approve a backlog item with `target_layer: M1`."
       - "Select it through `/next` and approve the scope card."
@@ -175,51 +179,78 @@ details:
       - "required_gate"
       - "draft_artifact_or_next_step"
     example: >
-      selected_path=proposal; evidence_basis=recent promote sweep exposed
-      multiple plausible homes; downstream_owner=architect/planner;
-      required_gate=human-approved proposal/backlog write; not_selected=M1
-      because architecture is not yet stable.
+      selected_path=proposal_planning; evidence_basis=recent promote sweep
+      exposed multiple plausible homes; downstream_owner=architect/planner;
+      required_gate=human-approved proposal write;
+      not_selected_paths=[m2_readback,m1_candidate_recommendation] because
+      readback alone is too weak and architecture is not yet stable enough for
+      an M1 recommendation.
   public_interface_policy:
     current_slice: >
       This proposal changes only the architecture proposal text. It does not
       change command contracts, scripts, skills, schemas, hooks, or runtime
       behavior.
     future_slice: >
-      If approved, a later implementation should first add a shared output
-      contract to the command/skill surfaces that already participate in the
-      learning loop. It should prefer existing proposal, backlog, and memory
-      metadata before introducing a new persisted learning-decision log.
+      If approved, the first implementation boundary is `/promote` output
+      wording that surfaces the Learning Application Decision. Broader command,
+      skill, schema, backlog, helper, or M1 behavior changes require a separate
+      D51-governed scope. Any later shared output contract should prefer
+      existing proposal, backlog, and memory metadata before introducing a new
+      persisted learning-decision log.
   validation_replay:
     - source_pattern: "orchestrator-final-delivery-reports-need-executive-quality-synthesis"
-      expected_path: "readback_only or proposal"
+      expected_path: "m2_readback"
+      not_selected_paths:
+        - proposal_planning
+        - backlog_planning
+        - m1_candidate_recommendation
       rationale: >
-        The pattern is immediately useful as operator memory, but durable
-        reporting changes affect multiple surfaces and should be challenged as
-        architecture before becoming M1.
+        The pattern is immediately useful as operator memory, while durable
+        reporting changes affect multiple surfaces and need a separate
+        architecture or backlog scope before any implementation route.
     - source_pattern: "platform-parity-needs-mechanical-mirrors-and-tests"
-      expected_path: "backlog_planning or m1_candidate"
+      expected_path: "backlog_planning"
+      not_selected_paths:
+        - m2_readback
+        - exact_reinforcement
+        - proposal_planning
+        - m1_candidate_recommendation
       rationale: >
-        The failure mode is deterministic and cross-platform; prose memory may
-        be insufficient if parity can be mechanically checked.
+        The failure mode is deterministic and cross-platform, so it should be
+        scoped as backlog planning for mechanical mirror and test work before
+        implementation. M1 candidacy requires a named durable procedure home
+        and a separate D51-governed scope.
     - source_pattern: "control-plane-needs-real-time-claims-and-durable-status"
       expected_path: "backlog_planning"
+      not_selected_paths:
+        - m2_readback
+        - l2_refinement
+        - m1_candidate_recommendation
       rationale: >
         The pattern points at operational state management and should be scoped
         through backlog and `/next` before changing control-plane behavior.
     - source_pattern: "governed-write-protocols-require-operational-readiness-check"
       expected_path: "not_yet"
+      not_selected_paths:
+        - exact_reinforcement
+        - backlog_planning
+        - m1_candidate_recommendation
       rationale: >
         The pattern was promoted with an explicit maturity note; it should
         remain evidence until recurrence strengthens the case for procedure
         change.
     - source_pattern: "exact duplicate recurrence evidence"
-      expected_path: "reinforce"
+      expected_path: "exact_reinforcement"
+      not_selected_paths:
+        - m2_readback
+        - proposal_planning
+        - backlog_planning
       rationale: >
         Exact recurrence should strengthen existing evidence rather than create
         duplicate patterns or premature downstream work.
   research_questions:
     - >
-      What minimum evidence threshold should move a pattern from readback-only
+      What minimum evidence threshold should move a pattern from m2_readback
       to L2 refinement, backlog planning, or M1 candidacy?
     - >
       Should the Learning Application Decision be persisted later, or is it
@@ -252,13 +283,14 @@ details:
     - "Do not introduce a new persisted learning-decision schema in this proposal slice."
   recommended_follow_up:
     shape: >
-      Use BL-075 for a focused research/challenge session that replays recent
-      promotions, compares D49 intake triage with post-promotion application
-      routing, and decides whether the v1 output contract should be implemented
-      in `/promote`, shared skill text, `/next` readback, closeout, or a small
-      common helper.
+      Use BL-075 as the current planning and refinement slice for the Learning
+      Application Decision router. A later, separate backlog item can own
+      focused `/promote` output wording implementation if the refined proposal
+      and D51-governed approval support it. Shared skill text, `/next`
+      readback, closeout, common helpers, backlog writes, and M1 changes
+      require a separate D51-governed scope.
     likely_outputs:
       - "Accepted or revised application-path vocabulary."
-      - "A testable Learning Application Decision output contract."
-      - "A separate implementation backlog item only if research supports it."
+      - "A testable `/promote` Learning Application Decision output contract."
+      - "A separate implementation backlog item only if D51-governed research supports it."
       - "No M1 implementation unless the approved item is `target_layer: M1`."
