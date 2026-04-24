@@ -177,6 +177,19 @@ details:
       rule: >
         Candidate slices are planning evidence only until the human approves
         hydration into roadmap/backlog state.
+  active_pilot:
+    initiative_id: "INI-EVI-002"
+    bank_ref: ".azoth/research/ini-evi-002-research-bank.yaml"
+    status: "discovery_active"
+    rationale: >
+      INI-EVI-002 is the first pilot because it improves the quality gates for
+      proposals, initiative banks, roadmap hydration plans, and related planning
+      artifacts. The pilot bank is the living evidence surface; this proposal
+      remains the architecture rationale surface.
+    hydration_boundary: >
+      The pilot bank may refine questions, packs, findings, assumptions,
+      contradictions, candidate slices, and readiness. It must not hydrate
+      roadmap/backlog state until a human approves a ready first slice.
   refined_contract:
     external_source_alignment:
       observed_at: "2026-04-24"
@@ -353,14 +366,14 @@ details:
       external_alignment:
         - "Atlassian's discovery-to-delivery model keeps uncertain ideas out of committed delivery until validation and prioritization are complete."
         - "Product Talk's opportunity-solution tree flow asks teams to choose a target opportunity and test assumptions before deciding what to build."
-    - scenario: "Knowledge-richness initiative can become a ready hydration candidate after a bounded slice is named"
+    - scenario: "Knowledge-richness initiative can become a ready hydration candidate after the bank-validator slice is approved"
       input:
         initiative_ref: "INI-EVI-002"
-        candidate_slice: "Proposal richness dashboard integration"
+        candidate_slice: "Initiative bank contract and readiness validation"
         observed_state: >
-          Phase-null initiative with no slices yet, but the ad-hoc evaluator,
-          proposal contract, and roadmap integration points create enough
-          evidence to draft a first reviewed hydration plan.
+          Phase-null initiative with no slices yet, but an initiative bank,
+          discovery proposal, and tooling proposal identify a narrow first
+          validator/readiness slice that can be reviewed before hydration.
       expected_path: "ready_to_hydrate_after_human_approval"
       readiness_result: "ready_to_hydrate"
       rationale: >

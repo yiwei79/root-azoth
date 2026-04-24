@@ -489,6 +489,15 @@ initiatives:
   priority: high
   task_ref: null
   slices: []
+  research_ref: .azoth/research/ini-evi-002-research-bank.yaml
+  proposal_refs:
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+  discovery_status: discovery_active
+  candidate_slice_ref: slice-evi-002-a
+  readiness_ref: .azoth/research/ini-evi-002-research-bank.yaml#readiness
+  next_discovery_action: Refine slice-evi-002-a in the initiative bank, then hydrate
+    only after readiness and human approval.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust,
     Azoth-integrated quality lane for project-management artifacts. The long-term
     goal is one shared rubric that can score architecture proposals, initiative
