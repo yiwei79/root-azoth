@@ -177,6 +177,229 @@ details:
       rule: >
         Candidate slices are planning evidence only until the human approves
         hydration into roadmap/backlog state.
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-04-24"
+      sources:
+        - title: "Atlassian Product Discovery"
+          url: "https://www.atlassian.com/agile/product-management/discovery"
+          finding: >
+            Product discovery should validate ideas before build commitment,
+            connect discovery data with delivery status, and keep decision data
+            visible rather than scattered across disconnected artifacts.
+        - title: "Jira Product Discovery delivery overview"
+          url: "https://www.atlassian.com/software/jira/product-discovery/guides/delivery/overview"
+          finding: >
+            Ideas can move from uncertain parking-lot state through discovery
+            into ready-for-delivery only after validation, prioritization, and
+            commitment; delivery issues remain linked back to discovery ideas.
+        - title: "Product Talk Opportunity Solution Tree"
+          url: "https://www.producttalk.org/glossary-discovery-opportunity-solution-tree/"
+          finding: >
+            Opportunity solution trees separate desired outcomes, opportunity
+            space, solution space, and assumption tests so teams can make
+            assumptions explicit before choosing what to build.
+        - title: "Google Cloud Architecture Decision Records overview"
+          url: "https://cloud.google.com/architecture/architecture-decision-records"
+          finding: >
+            Architecture decision records capture options, requirements, the
+            selected decision, and context so future work can understand why a
+            decision was made.
+        - title: "GOV.UK Service Manual discovery phase"
+          url: "https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works"
+          finding: >
+            Discovery should happen before build commitment, should clarify the
+            problem, constraints, users, wider context, opportunities, and success
+            measures, and should end with a decision to stop, continue researching,
+            or move toward testing ideas.
+      implications:
+        - >
+          Treat phase-null initiatives like uncertain discovery ideas: visible
+          and discussable, but not ready for delivery until the readiness gate
+          produces a validated candidate slice.
+        - >
+          Keep the initiative bank linked to downstream tasks so delivery
+          preserves discovery rationale instead of copying stale evidence into
+          disconnected task specs.
+        - >
+          Model candidate slices with outcome, opportunity, solution, and
+          assumption-test fields where useful; this maps cleanly to Azoth's
+          candidate-slice plus readiness-report contract.
+        - >
+          Preserve the proposal as the architectural rationale surface while
+          the initiative bank carries evidence and readiness state.
+        - >
+          Treat "not ready yet" and "stop" as successful discovery outcomes when
+          replay shows that an initiative is historical-only, too broad, or lacks
+          enough context to justify a first slice.
+    initiative_candidate_criteria:
+      purpose: >
+        Define which phase-null initiatives are eligible for discovery routing
+        so historical theme containers do not masquerade as live work.
+      criteria:
+        - "The initiative has `phase: null` and is not already scheduled into a roadmap version."
+        - "The initiative has at least one incomplete or explicitly open goal, slice, or unresolved research question."
+        - "The initiative is not fully represented by completed historical slices."
+        - "No claimable backlog item already covers the same next action."
+        - "The operator explicitly wants discovery, or the initiative has material assumptions that would make direct hydration risky."
+      non_candidates:
+        - "Historical-only initiatives whose slices are all complete."
+        - "Initiatives with an already claimable backlog item; `/next` should handle those."
+        - "Small obvious follow-ups that can be drafted directly as backlog work without a research lane."
+    artifact_boundary:
+      proposal_owns: "Intent, design space, open questions, non-goals, and challenge points."
+      initiative_bank_owns: >
+        Evidence, source packs, local findings, assumptions, contradictions,
+        challenge history, candidate slices, readiness, and hydration history
+        for one initiative.
+      task_capsule_owns: >
+        Slice-specific freshness and sufficiency evidence for delivery. A
+        task-level capsule must still satisfy `scripts/research_sufficiency.py`
+        before research-dependent delivery treats it as reusable evidence.
+      digest_relationship: >
+        `SWARM_RESEARCH_DIGEST.yaml` remains the roadmap-version DFA+ aggregate.
+        Initiative banks may reference digest pack ids, cite selected consensus
+        themes, or import relevant packs with provenance, but the digest should
+        not be reused directly as the initiative bank because it lacks
+        initiative ownership, readiness, candidate-slice, and hydration fields.
+    readiness_report_schema:
+      purpose: >
+        Record a human-readable pass/fail readiness judgment before hydration
+        without writing roadmap or backlog state.
+      minimal_fields:
+        - "initiative_id"
+        - "evaluated_at"
+        - "source_bank_ref"
+        - "readiness_status"
+        - "goal_clarity"
+        - "evidence_coverage"
+        - "freshness_status"
+        - "assumption_audit"
+        - "contradiction_disposition"
+        - "candidate_first_slice"
+        - "target_layer"
+        - "delivery_pipeline"
+        - "acceptance_criteria"
+        - "non_goals"
+        - "hydration_recommendation"
+        - "human_decision"
+      status_values:
+        - "continue_research"
+        - "ready_to_hydrate"
+        - "defer"
+        - "reject"
+      fail_closed_rules:
+        - "Unresolved contradictions that affect first-slice scope block `ready_to_hydrate`."
+        - "Stale evidence blocks `ready_to_hydrate` when freshness affects the slice."
+        - "Ambiguous `target_layer` or `delivery_pipeline` blocks hydration."
+        - "A first slice that is still the whole initiative must return `continue_research`."
+    command_policy:
+      roadmap: >
+        First visibility surface. `/roadmap` may show read-only discovery
+        readiness or candidate status inside the unscheduled initiatives panel.
+      start: >
+        Keep `/start` lightweight: when no backlog item is claimable, it may
+        hint that discovery candidates exist and point to `/roadmap` or a
+        future discovery command.
+      next: >
+        Keep `/next` as the delivery scope-card path. It may show a read-only
+        discovery hint when no backlog item is claimable, but it must not create
+        proposals, write research banks, hydrate roadmap tasks, or turn an
+        initiative into a scope card.
+      future_command: >
+        If the pattern proves durable, consider `/initiative-discover <INI-ID>`
+        as the dedicated command for opening or resuming discovery without
+        overloading `/next`.
+    hydration_handoff:
+      existing_planned_task: >
+        For a planned task stub that already exists in the active version, use
+        `scripts/roadmap_scaffold.py --hydrate-task <TASK-ID>` so the existing
+        identity is preserved.
+      new_approved_slice: >
+        For a newly approved slice, use `scripts/roadmap_scaffold.py --title ...
+        --initiative-ref <INI-ID>` after the human approves the hydration plan.
+      helper_boundary: >
+        A future `initiative_hydrate.py` helper should first emit a reviewed
+        hydration plan and readiness report without writing roadmap/backlog
+        state; only a separate human-approved step should call the existing
+        scaffold paths.
+  validation_replay:
+    - scenario: "Historical-only initiative should not become a discovery candidate"
+      input:
+        initiative_ref: "INI-KRP-001"
+        observed_state: >
+          Phase-null initiative whose T-KRP-A through T-KRP-E slices are all
+          recorded as historical and complete.
+      expected_path: "not_candidate"
+      readiness_result: "reject"
+      rationale: >
+        The initiative is durable historical context, not a live opportunity.
+        Surfacing it as discovery would confuse completed goal memory with the
+        next actionable planning surface.
+      external_alignment:
+        - "GOV.UK discovery treats stop/no-go as a valid outcome when research says the problem should not proceed."
+    - scenario: "Open phase-null initiative with no slices stays in discovery"
+      input:
+        initiative_ref: "INI-MEM-003"
+        observed_state: >
+          Phase-null memory initiative with no slices, no backlog task, and an
+          architectural goal that still needs slice and evidence selection.
+      expected_path: "initiative_discovery"
+      readiness_result: "continue_research"
+      rationale: >
+        The initiative is visible and potentially valuable, but direct hydration
+        would require inventing first-slice scope, acceptance criteria, and
+        delivery-layer classification from incomplete evidence.
+      external_alignment:
+        - "Atlassian's discovery-to-delivery model keeps uncertain ideas out of committed delivery until validation and prioritization are complete."
+        - "Product Talk's opportunity-solution tree flow asks teams to choose a target opportunity and test assumptions before deciding what to build."
+    - scenario: "Knowledge-richness initiative can become a ready hydration candidate after a bounded slice is named"
+      input:
+        initiative_ref: "INI-EVI-002"
+        candidate_slice: "Proposal richness dashboard integration"
+        observed_state: >
+          Phase-null initiative with no slices yet, but the ad-hoc evaluator,
+          proposal contract, and roadmap integration points create enough
+          evidence to draft a first reviewed hydration plan.
+      expected_path: "ready_to_hydrate_after_human_approval"
+      readiness_result: "ready_to_hydrate"
+      rationale: >
+        Once the slice records target layer, acceptance criteria, evidence refs,
+        non-goals, freshness status, and contradiction disposition, the helper
+        may emit a hydration plan. Roadmap and backlog writes still remain
+        human-approved scaffold actions.
+      external_alignment:
+        - "Google Cloud ADR guidance supports retaining options, requirements, decisions, and timestamps so future work can understand the rationale."
+  worked_examples:
+    - name: "Readiness report flow for a phase-null initiative"
+      steps:
+        - "Select an actionable phase-null initiative from `/roadmap` instead of `/next`."
+        - "Open or update the discovery proposal and initiative bank."
+        - "Record local findings, external sources, assumptions, contradictions, and candidate slices."
+        - "Run knowledge-richness and structural proposal checks."
+        - "Emit a readiness report with `continue_research`, `ready_to_hydrate`, `defer`, or `reject`."
+        - "Only after human approval, call the existing roadmap scaffold path for the selected slice."
+      expected_output: >
+        A reviewed hydration plan or a clear non-hydration decision, with no
+        roadmap/backlog writes performed by discovery itself.
+  research_completion_assessment:
+    assessed_at: "2026-04-24"
+    evaluator: "scripts/proposal_knowledge_richness.py"
+    score: "100/100"
+    rating: "excellent"
+    gaps: []
+    research_complete_for: >
+      Proposal refinement and future implementation scoping of the initiative
+      discovery lane contract.
+    not_complete_for:
+      - "Implementing a new `/initiative-discover` command without a separate scoped task."
+      - "Bypassing human approval for roadmap or backlog hydration writes."
+      - "Treating initiative-level evidence as a task-level research capsule without `scripts/research_sufficiency.py`."
+    evidence_basis:
+      - "Five external source alignments with observed date."
+      - "Three validation replay scenarios against real roadmap initiative shapes."
+      - "One worked readiness-report flow."
+      - "Passing structural proposal validation and targeted evaluator tests."
   command_surface_options:
     option_a_extend_start_next:
       description: >

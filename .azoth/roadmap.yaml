@@ -468,6 +468,48 @@ initiatives:
   - D50
   - D52
   spec_ref: null
+- id: INI-EVI-002
+  title: Knowledge richness evaluation for project-management artifacts
+  category: pipeline
+  theme: B
+  dimensions:
+    themes:
+    - B
+    - C
+    - E
+    categories:
+    - pipeline
+    - memory
+    - efficiency
+    tracks:
+    - knowledge-richness
+    - proposal-evaluation
+    - project-management-quality
+  phase: null
+  priority: high
+  task_ref: null
+  slices: []
+  summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust,
+    Azoth-integrated quality lane for project-management artifacts. The long-term
+    goal is one shared rubric that can score architecture proposals, initiative
+    research banks, roadmap hydration plans, task research capsules, and future
+    planning surfaces for evidence breadth, source quality, traceability, alternatives,
+    operational specificity, validation readiness, and freshness handling. This
+    initiative should preserve existing structural validators while adding advisory
+    richness scoring, threshold policies, dashboards, and integration points for
+    `/arch-proposal`, `/roadmap`, `/next`, and closeout.
+
+    '
+  decision_ref:
+  - D11
+  - D23
+  - D45
+  - D47
+  - D48
+  - D49
+  - D50
+  - D52
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
