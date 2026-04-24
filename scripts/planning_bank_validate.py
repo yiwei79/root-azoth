@@ -306,8 +306,10 @@ def build_initiative_readiness_report(
     blocking_reasons: list[str] = []
     use_readiness_candidate_status = selected_candidate_id == candidate_first_slice
 
-    if candidate_status == "complete":
-        blocking_reasons.append("candidate.status is complete; no hydration action remains")
+    if candidate_status in {"hydrated", "complete"}:
+        blocking_reasons.append(
+            f"candidate.status is {candidate_status}; no hydration action remains"
+        )
     if readiness_status != "ready_to_hydrate":
         blocking_reasons.append("readiness.readiness_status must be ready_to_hydrate")
     if human_decision != "approved":
@@ -337,7 +339,7 @@ def build_initiative_readiness_report(
         and bool(non_goals)
         and isinstance(open_questions, list)
         and not open_questions
-        and candidate_status != "complete"
+        and candidate_status not in {"hydrated", "complete"}
     )
     acceptance_criteria_status = (
         readiness.get("acceptance_criteria_status") if use_readiness_candidate_status else None

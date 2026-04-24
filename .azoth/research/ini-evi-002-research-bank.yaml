@@ -2,7 +2,7 @@ schema_version: 1
 artifact_type: research_evidence_index
 topic: INI-EVI-002 knowledge richness evaluation for project-management artifacts
 created_at: "2026-04-24T00:00:00+00:00"
-updated_at: "2026-04-24T19:55:00+00:00"
+updated_at: "2026-04-24T20:06:33+00:00"
 planning_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
 summary: >
   Evidence index for the INI-EVI-002 initiative bank. Research artifacts own
@@ -90,3 +90,59 @@ research_packs:
         finding: The tooling proposal identifies readiness reporting and plan-only handoff as the safe bridge before any future write-mode hydration helper.
       - path: .azoth/initiative-banks/INI-EVI-002.yaml
         finding: Slice-evi-002-b now has concrete acceptance criteria, non-goals, evidence refs, and no blocking open questions, but still awaits explicit human hydration approval.
+  - pack_id: pack-evi-002-external-richness-adapters-001
+    kind: external-current-research
+    status: active
+    captured_at: "2026-04-24T20:06:33+00:00"
+    source_session_id: 2026-04-24-ini-evi-002-b-research-complete
+    goal: Complete external research for slice-evi-002-b artifact-class richness adapters.
+    volatility: medium
+    limitations:
+      - Public product-discovery and ADR guidance supports the adapter dimensions, but does not prescribe Azoth-specific schema names.
+      - Research completion does not approve roadmap/backlog hydration; it prepares the slice for a human hydration decision.
+    questions:
+      - Which external practices should shape initiative-bank richness dimensions?
+      - Which dimensions are advisory quality evidence rather than structural validation?
+    sources:
+      - title: Atlassian Jira Product Discovery insights overview
+        url: https://www.atlassian.com/software/jira/product-discovery/guides/insights/overview
+        finding: Current product-discovery practice treats insights as evidence that supports, validates, and shapes ideas; useful adapter dimensions are evidence source, linkability, impact rating, and labels.
+      - title: Atlassian Jira Product Discovery ideas overview
+        url: https://www.atlassian.com/software/jira/product-discovery/guides/ideas/overview
+        finding: Ideas carry hypotheses, validation methods, insights, linked delivery tickets, and history, which maps cleanly to Azoth candidate slices plus hydration history.
+      - title: Atlassian Jira Product Discovery fields reference
+        url: https://support.atlassian.com/jira-product-discovery/docs/jira-product-discovery-fields-reference/
+        finding: Discovery fields expose insight counts, delivery progress, linked work items, labels, and updated timestamps; these support traceability and freshness scoring dimensions.
+      - title: Productboard user-needs guidance
+        url: https://support.productboard.com/hc/en-us/articles/10160398879891-Help-your-organization-understand-what-users-need
+        finding: Productboard guidance emphasizes centralizing feedback, routing it, turning it into insights, using insights to decide what to build, and closing the feedback loop.
+      - title: Product Talk Opportunity Solution Tree glossary
+        url: https://www.producttalk.org/glossary-discovery-opportunity-solution-tree/
+        finding: The opportunity-solution tree separates desired outcome, opportunity, solution, and assumption tests; this supports separate richness dimensions for outcome linkage, opportunity clarity, solution scope, and assumption-test coverage.
+      - title: Product Talk Assumption Testing glossary
+        url: https://www.producttalk.org/glossary-discovery-assumption-testing/
+        finding: Assumption testing evaluates desirability, usability, feasibility, viability, and ethical assumptions; initiative-bank richness should surface which assumption classes have evidence.
+      - title: Google Cloud Architecture Decision Records overview
+        url: https://cloud.google.com/architecture/architecture-decision-records
+        finding: ADR guidance emphasizes options, requirements, decisions, timestamps, and future traceability; this supports challenge/alternatives and decision-history dimensions.
+      - title: Microsoft Azure Well-Architected ADR guidance
+        url: https://learn.microsoft.com/da-dk/azure/well-architected/architect-role/architecture-decision-record
+        finding: ADR guidance recommends recording tradeoffs, confidence level, status, context, rationale, phased decisions, and consequences; this supports confidence and consequence visibility in richness reports.
+    synthesis:
+      adapter_dimensions:
+        - dimension_id: evidence_source_quality
+          guidance: Score whether each candidate slice cites concrete source artifacts, captures source type, and distinguishes internal evidence from external guidance.
+        - dimension_id: insight_traceability
+          guidance: Score links among research packs, candidate slices, hydration history, and delivery work; discovery evidence should not float without downstream trace.
+        - dimension_id: outcome_opportunity_solution_alignment
+          guidance: Score whether the candidate identifies the outcome, opportunity, proposed solution boundary, and assumption tests separately.
+        - dimension_id: assumption_coverage
+          guidance: Score desirability, usability, feasibility, viability, and ethical assumption evidence independently; missing categories should be visible but advisory.
+        - dimension_id: decision_context_and_alternatives
+          guidance: Score options considered, tradeoffs, confidence, status, consequences, and historical timestamping.
+        - dimension_id: freshness_and_lifecycle_state
+          guidance: Score updated timestamps, stale evidence risk, status, delivery linkage, and whether feedback loops have been closed.
+      hydration_boundary: >
+        These dimensions should enrich candidate readiness and review. They must
+        not replace planning_bank_validate.py structural checks, and they must not
+        write roadmap, backlog, or roadmap-spec state without a separate human gate.

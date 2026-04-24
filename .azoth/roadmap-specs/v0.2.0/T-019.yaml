@@ -1,0 +1,56 @@
+id: T-019
+roadmap_version: v0.2.0
+title: Artifact-class richness adapters for initiative banks
+decision_ref:
+- D11
+- D23
+- D45
+- D48
+- D50
+intent: >
+  Deliver the second focused INI-EVI-002 slice: generalize the proposal-only
+  knowledge-richness evaluator into artifact-class adapter design for
+  initiative banks.
+problem: >
+  The existing richness evaluator is proposal-specific, while INI-EVI-002 now
+  needs advisory quality evidence for initiative-bank candidate slices. Without
+  an adapter boundary, future work risks either overloading structural validators
+  with advisory scoring or treating raw initiative-bank candidates as ready
+  delivery work without traceable evidence quality.
+scope:
+- scripts/proposal_knowledge_richness.py
+- tests/test_proposal_knowledge_richness.py
+- scripts/planning_bank_validate.py integration boundary
+- .azoth/initiative-banks/INI-EVI-002.yaml as the pilot fixture
+- Read-only advisory richness report shape for initiative-bank artifacts
+non_goals:
+- Do not make advisory richness scores a replacement for planning_bank_validate.py structural validation.
+- Do not add write-mode hydration helper behavior.
+- Do not mutate roadmap, backlog, or roadmap-spec state from the adapter/reporting path.
+- Do not score every future artifact class in this first adapter slice.
+acceptance:
+- Define a minimal artifact-class adapter contract that can score architecture proposals and initiative banks without changing either source schema.
+- Map existing proposal richness dimensions to initiative-bank evidence fields, explicitly marking dimensions that do not transfer cleanly.
+- Include adapter dimensions for evidence source quality, insight traceability, outcome/opportunity/solution alignment, assumption coverage, decision context, and freshness/lifecycle state.
+- Produce a read-only report shape for initiative-bank richness that complements, but does not replace, planning_bank_validate.py structural checks.
+- Add tests proving proposal scoring remains unchanged and initiative-bank scoring fails soft as advisory evidence rather than blocking hydration mechanically.
+- Keep roadmap, backlog, roadmap-spec, and hydration-history writes out of the adapter slice.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.
+source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+candidate_slice_ref: slice-evi-002-b
+research_refs:
+- .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-next-candidate-001
+- .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-external-richness-adapters-001
+advisory_dimensions:
+- evidence_source_quality
+- insight_traceability
+- outcome_opportunity_solution_alignment
+- assumption_coverage
+- decision_context_and_alternatives
+- freshness_and_lifecycle_state

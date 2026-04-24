@@ -487,10 +487,15 @@ initiatives:
     - project-management-quality
   phase: v0.2.0-p3
   priority: high
-  task_ref: T-018
+  task_ref: T-019
   slices:
   - task_ref: T-018
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-018.yaml
+    phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-019
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-019.yaml
     phase: v0.2.0-p3
     status: complete
     role: primary
@@ -499,12 +504,11 @@ initiatives:
   - .azoth/design-banks/planning-banks-layer.yaml
   research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
-  discovery_status: first_slice_delivered
-  candidate_slice_ref: slice-evi-002-a
+  discovery_status: second_slice_delivered
+  candidate_slice_ref: slice-evi-002-b
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: T-018 delivered the validator/readiness report slice. Keep
-    future hydration helper write mode deferred until a new human-approved candidate
-    slice is selected.
+  next_discovery_action: T-019 delivered slice-evi-002-b. Run /next to select or
+    refine the next candidate slice; keep write-mode hydration helper behavior deferred.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
@@ -525,7 +529,7 @@ initiatives:
   - D49
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-018.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-019.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -1668,7 +1672,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 29
+  current_patch: 30
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1786,5 +1790,14 @@ versions:
     decision_ref:
     - D11
     - D23
+    - D48
+    - D50
+  - id: T-019
+    title: Artifact-class richness adapters for initiative banks
+    completed_date: '2026-04-24'
+    decision_ref:
+    - D11
+    - D23
+    - D45
     - D48
     - D50

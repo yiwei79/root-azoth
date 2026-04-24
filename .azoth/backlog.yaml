@@ -2992,3 +2992,27 @@ items:
   - D23
   - D48
   - D50
+- id: T-019
+  title: Artifact-class richness adapters for initiative banks
+  source: ini-evi-002-slice-b-research-complete-2026-04-24
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-24'
+  completed_date: '2026-04-24'
+  description: 'Hydrate the second INI-EVI-002 slice from the planning bank: generalize
+    the proposal-only knowledge-richness evaluator into artifact-class adapter design
+    for initiative banks. This slice should map external research-backed dimensions
+    onto initiative-bank evidence, produce read-only advisory richness reporting,
+    preserve planning_bank_validate.py as the fail-closed structural gate, and avoid
+    roadmap/backlog/spec writes beyond this explicit hydration.'
+  roadmap_ref: T-019
+  initiative_ref: INI-EVI-002
+  decision_ref:
+  - D11
+  - D23
+  - D45
+  - D48
+  - D50
