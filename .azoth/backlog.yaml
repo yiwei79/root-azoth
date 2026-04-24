@@ -2951,7 +2951,7 @@ items:
   - recovered-pipeline-auditability-separate-from-artifact-quality
   target_layer: planning
   delivery_pipeline: standard
-  status: open
+  status: complete
   target_version: v0.2.0-p3
   priority: 2
   created_date: '2026-04-24'
