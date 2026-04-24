@@ -214,6 +214,89 @@ class TestSkillContent:
             f"{skill_name} SKILL.md has {len(lines)} lines — minimum 50 expected"
         )
 
+    def test_structured_autonomy_plan_derives_success_criteria_before_tasks(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        goal_idx = content.index("### 1. Goal Restatement")
+        criteria_idx = content.index("### 2. Success Criteria")
+        checkpoint_idx = content.index("#### Non-Goals and Deferrals Checkpoint")
+        decomposition_idx = content.index("### 3. Task Decomposition")
+
+        assert goal_idx < criteria_idx < checkpoint_idx < decomposition_idx, (
+            "structured-autonomy-plan must derive falsifiable success criteria before "
+            "task decomposition"
+        )
+        assert "falsifiable" in content[criteria_idx:decomposition_idx].lower()
+
+    def test_structured_autonomy_plan_maps_each_success_criterion_to_validation(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        mapping_needles = (
+            "Each success criterion MUST map to exactly one validation disposition:",
+            "automated_test",
+            "manual_validation",
+            "human_review",
+            "deferred",
+            "criteria_id",
+            "validation_disposition",
+            "validation_ref",
+        )
+        for needle in mapping_needles:
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
+    def test_structured_autonomy_plan_requires_non_goals_before_builder_handoff(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        checkpoint_idx = content.index("#### Non-Goals and Deferrals Checkpoint")
+        decomposition_idx = content.index("### 3. Task Decomposition")
+        handoff_idx = content.index("consumed by the test-builder and builder stages")
+
+        assert checkpoint_idx < decomposition_idx < handoff_idx
+        for needle in (
+            "Before builder handoff",
+            "non_goals:",
+            "deferrals:",
+            "linked_success_criteria",
+            "The checkpoint MUST appear before task decomposition",
+        ):
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
+    def test_structured_autonomy_plan_template_places_non_goals_before_tasks(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        template = content[content.index("## Plan Template") :]
+
+        success_criteria_idx = template.index("### Success Criteria")
+        non_goals_idx = template.index("### Non-Goals and Deferrals")
+        tasks_idx = template.index("### Tasks")
+
+        assert success_criteria_idx < non_goals_idx < tasks_idx, (
+            "Plan Template must put Non-Goals and Deferrals before Tasks"
+        )
+
+    def test_structured_autonomy_plan_declares_krp_and_replay_boundaries(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        for needle in (
+            "T-KRP-A root behavior",
+            "T-KRP-B injectable skill",
+            "T-KRP-C Builder posture",
+            "T-KRP-D Orchestrator assumption surfacing",
+            "T-KRP-E structured success criteria",
+            "T-006 stable criteria for replay routing",
+            "lowest legitimate corrective stage",
+        ):
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
 
 class TestSkillConsistency:
     """Verify skills are consistent with architecture and each other."""

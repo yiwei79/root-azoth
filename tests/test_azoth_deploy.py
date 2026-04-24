@@ -1143,29 +1143,29 @@ def test_deployed_codex_skill_mirror_matches_canonical() -> None:
         )
 
 
-def test_deployed_karpathy_principles_skill_mirrors_match_canonical() -> None:
-    """T-KRP-B: injectable skill must project to both shared and OpenCode mirrors."""
-    skills = {skill["name"]: skill for skill in load_skills(_REPO_ROOT)}
-    skill = skills.get("karpathy-principles")
-    assert skill is not None, "missing canonical skills/karpathy-principles/SKILL.md"
+def test_deployed_skill_mirrors_match_canonical() -> None:
+    """Canonical skills must project to both shared and OpenCode mirrors."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
 
-    shared_dest = (
-        _REPO_ROOT / ".agents" / "skills" / shared_skill_name("karpathy-principles") / "SKILL.md"
-    )
-    opencode_dest = _REPO_ROOT / ".opencode" / "skills" / "karpathy-principles" / "SKILL.md"
+    for skill in skills:
+        shared_dest = (
+            _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        )
+        opencode_dest = _REPO_ROOT / ".opencode" / "skills" / skill["name"] / "SKILL.md"
 
-    assert shared_dest.is_file(), (
-        f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
-    )
-    assert opencode_dest.is_file(), (
-        f"missing {opencode_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
-    )
-    assert shared_dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
-        "Shared karpathy-principles skill drift: run python3 scripts/azoth-deploy.py"
-    )
-    assert opencode_dest.read_text(encoding="utf-8") == skill["raw"], (
-        "OpenCode karpathy-principles skill drift: run python3 scripts/azoth-deploy.py"
-    )
+        assert shared_dest.is_file(), (
+            f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert opencode_dest.is_file(), (
+            f"missing {opencode_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert shared_dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+        assert opencode_dest.read_text(encoding="utf-8") == skill["raw"], (
+            f"OpenCode skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
 
 
 def test_deployed_gemini_uses_shared_agents_skill_surface() -> None:
