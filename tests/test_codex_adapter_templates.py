@@ -35,6 +35,15 @@ AUTO_INLINE_JUSTIFICATION = (
 LEDGER_EVIDENCE_GUIDANCE = (
     "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`"
 )
+STAGE0_CHECKPOINT_MARKERS = (
+    "## Stage 0 Assumption Checkpoint",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -396,6 +405,20 @@ def test_codex_config_templates_and_orchestrator_projection_lock_deliver_full_st
         assert (
             DELIVER_FULL_STAGE2_DECLARATION_ONLY in text
         ), f"{path.name} missing declaration-only proof"
+
+
+def test_codex_orchestrator_and_auto_wrapper_include_stage0_assumption_checkpoint() -> None:
+    text = (REPO / ".codex" / "agents" / "orchestrator.toml").read_text(encoding="utf-8")
+    for marker in STAGE0_CHECKPOINT_MARKERS:
+        assert marker in text, (
+            f".codex/agents/orchestrator.toml missing Stage 0 checkpoint marker: {marker!r}"
+        )
+
+    wrapper = (REPO / ".agents" / "skills" / "azoth-auto" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert ".claude/commands/auto.md" in wrapper
+    assert "Read the body source referenced by that contract" in wrapper
 
 
 def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:

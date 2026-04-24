@@ -31,6 +31,34 @@ classification:
   knowledge: known-pattern | needs-research | novel | instruction-refinement
 ```
 
+## Stage 0 Assumption Checkpoint
+
+Using the evidence loaded above, emit a Stage 0 Assumption Checkpoint before final classification, auto-router composition, and Declaration. The checkpoint is the canonical handoff from intake evidence to routing judgment.
+
+```yaml
+stage0_assumption_checkpoint:
+  interpreted_goal: "<what the user is asking Azoth to accomplish>"
+  inputs_and_scope_source: "<explicit inputs, current scope/gate, backlog id, or ad-hoc>"
+  assumptions:
+    - claim: "<assumption>"
+      confidence: high|medium|low
+      evidence: "<memory/repo/user evidence>"
+  uncertainty_missing_facts:
+    - "<unknown that could change routing or gate posture>"
+  owned_surfaces:
+    - "<files/modules/governed surfaces in scope>"
+  out_of_scope_deferrals:
+    - "<nearby work deliberately deferred>"
+  classification_rationale: "<scope/risk/complexity/knowledge reasoning>"
+  gate_implications: "<human, governance, freshness, or entropy gates>"
+  routing_implications: "<auto-router base row plus subagent/delegation effects>"
+```
+
+Fail closed if a dimension is unclear, latest/current external facts are material,
+or the request may expand into kernel/governance policy: ask one focused question,
+insert official-source research, or require the relevant human gate before final
+classification.
+
 ## Pipeline Composition (D23)
 
 Invoke the `auto-router` skill. Treat the selected row as the conservative base

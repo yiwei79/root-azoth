@@ -69,6 +69,21 @@ BUILDER_POSTURE_MARKERS = [
     "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
 ]
 
+ORCHESTRATOR_ASSUMPTION_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "assumptions",
+    "uncertainty_missing_facts",
+    "owned_surfaces",
+    "out_of_scope_deferrals",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+]
+
 
 def _agent_path(agent_name: str) -> Path:
     """Return the path to an agent's .agent.md file."""
@@ -259,6 +274,11 @@ class TestAgentContent:
         assert len(lines) >= 60, (
             f"{agent_name}.agent.md has {len(lines)} lines — minimum 60 expected for enriched agents"
         )
+
+    def test_orchestrator_has_stage0_assumption_checkpoint_contract(self) -> None:
+        content = _agent_path("orchestrator").read_text(encoding="utf-8")
+        for marker in ORCHESTRATOR_ASSUMPTION_CHECKPOINT_MARKERS:
+            assert marker in content, f"orchestrator missing Stage 0 checkpoint marker: {marker}"
 
     def test_builder_enforces_surgical_simplicity_posture(self) -> None:
         content = _agent_path("builder").read_text(encoding="utf-8")

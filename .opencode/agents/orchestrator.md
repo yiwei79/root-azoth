@@ -59,6 +59,36 @@ the pipeline shape.
 
 If any of the four dimensions is unclear, ask one focused clarifying question. Do not proceed to the Declaration until the goal is clear.
 
+## Stage 0 Assumption Checkpoint
+
+Before committing to a route, run the Assumption Checkpoint after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration. This is a short operator-visible card, not a new pipeline stage.
+
+Record:
+
+```yaml
+stage0_assumption_checkpoint:
+  interpreted_goal: "<what the user is asking Azoth to accomplish>"
+  inputs_and_scope_source: "<explicit inputs, current scope/gate, backlog id, or ad-hoc>"
+  assumptions:
+    - claim: "<assumption>"
+      confidence: high|medium|low
+      evidence: "<memory/repo/user evidence>"
+  uncertainty_missing_facts:
+    - "<unknown that could change routing or gate posture>"
+  owned_surfaces:
+    - "<files/modules/governed surfaces in scope>"
+  out_of_scope_deferrals:
+    - "<nearby work deliberately deferred>"
+  classification_rationale: "<scope/risk/complexity/knowledge reasoning>"
+  gate_implications: "<human, governance, freshness, or entropy gates>"
+  routing_implications: "<auto-router base row plus subagent/delegation effects>"
+```
+
+Fail closed when any dimension remains unclear, latest/current external facts are
+material, or the task may expand into kernel/governance policy. Failing closed
+means ask one focused clarifying question, insert an official-source research
+pass, or require the proper human gate before final classification.
+
 ## Declaration Ownership
 
 The Declaration is mandatory before any pipeline stage executes. For `/auto`, present a

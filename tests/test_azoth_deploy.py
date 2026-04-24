@@ -18,6 +18,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import shutil
+import sys
 import uuid
 from pathlib import Path
 
@@ -31,6 +32,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 test env
 
 # Load the script as a module without executing main()
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "azoth-deploy.py"
+sys.path.insert(0, str(_SCRIPT.parent))
 _spec = importlib.util.spec_from_file_location("azoth_deploy", _SCRIPT)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
@@ -215,6 +217,27 @@ BUILDER_DEPLOY_MARKERS = [
     "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
 ]
 
+ORCHESTRATOR_STAGE0_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "routing_implications",
+    "Fail closed",
+]
+
+AUTO_STAGE0_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+]
+
 
 def _canonical_builder() -> dict:
     agents = load_agents(Path(__file__).resolve().parent.parent)
@@ -317,6 +340,25 @@ def test_builder_posture_projects_to_agent_transforms() -> None:
     for platform, output in outputs.items():
         for marker in BUILDER_DEPLOY_MARKERS:
             assert marker in output, f"{platform} builder output missing marker: {marker}"
+
+
+def test_orchestrator_stage0_checkpoint_projects_to_agent_transforms() -> None:
+    agents = load_agents(Path(__file__).resolve().parent.parent)
+    orchestrator = next(
+        agent for agent in agents if agent["meta"].get("name") == "orchestrator"
+    )
+    outputs = {
+        "claude": transform_agent_claude(orchestrator),
+        "copilot": transform_agent_copilot(orchestrator),
+        "opencode": transform_agent_opencode(orchestrator),
+        "codex": tomllib.loads(transform_agent_codex(orchestrator))["developer_instructions"],
+        "gemini": transform_agent_gemini(orchestrator),
+    }
+    for platform, output in outputs.items():
+        for marker in ORCHESTRATOR_STAGE0_CHECKPOINT_MARKERS:
+            assert marker in output, (
+                f"{platform} orchestrator output missing Stage 0 checkpoint marker: {marker}"
+            )
 
 
 # ── transform_agent_opencode ─────────────────────────────────────────────────
@@ -1492,6 +1534,22 @@ def test_t003_delivery_orchestration_family_is_canonicalized() -> None:
         assert "contract" in commands[command_name], (
             f"T-003 migration incomplete: expected canonical contract for {command_name}"
         )
+
+
+def test_auto_command_stage0_checkpoint_projects_to_command_transforms() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    auto = commands["auto"]
+    outputs = {
+        "claude": transform_command_claude(auto),
+        "copilot": transform_command_copilot(auto),
+        "opencode": transform_command_opencode(auto),
+        "gemini": transform_command_gemini(auto),
+    }
+    for platform, output in outputs.items():
+        for marker in AUTO_STAGE0_CHECKPOINT_MARKERS:
+            assert marker in output, (
+                f"{platform} auto command missing Stage 0 checkpoint marker: {marker}"
+            )
 
 
 @pytest.mark.parametrize(
