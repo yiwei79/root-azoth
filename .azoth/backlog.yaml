@@ -2727,15 +2727,15 @@ items:
   priority: 3
   created_date: '2026-04-22'
   completed_date: '2026-04-22'
-  description: 'Define the first real follow-on slice after the `T-015` seed: a
-    Codex-local selector policy and task-definition lane that preserves portable
-    `model_tier` intent while specifying richer selector inputs, inventory/capability
-    metadata, fallback rules, and acceptance criteria for later resolver plumbing.
-    Deliverables: (1) roadmap/backlog continuity that restores `T-015` as a completed
-    historical seed; (2) a concrete `T-017` spec for the selector-policy lane; (3)
-    a light refresh of the draft architecture proposal so it still anchors to `T-015`
-    while naming `T-017` as the live follow-on. Non-goal: no runtime resolver implementation,
-    no model-routing code changes, and no broad regression/deploy work in this slice.
+  description: 'Define the first real follow-on slice after the `T-015` seed: a Codex-local
+    selector policy and task-definition lane that preserves portable `model_tier`
+    intent while specifying richer selector inputs, inventory/capability metadata,
+    fallback rules, and acceptance criteria for later resolver plumbing. Deliverables:
+    (1) roadmap/backlog continuity that restores `T-015` as a completed historical
+    seed; (2) a concrete `T-017` spec for the selector-policy lane; (3) a light refresh
+    of the draft architecture proposal so it still anchors to `T-015` while naming
+    `T-017` as the live follow-on. Non-goal: no runtime resolver implementation, no
+    model-routing code changes, and no broad regression/deploy work in this slice.
 
     '
   roadmap_ref: T-017
@@ -2765,9 +2765,10 @@ items:
     at 0.4730s versus a prior 0.1845s post-optimization baseline and profiled YAML
     parsing as the dominant cost, but it also noted that the previous optimization
     was not visible in current git history. Deliverables: confirm the regression on
-    the active branch, add or restore a small `scripts/yaml_helpers.py` safe-load wrapper
-    if warranted, route the hot scripts through it, and verify with focused tests plus
-    before/after timings. Non-goal: no broad performance refactor without fresh measurements.
+    the active branch, add or restore a small `scripts/yaml_helpers.py` safe-load
+    wrapper if warranted, route the hot scripts through it, and verify with focused
+    tests plus before/after timings. Non-goal: no broad performance refactor without
+    fresh measurements.
 
     '
 - id: BL-072
@@ -2866,9 +2867,9 @@ items:
   description: 'Hydrate the third INI-KRP-001 follow-on slice by turning the planned
     T-KRP-C roadmap stub into backlog/spec state. This slice should refine the canonical
     Builder agent posture so implementation stages enforce simplicity-first, surgical-change,
-    and goal-driven verification behavior, using the task-scoped research capsule under
-    .azoth/research as planning evidence while keeping actual builder-posture implementation
-    behind a later governed M1 delivery scope.
+    and goal-driven verification behavior, using the task-scoped research capsule
+    under .azoth/research as planning evidence while keeping actual builder-posture
+    implementation behind a later governed M1 delivery scope.
 
     '
   roadmap_ref: T-KRP-C
@@ -2882,3 +2883,31 @@ items:
   blocked_by:
   - T-KRP-A
   - T-KRP-B
+- id: T-KRP-D
+  title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
+  source: t-krp-d-orchestrator-assumption-surfacing-research-2026-04-23
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-23'
+  completed_date: '2026-04-24'
+  description: Hydrate the fourth INI-KRP-001 follow-on slice by turning the planned
+    T-KRP-D roadmap stub into backlog/spec state. This slice should refine the canonical
+    Orchestrator posture so Stage 0 goal classification includes an explicit assumption-surfacing
+    checkpoint before Declaration and auto-router composition, using repo-local T-KRP-A/B/C
+    research and the T-KRP-D context pack as planning evidence while keeping actual
+    implementation behind a later governed M1 delivery scope.
+  roadmap_ref: T-KRP-D
+  initiative_ref: INI-KRP-001
+  decision_ref:
+  - D21
+  - D23
+  - D26
+  - D44
+  - D51
+  blocked_by:
+  - T-KRP-A
+  - T-KRP-B
+  - T-KRP-C

@@ -945,17 +945,17 @@ initiatives:
     status: complete
   - task_ref: T-KRP-C
     phase: null
-    role: primary
-    status: active
+    role: historical
+    status: complete
   - task_ref: T-KRP-D
     phase: null
-    role: follow-on
-    status: planned
+    role: historical
+    status: complete
   - task_ref: T-KRP-E
     phase: null
-    role: follow-on
-    status: planned
-  task_ref: T-KRP-C
+    role: primary
+    status: active
+  task_ref: T-KRP-E
   spec_ref: null
 - id: INI-EFF-001
   title: Token & inference efficiency (context budget, caching, spawn hygiene)
@@ -1610,7 +1610,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 21
+  current_patch: 23
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1628,13 +1628,6 @@ versions:
     '
   pending_task_refs: []
   tasks:
-  - id: T-KRP-D
-    title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    carried_from: v0.2.0-p2
   - id: T-KRP-E
     title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
       autonomous loop enabler)'
@@ -1692,3 +1685,4 @@ versions:
   - {id: T-017, title: "Codex selector policy + task-definition lane", completed_date: "2026-04-22", decision_ref: [D19, D21, D23, D46, D52]}
   - {id: T-KRP-B, title: "New skill: karpathy-principles SKILL.md for injectable discipline slot", completed_date: "2026-04-23", decision_ref: [D21, D23, D44, D51]}
   - {id: T-KRP-C, title: "Builder agent posture: surgical changes + simplicity-first enforcement", completed_date: "2026-04-23", decision_ref: [D21, D23, D26, D44, D51]}
+  - {id: T-KRP-D, title: "Orchestrator: assumption-surfacing checkpoint at goal classification", completed_date: "2026-04-24", decision_ref: [D21, D23, D26, D44, D51]}

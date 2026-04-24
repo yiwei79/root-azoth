@@ -1,14 +1,13 @@
 {
   "schema_version": 1,
-  "status": "synced",
-  "updated_at": "2026-04-23T22:39:07Z",
+  "status": "pending",
+  "updated_at": "2026-04-24T06:35:37Z",
   "source": "session-closeout",
-  "session_id": "2026-04-23-t-017",
-  "goal": "T-017: Codex selector policy + task-definition lane",
-  "latest_episode_id": "ep-331",
+  "session_id": "2026-04-24-t-krp-d",
+  "goal": "T-KRP-D: Orchestrator: assumption-surfacing checkpoint at goal classification",
+  "latest_episode_id": "ep-360",
   "latest_episode_summary": "Completed session closeout via scripts/do_closeout.py (W1-W4).",
   "next_action": "Run `/next` to select the next scoped task.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'",
-  "synced_at": "2026-04-23T22:39:07Z"
+  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'"
 }

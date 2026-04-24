@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-04-22-adhoc-research-t-krp-a-ini-krp-001-and-produce-a-reusa",
-  "goal": "Research T-KRP-A / INI-KRP-001 and produce a reusable repo-local research capsule before governed delivery.",
-  "session_mode": "exploratory",
-  "opened_at": "2026-04-22T16:40:32+00:00",
-  "updated_at": "2026-04-22T19:04:57Z",
+  "session_id": "2026-04-23-adhoc-t-krp-d-context-engineering",
+  "goal": "AD-HOC: writable T-KRP-D research, exploration, context engineering, and planning hydration",
+  "session_mode": "delivery",
+  "opened_at": "2026-04-23T22:46:25+00:00",
+  "updated_at": "2026-04-23T22:50:18Z",
   "status": "closed",
-  "approved_by": "system",
-  "closed_at": "2026-04-22T19:04:57Z"
+  "approved_by": "human",
+  "closed_at": "2026-04-23T22:50:18Z"
 }
