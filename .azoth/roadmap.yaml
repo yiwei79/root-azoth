@@ -953,9 +953,9 @@ initiatives:
     status: complete
   - task_ref: T-KRP-E
     phase: null
-    role: primary
-    status: active
-  task_ref: T-KRP-E
+    role: historical
+    status: complete
+  task_ref: null
   spec_ref: null
 - id: INI-EFF-001
   title: Token & inference efficiency (context budget, caching, spawn hygiene)
@@ -1610,7 +1610,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 23
+  current_patch: 25
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1627,16 +1627,7 @@ versions:
 
     '
   pending_task_refs: []
-  tasks:
-  - id: T-KRP-E
-    title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
-      autonomous loop enabler)'
-    target_layer: M1
-    delivery_pipeline: governed
-    initiative_ref: INI-KRP-001
-    status: planned
-    note: Implement before or alongside T-006 revise-and-continue loops
-    carried_from: v0.2.0-p2
+  tasks: []
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1686,3 +1677,4 @@ versions:
   - {id: T-KRP-B, title: "New skill: karpathy-principles SKILL.md for injectable discipline slot", completed_date: "2026-04-23", decision_ref: [D21, D23, D44, D51]}
   - {id: T-KRP-C, title: "Builder agent posture: surgical changes + simplicity-first enforcement", completed_date: "2026-04-23", decision_ref: [D21, D23, D26, D44, D51]}
   - {id: T-KRP-D, title: "Orchestrator: assumption-surfacing checkpoint at goal classification", completed_date: "2026-04-24", decision_ref: [D21, D23, D26, D44, D51]}
+  - {id: T-KRP-E, title: "structured-autonomy-plan: goal → success-criteria gate (T-006 dependency, autonomous loop enabler)", completed_date: "2026-04-24", decision_ref: [D21, D23, D26, D44, D51]}

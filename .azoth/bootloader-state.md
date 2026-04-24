@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.22 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 22
+0.1.3.25 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 25
 
 ## Last Session
-- **Session**: 2026-04-24-t-krp-d
-- **Goal**: T-KRP-D: Orchestrator: assumption-surfacing checkpoint at goal classification
+- **Session**: 2026-04-24-t-krp-e
+- **Goal**: T-KRP-E: structured-autonomy-plan: goal → success-criteria gate (T-006 dependency, autonomous loop enabler)
 - **Session mode**: delivery
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-360 (success)
+- **Episode**: ep-362 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

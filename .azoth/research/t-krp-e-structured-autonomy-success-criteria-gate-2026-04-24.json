@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "source_session_id": "2026-04-24-t-krp-e-planning-repair",
+  "goal": "Hydrate T-KRP-E with repo-local research and exploration evidence before governed delivery.",
+  "captured_at": "2026-04-24T06:55:00+00:00",
+  "volatility": "low",
+  "limitations": [
+    "Network access was unavailable in the Codex sandbox, so this capsule uses repo-local evidence only.",
+    "This capsule authorizes planning hydration only; implementation requires a later governed T-KRP-E scope.",
+    "Wave A and Wave B were read-only; no runtime behavior was validated in this capsule."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can existing repo-local Karpathy follow-on evidence be reused for T-KRP-E planning?",
+      "status": "answered",
+      "answered_at": "2026-04-24T06:55:00+00:00",
+      "fresh_until": "2026-05-24T06:55:00+00:00",
+      "answer": "Yes. T-KRP-A through T-KRP-D capsules and specs establish the initiative boundaries and repeatedly reserve structured-autonomy success-criteria gating for T-KRP-E."
+    },
+    {
+      "question_id": "phase-1-goal-ad-hoc-research-explore-hydrate-t-krp-e-planning",
+      "question": "Is the current AD-HOC planning repair sufficiently researched before hydration?",
+      "status": "answered",
+      "answered_at": "2026-04-24T06:55:00+00:00",
+      "fresh_until": "2026-05-24T06:55:00+00:00",
+      "answer": "Yes. Wave A identified the task-level boundary and Wave B confirmed the exact hydration write set: backlog row plus T-KRP-E spec."
+    },
+    {
+      "question_id": "phase-1-slice-t-krp-e-t-krp-e-structured-autonomy-plan-goal-success-cr",
+      "question": "What should the future T-KRP-E governed delivery own?",
+      "status": "answered",
+      "answered_at": "2026-04-24T06:55:00+00:00",
+      "fresh_until": "2026-05-24T06:55:00+00:00",
+      "answer": "The future delivery should add a goal-to-success-criteria gate to structured-autonomy-plan so plans derive falsifiable success criteria before task decomposition and map those criteria to validation and tests."
+    }
+  ],
+  "research_pack_id": "t-krp-e-structured-autonomy-success-criteria-context-pack-2026-04-24",
+  "topic": "structured-autonomy-plan goal-to-success-criteria gate",
+  "local_sources": [
+    {
+      "path": ".azoth/roadmap.yaml",
+      "use": "Confirms T-KRP-E is the active INI-KRP-001 slice in v0.2.0-p3 and is planned as governed M1 work."
+    },
+    {
+      "path": ".azoth/roadmap-specs/v0.2.0/T-KRP-D.yaml",
+      "use": "Distinguishes T-KRP-D orchestrator assumption surfacing from T-KRP-E structured success-criteria gating."
+    },
+    {
+      "path": ".agents/skills/karpathy-principles/SKILL.md",
+      "use": "Explicitly reserves structured-autonomy success-criteria gating for T-KRP-E."
+    },
+    {
+      "path": ".agents/skills/azoth-structured-autonomy-plan/SKILL.md",
+      "use": "Shows the current planning contract and extension point for falsifiable success criteria."
+    },
+    {
+      "path": "scripts/roadmap_scaffold.py",
+      "use": "Provides the repo-native hydrate-task path for turning a planned roadmap task into backlog/spec state."
+    }
+  ],
+  "implications_for_azoth": [
+    "T-KRP-E should make success criteria explicit before planner-to-builder handoff.",
+    "The future gate should map each success criterion to task validation and test strategy.",
+    "T-KRP-E strengthens T-006 revise-and-continue loops by making the target of replay falsifiable and stable.",
+    "The slice should stay inside structured-autonomy-plan and must not mutate root CLAUDE.md, karpathy-principles, Builder posture, Orchestrator classification, or D23 routing."
+  ],
+  "risks": [
+    "The future implementation could accidentally become a new pipeline stage or governance rule; keep it a structured-autonomy-plan quality gate unless separately scoped.",
+    "Success criteria could duplicate test-builder responsibilities; the gate should define what success means before tests, not replace the test strategy."
+  ],
+  "outcome": "research_sufficient"
+}

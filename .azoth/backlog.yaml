@@ -2911,3 +2911,34 @@ items:
   - T-KRP-A
   - T-KRP-B
   - T-KRP-C
+- id: T-KRP-E
+  title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
+    autonomous loop enabler)'
+  source: t-krp-e-structured-autonomy-success-criteria-research-2026-04-24
+  target_layer: M1
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 1
+  created_date: '2026-04-24'
+  completed_date: '2026-04-24'
+  description: Hydrate the fifth INI-KRP-001 follow-on slice by turning the planned
+    T-KRP-E roadmap stub into backlog/spec state. This slice should add a goal-to-success-criteria
+    gate to structured-autonomy-plan so future autonomy plans derive falsifiable success
+    criteria, map criteria to validation and tests, and preserve explicit deferrals
+    before builder handoff or T-006 revise-and-continue replay. Planning evidence
+    lives in .azoth/research/t-krp-e-structured-autonomy-success-criteria-gate-2026-04-24.json;
+    implementation remains behind a later governed M1 delivery scope.
+  roadmap_ref: T-KRP-E
+  initiative_ref: INI-KRP-001
+  decision_ref:
+  - D21
+  - D23
+  - D26
+  - D44
+  - D51
+  blocked_by:
+  - T-KRP-A
+  - T-KRP-B
+  - T-KRP-C
+  - T-KRP-D
