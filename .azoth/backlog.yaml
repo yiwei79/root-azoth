@@ -3016,3 +3016,23 @@ items:
   - D45
   - D48
   - D50
+- id: T-020
+  title: Planning-bank surfacing and routing in session dashboards
+  source: planning-bank-surfacing-routing-2026-04-24
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-24'
+  description: Continue the planning-bank layer after T-018/T-019 by surfacing tracked
+    design-bank and initiative-bank state in operator-facing routing surfaces. The
+    slice should make planning banks discoverable from session dashboards or roadmap
+    routing without turning banks into executable backlog until an explicit human-approved
+    hydration step exists.
+  roadmap_ref: T-020
+  decision_ref:
+  - D23
+  - D48
+  - D50
+  - D52

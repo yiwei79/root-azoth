@@ -507,8 +507,8 @@ initiatives:
   discovery_status: second_slice_delivered
   candidate_slice_ref: slice-evi-002-b
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: T-019 delivered slice-evi-002-b. Run /next to select or
-    refine the next candidate slice; keep write-mode hydration helper behavior deferred.
+  next_discovery_action: T-019 delivered slice-evi-002-b. Run /next to select or refine
+    the next candidate slice; keep write-mode hydration helper behavior deferred.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
@@ -1682,14 +1682,22 @@ versions:
   - C
   - D
   note: 'Third working phase of the v0.2.0 milestone. Phase-2 carry-forward drift
-    has been repaired so the live queue now reflects only the remaining Karpathy follow-on
-    slices (T-KRP-A through T-KRP-E). Completed memory/platform carry-forward work
-    stays in history, while unscheduled initiatives remain phase-null until explicitly
-    scheduled into a future slice.
+    has been repaired, the Karpathy follow-on slices (T-KRP-A through T-KRP-E)
+    are complete, and the live queue now carries the planning-bank surfacing continuation
+    T-020. Completed memory/platform carry-forward work stays in history, while
+    unscheduled initiatives remain phase-null until explicitly scheduled into a future
+    slice.
 
     '
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-020
+    title: Planning-bank surfacing and routing in session dashboards
+    decision_ref:
+    - D23
+    - D48
+    - D50
+    - D52
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal

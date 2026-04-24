@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-24T17:43:19+00:00"
+updated_at: "2026-04-24T21:30:23+00:00"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -66,14 +66,16 @@ routing_candidates:
     target: .azoth/initiative-banks/INI-EVI-002.yaml
     rationale: INI-EVI-002 is the first pilot migration for initiative-owned planning state.
   - route: backlog_task
-    status: future
-    target: Planning banks command/dashboard surfacing
-    rationale: Command changes should wait until the contract and validator are stable.
+    status: hydrated
+    target: T-020
+    rationale: T-018/T-019 stabilized the contract, validator, readiness report, and
+      advisory richness adapter; the next route is operator-facing surfacing without
+      adding write-mode hydration behavior.
 readiness:
-  evaluated_at: "2026-04-24T17:43:19+00:00"
+  evaluated_at: "2026-04-24T21:30:23+00:00"
   readiness_status: continue_refinement
-  freshness_status: current_initial_contract
-  target_route: pilot_migration
+  freshness_status: refreshed_after_t_018_t_019
+  target_route: dashboard_routing_surfacing
   blocking_questions:
     - db-planning-001
     - db-planning-002
@@ -81,9 +83,15 @@ readiness:
   source_refs:
     - .azoth/proposals/planning-banks-layer.yaml
     - .azoth/initiative-banks/INI-EVI-002.yaml
-  recommended_next_artifact: Planning banks validator and pilot migration
-  human_decision: pending
+    - .azoth/roadmap-specs/v0.2.0/T-020.yaml
+  recommended_next_artifact: T-020
+  human_decision: approved
 history:
   - timestamp: "2026-04-24T17:43:19+00:00"
     event: created_from_architecture_seed
     summary: Seeded the design bank from the planning-banks-layer architecture proposal.
+  - timestamp: "2026-04-24T21:30:23+00:00"
+    event: routed_next_slice
+    summary: Refreshed the design bank after T-018/T-019 completion and routed the
+      next continuation slice to T-020 for planning-bank surfacing and session
+      routing discoverability.
