@@ -2959,14 +2959,36 @@ items:
   decision_ref:
   - D49
   - D51
-  description: >
-    Complete the self-improvement loop for recent M3-to-M2 promotions by
-    researching and refining the promote application-path router proposal. The
-    session should replay the 2026-04-24 promote sweep, compare `/intake`
-    3-axis triage with `/promote` downstream routing, and decide whether the
-    application-path step belongs in `/promote`, `/next`, closeout, or a smaller
-    memory-loop command. Expected outputs are a refined proposal, explicit
-    accepted/rejected application paths, and a candidate implementation backlog
-    item only if the research justifies changing command or tool behavior.
-    Non-goal: do not implement `/promote` command changes in this planning
-    slice.
+  description: 'Complete the self-improvement loop for recent M3-to-M2 promotions
+    by researching and refining the promote application-path router proposal. The
+    session should replay the 2026-04-24 promote sweep, compare `/intake` 3-axis triage
+    with `/promote` downstream routing, and decide whether the application-path step
+    belongs in `/promote`, `/next`, closeout, or a smaller memory-loop command. Expected
+    outputs are a refined proposal, explicit accepted/rejected application paths,
+    and a candidate implementation backlog item only if the research justifies changing
+    command or tool behavior. Non-goal: do not implement `/promote` command changes
+    in this planning slice.
+
+    '
+- id: T-018
+  title: Initiative bank contract validator and readiness report
+  source: ini-evi-002-readiness-research-2026-04-24
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-24'
+  completed_date: '2026-04-24'
+  description: 'Hydrate the first focused INI-EVI-002 slice from the planning bank:
+    implement reusable initiative-bank validation and a read-only readiness report
+    for candidate slices. This task must preserve the boundary that roadmap/backlog/spec
+    writes happen only through explicit human-approved hydration, and must not add
+    write-mode hydration helper behavior.'
+  roadmap_ref: T-018
+  initiative_ref: INI-EVI-002
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50

@@ -1,0 +1,518 @@
+proposal_schema_version: 1
+created_at: "2026-04-24T17:43:19+00:00"
+session_id: "2026-04-24-planning-banks-layer-seed"
+backlog_id: "P6-003"
+title: "Planning banks layer"
+summary: >
+  Draft architecture seed for a first-class planning-banks layer in Azoth. The
+  motivating problem is that `.azoth/proposals/` was designed as a local,
+  generated, gitignored proposal inbox, but recent use has stretched proposals
+  into durable, continuously refined planning capsules. Research banks also
+  should not own this role because research is evidence, while design and
+  initiative banks are planning state. This proposal seeds a cleaner ontology:
+  local proposal drafts route into tracked planning banks when they deserve
+  continuous refinement, and planning banks later hydrate initiatives, roadmap
+  tasks, decisions, or research requests without turning ignored proposal files
+  into roadmap truth.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D25
+  - D29
+  - D39
+  - D48
+  - D50
+scope_layers:
+  - mixed
+details:
+  problem:
+    current_gap: >
+      Azoth has proposal drafts, research capsules, roadmap tasks, decision
+      records, memory, and inbox items. It does not yet have a first-class home
+      for long-lived architectural idea refinement that is accepted as planning
+      input but is not yet an initiative, not yet a backlog task, and not yet a
+      final decision.
+    proposal_mismatch: >
+      `.azoth/proposals/` is intentionally gitignored in consumer installs so
+      local machines, project instances, and agents can generate speculative
+      proposals without polluting shared truth. Using those ignored files as
+      long-term roadmap references creates dangling shared-state risk.
+    research_mismatch: >
+      `.azoth/research/` should hold evidence, source packs, sufficiency
+      capsules, and empirical findings. A design bank may cite research, but its
+      primary state is architectural reasoning: options, tradeoffs, open
+      decisions, candidate boundaries, and routing readiness.
+    initiative_mismatch: >
+      Initiatives are durable goal containers. They should not be used as
+      scratchpads for every evolving architectural idea. However, once an
+      initiative exists, its evolving readiness and candidate slices should live
+      in an initiative bank rather than in a generic research file.
+  architecture_thesis: >
+    Add a first-class planning-banks layer as the durable middle ground between
+    local proposal drafts and executable roadmap state. Planning banks are
+    tracked shared planning artifacts. They preserve continuous refinement while
+    keeping proposals local/speculative, research evidence-focused, initiatives
+    goal-focused, and backlog/spec files execution-focused.
+  lifecycle:
+    step_1_intake_local_draft:
+      input: ".azoth/proposals/<slug>.yaml"
+      action: >
+        Capture the idea as a local draft proposal or challenge surface without
+        making it shared roadmap truth.
+      output: "proposal draft"
+    step_2_promote_to_planning_bank:
+      input: "human-approved proposal draft or promoted insight"
+      action: >
+        Route the idea into a design bank or initiative bank when it needs
+        continuous refinement.
+      output: "tracked planning bank"
+    step_3_refine_with_evidence:
+      input: "tracked planning bank plus research refs"
+      action: >
+        Append options, tradeoffs, open questions, challenge log, research refs,
+        readiness, and routing candidates.
+      output: "route-ready planning state or continue_refinement"
+    step_4_route_or_hydrate:
+      input: "ready planning bank with human decision"
+      action: >
+        Route to initiative, backlog/spec, decision, or research request using
+        the existing human-gated Azoth paths.
+      output: "durable roadmap, decision, research, or execution artifact"
+  candidate_surfaces:
+    - ".azoth/proposals/"
+    - ".azoth/research/"
+    - ".azoth/roadmap.yaml"
+    - ".azoth/backlog.yaml"
+    - ".azoth/roadmap-specs/"
+    - "docs/DECISIONS_INDEX.md"
+    - ".claude/commands/arch-proposal.md"
+    - ".claude/commands/next.md"
+    - ".claude/commands/promote.md"
+    - "scripts/architecture_proposal_validate.py"
+    - "scripts/proposal_knowledge_richness.py"
+    - "tests/test_install_proposals_gitignore.py"
+    - "tests/test_planning_banks.py"
+  proposed_components:
+    design_bank_contract:
+      possible_surface: "pipelines/design-bank.schema.yaml"
+      purpose: "Define tracked design-bank shape and routing states."
+    initiative_bank_contract:
+      possible_surface: "pipelines/initiative-bank.schema.yaml"
+      purpose: "Define tracked initiative-bank shape and migration rules."
+    planning_bank_validator:
+      possible_surface: "scripts/planning_bank_validate.py"
+      purpose: "Validate design/initiative banks without mutating roadmap state."
+    roadmap_reference_guard:
+      possible_surface: "scripts/pre_pr_fast_fail.py or a focused validator"
+      purpose: "Reject authoritative roadmap refs that point at ignored proposal inbox files."
+    migration_helper:
+      possible_surface: "scripts/planning_bank_migrate.py"
+      purpose: "Move transitional initiative/design planning state into tracked bank homes with provenance."
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-04-24"
+      sources:
+        - title: "Current proposal gitignore contract"
+          url: "repo:.gitignore"
+          finding: >
+            `.azoth/proposals/` is still ignored, which preserves local proposal
+            inbox behavior but conflicts with using proposal files as durable
+            roadmap refs.
+        - title: "Architecture proposal validator"
+          url: "repo:scripts/architecture_proposal_validate.py"
+          finding: >
+            The existing proposal contract validates draft proposal shape but
+            does not distinguish local drafts from promoted shared planning
+            state.
+        - title: "INI-EVI-002 initiative bank pilot"
+          url: "repo:.azoth/research/ini-evi-002-research-bank.yaml"
+          finding: >
+            The pilot demonstrates the need for durable initiative readiness and
+            candidate-slice state, but its current research path mislabels
+            planning state as research.
+        - title: "Jira Product Discovery delivery overview"
+          url: "https://www.atlassian.com/software/jira/product-discovery/guides/delivery/overview"
+          finding: >
+            Discovery ideas can remain uncommitted until validation and
+            prioritization make them ready for delivery, while downstream work
+            stays linked to the discovery idea.
+        - title: "Product Talk Opportunity Solution Tree"
+          url: "https://www.producttalk.org/glossary-discovery-opportunity-solution-tree/"
+          finding: >
+            Separating outcomes, opportunities, candidate solutions, and
+            assumption tests supports a middle layer between raw ideas and
+            buildable work.
+        - title: "Google Cloud Architecture Decision Records overview"
+          url: "https://cloud.google.com/architecture/architecture-decision-records"
+          finding: >
+            Architecture decisions preserve context, options, requirements, and
+            timestamps; planning banks should preserve mutable pre-decision
+            context before an ADR is ready.
+      implications:
+        - >
+          Proposal drafts should remain cheap and local, but promoted planning
+          artifacts need tracked homes if roadmap or initiative state depends on
+          them.
+        - >
+          Research should be cited by planning banks, not overloaded as the
+          owner of architectural reasoning or initiative readiness.
+        - >
+          A design bank fills the gap between proposal and decision/backlog,
+          while an initiative bank fills the gap between initiative and hydrated
+          task.
+        - >
+          Validators should fail closed on dangling authoritative refs into
+          ignored proposal inbox files.
+    artifact_boundary:
+      proposal_inbox_owns: >
+        Local, speculative, generated architecture proposals and challenge
+        drafts. Proposal drafts can be source history, but not shared planning
+        truth by default.
+      design_bank_owns: >
+        Mutable architectural reasoning for a specific idea: options,
+        tradeoffs, challenge log, open questions, routing candidates, and
+        readiness.
+      initiative_bank_owns: >
+        Mutable initiative-specific planning state: contacts, evidence refs,
+        contradictions, candidate slices, readiness, and hydration history.
+      research_owns: >
+        Evidence, source packs, task research capsules, empirical findings, and
+        freshness-aware sufficiency checks.
+      roadmap_owns: >
+        Prioritized planning truth, scheduled work, durable initiatives, and
+        executable task/spec refs.
+      decisions_own: >
+        Stable architectural choices after options and context are resolved.
+    readiness_report_schema:
+      purpose: >
+        Define the minimum report before a planning bank routes into initiative,
+        backlog, decision, or research work.
+      minimal_fields:
+        - "bank_id"
+        - "bank_type"
+        - "evaluated_at"
+        - "readiness_status"
+        - "freshness_status"
+        - "target_route"
+        - "blocking_questions"
+        - "contradiction_disposition"
+        - "source_refs"
+        - "recommended_next_artifact"
+        - "human_decision"
+      status_values:
+        - "continue_refinement"
+        - "ready_to_route"
+        - "defer"
+        - "reject"
+      fail_closed_rules:
+        - "ready_to_route is invalid while human_decision is pending."
+        - "ready_to_route is invalid when target_route is missing."
+        - "ready_to_route is invalid when blocking_questions affect the target route."
+        - "ready_to_route is invalid when source_refs point only at ignored local proposal drafts."
+        - "ready_to_route is invalid when freshness_status is stale for route-affecting evidence."
+    command_policy:
+      arch_proposal: >
+        Continues to create or refine local proposal drafts. It may recommend a
+        design-bank promotion path, but should not silently create durable banks
+        without human approval.
+      promote: >
+        Can route a promoted idea into memory, proposal draft, design bank,
+        initiative bank, backlog, research, or decision paths depending on the
+        artifact's maturity.
+      roadmap: >
+        May display read-only planning-bank refs for initiatives or planning
+        candidates. It should distinguish bank refs from proposal inbox refs.
+      next: >
+        Must continue to scope executable backlog/roadmap tasks only. Planning
+        banks can inform `/next`, but should not become direct delivery scope
+        cards.
+      closeout: >
+        May append history to planning banks when the active session refined a
+        tracked bank, but should not mutate local proposal drafts as shared
+        truth.
+    hydration_handoff:
+      design_to_initiative: >
+        A design bank may produce an initiative candidate only after its route
+        readiness is approved.
+      design_to_backlog: >
+        A design bank may produce a backlog/spec candidate when the idea is
+        bounded, actionable, and has acceptance criteria.
+      initiative_bank_to_backlog: >
+        An initiative bank may produce hydrated task candidates only through
+        the existing human-gated roadmap scaffold path.
+  proposed_surfaces:
+    design_banks:
+      path_pattern: ".azoth/design-banks/<slug>.yaml"
+      purpose: >
+        Continuously refine one architectural idea that has been accepted as
+        worth thinking about, but is not yet a durable initiative, final ADR, or
+        executable backlog item.
+      examples:
+        - "proposal lifecycle split"
+        - "planning banks layer"
+        - "multi-agent evaluation policy"
+        - "command surface consolidation"
+    initiative_banks:
+      path_pattern: ".azoth/initiative-banks/<initiative-id>.yaml"
+      purpose: >
+        Continuously refine one roadmap initiative's knowledge, readiness,
+        candidate slices, contradictions, contacts, and hydration history.
+      migration_note: >
+        The current INI-EVI-002 bank under `.azoth/research/` is a pilot. A
+        future migration should move initiative-owned planning state into
+        `.azoth/initiative-banks/` while preserving links to research evidence.
+    research_banks:
+      path_pattern: ".azoth/research/<topic-or-task>.json|yaml"
+      purpose: >
+        Store evidence, source packs, freshness-aware research capsules, and
+        empirical findings that planning banks can cite.
+    proposal_inbox:
+      path_pattern: ".azoth/proposals/<slug>.yaml"
+      purpose: >
+        Local/generated/speculative architecture proposal drafts. These remain
+        useful as intake and challenge surfaces, but they should not be treated
+        as durable roadmap truth until promoted into a tracked planning bank,
+        backlog item, or decision.
+  routing_model:
+    proposal_draft_to_design_bank:
+      when: >
+        The idea deserves continuous architectural refinement, but it is not
+        ready to become an initiative, ADR, or executable task.
+      output: ".azoth/design-banks/<slug>.yaml"
+    proposal_draft_to_initiative_bank:
+      when: >
+        The idea belongs to an existing roadmap initiative and refines its
+        readiness, evidence, contacts, or candidate slices.
+      output: ".azoth/initiative-banks/<initiative-id>.yaml"
+    proposal_draft_to_initiative:
+      when: >
+        The idea has become a durable product/system goal that should be visible
+        in roadmap initiative panels.
+      output: ".azoth/roadmap.yaml initiatives[]"
+    proposal_draft_to_backlog:
+      when: >
+        The idea is small, actionable, and has clear acceptance criteria.
+      output: ".azoth/backlog.yaml plus optional .azoth/roadmap-specs/<version>/<id>.yaml"
+    proposal_draft_to_decision:
+      when: >
+        The idea resolves into a stable architectural choice rather than a
+        continuing workstream.
+      output: "docs/DECISIONS_INDEX.md and docs/AZOTH_ARCHITECTURE.md as appropriate"
+    planning_bank_to_research:
+      when: >
+        A design or initiative bank needs evidence before a routing or hydration
+        decision is safe.
+      output: ".azoth/research/<topic-or-task>.json|yaml"
+  command_surface_options:
+    option_a_keep_proposals_and_research_only:
+      description: >
+        Keep using proposals for design refinement and research files for
+        initiative readiness.
+      benefit: "No new artifact family."
+      risk: >
+        Preserves the current semantic mismatch: ignored proposals become
+        pseudo-truth and research files own non-research planning state.
+    option_b_design_banks_only:
+      description: >
+        Add `.azoth/design-banks/` for standalone architecture ideas but keep
+        initiative banks under `.azoth/research/`.
+      benefit: "Solves the proposal misuse for architectural ideas."
+      risk: "Leaves initiative-readiness state mislabeled as research."
+    option_c_full_planning_banks_layer:
+      description: >
+        Add both `.azoth/design-banks/` and `.azoth/initiative-banks/`, with
+        research linked as evidence.
+      benefit: >
+        Preserves clean ontology across proposal intake, design refinement,
+        initiative readiness, research evidence, and executable work.
+      risk: "Requires validators, command routing updates, and a careful migration."
+    recommended_starting_point: >
+      Start with option C, but implement it as a small contract-and-pilot
+      migration slice before adding new commands.
+  artifact_contract:
+    design_bank_minimal_fields:
+      - "schema_version"
+      - "bank_type: design"
+      - "id"
+      - "title"
+      - "status"
+      - "source_proposal_refs"
+      - "related_initiative_refs"
+      - "related_decision_refs"
+      - "problem"
+      - "design_thesis"
+      - "options"
+      - "tradeoffs"
+      - "open_questions"
+      - "research_refs"
+      - "challenge_log"
+      - "routing_candidates"
+      - "readiness"
+      - "history"
+    initiative_bank_minimal_fields:
+      - "schema_version"
+      - "bank_type: initiative"
+      - "initiative_id"
+      - "title"
+      - "status"
+      - "contacts"
+      - "source_proposal_refs"
+      - "research_questions"
+      - "research_refs"
+      - "local_findings"
+      - "external_findings"
+      - "assumptions"
+      - "contradictions"
+      - "challenge_log"
+      - "candidate_slices"
+      - "readiness"
+      - "hydration_history"
+    shared_rules:
+      - "Planning banks are tracked shared planning artifacts, not local runtime state."
+      - "Planning banks may reference ignored proposal drafts only as non-authoritative source history."
+      - "Roadmap and backlog references should point to tracked planning banks, specs, or decisions, not ignored proposal inbox files."
+      - "Research evidence remains in `.azoth/research/` and is linked by stable refs."
+      - "Hydration into roadmap/backlog/spec state remains human-gated."
+  migration_plan:
+    step_1_seed_contract:
+      action: >
+        Capture this proposal as the transitional architecture seed for planning
+        banks. Do not change command behavior yet.
+    step_2_create_examples:
+      action: >
+        Create one design-bank example for the proposal lifecycle split and one
+        migrated initiative-bank example for INI-EVI-002.
+    step_3_add_validators:
+      action: >
+        Add structural validators for design banks and initiative banks, plus a
+        roadmap reference check that fails when tracked roadmap state points at
+        ignored proposal inbox files as authoritative refs.
+    step_4_update_commands:
+      action: >
+        Teach `/arch-proposal`, `/promote`, `/roadmap`, and `/next` the routing
+        distinction between local proposal drafts, design banks, initiative
+        banks, and executable backlog/spec state.
+    step_5_migrate_existing_refs:
+      action: >
+        Move durable planning state currently held in proposal drafts or
+        research-labeled initiative banks into the new planning-bank locations,
+        preserving provenance links.
+  current_session_implications:
+    ini_evi_002: >
+      The INI-EVI-002 bank created in this session is useful, but its path under
+      `.azoth/research/` is transitional. The durable destination should be
+      `.azoth/initiative-banks/INI-EVI-002.yaml` once the planning-banks layer is
+      approved.
+    planning_banks_seed: >
+      This proposal lives in `.azoth/proposals/` only because that is the current
+      native architecture-seed path. The proposal itself argues that future
+      long-lived refinement should move into `.azoth/design-banks/` and
+      `.azoth/initiative-banks/`.
+    roadmap_refs: >
+      Until the layer is implemented, avoid adding new roadmap-authoritative
+      refs to ignored proposal files unless the proposal is explicitly
+      force-added as a promoted shared artifact.
+  validation_strategy:
+    first_tests:
+      - "Validate a sample design bank schema."
+      - "Validate a sample initiative bank schema."
+      - "Reject roadmap refs that point to ignored proposal inbox files as authoritative refs."
+      - "Allow proposal refs only as source/provenance inside planning banks."
+      - "Confirm INI-EVI-002 can migrate from `.azoth/research/` to `.azoth/initiative-banks/` without losing readiness or candidate-slice state."
+    non_goals:
+      - "Do not implement new commands in the seed slice."
+      - "Do not make all proposals tracked."
+      - "Do not move every research artifact into planning banks."
+      - "Do not turn every design bank into an initiative."
+      - "Do not let planning banks bypass human-gated roadmap hydration."
+  validation_replay:
+    - scenario: "Local proposal draft should not become roadmap truth"
+      input:
+        artifact: ".azoth/proposals/planning-banks-layer.yaml"
+        gitignore_status: "ignored"
+        referenced_by_roadmap: false
+      expected_result: "valid_transitional_seed"
+      rationale: >
+        A proposal draft is acceptable as a local architecture seed, but roadmap
+        authoritative refs should wait for promotion into a tracked planning
+        bank or force-added shared proposal record.
+    - scenario: "Accepted architectural idea needs continuous refinement"
+      input:
+        artifact_type: "proposal"
+        maturity: "accepted_for_refinement"
+        executable: false
+        durable_goal: false
+      expected_route: ".azoth/design-banks/<slug>.yaml"
+      rationale: >
+        The idea is too durable for an ignored proposal draft but not yet a
+        roadmap initiative, decision, or backlog task.
+    - scenario: "Discovery-active initiative has evolving readiness"
+      input:
+        initiative_ref: "INI-EVI-002"
+        current_bank_path: ".azoth/initiative-banks/INI-EVI-002.yaml"
+        state_type: "planning_readiness"
+      expected_route: ".azoth/initiative-banks/INI-EVI-002.yaml"
+      rationale: >
+        The evidence refs can remain in research, but readiness, candidate
+        slices, contacts, and hydration history belong to the initiative bank.
+  worked_examples:
+    - name: "Proposal lifecycle split"
+      steps:
+        - "Draft the idea under `.azoth/proposals/`."
+        - "Human decides it deserves ongoing refinement."
+        - "Promote the durable reasoning into `.azoth/design-banks/proposal-lifecycle-split.yaml`."
+        - "Keep source proposal refs as provenance only."
+        - "Later route to backlog, decision, or initiative after readiness passes."
+      expected_output: >
+        A tracked design bank, not a direct roadmap task and not a permanently
+        ignored proposal reference.
+    - name: "INI-EVI-002 bank migration"
+      steps:
+        - "Read the transitional research-path initiative bank."
+        - "Move initiative-owned fields into `.azoth/initiative-banks/INI-EVI-002.yaml`."
+        - "Preserve `.azoth/research/` refs for evidence packs and source freshness."
+        - "Update roadmap readiness refs to the tracked initiative bank."
+      expected_output: >
+        Roadmap initiative state points at an initiative bank, while research
+        remains evidence-focused.
+  challenge_points:
+    - >
+      Adding a new artifact family can create discoverability burden unless
+      `/promote`, `/roadmap`, and `/next` expose the routing distinction clearly.
+    - >
+      Planning banks can become another junk drawer if validators do not enforce
+      bank type, route readiness, source refs, and history shape.
+    - >
+      If proposal drafts remain gitignored, any promoted planning truth must be
+      explicitly moved or force-added before roadmap refs depend on it.
+    - >
+      Initiative banks should not become mini-roadmaps; they hold readiness and
+      candidate slices, while roadmap/backlog/specs own scheduled execution.
+  readiness_rubric:
+    pass_conditions:
+      - "The artifact's job is distinct from proposal, research, initiative, decision, and backlog surfaces."
+      - "The bank has a clear target route or an explicit continue_refinement status."
+      - "Authoritative refs point to tracked artifacts."
+      - "Research refs are evidence links, not the owner of planning state."
+      - "Human decision is captured before route or hydration writes."
+    fail_or_continue_refinement_conditions:
+      - "The same artifact is acting as local draft, durable bank, and execution source."
+      - "The bank depends only on ignored proposal files for authority."
+      - "The route would turn an architectural idea directly into implementation without challenge."
+      - "The initiative bank duplicates roadmap scheduling instead of candidate readiness."
+  open_questions:
+    - "Should design-bank ids use a DB-* prefix, a slug-only path, or both?"
+    - "Should initiative banks be mandatory for all initiatives or only discovery-active initiatives?"
+    - "Should promoted proposal records remain in `.azoth/proposals/` with force-add, or should promotion always materialize a design bank?"
+    - "How should closeout append history to planning banks without creating merge churn?"
+    - "Should planning-bank validators share the proposal knowledge-richness rubric or have a separate readiness rubric?"
+  recommended_next_slice:
+    title: "Planning banks layer contract and pilot migration"
+    target_layer: "infrastructure"
+    delivery_pipeline: "standard"
+    summary: >
+      Define tracked `.azoth/design-banks/` and `.azoth/initiative-banks/`
+      contracts, add pilot fixtures/validators, and migrate the INI-EVI-002 bank
+      out of `.azoth/research/` while preserving research refs and roadmap
+      readiness semantics.

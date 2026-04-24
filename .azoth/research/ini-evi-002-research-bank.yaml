@@ -1,244 +1,92 @@
 schema_version: 1
-initiative_id: INI-EVI-002
-title: Knowledge richness evaluation for project-management artifacts
-status: discovery_active
-created_at: '2026-04-24T00:00:00+00:00'
-updated_at: '2026-04-24T00:00:00+00:00'
-owner: codex
-source_sessions:
-- session_id: 2026-04-24-initiative-discovery-bridge-proposal
-  kind: proposal
-  artifact: .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
-  note: Defined the initiative bank contract and selected INI-EVI-002 as the active
-    discovery pilot for the lane; hydration readiness still depends on the bank
-    readiness gate.
-- session_id: 2026-04-24-ini-evi-002-bank-bootstrap
-  kind: discovery-bootstrap
-  artifact: .azoth/research/ini-evi-002-research-bank.yaml
-  note: Created the first persistent initiative-level bank for continuous refinement
-    before task hydration.
-proposal_refs:
-- .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
-- .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-roadmap_refs:
-- .azoth/roadmap.yaml#INI-EVI-002
-contacts:
-- id: operator
-  role: human decision owner
-  contact_type: human
-  note: Approves discovery direction, readiness, and any future roadmap/backlog
-    hydration.
-- id: proposal-contract
-  role: architecture rationale surface
-  contact_type: artifact
-  path: .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
-  note: Owns the discovery-lane design intent, non-goals, and command-surface
-    options.
-- id: richness-evaluator
-  role: local evaluator implementation
-  contact_type: artifact
-  path: scripts/proposal_knowledge_richness.py
-  note: Current advisory scorer for architecture proposals; likely seed for this
-    initiative.
-- id: future-bank-tooling-proposal
-  role: future architecture proposal
-  contact_type: artifact
-  path: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-  note: Captures the future validator, readiness reporter, and hydration-helper
-    tooling path.
-research_questions:
-- question_id: rq-evi-002-001
-  question: Which project-management artifacts should the first richness lane score?
-  status: answered
-  answered_at: '2026-04-24T00:00:00+00:00'
-  answer: Start with architecture proposals and initiative research banks. Defer
-    roadmap hydration plans and task research capsules until the bank contract is
-    validated against this pilot.
-  evidence_refs:
-  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
-  - scripts/proposal_knowledge_richness.py
-- question_id: rq-evi-002-002
-  question: What should remain separate from structural schema validation?
-  status: answered
-  answered_at: '2026-04-24T00:00:00+00:00'
-  answer: Richness scoring is advisory quality evidence. It should not replace
-    existing structural validators such as architecture_proposal_validate.py or
-    research_sufficiency.py.
-  evidence_refs:
-  - scripts/architecture_proposal_validate.py
-  - scripts/research_sufficiency.py
-  - scripts/proposal_knowledge_richness.py
-- question_id: rq-evi-002-003
-  question: What must be true before a first implementation slice is hydrated?
-  status: answered
-  opened_at: '2026-04-24T00:00:00+00:00'
-  answered_at: '2026-04-24T00:00:00+00:00'
-  needed_for: first_slice_readiness
-  answer: A future architecture proposal now exists for the tooling layer. The
-    first slice should stay unhydrated until slice-evi-002-a has stable acceptance
-    criteria, non-goals, readiness_status ready_to_hydrate, and human_decision
-    approved.
-  evidence_refs:
-  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-  - .azoth/research/ini-evi-002-research-bank.yaml
-  notes:
-  - Decide whether the first slice is a bank validator, a richer evaluator contract,
-    or UI surfacing in roadmap/start/next.
-  - Record acceptance criteria and non-goals before creating a roadmap task.
+artifact_type: research_evidence_index
+topic: INI-EVI-002 knowledge richness evaluation for project-management artifacts
+created_at: "2026-04-24T00:00:00+00:00"
+updated_at: "2026-04-24T19:55:00+00:00"
+planning_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+summary: >
+  Evidence index for the INI-EVI-002 initiative bank. Research artifacts own
+  evidence and source packs; the initiative bank owns readiness, contacts,
+  candidate slices, contradictions, and hydration history.
 research_packs:
-- pack_id: pack-evi-002-local-surfaces-001
-  kind: local
-  status: active
-  captured_at: '2026-04-24T00:00:00+00:00'
-  sources:
-  - path: scripts/proposal_knowledge_richness.py
-    finding: Existing proposal scorer has dimensions for evidence breadth, source
-      quality, traceability, alternatives, operational specificity, validation
-      readiness, freshness, and replay.
-  - path: tests/test_proposal_knowledge_richness.py
-    finding: Existing tests assert the initiative discovery proposal reaches a rich
-      score and that the CLI emits a summary.
-  - path: .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
-    finding: Proposal declares initiative banks as the evidence/readiness surface
-      between phase-null initiatives and hydrated roadmap tasks.
-- pack_id: pack-evi-002-external-alignment-001
-  kind: external-summary
-  status: imported_from_proposal
-  captured_at: '2026-04-24T00:00:00+00:00'
-  sources:
-  - title: Atlassian Product Discovery
-    url: https://www.atlassian.com/agile/product-management/discovery
-    finding: Discovery data should stay visible and connected to delivery status
-      before build commitment.
-  - title: Google Cloud Architecture Decision Records overview
-    url: https://cloud.google.com/architecture/architecture-decision-records
-    finding: Decisions should preserve options, requirements, selected path, and
-      context for future work.
-  - title: GOV.UK Service Manual discovery phase
-    url: https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works
-    finding: Discovery can validly end with stop, continue research, or move toward
-      testing ideas.
-local_findings:
-- finding_id: lf-evi-002-001
-  status: active
-  summary: INI-EVI-002 has no slices yet, so it should not become a delivery scope
-    directly.
-  evidence_refs:
-  - .azoth/roadmap.yaml#INI-EVI-002
-- finding_id: lf-evi-002-002
-  status: active
-  summary: The current evaluator is proposal-specific and should be generalized
-    only after the initiative bank proves which artifact classes need scoring first.
-  evidence_refs:
-  - scripts/proposal_knowledge_richness.py
-  - tests/test_proposal_knowledge_richness.py
-external_findings:
-- finding_id: ef-evi-002-001
-  status: active
-  summary: Discovery-to-delivery systems keep uncertain ideas linked to evidence
-    until validation and commitment.
-  source_pack_ref: pack-evi-002-external-alignment-001
-assumptions:
-- assumption_id: as-evi-002-001
-  status: active
-  statement: A reusable initiative bank is the right first artifact because it
-    improves future task hydration without prematurely choosing implementation.
-  validation_path: Challenge against the first candidate slice before hydration.
-- assumption_id: as-evi-002-002
-  status: active
-  statement: Advisory richness scoring should remain separate from fail-closed
-    structural validation.
-  validation_path: Keep schema/contract validators as separate gates in any future
-    implementation plan.
-contradictions:
-- contradiction_id: none-recorded-yet
-  status: none
-  summary: No blocking contradictions recorded yet.
-challenge_log:
-- challenge_id: ch-evi-002-001
-  challenged_at: '2026-04-24T00:00:00+00:00'
-  prompt: Is the first slice still the whole initiative?
-  disposition: continue_research
-  result: Yes. The initiative remains broader than a normal delivery task. Hydration
-    should wait until a narrower first slice is selected.
-- challenge_id: ch-evi-002-002
-  challenged_at: '2026-04-24T00:00:00+00:00'
-  prompt: What is the smallest legitimate first hydrated task?
-  disposition: refine_candidate_slice
-  result: Hydrate only a standard infrastructure task for initiative-bank contract
-    validation and readiness reporting. Defer /next changes, command additions,
-    dashboard integration, hydration planner writes, task-capsule derivation, and
-    artifact-class richness adapters.
-candidate_slices:
-- candidate_id: slice-evi-002-a
-  proposed_task_id: TBD-INI-EVI-002-A
-  title: Initiative bank contract and readiness validation for knowledge-richness
-    discovery
-  initiative_ref: INI-EVI-002
-  status: candidate
-  target_layer: infrastructure
-  delivery_pipeline: standard
-  summary: Define and validate the initiative-bank contract used to carry evidence,
-    assumptions, contradictions, candidate slices, contacts, and hydration history.
-  acceptance_criteria:
-  - INI-EVI-002 has a durable initiative bank under .azoth/research/.
-  - The bank records contacts, research packs, local findings, assumptions, contradictions,
-    candidate slices, readiness, and hydration history.
-  - A focused validation path catches missing required bank fields.
-  - No roadmap or backlog task is hydrated until readiness is approved.
-  research_evidence_refs:
-  - .azoth/research/ini-evi-002-research-bank.yaml
-  known_non_goals:
-  - Do not implement a new command.
-  - Do not change /next behavior.
-  - Do not hydrate roadmap/backlog state in the same step.
-  open_questions:
-  - Which exact fields should the future reusable validator require beyond the
-    current pilot test?
-  recommended_phase: v0.2.0-p3
-  hydration_plan:
-    proposed_title: Initiative bank contract validator and readiness report
-    future_scaffold: scripts/roadmap_scaffold.py --title "Initiative bank contract
-      validator and readiness report" --initiative-ref INI-EVI-002 --target-layer
-      infrastructure --delivery-pipeline standard
-    pre_hydration_requirements:
-    - readiness.readiness_status must be ready_to_hydrate.
-    - readiness.human_decision must be approved.
-    - acceptance_criteria_status and non_goals_status must be stable.
-    - open_questions must be empty or explicitly non-blocking.
-    - hydration_history remains empty until the approved scaffold write occurs.
-- candidate_id: slice-evi-002-b
-  proposed_task_id: TBD-INI-EVI-002-B
-  title: Generalize proposal richness scoring into artifact-class adapters
-  initiative_ref: INI-EVI-002
-  status: parked
-  target_layer: infrastructure
-  delivery_pipeline: standard
-  summary: Extend the current proposal-only richness evaluator toward adapters for
-    initiative banks and hydration plans after the bank contract stabilizes.
-  acceptance_criteria: []
-  research_evidence_refs:
-  - scripts/proposal_knowledge_richness.py
-  known_non_goals:
-  - Do not score every artifact class before the bank pilot proves the contract.
-  open_questions:
-  - Which dimensions transfer cleanly from architecture proposals to initiative banks?
-  recommended_phase: v0.2.0-p3
-readiness:
-  evaluated_at: '2026-04-24T00:00:00+00:00'
-  source_bank_ref: .azoth/research/ini-evi-002-research-bank.yaml
-  readiness_status: continue_research
-  goal_clarity: partial
-  evidence_coverage: partial
-  freshness_status: current_initial_bootstrap
-  assumption_audit: active_assumptions_recorded
-  contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-evi-002-a
-  target_layer: infrastructure
-  delivery_pipeline: standard
-  acceptance_criteria_status: draft
-  non_goals_status: draft
-  hydration_recommendation: Do not hydrate yet. Review slice-evi-002-a and approve
-    a focused hydration plan first.
-  human_decision: pending
-hydration_history: []
+  - pack_id: pack-evi-002-local-surfaces-001
+    kind: local
+    status: active
+    captured_at: "2026-04-24T00:00:00+00:00"
+    sources:
+      - path: scripts/proposal_knowledge_richness.py
+        finding: Existing proposal scorer has dimensions for evidence breadth, source quality, traceability, alternatives, operational specificity, validation readiness, freshness, and replay.
+      - path: tests/test_proposal_knowledge_richness.py
+        finding: Existing tests assert the initiative discovery proposal reaches a rich score and that the CLI emits a summary.
+      - path: .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+        finding: Proposal declares initiative banks as the readiness surface between phase-null initiatives and hydrated roadmap tasks.
+  - pack_id: pack-evi-002-external-alignment-001
+    kind: external-summary
+    status: imported_from_proposal
+    captured_at: "2026-04-24T00:00:00+00:00"
+    sources:
+      - title: Atlassian Product Discovery
+        url: https://www.atlassian.com/agile/product-management/discovery
+        finding: Discovery data should stay visible and connected to delivery status before build commitment.
+      - title: Google Cloud Architecture Decision Records overview
+        url: https://cloud.google.com/architecture/architecture-decision-records
+        finding: Decisions should preserve options, requirements, selected path, and context for future work.
+      - title: GOV.UK Service Manual discovery phase
+        url: https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works
+        finding: Discovery can validly end with stop, continue research, or move toward testing ideas.
+  - pack_id: pack-evi-002-readiness-checkpoint-001
+    kind: mixed-readiness-checkpoint
+    status: active
+    captured_at: "2026-04-24T18:36:03+00:00"
+    source_session_id: 2026-04-24-ini-evi-002-readiness-research
+    goal: Research planning-bank seed for INI-EVI-002 slice-evi-002-a readiness.
+    volatility: medium
+    limitations:
+      - External sources support the discovery-to-delivery boundary but do not define Azoth-specific bank fields.
+      - The current session did not hydrate roadmap, backlog, or roadmap-spec state.
+    questions:
+      - Should the operator hydrate slice-evi-002-a as the next standard infrastructure task?
+      - Should write-mode hydration helper behavior remain a later slice after validator and readiness reporting stabilize?
+    sources:
+      - path: .azoth/initiative-banks/INI-EVI-002.yaml
+        finding: Slice-evi-002-a now has stable acceptance criteria, stable non-goals, no blocking open questions, and an explicit next human hydration gate.
+      - path: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+        finding: The proposal's recommended starting point is validator plus read-only readiness reporter, with write-mode hydration deferred.
+      - path: scripts/planning_bank_validate.py
+        finding: The live validator already enforces initiative-bank structure and fails ready_to_hydrate when human_decision is not approved.
+      - title: Atlassian Jira Product Discovery ideas overview
+        url: https://www.atlassian.com/software/jira/product-discovery/guides/ideas/overview
+        finding: Discovery ideas collect hypotheses, validation methods, insights, linked delivery tickets, and history before prioritization.
+      - title: Atlassian Jira Product Discovery delivery overview
+        url: https://www.atlassian.com/hu/software/jira/product-discovery/guides/delivery/overview
+        finding: Discovery ideas progress from uncertain parking-lot items through validation into ready-for-delivery work.
+      - title: Google Cloud Architecture Decision Records overview
+        url: https://cloud.google.com/architecture/architecture-decision-records
+        finding: Durable architecture records preserve options, requirements, and decision context close to the relevant code.
+      - title: GOV.UK Service Manual discovery phase
+        url: https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works
+        finding: Discovery should clarify whether to stop, continue research, or move toward testing/building, and should not itself start the build.
+  - pack_id: pack-evi-002-next-candidate-001
+    kind: local-next-candidate-refinement
+    status: active
+    captured_at: "2026-04-24T19:55:00+00:00"
+    source_session_id: 2026-04-24-planning-bank-next-candidate-refinement
+    goal: Refine the next INI-EVI-002 candidate after T-018 delivered the bank validator and read-only readiness report.
+    volatility: low
+    limitations:
+      - This pack uses repo-local artifacts only; no fresh external source refresh was needed because the candidate is an internal adapter-design slice.
+      - The pack does not approve hydration. It prepares slice-evi-002-b for human review.
+    questions:
+      - Should the operator hydrate slice-evi-002-b as the next standard infrastructure task?
+      - Which initiative-bank fields should become first-class richness dimensions versus advisory notes?
+    sources:
+      - path: .azoth/roadmap-specs/v0.2.0/T-018.yaml
+        finding: T-018 deliberately delivered validator plus read-only readiness reporting and deferred write-mode hydration helper behavior to a later slice.
+      - path: scripts/proposal_knowledge_richness.py
+        finding: The existing richness evaluator already has reusable dimensions such as evidence breadth, source quality, traceability, challenge alternatives, validation readiness, freshness, and empirical replay.
+      - path: scripts/planning_bank_validate.py
+        finding: Planning-bank structural validation is fail-closed and should remain separate from advisory richness scoring.
+      - path: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+        finding: The tooling proposal identifies readiness reporting and plan-only handoff as the safe bridge before any future write-mode hydration helper.
+      - path: .azoth/initiative-banks/INI-EVI-002.yaml
+        finding: Slice-evi-002-b now has concrete acceptance criteria, non-goals, evidence refs, and no blocking open questions, but still awaits explicit human hydration approval.

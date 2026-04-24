@@ -1,0 +1,46 @@
+id: T-018
+roadmap_version: v0.2.0
+title: Initiative bank contract validator and readiness report
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+intent: >
+  Deliver the first focused INI-EVI-002 implementation slice: reusable
+  initiative-bank validation plus a read-only readiness report for candidate
+  slices.
+problem: >
+  Planning banks can now hold initiative-owned readiness state, but operators
+  still need a reliable way to verify the bank contract and see whether a
+  candidate slice is ready to hydrate without accidentally mutating roadmap,
+  backlog, or spec state.
+scope:
+- scripts/planning_bank_validate.py
+- tests/test_planning_banks.py
+- .azoth/initiative-banks/INI-EVI-002.yaml as the pilot fixture
+- Read-only readiness report output for initiative banks
+non_goals:
+- Do not add a new slash command.
+- Do not change /next behavior.
+- Do not add write-mode hydration helper behavior.
+- Do not mutate roadmap, backlog, or roadmap-spec state from the readiness reporter.
+- Do not replace architecture_proposal_validate.py or research_sufficiency.py.
+acceptance:
+- Reusable validation accepts the live INI-EVI-002 initiative bank and rejects missing required fields or malformed candidate slices.
+- Readiness reporting exposes readiness_status, human_decision, candidate_first_slice, acceptance criteria status, non-goals status, freshness status, and hydration recommendation.
+- Pending or absent human_decision fails closed for ready_to_hydrate.
+- The implementation does not write roadmap, backlog, or roadmap-spec state; any future hydration remains a separate explicit approval path.
+- Research evidence remains linked under .azoth/research/ instead of owning planning state.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Phase 1 = validator plus read-only readiness report. Phase 2 = optional
+  plan-only hydration helper after the validator/reporting contract stabilizes.
+source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+candidate_slice_ref: slice-evi-002-a
+research_refs:
+- .azoth/research/ini-evi-002-research-bank.yaml

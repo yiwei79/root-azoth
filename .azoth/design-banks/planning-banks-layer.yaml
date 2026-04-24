@@ -1,0 +1,89 @@
+schema_version: 1
+bank_type: design
+id: planning-banks-layer
+title: Planning banks layer
+status: active_refinement
+created_at: "2026-04-24T17:43:19+00:00"
+updated_at: "2026-04-24T17:43:19+00:00"
+source_proposal_refs:
+  - .azoth/proposals/planning-banks-layer.yaml
+related_initiative_refs:
+  - INI-EVI-002
+related_decision_refs:
+  - D11
+  - D23
+  - D25
+  - D29
+  - D48
+  - D50
+problem: >
+  Azoth lacked a tracked place for continuous architectural refinement between
+  local proposal drafts and executable roadmap/backlog work. Proposal drafts are
+  intentionally local/speculative, while research artifacts should own evidence
+  rather than planning state.
+design_thesis: >
+  Add tracked planning banks as the durable middle layer: design banks for
+  evolving architectural ideas and initiative banks for initiative readiness,
+  candidate slices, contacts, contradictions, and hydration history.
+options:
+  - option_id: keep_proposals_and_research_only
+    status: rejected
+    summary: Keep using ignored proposal drafts and research files for planning state.
+    rationale: Preserves the semantic mismatch that caused this design issue.
+  - option_id: design_banks_only
+    status: parked
+    summary: Add design banks but leave initiative banks under research.
+    rationale: Solves architecture-idea refinement but leaves initiative readiness mislabeled.
+  - option_id: full_planning_banks_layer
+    status: preferred
+    summary: Add both design banks and initiative banks, with research linked as evidence.
+    rationale: Best preserves Azoth's artifact boundaries.
+tradeoffs:
+  - tradeoff_id: discoverability
+    summary: New artifact homes require command and dashboard surfacing.
+    mitigation: Start with validators and pilot migration before adding new commands.
+  - tradeoff_id: artifact_proliferation
+    summary: More artifact types can create confusion if routing rules are vague.
+    mitigation: Keep route readiness and human decisions explicit in each bank.
+open_questions:
+  - question_id: db-planning-001
+    status: open
+    question: Should design-bank ids use a DB-* prefix, a slug-only path, or both?
+  - question_id: db-planning-002
+    status: open
+    question: Should all initiatives get banks, or only discovery-active initiatives?
+research_refs:
+  - .azoth/research/ini-evi-002-research-bank.yaml
+challenge_log:
+  - challenge_id: ch-planning-banks-001
+    challenged_at: "2026-04-24T17:43:19+00:00"
+    prompt: Should design banks live under research?
+    disposition: rejected
+    result: Research is evidence; design banks are architectural planning state.
+routing_candidates:
+  - route: initiative_bank
+    status: active
+    target: .azoth/initiative-banks/INI-EVI-002.yaml
+    rationale: INI-EVI-002 is the first pilot migration for initiative-owned planning state.
+  - route: backlog_task
+    status: future
+    target: Planning banks command/dashboard surfacing
+    rationale: Command changes should wait until the contract and validator are stable.
+readiness:
+  evaluated_at: "2026-04-24T17:43:19+00:00"
+  readiness_status: continue_refinement
+  freshness_status: current_initial_contract
+  target_route: pilot_migration
+  blocking_questions:
+    - db-planning-001
+    - db-planning-002
+  contradiction_disposition: none_blocking_recorded
+  source_refs:
+    - .azoth/proposals/planning-banks-layer.yaml
+    - .azoth/initiative-banks/INI-EVI-002.yaml
+  recommended_next_artifact: Planning banks validator and pilot migration
+  human_decision: pending
+history:
+  - timestamp: "2026-04-24T17:43:19+00:00"
+    event: created_from_architecture_seed
+    summary: Seeded the design bank from the planning-banks-layer architecture proposal.

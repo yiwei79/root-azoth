@@ -179,13 +179,13 @@ details:
         hydration into roadmap/backlog state.
   active_pilot:
     initiative_id: "INI-EVI-002"
-    bank_ref: ".azoth/research/ini-evi-002-research-bank.yaml"
+    bank_ref: ".azoth/initiative-banks/INI-EVI-002.yaml"
     status: "discovery_active"
     rationale: >
       INI-EVI-002 is the first pilot because it improves the quality gates for
       proposals, initiative banks, roadmap hydration plans, and related planning
-      artifacts. The pilot bank is the living evidence surface; this proposal
-      remains the architecture rationale surface.
+      artifacts. The pilot bank is the living planning/readiness surface; this
+      proposal remains the architecture rationale surface.
     hydration_boundary: >
       The pilot bank may refine questions, packs, findings, assumptions,
       contradictions, candidate slices, and readiness. It must not hydrate
