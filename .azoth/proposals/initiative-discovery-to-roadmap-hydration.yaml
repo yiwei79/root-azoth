@@ -1,0 +1,280 @@
+proposal_schema_version: 1
+created_at: "2026-04-24T07:40:08+00:00"
+session_id: "2026-04-24-initiative-discovery-bridge-proposal"
+backlog_id: "P6-003"
+title: "Initiative discovery lane to roadmap hydration"
+summary: >
+  Draft architecture proposal for bridging Azoth's phase-null initiatives to
+  scoped roadmap tasks without asking delivery agents to start from assumptions.
+  The proposal introduces an initiative discovery lane: select a goal-oriented
+  initiative, open research/discovery sessions against that initiative, maintain
+  a persistent initiative knowledge bank, challenge and refine the synthesis,
+  then hydrate one or more initiative-bound tasks into the active roadmap only
+  after explicit knowledge-readiness and human approval gates pass. This keeps
+  initiatives as durable goal containers while preserving `/next` and roadmap
+  tasks as the only delivery-scoping surface.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D47
+  - D48
+  - D49
+  - D50
+  - D51
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    current_gap: >
+      Azoth can already draft proposals, run research/discovery sessions, build
+      proposal-specific research banks, refine the proposal, and eventually
+      hydrate stable knowledge into roadmap work. Initiatives, however, are
+      currently larger goal containers that can appear as the next visible thing
+      after the backlog is empty without having an equally explicit knowledge
+      build-up path.
+    operator_need: >
+      When the operator wants to tackle the next initiative, the desired action
+      is often not immediate delivery. The desired action is to research the
+      initiative, challenge assumptions, build a durable knowledge base, and
+      only then mint bounded tasks tied back to the initiative and scheduled
+      into a roadmap phase.
+    failure_mode: >
+      Without an initiative discovery lane, `/next` has only two awkward choices:
+      invent a backlog card too early, or point at an unscheduled initiative
+      without a governed path for learning enough to scope it well.
+  proposed_model:
+    name: "initiative discovery lane"
+    hierarchy:
+      - "Initiative: durable goal container in `.azoth/roadmap.yaml`."
+      - "Discovery proposal: human-readable design space and open questions under `.azoth/proposals/`."
+      - "Initiative research bank: append-only or merge-friendly knowledge base under `.azoth/research/`."
+      - "Synthesis: candidate slices, risks, assumptions, and evidence-readiness score."
+      - "Hydrated roadmap tasks: bounded task stubs/specs bound to `initiative_ref` and scheduled into a version."
+    central_rule: >
+      Initiatives may guide discovery, but they should not directly authorize
+      delivery. Delivery starts only after a hydrated task exists in the roadmap
+      and backlog, then `/next` opens a scope card as usual.
+  lifecycle:
+    step_1_select_initiative:
+      trigger: >
+        `/start` or `/next` finds no claimable backlog item and surfaces
+        actionable phase-null initiatives.
+      output: >
+        Operator selects an initiative for discovery, not delivery.
+      gate: >
+        Human confirms the initiative discovery intent. This opens an
+        exploratory session or AD-HOC planning scope, not a delivery scope.
+    step_2_open_discovery_proposal:
+      output: >
+        Create or update a draft architecture proposal that names the initiative,
+        the motivating goal, the initial question set, known constraints, and
+        challenge points.
+      artifact_pattern: ".azoth/proposals/<initiative-slug>-discovery.yaml"
+      rule: >
+        The proposal is not authority for roadmap writes. It is a durable
+        discussion and refinement surface.
+    step_3_build_initiative_research_bank:
+      output: >
+        Run research and discovery sessions that append packs, local source
+        findings, assumptions, contradictions, and operator decisions to an
+        initiative-level knowledge bank.
+      candidate_artifact_patterns:
+        - ".azoth/research/<initiative-id>-research-bank.yaml"
+        - ".azoth/research/<initiative-id>-research-bank.json"
+        - ".azoth/roadmap-specs/v0.2.0/<initiative-id>-execution-plan.md"
+      compatibility_note: >
+        Existing task-level research capsules can remain flat JSON files under
+        `.azoth/research/`. The initiative bank should synthesize broader
+        knowledge and later emit task-specific capsules when a slice is ready.
+    step_4_challenge_and_refine:
+      output: >
+        Run architect/reviewer/evaluator-style challenge passes against the
+        proposal and research bank. Record rejected assumptions, unresolved
+        conflicts, non-goals, and candidate slice boundaries.
+      expected_questions:
+        - "What must be true before this initiative becomes actionable?"
+        - "Which risks are research gaps versus implementation risks?"
+        - "What is too broad for the first slice?"
+        - "Which work belongs in M1/governed delivery versus standard infrastructure?"
+        - "What evidence would make this initiative not worth scheduling yet?"
+    step_5_readiness_gate:
+      output: >
+        Produce a readiness report before any roadmap hydration.
+      readiness_dimensions:
+        - "goal clarity"
+        - "evidence coverage"
+        - "source freshness or volatility"
+        - "assumption audit"
+        - "contradiction handling"
+        - "sliceability"
+        - "governance layer classification"
+        - "success criteria"
+        - "test or validation strategy"
+        - "operator confidence"
+      suggested_threshold: >
+        Hydration is allowed only when the proposal has stable goal/scope,
+        major questions are answered or explicitly deferred, contradictions are
+        adjudicated, and at least one bounded first slice has clear acceptance
+        criteria and governance classification.
+    step_6_hydrate_roadmap_tasks:
+      output: >
+        Create one or more roadmap task stubs/specs bound to `initiative_ref`,
+        optionally seed backlog items, and assign them to the active or selected
+        roadmap version.
+      current_repo_path: >
+        Use `scripts/roadmap_scaffold.py --title ... --initiative-ref <INI-ID>`
+        for new slices, or `scripts/roadmap_scaffold.py --hydrate-task <TASK-ID>`
+        when a planned task stub already exists.
+      future_path: >
+        Consider a dedicated `scripts/initiative_hydrate.py` helper that reads
+        a proposal plus initiative research bank and emits reviewed roadmap
+        task candidates before writing.
+      gate: >
+        Human approves the hydration plan before roadmap/backlog writes.
+    step_7_delivery_resumes_normal_flow:
+      output: >
+        Once the task is hydrated, `/next` can surface it as a normal scope card.
+        `/auto`, `/deliver`, or `/deliver-full` then handles implementation via
+        the existing control plane.
+  artifact_contract:
+    initiative_research_bank:
+      purpose: >
+        Persistent initiative-level knowledge base that can survive multiple
+        discovery sessions and produce task-level research capsules later.
+      minimal_fields:
+        - "schema_version"
+        - "initiative_id"
+        - "title"
+        - "source_sessions"
+        - "research_questions"
+        - "research_packs"
+        - "local_findings"
+        - "external_findings"
+        - "assumptions"
+        - "contradictions"
+        - "challenge_log"
+        - "candidate_slices"
+        - "readiness"
+        - "hydration_history"
+      merge_rule: >
+        Append or merge by stable pack/question ids. Do not rewrite prior
+        findings except to supersede them explicitly.
+    candidate_slice:
+      minimal_fields:
+        - "proposed_task_id"
+        - "title"
+        - "initiative_ref"
+        - "target_layer"
+        - "delivery_pipeline"
+        - "summary"
+        - "acceptance_criteria"
+        - "research_evidence_refs"
+        - "known_non_goals"
+        - "open_questions"
+        - "recommended_phase"
+      rule: >
+        Candidate slices are planning evidence only until the human approves
+        hydration into roadmap/backlog state.
+  command_surface_options:
+    option_a_extend_start_next:
+      description: >
+        When `/next` has no claimable backlog item, show an "initiative discovery"
+        route for actionable phase-null initiatives.
+      benefit: "Low friction for the operator at exactly the point they feel the gap."
+      risk: "`/next` could become too broad if it starts doing discovery work itself."
+    option_b_add_initiative_discover_command:
+      description: >
+        Add a dedicated `/initiative-discover <INI-ID>` workflow that opens or
+        resumes initiative discovery without overloading `/next`.
+      benefit: "Clean separation between delivery scoping and knowledge build-up."
+      risk: "Another command surface may add discoverability and parity work."
+    option_c_use_arch_proposal_plus_plan:
+      description: >
+        Keep the first version procedural: use `/arch-proposal` for the design
+        artifact and `/plan` for initiative slice readiness until the pattern is
+        proven.
+      benefit: "Smallest implementation surface; matches the proposal-first rule."
+      risk: "Relies on operator discipline and may remain less discoverable."
+    recommended_starting_point: >
+      Start with option C as policy, then research whether option B deserves a
+      bounded implementation slice. Avoid making `/next` write discovery state.
+  governance:
+    human_gates:
+      - "Approve initiative discovery intent."
+      - "Approve creation or material revision of a discovery proposal."
+      - "Approve research/challenge question set when scope is ambiguous."
+      - "Approve readiness before hydration."
+      - "Approve roadmap/backlog writes produced by hydration."
+    scope_boundaries:
+      - "Exploratory discovery sessions may read broadly and write only approved proposal/research artifacts."
+      - "Hydration sessions may write roadmap/backlog/spec state only after explicit approval."
+      - "Delivery sessions must start from hydrated tasks and existing `/next` scope cards."
+    m1_boundary: >
+      If the hydrated task targets M1 or governed surfaces, D51 still applies:
+      the task requires a governed pipeline and must not be batched with non-M1
+      work.
+  readiness_rubric:
+    pass_conditions:
+      - "The initiative goal is stated in one or two durable sentences."
+      - "At least one first slice is small enough for a normal delivery session."
+      - "The first slice has explicit acceptance criteria and non-goals."
+      - "Research questions that affect scope are answered, contradicted, or consciously deferred."
+      - "Evidence freshness is adequate for the slice's volatility."
+      - "The proposed task has a clear target_layer and delivery_pipeline."
+      - "The proposal names what would invalidate or postpone the slice."
+    fail_or_continue_research_conditions:
+      - "The first slice is still just the whole initiative."
+      - "The plan depends on unstated product or architecture assumptions."
+      - "Research evidence is too old or too narrow for the decision."
+      - "Contradictions are recorded but not adjudicated."
+      - "The target layer is ambiguous enough to risk mixing M1 and non-M1 work."
+  non_goals:
+    - "Do not let initiatives become direct `/next` delivery scopes."
+    - "Do not auto-hydrate roadmap tasks merely because an initiative exists."
+    - "Do not move phase-null initiatives into a roadmap phase until a slice is explicitly scheduled."
+    - "Do not replace existing task-level research capsules; initiative banks should feed them."
+    - "Do not implement a new command from this proposal without a later scoped delivery task."
+  challenge_points:
+    - >
+      The initiative bank could duplicate proposal details unless the proposal
+      owns design intent and the bank owns evidence.
+    - >
+      A readiness score could create false confidence; unresolved contradictions
+      should be first-class, not hidden behind a number.
+    - >
+      Discoverability matters: if this remains only an expert convention, future
+      agents may still jump from initiative to implementation.
+    - >
+      The system should avoid forcing research for every small initiative; the
+      lane should trigger when assumptions are materially risky or the operator
+      explicitly asks to build knowledge first.
+  suggested_future_research_session:
+    goal: >
+      Research and challenge the initiative discovery lane against existing
+      proposal, research capsule, roadmap scaffold, and dynamic-full-auto digest
+      mechanisms.
+    questions:
+      - "Should the durable initiative bank be YAML or JSON?"
+      - "Can `SWARM_RESEARCH_DIGEST.yaml` be reused, or does initiative discovery need a narrower schema?"
+      - "Should a future helper validate readiness without writing roadmap state?"
+      - "Where should the operator see initiative discovery state: `/start`, `/roadmap`, `/next`, or a new command?"
+      - "How should task-specific research capsules be derived from an initiative bank without copying stale evidence?"
+    likely_outputs:
+      - "Refined proposal details."
+      - "Candidate schema for initiative research banks."
+      - "Decision on command surface: policy-only, `/plan`, or dedicated `/initiative-discover`."
+      - "A bounded backlog item only if implementation is justified."
+  candidate_surfaces:
+    - ".azoth/proposals/"
+    - ".azoth/research/"
+    - ".azoth/roadmap.yaml"
+    - ".azoth/roadmap-specs/v0.2.0/"
+    - "commands/start/body.md"
+    - "commands/next/body.md"
+    - "scripts/roadmap_scaffold.py"
+    - "scripts/initiative_scaffold.py"
+    - "scripts/research_sufficiency.py"
+    - "scripts/swarm_research_digest.py"
+    - "scripts/roadmap_dashboard.py"

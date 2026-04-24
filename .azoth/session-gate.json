@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-04-23-adhoc-t-krp-d-context-engineering",
-  "goal": "AD-HOC: writable T-KRP-D research, exploration, context engineering, and planning hydration",
-  "session_mode": "delivery",
-  "opened_at": "2026-04-23T22:46:25+00:00",
-  "updated_at": "2026-04-23T22:50:18Z",
+  "session_id": "2026-04-24-adhoc-ad-hoc-design-initiative-discovery-lane-and-draf",
+  "goal": "AD-HOC: design initiative discovery lane and draft architecture proposal",
+  "session_mode": "exploratory",
+  "opened_at": "2026-04-24T08:02:20+00:00",
+  "updated_at": "2026-04-24T08:02:22Z",
   "status": "closed",
-  "approved_by": "human",
-  "closed_at": "2026-04-23T22:50:18Z"
+  "approved_by": "system",
+  "closed_at": "2026-04-24T08:02:22Z"
 }
