@@ -1,195 +1,264 @@
 proposal_schema_version: 1
-created_at: "2026-04-23T19:36:33Z"
-session_id: "2026-04-23-promote-final-delivery-reporting"
-backlog_id: "P6-003"
-title: "Promote application-path router for Azoth self-improvement"
+created_at: "2026-04-24T08:59:30Z"
+session_id: "2026-04-24-m2-m1-self-improvement-loop"
+backlog_id: "BL-075"
+title: "M2-to-M1 Self-Improvement Control Loop"
 summary: >
-  Draft architecture proposal for evolving `/promote` from a narrow M3-to-M2
-  pattern-writing workflow into an explicit self-improvement router. The idea
-  is that after a candidate is approved, `/promote` should help classify the
-  next application path: keep in M2, create an M1 backlog item, update an
-  instruction/agent/command surface, add mechanical checks, route to research,
-  or reinforce an exact prior episode. This draft is intentionally not an
-  implementation plan; it exists so a future session can research, challenge,
-  and refine whether this belongs in `/promote`, another command, or a broader
-  memory-loop workflow.
+  Draft architecture proposal for treating Azoth's M2-to-M1 path as a
+  governed learning control loop rather than a `/promote`-local feature. The
+  target loop is: M3 evidence to M2 pattern, M2 pattern to a Learning
+  Application Decision, decision to scoped readback, proposal, backlog, L2
+  refinement, or M1 candidate work, then closeout evaluation that reinforces or
+  revises the learning. This proposal changes governance/design artifacts only.
+  It preserves the draft-only policy: Azoth may recommend and prepare
+  downstream artifacts, but M1 changes still require a backlog item, explicit
+  human approval, `/next`, and `/deliver-full`.
 status: draft
 decision_refs:
   - D11
   - D21
   - D23
+  - D45
+  - D47
   - D49
+  - D50
   - D51
 scope_layers:
   - mixed
 details:
   problem: >
-    Azoth's current `/promote` flow can correctly move reinforced M3 evidence
-    into M2 patterns, but the operator still has to reason manually about what
-    that learning should do next. Some learnings should remain memory-only,
-    some should become M1 backlog items, some should update command or agent
-    instructions, some need mechanical enforcement, and some need research
-    before any implementation. Without an explicit application-path step,
-    promotion can feel like "write to patterns.yaml and stop" even when the
-    deeper self-improvement loop needs a downstream destination.
-  motivating_example:
-    date: "2026-04-23"
-    source_pattern: "orchestrator-final-delivery-reports-need-executive-quality-synthesis"
-    source_episode: "ep-344"
-    observation: >
-      The approved final-delivery reporting pattern had several plausible
-      application paths: immediate manual use, canonical orchestrator
-      instruction changes, delivery-command final-report sections,
-      evaluator-score handoff conventions, or closeout/reporting support.
-      The human clarified that the important question was not only this one
-      pattern, but how `/promote` and Azoth self-improvement should expose such
-      paths systematically.
-  proposed_direction:
-    - >
-      Extend the promotion decision output with an "application path" section
-      after the standard evidence and Promotion Rubric result.
-    - >
-      Treat application path selection as a routing decision, not automatic
-      implementation. Human approval is still required before writes beyond the
-      approved promotion target.
-    - >
-      Preserve `/promote` as a memory/governance command by default; any M1
-      implementation path should create or recommend a backlog item and route
-      through the appropriate governed pipeline.
-  candidate_application_paths:
-    memory_only:
+    Azoth can capture M3 episodes and promote recurring evidence into M2
+    patterns, but the post-promotion application step is still mostly manual.
+    Some patterns should remain operational memory, some should reinforce exact
+    prior evidence, some should become L2 instruction-refinement work, some
+    need architecture proposals or planning backlog items, and only a smaller
+    subset should graduate toward M1. Without a common decision model, each
+    command risks inventing its own partial router and the self-improvement loop
+    remains less auditable than the rest of Azoth.
+  architecture_thesis: >
+    The optimal design is not to make `/promote` a larger command that owns all
+    downstream learning. Azoth should define one Learning Application Decision
+    concept that can be surfaced by multiple entrypoints. `/intake`, `/promote`,
+    `context-recall`, `/next`, `self-improve`, and closeout become views over
+    one governed learning loop: evidence is captured, pattern maturity is
+    judged, an application path is selected, the resulting work is scoped
+    through existing gates, and closeout records whether the learning actually
+    improved future behavior.
+  learning_state_model:
+    states:
+      - name: "captured_evidence"
+        source: "M3 episodes from closeout, intake, memory capture, or operator correction"
+        exit_condition: "Evidence is archived, integrated, or marked as an M2 candidate."
+      - name: "pattern_candidate"
+        source: "`/intake` D49 triage or `/promote` candidate discovery"
+        exit_condition: "Human approves, rejects, or defers promotion."
+      - name: "m2_pattern"
+        source: "Approved M3-to-M2 promotion under the Promotion Rubric"
+        exit_condition: "Pattern is available for readback and application routing."
+      - name: "learning_application_decision"
+        source: "Post-promotion or planning-time routing judgment"
+        exit_condition: "A path is selected with evidence, owner, gate, and rejected alternatives."
+      - name: "scoped_application"
+        source: "Existing proposal, backlog, L2 refinement, M1 candidate, or readback path"
+        exit_condition: "Work is completed, deferred, or rejected through normal Azoth gates."
+      - name: "closeout_feedback"
+        source: "Session closeout and future promote/intake sweeps"
+        exit_condition: "The pattern is reinforced, contradicted, revised, or retired."
+  application_paths:
+    readback_only:
       description: >
-        Keep the approved learning in M2 and rely on context-recall/readback to
-        influence future sessions.
-      when_to_use: >
-        The pattern is useful but not yet mature enough, mechanical enough, or
-        broadly enough scoped to change M1 behavior.
-    reinforcement:
+        Keep the approved pattern in M2 and rely on context-recall/readback to
+        influence future planning and execution.
+      use_when: >
+        The pattern is useful, but prose memory is enough for now or evidence is
+        not mature enough to justify a scoped implementation.
+      gate: "No write beyond the approved M2 update."
+    reinforce:
       description: >
-        Increment an exact prior episode's reinforcement_count when the human
-        explicitly confirms the same lesson recurred.
-      when_to_use: >
-        The candidate is not a new pattern but recurrence evidence for an
-        existing exact episode or lesson.
-    instruction_candidate:
+        Add recurrence evidence to an exact prior episode or pattern without
+        creating a duplicate pattern or downstream work item.
+      use_when: >
+        The human confirms that the same lesson recurred and an exact target id
+        is available.
+      gate: "Require exact id; never infer the reinforcement target from tags or prose."
+    l2_refinement:
       description: >
-        Recommend a future update to an instruction surface such as an
-        orchestrator archetype, agent definition, command body, or skill.
-      when_to_use: >
-        The pattern should alter agent behavior but does not require a hook,
-        validator, schema, or runtime state machine.
-    mechanical_candidate:
+        Route the pattern into the evidence-based self-improve lane for prompt,
+        skill, agent, or command instruction refinement.
+      use_when: >
+        There is enough repeated evidence to test an instruction-quality
+        hypothesis, but the change is still behavioral/instructional rather
+        than a kernel procedure.
+      gate: "Human-approved L2 proposal, then `/auto` with instruction-refinement."
+    proposal:
       description: >
-        Recommend a future test, hook, validator, schema rule, CLI guard, or
-        generated parity check.
-      when_to_use: >
-        The learning is repeatedly violated despite memory or prose
-        instructions, or correctness depends on deterministic enforcement.
-    backlog_candidate:
+        Capture an architecture-level design space in `.azoth/proposals/` for
+        research, challenge, and refinement before implementation.
+      use_when: >
+        The learning affects multiple commands or governance layers, has unclear
+        ownership, or risks overfitting from a narrow recent workflow.
+      gate: "Draft-only unless the operator explicitly approves the proposal write."
+    backlog_planning:
       description: >
-        Draft or recommend an M1/M2 backlog item for a later scoped delivery
-        session.
-      when_to_use: >
-        The pattern has a clear implementation destination but should not be
-        implemented during the current promote pass.
-    research_candidate:
+        Recommend or draft a non-M1 planning or implementation backlog item for
+        later scoped delivery.
+      use_when: >
+        The pattern has a clear operational destination but does not require a
+        kernel/governance M1 change.
+      gate: "Human-approved backlog append; later `/next` scope card."
+    m1_candidate:
       description: >
-        Create or recommend a future research/challenge session before
-        implementation.
-      when_to_use: >
-        The idea is promising but has architectural tradeoffs, unclear
-        ownership, or risk of overfitting from one recent workflow.
-    proposal_candidate:
+        Recommend a `target_layer: M1` backlog candidate for a procedure,
+        governance, kernel, command, skill, or agent change.
+      use_when: >
+        The pattern is validated across sessions, belongs in a durable Azoth
+        procedure, and memory/readback alone is insufficient.
+      gate: "`target_layer: M1`, human approval, `/next`, and `/deliver-full`."
+    not_yet:
       description: >
-        Capture the design space in `.azoth/proposals/` for later refinement.
-      when_to_use: >
-        The learning points at a broad workflow change but needs synthesis
-        before becoming a backlog item.
-  possible_output_shape:
-    example: >
-      After "Approve? [yes / not-yet / reject]", the approved path could show:
-      "Application path: M2 now; research_candidate next; possible future
-      M1 surfaces: .claude/commands/promote.md, scripts/reinforcement_count.py,
-      .agents/skills/context-recall/SKILL.md; no implementation in this pass."
+        Preserve the evidence without taking downstream action.
+      use_when: >
+        The signal is one-off, contradictory, too broad, too recent, or not yet
+        tied to a concrete Azoth improvement surface.
+      gate: "No downstream write; optionally record a maturity note."
+  command_roles:
+    intake: >
+      `/intake` remains the external-signal triage point. It classifies inbox
+      evidence across M3 integration, M2 candidacy, and backlog candidacy using
+      D49. It may produce candidate evidence for this loop, but it does not own
+      M2-to-M1 graduation.
+    promote: >
+      `/promote` remains the evidence and Promotion Rubric gate for M3-to-M2
+      movement. After an approved promotion, it should be able to surface a
+      Learning Application Decision recommendation, but it should not directly
+      implement M1 or write unrelated work without an explicit approved path.
+    context_recall: >
+      `context-recall` closes the write-only memory failure mode by pulling
+      relevant M3 episodes and M2 patterns into planning. It is the default
+      execution-time path for readback-only patterns.
+    next: >
+      `/next` remains the scoped-work gate. It should surface relevant M2
+      patterns, proposal references, and M1 boundaries when choosing and
+      approving backlog work, and it must continue to reject mixed M1 and
+      non-M1 scope cards.
+    self_improve: >
+      `self-improve` owns the L1/L2 reflexion path. L2 refinement should be
+      used when repeated evidence points at instruction quality, prompt
+      behavior, or agent/skill wording rather than a deterministic M1
+      procedure.
+    closeout: >
+      Closeout records whether a learning was applied, ignored, contradicted,
+      reinforced, or converted into scoped work. This feedback is what makes
+      the loop self-correcting instead of merely accumulative.
+  m1_graduation_policy:
+    principles:
+      - "M1 is a durable procedure layer, not a reward for every useful pattern."
+      - "M2 readback is the default application path until evidence proves it is insufficient."
+      - "M1 candidates require cross-session validation and a concrete procedure home."
+      - "M1 changes must happen between sessions through scoped delivery, not inline during promotion."
+    required_path:
+      - "Create or approve a backlog item with `target_layer: M1`."
+      - "Select it through `/next` and approve the scope card."
+      - "Deliver it through `/deliver-full` with the normal typed gates."
+      - "Close out with evidence of whether the new procedure changed behavior."
+  v1_output_contract:
+    purpose: >
+      Give operators a consistent decision surface without adding a new
+      persisted control-plane schema in the first implementation.
+    section_name: "Learning Application Decision"
     fields:
       - "selected_path"
+      - "evidence_basis"
       - "why_this_path"
       - "not_selected_paths"
-      - "future_surfaces"
-      - "governance_requirement"
-      - "suggested_next_session"
+      - "downstream_owner"
+      - "required_gate"
+      - "draft_artifact_or_next_step"
+    example: >
+      selected_path=proposal; evidence_basis=recent promote sweep exposed
+      multiple plausible homes; downstream_owner=architect/planner;
+      required_gate=human-approved proposal/backlog write; not_selected=M1
+      because architecture is not yet stable.
+  public_interface_policy:
+    current_slice: >
+      This proposal changes only the architecture proposal text. It does not
+      change command contracts, scripts, skills, schemas, hooks, or runtime
+      behavior.
+    future_slice: >
+      If approved, a later implementation should first add a shared output
+      contract to the command/skill surfaces that already participate in the
+      learning loop. It should prefer existing proposal, backlog, and memory
+      metadata before introducing a new persisted learning-decision log.
+  validation_replay:
+    - source_pattern: "orchestrator-final-delivery-reports-need-executive-quality-synthesis"
+      expected_path: "readback_only or proposal"
+      rationale: >
+        The pattern is immediately useful as operator memory, but durable
+        reporting changes affect multiple surfaces and should be challenged as
+        architecture before becoming M1.
+    - source_pattern: "platform-parity-needs-mechanical-mirrors-and-tests"
+      expected_path: "backlog_planning or m1_candidate"
+      rationale: >
+        The failure mode is deterministic and cross-platform; prose memory may
+        be insufficient if parity can be mechanically checked.
+    - source_pattern: "control-plane-needs-real-time-claims-and-durable-status"
+      expected_path: "backlog_planning"
+      rationale: >
+        The pattern points at operational state management and should be scoped
+        through backlog and `/next` before changing control-plane behavior.
+    - source_pattern: "governed-write-protocols-require-operational-readiness-check"
+      expected_path: "not_yet"
+      rationale: >
+        The pattern was promoted with an explicit maturity note; it should
+        remain evidence until recurrence strengthens the case for procedure
+        change.
+    - source_pattern: "exact duplicate recurrence evidence"
+      expected_path: "reinforce"
+      rationale: >
+        Exact recurrence should strengthen existing evidence rather than create
+        duplicate patterns or premature downstream work.
   research_questions:
     - >
-      Should application-path routing live inside `/promote`, or should
-      `/promote` stay narrowly M3-to-M2 while another command owns downstream
-      self-improvement routing?
+      What minimum evidence threshold should move a pattern from readback-only
+      to L2 refinement, backlog planning, or M1 candidacy?
     - >
-      How much should `/promote` suggest automatically before it risks
-      overstepping the "Never auto-promote" rule?
+      Should the Learning Application Decision be persisted later, or is it
+      enough to record decisions in proposals, backlog items, and closeout
+      episodes?
     - >
-      What is the right boundary between "recommend a backlog item" and
-      "write a backlog item" after a promotion is approved?
+      How should `/next` present relevant M2 patterns without making every
+      scoped task feel obligated to implement memory improvements?
     - >
-      Can application-path routing reuse existing intake triage axes, or does
-      promotion need its own smaller routing vocabulary?
-    - >
-      How should the feature avoid duplicate churn when an existing M2 pattern
-      already names likely M1 homes?
-    - >
-      Should proposal creation be an explicit human-approved path, or is a
-      draft proposal acceptable when the user asks to preserve the idea for
-      future research?
+      What evaluator checks can prove that an M1 procedure actually reduced the
+      recurrence of the original failure?
   challenge_points:
     - >
-      Risk of overloading `/promote`: if it becomes both promotion, planning,
-      backlog creation, and proposal drafting, the command may lose its simple
-      auditability.
+      Avoid command fragmentation: adding separate routers to `/intake`,
+      `/promote`, `/next`, and closeout would make the loop harder to audit.
     - >
-      Risk of premature M1 pressure: every useful pattern could start looking
-      like a required implementation, even when M2 readback is enough.
+      Avoid premature M1 pressure: most useful M2 patterns should remain
+      operational memory until they show that memory/readback is insufficient.
     - >
-      Risk of duplicate routing: intake already routes insights across memory,
-      backlog, and action; promotion routing should not recreate an inconsistent
-      second triage system.
+      Avoid hidden writes: draft-only recommendations must not quietly mutate
+      backlog, proposal, command, skill, or kernel surfaces.
     - >
-      Risk of false precision: application paths may look deterministic even
-      when the evidence is still weak or context-specific.
-  candidate_surfaces:
-    - ".claude/commands/promote.md"
-    - ".agents/skills/azoth-promote/SKILL.md"
-    - ".azoth/memory/patterns.yaml"
-    - ".azoth/memory/episodes.jsonl"
-    - "kernel/PROMOTION_RUBRIC.md"
-    - "scripts/reinforcement_count.py"
-    - ".agents/skills/context-recall/SKILL.md"
-    - ".agents/skills/azoth-memory-capture/SKILL.md"
-  validation_replay:
-    - >
-      Replay against ep-337, ep-341, and ep-342. Expected result: `/promote`
-      should approve M3-to-M2 as repo-local, then recommend "M2 now,
-      research/proposal candidate next" rather than directly editing
-      orchestrator or delivery command surfaces.
-    - >
-      Replay against earlier pipeline-compliance promotion candidates. Expected
-      result: when a pattern already exists in M2 with likely M1 homes, routing
-      should avoid proposing a duplicate pattern and instead surface the
-      existing pattern plus any missing follow-on action.
-    - >
-      Replay against a pure recurrence case. Expected result: the command should
-      ask for an exact episode id before reinforcement_count updates and should
-      not infer the id from tags or prose.
+      Avoid false precision: the route is an architectural judgment with
+      evidence and rejected alternatives, not a deterministic classifier.
   non_goals:
     - "Do not auto-promote M2 patterns into M1."
-    - "Do not make `/promote` write backlog items without an explicit human-approved path."
-    - "Do not replace `/intake`; keep external insight triage distinct from promotion of already-captured M3 evidence."
-    - "Do not implement command, script, or kernel changes from this draft."
+    - "Do not directly edit command, skill, agent, kernel, or script surfaces from memory alone."
+    - "Do not write backlog items or proposals without explicit human approval."
+    - "Do not replace `/intake`; keep external insight triage distinct from promotion of captured M3 evidence."
+    - "Do not introduce a new persisted learning-decision schema in this proposal slice."
   recommended_follow_up:
     shape: >
-      Run a dedicated research/challenge session that maps the current memory
-      loop, compares `/intake` triage with `/promote` routing, replays several
-      recent promotions, and decides whether to refine this into a backlog item,
-      revise the proposal, or reject the feature as too much command surface.
+      Use BL-075 for a focused research/challenge session that replays recent
+      promotions, compares D49 intake triage with post-promotion application
+      routing, and decides whether the v1 output contract should be implemented
+      in `/promote`, shared skill text, `/next` readback, closeout, or a small
+      common helper.
     likely_outputs:
-      - "A refined proposal with accepted/rejected application paths."
-      - "A candidate backlog item only if the research supports implementation."
-      - "A testable output contract for `/promote` if the feature proceeds."
+      - "Accepted or revised application-path vocabulary."
+      - "A testable Learning Application Decision output contract."
+      - "A separate implementation backlog item only if research supports it."
+      - "No M1 implementation unless the approved item is `target_layer: M1`."

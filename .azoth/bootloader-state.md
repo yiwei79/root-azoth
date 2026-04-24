@@ -4,12 +4,12 @@
 0.1.3.25 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 25
 
 ## Last Session
-- **Session**: 2026-04-24-adhoc-ad-hoc-design-initiative-discovery-lane-and-draf
-- **Goal**: AD-HOC: design initiative discovery lane and draft architecture proposal
+- **Session**: 2026-04-24-adhoc-ad-hoc-draft-m2-to-m1-self-improvement-control-l
+- **Goal**: AD-HOC: draft M2-to-M1 self-improvement control-loop proposal
 - **Session mode**: exploratory
 - **Pipeline**: exploratory
 - **Outcome**: closed
-- **Episode**: ep-363 (success)
+- **Episode**: ep-372 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

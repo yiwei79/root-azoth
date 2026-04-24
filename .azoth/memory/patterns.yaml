@@ -451,14 +451,17 @@ patterns:
   - id: control-plane-needs-real-time-claims-and-durable-status
     approved: true
     approved_date: "2026-04-17"
-    reinforced_by: [ep-158, ep-184, ep-193, ep-215, ep-232, ep-233]
-    trigger: any change to /next, scope selection, backlog claiming, or closeout status write-back
+    reinforced_by: [ep-158, ep-184, ep-193, ep-215, ep-232, ep-233, ep-334]
+    trigger: any change to /next, /resume, scope selection, backlog claiming, session lifecycle reconciliation, or closeout status write-back
     summary: >
       Azoth control-plane state cannot rely on a single surface. Real-time
       ownership belongs in run-ledger.local.yaml (claim registry), while durable
-      planning state belongs in backlog.yaml and scope-gate.json. Candidate
-      selection must cross-check both. If either side is omitted, stale or
-      lagging state resurfaces claimed or completed work as available.
+      planning state belongs in backlog.yaml and scope-gate.json. Session
+      continuity also depends on session-state.md plus session or pipeline gate
+      artifacts. Candidate selection and resume eligibility must reconcile the
+      authoritative surfaces instead of trusting one preferred file. If either
+      side is omitted, stale or lagging state resurfaces claimed or completed
+      work as available, or hides live work as non-resumable.
     why_it_matters: >
       ep-158 showed a delivered item resurfacing because backlog completion was
       never written back. ep-184 and ep-193 reinforced the same stale-open
@@ -467,28 +470,37 @@ patterns:
       and approval-time write-back. ep-232 and ep-233 extend the same failure
       class into resume/finalization UX: stale ledger state and missing
       administrative finalization both leak bad control-plane state back to the
-      human. The pattern is specific to Azoth's multi-surface session control
-      plane, but it is now proven and actionable.
+      human. ep-334 reinforced the resume side of the same class: partial but
+      authoritative live-state evidence should not produce a false "nothing
+      resumable" result. The pattern is specific to Azoth's multi-surface
+      session control plane, but it is now proven and actionable.
     how_to_apply: >
-      Whenever scope selection or completion logic changes, audit all three
-      surfaces together: (1) run-ledger.local.yaml for live claims, (2)
-      backlog.yaml for durable task state, and (3) scope-gate.json for current
-      intent. /next must exclude items claimed in either the ledger or backlog,
-      and closeout must write backlog completion before the scope closes. Treat
-      any one-surface fix as incomplete until the other two surfaces are checked
-      and regression-tested.
+      Whenever scope selection, resume, or completion logic changes, audit the
+      session control surfaces together: run-ledger.local.yaml for live claims
+      and session rows, backlog.yaml for durable task state, scope-gate.json for
+      current intent, session-state.md for operator-visible lifecycle state, and
+      session or pipeline gate artifacts for active execution proof. /next must
+      exclude items claimed in either the ledger or backlog, /resume must derive
+      eligibility from reconciled live-state evidence, and closeout must write
+      backlog completion before the scope closes. Any authoritative proof of
+      live work should either resume directly or trigger an explicit repair path
+      naming the missing surfaces. Treat any one-surface fix as incomplete until
+      the other relevant surfaces are checked and regression-tested.
 
   - id: platform-parity-needs-mechanical-mirrors-and-tests
     approved: true
     approved_date: "2026-04-17"
-    reinforced_by: [ep-150, ep-177, ep-178, ep-202, ep-230, ep-231]
-    trigger: any canonical command, hook, adapter, or instruction-surface change that projects to multiple platforms
+    reinforced_by: [ep-150, ep-177, ep-178, ep-202, ep-230, ep-231, ep-349]
+    trigger: any canonical command, hook, adapter, workflow schema, generated mirror, or cross-surface state change that projects to multiple platforms or surfaces
     summary: >
       In Azoth, platform parity is not preserved by intention alone. When a
       canonical contract changes, every generated or parallel platform surface
       must be updated in the same slice and the propagation boundary must be
-      locked by regression tests. Otherwise one platform silently lags while the
-      source looks correct.
+      locked by regression tests. Delivery slices that touch generated mirrors,
+      workflow schemas, adapter stubs, or cross-surface state must explicitly
+      declare the source of truth and include targeted seam tests for the
+      affected boundary. Otherwise one platform or state surface silently lags
+      while the source looks correct.
     why_it_matters: >
       ep-150 showed Cursor missing eval-swarm escalation routing because the
       template coverage was incomplete. ep-177 and ep-178 exposed the same class
@@ -496,22 +508,27 @@ patterns:
       repeated runtime failures are a signal to add mechanical hardening rather
       than trusting future manual sync. ep-230 and ep-231 carry the same lesson
       into closeout semantics: dangerous contract drift persisted because the
-      mirror text and the regression test were both too weak. The repeated
-      failure mode is structural: mirror drift persists until tests and deploy
-      paths encode the boundary.
+      mirror text and the regression test were both too weak. ep-349 showed the
+      same pattern across PR automation findings: fail-closed guardrails,
+      multi-surface parity, seam-aware regression coverage, and schema-first
+      workflow design kept recurring as coupled requirements. The repeated
+      failure mode is structural: mirror or seam drift persists until tests and
+      deploy paths encode the boundary.
     how_to_apply: >
-      For any canonical instruction or hook change, identify the full mirror set
-      before editing. Update every affected surface in the same session, run the
-      relevant deploy or projection step, and add or update parity tests that
-      fail if one platform is omitted. If a field intentionally does not
-      propagate, encode that boundary explicitly in tests or documentation so
-      future sessions do not assume silent parity.
+      For any canonical instruction, hook, schema, adapter, or state-surface
+      change, identify the source of truth and full mirror/seam set before
+      editing. Update every affected surface in the same session, run the
+      relevant deploy or projection step, and add or update parity or seam tests
+      that fail if one platform, generated mirror, workflow schema, adapter
+      stub, or cross-surface state boundary is omitted. If a field intentionally
+      does not propagate, encode that boundary explicitly in tests or
+      documentation so future sessions do not assume silent parity.
 
   - id: orchestrator-goal-driven-adaptive-threshold-loops
     approved: true
     approved_date: "2026-04-19"
-    reinforced_by: [ep-241, ep-246, ep-276, ep-277, ep-281]
-    trigger: governed or adaptive pipeline work where a reviewer/evaluator returns scope-local request-changes and the human wants autonomous continuation
+    reinforced_by: [ep-241, ep-246, ep-276, ep-277, ep-281, ep-314, ep-328]
+    trigger: governed or adaptive pipeline work where a reviewer/evaluator returns scope-local request-changes, the human wants autonomous continuation, or the orchestrator escalates back to the human
     summary: >
       The orchestrator should treat the declared pipeline as the fixed control
       structure, then adapt inside it by routing findings to the lowest
@@ -519,7 +536,11 @@ patterns:
       subagents, and carrying typed handoffs forward until the gate passes or a
       numeric loop threshold is reached. This is not free-form retrying: it is
       goal-driven adaptive routing with bounded authority, explicit replay
-      evidence, and a deterministic stop or recomposition point.
+      evidence, and a deterministic stop or recomposition point. When the loop
+      escalates back to the human, the orchestrator must synthesize its own
+      judgment instead of relaying raw stage output alone. Failing or
+      conflicting evaluator/reviewer judgments are routing signals for bounded
+      self-healing loops, not one-shot pass/fail endpoints.
     why_it_matters: >
       ep-241 established the preference for minimal-upstream corrective routing
       instead of reflexively bouncing everything to architect. ep-246 made the
@@ -529,7 +550,13 @@ patterns:
       ep-281 validated the stronger capability in practice: T-013 stayed inside
       the declared deliver-full pipeline, used visible subagent handoffs,
       recorded replay artifacts, and reached a pass outcome through bounded
-      architect-reviewer replays rather than inline improvisation.
+      architect-reviewer replays rather than inline improvisation. ep-328
+      reinforced the high-autonomy escalation requirement: subagent outputs
+      inform the orchestrator's judgment, but they do not replace it when the
+      pipeline returns control to the human. ep-314 reinforced the evaluator
+      variant: conflicting evaluator and reviewer judgments exposed a real
+      output-quality gap and were resolved through orchestrator-routed builder
+      replays, asymmetric model-tier use, and a default threshold of 3.
     how_to_apply: >
       When a pipeline gate returns actionable request-changes, first classify
       whether the finding belongs to architect, planner, builder, or another
@@ -538,8 +565,71 @@ patterns:
       fresh subagent, and keep the handoff trail visible in-thread. Always set
       or inherit a numeric loop threshold. If the threshold is hit, stop the
       blind replay cycle and either escalate to the human or recompose the run
-      into a narrower approved slice. Never use adaptive-loop authority to
-      collapse the pipeline back into inline orchestrator execution.
+      into a narrower approved slice. Any escalation back to the human should
+      include the orchestrator's own judgment: what appears legitimate, why it
+      matters, and the recommended next move. For evaluator-driven loops, treat
+      failing or conflicting judgments as input to the same routing decision:
+      choose the lowest legitimate corrective stage or agent, rerun the quality
+      gate, and default to threshold 3 before recomposition, escalation, or
+      explicit human override. Never use adaptive-loop authority to collapse the
+      pipeline back into inline orchestrator execution.
+
+  - id: recovered-pipeline-auditability-separate-from-artifact-quality
+    approved: true
+    approved_date: "2026-04-24"
+    reinforced_by: [ep-294]
+    trigger: any recovered governed pipeline, architect summary, final report, or quality evaluation where early stage evidence was reconstructed after a process miss
+    summary: >
+      In Azoth, a recovered pipeline can finish with strong artifacts while still
+      carrying a real auditability weakness from its opening segment. Final
+      quality and process auditability must be reported separately: later
+      grounded stage summaries, passing tests, and approval evidence do not erase
+      missing or reconstructed declaration/gate-write evidence.
+    why_it_matters: >
+      ep-294 showed a completed `/auto` run where every stage from planner onward
+      was grounded in real subagent summaries and the final state was strong, but
+      the opening declaration/gate segment had to be reconstructed after an
+      inline-orchestration miss. Blurring those together would make recovery look
+      cleaner than it was and would hide the exact point where the governed
+      execution contract first lost auditability.
+    how_to_apply: >
+      When reviewing or reporting a recovered pipeline run, score grounded stages
+      directly and mark reconstructed or inferred opening evidence with explicit
+      lower-confidence language. Architect summaries and final delivery reports
+      should say both things when both are true: the artifacts may be good and
+      the later stages may be compliant, while the declaration or gate-write
+      segment remains an auditability risk. Do not let a final PASS rewrite the
+      process history.
+
+  - id: governed-write-protocols-require-operational-readiness-check
+    approved: true
+    approved_date: "2026-04-24"
+    reinforced_by: [ep-173]
+    maturity_note: promoted by explicit human override from a bundled single-episode candidate; re-evaluate after narrower recurrence
+    trigger: before starting any multi-step governed write protocol, intake run, or infrastructure sync where missing tools or known drift can derail execution
+    summary: >
+      Before beginning a multi-step governed write protocol, Azoth should verify
+      that the required tools and repo surfaces are actually available, and
+      should resolve known manual-sync drift immediately rather than treating it
+      as optional cleanup. Operational readiness is part of protocol correctness:
+      a session can know the right process and still fail if tool availability,
+      version state, or known pre-existing failures are left to surprise the run.
+    why_it_matters: >
+      ep-173 bundled three concrete friction patterns: attempted intake with
+      tools disabled, known version drift that was noted but not fixed until it
+      caused a test failure, and pre-existing regression failures that were
+      discovered but not proactively scoped. The pattern is promoted by explicit
+      human override despite single-episode evidence because each failure class
+      creates avoidable governance friction at the start or verification edge of
+      a write protocol.
+    how_to_apply: >
+      Before `/intake`, `/promote`, closeout repair, version sync, or another
+      governed multi-step write path, do a short readiness check: required tools
+      are available, known manual-sync surfaces are already aligned or scheduled
+      as in-scope work, and pre-existing test failures found during verification
+      are either triaged as scope candidates or explicitly marked out of scope.
+      If a known drift item is cheap and directly related, fix it immediately
+      instead of recording it as optional future work.
 
   - id: worktree-sync-completion-includes-producer-cleanup
     approved: true
@@ -723,7 +813,7 @@ patterns:
   - id: orchestrator-final-delivery-reports-need-executive-quality-synthesis
     approved: true
     approved_date: "2026-04-23"
-    reinforced_by: [ep-337, ep-341, ep-342]
+    reinforced_by: [ep-337, ep-341, ep-342, ep-359]
     trigger: any final delivery gate, pipeline close, or orchestrator status report that summarizes completed work for the human
     summary: >
       In Azoth, the orchestrator's final delivery report is an operator-facing
@@ -731,7 +821,10 @@ patterns:
       executive read of what shipped, why it matters, and what remains open;
       surface evaluator score visibility when a numeric score exists; and when
       no numeric evaluator score was produced, say that plainly while showing
-      the strongest available quality evidence.
+      the strongest available quality evidence. For governed deliveries, the
+      approval handoff should include architect-involved review before the
+      final approval ask, then return to the orchestrator voice for the
+      executive synthesis.
     why_it_matters: >
       ep-337 established that the final orchestrator report should explain the
       delivered outcome and expose evaluator score visibility so the human does
@@ -741,13 +834,21 @@ patterns:
       architect review, tests, and gate validation. ep-342 made the
       communication standard explicit: operator-facing delivery summaries should
       use concise hierarchy, compact tables for scores or evidence, and
-      residual-risk rows when comparison matters.
+      residual-risk rows when comparison matters. ep-359 reinforced the
+      approval-UX sequence: architect-involved review should surface
+      architectural implications and constraints before the orchestrator asks
+      for final-delivery approval, and the final synthesis should include UX
+      anchors, quality evidence, residual risks, entropy, and next gate state.
     how_to_apply: >
       At final delivery, start with a short executive read that names what was
       delivered and the practical outcome. Then present quality evidence in a
       compact structured form: evaluator score if available, otherwise a
       clearly labeled "no separate numeric evaluator score" row plus supporting
       evidence such as architect PASS, tests, gate validation, and known
-      residual blockers. Keep agent-to-agent artifacts deterministic, but make
-      the human-facing orchestrator closeout polished enough that the operator
-      can understand the outcome without reading the full stage transcript.
+      residual blockers. For governed delivery approval, first surface an
+      architect-involved review of implications and constraints, then use the
+      orchestrator summary to synthesize UX anchors, evaluator or test
+      evidence, residual risks, entropy, and next gate state. Keep
+      agent-to-agent artifacts deterministic, but make the human-facing
+      orchestrator closeout polished enough that the operator can understand
+      the outcome without reading the full stage transcript.

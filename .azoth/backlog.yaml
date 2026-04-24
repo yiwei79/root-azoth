@@ -2942,3 +2942,31 @@ items:
   - T-KRP-B
   - T-KRP-C
   - T-KRP-D
+- id: BL-075
+  title: Research and refine M2 pattern application router for self-improvement
+  source: promote-2026-04-24-self-improvement-loop-test
+  source_patterns:
+  - memory-requires-read-back-mechanism
+  - governed-write-protocols-require-operational-readiness-check
+  - recovered-pipeline-auditability-separate-from-artifact-quality
+  target_layer: planning
+  delivery_pipeline: standard
+  status: open
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-24'
+  proposal_ref: .azoth/proposals/promote-application-path-router.yaml
+  decision_ref:
+  - D49
+  - D51
+  description: >
+    Complete the self-improvement loop for recent M3-to-M2 promotions by
+    researching and refining the promote application-path router proposal. The
+    session should replay the 2026-04-24 promote sweep, compare `/intake`
+    3-axis triage with `/promote` downstream routing, and decide whether the
+    application-path step belongs in `/promote`, `/next`, closeout, or a smaller
+    memory-loop command. Expected outputs are a refined proposal, explicit
+    accepted/rejected application paths, and a candidate implementation backlog
+    item only if the research justifies changing command or tool behavior.
+    Non-goal: do not implement `/promote` command changes in this planning
+    slice.
