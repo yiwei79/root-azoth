@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-04-25-adhoc-start-a-new-autonomous-auto-campaign-for-the-aut",
-  "goal": "Start a new autonomous-auto campaign for the autonomous mode initiative. Use repo-native state to choose the best next eligible slice, likely INI-AUTO-001 / T-024 if still current. Aim for optimal quality: staged subagents, scoped gates, bounded replay, focused tests, truthful closeout, and split commits. Stop for protected gates, entropy overrun, or unclear ownership.",
+  "session_id": "2026-04-25-adhoc-start-a-fresh-autonomous-auto-campaign-for-the-n",
+  "goal": "Start a fresh autonomous-auto campaign for the next best eligible autonomous-mode slice.\nUse lifecycle-route / repo-native state before opening delivery.\nStop if route says stop; otherwise open the selected route with staged subagents.",
   "session_mode": "exploratory",
-  "opened_at": "2026-04-25T17:51:39+00:00",
-  "updated_at": "2026-04-25T17:53:09Z",
+  "opened_at": "2026-04-25T18:11:48+00:00",
+  "updated_at": "2026-04-25T18:13:09Z",
   "status": "closed",
   "approved_by": "system",
-  "closed_at": "2026-04-25T17:53:09Z"
+  "closed_at": "2026-04-25T18:13:09Z"
 }
