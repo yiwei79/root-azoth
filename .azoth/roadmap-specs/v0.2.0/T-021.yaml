@@ -1,0 +1,53 @@
+id: T-021
+roadmap_version: v0.2.0
+title: Planning-bank ID and coverage policy
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+intent: Define the minimum mechanical policy for planning-bank identity and
+  initiative coverage so future discovery banks are discoverable, consistent,
+  and explicitly scoped without making every roadmap initiative bank-backed.
+problem: Planning banks are now visible in `/start`, `/roadmap`, and `/next`,
+  but the repo still lacks a mechanical policy for bank ids, filename alignment,
+  and which initiatives must have tracked bank coverage. Without this policy,
+  future agents can create drift by inventing design-bank id schemes, renaming
+  initiative-bank files away from their initiative ids, or assuming every
+  phase-null initiative requires a bank before it has active discovery state.
+scope:
+- Extend planning-bank validation with explicit id/filename rules for design
+  and initiative banks.
+- Add a read-only coverage report that distinguishes bank-declared initiatives
+  from initiatives that do not yet require banks.
+- Keep roadmap/backlog/spec hydration delegated to existing Azoth scaffold and
+  scope-gate flows.
+non_goals:
+- Do not add write-mode hydration helper behavior.
+- Do not make advisory richness scores a fail-closed validation gate.
+- Do not require every phase-null initiative to create an initiative bank.
+- Do not change `/next` from read-only planning-bank seed surfacing into direct
+  raw candidate execution.
+acceptance:
+- Design-bank ids must be slug-style and match their filename stem.
+- Initiative-bank filenames must match `initiative_id`, and roadmap
+  `initiative_bank_ref` entries must point to matching tracked bank files.
+- A coverage report lists initiatives with bank refs, marks INI-EVI-002 as
+  covered, and does not flag unrelated phase-null initiatives as missing.
+- Focused tests cover valid live banks, mismatched ids, mismatched filenames,
+  coverage reporting, and read-only CLI behavior.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+candidate_slice_ref: slice-evi-002-c
+research_ref: .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+autonomy:
+  mode: branch-local-no-human-gates
+  approval_basis: User explicitly authorized branch-local autonomous Azoth
+    self-development without human gates for this experiment.
+elasticity: Phase 1 = id and coverage validation plus read-only reporting. Phase
+  2 = richer coverage dashboards or hydration-helper planning only after this
+  policy proves stable.

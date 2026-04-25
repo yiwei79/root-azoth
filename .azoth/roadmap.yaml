@@ -485,9 +485,9 @@ initiatives:
     - knowledge-richness
     - proposal-evaluation
     - project-management-quality
-  phase: null
+  phase: v0.2.0-p3
   priority: high
-  task_ref: T-019
+  task_ref: T-021
   slices:
   - task_ref: T-018
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-018.yaml
@@ -499,17 +499,22 @@ initiatives:
     phase: v0.2.0-p3
     status: complete
     role: historical
+  - task_ref: T-021
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
+    phase: v0.2.0-p3
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
   design_bank_refs:
   - .azoth/design-banks/planning-banks-layer.yaml
   research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
-  discovery_status: next_seed_planted_needs_research_refinement
+  discovery_status: slice_evi_002_c_research_complete_hydrated_as_t_021
   candidate_slice_ref: slice-evi-002-c
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: Seeded slice-evi-002-c in the initiative bank. Run /next or /start
-    to discover the bank, then run research/refinement before any hydration or scaffold
-    write.
+  next_discovery_action: slice-evi-002-c is hydrated as T-021 on the autonomous
+    self-development branch; run the scoped delivery pipeline for T-021 before
+    selecting another raw planning-bank candidate.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
@@ -530,7 +535,7 @@ initiatives:
   - D49
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-019.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -1673,7 +1678,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 32
+  current_patch: 33
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1683,11 +1688,12 @@ versions:
   - C
   - D
   note: 'Third working phase of the v0.2.0 milestone. Phase-2 carry-forward drift
-    has been repaired, the Karpathy follow-on slices (T-KRP-A through T-KRP-E)
-    are complete, and the live queue now carries the planning-bank surfacing continuation
-    T-020. Completed memory/platform carry-forward work stays in history, while
-    unscheduled initiatives remain phase-null until explicitly scheduled into a future
-    slice.
+    has been repaired, the Karpathy follow-on slices (T-KRP-A through T-KRP-E) are
+    complete, T-020 made tracked planning banks discoverable, and the branch-local
+    autonomous self-development test has hydrated T-021 for planning-bank ID and
+    coverage policy. Completed memory/platform carry-forward work stays in history,
+    while unscheduled initiatives remain phase-null until explicitly scheduled into
+    a future slice.
 
     '
   pending_task_refs: []
@@ -1803,4 +1809,19 @@ versions:
     - D45
     - D48
     - D50
-    - {id: T-020, title: "Planning-bank surfacing and routing in session dashboards", completed_date: "2026-04-25", decision_ref: [D23, D48, D50, D52]}
+  - id: T-020
+    title: Planning-bank surfacing and routing in session dashboards
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-021
+    title: Planning-bank ID and coverage policy
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50

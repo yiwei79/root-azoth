@@ -4,7 +4,7 @@ initiative_id: INI-EVI-002
 title: Knowledge richness evaluation for project-management artifacts
 status: active_refinement
 created_at: "2026-04-24T00:00:00+00:00"
-updated_at: "2026-04-25T00:42:48+00:00"
+updated_at: "2026-04-25T01:15:06+00:00"
 owner: codex
 source_sessions:
   - session_id: 2026-04-24-initiative-discovery-bridge-proposal
@@ -23,6 +23,10 @@ source_sessions:
     kind: routing-surfacing
     artifact: .azoth/initiative-banks/INI-EVI-002.yaml
     note: Planted post-T-020 next-candidate seeds so future /next and dashboard routing can discover research/refinement work before hydration.
+  - session_id: 2026-04-25-ini-evi-002-c-autonomous-research
+    kind: branch-local-autonomous-research-and-hydration
+    artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+    note: Completed slice-evi-002-c research, selected planning-bank ID and coverage policy, and hydrated T-021 under the branch-local no-human-gate test budget.
 contacts:
   - id: operator
     role: human decision owner
@@ -112,14 +116,20 @@ research_questions:
       - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-external-richness-adapters-001
   - question_id: rq-evi-002-007
     question: Which post-T-019 knowledge-richness slice should be researched or refined next?
-    status: open
+    status: answered
     opened_at: "2026-04-25T00:42:48+00:00"
+    answered_at: "2026-04-25T01:15:06+00:00"
     needed_for: post_t020_next_slice_selection
-    answer: null
+    answer: >
+      Select planning-bank ID and coverage policy as the next hydratable slice.
+      Deeper initiative-bank richness scoring and derived task research capsule
+      support remain useful follow-ons, but they depend on stable bank identity,
+      filename alignment, and roadmap bank-reference coverage first.
     evidence_refs:
       - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
       - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
       - scripts/proposal_knowledge_richness.py
+      - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
 research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
 local_findings:
@@ -161,6 +171,14 @@ local_findings:
       - .azoth/roadmap-specs/v0.2.0/T-020.yaml
       - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
       - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+  - finding_id: lf-evi-002-007
+    status: active
+    summary: The next narrow policy slice should make planning-bank ids and initiative coverage mechanically checkable before adding broader scoring or hydration-helper behavior.
+    evidence_refs:
+      - .azoth/design-banks/planning-banks-layer.yaml#open_questions
+      - scripts/planning_bank_validate.py
+      - scripts/planning_bank_surfacing.py
+      - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
 external_findings:
   - finding_id: ef-evi-002-001
     status: active
@@ -181,6 +199,14 @@ external_findings:
       delivery traceability, decision confidence, and freshness as advisory
       quality signals.
     source_ref: .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-external-richness-adapters-001
+  - finding_id: ef-evi-002-004
+    status: active
+    summary: >
+      The current freshness refresh reinforces explicit provenance and decision
+      traceability: discovery evidence should remain linked to delivery work, and
+      architecture/planning decisions should preserve stable identifiers,
+      alternatives, confidence, and consequences.
+    source_ref: .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
 assumptions:
   - assumption_id: as-evi-002-001
     status: active
@@ -230,6 +256,15 @@ challenge_log:
     prompt: Should T-020 completion immediately hydrate the next INI-EVI-002 task?
     disposition: seed_research_refinement
     result: No. T-020 makes the bank discoverable; the next candidate should be seeded as research/refinement until the operator selects and approves a concrete hydration boundary.
+  - challenge_id: ch-evi-002-008
+    challenged_at: "2026-04-25T01:15:06+00:00"
+    prompt: Should slice-evi-002-c become deeper scoring, task-capsule support, or a concrete planning-bank policy task?
+    disposition: hydrate_as_t_021
+    result: >
+      Hydrate planning-bank ID and coverage policy as T-021. It is the smallest
+      branch-local self-development slice that answers the open design-bank id
+      and coverage questions while preserving advisory-richness and no-write
+      hydration boundaries.
 candidate_slices:
   - candidate_id: slice-evi-002-a
     proposed_task_id: T-018
@@ -305,82 +340,81 @@ candidate_slices:
         - acceptance_criteria_status and non_goals_status must be stable.
         - open_questions must be empty or explicitly non-blocking.
   - candidate_id: slice-evi-002-c
-    proposed_task_id: TBD-EVI-002-C
-    title: Research/refine the next knowledge-richness planning-bank slice
+    proposed_task_id: T-021
+    title: Planning-bank ID and coverage policy
     initiative_ref: INI-EVI-002
-    status: candidate
+    status: hydrated
     target_layer: infrastructure
     delivery_pipeline: standard
-    summary: Seed a future research/refinement pass that decides which knowledge-richness artifact class or planning-bank readiness signal should become the next hydratable slice after T-019/T-020, without creating roadmap/backlog/spec state yet.
+    summary: Define and enforce the planning-bank ID and coverage policy so design-bank ids, initiative-bank filenames, and roadmap bank references remain mechanically consistent without requiring every phase-null initiative to become bank-backed.
     acceptance_criteria:
-      - Compare at least two candidate directions: deeper initiative-bank richness scoring, planning-bank readiness rubric, or derived task research capsule support.
-      - Record which direction needs additional research, which is ready for a plan-only proposal, and which should be rejected or deferred.
-      - Preserve the boundary that advisory richness and readiness signals do not replace fail-closed structural validation.
-      - Produce a clear human hydration decision point before any roadmap/backlog/spec write.
+      - Design-bank ids use slug-style names and match the filename stem.
+      - Initiative-bank filenames match their `initiative_id`, and roadmap `initiative_bank_ref` entries point to matching tracked bank files.
+      - A read-only coverage report lists bank-backed initiatives without treating every phase-null initiative as missing.
+      - Advisory richness remains separate from fail-closed structural validation and no write-mode hydration helper is added.
     research_evidence_refs:
       - .azoth/research/ini-evi-002-research-bank.yaml
       - .azoth/design-banks/planning-banks-layer.yaml
       - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+      - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
     known_non_goals:
-      - Do not hydrate TBD-EVI-002-C directly from this seed.
       - Do not implement write-mode hydration helper behavior.
       - Do not make advisory richness scores a mechanical blocker for hydration.
-      - Do not mutate roadmap, backlog, or roadmap-spec state until the operator approves a concrete slice.
-    open_questions:
-      - Which artifact class should the next richness/refinement pass prioritize?
-      - Should this become a task-level research capsule, a proposal refinement, or a hydrated backlog task?
+      - Do not require every phase-null initiative to have an initiative bank.
+      - Do not mutate roadmap, backlog, or roadmap-spec state outside the explicit T-021 hydration performed for this branch-local autonomy test.
+    open_questions: []
     recommended_phase: v0.2.0-p3
     hydration_plan:
-      proposed_title: Research/refine next knowledge-richness planning-bank slice
-      hydrated_task_ref: null
-      hydrated_spec_ref: null
-      scaffold_command: null
+      proposed_title: Planning-bank ID and coverage policy
+      hydrated_task_ref: T-021
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
+      scaffold_command: scripts/roadmap_scaffold.py --title "Planning-bank ID and coverage policy" --initiative-ref INI-EVI-002 --target-layer infrastructure --delivery-pipeline standard
       pre_hydration_requirements:
         - readiness.readiness_status must be ready_to_hydrate.
         - readiness.human_decision must be approved for hydration, not only seed approval.
         - open_questions must be answered or explicitly non-blocking.
         - the selected direction must have acceptance criteria and non-goals stable enough for /next.
 readiness:
-  evaluated_at: "2026-04-25T00:42:48+00:00"
+  evaluated_at: "2026-04-25T01:15:06+00:00"
   source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
-  readiness_status: continue_research
-  goal_clarity: next_candidate_seeded
-  evidence_coverage: seed_only_needs_research_refinement
-  freshness_status: refreshed_after_t_020
+  readiness_status: ready_to_hydrate
+  goal_clarity: selected_concrete_policy_slice
+  evidence_coverage: research_complete_for_t_021_hydration
+  freshness_status: refreshed_for_branch_local_autonomous_test
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
   candidate_first_slice: slice-evi-002-c
   target_layer: infrastructure
   delivery_pipeline: standard
-  acceptance_criteria_status: seeded
-  non_goals_status: seeded
-  next_readiness_gate: research_refinement_before_hydration
-  hydration_recommendation: Seeded slice-evi-002-c for research/refinement. Run /next or /start to discover the bank, then run a research/refinement session before any hydration.
-  human_decision: approved_seed_only
+  acceptance_criteria_status: stable
+  non_goals_status: stable
+  next_readiness_gate: hydrated_as_t_021
+  hydration_recommendation: Hydrated slice-evi-002-c as T-021 under the branch-local autonomous self-development test; next step is scoped delivery, not another raw candidate hydration.
+  human_decision: approved
+  approval_basis: User explicitly authorized no-human-gate branch-local autonomous Azoth self-development test on codex/autonomous-roadmap-self-development.
 research_completion_assessment:
-  candidate_slice_ref: slice-evi-002-b
-  completed_at: "2026-04-24T20:06:33+00:00"
-  status: research_complete_delivered
+  candidate_slice_ref: slice-evi-002-c
+  completed_at: "2026-04-25T01:15:06+00:00"
+  status: research_complete_hydrated_as_t_021
   source_pack_refs:
-    - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-next-candidate-001
-    - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-external-richness-adapters-001
+    - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
   completed_dimensions:
-    - evidence_source_quality
-    - insight_traceability
-    - outcome_opportunity_solution_alignment
-    - assumption_coverage
-    - decision_context_and_alternatives
-    - freshness_and_lifecycle_state
+    - direction_comparison
+    - local_surface_mapping
+    - external_freshness_refresh
+    - autonomy_approval_basis
+    - hydration_boundary
   unresolved_before_hydration: []
 next_seed_assessment:
   candidate_slice_ref: slice-evi-002-c
-  seeded_at: "2026-04-25T00:42:48+00:00"
-  status: needs_research_refinement
+  seeded_at: "2026-04-25T01:15:06+00:00"
+  status: completed_and_hydrated_as_t_021
   source_refs:
     - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
     - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
-  note: Future sessions should discover this seed through planning-bank surfacing, then decide whether to research, refine a proposal, or hydrate a concrete task.
+    - .azoth/roadmap-specs/v0.2.0/T-021.yaml
+  note: The seed is no longer raw discovery state; it has been hydrated as T-021 for scoped delivery on the experiment branch.
 hydration_history:
   - hydrated_at: "2026-04-24T18:50:00+00:00"
     session_id: 2026-04-24-ini-evi-002-readiness-research
@@ -394,3 +428,9 @@ hydration_history:
     task_ref: T-019
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-019.yaml
     result: Hydrated standard infrastructure task after human approval.
+  - hydrated_at: "2026-04-25T01:15:06+00:00"
+    session_id: 2026-04-25-ini-evi-002-c-autonomous-research
+    candidate_slice_ref: slice-evi-002-c
+    task_ref: T-021
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
+    result: Hydrated standard infrastructure task under branch-local autonomous self-development approval basis.

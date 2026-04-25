@@ -2,7 +2,7 @@ schema_version: 1
 artifact_type: research_evidence_index
 topic: INI-EVI-002 knowledge richness evaluation for project-management artifacts
 created_at: "2026-04-24T00:00:00+00:00"
-updated_at: "2026-04-24T20:06:33+00:00"
+updated_at: "2026-04-25T01:15:06+00:00"
 planning_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
 summary: >
   Evidence index for the INI-EVI-002 initiative bank. Research artifacts own
@@ -146,3 +146,60 @@ research_packs:
         These dimensions should enrich candidate readiness and review. They must
         not replace planning_bank_validate.py structural checks, and they must not
         write roadmap, backlog, or roadmap-spec state without a separate human gate.
+  - pack_id: pack-evi-002-c-policy-selection-001
+    kind: mixed-current-research
+    status: active
+    captured_at: "2026-04-25T01:15:06+00:00"
+    source_session_id: 2026-04-25-ini-evi-002-c-autonomous-research
+    goal: Complete research/refinement for slice-evi-002-c and select the next hydratable planning-bank policy slice.
+    volatility: medium
+    limitations:
+      - External product-discovery and ADR sources support the discovery-to-delivery boundary but do not prescribe Azoth-specific bank id syntax.
+      - Branch-local autonomous approval replaces the usual human hydration approval only for this experiment branch.
+    questions:
+      - Which post-T-019 knowledge-richness slice should be researched or refined next?
+      - Should the next output be a task-level research capsule, proposal refinement, or hydrated backlog task?
+    sources:
+      - path: .azoth/design-banks/planning-banks-layer.yaml
+        finding: The remaining design-bank questions are id shape, which initiatives require banks, /next hydration prompting, and closeout history churn.
+      - path: .azoth/initiative-banks/INI-EVI-002.yaml
+        finding: Slice-evi-002-c explicitly asks to compare deeper scoring, readiness policy, and derived task-capsule support before hydration.
+      - path: scripts/planning_bank_validate.py
+        finding: The existing structural validator is the smallest safe place to enforce bank id and coverage rules without creating a second roadmap writer.
+      - path: scripts/planning_bank_surfacing.py
+        finding: Dashboard and /next surfacing already treat planning banks as read-only seeds, so the next implementation should protect consistency rather than add new routing behavior.
+      - title: Atlassian Jira Product Discovery insights overview
+        url: https://www.atlassian.com/software/jira/product-discovery/guides/insights/overview
+        finding: Current guidance keeps evidence linked to ideas with source context and impact signals, reinforcing traceability rather than raw execution from discovery state.
+      - title: Atlassian Jira Product Discovery ideas overview
+        url: https://www.atlassian.com/software/jira/product-discovery/guides/ideas/overview
+        finding: Ideas can carry hypotheses, validation methods, insights, linked delivery tickets, and history, which supports explicit bank-to-task provenance.
+      - title: Google Cloud Architecture Decision Records overview
+        url: https://cloud.google.com/architecture/architecture-decision-records
+        finding: ADR guidance emphasizes options, requirements, decisions, and code-adjacent traceability, supporting filename/id stability for planning artifacts.
+      - title: Product Talk Opportunity Solution Tree glossary
+        url: https://www.producttalk.org/glossary-discovery-opportunity-solution-tree/
+        finding: Opportunity-solution structure separates outcome, opportunity, solution, and assumption tests, supporting a focused policy slice before broader scoring expansion.
+      - title: Product Talk Assumption Testing glossary
+        url: https://www.producttalk.org/glossary-discovery-assumption-testing/
+        finding: Testing assumptions before building complete products supports hydrating a narrow policy task while deferring task-capsule automation.
+      - title: Microsoft Azure Well-Architected ADR guidance
+        url: https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record
+        finding: ADR guidance recommends explicit context, options, confidence, tradeoffs, and consequences, reinforcing visible approval basis and branch-local autonomy notes.
+    synthesis:
+      selected_direction: planning-bank-id-and-coverage-policy
+      rejected_or_deferred:
+        - direction: deeper_initiative_bank_richness_scoring
+          disposition: defer
+          reason: T-019 already delivered advisory initiative-bank richness; more scoring is useful but not a prerequisite for stable bank identity.
+        - direction: derived_task_research_capsule_support
+          disposition: defer
+          reason: Task capsules should come after the bank identity and coverage rules prevent stale or ambiguous provenance.
+        - direction: write_mode_hydration_helper
+          disposition: reject_for_this_slice
+          reason: It would widen the experiment into a second roadmap writer.
+      research_completion: >
+        The selected slice is research-complete for branch-local hydration as T-021:
+        the policy boundary is local, the freshness refresh found no directional
+        change, open questions are answered, and implementation can stay inside
+        read-only validation/reporting behavior.

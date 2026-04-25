@@ -3037,3 +3037,24 @@ items:
   - D48
   - D50
   - D52
+- id: T-021
+  title: Planning-bank ID and coverage policy
+  source: ini-evi-002-c-research-complete-2026-04-25
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 2
+  created_date: '2026-04-25'
+  completed_date: '2026-04-25'
+  description: 'Hydrate the third focused INI-EVI-002 slice: define and enforce the
+    planning-bank ID and coverage policy so design-bank ids, initiative-bank filenames,
+    and roadmap bank references remain mechanically consistent without requiring every
+    phase-null initiative to become bank-backed.'
+  roadmap_ref: T-021
+  initiative_ref: INI-EVI-002
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
