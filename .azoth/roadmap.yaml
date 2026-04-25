@@ -1741,7 +1741,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 53
+  current_patch: 54
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1760,16 +1760,7 @@ versions:
 
     '
   pending_task_refs: []
-  tasks:
-  - id: T-024
-    title: Lifecycle router over initiative readiness surfaces
-    decision_ref:
-    - D11
-    - D23
-    - D48
-    - D50
-    - D52
-    initiative_ref: INI-AUTO-001
+  tasks: []
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1923,3 +1914,4 @@ versions:
     - D23
     - D46
     - D52
+    - {id: T-024, title: "Lifecycle router over initiative readiness surfaces", completed_date: "2026-04-25", decision_ref: [D11, D23, D48, D50, D52]}

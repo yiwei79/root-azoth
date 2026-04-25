@@ -4,12 +4,12 @@
 0.1.3.53 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 53
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-t-025-1
-- **Goal**: Ship the T-025 runtime resolver implementation after pre-implementation gate confirmation.
+- **Session**: 2026-04-25-autonomous-auto-t-024-1
+- **Goal**: Lifecycle router over initiative readiness surfaces
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-413 (success)
+- **Episode**: ep-414 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Administrative finalize complete — run `/next` to select the next scoped task.
+- Run `/next` to select the next scoped task.

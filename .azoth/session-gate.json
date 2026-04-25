@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-04-25-adhoc-autonomous-auto-full-ready",
-  "goal": "AD-HOC: ship autonomous-auto to Green using the UX retrospective as success criteria",
-  "session_mode": "delivery",
-  "opened_at": "2026-04-25T08:52:50Z",
-  "updated_at": "2026-04-25T09:07:03Z",
+  "session_id": "2026-04-25-adhoc-start-a-new-autonomous-auto-campaign-for-the-aut",
+  "goal": "Start a new autonomous-auto campaign for the autonomous mode initiative. Use repo-native state to choose the best next eligible slice, likely INI-AUTO-001 / T-024 if still current. Aim for optimal quality: staged subagents, scoped gates, bounded replay, focused tests, truthful closeout, and split commits. Stop for protected gates, entropy overrun, or unclear ownership.",
+  "session_mode": "exploratory",
+  "opened_at": "2026-04-25T17:51:39+00:00",
+  "updated_at": "2026-04-25T17:53:09Z",
   "status": "closed",
-  "approved_by": "human",
-  "closed_at": "2026-04-25T09:07:03Z"
+  "approved_by": "system",
+  "closed_at": "2026-04-25T17:53:09Z"
 }
