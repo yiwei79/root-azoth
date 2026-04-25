@@ -336,6 +336,8 @@ def build_initiative_readiness_report(
     human_decision = readiness.get("human_decision")
     readiness_status = readiness.get("readiness_status")
     freshness_status = readiness.get("freshness_status")
+    approval_basis = _non_empty_string(readiness.get("approval_basis"))
+    approval_scope = _non_empty_string(readiness.get("approval_scope"))
     acceptance_criteria = candidate_doc.get("acceptance_criteria")
     non_goals = candidate_doc.get("known_non_goals")
     open_questions = candidate_doc.get("open_questions")
@@ -363,6 +365,12 @@ def build_initiative_readiness_report(
         blocking_reasons.append("readiness.readiness_status must be ready_to_hydrate")
     if human_decision != "approved":
         blocking_reasons.append("readiness.human_decision must be approved")
+    if readiness_status == "ready_to_hydrate" and approval_basis is None:
+        blocking_reasons.append("readiness.approval_basis must be present before hydration")
+    if approval_scope == "planning_seed_only_no_hydration":
+        blocking_reasons.append(
+            "readiness.approval_scope planning_seed_only_no_hydration does not authorize hydration"
+        )
     if not isinstance(candidate, dict):
         if selected_candidate_id:
             blocking_reasons.append(
@@ -407,6 +415,8 @@ def build_initiative_readiness_report(
         "source_bank_ref": rel.as_posix(),
         "readiness_status": readiness_status or "missing",
         "human_decision": human_decision or "missing",
+        "approval_scope": approval_scope,
+        "approval_basis": approval_basis,
         "candidate_first_slice": candidate_first_slice or candidate_doc.get("candidate_id"),
         "candidate_id": candidate_doc.get("candidate_id") or selected_candidate_id or "missing",
         "candidate_slice_ref": candidate_slice_ref or "missing",
@@ -588,6 +598,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Print a read-only planning-bank coverage report as YAML.",
     )
+    parser.add_argument(
+        "--intake-contract",
+        type=Path,
+        metavar="PATH",
+        help="Print a read-only initiative intake contract validation report as YAML.",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -605,6 +621,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.coverage_report:
             report = build_planning_bank_coverage_report()
             print(yaml.safe_dump({"planning_bank_coverage": report}, sort_keys=False), end="")
+            return 0
+        if args.intake_contract is not None:
+            import initiative_intake
+
+            report = initiative_intake.validate_intake_contract(_load_yaml(args.intake_contract))
+            print(yaml.safe_dump({"initiative_intake_reports": [report]}, sort_keys=False), end="")
             return 0
     except PlanningBankValidationError as exc:
         print(f"planning_bank_validate: {exc}", file=sys.stderr)

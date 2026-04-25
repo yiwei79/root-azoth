@@ -1258,3 +1258,287 @@ def test_campaign_report_fails_closed_for_missing_handoff_completion_reason(
     assert report["handoff_campaign"]["completion_reason"] == ""
     assert report["observation"]["fresh_budget_required"] is True
     assert report["observation"]["safe_to_continue_old_campaign"] is False
+
+
+def _write_lifecycle_initiative_bank(tmp_path: Path) -> Path:
+    path = tmp_path / ".azoth/initiative-banks/INI-AUTO-001.yaml"
+    _write_yaml(
+        path,
+        {
+            "schema_version": 1,
+            "bank_type": "initiative",
+            "initiative_id": "INI-AUTO-001",
+            "title": "Autonomous initiative lifecycle orchestration",
+            "status": "active_refinement",
+            "owner": "codex",
+            "source_proposal_refs": [
+                ".azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml"
+            ],
+            "local_findings": [
+                {
+                    "finding_id": "lf-auto-001-005",
+                    "status": "active",
+                    "summary": "Route initiatives from a normalized lifecycle report.",
+                }
+            ],
+            "candidate_slices": [
+                {
+                    "candidate_id": "slice-auto-001-a",
+                    "proposed_task_id": "T-AUTO-A",
+                    "title": "Initiative intake and seed contract",
+                    "initiative_ref": "INI-AUTO-001",
+                    "status": "candidate",
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                    "summary": "Define safe initiative intake before hydration.",
+                    "acceptance_criteria": [
+                        "Raw initiative input is classified as planning/discovery.",
+                        "Protected-scope expansion fails closed.",
+                    ],
+                    "research_evidence_refs": [
+                        "scripts/autonomous_loop.py",
+                        "scripts/planning_bank_validate.py",
+                    ],
+                    "known_non_goals": [
+                        "Do not create backlog items.",
+                        "Do not hydrate roadmap task specs.",
+                    ],
+                    "open_questions": [],
+                    "hydration_plan": {
+                        "proposed_title": "Initiative intake and seed contract",
+                        "scaffold_command": "python3 scripts/roadmap_scaffold.py --hydrate-task T-AUTO-A",
+                    },
+                }
+            ],
+            "readiness": {
+                "evaluated_at": "2026-04-25T12:10:00+00:00",
+                "source_bank_ref": ".azoth/initiative-banks/INI-AUTO-001.yaml",
+                "readiness_status": "continue_research",
+                "freshness_status": "current_as_of_2026_04_25",
+                "candidate_first_slice": "slice-auto-001-a",
+                "acceptance_criteria_status": "draft",
+                "non_goals_status": "draft",
+                "next_readiness_gate": "refine_intake_contract_before_hydration",
+                "hydration_recommendation": "Do not hydrate yet; refine the intake contract first.",
+                "human_decision": "approved",
+                "approval_scope": "planning_seed_only_no_hydration",
+                "approval_basis": "Operator approved planning-only autonomous-auto exploration.",
+            },
+            "hydration_history": [],
+        },
+    )
+    return path
+
+
+def _write_lifecycle_reflection(tmp_path: Path) -> Path:
+    path = tmp_path / ".azoth/inbox/session-reflection-2026-04-25-autonomous-auto-campaign-report.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "id": "SRF-2026-04-25-AUTOAUTO-CAMPAIGN-REPORT-IMPLICATIONS",
+                "severity": "high",
+                "summary": "Campaign reports must include implications, quality, scores, and next steps.",
+                "recommended_action": "Refine the report contract with evaluator-score visibility.",
+                "tags": ["autonomous-auto", "campaign-report", "eval-score"],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_lifecycle_report_reuses_readiness_report_and_reflection_without_writes(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    reflection_path = _write_lifecycle_reflection(tmp_path)
+    initiative_before = initiative_path.read_text(encoding="utf-8")
+    reflection_before = reflection_path.read_text(encoding="utf-8")
+
+    report = autonomous_loop.build_initiative_lifecycle_report(
+        tmp_path,
+        initiative_path,
+        reflection_path=reflection_path,
+    )
+
+    assert report["report_type"] == "initiative_lifecycle_report"
+    assert report["scope_boundary"]["read_only"] is True
+    assert report["readiness"]["ready_to_hydrate"] is False
+    assert report["readiness"]["approval_basis"] == (
+        "Operator approved planning-only autonomous-auto exploration."
+    )
+    assert report["source_artifacts"]["reflection"]["observable"] is True
+    assert report["quality"]["evaluator_scores"][0]["score"] is None
+    assert report["next_safe_actions"][0]["action"] == "refine_proposal"
+    assert any(item["action"] == "hydrate_task" for item in report["blocked_actions"])
+    assert initiative_path.read_text(encoding="utf-8") == initiative_before
+    assert reflection_path.read_text(encoding="utf-8") == reflection_before
+
+
+def test_lifecycle_report_cli_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    reflection_path = _write_lifecycle_reflection(tmp_path)
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-report",
+                "--initiative",
+                str(initiative_path),
+                "--reflection",
+                str(reflection_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["initiative"]["initiative_id"] == "INI-AUTO-001"
+    assert payload["candidate"]["candidate_id"] == "slice-auto-001-a"
+    assert payload["quality"]["reflection_observable"] is True
+
+
+def test_lifecycle_report_cli_plain_text(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-report",
+                "--initiative",
+                str(initiative_path),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+
+    assert "Autonomous-auto initiative lifecycle report" in output
+    assert "Readiness: continue_research (hydrate=False)" in output
+    assert "Blocked actions: hydrate_task, ship_task" in output
+
+
+def test_lifecycle_report_missing_reflection_is_observable_false_and_read_only(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    missing_reflection = tmp_path / ".azoth/inbox/missing.jsonl"
+    initiative_before = initiative_path.read_text(encoding="utf-8")
+
+    report = autonomous_loop.build_initiative_lifecycle_report(
+        tmp_path,
+        initiative_path,
+        reflection_path=missing_reflection,
+    )
+
+    assert report["source_artifacts"]["reflection"]["observable"] is False
+    assert report["source_artifacts"]["reflection"]["failure_reasons"] == [
+        "missing_reflection"
+    ]
+    assert report["quality"]["meaning"].startswith("No reflection artifact")
+    assert initiative_path.read_text(encoding="utf-8") == initiative_before
+
+
+def test_lifecycle_report_plain_text_keeps_hydration_approval_caveat_visible(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["readiness"]["readiness_status"] = "ready_to_hydrate"
+    doc["readiness"]["acceptance_criteria_status"] = "present"
+    doc["readiness"]["non_goals_status"] = "present"
+    doc["readiness"]["next_readiness_gate"] = "hydrate_after_explicit_approval"
+    doc["readiness"]["hydration_recommendation"] = "Hydrate only with explicit approval."
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-report",
+                "--initiative",
+                str(initiative_path),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+
+    assert "Next safe actions: hydrate_task" in output
+    assert "explicit hydration approval_basis remains required at the write edge" in output
+
+
+def test_lifecycle_report_seed_only_approval_never_routes_hydrate_or_ship(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["readiness"]["readiness_status"] = "ready_to_hydrate"
+    doc["readiness"]["next_readiness_gate"] = "hydrate_after_explicit_approval"
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-023"
+    _write_yaml(initiative_path, doc)
+
+    report = autonomous_loop.build_initiative_lifecycle_report(tmp_path, initiative_path)
+
+    assert report["readiness"]["approval_scope"] == "planning_seed_only_no_hydration"
+    assert report["next_safe_actions"][0]["action"] == "research_initiative"
+    assert {
+        item["action"]
+        for item in report["blocked_actions"]
+    } == {"hydrate_task", "ship_task"}
+    assert all(
+        item["action"] not in {"hydrate_task", "ship_task"}
+        for item in report["next_safe_actions"]
+    )
+
+
+def test_lifecycle_report_hydrated_candidate_routes_to_ship_task(tmp_path: Path) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-023"
+    doc["readiness"]["readiness_status"] = "continue_research"
+    doc["readiness"]["next_readiness_gate"] = "ship_hydrated_task_T_023"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    doc["readiness"]["hydration_recommendation"] = (
+        "slice-auto-001-a is hydrated as T-023; do not hydrate it again."
+    )
+    _write_yaml(initiative_path, doc)
+
+    report = autonomous_loop.build_initiative_lifecycle_report(tmp_path, initiative_path)
+
+    assert report["next_safe_actions"][0]["action"] == "ship_task"
+    assert report["next_safe_actions"][0]["basis"] == "candidate is hydrated as T-023"
+    assert report["blocked_actions"] == [
+        {
+            "action": "hydrate_task",
+            "reason": (
+                "candidate.status is hydrated; no hydration action remains; "
+                "readiness.readiness_status must be ready_to_hydrate"
+            ),
+        }
+    ]
+    assert report["operator_implications"][0]["meaning"].startswith(
+        "The selected candidate is hydrated"
+    )

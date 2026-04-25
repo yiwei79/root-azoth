@@ -18,6 +18,7 @@ from typing import Any
 
 import yaml
 
+from planning_bank_validate import build_initiative_readiness_report
 from run_ledger import acquire_write_claim, load_write_claim, release_write_claim, upsert_run
 from session_gate import active_session_gate, normalized_session_mode
 from yaml_helpers import safe_load_yaml_path
@@ -1622,6 +1623,399 @@ def campaign_report(
     }
 
 
+def _repo_artifact_ref(root: Path, path: Path | None) -> str:
+    if path is None:
+        return ""
+    resolved_root = Path(root).resolve()
+    resolved_path = Path(path).resolve()
+    try:
+        return resolved_path.relative_to(resolved_root).as_posix()
+    except ValueError:
+        return str(resolved_path)
+
+
+def _resolve_report_path(root: Path, value: Path | str | None) -> Path | None:
+    if value is None or str(value) == "":
+        return None
+    path = Path(value)
+    return path if path.is_absolute() else Path(root) / path
+
+
+def _load_jsonl_mappings(path: Path | None) -> tuple[list[dict[str, Any]], list[str]]:
+    if path is None:
+        return [], ["not_requested"]
+    if not path.exists():
+        return [], ["missing_reflection"]
+
+    entries: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError as exc:
+            errors.append(f"line_{line_number}: invalid_json: {exc.msg}")
+            continue
+        if not isinstance(parsed, dict):
+            errors.append(f"line_{line_number}: entry_must_be_object")
+            continue
+        entries.append(parsed)
+    return entries, errors
+
+
+def _selected_lifecycle_candidate(
+    doc: dict[str, Any],
+    readiness_report: dict[str, Any],
+) -> dict[str, Any]:
+    candidate_id = str(readiness_report.get("candidate_id") or "")
+    candidates = doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    candidate = next(
+        (
+            item
+            for item in candidates
+            if isinstance(item, dict) and str(item.get("candidate_id") or "") == candidate_id
+        ),
+        {},
+    )
+    if not isinstance(candidate, dict):
+        candidate = {}
+    acceptance = candidate.get("acceptance_criteria")
+    non_goals = candidate.get("known_non_goals")
+    open_questions = candidate.get("open_questions")
+    evidence_refs = candidate.get("research_evidence_refs")
+    return {
+        "candidate_id": candidate.get("candidate_id") or readiness_report.get("candidate_id"),
+        "title": candidate.get("title") or readiness_report.get("proposed_title"),
+        "proposed_task_id": candidate.get("proposed_task_id")
+        or readiness_report.get("candidate_task_ref"),
+        "status": candidate.get("status") or readiness_report.get("candidate_status"),
+        "target_layer": candidate.get("target_layer") or readiness_report.get("target_layer"),
+        "delivery_pipeline": candidate.get("delivery_pipeline")
+        or readiness_report.get("delivery_pipeline"),
+        "summary": candidate.get("summary") or "",
+        "acceptance_criteria_count": len(acceptance) if isinstance(acceptance, list) else 0,
+        "non_goals_count": len(non_goals) if isinstance(non_goals, list) else 0,
+        "open_questions": open_questions if isinstance(open_questions, list) else [],
+        "research_evidence_refs": evidence_refs if isinstance(evidence_refs, list) else [],
+    }
+
+
+def _lifecycle_next_safe_actions(
+    doc: dict[str, Any],
+    readiness_report: dict[str, Any],
+    reflections: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
+    next_gate = str(readiness.get("next_readiness_gate") or "")
+    recommendation = str(readiness.get("hydration_recommendation") or "")
+    blockers = readiness_report.get("blocking_reasons")
+    blocker_text = "; ".join(str(item) for item in blockers) if isinstance(blockers, list) else ""
+
+    if readiness_report.get("approval_scope") == "planning_seed_only_no_hydration":
+        actions = [
+            {
+                "action": "refine_proposal" if "refine" in next_gate else "research_initiative",
+                "basis": (
+                    "approval_scope planning_seed_only_no_hydration permits "
+                    "discovery/planning only"
+                ),
+                "approval_needed": "new hydration or delivery approval_basis required before writes",
+            }
+        ]
+    elif str(readiness_report.get("candidate_status") or "") == "hydrated":
+        task_ref = str(readiness_report.get("candidate_task_ref") or "").strip()
+        actions = [
+            {
+                "action": "ship_task",
+                "basis": f"candidate is hydrated as {task_ref or 'an executable task'}",
+                "approval_needed": "open a normal scoped delivery run before implementation",
+            }
+        ]
+    elif readiness_report.get("ready_to_hydrate"):
+        actions = [
+            {
+                "action": "hydrate_task",
+                "basis": "readiness report is green and candidate has an executable scaffold command",
+                "approval_needed": "explicit hydration approval_basis remains required at the write edge",
+            }
+        ]
+    elif "refine" in next_gate:
+        actions = [
+            {
+                "action": "refine_proposal",
+                "basis": next_gate,
+                "approval_needed": "covered by planning/refinement scope only",
+            }
+        ]
+    else:
+        actions = [
+            {
+                "action": "research_initiative",
+                "basis": recommendation or blocker_text or "readiness is not green",
+                "approval_needed": "covered by discovery/research scope only",
+            }
+        ]
+
+    if reflections:
+        actions.append(
+            {
+                "action": "capture_self_improvement",
+                "basis": "operator feedback/reflection artifact is present and should influence future reports",
+                "approval_needed": "not required for inbox-first self-improvement capture",
+            }
+        )
+    return actions
+
+
+def _lifecycle_blocked_actions(readiness_report: dict[str, Any]) -> list[dict[str, str]]:
+    blockers = readiness_report.get("blocking_reasons")
+    reason = "; ".join(str(item) for item in blockers) if isinstance(blockers, list) else ""
+    if readiness_report.get("approval_scope") == "planning_seed_only_no_hydration":
+        return [
+            {
+                "action": "hydrate_task",
+                "reason": "approval_scope planning_seed_only_no_hydration does not authorize hydration",
+            },
+            {
+                "action": "ship_task",
+                "reason": "approval_scope planning_seed_only_no_hydration does not authorize delivery",
+            },
+        ]
+    blocked: list[dict[str, str]] = []
+    if not readiness_report.get("ready_to_hydrate"):
+        blocked.append(
+            {
+                "action": "hydrate_task",
+                "reason": reason or "readiness report is not green",
+            }
+        )
+    if str(readiness_report.get("candidate_status") or "") != "hydrated":
+        blocked.append(
+            {
+                "action": "ship_task",
+                "reason": "candidate is not hydrated into an executable roadmap/backlog/spec task",
+            }
+        )
+    return blocked
+
+
+def _quality_signals_from_reflections(entries: list[dict[str, Any]]) -> list[dict[str, str]]:
+    signals: list[dict[str, str]] = []
+    for entry in entries:
+        signals.append(
+            {
+                "id": str(entry.get("id") or ""),
+                "severity": str(entry.get("severity") or "unknown"),
+                "summary": str(entry.get("summary") or ""),
+                "recommended_action": str(entry.get("recommended_action") or ""),
+            }
+        )
+    return signals
+
+
+def build_initiative_lifecycle_report(
+    root: Path,
+    initiative_path: Path,
+    *,
+    reflection_path: Path | None = None,
+    state_path: Path | None = None,
+    handoff_path: Path | None = None,
+    candidate_id: str | None = None,
+) -> dict[str, Any]:
+    root = Path(root)
+    initiative_path = _resolve_report_path(root, initiative_path)
+    if initiative_path is None:
+        raise ValueError("initiative_path is required")
+    reflection_path = _resolve_report_path(root, reflection_path)
+    state_path = _resolve_report_path(root, state_path) or (root / STATE_REL)
+    handoff_path = _resolve_report_path(root, handoff_path)
+
+    doc = safe_load_yaml_path(initiative_path)
+    if not isinstance(doc, dict):
+        doc = {}
+    readiness_report = build_initiative_readiness_report(
+        initiative_path,
+        repo_root=root,
+        candidate_id=candidate_id,
+    )
+    reflections, reflection_errors = _load_jsonl_mappings(reflection_path)
+    candidate = _selected_lifecycle_candidate(doc, readiness_report)
+    readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
+    campaign = campaign_report(root, state_path, handoff_path=handoff_path)
+    target_layer = str(readiness_report.get("target_layer") or "").lower()
+    delivery_pipeline = str(readiness_report.get("delivery_pipeline") or "").lower()
+    protected_gate_required = (
+        target_layer in PROTECTED_TARGET_LAYERS or delivery_pipeline in PROTECTED_PIPELINES
+    )
+    reflection_observable = reflection_path is not None and reflection_path.exists()
+
+    if str(readiness_report.get("candidate_status") or "") == "hydrated":
+        readiness_meaning = (
+            "The selected candidate is hydrated into an executable task; repeat hydration is "
+            "blocked and the next safe move is scoped delivery."
+        )
+    elif readiness_report.get("ready_to_hydrate"):
+        readiness_meaning = (
+            "The selected candidate is ready to approach hydration, but the write edge still "
+            "requires explicit approval_basis."
+        )
+    else:
+        readiness_meaning = (
+            "The initiative is still in discovery/refinement; hydration and delivery remain blocked."
+        )
+    quality_meaning = (
+        "Operator feedback is available and should be carried into future report/evaluator contracts."
+        if reflection_observable
+        else "No reflection artifact was available, so report-quality implications are limited."
+    )
+
+    return {
+        "report_schema_version": 1,
+        "report_type": "initiative_lifecycle_report",
+        "source_artifacts": {
+            "initiative_bank": _repo_artifact_ref(root, initiative_path),
+            "reflection": {
+                "observable": reflection_observable,
+                "path": _repo_artifact_ref(root, reflection_path),
+                "entry_count": len(reflections),
+                "failure_reasons": reflection_errors,
+            },
+            "loop_state": _repo_artifact_ref(root, state_path),
+        },
+        "scope_boundary": {
+            "read_only": True,
+            "mutates_planning_state": False,
+            "allowed_actions_observed": [
+                "research_initiative",
+                "refine_proposal",
+                "hydrate_task",
+                "ship_task",
+                "capture_self_improvement",
+            ],
+            "protected_boundaries": [
+                "kernel/governance/M1/destructive/network expansion still stops",
+                "hydration requires green readiness and explicit approval_basis at the write edge",
+            ],
+        },
+        "initiative": {
+            "initiative_id": doc.get("initiative_id"),
+            "title": doc.get("title"),
+            "status": doc.get("status"),
+            "owner": doc.get("owner"),
+            "source_proposal_refs": doc.get("source_proposal_refs")
+            if isinstance(doc.get("source_proposal_refs"), list)
+            else [],
+            "local_findings_count": len(doc.get("local_findings") or [])
+            if isinstance(doc.get("local_findings"), list)
+            else 0,
+        },
+        "candidate": candidate,
+        "readiness": {
+            **readiness_report,
+            "approval_basis": readiness.get("approval_basis") or "",
+            "approval_scope": readiness.get("approval_scope") or "",
+            "next_readiness_gate": readiness.get("next_readiness_gate") or "",
+        },
+        "campaign_context": {
+            "current_loop_status": campaign.get("current_loop", {}).get("status"),
+            "handoff_observable": campaign.get("handoff_campaign", {}).get("observable"),
+            "fresh_budget_required": campaign.get("observation", {}).get(
+                "fresh_budget_required"
+            ),
+            "observation_reason": campaign.get("observation", {}).get("reason"),
+        },
+        "quality": {
+            "reflection_observable": reflection_observable,
+            "quality_signals": _quality_signals_from_reflections(reflections),
+            "evaluator_scores": [
+                {
+                    "name": "autonomous_auto_campaign_orchestrator_report",
+                    "score": None,
+                    "status": "not_recorded_in_source_artifacts",
+                    "meaning": "No evaluator score artifact was provided; quality must be treated as unscored.",
+                }
+            ],
+            "meaning": quality_meaning,
+        },
+        "operator_implications": [
+            {
+                "area": "readiness",
+                "meaning": readiness_meaning,
+            },
+            {
+                "area": "quality",
+                "meaning": quality_meaning,
+            },
+            {
+                "area": "next_move",
+                "meaning": "Use the report to pick the next safe action; do not infer write authority from initiative presence alone.",
+            },
+        ],
+        "safety": {
+            "protected_gate_required": protected_gate_required,
+            "hydration_safe_now": bool(readiness_report.get("ready_to_hydrate"))
+            and not protected_gate_required,
+            "approval_basis": readiness.get("approval_basis") or "",
+            "human_decision": readiness_report.get("human_decision"),
+        },
+        "next_safe_actions": _lifecycle_next_safe_actions(doc, readiness_report, reflections),
+        "blocked_actions": _lifecycle_blocked_actions(readiness_report),
+    }
+
+
+def _format_lifecycle_report(payload: dict[str, Any]) -> str:
+    initiative = payload.get("initiative") if isinstance(payload.get("initiative"), dict) else {}
+    candidate = payload.get("candidate") if isinstance(payload.get("candidate"), dict) else {}
+    readiness = payload.get("readiness") if isinstance(payload.get("readiness"), dict) else {}
+    safety = payload.get("safety") if isinstance(payload.get("safety"), dict) else {}
+    quality = payload.get("quality") if isinstance(payload.get("quality"), dict) else {}
+    next_actions = payload.get("next_safe_actions")
+    blocked_actions = payload.get("blocked_actions")
+    next_action_items = next_actions if isinstance(next_actions, list) else []
+    blocked_action_items = blocked_actions if isinstance(blocked_actions, list) else []
+    next_text = ", ".join(
+        f"{item.get('action')} (approval_needed={item.get('approval_needed')})"
+        for item in next_action_items
+        if isinstance(item, dict)
+    )
+    blocked_text = ", ".join(
+        str(item.get("action"))
+        for item in blocked_action_items
+        if isinstance(item, dict)
+    )
+    return "\n".join(
+        [
+            "Autonomous-auto initiative lifecycle report",
+            f"Initiative: {initiative.get('initiative_id')} - {initiative.get('title')}",
+            f"Candidate: {candidate.get('candidate_id')} - {candidate.get('title')}",
+            f"Readiness: {readiness.get('readiness_status')} (hydrate={readiness.get('ready_to_hydrate')})",
+            f"Human decision: {readiness.get('human_decision')} ({readiness.get('approval_scope') or 'no scope'})",
+            f"Quality: {'observed' if quality.get('reflection_observable') else 'not observed'}; evaluator score recorded=False",
+            f"Protected gate required: {safety.get('protected_gate_required')}",
+            f"Next safe actions: {next_text or 'none'}",
+            f"Blocked actions: {blocked_text or 'none'}",
+        ]
+    )
+
+
+def cmd_lifecycle_report(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    result = build_initiative_lifecycle_report(
+        root,
+        Path(args.initiative),
+        reflection_path=Path(args.reflection) if args.reflection else None,
+        state_path=_state_path(root, args.state),
+        handoff_path=Path(args.handoff) if args.handoff else None,
+        candidate_id=args.candidate_id,
+    )
+    print(
+        json.dumps(result, indent=2, sort_keys=False)
+        if args.json
+        else _format_lifecycle_report(result)
+    )
+
+
 def init_loop(
     root: Path,
     state_path: Path,
@@ -2331,6 +2725,17 @@ def build_parser() -> argparse.ArgumentParser:
     campaign.add_argument("--handoff", default=None, help="Handoff markdown path.")
     campaign.add_argument("--json", action="store_true")
     campaign.set_defaults(func=cmd_campaign_report)
+
+    lifecycle = sub.add_parser(
+        "lifecycle-report",
+        help="Build a read-only initiative lifecycle report for autonomous-auto routing.",
+    )
+    lifecycle.add_argument("--initiative", required=True, help="Initiative bank YAML path.")
+    lifecycle.add_argument("--reflection", default=None, help="Optional reflection JSONL path.")
+    lifecycle.add_argument("--handoff", default=None, help="Optional autonomous-auto handoff path.")
+    lifecycle.add_argument("--candidate-id", default=None, help="Optional candidate_slices id.")
+    lifecycle.add_argument("--json", action="store_true")
+    lifecycle.set_defaults(func=cmd_lifecycle_report)
     return parser
 
 

@@ -212,6 +212,11 @@ def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
         "source_bank_ref": ".azoth/initiative-banks/INI-TEST.yaml",
         "readiness_status": "ready_to_hydrate",
         "human_decision": "approved",
+        "approval_scope": None,
+        "approval_basis": (
+            "Operator approved the planning-bank continuation autonomous-auto campaign "
+            "on 2026-04-25 with replay_threshold=3 and up to 4 bounded iterations."
+        ),
         "candidate_first_slice": "slice-evi-002-c",
         "candidate_id": "slice-evi-002-c",
         "candidate_slice_ref": "slice-evi-002-c",
@@ -353,6 +358,66 @@ def test_readiness_report_fails_closed_without_human_approval(tmp_path: Path) ->
     assert report["human_decision"] == "pending"
     assert report["ready_to_hydrate"] is False
     assert "readiness.human_decision must be approved" in report["blocking_reasons"]
+
+
+def test_readiness_report_fails_closed_when_hydration_approval_basis_is_missing(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    readiness.pop("approval_basis", None)
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["open_questions"] = []
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert report["approval_basis"] is None
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
+    assert (
+        "readiness.approval_basis must be present before hydration"
+        in report["blocking_reasons"]
+    )
+
+
+def test_readiness_report_fails_closed_for_seed_only_approval_scope(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    readiness["approval_scope"] = "planning_seed_only_no_hydration"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["open_questions"] = []
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert report["approval_scope"] == "planning_seed_only_no_hydration"
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
+    assert (
+        "readiness.approval_scope planning_seed_only_no_hydration does not authorize hydration"
+        in report["blocking_reasons"]
+    )
 
 
 def test_readiness_report_fails_closed_when_human_decision_is_absent(tmp_path: Path) -> None:
@@ -677,6 +742,71 @@ def test_validator_cli_prints_readiness_reports_top_level_yaml() -> None:
     assert report["proposed_title"] == "Planning-bank ID and coverage policy"
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
+
+
+def test_validator_cli_prints_intake_contract_report(tmp_path: Path) -> None:
+    intake_path = tmp_path / "intake.yaml"
+    intake_path.write_text(
+        yaml.safe_dump(
+            {
+                "initiative_id": "INI-RAW-001",
+                "operator_goal": "Create a safe raw initiative intake path.",
+                "why_now": "Autonomous-auto needs seed-only discovery before hydration.",
+                "known_constraints": ["Do not create delivery artifacts."],
+                "protected_boundaries": ["No kernel or governance changes."],
+                "success_signals": ["A raw initiative validates as planning discovery."],
+                "initial_uncertainty": ["Which later slice should become hydration-ready?"],
+                "approval_scope": "planning_seed_only_no_hydration",
+                "approval_basis": "Operator approved seed-only intake.",
+                "allowed_outputs": ["initiative_bank_seed", "validation_report"],
+                "forbidden_outputs": sorted(
+                    {
+                        "scope_gate",
+                        "run_ledger_entry",
+                        "backlog_row",
+                        "roadmap_task",
+                        "task_spec",
+                        "hydration_write",
+                        "implementation_work",
+                        "hydrate_task",
+                        "ship_task",
+                        "protected_expansion",
+                        "kernel_change",
+                        "governance_change",
+                        "destructive_action",
+                        "network_expansion",
+                        "credential_access",
+                        "cross_branch_write",
+                    }
+                ),
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "planning_bank_validate.py"),
+            "--intake-contract",
+            str(intake_path),
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    output = yaml.safe_load(result.stdout)
+    assert set(output) == {"initiative_intake_reports"}
+    report = output["initiative_intake_reports"][0]
+    assert report["report_type"] == "initiative_intake_validation"
+    assert report["classification"] == "planning_discovery_seed"
+    assert report["delivery_authorized"] is False
+    assert "hydrate_task" in report["blocked_actions"]
+    assert "ship_task" in report["blocked_actions"]
 
 
 def test_validator_cli_readiness_report_is_read_only() -> None:
