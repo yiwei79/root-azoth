@@ -212,15 +212,20 @@ initiatives:
     tracks:
     - write-claims
     - multi-writer-safety
-  phase: null
+  phase: v0.2.0-p3
   priority: high
-  task_ref: P1-015
+  task_ref: T-028
   slices:
   - task_ref: P1-015
     spec_ref: .azoth/roadmap-specs/v0.2.0/P1-015.yaml
     phase: null
     status: complete
     role: historical
+  - task_ref: T-028
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-028.yaml
+    phase: v0.2.0-p3
+    status: active
+    role: primary
   blocked_by:
   - P1-014
   summary: 'Add explicit write-claim and lock enforcement for concurrent sessions
@@ -235,7 +240,7 @@ initiatives:
   - D21
   - D46
   - D50
-  spec_ref: .azoth/roadmap-specs/v0.2.0/P1-015.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-028.yaml
 - id: INI-RST-004
   title: Roadmap/backlog/spec scaffolding
   category: run-state
@@ -1752,7 +1757,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 63
+  current_patch: 64
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1943,4 +1948,13 @@ versions:
       - D48
       - D50
       - D52
-    - {id: T-027, title: "Initiative lifecycle evaluator and discoverability spine", completed_date: "2026-04-25", decision_ref: [D11, D23, D48, D50, D52]}
+    - id: T-027
+      title: Initiative lifecycle evaluator and discoverability spine
+      completed_date: '2026-04-25'
+      decision_ref:
+      - D11
+      - D23
+      - D48
+      - D50
+      - D52
+    - {id: T-028, title: "Run-ledger serialized stage evidence writes", completed_date: "2026-04-25", decision_ref: [D11, D21, D23, D46, D50, D52]}

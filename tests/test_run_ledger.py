@@ -9,6 +9,8 @@ Covers: schema, validate subcommand, status subcommand, append subcommand,
 from __future__ import annotations
 
 import json
+import multiprocessing
+import queue
 import subprocess
 import sys
 from pathlib import Path
@@ -895,6 +897,92 @@ def _stage_evidence_ledger(tmp_path: Path) -> Path:
     return ledger
 
 
+def _record_stage_evidence_worker(
+    ledger_path: str,
+    stage_id: str,
+    evidence_kind: str,
+    ready_queue: multiprocessing.Queue,
+    start_event: multiprocessing.Event,
+    error_queue: multiprocessing.Queue,
+) -> None:
+    ledger = Path(ledger_path)
+    kwargs = {
+        "run_id": "run-stage-evidence",
+        "stage_id": stage_id,
+        "subagent_type": "builder",
+        "trigger": "concurrent-test",
+        "role_hint": "Agent(subagent_type=builder): Implement - trigger: concurrent-test",
+        "dependency_summary_refs": [],
+        "ledger_path": ledger,
+    }
+    try:
+        ready_queue.put(stage_id)
+        if not start_event.wait(10):
+            raise RuntimeError("timed out waiting for concurrent start")
+        if evidence_kind == "spawn":
+            record_stage_spawn(ledger.parent, **kwargs)
+        elif evidence_kind == "summary":
+            record_stage_summary(
+                ledger.parent,
+                summary_status="complete",
+                summary_disposition="approved",
+                **kwargs,
+            )
+        else:
+            raise RuntimeError(f"unknown evidence kind {evidence_kind!r}")
+    except BaseException as exc:
+        error_queue.put(f"{stage_id}: {type(exc).__name__}: {exc}")
+
+
+def _run_concurrent_stage_evidence_records(
+    ledger: Path,
+    *,
+    evidence_kind: str,
+    count: int = 8,
+) -> None:
+    ctx = multiprocessing.get_context("spawn")
+    ready_queue = ctx.Queue()
+    error_queue = ctx.Queue()
+    start_event = ctx.Event()
+    processes = [
+        ctx.Process(
+            target=_record_stage_evidence_worker,
+            args=(
+                str(ledger),
+                f"stage_{index}",
+                evidence_kind,
+                ready_queue,
+                start_event,
+                error_queue,
+            ),
+        )
+        for index in range(count)
+    ]
+    for process in processes:
+        process.start()
+    try:
+        for _ in processes:
+            ready_queue.get(timeout=10)
+        start_event.set()
+        for process in processes:
+            process.join(20)
+    finally:
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    errors: list[str] = []
+    while True:
+        try:
+            errors.append(error_queue.get_nowait())
+        except queue.Empty:
+            break
+    exitcodes = [process.exitcode for process in processes]
+    assert errors == []
+    assert exitcodes == [0] * count
+
+
 def _spawn_evidence(**overrides: object) -> dict[str, object]:
     evidence = {
         **_stage_evidence_kwargs(),
@@ -1003,6 +1091,98 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
     assert summary["summary_status"] == "complete"
     assert evidence["spawn"]["spawned_at"] == "2026-04-23T10:01:00+00:00"
     assert evidence["summary"]["summary_disposition"] == "approved"
+
+
+def test_record_stage_spawn_preserves_concurrent_appends(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    _run_concurrent_stage_evidence_records(ledger, evidence_kind="spawn")
+
+    run = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert sorted(entry["stage_id"] for entry in run["stage_spawns"]) == [
+        f"stage_{index}" for index in range(8)
+    ]
+
+
+def test_record_stage_summary_preserves_concurrent_appends(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    _run_concurrent_stage_evidence_records(ledger, evidence_kind="summary")
+
+    run = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert sorted(entry["stage_id"] for entry in run["stage_summaries"]) == [
+        f"stage_{index}" for index in range(8)
+    ]
+
+
+def test_require_stage_evidence_accepts_two_paired_stage_ids(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    for stage_id in ("auto_s4_builder", "auto_s5_reviewer"):
+        kwargs = {**_stage_evidence_kwargs(ledger), "stage_id": stage_id}
+        record_stage_spawn(
+            tmp_path,
+            spawned_at="2026-04-23T10:01:00+00:00",
+            **kwargs,
+        )
+        record_stage_summary(
+            tmp_path,
+            summary_status="complete",
+            summary_disposition="approved",
+            summary_recorded_at="2026-04-23T10:04:00+00:00",
+            **kwargs,
+        )
+
+    for stage_id in ("auto_s4_builder", "auto_s5_reviewer"):
+        evidence = require_stage_evidence(
+            tmp_path,
+            **{**_stage_evidence_kwargs(ledger), "stage_id": stage_id},
+        )
+        assert evidence["spawn"]["stage_id"] == stage_id
+        assert evidence["summary"]["stage_id"] == stage_id
+
+
+@pytest.mark.parametrize("evidence_kind", ["spawn", "summary"])
+def test_record_stage_evidence_lock_timeout_names_path_and_retry_action(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    evidence_kind: str,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    attempts = 0
+
+    def contend_for_lock(_lock_file: object) -> bool:
+        nonlocal attempts
+        attempts += 1
+        return False
+
+    monkeypatch.setattr(run_ledger_module, "_try_acquire_ledger_lock", contend_for_lock)
+    monkeypatch.setattr(run_ledger_module, "_LEDGER_LOCK_TIMEOUT_SECONDS", 0.001)
+    monkeypatch.setattr(run_ledger_module, "_LEDGER_LOCK_POLL_SECONDS", 0)
+
+    with pytest.raises(ValueError) as excinfo:
+        if evidence_kind == "spawn":
+            record_stage_spawn(
+                tmp_path,
+                spawned_at="2026-04-23T10:01:00+00:00",
+                **_stage_evidence_kwargs(ledger),
+            )
+        else:
+            record_stage_summary(
+                tmp_path,
+                summary_status="complete",
+                summary_disposition="approved",
+                summary_recorded_at="2026-04-23T10:04:00+00:00",
+                **_stage_evidence_kwargs(ledger),
+            )
+
+    message = str(excinfo.value)
+    assert attempts > 1
+    assert str(ledger.with_name(f"{ledger.name}.lock")) in message
+    assert str(ledger) in message
+    assert "timed out" in message.lower()
+    assert "retry" in message.lower()
+    assert "serialize" in message.lower()
 
 
 def test_require_stage_evidence_fails_closed_on_missing_or_mismatched_evidence(

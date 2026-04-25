@@ -1,0 +1,219 @@
+proposal_schema_version: 1
+created_at: "2026-04-25T20:55:00Z"
+session_id: "2026-04-25-autonomous-auto-run-ledger-atomic-stage-evidence-2"
+backlog_id: "P6-003"
+title: "Run-ledger serialized stage evidence writes"
+summary: >
+  Autonomous-auto now treats delegated-stage evidence as part of the operator-visible
+  audit trail: child scopes must record `stage_spawns`, record `stage_summaries`,
+  and later pass `require-stage-evidence` before downstream progress is trusted.
+  A same-day autonomous-auto self-capture found that parallel `record-spawn` and
+  `record-summary` calls can each report success while clobbering another writer's
+  evidence row, because the helpers read the whole YAML ledger, append in memory,
+  validate, and replace the whole file without protecting the full critical section.
+  Current roadmap truth makes this a narrow run-state reliability follow-on, not
+  another INI-EVI-002 planning-bank slice and not a broad autonomous-auto lifecycle
+  rewrite: preserve the current ledger shape and fix only the stage-evidence writers
+  that autonomous-auto relies on for auditability.
+status: draft
+decision_refs:
+  - D11
+  - D21
+  - D23
+  - D46
+  - D50
+  - D52
+scope_layers:
+  - pipelines
+  - mixed
+details:
+  classification:
+    scope: pipelines
+    risk: additive
+    complexity: medium
+    knowledge: known-pattern
+  problem:
+    defect: >
+      Run-ledger stage evidence writes are individually atomic at file-replace
+      time, but the read/append/validate/rewrite sequence is not protected
+      against stale reads. Two successful writers can each validate and replace
+      the ledger from different snapshots, causing the later replace to erase
+      the earlier evidence append.
+    impact: >
+      Autonomous-auto can truthfully use staged subagents and still fail
+      `require-stage-evidence` later because spawn or summary rows were lost by
+      concurrent ledger writers. That breaks the UX anchor for visible audit
+      trail without noise: the operator cannot reconstruct staged execution
+      from durable artifacts even though the staged work happened.
+    current_campaign_rule: >
+      Until this defect is fixed, all `scripts/run_ledger.py record-spawn`,
+      `record-summary`, and `require-stage-evidence` calls must run
+      sequentially, not through parallel tool batches.
+  current_roadmap_truth:
+    route_disposition: "hydrate-a-new-narrow-run-state-follow-on"
+    not_this:
+      - "Not INI-EVI-002: T-018, T-019, T-021, and T-022 are complete; that lane is about planning-bank richness and handoff quality."
+      - "Not a repeat of INI-AUTO-001 slice-auto-001-e/T-027: lifecycle discoverability is hydrated separately and should not absorb this implementation."
+      - "Not a P1-001 rewrite: the foundational run-ledger/resume protocol is complete and should remain stable."
+    recommended_placement:
+      initiative_ref: "INI-RST-003"
+      title: "True multi-writer safety (write claims and lock enforcement)"
+      rationale: >
+        The implementation touches run-state multi-writer safety, but the defect
+        was discovered through autonomous-auto's stage-evidence UX. Route the
+        implementation as a small INI-RST-003 follow-on while keeping the
+        motivation and acceptance criteria anchored to autonomous-auto auditability.
+    autonomous_auto_ux_anchor_fit:
+      improves:
+        - "Auditability: staged subagent execution remains reconstructable from `stage_spawns`, `stage_summaries`, and `require-stage-evidence`."
+        - "Safety: concurrent writer races fail closed or serialize instead of silently erasing evidence."
+        - "Low cognitive load: operators stop seeing confusing replay needs caused by mechanical ledger loss."
+      intentionally_deferred:
+        - "Continuation policy, lifecycle routing, wakeup behavior, campaign reports, and initiative-bank hydration."
+  evidence_refs:
+    - path: ".azoth/inbox/session-reflection-2026-04-25-autonomous-auto-ledger-serialization.jsonl"
+      line: 1
+      note: >
+        Validated process-control reflection: parallel record calls reported
+        success, `require-stage-evidence` later missed rows, and sequential replay
+        restored ledger truth.
+    - path: ".azoth/roadmap.yaml"
+      lines: "203-233"
+      note: >
+        INI-RST-003 is the existing run-state multi-writer safety placement.
+    - path: ".azoth/roadmap.yaml"
+      lines: "536-586"
+      note: >
+        INI-EVI-002 is complete through T-022 and should not receive this run-ledger
+        implementation slice.
+    - path: ".azoth/initiative-banks/INI-AUTO-001.yaml"
+      lines: "652-681"
+      note: >
+        INI-AUTO-001 slice-auto-001-e/T-027 is already hydrated as lifecycle
+        discoverability; this proposal should not repeat that route.
+    - path: ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
+      lines: "107-126"
+      note: >
+        Auditability, safety, and low cognitive load are explicit autonomous-auto
+        UX anchors.
+    - path: "scripts/run_ledger.py"
+      lines: "99-108"
+      note: >
+        Ledger writes use a PID temp file followed by replace, making each replace
+        atomic but not protecting stale read/modify/write windows.
+    - path: "scripts/run_ledger.py"
+      lines: "1015-1049"
+      note: >
+        `record_stage_spawn` and `record_stage_summary` append evidence through
+        load/append/validate/rewrite flows.
+    - path: "tests/test_run_ledger.py"
+      lines: "980-1049"
+      note: >
+        Existing focused stage-evidence tests are the right home for the regression.
+  implementation_options:
+    file_lock:
+      description: >
+        Acquire an exclusive lock around the full ledger read/append/validate/write
+        critical section for stage-evidence writers.
+      pros:
+        - "Smallest behavioral change."
+        - "Keeps the current YAML ledger shape and validation flow."
+        - "Easy to regression-test with concurrent record calls."
+      cons:
+        - "Requires careful cross-platform lock behavior and bounded timeout messaging."
+      recommendation: "Recommended next slice."
+    stale_write_guard:
+      description: >
+        Capture file metadata before mutation and reject the write if the on-disk
+        ledger changed before replace.
+      pros:
+        - "Fails closed with an explicit retry path instead of blocking indefinitely."
+        - "Can complement a future lock."
+      cons:
+        - "Callers still need retry or serialization handling."
+        - "Metadata-only checks can be subtle across filesystems."
+      recommendation: "Acceptable fallback only if simple locking is not viable."
+    append_only_stage_evidence_log:
+      description: >
+        Move stage evidence to an append-only JSONL or per-run evidence log and
+        derive ledger views from that log.
+      pros:
+        - "Naturally reduces whole-file clobber risk."
+        - "Improves audit history for delegated-stage evidence."
+      cons:
+        - "Larger schema and read-path migration."
+        - "Too broad for the first repair slice."
+      recommendation: "Defer."
+  recommended_next_slice:
+    exact_title: "Run-ledger serialized stage evidence writes"
+    route: "hydrate_task"
+    placement:
+      initiative_ref: "INI-RST-003"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      source: "proposal-run-ledger-atomic-stage-evidence"
+    scaffold_readiness:
+      readiness_status: "ready_to_hydrate"
+      recommended_task_kind: "roadmap_backed_task"
+      approval_basis_required: >
+        Must name this proposal, INI-RST-003, the autonomous-auto stage-evidence
+        serialization defect, and the exact narrow write set: `scripts/run_ledger.py`
+        plus `tests/test_run_ledger.py`.
+      suggested_scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Run-ledger serialized stage evidence writes" --namespace roadmap --initiative-ref INI-RST-003 --decision-ref D11 D21 D23 D46 D50 D52 --source proposal-run-ledger-atomic-stage-evidence --description "Protect scripts/run_ledger.py record-spawn and record-summary read/append/validate/write critical sections so concurrent stage evidence writes cannot silently clobber rows, with focused coverage in tests/test_run_ledger.py." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - "This proposal validates with `scripts/architecture_proposal_validate.py`."
+        - "No active write claim or protected gate blocks a narrow infrastructure child."
+        - "The child owns only `scripts/run_ledger.py` and `tests/test_run_ledger.py` unless a reviewer explicitly approves a narrower helper file."
+        - "The child agrees not to edit kernel, governance, autonomous-loop routing, roadmap/backlog/spec state outside the scaffold, or unrelated ledger writers."
+    hydration_notes:
+      - "This proposal is the planning artifact; it is not itself a roadmap/backlog/spec hydration."
+      - "The next child can hydrate a single T-series task from the scaffold command, then implement that hydrated task in a separate delivery stage."
+      - "If the loop chooses implementation without hydration, stop and record the missing hydration edge instead of editing scripts directly from this proposal."
+  implementation_scope:
+    include:
+      - "Protect `record_stage_spawn` across its full load/append/validate/write sequence."
+      - "Protect `record_stage_summary` across its full load/append/validate/write sequence."
+      - "Use the same protection for CLI `record-spawn` and `record-summary` because they call those helpers."
+      - "Preserve existing evidence payload fields, YAML schema compatibility, and success messages."
+      - "Add focused regression coverage in `tests/test_run_ledger.py` demonstrating that concurrent stage-evidence writes do not silently lose rows."
+    exclude:
+      - "Do not change `require_stage_evidence` semantics except as needed to keep tests passing against preserved evidence rows."
+      - "Do not change `append`, `claim`, `release-claim`, `park-session`, human-gate replay, closeout, autonomous-loop routing, or planning-bank helpers."
+      - "Do not introduce a new ledger schema, JSONL side log, daemon, scheduler, or repository-wide lock manager."
+  acceptance_criteria:
+    - "A focused test in `tests/test_run_ledger.py` starts from one temp ledger and records two distinct stage spawns for the same run through `record_stage_spawn`; after both calls finish, the ledger contains both `stage_spawns` rows and `validate_ledger` reports no errors."
+    - "A focused test in `tests/test_run_ledger.py` starts from one temp ledger and records two distinct stage summaries for the same run through `record_stage_summary`; after both calls finish, the ledger contains both `stage_summaries` rows and `validate_ledger` reports no errors."
+    - "A paired test records spawn and summary evidence for at least two stage ids under the protected path, then `require_stage_evidence` succeeds for each stage id."
+    - "The implementation protects the whole read/append/validate/write critical section in `scripts/run_ledger.py`, not only `_write_ledger` or final `Path.replace`."
+    - "If the protection cannot be acquired within the bounded timeout or detects an unsafe stale write, `record-spawn` and `record-summary` fail closed with an actionable error that names the ledger path and retry/serialization expectation."
+    - "Existing single-writer tests for `record_stage_spawn`, `record_stage_summary`, and `require_stage_evidence` continue to pass without changing the ledger evidence schema."
+    - "The focused verification command for the child is `python3 -m pytest tests/test_run_ledger.py`; broad repository tests are optional unless the child touches shared YAML helpers or other run-state writers."
+  non_goals:
+    - "No kernel or governance edits."
+    - "No autonomous-auto lifecycle router, wakeup driver, campaign-report, loop-state, or UX-copy changes."
+    - "No broad audit or repair of all run-ledger writers."
+    - "No ledger schema migration and no migration of existing `.azoth/run-ledger.local.yaml` contents."
+    - "No changes to write-claim acquisition/release semantics."
+    - "No changes to closeout, scope gates, pipeline gates, final-delivery approvals, or session-state lifecycle."
+    - "No relaxation of staged subagent evidence requirements."
+    - "No implementation in this architect proposal child."
+  risks:
+    - "A lock implementation could behave differently on macOS, Linux, and CI if it depends on platform-specific behavior without a small compatibility wrapper."
+    - "Timeout defaults that are too short could create noisy false failures during normal closeout."
+    - "Timeout defaults that are too long could make a stuck writer feel like a hung pipeline."
+    - "Fixing only spawn/summary writers intentionally leaves adjacent whole-ledger writers for later inspection; this is acceptable because the current defect is stage-evidence loss in autonomous-auto audit flow."
+  validation_plan:
+    - "For this proposal child: run `python3 scripts/architecture_proposal_validate.py .azoth/proposals/run-ledger-atomic-stage-evidence.yaml`."
+    - "For the future hydration child: validate any scaffolded roadmap/backlog/spec artifacts with the repo-native scaffold output checks."
+    - "For the future implementation child: run `python3 -m pytest tests/test_run_ledger.py`."
+    - "If the implementation touches shared YAML helpers, lock utilities, or non-stage ledger writers, expand validation deliberately and record why the blast radius changed."
+  architect_stage_summary:
+    stage_id: "autonomous_auto_s1_architect"
+    disposition: "proposal-refined-hydration-ready"
+    changed_paths:
+      - ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml"
+    next_stage_recommendation: >
+      Hydrate one narrow infrastructure task titled "Run-ledger serialized stage
+      evidence writes" under INI-RST-003, then implement only `scripts/run_ledger.py`
+      and `tests/test_run_ledger.py` in the delivery child.

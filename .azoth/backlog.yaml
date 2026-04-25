@@ -3197,3 +3197,25 @@ items:
   - D48
   - D50
   - D52
+- id: T-028
+  title: Run-ledger serialized stage evidence writes
+  source: proposal-run-ledger-atomic-stage-evidence
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  completed_date: '2026-04-25'
+  description: Protect scripts/run_ledger.py record-spawn and record-summary read/append/validate/write
+    critical sections so concurrent stage evidence writes cannot silently clobber
+    rows, with focused coverage in tests/test_run_ledger.py.
+  roadmap_ref: T-028
+  initiative_ref: INI-RST-003
+  decision_ref:
+  - D11
+  - D21
+  - D23
+  - D46
+  - D50
+  - D52

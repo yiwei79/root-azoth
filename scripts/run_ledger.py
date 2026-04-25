@@ -23,6 +23,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import errno
 import hashlib
 import json
 import os
@@ -30,12 +32,18 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 from session_continuity import active_scope, session_registry_entry_is_resumable
 from yaml_helpers import safe_load_yaml_path
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - fcntl is available on supported Unix hosts.
+    fcntl = None
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
@@ -60,6 +68,8 @@ _GOVERNED_RUN_MODES = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver"
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 _STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _UNSET = object()
+_LEDGER_LOCK_TIMEOUT_SECONDS = 10.0
+_LEDGER_LOCK_POLL_SECONDS = 0.05
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,6 +116,80 @@ def _write_yaml_mapping(path: Path, data: dict) -> None:
 
 def _write_ledger(path: Path, data: dict) -> None:
     _write_yaml_mapping(path, data)
+
+
+def _ledger_lock_path(path: Path) -> Path:
+    return path.with_name(f"{path.name}.lock")
+
+
+def _ledger_lock_failure_message(ledger_path: Path, lock_path: Path, exc: BaseException) -> str:
+    return (
+        f"could not acquire run ledger lock at {lock_path} for ledger {ledger_path}: {exc}. "
+        "Retry after the current writer finishes, or serialize record-spawn/record-summary "
+        "writers for this ledger."
+    )
+
+
+def _is_lock_contention_error(exc: OSError) -> bool:
+    return isinstance(exc, BlockingIOError) or exc.errno in {errno.EACCES, errno.EAGAIN}
+
+
+def _try_acquire_ledger_lock(lock_file: object) -> bool:
+    if fcntl is None:
+        raise OSError("fcntl file locking is unavailable on this platform")
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError as exc:
+        if _is_lock_contention_error(exc):
+            return False
+        raise
+
+
+def _acquire_ledger_lock(lock_file: object) -> None:
+    deadline = time.monotonic() + _LEDGER_LOCK_TIMEOUT_SECONDS
+    while True:
+        if _try_acquire_ledger_lock(lock_file):
+            return
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"timed out after {_LEDGER_LOCK_TIMEOUT_SECONDS:.2f}s waiting for ledger lock"
+            )
+        time.sleep(_LEDGER_LOCK_POLL_SECONDS)
+
+
+def _release_ledger_lock(lock_file: object) -> None:
+    if fcntl is not None:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+@contextmanager
+def _locked_ledger_update(ledger_path: Path):
+    lock_path = _ledger_lock_path(ledger_path)
+    lock_file = None
+    acquired = False
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise ValueError(_ledger_lock_failure_message(ledger_path, lock_path, exc)) from exc
+    try:
+        lock_file = lock_path.open("a+", encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(_ledger_lock_failure_message(ledger_path, lock_path, exc)) from exc
+    try:
+        try:
+            _acquire_ledger_lock(lock_file)
+            acquired = True
+        except OSError as exc:
+            message = _ledger_lock_failure_message(ledger_path, lock_path, exc)
+            raise ValueError(message) from exc
+        yield
+    finally:
+        try:
+            if acquired:
+                _release_ledger_lock(lock_file)
+        finally:
+            lock_file.close()
 
 
 def _load_ledger_for_helpers(root: Path) -> dict | None:
@@ -992,24 +1076,30 @@ def record_stage_spawn(
     ledger_path: Path | None = None,
 ) -> dict:
     """Append durable evidence that a pipeline stage was delegated."""
-    resolved_ledger_path, data, run = _require_run_entry(root, run_id, ledger_path=ledger_path)
-    evidence = _stage_evidence_entry(
-        run_id=run_id,
-        stage_id=stage_id,
-        subagent_type=subagent_type,
-        trigger=trigger,
-        role_hint=role_hint,
-        dependency_summary_refs=dependency_summary_refs,
-        timestamp_field="spawned_at",
-        timestamp=spawned_at or utc_now_iso(),
-    )
-    run.setdefault("stage_spawns", []).append(evidence)
-    run["updated_at"] = utc_now_iso()
-    errors = validate_ledger(data)
-    if errors:
-        raise ValueError("; ".join(errors))
-    _write_ledger(resolved_ledger_path, data)
-    return evidence
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    with _locked_ledger_update(resolved_ledger_path):
+        resolved_ledger_path, data, run = _require_run_entry(
+            root,
+            run_id,
+            ledger_path=resolved_ledger_path,
+        )
+        evidence = _stage_evidence_entry(
+            run_id=run_id,
+            stage_id=stage_id,
+            subagent_type=subagent_type,
+            trigger=trigger,
+            role_hint=role_hint,
+            dependency_summary_refs=dependency_summary_refs,
+            timestamp_field="spawned_at",
+            timestamp=spawned_at or utc_now_iso(),
+        )
+        run.setdefault("stage_spawns", []).append(evidence)
+        run["updated_at"] = utc_now_iso()
+        errors = validate_ledger(data)
+        if errors:
+            raise ValueError("; ".join(errors))
+        _write_ledger(resolved_ledger_path, data)
+        return evidence
 
 
 def record_stage_summary(
@@ -1027,26 +1117,32 @@ def record_stage_summary(
     ledger_path: Path | None = None,
 ) -> dict:
     """Append durable evidence that a delegated stage returned a typed summary."""
-    resolved_ledger_path, data, run = _require_run_entry(root, run_id, ledger_path=ledger_path)
-    evidence = _stage_evidence_entry(
-        run_id=run_id,
-        stage_id=stage_id,
-        subagent_type=subagent_type,
-        trigger=trigger,
-        role_hint=role_hint,
-        dependency_summary_refs=dependency_summary_refs,
-        timestamp_field="summary_recorded_at",
-        timestamp=summary_recorded_at or utc_now_iso(),
-        summary_status=summary_status,
-        summary_disposition=summary_disposition,
-    )
-    run.setdefault("stage_summaries", []).append(evidence)
-    run["updated_at"] = utc_now_iso()
-    errors = validate_ledger(data)
-    if errors:
-        raise ValueError("; ".join(errors))
-    _write_ledger(resolved_ledger_path, data)
-    return evidence
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    with _locked_ledger_update(resolved_ledger_path):
+        resolved_ledger_path, data, run = _require_run_entry(
+            root,
+            run_id,
+            ledger_path=resolved_ledger_path,
+        )
+        evidence = _stage_evidence_entry(
+            run_id=run_id,
+            stage_id=stage_id,
+            subagent_type=subagent_type,
+            trigger=trigger,
+            role_hint=role_hint,
+            dependency_summary_refs=dependency_summary_refs,
+            timestamp_field="summary_recorded_at",
+            timestamp=summary_recorded_at or utc_now_iso(),
+            summary_status=summary_status,
+            summary_disposition=summary_disposition,
+        )
+        run.setdefault("stage_summaries", []).append(evidence)
+        run["updated_at"] = utc_now_iso()
+        errors = validate_ledger(data)
+        if errors:
+            raise ValueError("; ".join(errors))
+        _write_ledger(resolved_ledger_path, data)
+        return evidence
 
 
 def _latest_stage_evidence(run: dict, field_name: str, *, stage_id: str) -> dict | None:
