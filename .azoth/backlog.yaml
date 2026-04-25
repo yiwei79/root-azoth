@@ -2767,16 +2767,16 @@ items:
   blocked_by:
   - T-015
   - T-017
-  description: 'Implement the runtime bridge after the `T-015` seed and shipped
-    `T-017` selector-policy lane: add Codex model-selection policy/resolver behavior
-    that passes explicit `model` and `reasoning_effort` to every spawned subagent,
-    preventing parent `xhigh` reasoning from becoming an accidental leaf-worker default.
-    This task starts with a mandatory pre-implementation gate: canonical spawn source
-    surfaces, projection/deploy expectations, selector trace location, Codex spawn
-    API support, fallback semantics, and anti-leak tests must be named before runtime
-    files are changed. Non-goal: do not promote current model aliases into the long-term
-    normative contract; treat GPT-5.5 calibration as current policy evidence, not
-    permanent architecture.
+  description: 'Implement the runtime bridge after the `T-015` seed and shipped `T-017`
+    selector-policy lane: add Codex model-selection policy/resolver behavior that
+    passes explicit `model` and `reasoning_effort` to every spawned subagent, preventing
+    parent `xhigh` reasoning from becoming an accidental leaf-worker default. This
+    task starts with a mandatory pre-implementation gate: canonical spawn source surfaces,
+    projection/deploy expectations, selector trace location, Codex spawn API support,
+    fallback semantics, and anti-leak tests must be named before runtime files are
+    changed. Non-goal: do not promote current model aliases into the long-term normative
+    contract; treat GPT-5.5 calibration as current policy evidence, not permanent
+    architecture.
 
     '
 - id: BL-071
@@ -3147,6 +3147,26 @@ items:
   description: Implement autonomous-auto route decision capsules over normalized lifecycle/readiness
     reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py.
   roadmap_ref: T-024
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
+- id: T-026
+  title: Durable autonomous-auto wakeup driver
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-d
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  description: Implement a one-iteration autonomous-auto wakeup driver that checks
+    loop state, campaign reports, gates, run ledger, write claims, and stop conditions
+    before opening any child scope.
+  roadmap_ref: T-026
   initiative_ref: INI-AUTO-001
   decision_ref:
   - D11
