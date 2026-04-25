@@ -1,0 +1,75 @@
+id: T-024
+roadmap_version: v0.2.0
+title: Lifecycle router over initiative readiness surfaces
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: >
+  Implement the Slice B lifecycle router for INI-AUTO-001 by producing
+  autonomous-auto route decision capsules over normalized lifecycle/readiness
+  reports.
+problem: >
+  Autonomous-auto has initiative-bank readiness and campaign evidence, but it
+  still needs an explicit route surface that can distinguish research,
+  proposal refinement, hydration, shipping, self-capture, and stop outcomes
+  without treating raw YAML or stale campaign reports as delivery authority.
+scope:
+- Add or update the autonomous-auto route decision capsule shape for initiative
+  readiness decisions.
+- Consume normalized lifecycle/readiness report evidence rather than duplicating
+  planning_bank_validate.py readiness semantics.
+- Cover route states for raw initiatives, discovery-active candidates,
+  review-ready candidates, approved hydration, delivery-ready tasks,
+  completed-or-stale campaigns, and high-severity self-capture.
+- Record selected route, rejected alternatives, source artifacts, readiness
+  evidence, UX-anchor rationale, protected stops, blocked actions,
+  approval-needed state, and evaluator scores.
+- Preserve repeat-hydration blocking for candidates that are already hydrated
+  into roadmap/backlog/spec state.
+non_goals:
+- Do not replace /next.
+- Do not replace roadmap_scaffold.py.
+- Do not replace planning_bank_validate.py or its readiness semantics.
+- Do not implement write-mode hydration in this slice.
+- Do not ship T-024 implementation as part of this hydration-only session.
+- Do not bypass protected gates for M1, kernel, governance, destructive,
+  credential, network, or cross-branch work.
+acceptance:
+- The route table covers raw initiative, discovery_active,
+  candidate_ready_for_review, approved_for_hydration, delivery_ready,
+  completed_or_stale_campaign, and high_severity_self_capture.
+- Every route decision capsule records selected_route, rejected_alternatives,
+  source_artifacts, readiness_evidence, ux_anchor_rationale, protected_stops,
+  blocked_actions, approval_needed, and evaluator_scores.
+- Raw initiatives, missing readiness, stale campaign reports, seed-only
+  approval, and protected-scope expansion fail closed instead of routing to
+  hydrate_task or ship_task.
+- Approved-for-hydration routing requires readiness_status ready_to_hydrate,
+  human_decision approved, hydration-specific approval_scope, approval_basis,
+  and an exact scaffold command naming slice-auto-001-b.
+- Delivery-ready routing requires an already hydrated roadmap/backlog/spec task
+  and blocks repeat hydration of the same candidate.
+- High-severity self-capture evidence routes to capture_self_improvement before
+  continuation.
+- Slice B consumes normalized lifecycle/readiness reports and does not replace
+  /next, roadmap_scaffold.py, or planning_bank_validate.py.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = implement the route decision capsule and fail-closed route
+  table with focused tests. Phase 2 = wire the router into autonomous-auto
+  continuation decisions after the route surface is proven.
+source_proposal_ref: .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
+candidate_slice_ref: slice-auto-001-b
+source_refs:
+- .azoth/initiative-banks/INI-AUTO-001.yaml#candidate_slices.slice-auto-001-b
+- .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
+- scripts/planning_bank_validate.py
+- scripts/autonomous_loop.py
+- .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md

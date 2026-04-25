@@ -4,7 +4,7 @@ initiative_id: INI-AUTO-001
 title: Autonomous initiative lifecycle orchestration
 status: active_refinement
 created_at: "2026-04-25T12:10:00+00:00"
-updated_at: "2026-04-25T12:10:00+00:00"
+updated_at: "2026-04-25T14:18:00Z"
 owner: codex
 source_sessions:
   - session_id: 2026-04-25-autonomous-initiative-lifecycle-seed
@@ -42,41 +42,78 @@ source_proposal_refs:
 research_questions:
   - question_id: rq-auto-001-001
     question: What does "throw an initiative at Azoth" mean as a safe input contract?
-    status: open
+    status: answered
     opened_at: "2026-04-25T12:10:00+00:00"
     needed_for: initiative_intake_contract
-    answer: ""
+    answer: >
+      A safe raw-initiative input is a discovery-only seed contract: stable
+      initiative id, operator goal, why now, constraints, protected boundaries,
+      success signals, initial uncertainty, approval_scope, allowed outputs,
+      forbidden outputs, and discovery-only approval_basis. It may create or
+      update planning seed artifacts, but it has no roadmap, backlog, task-spec,
+      scope, run-claim, hydration, or implementation authority.
     evidence_refs:
       - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml#details.proposed_model.initiative_intake_contract
+      - scripts/planning_bank_validate.py
+      - scripts/initiative_scaffold.py
   - question_id: rq-auto-001-002
     question: Which readiness state should route to research, proposal refinement, hydration, delivery, capture, or stop?
-    status: open
+    status: answered
     opened_at: "2026-04-25T12:10:00+00:00"
     needed_for: lifecycle_router
-    answer: ""
+    answer: >
+      Route from a normalized read-only lifecycle report, not raw YAML alone.
+      Raw initiatives stop for intake. Initiative banks with continue_research,
+      open questions, stale evidence, or contradictions route to
+      research_initiative. Draft proposals with unclear non-goals, acceptance,
+      alternatives, or hydration plans route to refine_proposal. A green
+      readiness report with approved human_decision, hydration-specific approval_scope,
+      approval_basis, fresh evidence, empty open questions, selected candidate,
+      and scaffold command routes to hydrate_task. Hydrated safe roadmap/backlog/spec tasks route to
+      ship_task. Self-improvement queues route to capture_self_improvement. Defer,
+      reject, protected gates, missing approval, active claims, exhausted budget,
+      async stop, stale old campaigns, or no safe candidate route to stop.
     evidence_refs:
       - scripts/autonomous_loop.py
       - scripts/planning_bank_validate.py
+      - scripts/planning_bank_surfacing.py
+      - scripts/roadmap_dashboard.py
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
   - question_id: rq-auto-001-003
     question: What is the minimum approved write-mode hydration path that cannot become a second roadmap engine?
-    status: open
+    status: answered
     opened_at: "2026-04-25T12:10:00+00:00"
     needed_for: write_mode_hydration
-    answer: ""
+    answer: >
+      The minimum safe path is a dedicated hydration helper that consumes a
+      green planning_bank_validate.py readiness report, requires explicit
+      hydration approval_basis and human_decision approved, refuses raw
+      initiatives, proposal-only input, stale evidence, open questions,
+      protected/governed/M1 expansion, and missing scaffold commands, then
+      delegates actual roadmap/backlog/spec mutation to roadmap_scaffold.py.
+      After success, it may update only initiative-bank bookkeeping such as
+      candidate status and hydration_history.
     evidence_refs:
       - scripts/roadmap_scaffold.py
+      - scripts/planning_bank_validate.py
       - .azoth/roadmap-specs/v0.2.0/T-022.yaml
       - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
   - question_id: rq-auto-001-004
     question: How should durable wakeups run one bounded autonomous-auto iteration without hidden continuation?
-    status: open
+    status: answered
     opened_at: "2026-04-25T12:10:00+00:00"
     needed_for: durable_wakeup_driver
-    answer: ""
+    answer: >
+      Durable wakeups should start as a repo-local dry-run/report command that
+      reads loop state, campaign report, gates, run ledger, write claim, budget,
+      async packets, and stop conditions; emits a concrete stop reason when
+      blocked; requires fresh budget for old or completed campaigns; may run one
+      decide-next and optionally one open-next when safe; then exits. It must not
+      become a daemon, repeated loop, or hidden continuation path.
     evidence_refs:
       - .agents/skills/autonomous-auto/SKILL.md
       - scripts/autonomous_loop.py
+      - .azoth/scope-gate.json
       - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
 research_refs: []
 local_findings:
@@ -99,6 +136,32 @@ local_findings:
     evidence_refs:
       - .azoth/roadmap-specs/v0.2.0/T-022.yaml
       - scripts/planning_bank_validate.py
+  - finding_id: lf-auto-001-004
+    status: active
+    summary: The minimal first implementation shape for slice-auto-001-a is a dedicated seed-only intake helper plus planning_bank_validate.py enforcement. Existing initiative_scaffold.py is too strong for raw initiative intake because it creates roadmap task stubs and can write backlog rows.
+    evidence_refs:
+      - scripts/planning_bank_validate.py
+      - scripts/initiative_scaffold.py
+      - scripts/roadmap_scaffold.py
+  - finding_id: lf-auto-001-005
+    status: active
+    summary: Initiative lifecycle routing should consume a normalized read-only lifecycle report that combines readiness, planning-bank surfacing, campaign-report, gate, claim, backlog, proposal, and stop-condition evidence before autonomous_loop.py chooses the next action.
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - scripts/planning_bank_validate.py
+      - scripts/planning_bank_surfacing.py
+  - finding_id: lf-auto-001-006
+    status: active
+    summary: Approved write-mode hydration should live in a dedicated helper that delegates all roadmap/backlog/spec writes to roadmap_scaffold.py and only records initiative-bank bookkeeping after success.
+    evidence_refs:
+      - scripts/roadmap_scaffold.py
+      - scripts/planning_bank_validate.py
+  - finding_id: lf-auto-001-007
+    status: active
+    summary: Durable autonomous-auto wakeups should begin as a repo-local dry-run/operator-report command that can perform at most one decide/open iteration and must emit explicit stop reasons instead of hidden continuation.
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - .agents/skills/autonomous-auto/SKILL.md
 external_findings: []
 assumptions:
   - assumption_id: as-auto-001-001
@@ -133,56 +196,279 @@ challenge_log:
     prompt: Should write-mode hydration be the first slice?
     disposition: defer_write_mode
     result: No. Intake and readiness routing must stabilize before adding any writer that touches roadmap/backlog/spec state.
+  - challenge_id: ch-auto-001-004
+    challenged_at: "2026-04-25T12:34:45+00:00"
+    prompt: Should initiative intake live inside autonomous_loop.py, initiative_scaffold.py, or planning_bank_validate.py?
+    disposition: split_router_validator_and_seed_helper
+    result: Keep autonomous_loop.py as the router, keep planning_bank_validate.py as the validation and readiness authority, and add a future seed-only initiative_intake.py helper for raw initiative artifact creation. Do not reuse initiative_scaffold.py unchanged because it can create executable planning artifacts.
+  - challenge_id: ch-auto-001-005
+    challenged_at: "2026-04-25T12:46:39+00:00"
+    prompt: Should autonomous-auto route initiatives directly from raw bank YAML?
+    disposition: require_normalized_lifecycle_report
+    result: No. Direct raw-YAML routing would duplicate readiness semantics. Use a normalized read-only lifecycle report that imports or calls readiness-report logic and combines it with surfacing, campaign, gate, claim, backlog, proposal, and stop-condition evidence.
+  - challenge_id: ch-auto-001-006
+    challenged_at: "2026-04-25T12:46:39+00:00"
+    prompt: Should write-mode hydration be implemented inside planning_bank_validate.py or autonomous_loop.py?
+    disposition: dedicated_hydration_helper
+    result: No. planning_bank_validate.py should remain the readiness authority and autonomous_loop.py should remain the router. A later dedicated helper may hydrate only after green readiness and explicit hydration approval, delegating writes to roadmap_scaffold.py.
+  - challenge_id: ch-auto-001-007
+    challenged_at: "2026-04-25T12:46:39+00:00"
+    prompt: Should durable wakeup start as an automation or daemon?
+    disposition: repo_local_dry_run_first
+    result: No. Start with an auditable repo-local dry-run/operator report for one bounded iteration; scheduler or Codex automation integration can come later.
+  - challenge_id: ch-auto-001-008
+    challenged_at: "2026-04-25T13:19:32Z"
+    prompt: Is planning-seed approval enough to hydrate slice-auto-001-a?
+    disposition: keep_hydration_blocked
+    result: No. The intake contract may refine seed-only artifacts, but hydration still requires a hydration-specific approval scope, readiness_status ready_to_hydrate, stable acceptance and non-goals, and a scaffold command naming the exact candidate.
+  - challenge_id: ch-auto-001-009
+    challenged_at: "2026-04-25T13:25:00Z"
+    prompt: Should the plan-only handoff command be executed during intake-contract refinement?
+    disposition: record_handoff_only
+    result: No. Record the exact roadmap_scaffold.py command as a plan-only hydration handoff, but do not run it until the operator grants hydration-specific approval for slice-auto-001-a.
 candidate_slices:
   - candidate_id: slice-auto-001-a
-    proposed_task_id: T-AUTO-A
+    proposed_task_id: T-023
     title: Initiative intake and seed contract
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: complete
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Define the minimal safe input contract for turning an operator initiative into Azoth-native initiative/proposal/bank seed artifacts without hydrating backlog or roadmap task state.
+    intake_contract:
+      authority: discovery_seed_only
+      required_fields:
+        - initiative_id
+        - operator_goal
+        - why_now
+        - known_constraints
+        - protected_boundaries
+        - success_signals
+        - initial_uncertainty
+        - approval_scope
+        - approval_basis
+      allowed_outputs:
+        - roadmap_initiative_container
+        - initiative_bank_seed
+        - proposal_seed
+        - read_only_lifecycle_report
+      forbidden_outputs:
+        - scope_gate
+        - run_ledger_entry
+        - roadmap_task
+        - backlog_item
+        - task_spec
+        - hydration_write
+        - implementation_work
+      approval_rule: planning_seed_only_no_hydration never authorizes hydrate_task or ship_task.
+      implementation_note: initiative_scaffold.py is too strong for raw intake because it can create roadmap task stubs and backlog rows; use or add a seed-only helper for this slice.
+    fail_closed_rules:
+      - Missing operator_goal, approval_basis, approval_scope, protected_boundaries, allowed_outputs, or forbidden_outputs means no artifact is written.
+      - Raw initiative text can route only to discovery/planning actions; it can never route directly to hydrate_task or ship_task.
+      - Protected M1, kernel, governance, destructive, credential, network, or cross-branch intent stops for a human gate before any write.
+      - human_decision approved is insufficient for hydration while approval_scope is planning_seed_only_no_hydration.
+      - Hydration remains blocked until readiness_status is ready_to_hydrate, acceptance/non-goals are stable, and a scaffold command names the exact candidate.
+    acceptance_test_matrix:
+      - case: missing_operator_goal
+        expected: fail_closed_no_artifacts
+      - case: missing_approval_basis
+        expected: fail_closed_no_artifacts
+      - case: protected_scope_expansion
+        expected: stop_for_human_gate
+      - case: planning_seed_approval_only
+        expected: seed_artifacts_allowed_hydration_blocked
+      - case: valid_discovery_seed
+        expected: initiative_or_proposal_seed_only_no_executable_task
+    hydration_plan:
+      mode: executed
+      proposed_title: Initiative intake and seed contract
+      proposed_task_kind: roadmap_backed_task
+      approval_scope_required: hydration_specific_slice_auto_001_a
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-a, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Initiative intake and seed contract" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-a --description "Implement a seed-only raw initiative intake contract and validator/helper for INI-AUTO-001 without hydrating downstream delivery work." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - readiness_status is ready_to_hydrate
+        - approval_scope is hydration_specific_slice_auto_001_a
+        - approval_basis names the exact scaffold command
+        - no protected gate or active write claim blocks the write edge
+      hydrated_task_ref: T-023
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-023.yaml
+      hydrated_at: "2026-04-25T13:43:00Z"
     acceptance_criteria:
       - Raw initiative input is classified as planning/discovery, not delivery.
       - The intake contract records goal, why-now, constraints, success signals, protected boundaries, initial uncertainty, and discovery-only approval basis.
       - The output can create or update a roadmap initiative container, proposal draft, and initiative bank seed without creating executable task rows.
       - Tests prove missing goal, missing approval basis, and protected-scope expansion fail closed.
+      - Tests prove planning_seed_only_no_hydration blocks hydration even when human_decision is approved.
+      - Lifecycle report output exposes why hydration and ship actions remain blocked.
     research_evidence_refs:
       - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
       - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+      - scripts/planning_bank_validate.py
+      - scripts/initiative_scaffold.py
     known_non_goals:
       - Do not create backlog items.
       - Do not hydrate roadmap task specs.
       - Do not implement durable wakeups.
       - Do not implement write-mode hydration.
-    open_questions:
-      - Should the intake helper be a new script or an autonomous_loop.py subcommand?
-      - Which existing validator should own the initiative seed contract?
+    open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-b
-    proposed_task_id: T-AUTO-B
+    proposed_task_id: T-024
     title: Lifecycle router over initiative readiness
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: hydrated
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Teach autonomous-auto to route initiative state through research, proposal refinement, hydration, shipping, capture, or stop using readiness reports and campaign-report evidence.
     acceptance_criteria:
-      - Route decisions include selected and rejected alternatives with readiness/risk/value reasoning.
-      - Raw initiatives and stale/missing readiness fail closed.
-      - Ready-to-hydrate candidates require human_decision approved and approval_basis.
-      - Campaign-report fresh_budget_required blocks old-campaign continuation.
+      - "The route table covers raw initiative, discovery_active, candidate_ready_for_review, approved_for_hydration, delivery_ready, completed_or_stale_campaign, and high_severity_self_capture."
+      - "Every route decision capsule records selected_route, rejected_alternatives, source_artifacts, readiness_evidence, ux_anchor_rationale, protected_stops, blocked_actions, approval_needed, and evaluator_scores."
+      - "Raw initiatives, missing readiness, stale campaign reports, seed-only approval, and protected-scope expansion fail closed instead of routing to hydrate_task or ship_task."
+      - "Approved-for-hydration routing requires readiness_status ready_to_hydrate, human_decision approved, hydration-specific approval_scope, approval_basis, and an exact scaffold command naming slice-auto-001-b."
+      - "Delivery-ready routing requires an already hydrated roadmap/backlog/spec task and must block repeat hydration of the same candidate."
+      - "High-severity self-capture evidence routes to capture_self_improvement before continuation."
+      - "Slice B consumes normalized lifecycle/readiness reports and must not replace /next, roadmap_scaffold.py, or planning_bank_validate.py."
+      - "Slice B hydration records only T-024 planning artifacts; implementation and shipping remain blocked until a separate scoped delivery."
+    routing_contract:
+      consumes:
+        - "normalized initiative lifecycle report"
+        - "planning_bank_validate.py readiness report"
+        - "planning-bank surfacing summary"
+        - "campaign report and loop state"
+        - "proposal and initiative-bank route metadata"
+      does_not_replace:
+        - "/next"
+        - "roadmap_scaffold.py"
+        - "planning_bank_validate.py"
+      decision_capsule_required_fields:
+        - selected_route
+        - rejected_alternatives
+        - source_artifacts
+        - readiness_evidence
+        - ux_anchor_rationale
+        - protected_stops
+        - blocked_actions
+        - approval_needed
+        - evaluator_scores
+      route_table:
+        raw_initiative:
+          selected_route: "research_initiative or refine_proposal"
+          fail_closed_behavior: "No hydrate_task or ship_task route is allowed before durable planning artifacts and readiness evidence exist."
+          approval_needed: "discovery or proposal-refinement approval only"
+          blocked_actions:
+            - hydrate_task
+            - ship_task
+            - roadmap_backlog_spec_writes
+        discovery_active:
+          selected_route: research_initiative
+          fail_closed_behavior: "Open questions, stale evidence, or contradictions keep hydration blocked."
+          approval_needed: "covered by discovery/research scope"
+          blocked_actions:
+            - hydrate_task
+            - ship_task
+        candidate_ready_for_review:
+          selected_route: refine_proposal
+          fail_closed_behavior: "Only plan-only hydration handoff refinement is allowed; roadmap_scaffold.py execution remains blocked."
+          approval_needed: "proposal-refinement approval"
+          blocked_actions:
+            - roadmap_scaffold_execution
+            - hydration_history_append
+        approved_for_hydration:
+          selected_route: hydrate_task
+          fail_closed_behavior: "Hydrate only after green readiness, hydration-specific approval_scope, approval_basis, and exact scaffold command are present."
+          approval_needed: hydration_specific_slice_auto_001_b
+          blocked_actions:
+            - proposal_only_hydration
+            - parallel_roadmap_writer
+        delivery_ready:
+          selected_route: ship_task
+          fail_closed_behavior: "Ship only from an existing roadmap/backlog/spec task and block repeat hydration."
+          approval_needed: "normal scoped delivery approval"
+          blocked_actions:
+            - repeat_hydration
+        completed_or_stale_campaign:
+          selected_route: stop
+          fail_closed_behavior: "fresh_budget_required, stale handoff, exhausted budget, or completed campaign blocks hidden continuation."
+          approval_needed: "fresh or continuing autonomous-auto budget"
+          blocked_actions:
+            - hidden_continuation
+            - open_next_without_budget
+        high_severity_self_capture:
+          selected_route: capture_self_improvement
+          fail_closed_behavior: "High-severity workflow evidence is captured before continuation; protected gates still stop."
+          approval_needed: "inbox-first capture allowed unless protected boundary expands"
+          blocked_actions:
+            - silent_continuation_past_high_severity_capture
+    acceptance_test_matrix:
+      - case: raw_initiative_fails_closed_to_intake_or_stop
+        expected_route: "research_initiative or refine_proposal"
+        expected_blocked_actions:
+          - hydrate_task
+          - ship_task
+      - case: discovery_active_routes_research_or_refine_proposal
+        expected_route: research_initiative
+        expected_blocked_actions:
+          - hydrate_task
+          - ship_task
+      - case: candidate_ready_for_review_emits_plan_only_handoff
+        expected_route: refine_proposal
+        expected_blocked_actions:
+          - roadmap_scaffold_execution
+          - hydration_history_append
+      - case: approved_for_hydration_routes_hydrate_task_after_explicit_approval
+        expected_route: hydrate_task
+        required_evidence:
+          - ready_to_hydrate_readiness_report
+          - hydration_specific_slice_auto_001_b
+          - exact_scaffold_command
+      - case: delivery_ready_routes_ship_task_without_rehydration
+        expected_route: ship_task
+        expected_blocked_actions:
+          - repeat_hydration
+      - case: completed_or_stale_campaign_requires_fresh_budget
+        expected_route: stop
+        required_evidence:
+          - campaign_report_fresh_budget_required
+      - case: high_severity_self_capture_routes_capture_self_improvement
+        expected_route: capture_self_improvement
+        required_evidence:
+          - high_severity_reflection_or_evaluator_signal
+      - case: seed_only_approval_blocks_hydrate_and_ship
+        expected_route: "research_initiative or refine_proposal"
+        expected_blocked_actions:
+          - hydrate_task
+          - ship_task
+    hydration_plan:
+      mode: executed
+      proposed_title: Lifecycle router over initiative readiness surfaces
+      proposed_task_kind: roadmap_backed_task
+      approval_scope_required: hydration_specific_slice_auto_001_b
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-b, the normalized lifecycle/readiness report contract, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Lifecycle router over initiative readiness surfaces" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-b --description "Implement autonomous-auto route decision capsules over normalized lifecycle/readiness reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - "readiness_status is ready_to_hydrate"
+        - "approval_scope is hydration_specific_slice_auto_001_b"
+        - "approval_basis names INI-AUTO-001, slice-auto-001-b, and the exact scaffold command"
+        - "planning_bank_validate.py readiness report is green for slice-auto-001-b"
+        - "architecture proposal and initiative bank route tables agree"
+        - "no protected gate or active write claim blocks the write edge"
+      hydrated_task_ref: T-024
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-024.yaml
+      hydrated_at: "2026-04-25T15:50:51Z"
     research_evidence_refs:
       - scripts/autonomous_loop.py
       - scripts/planning_bank_validate.py
+      - tests/test_autonomous_loop.py
       - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
     known_non_goals:
       - Do not replace /next.
       - Do not bypass planning_bank_validate.py readiness semantics.
       - Do not implement write-mode hydration.
-    open_questions:
-      - Should the lifecycle router call planning_bank_validate.py directly or consume a generated readiness report?
+    open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-c
     proposed_task_id: T-AUTO-C
@@ -204,8 +490,7 @@ candidate_slices:
     known_non_goals:
       - Do not support governed/M1 hydration in the same standard slice.
       - Do not allow automated hydration without a human-approved readiness decision.
-    open_questions:
-      - Should write-mode hydration live in planning_bank_validate.py, autonomous_loop.py, or a dedicated helper?
+    open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-d
     proposed_task_id: T-AUTO-D
@@ -227,8 +512,7 @@ candidate_slices:
     known_non_goals:
       - Do not create an unbounded daemon.
       - Do not bypass platform approvals or credential/network restrictions.
-    open_questions:
-      - Should the first durable wakeup surface be Codex automation, cron-style script, or a repo-local dry-run command?
+    open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-e
     proposed_task_id: T-AUTO-E
@@ -254,23 +538,47 @@ candidate_slices:
       - Should this extend campaign-report, planning_bank_surfacing.py, welcome.py, or become a dedicated discover command?
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-25T12:10:00+00:00"
+  evaluated_at: "2026-04-25T15:49:31Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
-  readiness_status: continue_research
-  goal_clarity: broad_vision_seeded
-  evidence_coverage: local_campaign_and_planning_bank_evidence_seeded
-  freshness_status: current_as_of_2026_04_25
+  readiness_status: ready_to_hydrate
+  goal_clarity: t_023_complete_next_lifecycle_router_proposal_refinement
+  evidence_coverage: slice_b_route_table_and_lifecycle_report_contract_refined
+  freshness_status: reconciled_after_t_023_completion
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-auto-001-a
+  candidate_first_slice: slice-auto-001-b
   target_layer: infrastructure
   delivery_pipeline: standard
-  acceptance_criteria_status: draft
-  non_goals_status: draft
-  next_readiness_gate: refine_intake_contract_before_hydration
-  next_candidate_ref: slice-auto-001-a
-  hydration_recommendation: Do not hydrate yet; refine and challenge the initiative intake contract first, then ask for explicit approval before creating a roadmap/backlog/spec task.
+  acceptance_criteria_status: stable
+  non_goals_status: stable
+  next_readiness_gate: ship_t_024_only_after_separate_delivery_scope
+  next_candidate_ref: slice-auto-001-b
+  hydration_recommendation: T-024 is hydrated for slice-auto-001-b; do not repeat hydration, implement, ship, or mark the slice complete in this scope.
   human_decision: approved
-  approval_scope: planning_seed_only_no_hydration
-  approval_basis: Operator approved creating an initiative seed and architecture proposal on 2026-04-25 to pursue the throw-any-initiative autonomous-auto lifecycle vision.
-hydration_history: []
+  approval_scope: hydration_specific_slice_auto_001_b
+  approval_basis: Operator approved hydration on 2026-04-25 for INI-AUTO-001 slice-auto-001-b using the normalized lifecycle/readiness report contract and the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Lifecycle router over initiative readiness surfaces" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-b --description "Implement autonomous-auto route decision capsules over normalized lifecycle/readiness reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py." --target-layer infrastructure --delivery-pipeline standard`; approval is hydration-only and excludes shipping, implementation, kernel, governance, M1, destructive, credential, network, and cross-branch work.
+hydration_history:
+  - hydrated_at: "2026-04-25T13:43:00Z"
+    session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1
+    candidate_slice_ref: slice-auto-001-a
+    task_ref: T-023
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-023.yaml
+    backlog_ref: T-023
+    roadmap_ref: T-023
+    approval_scope: hydration_specific_slice_auto_001_a
+    approval_basis: Operator approved hydration on 2026-04-25 by replying "Yes approve, proceed towards campaign's goal"; approval applies to INI-AUTO-001 slice-auto-001-a and the exact roadmap_scaffold.py command.
+    scaffold_command: >
+      python3 scripts/roadmap_scaffold.py --title "Initiative intake and seed contract" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-a --description "Implement a seed-only raw initiative intake contract and validator/helper for INI-AUTO-001 without hydrating downstream delivery work." --target-layer infrastructure --delivery-pipeline standard
+    result: Created roadmap/backlog/spec artifacts for T-023 and linked them to INI-AUTO-001.
+  - hydrated_at: "2026-04-25T15:50:51Z"
+    session_id: 2026-04-25-autonomous-auto-slice-auto-001-b-1
+    candidate_slice_ref: slice-auto-001-b
+    task_ref: T-024
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-024.yaml
+    backlog_ref: T-024
+    roadmap_ref: T-024
+    approval_scope: hydration_specific_slice_auto_001_b
+    approval_basis: Operator approved hydration on 2026-04-25 for INI-AUTO-001 slice-auto-001-b using the normalized lifecycle/readiness report contract and the exact scaffold command; approval is hydration-only and excludes shipping, implementation, kernel, governance, M1, destructive, credential, network, and cross-branch work.
+    scaffold_command: >
+      python3 scripts/roadmap_scaffold.py --title "Lifecycle router over initiative readiness surfaces" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-b --description "Implement autonomous-auto route decision capsules over normalized lifecycle/readiness reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py." --target-layer infrastructure --delivery-pipeline standard
+    result: Created roadmap/backlog/spec artifacts for T-024 and linked them to INI-AUTO-001; no implementation or shipping work was performed.

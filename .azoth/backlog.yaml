@@ -3081,3 +3081,42 @@ items:
   - D23
   - D48
   - D50
+- id: T-023
+  title: Initiative intake and seed contract
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-a
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  completed_date: '2026-04-25'
+  description: Implement a seed-only raw initiative intake contract and validator/helper
+    for INI-AUTO-001 without hydrating downstream delivery work.
+  roadmap_ref: T-023
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
+- id: T-024
+  title: Lifecycle router over initiative readiness surfaces
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-b
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  description: Implement autonomous-auto route decision capsules over normalized lifecycle/readiness
+    reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py.
+  roadmap_ref: T-024
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52

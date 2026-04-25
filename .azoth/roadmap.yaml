@@ -485,9 +485,19 @@ initiatives:
     - planning-bank-routing
     - durable-wakeups
     - discoverability
-  phase: null
+  phase: v0.2.0-p3
   priority: high
-  slices: []
+  slices:
+  - task_ref: T-023
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-023.yaml
+    phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-024
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-024.yaml
+    phase: v0.2.0-p3
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
@@ -510,6 +520,8 @@ initiatives:
   - D48
   - D50
   - D52
+  task_ref: T-024
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-024.yaml
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline
@@ -1724,7 +1736,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 46
+  current_patch: 53
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1743,7 +1755,16 @@ versions:
 
     '
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-024
+    title: Lifecycle router over initiative readiness surfaces
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+    initiative_ref: INI-AUTO-001
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1879,3 +1900,12 @@ versions:
     - D23
     - D48
     - D50
+    - id: T-023
+      title: Initiative intake and seed contract
+      completed_date: '2026-04-25'
+      decision_ref:
+      - D11
+      - D23
+      - D48
+      - D50
+      - D52

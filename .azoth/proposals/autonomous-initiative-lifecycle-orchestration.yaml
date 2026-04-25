@@ -75,10 +75,13 @@ details:
       fail_closed_rules:
         - "Never treat a raw initiative as delivery-ready."
         - "Never hydrate while human_decision or approval_basis is missing."
+        - "Never hydrate when approval_scope is planning_seed_only_no_hydration, even if human_decision is approved."
+        - "Never hydrate unless readiness_status is ready_to_hydrate, acceptance and non-goals are stable, and the scaffold command names the exact candidate."
         - "Never write roadmap/backlog/spec state from a proposal alone."
         - "Never continue an old campaign without a fresh budget when campaign-report says fresh_budget_required."
         - "Stop before M1, kernel, governance, destructive, credential, network, or cross-branch expansion."
     initiative_intake_contract:
+      authority: "discovery_seed_only"
       minimum_fields:
         - "initiative_id or stable generated id"
         - "operator goal"
@@ -87,14 +90,36 @@ details:
         - "protected boundaries"
         - "success signals"
         - "initial uncertainty"
+        - "approval_scope for discovery only"
         - "approval_basis for discovery only"
+        - "allowed outputs"
+        - "forbidden outputs"
       output_artifacts:
         - "roadmap initiative container when this should be shared planning truth"
         - "initiative bank when the idea needs durable readiness state"
         - "proposal draft when architecture challenge is needed"
+        - "read-only lifecycle report when the next safe action needs explanation"
+      forbidden_outputs:
+        - "scope gate"
+        - "run ledger entry"
+        - "roadmap task"
+        - "backlog item"
+        - "task spec"
+        - "hydration write"
+        - "implementation work"
       explicit_non_authority: >
         Intake approval authorizes discovery/planning artifacts only. It does
         not authorize roadmap/backlog/spec hydration or implementation.
+      fail_closed_rules:
+        - "Missing goal, approval_basis, approval_scope, protected boundaries, allowed outputs, or forbidden outputs means no artifact is written."
+        - "Raw initiative text can route only to intake, research, proposal refinement, or stop."
+        - "Protected M1, kernel, governance, destructive, credential, network, or cross-branch intent stops for a human gate before any write."
+        - "planning_seed_only_no_hydration remains a hydration blocker until a later hydration-specific approval names the exact candidate."
+      implementation_boundary: >
+        Do not reuse initiative_scaffold.py unchanged for raw intake because it
+        can create roadmap task stubs and write backlog rows. Slice A should
+        produce a seed-only schema/helper plus validation tests before any
+        hydration helper exists.
     readiness_ladder:
       levels:
         - id: raw
@@ -126,19 +151,159 @@ details:
         The throw-any-initiative vision starts at intake. Without this contract,
         later routing cannot distinguish discovery approval from delivery approval.
       expected_outputs:
-        - "initiative intake schema or validator"
-        - "tests for raw initiative -> seed artifacts"
-        - "no backlog or roadmap task hydration"
+        - "initiative intake schema or seed-only helper"
+        - "validation tests for raw initiative -> seed artifacts"
+        - "fail-closed tests for missing goal, missing approval basis, protected-scope expansion, and planning approval being insufficient for hydration"
+        - "read-only report output showing why hydrate_task and ship_task remain blocked"
+        - "no backlog, roadmap task, task spec, scope gate, run-ledger entry, or implementation work from raw intake"
     slice_auto_001_b:
       title: "Lifecycle router over readiness surfaces"
       purpose: >
         Route initiatives through research, proposal refinement, hydration,
         shipping, capture, or stop using planning-bank readiness and campaign
         report evidence.
+      source_contract: >
+        Slice B consumes normalized lifecycle and readiness reports produced by
+        existing planning surfaces. It must not replace /next,
+        roadmap_scaffold.py, or planning_bank_validate.py; it only selects and
+        explains the next safe autonomous-auto route before any write edge.
+      route_table:
+        raw_initiative:
+          selected_route: "research_initiative or refine_proposal"
+          readiness_signal: "No durable initiative/proposal/bank artifact owns the goal yet."
+          fail_closed_behavior: "Never route to hydrate_task or ship_task."
+          required_source_artifacts:
+            - "operator initiative text"
+            - "initiative intake contract report when available"
+          blocked_actions:
+            - "hydrate_task"
+            - "ship_task"
+            - "roadmap/backlog/spec writes"
+        discovery_active:
+          selected_route: "research_initiative"
+          readiness_signal: "Initiative bank exists with continue_research, open questions, stale evidence, or contradictions."
+          fail_closed_behavior: "Stay in discovery/refinement until acceptance, non-goals, evidence, and protected stops are stable."
+          required_source_artifacts:
+            - "initiative bank readiness section"
+            - "research/readiness evidence"
+            - "planning-bank surfacing summary"
+          blocked_actions:
+            - "hydrate_task"
+            - "ship_task"
+        candidate_ready_for_review:
+          selected_route: "refine_proposal"
+          readiness_signal: "Candidate acceptance and non-goals are stable enough for a plan-only hydration handoff, but hydration approval is absent."
+          fail_closed_behavior: "Emit or refine a plan-only handoff; do not run roadmap_scaffold.py."
+          required_source_artifacts:
+            - "proposal route table"
+            - "initiative bank candidate slice"
+            - "read-only readiness report"
+          blocked_actions:
+            - "roadmap_scaffold.py execution"
+            - "hydration_history append"
+        approved_for_hydration:
+          selected_route: "hydrate_task"
+          readiness_signal: "Readiness report is green, candidate is still candidate, human_decision is approved, approval_scope is hydration-specific, and approval_basis names the exact scaffold command."
+          fail_closed_behavior: "Delegate only to the later approved hydration path; never hydrate from proposal-only input."
+          required_source_artifacts:
+            - "green planning_bank_validate.py readiness report"
+            - "hydration-specific approval basis"
+            - "exact roadmap_scaffold.py command"
+          blocked_actions:
+            - "parallel roadmap writer"
+            - "proposal-only hydration"
+        delivery_ready:
+          selected_route: "ship_task"
+          readiness_signal: "Roadmap/backlog/spec task exists, candidate is hydrated, and normal gates/claims are valid."
+          fail_closed_behavior: "Open a normal scoped delivery run; do not rehydrate the same candidate."
+          required_source_artifacts:
+            - "roadmap task"
+            - "backlog row"
+            - "task spec"
+            - "scope/pipeline gate state"
+          blocked_actions:
+            - "repeat hydration"
+        completed_or_stale_campaign:
+          selected_route: "stop or research_initiative with fresh budget"
+          readiness_signal: "Campaign report says completed, stale, budget exhausted, or fresh_budget_required."
+          fail_closed_behavior: "Do not continue old campaign state without a fresh budget or continuing approved budget."
+          required_source_artifacts:
+            - "campaign report"
+            - "loop state"
+            - "latest handoff"
+          blocked_actions:
+            - "hidden continuation"
+            - "open-next without budget"
+        high_severity_self_capture:
+          selected_route: "capture_self_improvement"
+          readiness_signal: "Inbox/reflection/campaign evidence records high-severity workflow or evaluator failure."
+          fail_closed_behavior: "Capture the learning as a planning artifact before resuming delivery; protected gates still stop."
+          required_source_artifacts:
+            - "session reflection"
+            - "campaign report quality signals"
+            - "evaluator/reviewer finding when available"
+          blocked_actions:
+            - "silent continuation past high-severity capture"
+      route_decision_capsule:
+        required_fields:
+          - selected_route
+          - rejected_alternatives
+          - source_artifacts
+          - readiness_evidence
+          - ux_anchor_rationale
+          - protected_stops
+          - blocked_actions
+          - approval_needed
+          - evaluator_scores
+        evaluator_scores:
+          fields:
+            - score_name
+            - score_value
+            - score_max
+            - rating
+            - evidence_ref
+            - missing_score_reason
+          rule: "Missing evaluator score fields are visible as unscored evidence, not silently treated as passing."
+        protected_stops:
+          - "kernel/governance/M1 expansion"
+          - "destructive, credential, network, or cross-branch expansion"
+          - "active write claim or live scope conflict"
+          - "missing approval_basis for the selected write edge"
+          - "approval_scope planning_seed_only_no_hydration for hydration or delivery"
+      test_evaluator_matrix:
+        planning_only: true
+        note: "These are planning cases for later tests/evaluators, not executable tests in this proposal-refinement slice."
+        cases:
+          - name: raw_initiative_fails_closed_to_intake_or_stop
+            expected_route: "research_initiative or refine_proposal"
+            evaluator_focus: "Raw initiative cannot hydrate or ship."
+          - name: discovery_active_routes_research_or_refine_proposal
+            expected_route: "research_initiative"
+            evaluator_focus: "Open questions, stale evidence, or contradictions keep readiness non-green."
+          - name: candidate_ready_for_review_emits_plan_only_handoff
+            expected_route: "refine_proposal"
+            evaluator_focus: "Stable candidate produces plan-only handoff without roadmap_scaffold.py execution."
+          - name: approved_for_hydration_routes_hydrate_task_after_explicit_approval
+            expected_route: "hydrate_task"
+            evaluator_focus: "Hydration-specific approval and exact scaffold command are required."
+          - name: delivery_ready_routes_ship_task_without_rehydration
+            expected_route: "ship_task"
+            evaluator_focus: "Hydrated roadmap/backlog/spec task ships without repeat hydration."
+          - name: completed_or_stale_campaign_requires_fresh_budget
+            expected_route: "stop"
+            evaluator_focus: "Old campaign continuation fails closed when fresh_budget_required is true."
+          - name: high_severity_self_capture_routes_capture_self_improvement
+            expected_route: "capture_self_improvement"
+            evaluator_focus: "High-severity workflow evidence is captured before continuation."
+          - name: seed_only_approval_blocks_hydrate_and_ship
+            expected_route: "research_initiative or refine_proposal"
+            evaluator_focus: "planning_seed_only_no_hydration blocks hydrate_task and ship_task even with human_decision approved."
       expected_outputs:
         - "route decision capsule"
         - "selected and rejected alternatives"
-        - "tests proving raw initiatives fail closed"
+        - "route table over raw, discovery, review-ready, hydration-approved, delivery-ready, completed/stale campaign, and self-capture states"
+        - "planning-only evaluator matrix proving raw initiatives and seed-only approval fail closed"
+        - "explicit handoff that routing consumes normalized readiness/lifecycle reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py"
     slice_auto_001_c:
       title: "Approved write-mode hydration delegation"
       purpose: >
@@ -193,9 +358,23 @@ details:
     - "Do not replace /next, roadmap_scaffold.py, or existing gate semantics."
     - "Do not weaken protected human gates for M1, kernel, governance, destructive, network, or credential work."
   acceptance_for_next_step:
-    first_slice_should_be_ready_when:
-      - "The initiative bank records candidate slice A with stable non-goals."
-      - "The proposal identifies the intake contract fields and fail-closed rules."
+    slice_a_history:
+      status: "preserved as completed/hydrated through T-023; do not hydrate or ship slice-auto-001-a again from this proposal-refinement slice."
+      retained_lessons:
+        - "The intake contract separated discovery approval from hydration approval."
+        - "planning_seed_only_no_hydration remained insufficient for hydration."
+        - "roadmap_scaffold.py was the only allowed hydration writer after hydration-specific approval."
+    slice_b_proposal_refinement_ready_when:
+      - "The proposal route table covers raw initiative, discovery_active, candidate_ready_for_review, approved_for_hydration, delivery_ready, completed/stale campaign, and high-severity self-capture routes."
+      - "The route decision capsule names selected route, rejected alternatives, source artifacts, readiness evidence, UX-anchor rationale, protected stops, blocked actions, approval needed, and evaluator score fields."
+      - "The proposal states that Slice B consumes normalized lifecycle/readiness reports and does not replace /next, roadmap_scaffold.py, or planning_bank_validate.py."
+      - "The initiative bank candidate slice-auto-001-b mirrors the route table and records fail-closed acceptance criteria."
+      - "The initiative bank records a plan-only hydration plan for Slice B without running roadmap_scaffold.py."
+      - "The initiative bank keeps readiness_status continue_research and approval_scope planning_seed_only_no_hydration."
       - "planning_bank_validate.py accepts the initiative bank."
       - "architecture_proposal_validate.py accepts this proposal."
-      - "The operator explicitly approves hydrating exactly one first slice."
+    not_authorized_by_this_slice:
+      - "Do not run roadmap_scaffold.py."
+      - "Do not append hydration_history."
+      - "Do not create or edit executable tests."
+      - "Do not touch backlog, roadmap, task specs, gates, run ledger, kernel, or governance surfaces."
