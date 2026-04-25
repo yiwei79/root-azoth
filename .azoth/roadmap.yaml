@@ -468,6 +468,48 @@ initiatives:
   - D50
   - D52
   spec_ref: null
+- id: INI-AUTO-001
+  title: Autonomous initiative lifecycle orchestration
+  category: pipeline
+  theme: D
+  dimensions:
+    themes:
+    - D
+    categories:
+    - pipeline
+    - autonomy
+    - planning
+    tracks:
+    - autonomous-auto
+    - initiative-lifecycle
+    - planning-bank-routing
+    - durable-wakeups
+    - discoverability
+  phase: null
+  priority: high
+  slices: []
+  initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
+  source_proposal_refs:
+  - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+  discovery_status: active_refinement
+  candidate_slice_ref: slice-auto-001-a
+  readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
+  next_discovery_action: Refine and challenge the initiative intake contract before
+    hydrating any roadmap/backlog/spec task.
+  summary: 'Make autonomous-auto capable of taking an operator-provided initiative
+    and working it through Azoth-native lifecycle states: intake, evidence building,
+    architecture challenge, readiness reporting, approved hydration, bounded delivery,
+    evaluation, closeout, learning capture, and continuation or safe stop. The initiative
+    keeps raw initiative intent out of direct delivery until readiness and approval
+    gates produce a hydrated roadmap/backlog/spec task.
+
+    '
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline

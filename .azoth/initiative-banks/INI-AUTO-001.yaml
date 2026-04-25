@@ -1,0 +1,276 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-AUTO-001
+title: Autonomous initiative lifecycle orchestration
+status: active_refinement
+created_at: "2026-04-25T12:10:00+00:00"
+updated_at: "2026-04-25T12:10:00+00:00"
+owner: codex
+source_sessions:
+  - session_id: 2026-04-25-autonomous-initiative-lifecycle-seed
+    kind: operator-approved-planning-seed
+    artifact: .azoth/initiative-banks/INI-AUTO-001.yaml
+    note: Seeded the long-horizon vision for throw-any-initiative autonomous-auto lifecycle support.
+  - session_id: 2026-04-25-autonomous-initiative-lifecycle-seed
+    kind: architecture-proposal
+    artifact: .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+    note: Captured the architecture challenge and scalable slice decomposition for the initiative lifecycle router.
+contacts:
+  - id: operator
+    role: human decision owner
+    contact_type: human
+    note: Approves discovery direction, hydration boundaries, and protected gates.
+  - id: autonomous-auto-skill
+    role: mode contract
+    contact_type: artifact
+    path: .agents/skills/autonomous-auto/SKILL.md
+    note: Defines branch-local autonomy budget, async alignment, loop governor, staged delegation, and stop conditions.
+  - id: ux-anchor
+    role: success criteria
+    contact_type: artifact
+    path: .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+    note: Defines the operator experience this initiative should optimize.
+  - id: campaign-report
+    role: latest observation surface
+    contact_type: artifact
+    path: scripts/autonomous_loop.py
+    note: Provides campaign-report output that separates current loop state from observed completed campaigns.
+source_proposal_refs:
+  - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+  - .azoth/proposals/planning-banks-layer.yaml
+research_questions:
+  - question_id: rq-auto-001-001
+    question: What does "throw an initiative at Azoth" mean as a safe input contract?
+    status: open
+    opened_at: "2026-04-25T12:10:00+00:00"
+    needed_for: initiative_intake_contract
+    answer: ""
+    evidence_refs:
+      - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml#details.proposed_model.initiative_intake_contract
+  - question_id: rq-auto-001-002
+    question: Which readiness state should route to research, proposal refinement, hydration, delivery, capture, or stop?
+    status: open
+    opened_at: "2026-04-25T12:10:00+00:00"
+    needed_for: lifecycle_router
+    answer: ""
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - scripts/planning_bank_validate.py
+      - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+  - question_id: rq-auto-001-003
+    question: What is the minimum approved write-mode hydration path that cannot become a second roadmap engine?
+    status: open
+    opened_at: "2026-04-25T12:10:00+00:00"
+    needed_for: write_mode_hydration
+    answer: ""
+    evidence_refs:
+      - scripts/roadmap_scaffold.py
+      - .azoth/roadmap-specs/v0.2.0/T-022.yaml
+      - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+  - question_id: rq-auto-001-004
+    question: How should durable wakeups run one bounded autonomous-auto iteration without hidden continuation?
+    status: open
+    opened_at: "2026-04-25T12:10:00+00:00"
+    needed_for: durable_wakeup_driver
+    answer: ""
+    evidence_refs:
+      - .agents/skills/autonomous-auto/SKILL.md
+      - scripts/autonomous_loop.py
+      - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
+research_refs: []
+local_findings:
+  - finding_id: lf-auto-001-001
+    status: active
+    summary: Autonomous-auto can now observe completed campaigns through campaign-report, but that report deliberately requires a fresh budget before old-campaign continuation.
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - tests/test_autonomous_loop.py
+      - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
+  - finding_id: lf-auto-001-002
+    status: active
+    summary: The current loop governor can select proposals, initiatives, backlog tasks, self-capture, and stops, but broad initiative intake still needs a first-class contract.
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - .agents/skills/autonomous-auto/SKILL.md
+  - finding_id: lf-auto-001-003
+    status: active
+    summary: T-022 intentionally stopped at plan-only hydration handoff output; write-mode hydration remains a later explicit approval path.
+    evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0/T-022.yaml
+      - scripts/planning_bank_validate.py
+external_findings: []
+assumptions:
+  - assumption_id: as-auto-001-001
+    status: active
+    statement: Initiative lifecycle orchestration should be modeled as a router over readiness surfaces, not as a new roadmap authority.
+    validation_path: Test raw, discovery-active, approved-for-hydration, and delivery-ready states against fail-closed route decisions.
+  - assumption_id: as-auto-001-002
+    status: active
+    statement: The first buildable slice should be initiative intake and seed validation before lifecycle routing or write-mode hydration.
+    validation_path: Challenge whether routing can be correct without a stable input contract.
+  - assumption_id: as-auto-001-003
+    status: active
+    statement: Durable wakeups should run one bounded iteration per invocation and should never continue old campaigns without a fresh budget.
+    validation_path: Use campaign-report output plus loop-state and write-claim tests.
+contradictions:
+  - contradiction_id: none-recorded-yet
+    status: none
+    summary: No blocking contradictions recorded yet.
+challenge_log:
+  - challenge_id: ch-auto-001-001
+    challenged_at: "2026-04-25T12:10:00+00:00"
+    prompt: Should this vision go directly into backlog?
+    disposition: reject_direct_backlog
+    result: No. The vision is too broad for one executable task and should enter as an initiative seed plus architecture proposal first.
+  - challenge_id: ch-auto-001-002
+    challenged_at: "2026-04-25T12:10:00+00:00"
+    prompt: Should autonomous-auto accept raw initiatives as delivery scopes?
+    disposition: fail_closed_until_ready
+    result: No. Raw initiatives may seed planning artifacts but cannot authorize implementation or roadmap hydration.
+  - challenge_id: ch-auto-001-003
+    challenged_at: "2026-04-25T12:10:00+00:00"
+    prompt: Should write-mode hydration be the first slice?
+    disposition: defer_write_mode
+    result: No. Intake and readiness routing must stabilize before adding any writer that touches roadmap/backlog/spec state.
+candidate_slices:
+  - candidate_id: slice-auto-001-a
+    proposed_task_id: T-AUTO-A
+    title: Initiative intake and seed contract
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Define the minimal safe input contract for turning an operator initiative into Azoth-native initiative/proposal/bank seed artifacts without hydrating backlog or roadmap task state.
+    acceptance_criteria:
+      - Raw initiative input is classified as planning/discovery, not delivery.
+      - The intake contract records goal, why-now, constraints, success signals, protected boundaries, initial uncertainty, and discovery-only approval basis.
+      - The output can create or update a roadmap initiative container, proposal draft, and initiative bank seed without creating executable task rows.
+      - Tests prove missing goal, missing approval basis, and protected-scope expansion fail closed.
+    research_evidence_refs:
+      - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+      - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+      - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+    known_non_goals:
+      - Do not create backlog items.
+      - Do not hydrate roadmap task specs.
+      - Do not implement durable wakeups.
+      - Do not implement write-mode hydration.
+    open_questions:
+      - Should the intake helper be a new script or an autonomous_loop.py subcommand?
+      - Which existing validator should own the initiative seed contract?
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-b
+    proposed_task_id: T-AUTO-B
+    title: Lifecycle router over initiative readiness
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Teach autonomous-auto to route initiative state through research, proposal refinement, hydration, shipping, capture, or stop using readiness reports and campaign-report evidence.
+    acceptance_criteria:
+      - Route decisions include selected and rejected alternatives with readiness/risk/value reasoning.
+      - Raw initiatives and stale/missing readiness fail closed.
+      - Ready-to-hydrate candidates require human_decision approved and approval_basis.
+      - Campaign-report fresh_budget_required blocks old-campaign continuation.
+    research_evidence_refs:
+      - scripts/autonomous_loop.py
+      - scripts/planning_bank_validate.py
+      - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
+    known_non_goals:
+      - Do not replace /next.
+      - Do not bypass planning_bank_validate.py readiness semantics.
+      - Do not implement write-mode hydration.
+    open_questions:
+      - Should the lifecycle router call planning_bank_validate.py directly or consume a generated readiness report?
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-c
+    proposed_task_id: T-AUTO-C
+    title: Approved write-mode hydration delegation
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Add a carefully gated writer that consumes a plan-only hydration handoff, delegates roadmap/backlog/spec writes to roadmap_scaffold.py, and records hydration_history.
+    acceptance_criteria:
+      - Write mode refuses proposal-only and raw-initiative input.
+      - Write mode requires readiness_status ready_to_hydrate, human_decision approved, and explicit approval_basis.
+      - The writer delegates to roadmap_scaffold.py instead of writing a parallel roadmap format.
+      - Hydration history records candidate_slice_ref, task_ref, spec_ref, session_id, and approval basis.
+    research_evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0/T-022.yaml
+      - scripts/roadmap_scaffold.py
+      - scripts/planning_bank_validate.py
+    known_non_goals:
+      - Do not support governed/M1 hydration in the same standard slice.
+      - Do not allow automated hydration without a human-approved readiness decision.
+    open_questions:
+      - Should write-mode hydration live in planning_bank_validate.py, autonomous_loop.py, or a dedicated helper?
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-d
+    proposed_task_id: T-AUTO-D
+    title: Durable autonomous-auto wakeup driver
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Define and implement a one-iteration wakeup path so autonomous-auto can continue self-development without relying on a single long chat thread.
+    acceptance_criteria:
+      - A wakeup checks loop state, campaign report, gates, run ledger, write claim, and stop conditions before opening work.
+      - A wakeup runs at most one bounded iteration.
+      - Stale or completed campaigns require fresh budget and produce a clear operator report.
+      - Tests cover active scope, active write claim, completed campaign, missing state, and protected gate stops.
+    research_evidence_refs:
+      - .agents/skills/autonomous-auto/SKILL.md
+      - scripts/autonomous_loop.py
+      - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
+    known_non_goals:
+      - Do not create an unbounded daemon.
+      - Do not bypass platform approvals or credential/network restrictions.
+    open_questions:
+      - Should the first durable wakeup surface be Codex automation, cron-style script, or a repo-local dry-run command?
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-e
+    proposed_task_id: T-AUTO-E
+    title: Initiative lifecycle evaluator and discoverability spine
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Provide one generated operator/agent view of active initiatives, proposals, candidate slices, readiness, campaign reports, gates, and next safe actions.
+    acceptance_criteria:
+      - The report lists initiative banks, proposal refs, candidate slice states, readiness status, blockers, and safe next actions.
+      - The report distinguishes planning evidence from executable backlog/roadmap tasks.
+      - Residual risks and protected gates are visible.
+      - The report is deterministic and useful to a fresh chat session.
+    research_evidence_refs:
+      - scripts/planning_bank_surfacing.py
+      - scripts/autonomous_loop.py
+      - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+    known_non_goals:
+      - Do not mutate planning state from the report command.
+      - Do not treat every phase-null initiative as bank-backed or actionable.
+    open_questions:
+      - Should this extend campaign-report, planning_bank_surfacing.py, welcome.py, or become a dedicated discover command?
+    recommended_phase: v0.2.0-p3
+readiness:
+  evaluated_at: "2026-04-25T12:10:00+00:00"
+  source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
+  readiness_status: continue_research
+  goal_clarity: broad_vision_seeded
+  evidence_coverage: local_campaign_and_planning_bank_evidence_seeded
+  freshness_status: current_as_of_2026_04_25
+  assumption_audit: active_assumptions_recorded
+  contradiction_disposition: none_blocking_recorded
+  candidate_first_slice: slice-auto-001-a
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  acceptance_criteria_status: draft
+  non_goals_status: draft
+  next_readiness_gate: refine_intake_contract_before_hydration
+  next_candidate_ref: slice-auto-001-a
+  hydration_recommendation: Do not hydrate yet; refine and challenge the initiative intake contract first, then ask for explicit approval before creating a roadmap/backlog/spec task.
+  human_decision: approved
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: Operator approved creating an initiative seed and architecture proposal on 2026-04-25 to pursue the throw-any-initiative autonomous-auto lifecycle vision.
+hydration_history: []

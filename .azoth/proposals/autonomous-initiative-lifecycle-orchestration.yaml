@@ -1,0 +1,201 @@
+proposal_schema_version: 1
+created_at: "2026-04-25T12:10:00+00:00"
+session_id: "2026-04-25-autonomous-initiative-lifecycle-seed"
+backlog_id: "P6-003"
+title: "Autonomous initiative lifecycle orchestration"
+summary: >
+  Architecture proposal for making autonomous-auto capable of taking an
+  operator-provided initiative and working it through the Azoth lifecycle
+  properly: intake, evidence building, challenge, readiness, approved hydration,
+  bounded delivery, evaluation, closeout, capture, and continuation. The proposal
+  keeps initiatives as durable goal containers, proposals as challenge/design
+  surfaces, initiative banks as mutable readiness state, and backlog/roadmap
+  tasks as the only executable delivery surface.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    target_vision: >
+      The operator should be able to hand Azoth a meaningful initiative and
+      trust autonomous-auto to decide what the initiative needs next: research,
+      proposal refinement, planning-bank work, hydration, implementation,
+      evaluation, learning capture, or safe stop.
+    current_gap: >
+      Azoth can already run bounded autonomous-auto campaigns, observe completed
+      campaign handoffs, read planning banks, emit plan-only hydration handoffs,
+      and choose among existing queue/backlog/proposal/initiative candidates.
+      It cannot yet accept a raw or broad initiative and reliably transform it
+      into governed delivery without manual artifact setup and operator steering.
+    failure_modes:
+      - "Raw initiatives could be mistaken for delivery scopes before readiness exists."
+      - "Autonomous-auto candidate selection can drift from planning-bank readiness and /next semantics."
+      - "Hydration remains plan-only unless a later approved write-mode path delegates to roadmap_scaffold.py."
+      - "Durable wakeups and cross-session campaign ownership are not yet first-class."
+      - "The operator still has to infer too much from scattered proposal, bank, gate, and handoff surfaces."
+  architectural_position:
+    principle: >
+      Make initiative-to-delivery autonomy a lifecycle router, not a second
+      roadmap engine. The router may synthesize and recommend, but roadmap,
+      backlog, and spec writes still happen only through governed hydration
+      paths with explicit approval basis.
+    artifact_roles:
+      initiative: "Durable goal container and strategic continuity anchor."
+      proposal: "Architecture challenge surface for options, non-goals, and sequencing."
+      initiative_bank: "Tracked mutable readiness state, candidate slices, decisions, and hydration history."
+      research_bank: "Evidence, freshness, contradiction, and source-quality record."
+      readiness_report: "Fail-closed synthesis of whether a candidate can hydrate."
+      roadmap_backlog_spec: "Executable delivery authority after approved hydration."
+      campaign_report: "Cross-session observation surface for completed autonomous-auto campaigns."
+  proposed_model:
+    lifecycle_router:
+      purpose: >
+        Add an autonomous-auto routing layer that classifies an initiative's
+        next needed action before any delivery stage starts.
+      inputs:
+        - "operator initiative text or initiative id"
+        - "existing roadmap initiative, if present"
+        - "initiative bank, if present"
+        - "proposal draft, if present"
+        - "research/readiness evidence"
+        - "latest campaign report and loop state"
+      outputs:
+        - "research_initiative"
+        - "refine_proposal"
+        - "hydrate_task"
+        - "ship_task"
+        - "capture_self_improvement"
+        - "stop"
+      fail_closed_rules:
+        - "Never treat a raw initiative as delivery-ready."
+        - "Never hydrate while human_decision or approval_basis is missing."
+        - "Never write roadmap/backlog/spec state from a proposal alone."
+        - "Never continue an old campaign without a fresh budget when campaign-report says fresh_budget_required."
+        - "Stop before M1, kernel, governance, destructive, credential, network, or cross-branch expansion."
+    initiative_intake_contract:
+      minimum_fields:
+        - "initiative_id or stable generated id"
+        - "operator goal"
+        - "why now"
+        - "known constraints"
+        - "protected boundaries"
+        - "success signals"
+        - "initial uncertainty"
+        - "approval_basis for discovery only"
+      output_artifacts:
+        - "roadmap initiative container when this should be shared planning truth"
+        - "initiative bank when the idea needs durable readiness state"
+        - "proposal draft when architecture challenge is needed"
+      explicit_non_authority: >
+        Intake approval authorizes discovery/planning artifacts only. It does
+        not authorize roadmap/backlog/spec hydration or implementation.
+    readiness_ladder:
+      levels:
+        - id: raw
+          description: "Operator intent exists, but no durable Azoth artifact owns it."
+          next_action: "create initiative/proposal seed"
+        - id: discovery_active
+          description: "Initiative bank exists with open questions and candidate slices."
+          next_action: "research_initiative or refine_proposal"
+        - id: candidate_ready_for_review
+          description: "A candidate slice has stable acceptance and non-goals."
+          next_action: "emit plan-only hydration handoff"
+        - id: approved_for_hydration
+          description: "Readiness report is green and human_decision is approved."
+          next_action: "hydrate_task through roadmap_scaffold.py"
+        - id: delivery_ready
+          description: "Roadmap/backlog/spec task exists and gates are valid."
+          next_action: "ship_task through autonomous-auto child scope"
+        - id: complete_or_continue
+          description: "Delivery closed; campaign report chooses continue or fresh budget."
+          next_action: "campaign-report then decide-next under new or continuing budget"
+  scalable_slices:
+    slice_auto_001_a:
+      title: "Initiative intake and seed contract"
+      purpose: >
+        Define and validate the first-class input contract for a raw initiative,
+        producing roadmap initiative, initiative bank, and/or proposal seed
+        without creating executable tasks.
+      why_first: >
+        The throw-any-initiative vision starts at intake. Without this contract,
+        later routing cannot distinguish discovery approval from delivery approval.
+      expected_outputs:
+        - "initiative intake schema or validator"
+        - "tests for raw initiative -> seed artifacts"
+        - "no backlog or roadmap task hydration"
+    slice_auto_001_b:
+      title: "Lifecycle router over readiness surfaces"
+      purpose: >
+        Route initiatives through research, proposal refinement, hydration,
+        shipping, capture, or stop using planning-bank readiness and campaign
+        report evidence.
+      expected_outputs:
+        - "route decision capsule"
+        - "selected and rejected alternatives"
+        - "tests proving raw initiatives fail closed"
+    slice_auto_001_c:
+      title: "Approved write-mode hydration delegation"
+      purpose: >
+        Add a write-mode helper only after plan-only handoffs are stable. It
+        must delegate to roadmap_scaffold.py and record hydration_history.
+      expected_outputs:
+        - "explicit approval gate"
+        - "roadmap_scaffold delegation"
+        - "hydration_history append"
+        - "tests that no proposal-only input can write"
+    slice_auto_001_d:
+      title: "Durable wakeup driver"
+      purpose: >
+        Run one bounded autonomous-auto iteration per automation wakeup, using
+        loop state, campaign report, gates, and write-claim checks.
+      expected_outputs:
+        - "one-iteration wakeup command or automation contract"
+        - "stale/live run refusal tests"
+        - "operator-readable stop reasons"
+    slice_auto_001_e:
+      title: "Lifecycle evaluator and discoverability spine"
+      purpose: >
+        Give operators and future agents one generated view of initiatives,
+        proposals, readiness, handoffs, gates, active runs, and next safe action.
+      expected_outputs:
+        - "initiative lifecycle report"
+        - "readiness banding"
+        - "residual risk rows"
+        - "links to governing artifacts"
+  challenge_points:
+    - challenge: "Could this become an unbounded self-improvement daemon?"
+      answer: >
+        No. The model stays branch-local, budgeted, iteration-bounded, and
+        fail-closed around protected gates. Durable wakeups run one bounded
+        iteration at a time.
+    - challenge: "Could initiative banks become a second roadmap?"
+      answer: >
+        No. They own readiness and candidate slices only. Delivery authority
+        remains hydrated roadmap/backlog/spec state.
+    - challenge: "Could write-mode hydration bypass human approval?"
+      answer: >
+        No. The write-mode slice is explicitly later and requires human_decision,
+        approval_basis, plan-only report, and roadmap_scaffold.py delegation.
+    - challenge: "Could autonomous-auto overfit to INI-EVI-002?"
+      answer: >
+        The new initiative must generalize from INI-EVI-002 but test against at
+        least one synthetic initiative so lifecycle routing is not pilot-specific.
+  non_goals:
+    - "Do not create backlog rows from the broad vision."
+    - "Do not implement write-mode hydration in this proposal slice."
+    - "Do not make raw initiative text executable."
+    - "Do not replace /next, roadmap_scaffold.py, or existing gate semantics."
+    - "Do not weaken protected human gates for M1, kernel, governance, destructive, network, or credential work."
+  acceptance_for_next_step:
+    first_slice_should_be_ready_when:
+      - "The initiative bank records candidate slice A with stable non-goals."
+      - "The proposal identifies the intake contract fields and fail-closed rules."
+      - "planning_bank_validate.py accepts the initiative bank."
+      - "architecture_proposal_validate.py accepts this proposal."
+      - "The operator explicitly approves hydrating exactly one first slice."
