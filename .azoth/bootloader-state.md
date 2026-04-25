@@ -4,12 +4,12 @@
 0.1.3.53 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 53
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-slice-auto-001-b-1
-- **Goal**: slice-auto-001-b
+- **Session**: 2026-04-25-autonomous-auto-t-025-2
+- **Goal**: Hydrate T-025 under INI-PLT-006 with canonical surfaces, fallback semantics, audit trace, and anti-leak acceptance tests.
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-410 (success)
+- **Episode**: ep-412 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
