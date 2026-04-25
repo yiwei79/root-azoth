@@ -1720,6 +1720,261 @@ def campaign_report(
     }
 
 
+def _safe_state_snapshot(state_path: Path) -> tuple[dict[str, Any], str]:
+    if not state_path.exists():
+        return {}, "missing_loop_state"
+    try:
+        data = safe_load_yaml_path(state_path)
+    except Exception:
+        return {}, "malformed_loop_state"
+    if not isinstance(data, dict):
+        return {}, "malformed_loop_state"
+    return data, ""
+
+
+def _safe_loop_status(root: Path, state_path: Path) -> tuple[dict[str, Any], str]:
+    try:
+        return loop_status(root, state_path), ""
+    except Exception:
+        return {
+            "state_path": str(state_path),
+            "status": "malformed_state",
+            "raw_status": "malformed_state",
+            "loop_id": "",
+            "iteration": 0,
+            "max_iterations": 0,
+            "remaining_iterations": 0,
+            "active_scope_id": "",
+            "active_session_id": "",
+            "active_session_conflict": False,
+            "can_continue": False,
+            "stop_reason": "malformed_loop_state",
+            "completion_reason": "",
+            "alignment": _alignment_summary({}),
+            "vision": _vision_state({}),
+            "write_claim": _write_claim_status(root),
+            "next_candidate": None,
+        }, "malformed_loop_state"
+
+
+def _safe_operator_read(root: Path, state_path: Path) -> dict[str, Any]:
+    try:
+        return operator_read(root, state_path)
+    except Exception:
+        return {
+            "title": "Autonomous-auto operator read",
+            "objective": "autonomous-auto loop",
+            "loop_state": "malformed_state",
+            "iteration": 0,
+            "max_iterations": 0,
+            "remaining_iterations": 0,
+            "can_continue": False,
+            "next_likely_move": "blocked: malformed_loop_state",
+            "route_authority": "not-evaluated",
+            "approval_basis": "",
+            "pending_alignment_packets": 0,
+            "latest_alignment_packet": "",
+            "vision_band": "unevaluated",
+            "vision_target": DEFAULT_VISION_TARGET_BAND,
+            "vision_realized": False,
+            "write_claim": "unknown",
+            "continuation_required": False,
+            "continuation_reason": "blocked:malformed_loop_state",
+            "stop_reason": "malformed_loop_state",
+            "completion_reason": "",
+            "stop_conditions": DEFAULT_STOP_CONDITIONS,
+            "residual_risk": "Loop state is malformed; wakeup must fail closed.",
+        }
+
+
+def _safe_campaign_report(
+    root: Path,
+    state_path: Path,
+    handoff_path: Path | None,
+) -> dict[str, Any]:
+    try:
+        return campaign_report(root, state_path, handoff_path=handoff_path)
+    except Exception as exc:
+        return {
+            "report_schema_version": 1,
+            "current_loop": {
+                "state_path": str(state_path),
+                "status": "malformed_state",
+                "observable": False,
+                "failure_reason": f"malformed_loop_state: {exc}",
+                "completion_reason": "",
+                "operator_read": {},
+            },
+            "handoff_campaign": {
+                "observable": False,
+                "path": str(handoff_path or ""),
+                "failure_reason": "campaign_report_failed",
+                "current_truth": {},
+                "completion_reason": "",
+                "vision_band": "",
+                "known_residuals": [],
+                "safe_continuation_commands": [],
+                "recommended_options": [],
+            },
+            "observation": {
+                "fresh_budget_required": True,
+                "safe_to_continue_old_campaign": False,
+                "reason": "fail_closed",
+            },
+        }
+
+
+def _wakeup_fresh_budget_required(
+    status: dict[str, Any],
+    report: dict[str, Any],
+    handoff_path: Path | None,
+) -> bool:
+    observation = report.get("observation") if isinstance(report.get("observation"), dict) else {}
+    if not observation.get("fresh_budget_required"):
+        return False
+    handoff = (
+        report.get("handoff_campaign") if isinstance(report.get("handoff_campaign"), dict) else {}
+    )
+    if status.get("completion_reason"):
+        return True
+    if str(status.get("status") or "") not in {"active"}:
+        return True
+    if handoff.get("observable") and handoff_path is not None:
+        return True
+    if handoff_path is not None and not handoff.get("observable"):
+        return True
+    return False
+
+
+def _wakeup_gate_status(status: dict[str, Any]) -> dict[str, Any]:
+    active_scope_id = str(status.get("active_scope_id") or "")
+    active_session_id = str(status.get("active_session_id") or "")
+    return {
+        "active_scope": bool(active_scope_id),
+        "active_scope_id": active_scope_id,
+        "active_session_conflict": bool(status.get("active_session_conflict")),
+        "active_session_id": active_session_id,
+        "blocked": bool(active_scope_id or status.get("active_session_conflict")),
+    }
+
+
+def _wakeup_stop_reason(
+    *,
+    state_failure: str,
+    status: dict[str, Any],
+    decision: dict[str, Any],
+    fresh_budget_required: bool,
+) -> str | None:
+    if state_failure:
+        return state_failure
+    if fresh_budget_required:
+        if status.get("completion_reason"):
+            return str(status.get("completion_reason") or "completed_or_stale_campaign")
+        return "completed_or_stale_campaign"
+    if status.get("completion_reason"):
+        return str(status.get("completion_reason"))
+    if status.get("stop_reason"):
+        return str(status.get("stop_reason"))
+    if decision.get("action") == "stop":
+        return str(decision.get("stop_reason") or "stop_decision")
+    return None
+
+
+def _wakeup_residual_risk(
+    stop_reason: str | None,
+    operator: dict[str, Any],
+    fresh_budget_required: bool,
+) -> str:
+    if not stop_reason:
+        return "Report-only unless --open is provided; one safe scope may be opened."
+    if fresh_budget_required:
+        return "Completed or stale campaign evidence requires a fresh budget before wakeup opens scope."
+    if stop_reason in {"missing_loop_state", "malformed_loop_state", "invalid_loop_state"}:
+        return "Loop state is missing or malformed; wakeup must fail closed."
+    return str(
+        operator.get("residual_risk")
+        or "Continuation is blocked until the stop reason is resolved."
+    )
+
+
+def _default_wakeup_decision_path(root: Path) -> Path:
+    return root / ".azoth" / "autonomous-wakeup-decision.json"
+
+
+def wakeup(
+    root: Path,
+    state_path: Path,
+    *,
+    open_scope: bool = False,
+    decision_out: Path | None = None,
+    report_out: Path | None = None,
+    expires_at: str | None = None,
+    handoff_path: Path | None = None,
+) -> dict[str, Any]:
+    root = Path(root)
+    state_path = Path(state_path)
+    if handoff_path is not None and not handoff_path.is_absolute():
+        handoff_path = root / handoff_path
+    state, state_failure = _safe_state_snapshot(state_path)
+    status, status_failure = _safe_loop_status(root, state_path)
+    if status_failure and not state_failure:
+        state_failure = status_failure
+    campaign = _safe_campaign_report(root, state_path, handoff_path)
+    operator = _safe_operator_read(root, state_path)
+    try:
+        decision = decide_next(root, state_path)
+    except Exception as exc:
+        decision = _stop_decision(
+            state,
+            "malformed_loop_state",
+            detail=f"Could not decide next wakeup action: {exc}",
+        )
+        state_failure = state_failure or "malformed_loop_state"
+
+    fresh_budget_required = _wakeup_fresh_budget_required(status, campaign, handoff_path)
+    stop_reason = _wakeup_stop_reason(
+        state_failure=state_failure,
+        status=status,
+        decision=decision,
+        fresh_budget_required=fresh_budget_required,
+    )
+    residual_risk = _wakeup_residual_risk(stop_reason, operator, fresh_budget_required)
+    report = {
+        "report_schema_version": 1,
+        "loop_status": status,
+        "campaign_report": campaign,
+        "operator_read": operator,
+        "gate_status": _wakeup_gate_status(status),
+        "write_claim": status.get("write_claim") or _write_claim_status(root),
+        "autonomy_budget": state.get("autonomy_budget", {}) if state else {},
+        "alignment": status.get("alignment", _alignment_summary(state)),
+        "decision": decision,
+        "opened": False,
+        "session_id": "",
+        "stop_reason": stop_reason,
+        "fresh_budget_required": fresh_budget_required,
+        "residual_risk": residual_risk,
+    }
+
+    if open_scope and stop_reason is None:
+        out_path = decision_out or _default_wakeup_decision_path(root)
+        _write_json_mapping(out_path, decision)
+        try:
+            opened = open_next(root, state_path, out_path, expires_at)
+        except SystemExit as exc:
+            report["stop_reason"] = "open_next_failed"
+            report["residual_risk"] = str(exc)
+        else:
+            report["opened"] = bool(opened.get("opened"))
+            report["session_id"] = str(opened.get("session_id") or "")
+    elif decision_out is not None:
+        _write_json_mapping(decision_out, decision)
+
+    if report_out is not None:
+        _write_json_mapping(report_out, report)
+    return report
+
+
 def _repo_artifact_ref(root: Path, path: Path | None) -> str:
     if path is None:
         return ""
@@ -3207,6 +3462,48 @@ def cmd_campaign_report(args: argparse.Namespace) -> None:
     )
 
 
+def _resolve_optional_path(root: Path, value: str | None) -> Path | None:
+    if not value:
+        return None
+    path = Path(value)
+    return path if path.is_absolute() else root / path
+
+
+def _format_wakeup_report(payload: dict[str, Any]) -> str:
+    decision = payload.get("decision") if isinstance(payload.get("decision"), dict) else {}
+    status = payload.get("loop_status") if isinstance(payload.get("loop_status"), dict) else {}
+    return "\n".join(
+        [
+            "Autonomous-auto wakeup report",
+            f"Loop: {status.get('status', 'unknown')} ({status.get('iteration', 0)}/{status.get('max_iterations', 0)})",
+            f"Decision: {decision.get('action', 'unknown')} ({decision.get('candidate_id') or decision.get('stop_reason') or 'none'})",
+            f"Opened: {payload.get('opened')} ({payload.get('session_id') or 'none'})",
+            f"Fresh budget required: {payload.get('fresh_budget_required')}",
+            f"Stop reason: {payload.get('stop_reason') or 'none'}",
+            f"Residual risk: {payload.get('residual_risk')}",
+        ]
+    )
+
+
+def cmd_wakeup(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    state_path = _state_path(root, args.state)
+    result = wakeup(
+        root,
+        state_path,
+        open_scope=args.open,
+        decision_out=_resolve_optional_path(root, args.decision_out),
+        report_out=_resolve_optional_path(root, args.report_out),
+        expires_at=args.expires_at,
+        handoff_path=_resolve_optional_path(root, args.handoff),
+    )
+    print(
+        json.dumps(result, indent=2, sort_keys=False)
+        if args.json
+        else _format_wakeup_report(result)
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -3300,6 +3597,18 @@ def build_parser() -> argparse.ArgumentParser:
     campaign.add_argument("--handoff", default=None, help="Handoff markdown path.")
     campaign.add_argument("--json", action="store_true")
     campaign.set_defaults(func=cmd_campaign_report)
+
+    wake = sub.add_parser(
+        "wakeup",
+        help="Build a one-shot autonomous-auto wakeup report and optionally open one scope.",
+    )
+    wake.add_argument("--json", action="store_true")
+    wake.add_argument("--open", action="store_true", help="Open one scope if the report is safe.")
+    wake.add_argument("--decision-out", default=None, help="Decision JSON output path.")
+    wake.add_argument("--report-out", default=None, help="Wakeup report JSON output path.")
+    wake.add_argument("--expires-at", default=None, help="Scope expiry ISO timestamp.")
+    wake.add_argument("--handoff", default=None, help="Optional autonomous-auto handoff path.")
+    wake.set_defaults(func=cmd_wakeup)
 
     lifecycle = sub.add_parser(
         "lifecycle-report",

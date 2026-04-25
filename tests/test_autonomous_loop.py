@@ -1162,6 +1162,305 @@ def test_open_next_persists_budget_and_decision_capsule(tmp_path: Path) -> None:
     assert scope["loop_decision"]["architect_judgment"]["selected"]["candidate_id"] == "T-321"
 
 
+def test_wakeup_report_only_builds_decision_without_mutation(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    state_before = state_path.read_text(encoding="utf-8")
+
+    report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=False)
+
+    assert report["opened"] is False
+    assert report["session_id"] == ""
+    assert report["stop_reason"] is None
+    assert report["decision"]["action"] == "ship_task"
+    assert report["operator_read"]["next_likely_move"] == "ship_task (T-321)"
+    assert report["gate_status"]["blocked"] is False
+    assert state_path.read_text(encoding="utf-8") == state_before
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
+    assert not (tmp_path / ".azoth/run-ledger.local.yaml").exists()
+
+
+def test_wakeup_open_writes_built_decision_and_opens_one_scope(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    decision_out = tmp_path / ".azoth/wakeup-decision.json"
+
+    report = autonomous_loop.wakeup(
+        tmp_path,
+        state_path,
+        open_scope=True,
+        decision_out=decision_out,
+        expires_at="2026-04-25T12:00:00Z",
+    )
+
+    scope = json.loads((tmp_path / ".azoth/scope-gate.json").read_text(encoding="utf-8"))
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    written_decision = json.loads(decision_out.read_text(encoding="utf-8"))
+    assert report["opened"] is True
+    assert report["session_id"] == scope["session_id"]
+    assert report["decision"]["candidate_id"] == "T-321"
+    assert written_decision == report["decision"]
+    assert scope["loop_decision"]["candidate_id"] == "T-321"
+    assert state["iteration"] == 1
+    assert state["queue"] == []
+
+
+def test_wakeup_fails_closed_for_missing_and_malformed_state(tmp_path: Path) -> None:
+    missing_state = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+
+    missing_report = autonomous_loop.wakeup(tmp_path, missing_state, open_scope=True)
+
+    assert missing_report["opened"] is False
+    assert missing_report["stop_reason"] == "missing_loop_state"
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+    malformed_state = tmp_path / ".azoth/malformed-autonomous-loop-state.local.yaml"
+    malformed_state.parent.mkdir(parents=True, exist_ok=True)
+    malformed_state.write_text(":\n", encoding="utf-8")
+
+    malformed_report = autonomous_loop.wakeup(tmp_path, malformed_state, open_scope=True)
+
+    assert malformed_report["opened"] is False
+    assert malformed_report["stop_reason"] == "malformed_loop_state"
+
+
+def test_wakeup_fails_closed_for_active_scope_and_write_claim(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "session_id": "live-session",
+        },
+    )
+
+    active_scope_report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=True)
+
+    assert active_scope_report["opened"] is False
+    assert active_scope_report["stop_reason"] == "active_scope_present"
+
+    (tmp_path / ".azoth/scope-gate.json").unlink()
+    _write_yaml(
+        tmp_path / ".azoth/run-ledger.local.yaml",
+        {
+            "schema_version": 1,
+            "runs": [],
+            "write_claim": {
+                "session_id": "previous-child",
+                "expires_at": _future_expiry(),
+                "acquired_at": "2026-04-25T12:00:00Z",
+                "worktree_path": str(tmp_path),
+            },
+        },
+    )
+
+    write_claim_report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=True)
+
+    assert write_claim_report["opened"] is False
+    assert write_claim_report["stop_reason"] == "active_write_claim_present"
+    assert write_claim_report["write_claim"]["session_id"] == "previous-child"
+
+
+def test_wakeup_current_active_loop_outranks_discovered_old_handoff(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "# Handoff\n\n## Current Truth\n\n- Completion reason: `vision_realized`\n",
+        encoding="utf-8",
+    )
+
+    report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=False)
+
+    assert report["fresh_budget_required"] is False
+    assert report["stop_reason"] is None
+    assert report["decision"]["action"] == "ship_task"
+
+
+def test_wakeup_fails_closed_for_active_session_gate(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_active_session_gate(tmp_path)
+
+    report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=True)
+
+    assert report["opened"] is False
+    assert report["stop_reason"] == "active_session_gate_conflict"
+    assert report["gate_status"]["blocked"] is True
+    assert report["gate_status"]["active_session_id"] == "active-session"
+
+
+def test_wakeup_fails_closed_for_completed_vision(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+
+    report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=True)
+
+    assert report["opened"] is False
+    assert report["stop_reason"] == "vision_realized"
+    assert report["fresh_budget_required"] is True
+    assert "fresh budget" in report["residual_risk"]
+
+
+def test_wakeup_fails_closed_for_protected_candidate_and_no_safe_candidate(
+    tmp_path: Path,
+) -> None:
+    protected_state = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "BL-999",
+                "title": "Kernel change",
+                "target_layer": "M1",
+                "delivery_pipeline": "governed",
+            }
+        ],
+    )
+
+    protected_report = autonomous_loop.wakeup(tmp_path, protected_state, open_scope=True)
+
+    assert protected_report["opened"] is False
+    assert protected_report["stop_reason"] == "protected_gate_required"
+
+    empty_root = tmp_path / "empty"
+    empty_root.mkdir()
+    no_candidate_state = _state(empty_root)
+
+    no_candidate_report = autonomous_loop.wakeup(empty_root, no_candidate_state, open_scope=True)
+
+    assert no_candidate_report["opened"] is False
+    assert no_candidate_report["stop_reason"] == "no_safe_candidate"
+
+
+def test_wakeup_cli_json_writes_report_and_decision(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    decision_out = tmp_path / ".azoth/cli-wakeup-decision.json"
+    report_out = tmp_path / ".azoth/cli-wakeup-report.json"
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--state",
+                str(state_path),
+                "wakeup",
+                "--decision-out",
+                str(decision_out),
+                "--report-out",
+                str(report_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    report_file_payload = json.loads(report_out.read_text(encoding="utf-8"))
+    decision_file_payload = json.loads(decision_out.read_text(encoding="utf-8"))
+    assert set(
+        [
+            "loop_status",
+            "campaign_report",
+            "operator_read",
+            "gate_status",
+            "write_claim",
+            "autonomy_budget",
+            "alignment",
+            "decision",
+            "opened",
+            "session_id",
+            "stop_reason",
+            "fresh_budget_required",
+            "residual_risk",
+        ]
+    ).issubset(payload)
+    assert payload["opened"] is False
+    assert payload["decision"]["candidate_id"] == "T-321"
+    assert report_file_payload == payload
+    assert decision_file_payload == payload["decision"]
+
+
 def test_campaign_report_observes_completed_handoff_without_continuing_current_loop(
     tmp_path: Path,
 ) -> None:
