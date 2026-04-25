@@ -504,7 +504,23 @@ candidate_slices:
       - A wakeup checks loop state, campaign report, gates, run ledger, write claim, and stop conditions before opening work.
       - A wakeup runs at most one bounded iteration.
       - Stale or completed campaigns require fresh budget and produce a clear operator report.
+      - The wakeup emits an operator-readable stop report before any opened work when state, budget, gates, claims, protected boundaries, or stale campaign evidence block continuation.
+      - No hidden continuation path, daemon loop, scheduler, or repeated same-thread heartbeat can open more than one child scope per wakeup invocation.
       - Tests cover active scope, active write claim, completed campaign, missing state, and protected gate stops.
+    hydration_plan:
+      mode: planned
+      proposed_title: Durable autonomous-auto wakeup driver
+      proposed_task_kind: roadmap_backed_task
+      approval_scope_required: hydration_specific_slice_auto_001_d
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-d, the one-iteration wakeup contract, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Durable autonomous-auto wakeup driver" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-d --description "Implement a one-iteration autonomous-auto wakeup driver that checks loop state, campaign reports, gates, run ledger, write claims, and stop conditions before opening any child scope." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - readiness_status is ready_to_hydrate
+        - approval_scope is hydration_specific_slice_auto_001_d
+        - approval_basis names INI-AUTO-001, slice-auto-001-d, the one-iteration wakeup contract, and the exact scaffold command
+        - no protected gate or active write claim blocks the write edge
+        - this readiness-refinement child is closed with evaluator evidence
     research_evidence_refs:
       - .agents/skills/autonomous-auto/SKILL.md
       - scripts/autonomous_loop.py
@@ -512,6 +528,8 @@ candidate_slices:
     known_non_goals:
       - Do not create an unbounded daemon.
       - Do not bypass platform approvals or credential/network restrictions.
+      - Do not implement the wakeup driver in the readiness-refinement child.
+      - Do not hydrate roadmap/backlog/spec artifacts until a separate hydration child opens.
     open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-e
@@ -538,25 +556,25 @@ candidate_slices:
       - Should this extend campaign-report, planning_bank_surfacing.py, welcome.py, or become a dedicated discover command?
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-25T15:49:31Z"
+  evaluated_at: "2026-04-25T19:24:00Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   readiness_status: ready_to_hydrate
-  goal_clarity: t_023_complete_next_lifecycle_router_proposal_refinement
-  evidence_coverage: slice_b_route_table_and_lifecycle_report_contract_refined
-  freshness_status: reconciled_after_t_023_completion
+  goal_clarity: durable_wakeup_driver_ready_for_plan_only_hydration
+  evidence_coverage: slice_d_one_iteration_wakeup_contract_refined
+  freshness_status: reconciled_after_route_authority_campaign_completion
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-auto-001-b
+  candidate_first_slice: slice-auto-001-d
   target_layer: infrastructure
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: ship_t_024_only_after_separate_delivery_scope
-  next_candidate_ref: slice-auto-001-b
-  hydration_recommendation: T-024 is hydrated for slice-auto-001-b; do not repeat hydration, implement, ship, or mark the slice complete in this scope.
+  next_readiness_gate: hydrate_slice_auto_001_d_only_after_separate_hydration_child
+  next_candidate_ref: slice-auto-001-d
+  hydration_recommendation: Slice-auto-001-d is hydration-ready as a plan-only handoff; do not run the scaffold command or implement the wakeup driver in this readiness-refinement child.
   human_decision: approved
-  approval_scope: hydration_specific_slice_auto_001_b
-  approval_basis: Operator approved hydration on 2026-04-25 for INI-AUTO-001 slice-auto-001-b using the normalized lifecycle/readiness report contract and the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Lifecycle router over initiative readiness surfaces" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-b --description "Implement autonomous-auto route decision capsules over normalized lifecycle/readiness reports without replacing /next, roadmap_scaffold.py, or planning_bank_validate.py." --target-layer infrastructure --delivery-pipeline standard`; approval is hydration-only and excludes shipping, implementation, kernel, governance, M1, destructive, credential, network, and cross-branch work.
+  approval_scope: hydration_specific_slice_auto_001_d
+  approval_basis: Operator locked the Durable Wakeup Driver Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-d and approved readiness refinement toward a separate hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Durable autonomous-auto wakeup driver" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-d --description "Implement a one-iteration autonomous-auto wakeup driver that checks loop state, campaign reports, gates, run ledger, write claims, and stop conditions before opening any child scope." --target-layer infrastructure --delivery-pipeline standard`; approval is hydration-planning only in this child and excludes scaffold execution, implementation, kernel, governance, M1, destructive, credential, network, hidden daemon, unbounded scheduler, and cross-branch work.
 hydration_history:
   - hydrated_at: "2026-04-25T13:43:00Z"
     session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1

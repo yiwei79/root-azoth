@@ -496,16 +496,17 @@ initiatives:
   - task_ref: T-024
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-024.yaml
     phase: v0.2.0-p3
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
   discovery_status: active_refinement
-  candidate_slice_ref: slice-auto-001-a
+  candidate_slice_ref: slice-auto-001-d
   readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
-  next_discovery_action: Refine and challenge the initiative intake contract before
-    hydrating any roadmap/backlog/spec task.
+  next_discovery_action: Hydrate slice-auto-001-d as a separate child only after
+    this readiness-refinement scope closes with evaluator evidence; do not implement
+    the durable wakeup driver from stale campaign evidence.
   summary: 'Make autonomous-auto capable of taking an operator-provided initiative
     and working it through Azoth-native lifecycle states: intake, evidence building,
     architecture challenge, readiness reporting, approved hydration, bounded delivery,
