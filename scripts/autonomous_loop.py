@@ -1734,6 +1734,15 @@ def _lifecycle_next_safe_actions(
                 "approval_needed": "new hydration or delivery approval_basis required before writes",
             }
         ]
+    elif bool(readiness_report.get("candidate_task_complete")):
+        task_ref = str(readiness_report.get("candidate_task_ref") or "").strip()
+        actions = [
+            {
+                "action": "research_initiative",
+                "basis": f"hydrated task {task_ref or 'candidate task'} is already complete",
+                "approval_needed": "select a fresh candidate or refresh initiative readiness",
+            }
+        ]
     elif str(readiness_report.get("candidate_status") or "") == "hydrated":
         task_ref = str(readiness_report.get("candidate_task_ref") or "").strip()
         actions = [
@@ -1801,6 +1810,15 @@ def _lifecycle_blocked_actions(readiness_report: dict[str, Any]) -> list[dict[st
                 "reason": reason or "readiness report is not green",
             }
         )
+    if bool(readiness_report.get("candidate_task_complete")):
+        task_ref = str(readiness_report.get("candidate_task_ref") or "").strip()
+        blocked.append(
+            {
+                "action": "ship_task",
+                "reason": f"hydrated task {task_ref or 'candidate task'} is already complete",
+            }
+        )
+        return _dedupe_action_reasons(blocked)
     if str(readiness_report.get("candidate_status") or "") != "hydrated":
         blocked.append(
             {
@@ -1845,6 +1863,43 @@ def _yaml_tree_contains_task_ref(data: Any, task_ref: str) -> bool:
     return False
 
 
+TERMINAL_TASK_STATUSES = {"complete", "completed", "closed", "shipped"}
+
+
+def _yaml_tree_matching_task_nodes(data: Any, task_ref: str) -> list[dict[str, Any]]:
+    matches: list[dict[str, Any]] = []
+    if isinstance(data, dict):
+        identifiers = {
+            str(data.get("id") or ""),
+            str(data.get("task_ref") or ""),
+            str(data.get("roadmap_ref") or ""),
+        }
+        if task_ref in identifiers:
+            matches.append(data)
+        for value in data.values():
+            matches.extend(_yaml_tree_matching_task_nodes(value, task_ref))
+    elif isinstance(data, list):
+        for item in data:
+            matches.extend(_yaml_tree_matching_task_nodes(item, task_ref))
+    return matches
+
+
+def _hydrated_task_is_complete(root: Path, task_ref: str) -> bool:
+    task_id = str(task_ref or "").strip()
+    if not task_id:
+        return False
+    for rel_path in (".azoth/backlog.yaml", ".azoth/roadmap.yaml"):
+        path = root / rel_path
+        if not path.exists():
+            continue
+        data = safe_load_yaml_path(path)
+        for node in _yaml_tree_matching_task_nodes(data, task_id):
+            status = str(node.get("status") or "").strip().lower()
+            if status in TERMINAL_TASK_STATUSES or node.get("completed_date"):
+                return True
+    return False
+
+
 def _hydrated_task_artifacts_exist(root: Path, task_ref: str) -> bool:
     task_id = str(task_ref or "").strip()
     if not task_id:
@@ -1864,15 +1919,38 @@ def _hydrated_task_artifacts_exist(root: Path, task_ref: str) -> bool:
 
 def _high_severity_quality_signal(report: dict[str, Any]) -> dict[str, str] | None:
     quality = report.get("quality") if isinstance(report.get("quality"), dict) else {}
+    consumed_ids = set()
+    raw_consumed = quality.get("consumed_signal_ids")
+    if isinstance(raw_consumed, list):
+        consumed_ids = {str(item) for item in raw_consumed if str(item)}
     signals = quality.get("quality_signals")
     if not isinstance(signals, list):
         return None
     for signal in signals:
         if not isinstance(signal, dict):
             continue
+        if str(signal.get("id") or "") in consumed_ids:
+            continue
         if str(signal.get("severity") or "").lower() in {"high", "critical"}:
             return {str(key): str(value) for key, value in signal.items()}
     return None
+
+
+def _consumed_self_capture_ids(state: dict[str, Any]) -> list[str]:
+    consumed: list[str] = []
+    history = state.get("history")
+    if not isinstance(history, list):
+        return consumed
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        materialization = item.get("self_capture_materialization")
+        if not isinstance(materialization, dict):
+            continue
+        entry_id = str(materialization.get("entry_id") or "")
+        if entry_id and entry_id not in consumed:
+            consumed.append(entry_id)
+    return consumed
 
 
 def _campaign_requires_fresh_budget(report: dict[str, Any]) -> bool:
@@ -2009,7 +2087,24 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
         )
         ux_basis = "Seed-only approval remains visible and blocks delivery writes."
     elif candidate_status == "hydrated":
-        if _hydrated_task_artifacts_exist(root, task_ref):
+        if bool(readiness.get("candidate_task_complete")):
+            selected_route = "stop"
+            route_state = "completed_or_stale_campaign"
+            approval_needed = "fresh initiative candidate or readiness refresh"
+            blocked_actions.append(
+                {
+                    "action": "ship_task",
+                    "reason": f"hydrated task {task_ref or 'candidate task'} is already complete",
+                }
+            )
+            blocked_actions.append(
+                {
+                    "action": "hydrate_task",
+                    "reason": "repeat hydration is blocked for an already completed candidate",
+                }
+            )
+            ux_basis = "Completed task truth blocks stale autonomous delivery."
+        elif _hydrated_task_artifacts_exist(root, task_ref):
             selected_route = "ship_task"
             route_state = "delivery_ready"
             approval_needed = "normal scoped delivery approval"
@@ -2105,6 +2200,7 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
             "candidate_id": readiness.get("candidate_id"),
             "candidate_status": readiness.get("candidate_status"),
             "candidate_task_ref": readiness.get("candidate_task_ref"),
+            "candidate_task_complete": bool(readiness.get("candidate_task_complete")),
             "scaffold_command": readiness.get("scaffold_command"),
         },
         "ux_anchor_rationale": {
@@ -2148,6 +2244,19 @@ def build_initiative_lifecycle_report(
     reflections, reflection_errors = _load_jsonl_mappings(reflection_path)
     candidate = _selected_lifecycle_candidate(doc, readiness_report)
     readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
+    task_ref = str(
+        readiness_report.get("candidate_task_ref") or candidate.get("proposed_task_id") or ""
+    )
+    candidate_task_complete = _hydrated_task_is_complete(root, task_ref)
+    loop_state = _load_yaml_mapping(state_path)
+    consumed_signal_ids = _consumed_self_capture_ids(loop_state)
+    lifecycle_readiness = {
+        **readiness_report,
+        "approval_basis": readiness.get("approval_basis") or "",
+        "approval_scope": readiness.get("approval_scope") or "",
+        "next_readiness_gate": readiness.get("next_readiness_gate") or "",
+        "candidate_task_complete": candidate_task_complete,
+    }
     campaign = campaign_report(root, state_path, handoff_path=handoff_path)
     target_layer = str(readiness_report.get("target_layer") or "").lower()
     delivery_pipeline = str(readiness_report.get("delivery_pipeline") or "").lower()
@@ -2156,7 +2265,12 @@ def build_initiative_lifecycle_report(
     )
     reflection_observable = reflection_path is not None and reflection_path.exists()
 
-    if str(readiness_report.get("candidate_status") or "") == "hydrated":
+    if candidate_task_complete:
+        readiness_meaning = (
+            "The selected candidate is hydrated, but its task is already complete; "
+            "stale delivery is blocked."
+        )
+    elif str(readiness_report.get("candidate_status") or "") == "hydrated":
         readiness_meaning = (
             "The selected candidate is hydrated into an executable task; repeat hydration is "
             "blocked and the next safe move is scoped delivery."
@@ -2216,10 +2330,7 @@ def build_initiative_lifecycle_report(
         },
         "candidate": candidate,
         "readiness": {
-            **readiness_report,
-            "approval_basis": readiness.get("approval_basis") or "",
-            "approval_scope": readiness.get("approval_scope") or "",
-            "next_readiness_gate": readiness.get("next_readiness_gate") or "",
+            **lifecycle_readiness,
         },
         "campaign_context": {
             "current_loop_status": campaign.get("current_loop", {}).get("status"),
@@ -2230,6 +2341,7 @@ def build_initiative_lifecycle_report(
         "quality": {
             "reflection_observable": reflection_observable,
             "quality_signals": _quality_signals_from_reflections(reflections),
+            "consumed_signal_ids": consumed_signal_ids,
             "evaluator_scores": [
                 {
                     "name": "autonomous_auto_campaign_orchestrator_report",
@@ -2261,8 +2373,8 @@ def build_initiative_lifecycle_report(
             "approval_basis": readiness.get("approval_basis") or "",
             "human_decision": readiness_report.get("human_decision"),
         },
-        "next_safe_actions": _lifecycle_next_safe_actions(doc, readiness_report, reflections),
-        "blocked_actions": _lifecycle_blocked_actions(readiness_report),
+        "next_safe_actions": _lifecycle_next_safe_actions(doc, lifecycle_readiness, reflections),
+        "blocked_actions": _lifecycle_blocked_actions(lifecycle_readiness),
     }
 
 

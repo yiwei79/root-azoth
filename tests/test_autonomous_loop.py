@@ -1367,6 +1367,34 @@ def _write_hydrated_task_artifacts(tmp_path: Path, task_id: str) -> None:
     )
 
 
+def _write_completed_task_artifacts(tmp_path: Path, task_id: str) -> None:
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0" / f"{task_id}.yaml",
+        {"id": task_id, "title": "Hydrated task"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "versions": [
+                {
+                    "id": "v0.2.0-p3",
+                    "completed_tasks": [
+                        {
+                            "id": task_id,
+                            "title": "Hydrated task",
+                            "completed_date": "2026-04-25",
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [{"id": task_id, "status": "complete", "completed_date": "2026-04-25"}],
+    )
+
+
 def test_lifecycle_report_reuses_readiness_report_and_reflection_without_writes(
     tmp_path: Path,
 ) -> None:
@@ -1556,6 +1584,29 @@ def test_lifecycle_report_hydrated_candidate_routes_to_ship_task(tmp_path: Path)
     )
 
 
+def test_lifecycle_report_completed_hydrated_task_blocks_stale_ship_task(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+
+    report = autonomous_loop.build_initiative_lifecycle_report(tmp_path, initiative_path)
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert report["readiness"]["candidate_task_complete"] is True
+    assert all(item["action"] != "ship_task" for item in report["next_safe_actions"])
+    assert any(item["action"] == "ship_task" for item in report["blocked_actions"])
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "completed_or_stale_campaign"
+    assert capsule["readiness_evidence"]["candidate_task_complete"] is True
+
+
 def test_route_decision_capsule_delivery_ready_requires_hydrated_task_artifacts(
     tmp_path: Path,
 ) -> None:
@@ -1654,6 +1705,34 @@ def test_route_decision_capsule_seed_only_and_self_capture_fail_closed(
 
     assert capture["selected_route"] == "capture_self_improvement"
     assert capture["route_state"] == "high_severity_self_capture"
+
+
+def test_route_decision_capsule_consumed_self_capture_does_not_preempt_again(
+    tmp_path: Path,
+) -> None:
+    _state(
+        tmp_path,
+        history=[
+            {
+                "action": "capture_self_improvement",
+                "self_capture_materialization": {
+                    "entry_id": "SRF-2026-04-25-AUTOAUTO-CAMPAIGN-REPORT-IMPLICATIONS",
+                    "artifact_path": ".azoth/inbox/session-reflection-2026-04-25-autonomous-auto-campaign-report.jsonl",
+                },
+            }
+        ],
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    reflection_path = _write_lifecycle_reflection(tmp_path)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        reflection_path=reflection_path,
+    )
+
+    assert capsule["selected_route"] != "capture_self_improvement"
+    assert capsule["route_state"] in {"discovery_active", "candidate_ready_for_review"}
 
 
 def test_route_decision_capsule_protected_gate_overrides_self_capture(
