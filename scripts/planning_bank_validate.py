@@ -118,6 +118,28 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     return loaded
 
 
+def _non_empty_string(value: Any) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value
+    return None
+
+
+def _list_or_empty(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def _freshness_blocking_reason(freshness_status: Any) -> str | None:
+    value = _non_empty_string(freshness_status)
+    if value is None:
+        return "readiness.freshness_status must be present and non-stale"
+    normalized = value.strip().lower()
+    if normalized == "stale" or normalized.startswith(("stale_", "stale-")):
+        return "readiness.freshness_status must not be stale"
+    return None
+
+
 def _require_fields(doc: dict[str, Any], required: set[str], *, label: str) -> None:
     missing = sorted(required - set(doc))
     if missing:
@@ -306,19 +328,37 @@ def build_initiative_readiness_report(
     ):
         candidate = candidates[0]
 
+    candidate_doc = candidate if isinstance(candidate, dict) else {}
+    hydration_plan = candidate_doc.get("hydration_plan")
+    if not isinstance(hydration_plan, dict):
+        hydration_plan = {}
+
     human_decision = readiness.get("human_decision")
     readiness_status = readiness.get("readiness_status")
-    acceptance_criteria = candidate.get("acceptance_criteria") if isinstance(candidate, dict) else None
-    non_goals = candidate.get("known_non_goals") if isinstance(candidate, dict) else None
-    open_questions = candidate.get("open_questions") if isinstance(candidate, dict) else None
-    candidate_status = candidate.get("status") if isinstance(candidate, dict) else None
+    freshness_status = readiness.get("freshness_status")
+    acceptance_criteria = candidate_doc.get("acceptance_criteria")
+    non_goals = candidate_doc.get("known_non_goals")
+    open_questions = candidate_doc.get("open_questions")
+    candidate_status = candidate_doc.get("status")
+    initiative_ref = candidate_doc.get("initiative_ref") or doc.get("initiative_id")
+    candidate_slice_ref = candidate_doc.get("candidate_id") or selected_candidate_id
+    target_layer = _non_empty_string(candidate_doc.get("target_layer"))
+    delivery_pipeline = _non_empty_string(candidate_doc.get("delivery_pipeline"))
+    proposed_title = _non_empty_string(hydration_plan.get("proposed_title"))
+    scaffold_command_candidate = _non_empty_string(hydration_plan.get("scaffold_command"))
+    acceptance = _list_or_empty(acceptance_criteria)
+    goals_to_exclude = _list_or_empty(non_goals)
     blocking_reasons: list[str] = []
     use_readiness_candidate_status = selected_candidate_id == candidate_first_slice
 
-    if candidate_status in {"hydrated", "complete"}:
+    if isinstance(candidate, dict) and candidate_status is None:
+        blocking_reasons.append("candidate.status must be present")
+    elif candidate_status in {"hydrated", "complete"}:
         blocking_reasons.append(
             f"candidate.status is {candidate_status}; no hydration action remains"
         )
+    elif candidate_status is not None and candidate_status != "candidate":
+        blocking_reasons.append("candidate.status must be candidate")
     if readiness_status != "ready_to_hydrate":
         blocking_reasons.append("readiness.readiness_status must be ready_to_hydrate")
     if human_decision != "approved":
@@ -338,38 +378,53 @@ def build_initiative_readiness_report(
         blocking_reasons.append("candidate.open_questions must be empty")
     elif not isinstance(open_questions, list):
         blocking_reasons.append("candidate.open_questions must be a list")
+    if target_layer is None:
+        blocking_reasons.append("candidate.target_layer must be a non-empty string")
+    if delivery_pipeline is None:
+        blocking_reasons.append("candidate.delivery_pipeline must be a non-empty string")
+    if proposed_title is None:
+        blocking_reasons.append(
+            "candidate.hydration_plan.proposed_title must be a non-empty string"
+        )
+    if isinstance(candidate, dict) and scaffold_command_candidate is None:
+        blocking_reasons.append(
+            "candidate.hydration_plan.scaffold_command must be a non-empty string"
+        )
+    freshness_blocker = _freshness_blocking_reason(freshness_status)
+    if freshness_blocker is not None:
+        blocking_reasons.append(freshness_blocker)
 
-    ready_to_hydrate = (
-        readiness_status == "ready_to_hydrate"
-        and human_decision == "approved"
-        and isinstance(acceptance_criteria, list)
-        and bool(acceptance_criteria)
-        and isinstance(non_goals, list)
-        and bool(non_goals)
-        and isinstance(open_questions, list)
-        and not open_questions
-        and candidate_status not in {"hydrated", "complete"}
-    )
+    ready_to_hydrate = not blocking_reasons
     acceptance_criteria_status = (
         readiness.get("acceptance_criteria_status") if use_readiness_candidate_status else None
     )
     non_goals_status = readiness.get("non_goals_status") if use_readiness_candidate_status else None
+    scaffold_command = scaffold_command_candidate if ready_to_hydrate else None
 
     return {
         "initiative_id": doc.get("initiative_id"),
+        "initiative_ref": initiative_ref,
+        "source_bank_ref": rel.as_posix(),
         "readiness_status": readiness_status or "missing",
         "human_decision": human_decision or "missing",
-        "candidate_first_slice": candidate_first_slice or (candidate or {}).get("candidate_id"),
-        "candidate_id": (candidate or {}).get("candidate_id") or selected_candidate_id or "missing",
-        "candidate_task_ref": (candidate or {}).get("proposed_task_id"),
+        "candidate_first_slice": candidate_first_slice or candidate_doc.get("candidate_id"),
+        "candidate_id": candidate_doc.get("candidate_id") or selected_candidate_id or "missing",
+        "candidate_slice_ref": candidate_slice_ref or "missing",
+        "candidate_task_ref": candidate_doc.get("proposed_task_id"),
         "candidate_status": candidate_status or "missing",
+        "proposed_title": proposed_title,
+        "target_layer": target_layer,
+        "delivery_pipeline": delivery_pipeline,
+        "acceptance": acceptance,
         "acceptance_criteria_status": acceptance_criteria_status
         or ("present" if acceptance_criteria else "missing"),
+        "non_goals": goals_to_exclude,
         "non_goals_status": non_goals_status or ("present" if non_goals else "missing"),
-        "freshness_status": readiness.get("freshness_status") or "missing",
+        "freshness_status": freshness_status or "missing",
         "hydration_recommendation": readiness.get("hydration_recommendation") or "missing",
         "blocking_reasons": blocking_reasons,
         "ready_to_hydrate": ready_to_hydrate,
+        "scaffold_command": scaffold_command,
     }
 
 

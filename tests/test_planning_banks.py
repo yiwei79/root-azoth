@@ -37,6 +37,28 @@ def _load_yaml(path: Path) -> dict:
     return loaded
 
 
+def _write_temp_initiative_bank(repo: Path, *, initiative_id: str = "INI-TEST") -> tuple[Path, dict]:
+    bank_path = repo / ".azoth" / "initiative-banks" / f"{initiative_id}.yaml"
+    bank_path.parent.mkdir(parents=True)
+    bank = _load_yaml(INITIATIVE_BANK_PATH)
+    bank["initiative_id"] = initiative_id
+    if isinstance(bank.get("readiness"), dict):
+        bank["readiness"]["source_bank_ref"] = f".azoth/initiative-banks/{initiative_id}.yaml"
+    for candidate in bank["candidate_slices"]:
+        candidate["initiative_ref"] = initiative_id
+        hydration_plan = candidate.get("hydration_plan")
+        if isinstance(hydration_plan, dict) and isinstance(
+            hydration_plan.get("scaffold_command"),
+            str,
+        ):
+            hydration_plan["scaffold_command"] = hydration_plan["scaffold_command"].replace(
+                "--initiative-ref INI-EVI-002",
+                f"--initiative-ref {initiative_id}",
+            )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    return bank_path, bank
+
+
 def test_live_planning_banks_validate() -> None:
     validate_design_bank(DESIGN_BANK_PATH)
     validate_initiative_bank(INITIATIVE_BANK_PATH)
@@ -108,26 +130,209 @@ def test_ini_evi_002_bank_third_slice_is_complete_and_routes_helper_refinement()
 
 
 def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
+    bank = _load_yaml(INITIATIVE_BANK_PATH)
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
+    assert report["initiative_id"] == "INI-EVI-002"
+    assert report["initiative_ref"] == "INI-EVI-002"
+    assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
+    assert report["readiness_status"] == "continue_research"
+    assert report["human_decision"] == "approved"
+    assert report["candidate_first_slice"] == "slice-evi-002-c"
+    assert report["candidate_id"] == "slice-evi-002-c"
+    assert report["candidate_slice_ref"] == "slice-evi-002-c"
+    assert report["candidate_task_ref"] == "T-021"
+    assert report["candidate_status"] == "complete"
+    assert report["proposed_title"] == "Planning-bank ID and coverage policy"
+    assert report["target_layer"] == "infrastructure"
+    assert report["delivery_pipeline"] == "standard"
+    assert report["acceptance"] == candidate["acceptance_criteria"]
+    assert report["acceptance_criteria_status"] == "stable"
+    assert report["non_goals"] == candidate["known_non_goals"]
+    assert report["non_goals_status"] == "stable"
+    assert report["freshness_status"] == "reconciled_after_t_021_completion"
+    assert (
+        report["hydration_recommendation"]
+        == "T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate."
+    )
+    assert report["blocking_reasons"] == [
+        "candidate.status is complete; no hydration action remains",
+        "readiness.readiness_status must be ready_to_hydrate",
+    ]
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
+
+
+def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    readiness["acceptance_criteria_status"] = "stable"
+    readiness["non_goals_status"] = "stable"
+    readiness["hydration_recommendation"] = "Ready for plan-only scaffold."
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["acceptance_criteria"] = [
+        "The approved temp candidate emits a scaffold command.",
+        "The report remains plan-only and read-only.",
+    ]
+    candidate["known_non_goals"] = [
+        "Do not mutate roadmap state.",
+        "Do not implement write-mode hydration.",
+    ]
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        'scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
     assert report == {
-        "initiative_id": "INI-EVI-002",
-        "readiness_status": "continue_research",
+        "initiative_id": "INI-TEST",
+        "initiative_ref": "INI-TEST",
+        "source_bank_ref": ".azoth/initiative-banks/INI-TEST.yaml",
+        "readiness_status": "ready_to_hydrate",
         "human_decision": "approved",
         "candidate_first_slice": "slice-evi-002-c",
         "candidate_id": "slice-evi-002-c",
-        "candidate_task_ref": "T-021",
-        "candidate_status": "complete",
-        "acceptance_criteria_status": "stable",
-        "non_goals_status": "stable",
-        "freshness_status": "reconciled_after_t_021_completion",
-        "hydration_recommendation": "T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate.",
-        "blocking_reasons": [
-            "candidate.status is complete; no hydration action remains",
-            "readiness.readiness_status must be ready_to_hydrate",
+        "candidate_slice_ref": "slice-evi-002-c",
+        "candidate_task_ref": "TBD-INI-TEST-001",
+        "candidate_status": "candidate",
+        "proposed_title": "Temp approved planning-bank slice",
+        "target_layer": "infrastructure",
+        "delivery_pipeline": "standard",
+        "acceptance": [
+            "The approved temp candidate emits a scaffold command.",
+            "The report remains plan-only and read-only.",
         ],
-        "ready_to_hydrate": False,
+        "acceptance_criteria_status": "stable",
+        "non_goals": [
+            "Do not mutate roadmap state.",
+            "Do not implement write-mode hydration.",
+        ],
+        "non_goals_status": "stable",
+        "freshness_status": "fresh",
+        "hydration_recommendation": "Ready for plan-only scaffold.",
+        "blocking_reasons": [],
+        "ready_to_hydrate": True,
+        "scaffold_command": (
+            'scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+            "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+        ),
     }
+
+
+def test_readiness_report_fails_closed_when_candidate_status_is_missing(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate.pop("status", None)
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert report["candidate_status"] == "missing"
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
+    assert "candidate.status must be present" in report["blocking_reasons"]
+
+
+def test_readiness_report_fails_closed_when_proposed_title_is_missing(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"].pop("proposed_title", None)
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert report["proposed_title"] is None
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
+    assert (
+        "candidate.hydration_plan.proposed_title must be a non-empty string"
+        in report["blocking_reasons"]
+    )
+
+
+def test_readiness_report_fails_closed_on_missing_or_stale_freshness(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness.pop("freshness_status", None)
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["open_questions"] = []
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    missing_report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert missing_report["freshness_status"] == "missing"
+    assert missing_report["ready_to_hydrate"] is False
+    assert missing_report["scaffold_command"] is None
+    assert (
+        "readiness.freshness_status must be present and non-stale"
+        in missing_report["blocking_reasons"]
+    )
+
+    readiness["freshness_status"] = "stale"
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    stale_report = build_initiative_readiness_report(bank_path, repo_root=repo)
+
+    assert stale_report["freshness_status"] == "stale"
+    assert stale_report["ready_to_hydrate"] is False
+    assert stale_report["scaffold_command"] is None
+    assert "readiness.freshness_status must not be stale" in stale_report["blocking_reasons"]
 
 
 def test_readiness_report_fails_closed_without_human_approval(tmp_path: Path) -> None:
@@ -443,7 +648,7 @@ def test_validator_cli_prints_readiness_reports_top_level_yaml() -> None:
             "--readiness-report",
             str(INITIATIVE_BANK_PATH),
             "--candidate-id",
-            "slice-evi-002-b",
+            "slice-evi-002-c",
         ],
         cwd=ROOT,
         check=False,
@@ -454,8 +659,24 @@ def test_validator_cli_prints_readiness_reports_top_level_yaml() -> None:
     assert result.returncode == 0, result.stderr
     output = yaml.safe_load(result.stdout)
     assert set(output) == {"readiness_reports"}
-    assert output["readiness_reports"][0]["candidate_id"] == "slice-evi-002-b"
-    assert output["readiness_reports"][0]["ready_to_hydrate"] is False
+    report = output["readiness_reports"][0]
+    assert {
+        "initiative_ref",
+        "source_bank_ref",
+        "candidate_slice_ref",
+        "proposed_title",
+        "target_layer",
+        "delivery_pipeline",
+        "acceptance",
+        "non_goals",
+        "scaffold_command",
+    }.issubset(report)
+    assert report["candidate_id"] == "slice-evi-002-c"
+    assert report["candidate_slice_ref"] == "slice-evi-002-c"
+    assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
+    assert report["proposed_title"] == "Planning-bank ID and coverage policy"
+    assert report["ready_to_hydrate"] is False
+    assert report["scaffold_command"] is None
 
 
 def test_validator_cli_readiness_report_is_read_only() -> None:
