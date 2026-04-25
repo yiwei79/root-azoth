@@ -198,7 +198,7 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
     assert initiative["phase"] == "v0.2.0-p3"
-    assert initiative["task_ref"] == "T-021"
+    assert initiative["task_ref"] == "T-022"
     assert initiative["slices"] == [
         {
             "task_ref": "T-018",
@@ -219,6 +219,13 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-021.yaml",
             "phase": "v0.2.0-p3",
             "status": "complete",
+            "role": "historical",
+        },
+        {
+            "task_ref": "T-022",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-022.yaml",
+            "phase": "v0.2.0-p3",
+            "status": "active",
             "role": "primary",
         },
     ]
@@ -241,8 +248,9 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
     assert hydrated_candidates == []
-    assert initiative["discovery_status"] == "slice_evi_002_c_complete_next_helper_refinement"
-    assert "initiative-bank-tooling-and-hydration-helper.yaml" in initiative["next_discovery_action"]
+    assert initiative["discovery_status"] == "plan_only_handoff_helper_hydrated"
+    assert "T-022 is hydrated" in initiative["next_discovery_action"]
+    assert "ship_task" in initiative["next_discovery_action"]
 
     roadmap_task_ids = {
         str(task.get("id"))
@@ -266,6 +274,9 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     assert "T-021" in roadmap_task_ids
     assert "T-021" in backlog_ids
     assert "T-021" in spec_ids
+    assert "T-022" in roadmap_task_ids
+    assert "T-022" in backlog_ids
+    assert "T-022" in spec_ids
 
 
 def test_design_bank_id_must_match_filename(tmp_path: Path) -> None:

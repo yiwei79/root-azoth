@@ -487,7 +487,7 @@ initiatives:
     - project-management-quality
   phase: v0.2.0-p3
   priority: high
-  task_ref: T-021
+  task_ref: T-022
   slices:
   - task_ref: T-018
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-018.yaml
@@ -503,18 +503,22 @@ initiatives:
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
     phase: v0.2.0-p3
     status: complete
+    role: historical
+  - task_ref: T-022
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
+    phase: v0.2.0-p3
+    status: active
     role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
   design_bank_refs:
   - .azoth/design-banks/planning-banks-layer.yaml
   research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
-  discovery_status: slice_evi_002_c_complete_next_helper_refinement
+  discovery_status: plan_only_handoff_helper_hydrated
   candidate_slice_ref: slice-evi-002-c
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: T-021 is complete across roadmap and backlog history;
-    refine .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-    before hydrating another INI-EVI-002 slice.
+  next_discovery_action: T-022 is hydrated as the active plan-only handoff helper;
+    deliver it in a later ship_task child before hydrating another INI-EVI-002 slice.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
@@ -535,7 +539,7 @@ initiatives:
   - D49
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -1697,7 +1701,15 @@ versions:
 
     '
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-022
+    title: Plan-only initiative hydration handoff helper
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    initiative_ref: INI-EVI-002
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
