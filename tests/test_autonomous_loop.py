@@ -1067,3 +1067,194 @@ def test_open_next_persists_budget_and_decision_capsule(tmp_path: Path) -> None:
     scope = json.loads((tmp_path / ".azoth/scope-gate.json").read_text(encoding="utf-8"))
     assert scope["autonomy_budget"]["replay_threshold"] == 2
     assert scope["loop_decision"]["architect_judgment"]["selected"]["candidate_id"] == "T-321"
+
+
+def test_campaign_report_observes_completed_handoff_without_continuing_current_loop(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        objective="Observer campaign",
+        iteration=1,
+        autonomy_budget={
+            "approval_basis": "User approved observer campaign.",
+            "max_iterations": 2,
+            "allowed_actions": ["ship_task"],
+        },
+    )
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "\n".join(
+            [
+                "# Autonomous-Auto Development Handoff - 2026-04-25",
+                "",
+                "## Current Truth",
+                "",
+                "- Autonomous loop: completed `4/4`",
+                "- Completion reason: `vision_realized`",
+                "- Vision band: `green -> target green`",
+                "- Shared write claim: none",
+                "",
+                "## Known Residuals",
+                "",
+                "1. T-020 malformed YAML remains outside scope.",
+                "2. Bootloader header is stale.",
+                "",
+                "## Safe Continuation Checks",
+                "",
+                "```bash",
+                "git status --short --branch",
+                "python3 scripts/autonomous_loop.py status --operator-read",
+                "```",
+                "",
+                "## Recommended Next Development Options",
+                "",
+                "### Option A - Metadata Repair",
+                "",
+                "Why: low risk, improves operator truth.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    state_before = state_path.read_text(encoding="utf-8")
+    handoff_before = handoff_path.read_text(encoding="utf-8")
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
+
+    assert report["report_schema_version"] == 1
+    assert report["current_loop"]["status"] == "active"
+    assert report["handoff_campaign"]["observable"] is True
+    assert report["handoff_campaign"]["current_truth"]["completion_reason"] == "vision_realized"
+    assert report["handoff_campaign"]["completion_reason"] == "vision_realized"
+    assert report["handoff_campaign"]["vision_band"] == "green -> target green"
+    assert report["observation"]["fresh_budget_required"] is True
+    assert report["observation"]["safe_to_continue_old_campaign"] is False
+    assert report["handoff_campaign"]["known_residuals"] == [
+        "T-020 malformed YAML remains outside scope.",
+        "Bootloader header is stale.",
+    ]
+    assert report["handoff_campaign"]["safe_continuation_commands"] == [
+        "git status --short --branch",
+        "python3 scripts/autonomous_loop.py status --operator-read",
+    ]
+    assert report["handoff_campaign"]["recommended_options"][0]["title"] == (
+        "Option A - Metadata Repair"
+    )
+    assert state_path.read_text(encoding="utf-8") == state_before
+    assert handoff_path.read_text(encoding="utf-8") == handoff_before
+
+
+def test_campaign_report_discovers_latest_autonomous_handoff(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+    handoffs = tmp_path / ".azoth/handoffs"
+    handoffs.mkdir(parents=True, exist_ok=True)
+    older = handoffs / "2026-04-24-autonomous-auto-development-handoff.md"
+    latest = handoffs / "2026-04-25-autonomous-auto-development-handoff.md"
+    older.write_text(
+        "# Old\n\n## Current Truth\n\n- Completion reason: `older`\n",
+        encoding="utf-8",
+    )
+    latest.write_text(
+        "# New\n\n## Current Truth\n\n- Completion reason: `vision_realized`\n",
+        encoding="utf-8",
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+
+    assert report["handoff_campaign"]["path"].endswith(
+        ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    )
+    assert report["handoff_campaign"]["completion_reason"] == "vision_realized"
+
+
+def test_campaign_report_cli_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    state_path = _state(tmp_path)
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "# Handoff\n\n## Current Truth\n\n- Completion reason: `vision_realized`\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--state",
+                str(state_path),
+                "campaign-report",
+                "--handoff",
+                str(handoff_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["handoff_campaign"]["completion_reason"] == "vision_realized"
+    assert payload["observation"]["fresh_budget_required"] is True
+
+
+def test_campaign_report_fails_closed_for_missing_loop_state(tmp_path: Path) -> None:
+    state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "# Handoff\n\n## Current Truth\n\n- Completion reason: `vision_realized`\n",
+        encoding="utf-8",
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
+
+    assert report["current_loop"]["observable"] is False
+    assert report["current_loop"]["failure_reason"] == "missing_loop_state"
+    assert report["observation"]["fresh_budget_required"] is True
+    assert report["observation"]["safe_to_continue_old_campaign"] is False
+
+
+def test_campaign_report_fails_closed_for_missing_handoff(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+
+    assert report["handoff_campaign"]["observable"] is False
+    assert report["handoff_campaign"]["failure_reason"] == "missing_handoff"
+    assert report["observation"]["fresh_budget_required"] is True
+    assert report["observation"]["safe_to_continue_old_campaign"] is False
+
+
+def test_campaign_report_requires_fresh_budget_for_nonvision_handoff_completion(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "# Handoff\n\n## Current Truth\n\n- Completion reason: `budget_exhausted`\n",
+        encoding="utf-8",
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
+
+    assert report["handoff_campaign"]["completion_reason"] == "budget_exhausted"
+    assert report["observation"]["fresh_budget_required"] is True
+    assert report["observation"]["safe_to_continue_old_campaign"] is False
+
+
+def test_campaign_report_fails_closed_for_missing_handoff_completion_reason(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text("# Handoff\n\n## Current Truth\n\n- Vision band: green\n", encoding="utf-8")
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
+
+    assert report["handoff_campaign"]["completion_reason"] == ""
+    assert report["observation"]["fresh_budget_required"] is True
+    assert report["observation"]["safe_to_continue_old_campaign"] is False

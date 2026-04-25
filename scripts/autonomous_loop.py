@@ -25,6 +25,7 @@ from yaml_helpers import safe_load_yaml_path
 STATE_REL = ".azoth/autonomous-loop-state.local.yaml"
 SCOPE_GATE_REL = ".azoth/scope-gate.json"
 INBOX_DIR_REL = ".azoth/inbox"
+HANDOFFS_DIR_REL = ".azoth/handoffs"
 DECISION_SCHEMA_VERSION = 1
 VALID_ACTIONS = {
     "ship_task",
@@ -1407,6 +1408,220 @@ def _load_json_argument(raw: str, *, label: str) -> dict[str, Any]:
     return data
 
 
+def _latest_autonomous_handoff(root: Path) -> Path | None:
+    handoffs_dir = root / HANDOFFS_DIR_REL
+    if not handoffs_dir.is_dir():
+        return None
+    candidates = [
+        path
+        for path in handoffs_dir.glob("*autonomous-auto*handoff*.md")
+        if path.is_file()
+    ]
+    if not candidates:
+        return None
+    return sorted(candidates, key=lambda path: path.name)[-1]
+
+
+def _markdown_sections(text: str) -> dict[str, list[str]]:
+    sections: dict[str, list[str]] = {}
+    current = ""
+    for line in text.splitlines():
+        match = re.match(r"^##\s+(.+?)\s*$", line)
+        if match:
+            current = match.group(1).strip()
+            sections.setdefault(current, [])
+            continue
+        if current:
+            sections[current].append(line)
+    return sections
+
+
+def _clean_markdown_value(value: str) -> str:
+    text = str(value or "").strip()
+    if len(text) >= 2 and text.startswith("`") and text.endswith("`"):
+        text = text[1:-1]
+    return text.replace("`", "").strip()
+
+
+def _markdown_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
+
+
+def _parse_current_truth(lines: list[str]) -> dict[str, str]:
+    truth: dict[str, str] = {}
+    for line in lines:
+        match = re.match(r"^\s*[-*]\s+([^:]+):\s*(.+?)\s*$", line)
+        if not match:
+            continue
+        key = _markdown_key(match.group(1))
+        if key:
+            truth[key] = _clean_markdown_value(match.group(2))
+    return truth
+
+
+def _parse_markdown_list(lines: list[str]) -> list[str]:
+    items: list[str] = []
+    current: list[str] = []
+    for line in lines:
+        match = re.match(r"^\s*(?:[-*]|\d+[.)])\s+(.+?)\s*$", line)
+        if match:
+            if current:
+                items.append(_clean_markdown_value(" ".join(current)))
+            current = [match.group(1)]
+            continue
+        stripped = line.strip()
+        if current and stripped and not stripped.startswith("#") and not stripped.startswith("```"):
+            current.append(stripped)
+    if current:
+        items.append(_clean_markdown_value(" ".join(current)))
+    return items
+
+
+def _parse_safe_continuation_commands(lines: list[str]) -> list[str]:
+    commands: list[str] = []
+    in_fence = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence and stripped:
+            commands.append(stripped)
+    return commands
+
+
+def _parse_recommended_options(lines: list[str]) -> list[dict[str, Any]]:
+    options: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    body: list[str] = []
+    for line in lines:
+        match = re.match(r"^###\s+(.+?)\s*$", line)
+        if match:
+            if current is not None:
+                current["body"] = "\n".join(body).strip()
+                options.append(current)
+            current = {"title": match.group(1).strip()}
+            body = []
+            continue
+        if current is not None:
+            body.append(line)
+    if current is not None:
+        current["body"] = "\n".join(body).strip()
+        options.append(current)
+    return options
+
+
+def _parse_handoff_campaign(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        return {
+            "observable": False,
+            "path": "",
+            "failure_reason": "missing_handoff",
+            "current_truth": {},
+            "completion_reason": "",
+            "vision_band": "",
+            "known_residuals": [],
+            "safe_continuation_commands": [],
+            "recommended_options": [],
+        }
+    if not path.exists():
+        return {
+            "observable": False,
+            "path": str(path),
+            "failure_reason": "missing_handoff",
+            "current_truth": {},
+            "completion_reason": "",
+            "vision_band": "",
+            "known_residuals": [],
+            "safe_continuation_commands": [],
+            "recommended_options": [],
+        }
+    sections = _markdown_sections(path.read_text(encoding="utf-8"))
+    current_truth = _parse_current_truth(sections.get("Current Truth", []))
+    return {
+        "observable": True,
+        "path": str(path),
+        "failure_reason": "",
+        "current_truth": current_truth,
+        "completion_reason": current_truth.get("completion_reason", ""),
+        "vision_band": current_truth.get("vision_band", ""),
+        "known_residuals": _parse_markdown_list(sections.get("Known Residuals", [])),
+        "safe_continuation_commands": _parse_safe_continuation_commands(
+            sections.get("Safe Continuation Checks", [])
+        ),
+        "recommended_options": _parse_recommended_options(
+            sections.get("Recommended Next Development Options", [])
+        ),
+    }
+
+
+def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
+    if not state_path.exists():
+        return {
+            "state_path": str(state_path),
+            "status": "missing_state",
+            "observable": False,
+            "failure_reason": "missing_loop_state",
+            "completion_reason": "",
+            "operator_read": {},
+        }
+    try:
+        report = loop_status(root, state_path)
+        report["operator_read"] = operator_read(root, state_path)
+    except Exception as exc:
+        return {
+            "state_path": str(state_path),
+            "status": "malformed_state",
+            "observable": False,
+            "failure_reason": f"malformed_loop_state: {exc}",
+            "completion_reason": "",
+            "operator_read": {},
+        }
+    report["observable"] = True
+    report.setdefault("failure_reason", "")
+    return report
+
+
+def campaign_report(
+    root: Path,
+    state_path: Path,
+    handoff_path: Path | None = None,
+) -> dict[str, Any]:
+    root = Path(root)
+    state_path = Path(state_path)
+    current_loop = _current_loop_report(root, state_path)
+
+    resolved_handoff = (
+        Path(handoff_path) if handoff_path is not None else _latest_autonomous_handoff(root)
+    )
+    if resolved_handoff is not None and not resolved_handoff.is_absolute():
+        resolved_handoff = root / resolved_handoff
+    handoff_campaign = _parse_handoff_campaign(resolved_handoff)
+    completion_reason = str(handoff_campaign.get("completion_reason") or "")
+    fail_closed = not current_loop.get("observable") or not handoff_campaign.get("observable")
+    vision_realized = completion_reason == "vision_realized"
+    observed_old_campaign = bool(handoff_campaign.get("observable"))
+    ambiguous_observation = observed_old_campaign and not completion_reason
+    return {
+        "report_schema_version": 1,
+        "current_loop": current_loop,
+        "handoff_campaign": handoff_campaign,
+        "observation": {
+            "fresh_budget_required": bool(
+                fail_closed or observed_old_campaign or ambiguous_observation
+            ),
+            "safe_to_continue_old_campaign": False,
+            "reason": "vision_realized"
+            if vision_realized
+            else "fail_closed"
+            if fail_closed
+            else "missing_completion_reason"
+            if ambiguous_observation
+            else "handoff_observed",
+        },
+    }
+
+
 def init_loop(
     root: Path,
     state_path: Path,
@@ -1986,6 +2201,43 @@ def cmd_materialize_self_capture(args: argparse.Namespace) -> None:
     print(json.dumps(result, indent=2, sort_keys=False))
 
 
+def _format_campaign_report(payload: dict[str, Any]) -> str:
+    current = payload.get("current_loop") if isinstance(payload.get("current_loop"), dict) else {}
+    handoff = (
+        payload.get("handoff_campaign")
+        if isinstance(payload.get("handoff_campaign"), dict)
+        else {}
+    )
+    observation = (
+        payload.get("observation") if isinstance(payload.get("observation"), dict) else {}
+    )
+    return "\n".join(
+        [
+            "Autonomous-auto campaign report",
+            f"Current loop: {current.get('status', 'unknown')}",
+            f"Handoff: {handoff.get('path') or 'none'}",
+            f"Completion reason: {handoff.get('completion_reason') or 'unknown'}",
+            f"Vision band: {handoff.get('vision_band') or 'unknown'}",
+            f"Fresh budget required: {observation.get('fresh_budget_required')}",
+            f"Safe to continue old campaign: {observation.get('safe_to_continue_old_campaign')}",
+        ]
+    )
+
+
+def cmd_campaign_report(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    state_path = _state_path(root, args.state)
+    handoff_path = Path(args.handoff) if args.handoff else None
+    if handoff_path is not None and not handoff_path.is_absolute():
+        handoff_path = root / handoff_path
+    result = campaign_report(root, state_path, handoff_path=handoff_path)
+    print(
+        json.dumps(result, indent=2, sort_keys=False)
+        if args.json
+        else _format_campaign_report(result)
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -2074,6 +2326,11 @@ def build_parser() -> argparse.ArgumentParser:
         "materialize-self-capture", help="Write the next self-capture candidate to inbox."
     )
     materialize.set_defaults(func=cmd_materialize_self_capture)
+
+    campaign = sub.add_parser("campaign-report", help="Observe an autonomous-auto handoff.")
+    campaign.add_argument("--handoff", default=None, help="Handoff markdown path.")
+    campaign.add_argument("--json", action="store_true")
+    campaign.set_defaults(func=cmd_campaign_report)
     return parser
 
 
