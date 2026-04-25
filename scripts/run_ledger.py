@@ -56,7 +56,7 @@ _NONBLOCKING_SUMMARY_DISPOSITIONS = {
     "passed",
     "no-changes",
 }
-_GOVERNED_RUN_MODES = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
+_GOVERNED_RUN_MODES = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 _STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _UNSET = object()

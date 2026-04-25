@@ -754,7 +754,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         "  <goal>   → /start route — exploratory goals open a session; delivery goals escalate to /auto"
     )
     lines.append(
-        "  codex    → app: slash list for enabled azoth-* skills; CLI/IDE: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens remain compatibility fallback"
+        "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto / $azoth-autonomous-auto; app slash list for enabled azoth-* skills; raw slash tokens remain compatibility fallback"
     )
     lines.append("")
     lines.append(sep)
@@ -1033,7 +1033,7 @@ def render_dashboard() -> None:
             else "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff"
         ),
         "[bold cyan]<goal>[/bold cyan]   :right_arrow: /start route — exploratory goals open a session; delivery goals escalate to /auto",
-        "[bold magenta]codex[/bold magenta]    :right_arrow: app slash list for enabled azoth-* skills; CLI/IDE: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens remain compatibility fallback",
+        "[bold magenta]codex[/bold magenta]    :right_arrow: primary: /skills or $azoth-resume / $azoth-next / $azoth-auto / $azoth-autonomous-auto; app slash list for enabled azoth-* skills; raw slash tokens remain compatibility fallback",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 

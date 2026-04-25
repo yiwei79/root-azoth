@@ -328,7 +328,7 @@ def _normalize_pipeline_command(
         _coerce_string(run_entry.get("mode") if isinstance(run_entry, dict) else ""),
         _coerce_string(delivery_pipeline),
     ):
-        if candidate in {"auto", "dynamic-full-auto", "deliver", "deliver-full"}:
+        if candidate in {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}:
             return candidate
     if target_layer == "M1" or delivery_pipeline == "governed":
         return "deliver-full"
@@ -694,7 +694,13 @@ def resume_session(
         delivery_pipeline=delivery_pipeline,
         target_layer=target_layer,
     )
-    if not pipeline and live_pipeline_command in {"auto", "dynamic-full-auto", "deliver", "deliver-full"}:
+    if not pipeline and live_pipeline_command in {
+        "auto",
+        "autonomous-auto",
+        "dynamic-full-auto",
+        "deliver",
+        "deliver-full",
+    }:
         pipeline = live_pipeline_command
     if pipeline:
         checkpoint["pipeline"] = pipeline

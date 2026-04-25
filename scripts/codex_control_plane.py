@@ -17,12 +17,12 @@ from session_gate import (
 )
 from session_continuity import resolve_transition
 
-PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
+PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
 SKILL_COMMAND_RE = re.compile(r"^\s*\$azoth-([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
 NONLEADING_COMMAND_MENTION_RE = re.compile(r"(?<!\S)/([a-z][a-z0-9-]*)\b")
 PIPELINE_OVERRIDE_RE = re.compile(
-    r"^\s*pipeline_command=(dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
+    r"^\s*pipeline_command=(autonomous-auto|dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
     re.DOTALL,
 )
 
@@ -361,9 +361,17 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
             "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`; before protected downstream stages, run `scripts/run_ledger.py require-stage-evidence` and fail closed on missing, mismatched, blocked, or needs-input evidence.",
         ]
     )
-    if pipeline in {"auto", "dynamic-full-auto"}:
+    if pipeline in {"auto", "autonomous-auto", "dynamic-full-auto"}:
         guidance.append(
-            "Within an approved `/auto` or `dynamic-full-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning and no required fresh-context, review-independence, or human gate is being bypassed."
+            "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning and no required fresh-context, review-independence, or human gate is being bypassed."
+        )
+    if pipeline == "autonomous-auto":
+        guidance.extend(
+            [
+                "Autonomous Auto Mode is a standalone adaptive pipeline, not a submode of `dynamic-full-auto`.",
+                "Use `alignment_mode: async`; classify later operator messages as alignment packets and apply them at the next safe checkpoint unless they are `async_stop`.",
+                "Persist `approval_basis` beside any branch-local autonomous approval fields.",
+            ]
         )
     if pipeline == "deliver-full":
         guidance.extend(

@@ -30,7 +30,7 @@ DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
     "Declaration, gate write, or status card does not count as Stage 2 execution"
 )
 AUTO_INLINE_JUSTIFICATION = (
-    "Within an approved `/auto` or `dynamic-full-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
+    "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
 )
 LEDGER_EVIDENCE_GUIDANCE = (
     "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`"
@@ -185,6 +185,23 @@ def test_codex_router_adds_context_for_dynamic_full_auto_token() -> None:
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=dynamic-full-auto investigate drift"
+    )
+
+
+def test_codex_router_adds_context_for_autonomous_auto_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/autonomous-auto improve Azoth", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/autonomous-auto" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/autonomous-auto/command.yaml" in ctx
+    assert "pipeline_command=autonomous-auto" in ctx
+    assert "alignment_mode: async" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=autonomous-auto improve Azoth"
     )
 
 

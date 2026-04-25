@@ -52,7 +52,9 @@ PIPELINE_GATE_CORE_REQUIRED_FIELDS = frozenset(
 )
 
 PIPELINE_GATE_MODE_FIELDS = frozenset({"pipeline", "pipeline_command"})
-PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
+PIPELINE_COMMANDS = frozenset(
+    {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
+)
 WINDOWS_DRIVE_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 

@@ -30,7 +30,7 @@ properties:
 
   pipeline:
     type: string
-    enum: [auto, deliver, deliver-full]
+    enum: [auto, autonomous-auto, deliver, deliver-full]
     description: "Which delivery command / preset produced this stage."
 
   stage_id:

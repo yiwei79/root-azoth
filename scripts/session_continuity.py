@@ -13,7 +13,7 @@ from typing import Any
 from session_gate import active_session_gate
 
 
-PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
+PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 _EXTEND_THRESHOLD_SECONDS = 30 * 60
 _WORK_ITEM_RE = re.compile(r"\b(?:[A-Z]{1,6}-\d{1,6}|P\d+-\d+|D\d+)\b", re.IGNORECASE)
 

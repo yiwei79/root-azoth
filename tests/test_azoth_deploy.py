@@ -1207,7 +1207,7 @@ def test_deployed_agents_skill_surface_has_no_stale_non_azoth_entries() -> None:
 
 # ── P1-013: Orchestrator binding tests ──────────────────────────────────────
 
-_PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
+_PIPELINE_CMD_NAMES = ("auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full")
 
 _SESSION_ENTRY_CMD_NAMES = ("start", "next", "resume")
 
@@ -1369,12 +1369,22 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
     assert "max_threads: 10, max_depth: 2" in content
 
 
-def test_dynamic_full_auto_defines_async_autonomous_self_development_mode() -> None:
+def test_dynamic_full_auto_does_not_define_autonomous_self_development_mode() -> None:
     content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
         encoding="utf-8"
     )
+    assert "## Autonomous Self-Development Mode" not in content
+    assert "operator lines are not sequential gates" not in content
+    assert "alignment packets" not in content
+
+
+def test_autonomous_auto_defines_standalone_async_self_development_mode() -> None:
+    content = (_REPO_ROOT / "skills" / "autonomous-auto" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
     for needle in (
-        "## Autonomous Self-Development Mode",
+        "## Autonomous Auto Mode",
+        "selected mode = `autonomous-auto`",
         "alignment_mode: async",
         "operator lines are not sequential gates",
         "alignment packets",
@@ -1382,20 +1392,24 @@ def test_dynamic_full_auto_defines_async_autonomous_self_development_mode() -> N
         "next safe checkpoint",
         "async_stop",
         "branch-local autonomy budget",
+        "adaptive pipeline",
+        "pipeline_command=autonomous-auto",
     ):
-        assert needle in content, f"dynamic-full-auto skill missing {needle!r}"
+        assert needle in content, f"autonomous-auto skill missing {needle!r}"
 
 
-def test_dynamic_full_auto_async_mode_reaches_entrypoint_and_skill_mirrors() -> None:
+def test_autonomous_auto_reaches_entrypoint_and_skill_mirrors() -> None:
     for rel in (
-        ".claude/commands/dynamic-full-auto.md",
-        ".github/prompts/dynamic-full-auto.prompt.md",
-        ".opencode/commands/dynamic-full-auto.md",
-        ".agents/skills/dynamic-full-auto/SKILL.md",
-        ".opencode/skills/dynamic-full-auto/SKILL.md",
+        ".claude/commands/autonomous-auto.md",
+        ".github/prompts/autonomous-auto.prompt.md",
+        ".opencode/commands/autonomous-auto.md",
+        ".agents/workflows/autonomous-auto.md",
+        ".agents/skills/autonomous-auto/SKILL.md",
+        ".opencode/skills/autonomous-auto/SKILL.md",
+        ".agents/skills/azoth-autonomous-auto/SKILL.md",
     ):
         content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
-        assert "Autonomous Self-Development Mode" in content, f"{rel} missing mode marker"
+        assert "Autonomous Auto Mode" in content, f"{rel} missing mode marker"
         assert "alignment_mode: async" in content, f"{rel} missing async alignment marker"
 
 

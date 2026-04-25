@@ -28,25 +28,13 @@ Before execution, declare:
 
 - goal
 - selected mode = `dynamic-full-auto`
-- optional autonomy_mode, e.g. `autonomous-self-development`
-- alignment_mode, e.g. `async`
 - replay threshold
 - whether discovery / evidence insertion may be automatic
 - recomposition stop conditions
 - required human-gate boundaries
-- approval_basis for branch-local autonomous approvals
 
 After approval, continue under that budget rather than treating this mode as a temporary
 discovery wrapper that must hand off by definition.
-
-## Autonomous Self-Development Mode
-
-When the budget includes `autonomy_mode: autonomous-self-development` and
-`alignment_mode: async`, operator lines are not sequential gates. Treat later human messages
-as alignment packets, classify them as `async_advisory`, `async_override`, `async_stop`, or
-`approval_basis`, and apply them at the next safe checkpoint while non-blocked work continues.
-This branch-local autonomy budget does not skip mechanical scope/pipeline gates, write
-claims, run-ledger evidence, final safety checks, or kernel/governance/M1 approvals.
 
 ## Iron laws (non-negotiable)
 

@@ -1,0 +1,8 @@
+interface:
+  display_name: /autonomous-auto
+  short_description: 'Autonomous Auto Mode: standalone adaptive pipeline for branch-local
+    Azoth self-development with alignment_mode: async, alignment packets, and approval_basis
+    persistence'
+  default_prompt: '$azoth-autonomous-auto '
+policy:
+  allow_implicit_invocation: false

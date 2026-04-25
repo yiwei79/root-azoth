@@ -55,7 +55,7 @@ class TestValidDocuments:
         )
         validate_stage_summary(doc)
 
-    @pytest.mark.parametrize("pipeline", ["auto", "deliver", "deliver-full"])
+    @pytest.mark.parametrize("pipeline", ["auto", "autonomous-auto", "deliver", "deliver-full"])
     def test_all_valid_pipelines(self, pipeline: str) -> None:
         validate_stage_summary(_valid_doc(pipeline=pipeline))
 

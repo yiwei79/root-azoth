@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-VALID_PIPELINES = frozenset({"auto", "deliver", "deliver-full"})
+VALID_PIPELINES = frozenset({"auto", "autonomous-auto", "deliver", "deliver-full"})
 VALID_KINDS = frozenset({"research", "build", "eval", "audit"})
 VALID_STATUS = frozenset({"complete", "blocked", "needs-input"})
 VALID_ENTROPY = frozenset({"GREEN", "YELLOW", "RED"})
