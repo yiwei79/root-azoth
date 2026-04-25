@@ -1,10 +1,10 @@
 {
-  "session_id": "2026-04-24-adhoc-t-018-eval-swarm-quality-loop-and-continuity-rep",
-  "goal": "T-018 eval-swarm quality loop and continuity repair",
-  "session_mode": "exploratory",
-  "opened_at": "2026-04-24T19:37:18+00:00",
-  "updated_at": "2026-04-24T19:37:21Z",
+  "session_id": "2026-04-25-adhoc-autonomous-auto-loop-governor",
+  "goal": "AD-HOC: implement autonomous-auto loop governor and automation-ready continuation",
+  "session_mode": "delivery",
+  "opened_at": "2026-04-25T07:51:20+00:00",
+  "updated_at": "2026-04-25T08:27:49Z",
   "status": "closed",
-  "approved_by": "system",
-  "closed_at": "2026-04-24T19:37:21Z"
+  "approved_by": "human",
+  "closed_at": "2026-04-25T08:27:49Z"
 }

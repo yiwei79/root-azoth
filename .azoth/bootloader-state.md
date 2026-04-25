@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.35 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 35
+0.1.3.36 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 36
 
 ## Last Session
-- **Session**: 2026-04-25-adhoc-autonomous-auto-standalone-mode
-- **Goal**: AD-HOC: split autonomous-auto into a standalone adaptive pipeline mode
+- **Session**: 2026-04-25-adhoc-autonomous-auto-loop-governor
+- **Goal**: AD-HOC: implement autonomous-auto loop governor and automation-ready continuation
 - **Session mode**: delivery
-- **Pipeline**: autonomous-auto
+- **Pipeline**: dynamic-full-auto
 - **Outcome**: closed
-- **Episode**: ep-386 (success)
+- **Episode**: ep-387 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
