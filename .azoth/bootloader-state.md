@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.57 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 57
+0.1.3.58 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 58
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-route-authority-governor-repair-1
-- **Goal**: Make lifecycle-route authoritative for decide-next
+- **Session**: 2026-04-25-autonomous-auto-durable-wakeup-readiness-refinement-1
+- **Goal**: Refine durable wakeup driver readiness for slice-auto-001-d
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-419 (success)
+- **Episode**: ep-420 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
