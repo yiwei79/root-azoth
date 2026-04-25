@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-25T00:42:48+00:00"
+updated_at: "2026-04-25T10:21:19Z"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -47,11 +47,13 @@ tradeoffs:
     mitigation: Keep route readiness and human decisions explicit in each bank.
 open_questions:
   - question_id: db-planning-001
-    status: open
+    status: answered
     question: Should design-bank ids use a DB-* prefix, a slug-only path, or both?
+    answer: T-021 selected slug-style design-bank ids that match filename stems; no DB-* prefix is required for the current bank contract.
   - question_id: db-planning-002
-    status: open
+    status: answered
     question: Should all initiatives get banks, or only discovery-active initiatives?
+    answer: T-021 selected declared coverage only; initiatives require banks when roadmap state declares an initiative_bank_ref, not merely because they are phase-null.
   - question_id: db-planning-003
     status: open
     question: Should `/next` remain read-only for planning-bank seeds, or should it offer a dedicated hydration prompt when readiness is approved?
@@ -72,7 +74,7 @@ routing_candidates:
     target: .azoth/initiative-banks/INI-EVI-002.yaml
     rationale: INI-EVI-002 is the first pilot migration for initiative-owned planning state.
   - route: backlog_task
-    status: hydrated
+    status: complete
     target: T-020
     rationale: T-018/T-019 stabilized the contract, validator, readiness report, and
       advisory richness adapter; the next route is operator-facing surfacing without
@@ -85,34 +87,30 @@ routing_candidates:
       no claimable backlog item, while keeping them read-only and non-executable
       until explicit hydration creates backlog/spec state.
   - route: research_refinement
-    status: seeded
+    status: complete
     target: planning-bank-id-and-coverage-policy
     rationale: >
-      Open questions about design-bank id shape and which initiatives deserve
-      banks need a future research/refinement pass before becoming command or
-      validator policy.
+      T-021 completed the minimum mechanical policy for design-bank ids,
+      initiative-bank filenames, and declared roadmap bank coverage.
   - route: initiative_candidate
-    status: seeded
+    status: complete
     target: INI-EVI-002#slice-evi-002-c
     rationale: >
-      INI-EVI-002 needs a post-T-019 candidate seed for research/refinement so
-      the next useful knowledge-richness slice remains discoverable without
-      premature hydration.
+      Slice-evi-002-c was hydrated and completed as T-021; the initiative should
+      not hydrate another raw slice until the helper proposal is refined.
   - route: proposal_refinement
-    status: seeded
+    status: active
     target: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
     rationale: >
       The write-mode hydration helper and task-research derivation path remain
       proposal/refinement work until readiness evidence and human approval justify
       executable backlog/spec hydration.
 readiness:
-  evaluated_at: "2026-04-25T00:42:48+00:00"
+  evaluated_at: "2026-04-25T10:21:19Z"
   readiness_status: continue_refinement
-  freshness_status: refreshed_after_t_020
-  target_route: next_command_seed_discoverability
+  freshness_status: reconciled_after_t_021_completion
+  target_route: proposal_refinement
   blocking_questions:
-    - db-planning-001
-    - db-planning-002
     - db-planning-003
     - db-planning-004
   contradiction_disposition: none_blocking_recorded
@@ -120,8 +118,9 @@ readiness:
     - .azoth/proposals/planning-banks-layer.yaml
     - .azoth/initiative-banks/INI-EVI-002.yaml
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-021.yaml
     - commands/next/body.md
-  recommended_next_artifact: planning-bank-id-and-coverage-policy
+  recommended_next_artifact: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
   human_decision: approved
 history:
   - timestamp: "2026-04-24T17:43:19+00:00"
@@ -137,3 +136,8 @@ history:
     summary: Seeded post-T-020 readback and research/refinement routes so `/next`,
       `/start`, and `/roadmap` can surface planning-bank follow-ons without
       converting them into executable backlog before explicit hydration.
+  - timestamp: "2026-04-25T10:21:19Z"
+    event: reconciled_post_t021_completion
+    summary: Marked the planning-bank ID and coverage policy route complete after
+      T-021 shipped, answered the id and coverage policy questions, and routed the
+      next autonomous campaign move to initiative-bank helper proposal refinement.

@@ -4,7 +4,7 @@ initiative_id: INI-EVI-002
 title: Knowledge richness evaluation for project-management artifacts
 status: active_refinement
 created_at: "2026-04-24T00:00:00+00:00"
-updated_at: "2026-04-25T01:15:06+00:00"
+updated_at: "2026-04-25T10:21:19Z"
 owner: codex
 source_sessions:
   - session_id: 2026-04-24-initiative-discovery-bridge-proposal
@@ -27,6 +27,10 @@ source_sessions:
     kind: branch-local-autonomous-research-and-hydration
     artifact: .azoth/initiative-banks/INI-EVI-002.yaml
     note: Completed slice-evi-002-c research, selected planning-bank ID and coverage policy, and hydrated T-021 under the branch-local no-human-gate test budget.
+  - session_id: 2026-04-25-autonomous-auto-autoauto-planbank-drift-reconcile-1
+    kind: autonomous-auto-planning-truth-reconciliation
+    artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+    note: Reconciled post-T-021 initiative-bank readback with completed roadmap/backlog state and routed the next campaign move to helper proposal refinement.
 contacts:
   - id: operator
     role: human decision owner
@@ -343,7 +347,7 @@ candidate_slices:
     proposed_task_id: T-021
     title: Planning-bank ID and coverage policy
     initiative_ref: INI-EVI-002
-    status: hydrated
+    status: complete
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Define and enforce the planning-bank ID and coverage policy so design-bank ids, initiative-bank filenames, and roadmap bank references remain mechanically consistent without requiring every phase-null initiative to become bank-backed.
@@ -375,12 +379,12 @@ candidate_slices:
         - open_questions must be answered or explicitly non-blocking.
         - the selected direction must have acceptance criteria and non-goals stable enough for /next.
 readiness:
-  evaluated_at: "2026-04-25T01:15:06+00:00"
+  evaluated_at: "2026-04-25T10:21:19Z"
   source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
-  readiness_status: ready_to_hydrate
-  goal_clarity: selected_concrete_policy_slice
-  evidence_coverage: research_complete_for_t_021_hydration
-  freshness_status: refreshed_for_branch_local_autonomous_test
+  readiness_status: continue_research
+  goal_clarity: t_021_complete_next_helper_refinement
+  evidence_coverage: research_complete_for_t_021_next_proposal_refinement_seeded
+  freshness_status: reconciled_after_t_021_completion
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
   candidate_first_slice: slice-evi-002-c
@@ -388,10 +392,11 @@ readiness:
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: hydrated_as_t_021
-  hydration_recommendation: Hydrated slice-evi-002-c as T-021 under the branch-local autonomous self-development test; next step is scoped delivery, not another raw candidate hydration.
+  next_readiness_gate: helper_proposal_refinement_before_next_hydration
+  next_candidate_ref: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+  hydration_recommendation: T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate.
   human_decision: approved
-  approval_basis: User explicitly authorized no-human-gate branch-local autonomous Azoth self-development test on codex/autonomous-roadmap-self-development.
+  approval_basis: Operator approved the planning-bank continuation autonomous-auto campaign on 2026-04-25 with replay_threshold=3 and up to 4 bounded iterations.
 research_completion_assessment:
   candidate_slice_ref: slice-evi-002-c
   completed_at: "2026-04-25T01:15:06+00:00"
@@ -407,14 +412,14 @@ research_completion_assessment:
   unresolved_before_hydration: []
 next_seed_assessment:
   candidate_slice_ref: slice-evi-002-c
-  seeded_at: "2026-04-25T01:15:06+00:00"
-  status: completed_and_hydrated_as_t_021
+  seeded_at: "2026-04-25T10:21:19Z"
+  status: t_021_complete_next_helper_refinement_seeded
   source_refs:
     - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
     - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
     - .azoth/roadmap-specs/v0.2.0/T-021.yaml
-  note: The seed is no longer raw discovery state; it has been hydrated as T-021 for scoped delivery on the experiment branch.
+  note: The planning-bank ID and coverage policy seed is complete as T-021; the next campaign move is helper proposal refinement before any new hydration or helper implementation.
 hydration_history:
   - hydrated_at: "2026-04-24T18:50:00+00:00"
     session_id: 2026-04-24-ini-evi-002-readiness-research

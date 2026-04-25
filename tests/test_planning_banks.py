@@ -72,7 +72,7 @@ def test_ini_evi_002_candidate_slices_are_planning_evidence_only() -> None:
             assert candidate["known_non_goals"]
 
 
-def test_ini_evi_002_bank_third_slice_is_hydrated_for_delivery() -> None:
+def test_ini_evi_002_bank_third_slice_is_complete_and_routes_helper_refinement() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     readiness = bank.get("readiness")
     completed_candidate = next(
@@ -88,17 +88,21 @@ def test_ini_evi_002_bank_third_slice_is_hydrated_for_delivery() -> None:
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
-    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["readiness_status"] == "continue_research"
     assert readiness["human_decision"] == "approved"
     assert readiness["candidate_first_slice"] == "slice-evi-002-c"
-    assert readiness["next_readiness_gate"] == "hydrated_as_t_021"
+    assert readiness["next_readiness_gate"] == "helper_proposal_refinement_before_next_hydration"
+    assert (
+        readiness["next_candidate_ref"]
+        == ".azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml"
+    )
     assert bank["hydration_history"]
     assert bank["hydration_history"][-1]["task_ref"] == "T-021"
     assert completed_candidate["status"] == "complete"
     assert completed_candidate["proposed_task_id"] == "T-019"
     assert completed_candidate["acceptance_criteria"]
     assert completed_candidate["open_questions"] == []
-    assert hydrated_candidate["status"] == "hydrated"
+    assert hydrated_candidate["status"] == "complete"
     assert hydrated_candidate["proposed_task_id"] == "T-021"
     assert hydrated_candidate["open_questions"] == []
 
@@ -108,18 +112,19 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
 
     assert report == {
         "initiative_id": "INI-EVI-002",
-        "readiness_status": "ready_to_hydrate",
+        "readiness_status": "continue_research",
         "human_decision": "approved",
         "candidate_first_slice": "slice-evi-002-c",
         "candidate_id": "slice-evi-002-c",
         "candidate_task_ref": "T-021",
-        "candidate_status": "hydrated",
+        "candidate_status": "complete",
         "acceptance_criteria_status": "stable",
         "non_goals_status": "stable",
-        "freshness_status": "refreshed_for_branch_local_autonomous_test",
-        "hydration_recommendation": "Hydrated slice-evi-002-c as T-021 under the branch-local autonomous self-development test; next step is scoped delivery, not another raw candidate hydration.",
+        "freshness_status": "reconciled_after_t_021_completion",
+        "hydration_recommendation": "T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate.",
         "blocking_reasons": [
-            "candidate.status is hydrated; no hydration action remains",
+            "candidate.status is complete; no hydration action remains",
+            "readiness.readiness_status must be ready_to_hydrate",
         ],
         "ready_to_hydrate": False,
     }
@@ -175,7 +180,7 @@ def test_readiness_report_can_target_completed_prior_candidate() -> None:
     assert "candidate.status is complete; no hydration action remains" in report["blocking_reasons"]
 
 
-def test_ini_evi_002_has_hydrated_third_slice_as_active_task() -> None:
+def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     roadmap = _load_yaml(ROADMAP_PATH)
     backlog = _load_yaml(BACKLOG_PATH)
@@ -213,7 +218,7 @@ def test_ini_evi_002_has_hydrated_third_slice_as_active_task() -> None:
             "task_ref": "T-021",
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-021.yaml",
             "phase": "v0.2.0-p3",
-            "status": "active",
+            "status": "complete",
             "role": "primary",
         },
     ]
@@ -231,10 +236,13 @@ def test_ini_evi_002_has_hydrated_third_slice_as_active_task() -> None:
     assert [candidate["proposed_task_id"] for candidate in completed_candidates] == [
         "T-018",
         "T-019",
+        "T-021",
     ]
     assert seeded_candidate["proposed_task_id"] == "T-021"
-    assert seeded_candidate["status"] == "hydrated"
-    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == ["T-021"]
+    assert seeded_candidate["status"] == "complete"
+    assert hydrated_candidates == []
+    assert initiative["discovery_status"] == "slice_evi_002_c_complete_next_helper_refinement"
+    assert "initiative-bank-tooling-and-hydration-helper.yaml" in initiative["next_discovery_action"]
 
     roadmap_task_ids = {
         str(task.get("id"))

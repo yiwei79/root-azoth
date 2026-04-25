@@ -9,10 +9,10 @@ summary: >
   remain durable goal containers, initiative banks continuously refine knowledge,
   readiness, candidate slices, contacts, and contradictions, and a future helper
   can emit reviewed hydration plans before any roadmap or backlog write occurs.
-  This proposal does not hydrate work directly. It seeds a future design and
-  implementation path for validating initiative-bank contracts, summarizing
-  readiness, deriving task-specific research capsules, and handing approved
-  candidate slices to the existing roadmap scaffold flow.
+  T-018, T-019, and T-021 have now delivered the first validator, readiness
+  report, richness adapter, and planning-bank policy groundwork. This proposal
+  now narrows the remaining design space to plan-only hydration handoff and
+  task-capsule derivation, without creating a second roadmap writer.
 status: draft
 decision_refs:
   - D11
@@ -29,10 +29,12 @@ details:
   problem:
     current_gap: >
       The initiative-discovery proposal defines the artifact boundary, and
-      INI-EVI-002 now has a concrete initiative bank. The next missing layer is
-      reusable tooling: future sessions need a way to validate bank structure,
-      report readiness, derive candidate hydration plans, and prevent accidental
-      roadmap/backlog writes before human approval.
+      INI-EVI-002 now has a concrete initiative bank plus delivered validation,
+      readiness reporting, advisory richness, and planning-bank id/coverage
+      policy. The next missing layer is not another validator. It is a reusable
+      plan-only handoff helper that can turn an approved, non-complete candidate
+      slice into a reviewed scaffold plan while still preventing accidental
+      roadmap/backlog writes before explicit approval.
     risk_without_tooling: >
       Without a validator or helper, initiative banks remain a convention.
       Agents may duplicate proposal text into banks, skip required evidence
@@ -79,7 +81,8 @@ details:
         Validate required initiative-bank fields, candidate-slice fields,
         source references, append/merge ids, readiness status values, and
         hydration-history shape.
-      possible_surface: "scripts/initiative_bank_validate.py"
+      status: "delivered_first_slice"
+      current_surface: "scripts/planning_bank_validate.py"
       fail_closed_checks:
         - "Missing required bank fields."
         - "Candidate slice without target_layer, delivery_pipeline, acceptance criteria, or non-goals."
@@ -90,7 +93,8 @@ details:
         Summarize whether a bank should continue research, defer, reject, or move
         toward hydration. The reporter should make contradictions and stale
         evidence visible instead of hiding them behind a single score.
-      possible_surface: "scripts/initiative_bank_readiness.py"
+      status: "delivered_first_slice"
+      current_surface: "scripts/planning_bank_validate.py --readiness-report <BANK>"
       output: "human-readable readiness report plus machine-readable status"
     hydration_planner:
       purpose: >
@@ -118,6 +122,7 @@ details:
     - "scripts/research_sufficiency.py"
     - "scripts/roadmap_scaffold.py"
     - "scripts/proposal_knowledge_richness.py"
+    - ".azoth/design-banks/planning-banks-layer.yaml"
   refined_contract:
     external_source_alignment:
       observed_at: "2026-04-24"
@@ -134,7 +139,9 @@ details:
           finding: >
             Provides the first pilot bank with questions, research packs,
             local/external findings, assumptions, challenge log, candidate
-            slices, readiness, and empty hydration history.
+            slices, readiness, and hydration history through T-021. Its current
+            readiness is continue_research because the latest candidate is
+            complete and the next helper work needs proposal refinement first.
         - title: "Roadmap scaffold helper"
           url: "repo:scripts/roadmap_scaffold.py"
           finding: >
@@ -151,9 +158,15 @@ details:
         - title: "Current pilot guard tests"
           url: "repo:tests/test_planning_banks.py"
           finding: >
-            The pilot test now guards bank shape, readiness values, candidate
-            slice planning-only status, and absence of premature roadmap/backlog/spec
-            hydration.
+            The pilot tests now guard bank shape, readiness values, completed
+            slice status, planning-bank coverage policy, and the absence of
+            raw candidate execution after T-021 completion.
+        - title: "Planning-bank ID and coverage policy"
+          url: "repo:.azoth/roadmap-specs/v0.2.0/T-021.yaml"
+          finding: >
+            T-021 completed the mechanical id, filename, and declared-coverage
+            policy. Future helper work should consume that policy instead of
+            re-opening bank identity or coverage rules.
         - title: "Jira Product Discovery delivery overview"
           url: "https://www.atlassian.com/software/jira/product-discovery/guides/delivery/overview"
           finding: >
@@ -174,14 +187,14 @@ details:
             path was chosen.
       implications:
         - >
-          A validator is the lowest-risk first implementation because it can
-          prove the bank contract without mutating roadmap/backlog state.
+          Validator and readiness reporting are now groundwork, not the next
+          proposal target.
         - >
           Readiness reporting should expose blockers and contradictions directly
           rather than hiding them behind a single score.
         - >
-          A hydration helper must default to plan-only and call existing scaffold
-          code only after human approval.
+          The next helper slice should default to plan-only and call existing
+          scaffold code only after a separate explicit approval.
         - >
           The first slice should use INI-EVI-002 as the pilot, but the contract
           must be reusable for later initiatives.
@@ -273,15 +286,46 @@ details:
     task_research_capsule: >
       Owns slice-specific sufficiency evidence for delivery. It may derive from
       the initiative bank but must remain freshness-aware for the scoped task.
+  post_t021_refinement:
+    refined_at: "2026-04-25T10:23:31Z"
+    trigger_session_id: "2026-04-25-autonomous-auto-initiative-bank-tooling-and-hydration-helper-2"
+    current_truth:
+      - "T-018 delivered initiative-bank validation plus read-only readiness reporting."
+      - "T-019 delivered advisory richness adapters for initiative banks."
+      - "T-021 delivered planning-bank id, filename, and declared coverage policy."
+      - "INI-EVI-002 has no current ready_to_hydrate non-complete candidate after slice-evi-002-c completed."
+    architect_judgment: >
+      The next useful implementation candidate is a plan-only initiative
+      hydration handoff helper, not write-mode hydration. It should consume
+      the existing validator/readiness report, reject complete or unapproved
+      candidates, and emit a scaffold plan for exactly one approved candidate
+      slice without mutating roadmap, backlog, or spec files.
+    recommended_next_slice:
+      title: "Plan-only initiative hydration handoff helper"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      readiness: "proposal_refined_hydration_pending"
+      candidate_source: ".azoth/initiative-banks/INI-EVI-002.yaml"
+      acceptance_criteria:
+        - "Reads an initiative bank and selected candidate slice through the existing planning-bank validator path."
+        - "Fails closed when readiness_status is not ready_to_hydrate, human_decision is not approved, or the selected candidate is complete/hydrated."
+        - "Emits a plan-only scaffold payload with initiative_ref, source_bank_ref, candidate_slice_ref, proposed title, target_layer, delivery_pipeline, acceptance, non-goals, and scaffold command."
+        - "Does not write roadmap.yaml, backlog.yaml, roadmap-spec files, or hydration_history in plan-only mode."
+        - "Focused tests cover complete-slice refusal, pending-human-decision refusal, and approved plan-only output."
+      non_goals:
+        - "No write-mode hydration in this slice."
+        - "No new roadmap/backlog writer."
+        - "No broad advisory richness scoring changes."
+        - "No M1/governance hydration."
   first_candidate_slice_ref:
     initiative_ref: "INI-EVI-002"
     bank_ref: ".azoth/initiative-banks/INI-EVI-002.yaml"
-    candidate_slice_ref: "slice-evi-002-a"
+    candidate_slice_ref: "slice-evi-002-c"
     source_of_truth: "The initiative bank owns mutable candidate-slice details and readiness."
     current_architectural_judgment: >
-      The first slice should stay focused on initiative-bank validation and
-      readiness reporting. Hydration is still blocked until the bank records a
-      stable ready_to_hydrate decision with human approval.
+      The first three pilot slices are complete through T-021. The next helper
+      work should refine plan-only handoff behavior before any new slice is
+      hydrated.
   command_surface_options:
     option_a_validator_only_first:
       description: >
@@ -292,17 +336,25 @@ details:
     option_b_validator_plus_readiness_reporter:
       description: >
         Implement validator plus read-only readiness report output for one bank.
+      status: "complete_as_t_018"
       benefit: "Answers the operator's 'what is ready to hydrate?' question without writing."
-      risk: "Requires a clear report schema and more tests."
+      risk: "Now groundwork; not the next implementation target."
     option_c_full_hydration_helper:
       description: >
         Implement validator, readiness reporter, plan-only hydration helper, and
         optional approved write mode in one slice.
       benefit: "Most complete workflow."
       risk: "Too much for the first slice; higher chance of creating a second roadmap engine."
+    option_d_plan_only_handoff_helper:
+      description: >
+        Implement only plan-only handoff generation for one approved, non-complete
+        candidate slice, consuming existing validation/readiness behavior and
+        stopping before any write.
+      benefit: "Closes the next operator workflow gap without creating a second roadmap engine."
+      risk: "Still needs careful fail-closed tests so complete or unapproved slices do not produce hydration plans."
     recommended_starting_point: >
-      Start with option B if the first slice is approved. Keep write-mode
-      hydration planner for a later slice after validation and reporting stabilize.
+      Start with option D next. Keep write-mode hydration for a later explicit
+      approval after plan-only handoff behavior proves stable.
   governance:
     human_gates:
       - "Approve the bank-tooling proposal before implementing reusable helpers."
@@ -314,26 +366,27 @@ details:
       - "Do not hydrate M1/governance work together with non-M1 work."
   validation_strategy:
     first_step: >
-      Keep the current focused test for INI-EVI-002 as a pilot guard, then
-      generalize into a reusable validator once the bank contract survives the
-      first refinement pass.
+      Keep the current planning-bank validator and readiness tests as the
+      structural guard, then add helper-specific tests for plan-only output and
+      fail-closed refusal cases.
     future_tests:
-      - "Validator accepts the INI-EVI-002 bank."
-      - "Validator rejects missing required fields and malformed candidate slices."
-      - "Readiness reporter refuses ready_to_hydrate when human_decision is pending."
+      - "Plan-only helper refuses a complete candidate slice such as slice-evi-002-c."
+      - "Plan-only helper refuses ready_to_hydrate when human_decision is pending."
       - "Hydration planner emits a plan without writing roadmap/backlog by default."
       - "Write mode, if added, delegates to roadmap_scaffold.py and records hydration_history."
   validation_replay:
     - scenario: "Current pilot bank remains discovery-only"
       input:
         initiative_ref: "INI-EVI-002"
-        candidate_slice_ref: "slice-evi-002-a"
+        candidate_slice_ref: "slice-evi-002-c"
         readiness_status: "continue_research"
-        human_decision: "pending"
+        human_decision: "approved"
+        candidate_status: "complete"
       expected_result: "continue_research"
       rationale: >
-        The bank has a candidate slice and plan direction, but roadmap/backlog
-        hydration remains blocked until readiness and human approval change.
+        The bank has completed its latest candidate slice; new roadmap/backlog
+        hydration remains blocked until a fresh non-complete candidate is selected
+        and approved.
     - scenario: "Pending human decision blocks ready_to_hydrate"
       input:
         readiness_status: "ready_to_hydrate"
@@ -353,13 +406,13 @@ details:
         The next artifact should be a reviewed plan and scaffold command; only a
         separate explicit write step may call roadmap_scaffold.py.
   worked_examples:
-    - name: "Refine INI-EVI-002 slice-evi-002-a"
+    - name: "Refine INI-EVI-002 after T-021"
       steps:
         - "Validate the bank structure and candidate slice fields."
-        - "Report that readiness is continue_research while human_decision is pending."
-        - "Name the smallest first slice: validator plus readiness reporter."
+        - "Report that readiness is continue_research because slice-evi-002-c is complete."
+        - "Name the smallest next helper slice: plan-only hydration handoff."
         - "Leave roadmap.yaml phase/task/slices unchanged."
-        - "After human approval, call roadmap_scaffold.py with initiative_ref INI-EVI-002."
+        - "Only after a later explicit approval, call roadmap_scaffold.py with initiative_ref INI-EVI-002."
       expected_output: >
         A readiness report and proposed scaffold command, with no roadmap/backlog
         writes in the plan-only step.
@@ -384,13 +437,11 @@ details:
     - "Do not make readiness scores hide unresolved contradictions or stale evidence."
   recommended_follow_up:
     shape: >
-      Continue refining INI-EVI-002's bank until slice-evi-002-a has stable
-      acceptance criteria, non-goals, and human readiness approval. Then hydrate
-      a standard infrastructure task for the first reusable bank validator and
-      readiness report.
+      Hydrate a standard infrastructure task for the plan-only initiative
+      hydration handoff helper once this refined proposal is accepted as the
+      campaign's next implementation target.
     likely_outputs:
-      - "Finalized initiative-bank schema contract."
-      - "Reusable validation helper for initiative banks."
-      - "Readiness report format."
-      - "Plan-only hydration helper design."
-      - "A later scoped implementation task only after human-approved readiness."
+      - "Plan-only scaffold payload shape."
+      - "Fail-closed helper behavior for complete, hydrated, pending, or stale candidate slices."
+      - "Tests proving no roadmap/backlog/spec writes in plan-only mode."
+      - "A later explicit write-mode proposal only after plan-only behavior stabilizes."
