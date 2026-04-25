@@ -553,9 +553,7 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
         "evaluator",
     ]
     assert scope["loop_decision"]["action"] == "ship_task"
-    ledger = yaml.safe_load(
-        (tmp_path / ".azoth/run-ledger.local.yaml").read_text(encoding="utf-8")
-    )
+    ledger = yaml.safe_load((tmp_path / ".azoth/run-ledger.local.yaml").read_text(encoding="utf-8"))
     run = next(item for item in ledger["runs"] if item["run_id"] == result["session_id"])
     assert run["status"] == "active"
     assert run["active_stage_id"] == "autonomous_auto_s1_architect"
@@ -1251,7 +1249,9 @@ def test_campaign_report_fails_closed_for_missing_handoff_completion_reason(
     state_path = _state(tmp_path)
     handoff_path = tmp_path / ".azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md"
     handoff_path.parent.mkdir(parents=True, exist_ok=True)
-    handoff_path.write_text("# Handoff\n\n## Current Truth\n\n- Vision band: green\n", encoding="utf-8")
+    handoff_path.write_text(
+        "# Handoff\n\n## Current Truth\n\n- Vision band: green\n", encoding="utf-8"
+    )
 
     report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
 
@@ -1331,7 +1331,10 @@ def _write_lifecycle_initiative_bank(tmp_path: Path) -> Path:
 
 
 def _write_lifecycle_reflection(tmp_path: Path) -> Path:
-    path = tmp_path / ".azoth/inbox/session-reflection-2026-04-25-autonomous-auto-campaign-report.jsonl"
+    path = (
+        tmp_path
+        / ".azoth/inbox/session-reflection-2026-04-25-autonomous-auto-campaign-report.jsonl"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -1347,6 +1350,21 @@ def _write_lifecycle_reflection(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def _write_hydrated_task_artifacts(tmp_path: Path, task_id: str) -> None:
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0" / f"{task_id}.yaml",
+        {"id": task_id, "title": "Hydrated task"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {"tasks": [{"id": task_id, "spec_ref": f".azoth/roadmap-specs/v0.2.0/{task_id}.yaml"}]},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [{"id": task_id, "status": "pending"}],
+    )
 
 
 def test_lifecycle_report_reuses_readiness_report_and_reflection_without_writes(
@@ -1446,9 +1464,7 @@ def test_lifecycle_report_missing_reflection_is_observable_false_and_read_only(
     )
 
     assert report["source_artifacts"]["reflection"]["observable"] is False
-    assert report["source_artifacts"]["reflection"]["failure_reasons"] == [
-        "missing_reflection"
-    ]
+    assert report["source_artifacts"]["reflection"]["failure_reasons"] == ["missing_reflection"]
     assert report["quality"]["meaning"].startswith("No reflection artifact")
     assert initiative_path.read_text(encoding="utf-8") == initiative_before
 
@@ -1502,13 +1518,9 @@ def test_lifecycle_report_seed_only_approval_never_routes_hydrate_or_ship(
 
     assert report["readiness"]["approval_scope"] == "planning_seed_only_no_hydration"
     assert report["next_safe_actions"][0]["action"] == "research_initiative"
-    assert {
-        item["action"]
-        for item in report["blocked_actions"]
-    } == {"hydrate_task", "ship_task"}
+    assert {item["action"] for item in report["blocked_actions"]} == {"hydrate_task", "ship_task"}
     assert all(
-        item["action"] not in {"hydrate_task", "ship_task"}
-        for item in report["next_safe_actions"]
+        item["action"] not in {"hydrate_task", "ship_task"} for item in report["next_safe_actions"]
     )
 
 
@@ -1542,3 +1554,239 @@ def test_lifecycle_report_hydrated_candidate_routes_to_ship_task(tmp_path: Path)
     assert report["operator_implications"][0]["meaning"].startswith(
         "The selected candidate is hydrated"
     )
+
+
+def test_route_decision_capsule_delivery_ready_requires_hydrated_task_artifacts(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+
+    blocked = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+    assert blocked["selected_route"] == "stop"
+    assert blocked["route_state"] == "completed_or_stale_campaign"
+    assert any(item["action"] == "ship_task" for item in blocked["blocked_actions"])
+
+    _write_hydrated_task_artifacts(tmp_path, "T-AUTO-A")
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert capsule["selected_route"] == "ship_task"
+    assert capsule["route_state"] == "delivery_ready"
+    assert set(capsule["route_table_coverage"]) == set(autonomous_loop.ROUTE_TABLE_STATES)
+    for field in (
+        "selected_route",
+        "rejected_alternatives",
+        "source_artifacts",
+        "readiness_evidence",
+        "ux_anchor_rationale",
+        "protected_stops",
+        "blocked_actions",
+        "approval_needed",
+        "evaluator_scores",
+    ):
+        assert field in capsule
+    assert any(item["action"] == "hydrate_task" for item in capsule["blocked_actions"])
+
+
+def test_route_decision_capsule_approved_hydration_requires_exact_slice_command(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    candidate = doc["candidate_slices"][0]
+    candidate["candidate_id"] = "slice-auto-001-b"
+    candidate["proposed_task_id"] = "T-024"
+    candidate["status"] = "candidate"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        "python3 scripts/roadmap_scaffold.py --source initiative-bank-INI-AUTO-001-slice-auto-001-b"
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "ready_to_hydrate",
+            "freshness_status": "current_as_of_2026_04_25",
+            "candidate_first_slice": "slice-auto-001-b",
+            "approval_scope": "hydration_specific_slice_auto_001_b",
+            "approval_basis": (
+                "Operator approved hydration for INI-AUTO-001 slice-auto-001-b "
+                "with the exact scaffold command."
+            ),
+            "acceptance_criteria_status": "present",
+            "non_goals_status": "present",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path, initiative_path, candidate_id="slice-auto-001-b"
+    )
+
+    assert capsule["selected_route"] == "hydrate_task"
+    assert capsule["route_state"] == "approved_for_hydration"
+    assert capsule["approval_needed"] == "hydration_specific_slice_auto_001_b"
+    assert capsule["readiness_evidence"]["approval_basis_present"] is True
+
+
+def test_route_decision_capsule_seed_only_and_self_capture_fail_closed(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+
+    seed_only = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+    assert seed_only["selected_route"] in {"research_initiative", "refine_proposal"}
+    assert {item["action"] for item in seed_only["blocked_actions"]} >= {
+        "hydrate_task",
+        "ship_task",
+    }
+
+    reflection_path = _write_lifecycle_reflection(tmp_path)
+    capture = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        reflection_path=reflection_path,
+    )
+
+    assert capture["selected_route"] == "capture_self_improvement"
+    assert capture["route_state"] == "high_severity_self_capture"
+
+
+def test_route_decision_capsule_protected_gate_overrides_self_capture(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["target_layer"] = "governance"
+    _write_yaml(initiative_path, doc)
+    reflection_path = _write_lifecycle_reflection(tmp_path)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        reflection_path=reflection_path,
+    )
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["approval_needed"] == "protected human gate required"
+    assert capsule["protected_stops"] == ["protected target layer or governed delivery pipeline"]
+    assert any(item["action"] == "hydrate_task" for item in capsule["blocked_actions"])
+    assert any(item["action"] == "ship_task" for item in capsule["blocked_actions"])
+
+
+def test_route_decision_capsule_raw_missing_readiness_fails_closed(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc.pop("readiness")
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert capsule["selected_route"] == "research_initiative"
+    assert capsule["route_state"] == "raw_initiative"
+    assert {item["action"] for item in capsule["blocked_actions"]} >= {
+        "hydrate_task",
+        "ship_task",
+    }
+
+
+def test_route_decision_capsule_stale_campaign_requires_fresh_budget(
+    tmp_path: Path,
+) -> None:
+    _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "completed_or_stale_campaign"
+    assert any(item["action"] == "open_next_without_budget" for item in capsule["blocked_actions"])
+
+
+def test_route_decision_capsule_bad_hydration_approval_or_scaffold_fails_closed(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["readiness"].update(
+        {
+            "readiness_status": "ready_to_hydrate",
+            "freshness_status": "current_as_of_2026_04_25",
+            "human_decision": "pending",
+            "approval_scope": "hydration_specific_slice_auto_001_a",
+            "approval_basis": "Operator approved the wrong thing.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    denied = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+    assert denied["selected_route"] != "hydrate_task"
+    assert any(item["action"] == "hydrate_task" for item in denied["blocked_actions"])
+
+    doc["readiness"]["human_decision"] = "approved"
+    doc["candidate_slices"][0]["hydration_plan"]["scaffold_command"] = (
+        "python3 scripts/roadmap_scaffold.py --source wrong-slice"
+    )
+    _write_yaml(initiative_path, doc)
+
+    malformed = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+    assert malformed["selected_route"] != "hydrate_task"
+    assert any(
+        "scaffold command naming the candidate" in item["reason"]
+        for item in malformed["blocked_actions"]
+        if item["action"] == "hydrate_task"
+    )
+
+
+def test_lifecycle_route_cli_json_and_plain_text_are_read_only(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    before = initiative_path.read_text(encoding="utf-8")
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-route",
+                "--initiative",
+                str(initiative_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["capsule_type"] == "autonomous_auto_initiative_route_decision"
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-route",
+                "--initiative",
+                str(initiative_path),
+            ]
+        )
+        == 0
+    )
+    assert "Autonomous-auto initiative route decision" in capsys.readouterr().out
+    assert initiative_path.read_text(encoding="utf-8") == before

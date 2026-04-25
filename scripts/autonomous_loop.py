@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -103,6 +102,15 @@ DEFAULT_STOP_CONDITIONS = [
     "protected_gate_required",
     "async_stop_packet",
     "no_safe_candidate",
+]
+ROUTE_TABLE_STATES = [
+    "raw_initiative",
+    "discovery_active",
+    "candidate_ready_for_review",
+    "approved_for_hydration",
+    "delivery_ready",
+    "completed_or_stale_campaign",
+    "high_severity_self_capture",
 ]
 
 
@@ -273,7 +281,9 @@ def _allowed_actions(state: dict[str, Any]) -> set[str]:
 
 def _stop_conditions_for_read(budget: dict[str, Any]) -> list[str]:
     raw = budget.get("stop_conditions") if isinstance(budget, dict) else None
-    conditions = [str(item) for item in raw] if isinstance(raw, list) else list(DEFAULT_STOP_CONDITIONS)
+    conditions = (
+        [str(item) for item in raw] if isinstance(raw, list) else list(DEFAULT_STOP_CONDITIONS)
+    )
     for condition in DEFAULT_STOP_CONDITIONS:
         if condition not in conditions:
             conditions.append(condition)
@@ -688,7 +698,9 @@ def _candidate_snapshot(action: str, candidate: dict[str, Any], source: str) -> 
     }
 
 
-def _delegation_stage(stage_id: str, subagent_type: str, trigger: str, purpose: str) -> dict[str, str]:
+def _delegation_stage(
+    stage_id: str, subagent_type: str, trigger: str, purpose: str
+) -> dict[str, str]:
     return {
         "stage_id": stage_id,
         "subagent_type": subagent_type,
@@ -1414,9 +1426,7 @@ def _latest_autonomous_handoff(root: Path) -> Path | None:
     if not handoffs_dir.is_dir():
         return None
     candidates = [
-        path
-        for path in handoffs_dir.glob("*autonomous-auto*handoff*.md")
-        if path.is_file()
+        path for path in handoffs_dir.glob("*autonomous-auto*handoff*.md") if path.is_file()
     ]
     if not candidates:
         return None
@@ -1669,7 +1679,9 @@ def _selected_lifecycle_candidate(
     readiness_report: dict[str, Any],
 ) -> dict[str, Any]:
     candidate_id = str(readiness_report.get("candidate_id") or "")
-    candidates = doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    candidates = (
+        doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    )
     candidate = next(
         (
             item
@@ -1717,8 +1729,7 @@ def _lifecycle_next_safe_actions(
             {
                 "action": "refine_proposal" if "refine" in next_gate else "research_initiative",
                 "basis": (
-                    "approval_scope planning_seed_only_no_hydration permits "
-                    "discovery/planning only"
+                    "approval_scope planning_seed_only_no_hydration permits discovery/planning only"
                 ),
                 "approval_needed": "new hydration or delivery approval_basis required before writes",
             }
@@ -1814,6 +1825,301 @@ def _quality_signals_from_reflections(entries: list[dict[str, Any]]) -> list[dic
     return signals
 
 
+def _hydration_scope_for_candidate(candidate_id: str) -> str:
+    return f"hydration_specific_{_markdown_key(candidate_id)}"
+
+
+def _scaffold_command_names_candidate(readiness: dict[str, Any]) -> bool:
+    candidate_id = str(readiness.get("candidate_id") or "").strip()
+    command = str(readiness.get("scaffold_command") or "").strip()
+    return bool(candidate_id and command and candidate_id in command)
+
+
+def _yaml_tree_contains_task_ref(data: Any, task_ref: str) -> bool:
+    if isinstance(data, dict):
+        if str(data.get("id") or "") == task_ref or str(data.get("task_ref") or "") == task_ref:
+            return True
+        return any(_yaml_tree_contains_task_ref(value, task_ref) for value in data.values())
+    if isinstance(data, list):
+        return any(_yaml_tree_contains_task_ref(item, task_ref) for item in data)
+    return False
+
+
+def _hydrated_task_artifacts_exist(root: Path, task_ref: str) -> bool:
+    task_id = str(task_ref or "").strip()
+    if not task_id:
+        return False
+    spec_path = root / ".azoth" / "roadmap-specs" / "v0.2.0" / f"{task_id}.yaml"
+    if not spec_path.exists():
+        return False
+    for rel_path in (".azoth/roadmap.yaml", ".azoth/backlog.yaml"):
+        path = root / rel_path
+        if not path.exists():
+            return False
+        data = safe_load_yaml_path(path)
+        if not _yaml_tree_contains_task_ref(data, task_id):
+            return False
+    return True
+
+
+def _high_severity_quality_signal(report: dict[str, Any]) -> dict[str, str] | None:
+    quality = report.get("quality") if isinstance(report.get("quality"), dict) else {}
+    signals = quality.get("quality_signals")
+    if not isinstance(signals, list):
+        return None
+    for signal in signals:
+        if not isinstance(signal, dict):
+            continue
+        if str(signal.get("severity") or "").lower() in {"high", "critical"}:
+            return {str(key): str(value) for key, value in signal.items()}
+    return None
+
+
+def _campaign_requires_fresh_budget(report: dict[str, Any]) -> bool:
+    campaign = (
+        report.get("campaign_context") if isinstance(report.get("campaign_context"), dict) else {}
+    )
+    current_status = str(campaign.get("current_loop_status") or "").strip()
+    return bool(campaign.get("fresh_budget_required")) and current_status not in {"active"}
+
+
+def _action_from_report_actions(report: dict[str, Any], action: str) -> dict[str, str] | None:
+    actions = report.get("next_safe_actions")
+    if not isinstance(actions, list):
+        return None
+    for item in actions:
+        if isinstance(item, dict) and str(item.get("action") or "") == action:
+            return {str(key): str(value) for key, value in item.items()}
+    return None
+
+
+def _dedupe_action_reasons(items: list[dict[str, str]]) -> list[dict[str, str]]:
+    seen: set[tuple[str, str]] = set()
+    result: list[dict[str, str]] = []
+    for item in items:
+        action = str(item.get("action") or "").strip()
+        reason = str(item.get("reason") or item.get("basis") or "").strip()
+        key = (action, reason)
+        if not action or key in seen:
+            continue
+        seen.add(key)
+        result.append(dict(item))
+    return result
+
+
+def _route_rejected_alternatives(
+    selected_route: str,
+    report: dict[str, Any],
+    blocked_actions: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    alternatives: list[dict[str, str]] = []
+    for item in report.get("next_safe_actions") or []:
+        if not isinstance(item, dict):
+            continue
+        action = str(item.get("action") or "")
+        if action and action != selected_route:
+            alternatives.append(
+                {
+                    "route": action,
+                    "reason": str(item.get("basis") or item.get("approval_needed") or ""),
+                }
+            )
+    for item in blocked_actions:
+        action = str(item.get("action") or "")
+        if action and action != selected_route:
+            alternatives.append(
+                {
+                    "route": action,
+                    "reason": str(item.get("reason") or item.get("basis") or ""),
+                }
+            )
+    return _dedupe_action_reasons(
+        [{"action": item["route"], "reason": item["reason"]} for item in alternatives]
+    )
+
+
+def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) -> dict[str, Any]:
+    readiness = report.get("readiness") if isinstance(report.get("readiness"), dict) else {}
+    safety = report.get("safety") if isinstance(report.get("safety"), dict) else {}
+    candidate = report.get("candidate") if isinstance(report.get("candidate"), dict) else {}
+    high_severity = _high_severity_quality_signal(report)
+    protected_gate_required = bool(safety.get("protected_gate_required"))
+    candidate_status = str(readiness.get("candidate_status") or "")
+    readiness_status = str(readiness.get("readiness_status") or "")
+    approval_scope = str(readiness.get("approval_scope") or "")
+    candidate_id = str(readiness.get("candidate_id") or "")
+    expected_scope = _hydration_scope_for_candidate(candidate_id)
+    task_ref = str(readiness.get("candidate_task_ref") or candidate.get("proposed_task_id") or "")
+    blocked_actions = [
+        dict(item) for item in report.get("blocked_actions") or [] if isinstance(item, dict)
+    ]
+    protected_stops: list[str] = []
+    selected_route = "stop"
+    route_state = "raw_initiative"
+    approval_needed = "discovery or proposal-refinement approval"
+    ux_basis = "Autonomous-auto should expose why an initiative is or is not safe to continue."
+
+    if protected_gate_required:
+        selected_route = "stop"
+        route_state = "raw_initiative"
+        approval_needed = "protected human gate required"
+        protected_stops.append("protected target layer or governed delivery pipeline")
+        blocked_actions.extend(
+            [
+                {
+                    "action": "hydrate_task",
+                    "reason": "protected scope expansion requires a human gate",
+                },
+                {
+                    "action": "ship_task",
+                    "reason": "protected scope expansion requires a human gate",
+                },
+            ]
+        )
+        ux_basis = "Protected expansion stops before autonomous execution."
+    elif high_severity:
+        selected_route = "capture_self_improvement"
+        route_state = "high_severity_self_capture"
+        approval_needed = "inbox-first capture allowed unless protected boundary expands"
+        ux_basis = "High-severity operator feedback is surfaced before more continuation."
+    elif _campaign_requires_fresh_budget(report):
+        selected_route = "stop"
+        route_state = "completed_or_stale_campaign"
+        approval_needed = "fresh or continuing autonomous-auto budget"
+        blocked_actions.append(
+            {
+                "action": "open_next_without_budget",
+                "reason": "completed or stale campaign requires a fresh budget",
+            }
+        )
+        ux_basis = "Old campaign evidence cannot silently authorize continuation."
+    elif approval_scope == "planning_seed_only_no_hydration":
+        action = _action_from_report_actions(
+            report, "refine_proposal"
+        ) or _action_from_report_actions(report, "research_initiative")
+        selected_route = str(action.get("action") if action else "research_initiative")
+        route_state = (
+            "candidate_ready_for_review"
+            if selected_route == "refine_proposal"
+            else "discovery_active"
+        )
+        approval_needed = str(
+            (action or {}).get("approval_needed")
+            or "new hydration or delivery approval_basis required before writes"
+        )
+        ux_basis = "Seed-only approval remains visible and blocks delivery writes."
+    elif candidate_status == "hydrated":
+        if _hydrated_task_artifacts_exist(root, task_ref):
+            selected_route = "ship_task"
+            route_state = "delivery_ready"
+            approval_needed = "normal scoped delivery approval"
+            blocked_actions.append(
+                {
+                    "action": "hydrate_task",
+                    "reason": "repeat hydration is blocked for an already hydrated candidate",
+                }
+            )
+            ux_basis = "Hydrated roadmap/backlog/spec truth can route to scoped delivery."
+        else:
+            selected_route = "stop"
+            route_state = "completed_or_stale_campaign"
+            approval_needed = "repair hydrated task artifact truth before delivery"
+            blocked_actions.append(
+                {
+                    "action": "ship_task",
+                    "reason": "hydrated candidate is missing roadmap/backlog/spec task artifacts",
+                }
+            )
+            ux_basis = "Delivery is blocked until hydrated task artifacts are all present."
+    elif (
+        bool(readiness.get("ready_to_hydrate"))
+        and approval_scope == expected_scope
+        and bool(readiness.get("approval_basis"))
+        and _scaffold_command_names_candidate(readiness)
+    ):
+        selected_route = "hydrate_task"
+        route_state = "approved_for_hydration"
+        approval_needed = expected_scope
+        ux_basis = "Green readiness plus exact hydration approval can route to hydration only."
+    elif readiness_status in {"missing", ""}:
+        selected_route = "research_initiative"
+        route_state = "raw_initiative"
+        approval_needed = "discovery or proposal-refinement approval"
+        blocked_actions.extend(
+            [
+                {
+                    "action": "hydrate_task",
+                    "reason": "missing readiness evidence blocks hydration",
+                },
+                {
+                    "action": "ship_task",
+                    "reason": "missing readiness evidence blocks delivery",
+                },
+            ]
+        )
+        ux_basis = "Raw or incomplete initiative evidence routes to discovery, not writes."
+    elif readiness_status in {"continue_research", "ready_to_hydrate"}:
+        selected_route = (
+            "refine_proposal"
+            if _action_from_report_actions(report, "refine_proposal")
+            else "research_initiative"
+        )
+        route_state = (
+            "candidate_ready_for_review"
+            if selected_route == "refine_proposal"
+            else "discovery_active"
+        )
+        action = _action_from_report_actions(report, selected_route) or {}
+        approval_needed = str(
+            action.get("approval_needed") or "covered by discovery/refinement scope only"
+        )
+        if readiness_status == "ready_to_hydrate":
+            blocked_actions.append(
+                {
+                    "action": "hydrate_task",
+                    "reason": (
+                        "approved hydration requires human_decision approved, "
+                        f"approval_scope {expected_scope}, approval_basis, and a "
+                        "scaffold command naming the candidate"
+                    ),
+                }
+            )
+        ux_basis = "Unmet readiness evidence routes to research or proposal refinement."
+
+    blocked_actions = _dedupe_action_reasons(blocked_actions)
+    return {
+        "capsule_schema_version": 1,
+        "capsule_type": "autonomous_auto_initiative_route_decision",
+        "selected_route": selected_route,
+        "route_state": route_state,
+        "rejected_alternatives": _route_rejected_alternatives(
+            selected_route, report, blocked_actions
+        ),
+        "source_artifacts": report.get("source_artifacts") or {},
+        "readiness_evidence": {
+            "readiness_status": readiness.get("readiness_status"),
+            "ready_to_hydrate": readiness.get("ready_to_hydrate"),
+            "human_decision": readiness.get("human_decision"),
+            "approval_scope": readiness.get("approval_scope"),
+            "approval_basis_present": bool(readiness.get("approval_basis")),
+            "candidate_id": readiness.get("candidate_id"),
+            "candidate_status": readiness.get("candidate_status"),
+            "candidate_task_ref": readiness.get("candidate_task_ref"),
+            "scaffold_command": readiness.get("scaffold_command"),
+        },
+        "ux_anchor_rationale": {
+            "anchor": DEFAULT_VISION_ANCHOR,
+            "route_basis": ux_basis,
+        },
+        "protected_stops": protected_stops,
+        "blocked_actions": blocked_actions,
+        "approval_needed": approval_needed,
+        "evaluator_scores": (report.get("quality") or {}).get("evaluator_scores") or [],
+        "route_table_coverage": ROUTE_TABLE_STATES,
+        "lifecycle_report_type": report.get("report_type"),
+    }
+
+
 def build_initiative_lifecycle_report(
     root: Path,
     initiative_path: Path,
@@ -1861,9 +2167,7 @@ def build_initiative_lifecycle_report(
             "requires explicit approval_basis."
         )
     else:
-        readiness_meaning = (
-            "The initiative is still in discovery/refinement; hydration and delivery remain blocked."
-        )
+        readiness_meaning = "The initiative is still in discovery/refinement; hydration and delivery remain blocked."
     quality_meaning = (
         "Operator feedback is available and should be carried into future report/evaluator contracts."
         if reflection_observable
@@ -1920,9 +2224,7 @@ def build_initiative_lifecycle_report(
         "campaign_context": {
             "current_loop_status": campaign.get("current_loop", {}).get("status"),
             "handoff_observable": campaign.get("handoff_campaign", {}).get("observable"),
-            "fresh_budget_required": campaign.get("observation", {}).get(
-                "fresh_budget_required"
-            ),
+            "fresh_budget_required": campaign.get("observation", {}).get("fresh_budget_required"),
             "observation_reason": campaign.get("observation", {}).get("reason"),
         },
         "quality": {
@@ -1964,6 +2266,27 @@ def build_initiative_lifecycle_report(
     }
 
 
+def build_initiative_route_decision_capsule(
+    root: Path,
+    initiative_path: Path,
+    *,
+    reflection_path: Path | None = None,
+    state_path: Path | None = None,
+    handoff_path: Path | None = None,
+    candidate_id: str | None = None,
+) -> dict[str, Any]:
+    """Build the read-only T-024 route decision capsule from normalized reports."""
+    report = build_initiative_lifecycle_report(
+        root,
+        initiative_path,
+        reflection_path=reflection_path,
+        state_path=state_path,
+        handoff_path=handoff_path,
+        candidate_id=candidate_id,
+    )
+    return _route_decision_from_lifecycle_report(Path(root), report)
+
+
 def _format_lifecycle_report(payload: dict[str, Any]) -> str:
     initiative = payload.get("initiative") if isinstance(payload.get("initiative"), dict) else {}
     candidate = payload.get("candidate") if isinstance(payload.get("candidate"), dict) else {}
@@ -1980,9 +2303,7 @@ def _format_lifecycle_report(payload: dict[str, Any]) -> str:
         if isinstance(item, dict)
     )
     blocked_text = ", ".join(
-        str(item.get("action"))
-        for item in blocked_action_items
-        if isinstance(item, dict)
+        str(item.get("action")) for item in blocked_action_items if isinstance(item, dict)
     )
     return "\n".join(
         [
@@ -1995,6 +2316,32 @@ def _format_lifecycle_report(payload: dict[str, Any]) -> str:
             f"Protected gate required: {safety.get('protected_gate_required')}",
             f"Next safe actions: {next_text or 'none'}",
             f"Blocked actions: {blocked_text or 'none'}",
+        ]
+    )
+
+
+def _format_route_decision_capsule(payload: dict[str, Any]) -> str:
+    readiness = (
+        payload.get("readiness_evidence")
+        if isinstance(payload.get("readiness_evidence"), dict)
+        else {}
+    )
+    blocked = (
+        payload.get("blocked_actions") if isinstance(payload.get("blocked_actions"), list) else []
+    )
+    blocked_actions = [
+        str(item.get("action") or "")
+        for item in blocked
+        if isinstance(item, dict) and str(item.get("action") or "")
+    ]
+    return "\n".join(
+        [
+            "Autonomous-auto initiative route decision",
+            f"Selected route: {payload.get('selected_route')} ({payload.get('route_state')})",
+            f"Candidate: {readiness.get('candidate_id')} -> {readiness.get('candidate_task_ref')}",
+            f"Readiness: {readiness.get('readiness_status')} (hydrate={readiness.get('ready_to_hydrate')})",
+            f"Approval needed: {payload.get('approval_needed')}",
+            f"Blocked actions: {', '.join(blocked_actions) if blocked_actions else 'none'}",
         ]
     )
 
@@ -2013,6 +2360,23 @@ def cmd_lifecycle_report(args: argparse.Namespace) -> None:
         json.dumps(result, indent=2, sort_keys=False)
         if args.json
         else _format_lifecycle_report(result)
+    )
+
+
+def cmd_route_decision(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    result = build_initiative_route_decision_capsule(
+        root,
+        Path(args.initiative),
+        reflection_path=Path(args.reflection) if args.reflection else None,
+        state_path=_state_path(root, args.state),
+        handoff_path=Path(args.handoff) if args.handoff else None,
+        candidate_id=args.candidate_id,
+    )
+    print(
+        json.dumps(result, indent=2, sort_keys=False)
+        if args.json
+        else _format_route_decision_capsule(result)
     )
 
 
@@ -2598,13 +2962,9 @@ def cmd_materialize_self_capture(args: argparse.Namespace) -> None:
 def _format_campaign_report(payload: dict[str, Any]) -> str:
     current = payload.get("current_loop") if isinstance(payload.get("current_loop"), dict) else {}
     handoff = (
-        payload.get("handoff_campaign")
-        if isinstance(payload.get("handoff_campaign"), dict)
-        else {}
+        payload.get("handoff_campaign") if isinstance(payload.get("handoff_campaign"), dict) else {}
     )
-    observation = (
-        payload.get("observation") if isinstance(payload.get("observation"), dict) else {}
-    )
+    observation = payload.get("observation") if isinstance(payload.get("observation"), dict) else {}
     return "\n".join(
         [
             "Autonomous-auto campaign report",
@@ -2736,6 +3096,17 @@ def build_parser() -> argparse.ArgumentParser:
     lifecycle.add_argument("--candidate-id", default=None, help="Optional candidate_slices id.")
     lifecycle.add_argument("--json", action="store_true")
     lifecycle.set_defaults(func=cmd_lifecycle_report)
+
+    route = sub.add_parser(
+        "lifecycle-route",
+        help="Build a read-only initiative route decision capsule for autonomous-auto.",
+    )
+    route.add_argument("--initiative", required=True, help="Initiative bank YAML path.")
+    route.add_argument("--reflection", default=None, help="Optional reflection JSONL path.")
+    route.add_argument("--handoff", default=None, help="Optional autonomous-auto handoff path.")
+    route.add_argument("--candidate-id", default=None, help="Optional candidate_slices id.")
+    route.add_argument("--json", action="store_true")
+    route.set_defaults(func=cmd_route_decision)
     return parser
 
 
