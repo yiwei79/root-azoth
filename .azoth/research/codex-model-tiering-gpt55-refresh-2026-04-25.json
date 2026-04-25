@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "id": "codex-model-tiering-gpt55-refresh-2026-04-25",
+  "created_at": "2026-04-25",
+  "source_session": "codex-model-tiering-campaign-seed",
+  "status": "research-seed",
+  "topic": "Codex runtime model resolver and spawn-effort isolation",
+  "applies_to_campaign": {
+    "initiative_ref": "INI-PLT-006",
+    "predecessors": ["T-015", "T-017"],
+    "recommended_follow_on_title": "Codex runtime model resolver and spawn-effort isolation"
+  },
+  "official_sources": [
+    {
+      "title": "Models",
+      "url": "https://developers.openai.com/api/docs/models",
+      "observed_on": "2026-04-25",
+      "finding": "The current official model guide recommends gpt-5.5 as the starting point for complex reasoning and coding, with gpt-5.4-mini or gpt-5.4-nano for latency and cost sensitive workloads."
+    },
+    {
+      "title": "Using GPT-5.5",
+      "url": "https://developers.openai.com/api/docs/guides/latest-model",
+      "observed_on": "2026-04-25",
+      "finding": "GPT-5.5 should be treated as a new family to tune for, not a drop-in replacement for gpt-5.2 or gpt-5.4. The guide recommends benchmarking accuracy, token use, and end-to-end latency, and tuning reasoning.effort per workload."
+    },
+    {
+      "title": "GPT-5.5 model page",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+      "observed_on": "2026-04-25",
+      "finding": "gpt-5.5 supports reasoning.effort values none, low, medium, high, and xhigh; default is medium. It has a 1,050,000 token context window and supports hosted tools including apply_patch, skills, computer use, MCP, and tool search."
+    },
+    {
+      "title": "Reasoning models",
+      "url": "https://developers.openai.com/api/docs/guides/reasoning",
+      "observed_on": "2026-04-25",
+      "finding": "Reasoning effort values are model-dependent. gpt-5.5 defaults to medium. none is for latency-critical tasks without reasoning or chained tool calls; low is efficient reasoning for tool use and multi-step decision making; medium is the balanced default; high is for complex workflows; xhigh is for deep asynchronous or very long rollout tasks only when evals show clear benefit."
+    },
+    {
+      "title": "All models",
+      "url": "https://developers.openai.com/api/docs/models/all",
+      "observed_on": "2026-04-25",
+      "finding": "The current catalog separates frontier models from coding-specific models. Frontier options include GPT-5.5, GPT-5.5 pro, GPT-5.4, GPT-5.4 pro, GPT-5.4 mini, GPT-5.4 nano, GPT-5 mini, GPT-5 nano, GPT-5, and GPT-4.1. Coding-specific legacy Codex models are mostly deprecated except GPT-5.3-Codex, which remains listed."
+    },
+    {
+      "title": "GPT-5.3-Codex model page",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.3-codex",
+      "observed_on": "2026-04-25",
+      "finding": "GPT-5.3-Codex remains listed as optimized for agentic coding and supports low, medium, high, and xhigh reasoning effort settings, but the general model guidance now starts with gpt-5.5 for reasoning workloads."
+    }
+  ],
+  "current_model_inventory_observations": [
+    {
+      "model": "gpt-5.5",
+      "status": "current-frontier",
+      "reasoning_effort": ["none", "low", "medium", "high", "xhigh"],
+      "default_reasoning_effort": "medium",
+      "selector_implication": "Primary high-quality default for complex Codex orchestration, architect/reviewer/evaluator lanes, and hard implementation tasks when latency and cost are justified."
+    },
+    {
+      "model": "gpt-5.5-pro",
+      "status": "current-pro",
+      "reasoning_effort": "official model page should be rechecked before policy lock",
+      "selector_implication": "Use only as an escalation lane for hardest asynchronous or high-value evaluations; never default leaf workers to pro."
+    },
+    {
+      "model": "gpt-5.4",
+      "status": "current-lower-cost-frontier",
+      "reasoning_effort": ["none", "low", "medium", "high", "xhigh"],
+      "default_reasoning_effort": "none",
+      "selector_implication": "Fallback or cost-sensitive frontier lane when gpt-5.5 is unavailable or too expensive for the scope."
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "status": "current-mini",
+      "reasoning_effort": "reasoning token support present; exact accepted values should be rechecked before policy lock",
+      "selector_implication": "Strong candidate for default bounded subagents and high-volume leaf work if the actual Codex spawn API supports the needed reasoning settings."
+    },
+    {
+      "model": "gpt-5.4-nano",
+      "status": "current-nano",
+      "reasoning_effort": "reasoning token support not explicit in observed snippet; recheck before use",
+      "selector_implication": "Only consider for simple classification, extraction, ranking, or trivial leaf subagents; do not use for planning, review, or code mutation unless evaluated."
+    },
+    {
+      "model": "gpt-5.3-codex",
+      "status": "current-coding-specialized",
+      "reasoning_effort": ["low", "medium", "high", "xhigh"],
+      "selector_implication": "Potential coding-specialized fallback or alternative to gpt-5.5 for agentic coding lanes, but should be measured against gpt-5.5 rather than assumed superior."
+    },
+    {
+      "model": "legacy-codex-family",
+      "status": "mostly-deprecated",
+      "reasoning_effort": "varies by model",
+      "selector_implication": "Do not seed new policy defaults from deprecated Codex models such as GPT-5-Codex, GPT-5.2-Codex, GPT-5.1 Codex, GPT-5.1-Codex-Max, GPT-5.1 Codex mini, or codex-mini-latest."
+    }
+  ],
+  "campaign_seed_requirements": [
+    "Campaign A must refresh the proposal and task seed from official OpenAI docs dated 2026-04-25 or later before locking any alias defaults.",
+    "The policy artifact must store capability classes and availability state separately from current alias preferences so model changes do not require rewriting orchestration text.",
+    "Tests must assert explicit spawn model and reasoning_effort values, not exact current model names except in policy validation fixtures.",
+    "The first runtime slice must prove that parent xhigh does not leak into leaf subagents by omission.",
+    "Selector traces should record model, reasoning_effort, model_tier, policy_ref, confidence, fallback_reason, observed_source_date, and whether the decision used a deprecated model.",
+    "The resolver must fail closed or require explicit override if the chosen alias is deprecated, unavailable, lacks a required reasoning effort, or lacks mandatory tools for the stage."
+  ],
+  "provisional_policy_direction": {
+    "quality_first": true,
+    "default_frontier_lane": "gpt-5.5 with reasoning_effort medium unless stage policy says otherwise",
+    "leaf_worker_starting_point": "evaluate gpt-5.4-mini low or medium for bounded subagents; do not inherit orchestrator effort",
+    "latency_leaf_lane": "evaluate gpt-5.4-nano only for simple non-mutating or trivial tasks",
+    "deep_escalation_lane": "xhigh only for explicit hard async rollouts, deep research/eval, or protected high-value review where eval evidence justifies cost",
+    "deprecated_model_rule": "deprecated models cannot be preferred defaults; they require explicit fallback rationale or human override"
+  },
+  "open_questions_for_campaign_a": [
+    "Which surfaces are canonical for Codex spawn construction versus generated mirrors?",
+    "Can the current Codex subagent API always accept both model and reasoning_effort for every spawned agent type?",
+    "Should selector decisions be stored in run-ledger stage_spawns, BL-012 stage summaries, or a dedicated selector trace artifact?",
+    "Should gpt-5.3-codex remain an active coding-specialized alternative now that gpt-5.5 is the official default for complex reasoning and coding?"
+  ]
+}

@@ -90,6 +90,38 @@ details:
             Codex-Spark is framed as a latency-first real-time coding lane whose default
             working style stays lightweight and targeted, which makes it useful as a
             bounded leaf option rather than the main Azoth control-plane default.
+    official_refresh_2026_04_25:
+      seed_ref: ".azoth/research/codex-model-tiering-gpt55-refresh-2026-04-25.json"
+      observed_on: "2026-04-25"
+      sources:
+        - title: "Models"
+          url: "https://developers.openai.com/api/docs/models"
+          finding: >
+            OpenAI now recommends `gpt-5.5` as the starting point for complex
+            reasoning and coding, with `gpt-5.4-mini` and `gpt-5.4-nano` as
+            lower-latency, lower-cost options.
+        - title: "GPT-5.5 model docs"
+          url: "https://developers.openai.com/api/docs/models/gpt-5.5"
+          finding: >
+            `gpt-5.5` supports `reasoning.effort` values `none`, `low`, `medium`,
+            `high`, and `xhigh`; its default reasoning effort is `medium`.
+        - title: "Using GPT-5.5"
+          url: "https://developers.openai.com/api/docs/guides/latest-model"
+          finding: >
+            GPT-5.5 should be treated as a new model family to tune for, not as
+            a drop-in replacement for GPT-5.2 or GPT-5.4. The guide recommends
+            benchmarking accuracy, token consumption, and end-to-end latency.
+        - title: "Reasoning models"
+          url: "https://developers.openai.com/api/docs/guides/reasoning"
+          finding: >
+            Reasoning effort is model-dependent. `xhigh` is for deep asynchronous
+            or very long rollout tasks only when evals show a clear benefit.
+        - title: "All models"
+          url: "https://developers.openai.com/api/docs/models/all"
+          finding: >
+            The current catalog marks most older Codex-family models as deprecated.
+            `gpt-5.3-codex` remains listed as a coding-specialized option, but it
+            should be measured against GPT-5.5 rather than assumed to be the default.
   problem:
     intent_gap: >
       `model_tier` currently signals only coarse quality/cost intent and cannot
@@ -99,6 +131,11 @@ details:
       Azoth documentation implies that Codex resolves tier to a concrete model, but
       there is no real Codex policy artifact, no explicit capability inventory, and
       no tested deterministic resolver behavior.
+    spawn_effort_leak_gap: >
+      Codex sessions can run the root orchestrator with high or extra-high reasoning
+      while spawned subagents default to the parent setting unless the spawn path passes
+      explicit `model` and `reasoning_effort` fields. This turns `xhigh` into an
+      accidental leaf-worker default rather than an intentional stage escalation.
     forward_compatibility_gap: >
       Hard-coding today’s model names or snapshots would force recurring manual
       retuning as aliases, availability, model families, and capability trade-offs
@@ -226,11 +263,15 @@ details:
           M3/M2 so the policy improves with evidence instead of ad hoc human retuning.
   directional_current_policy:
     statement: >
-      Current evidence suggests a quality-first Codex default should usually resolve
-      toward `gpt-5.4` for orchestrator/design/review lanes, `gpt-5.3-codex` for
-      heavy agentic coding lanes, `gpt-5.4-mini` for most bounded subagents, and
-      Codex-Spark only for latency-first leaf work. These names are current directional
-      examples, not the future-proof normative interface.
+      Current official evidence from 2026-04-25 suggests a quality-first Codex policy
+      should start with `gpt-5.5` for complex orchestration, architecture, review,
+      evaluation, and hard implementation work; evaluate `gpt-5.4-mini` at `low` or
+      `medium` for bounded leaf subagents; reserve `gpt-5.4-nano` for simple
+      non-mutating latency/cost-sensitive tasks; and treat `gpt-5.3-codex` as a
+      still-listed coding-specialized alternative or fallback to measure rather than
+      the default assumption. `xhigh` must be explicit stage policy backed by eval
+      evidence, never inherited from the parent orchestrator by omission. These names
+      are current policy defaults/fallbacks, not the future-proof normative interface.
   follow_on_slices:
     - id: "Slice A"
       title: "Codex policy artifact + research bank"
@@ -254,6 +295,17 @@ details:
       title: "Optional portability follow-on"
       deliverables:
         - "Generalize beyond Codex only after the Codex co-primary proof is stable"
+    - id: "T-025"
+      title: "Codex runtime model resolver and spawn-effort isolation"
+      deliverables:
+        - "Refresh official model inventory from OpenAI docs before locking policy defaults"
+        - "Add a Codex-local policy artifact that separates capability classes, availability state, and alias preferences"
+        - "Implement resolver output with `model`, `reasoning_effort`, `model_tier`, `policy_ref`, `confidence`, `fallback_reason`, and `source_observed_on`"
+        - "Ensure every spawned subagent receives explicit `model` and `reasoning_effort` fields"
+        - "Prevent parent `xhigh` reasoning from leaking into leaf subagents by omission"
+        - "Record selector decisions in run-ledger spawn evidence, BL-012 stage summaries, or a dedicated selector trace artifact"
+        - "Fail closed or require explicit override for deprecated, unavailable, unsupported-effort, or mandatory-tool-mismatched aliases"
+        - "Add anti-leak, fallback, explicit override, deprecated-model, and spawn-payload regression tests"
   non_goals:
     - "No runtime selector implementation in this proposal slice"
     - "No deploy changes or command/agent mirror rewrites"
@@ -265,3 +317,16 @@ details:
     note: >
       `T-015` remains the historical seed/proposal anchor. `T-017` shipped the
       selector-policy and task-definition lane before any runtime resolver work.
+  next_follow_on:
+    backlog_id: "T-025"
+    title: "Codex runtime model resolver and spawn-effort isolation"
+    status: "campaign-seeded"
+    seed_ref: ".azoth/research/codex-model-tiering-gpt55-refresh-2026-04-25.json"
+    predecessors:
+      - "T-015"
+      - "T-017"
+    note: >
+      `T-025` is the runtime bridge follow-on. It must hydrate separately before
+      implementation, explicitly naming canonical source surfaces, projection/deploy
+      expectations, fallback semantics, selector audit location, Codex spawn API
+      capability, and anti-leak acceptance tests.

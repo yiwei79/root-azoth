@@ -2746,6 +2746,38 @@ items:
   - D23
   - D46
   - D52
+- id: T-025
+  title: Codex runtime model resolver and spawn-effort isolation
+  source: codex-model-tiering-gpt55-runtime-resolver-2026-04-25
+  roadmap_ref: T-025
+  initiative_ref: INI-PLT-006
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  decision_ref:
+  - D19
+  - D21
+  - D23
+  - D46
+  - D52
+  blocked_by:
+  - T-015
+  - T-017
+  description: 'Implement the runtime bridge after the `T-015` seed and shipped
+    `T-017` selector-policy lane: add Codex model-selection policy/resolver behavior
+    that passes explicit `model` and `reasoning_effort` to every spawned subagent,
+    preventing parent `xhigh` reasoning from becoming an accidental leaf-worker default.
+    This task starts with a mandatory pre-implementation gate: canonical spawn source
+    surfaces, projection/deploy expectations, selector trace location, Codex spawn
+    API support, fallback semantics, and anti-leak tests must be named before runtime
+    files are changed. Non-goal: do not promote current model aliases into the long-term
+    normative contract; treat GPT-5.5 calibration as current policy evidence, not
+    permanent architecture.
+
+    '
 - id: BL-071
   title: Reintroduce shared CSafeLoader YAML helper for hot scripts
   source: automation-performance-audit-2026-04-23

@@ -1005,6 +1005,11 @@ initiatives:
     phase: v0.2.0-p3
     status: complete
     role: historical
+  - task_ref: T-025
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-025.yaml
+    phase: v0.2.0-p3
+    status: active
+    role: primary
   summary: 'Shift Azoth from Claude-first-with-adapters toward a protocol-first platform
     model with Claude Code and Codex as co-primary command surfaces, while keeping
     Cursor, Copilot, OpenCode, and Gemini / Antigravity on an honest adapter contract.
@@ -1013,10 +1018,13 @@ initiatives:
     the migration batches and the canonical contract/projection path. T-015 added
     the bounded Codex model-selection seed under this initiative, and T-017 then shipped
     the selector-policy and task-definition lane before any runtime resolver work.
-    Follow-on Codex calm-flow runtime proof and any remaining `legacy_claude_markdown`
-    bridge cleanup continue as platform-polish work rather than evidence that every
-    migrated command, or every remaining command family, is already independent from
-    `.claude/commands/*.md`.
+    T-025 now carries the GPT-5.5-calibrated runtime resolver and spawn-effort isolation
+    follow-on, with explicit pre-implementation gates for canonical spawn surfaces,
+    projection/deploy expectations, selector trace location, Codex spawn API capability,
+    fallback semantics, and anti-leak tests. Follow-on Codex calm-flow runtime proof
+    and any remaining `legacy_claude_markdown` bridge cleanup continue as platform-polish
+    work rather than evidence that every migrated command, or every remaining command
+    family, is already independent from `.claude/commands/*.md`.
 
     '
   decision_ref:
@@ -1765,6 +1773,15 @@ versions:
     - D50
     - D52
     initiative_ref: INI-AUTO-001
+  - id: T-025
+    title: Codex runtime model resolver and spawn-effort isolation
+    decision_ref:
+    - D19
+    - D21
+    - D23
+    - D46
+    - D52
+    initiative_ref: INI-PLT-006
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal

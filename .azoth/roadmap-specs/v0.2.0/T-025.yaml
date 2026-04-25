@@ -1,0 +1,85 @@
+id: T-025
+roadmap_version: v0.2.0
+title: Codex runtime model resolver and spawn-effort isolation
+decision_ref:
+- D19
+- D21
+- D23
+- D46
+- D52
+initiative_ref: INI-PLT-006
+predecessors:
+- T-015
+- T-017
+intent: >
+  Ship the runtime bridge for Codex model selection by adding a host-local resolver
+  and spawn contract enforcement so every spawned subagent receives explicit `model`
+  and `reasoning_effort` fields. The first runtime slice must prevent parent
+  orchestrator `xhigh` reasoning from leaking into leaf subagents by omission while
+  preserving `model_tier` as portable intent.
+problem: >
+  T-015 established the Codex intelligent model-selection seed and T-017 shipped
+  the selector-policy/task-definition lane, but Codex runtime behavior still has
+  no concrete resolver path. In practice, a main orchestrator session running with
+  high or extra-high reasoning can cause spawned subagents to default to that parent
+  effort unless explicit per-spawn `model` and `reasoning_effort` are passed. This
+  makes `xhigh` an accidental cost and latency default for leaf workers instead of
+  an intentional escalation.
+scope:
+- Add a Codex-local policy artifact that separates capability classes, availability
+  state, current alias preferences, and fallback order.
+- Add or wire a resolver that returns `model`, `reasoning_effort`, `model_tier`,
+  `policy_ref`, `confidence`, `fallback_reason`, and `source_observed_on`.
+- Pass explicit `model` and `reasoning_effort` through every Codex subagent spawn
+  path that T-025 owns.
+- "Define and implement selector audit evidence in one chosen location: run-ledger stage-spawn evidence, BL-012 stage summaries, or a dedicated selector trace artifact."
+- Refresh official OpenAI model information before locking alias defaults; the
+  2026-04-25 seed currently points to GPT-5.5 as the complex reasoning/coding
+  starting point, `gpt-5.4-mini` or `gpt-5.4-nano` for latency/cost-sensitive work,
+  and `gpt-5.3-codex` as a still-listed coding-specialized alternative to measure.
+- Add tests for anti-leak behavior, explicit spawn payload fields, fallback/fail-closed
+  handling, deprecated-model protection, explicit override behavior, and policy
+  validation.
+pre_implementation_gate:
+- Name canonical source surfaces for Codex spawn construction versus generated mirrors.
+- Name projection/deploy expectations, including whether `scripts/azoth-deploy.py`
+  must project a policy artifact, static model fields, or neither in the first runtime
+  slice.
+- Name the selector trace location before runtime work starts.
+- Verify the current Codex spawn API supports explicit `model` and `reasoning_effort`
+  for spawned agents, or stop and re-scope to platform limitation mitigation.
+- Define fallback semantics for deprecated, unavailable, unsupported-effort, or
+  mandatory-tool-mismatched aliases before implementation.
+- Name the anti-leak regression tests that prove parent `xhigh` does not become a
+  leaf-subagent default by omission.
+non_goals:
+- Do not reopen T-015 or T-017; they remain completed predecessors.
+- Do not hard-code current model names as the long-term normative architecture.
+- Do not expand into kernel, governance, M1, destructive, credential, network, or
+  broad multi-platform adapter work.
+- Do not regenerate command/agent projections unless the pre-implementation gate
+  identifies projection as required for this Codex runtime slice.
+acceptance:
+- The pre-implementation gate is satisfied and recorded before runtime files change.
+- The resolver output is typed and includes `model`, `reasoning_effort`, `model_tier`,
+  `policy_ref`, `confidence`, `fallback_reason`, and `source_observed_on`.
+- Every owned Codex subagent spawn receives explicit `model` and `reasoning_effort`.
+- "A parent orchestrator running with `reasoning_effort: xhigh` does not cause default leaf subagents to inherit `xhigh`; `xhigh` appears only through explicit stage policy, human override, or eval-backed escalation."
+- Deprecated, unavailable, unsupported-effort, or mandatory-tool-mismatched model
+  aliases fail closed or require explicit override.
+- Tests assert capability classes and explicit spawn fields rather than exact current
+  model names, except in policy validation fixtures.
+- Selector decisions are auditable through the chosen trace location.
+dependencies:
+- T-015
+- T-017
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Phase 1 = satisfy the pre-implementation gate and ship the minimal anti-leak
+  resolver/spawn bridge. Phase 2 = tune policy defaults from measured outcomes.
+  Phase 3 = generalize beyond Codex only after Codex co-primary behavior is stable.
+source_proposal_ref: .azoth/proposals/codex-intelligent-model-selection.yaml
+source_research_ref: .azoth/research/codex-model-tiering-gpt55-refresh-2026-04-25.json

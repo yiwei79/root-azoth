@@ -64,6 +64,7 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "T-015",
         "T-016",
         "T-017",
+        "T-025",
         "T-005",
         "T-008",
         "T-009",
@@ -99,19 +100,25 @@ def test_codex_model_selection_shipped_continuity() -> None:
     assert "T-015" in completed_tasks, "v0.2.0-p3 should retain T-015 as completed history."
     assert "T-016" in completed_tasks, "v0.2.0-p3 should retain T-016 as completed history."
     assert "T-017" in completed_tasks, "v0.2.0-p3 should preserve T-017 as shipped history."
+    assert "T-025" in active_tasks, "v0.2.0-p3 should expose T-025 as the runtime resolver follow-on."
     assert completed_tasks["T-015"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
     assert completed_tasks["T-016"].get("decision_ref") == ["D19", "D46", "D50", "D52"]
     assert completed_tasks["T-017"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
 
     backlog_t015 = _find_backlog_item(backlog, "T-015")
     backlog_t017 = _find_backlog_item(backlog, "T-017")
+    backlog_t025 = _find_backlog_item(backlog, "T-025")
     assert backlog_t015 is not None, "T-015 must exist in backlog.yaml as the restored seed row."
     assert backlog_t017 is not None, "T-017 must exist in backlog.yaml as the shipped selector-policy row."
+    assert backlog_t025 is not None, "T-025 must exist in backlog.yaml as the runtime resolver row."
     assert backlog_t015.get("status") == "complete"
     assert backlog_t015.get("roadmap_ref") == "T-015"
     assert backlog_t017.get("status") == "complete"
     assert backlog_t017.get("initiative_ref") == "INI-PLT-006"
     assert backlog_t017.get("roadmap_ref") == "T-017"
+    assert backlog_t025.get("status") == "pending"
+    assert backlog_t025.get("initiative_ref") == "INI-PLT-006"
+    assert backlog_t025.get("roadmap_ref") == "T-025"
 
     initiatives = {item["id"]: item for item in road.get("initiatives") or []}
     plt006 = initiatives["INI-PLT-006"]
@@ -121,10 +128,16 @@ def test_codex_model_selection_shipped_continuity() -> None:
     t017_slice = next(item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-017")
     assert t017_slice.get("status") == "complete"
     assert t017_slice.get("role") == "historical"
+    t025_slice = next(item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-025")
+    assert t025_slice.get("status") == "active"
+    assert t025_slice.get("role") == "primary"
 
     shipped_follow_on = proposal["details"]["shipped_follow_on"]
     assert shipped_follow_on["backlog_id"] == "T-017"
     assert "shipped the selector-policy and task-definition lane" in shipped_follow_on["note"]
+    next_follow_on = proposal["details"]["next_follow_on"]
+    assert next_follow_on["backlog_id"] == "T-025"
+    assert "runtime bridge follow-on" in next_follow_on["note"]
 
 
 def test_codex_permissions_follow_on_history_is_preserved() -> None:
