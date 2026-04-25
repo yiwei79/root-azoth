@@ -544,11 +544,32 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
     assert scope["governance_mode"] == "standard"
     assert scope["approved_by"] == "autonomous-auto-loop"
     assert scope["approval_basis"] == "User approved branch-local autonomous-auto testing."
+    assert scope["delegation_plan"]["mode"] == "guidance"
+    assert scope["delegation_plan"]["run_ledger_evidence"]["run_id"] == result["session_id"]
+    assert [stage["subagent_type"] for stage in scope["delegation_plan"]["stages"]] == [
+        "architect",
+        "planner",
+        "builder",
+        "evaluator",
+    ]
     assert scope["loop_decision"]["action"] == "ship_task"
+    ledger = yaml.safe_load(
+        (tmp_path / ".azoth/run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    run = next(item for item in ledger["runs"] if item["run_id"] == result["session_id"])
+    assert run["status"] == "active"
+    assert run["active_stage_id"] == "autonomous_auto_s1_architect"
+    assert run["pending_stage_ids"] == [
+        "autonomous_auto_s1_architect",
+        "autonomous_auto_s2_planner",
+        "autonomous_auto_s3_builder",
+        "autonomous_auto_s4_evaluator",
+    ]
     assert state["iteration"] == 1
     assert state["last_session_id"] == result["session_id"]
     assert state["queue"] == []
     assert state["history"][0]["candidate_id"] == "T-321"
+    assert state["history"][0]["delegation_plan_id"] == scope["delegation_plan"]["plan_id"]
 
 
 def test_open_next_consumes_only_selected_queue_candidate(tmp_path: Path) -> None:
@@ -635,6 +656,46 @@ def test_open_next_refuses_active_session_gate_conflict(tmp_path: Path) -> None:
             "2026-04-25T12:00:00Z",
         )
     assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+
+def test_live_write_claim_blocks_next_iteration_and_operator_read(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/run-ledger.local.yaml",
+        {
+            "schema_version": 1,
+            "runs": [],
+            "write_claim": {
+                "session_id": "previous-child",
+                "expires_at": _future_expiry(),
+                "acquired_at": "2026-04-25T12:00:00Z",
+                "worktree_path": str(tmp_path),
+            },
+        },
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "active_write_claim_present"
+    assert status["can_continue"] is False
+    assert status["stop_reason"] == "active_write_claim_present"
+    assert read["write_claim"].startswith("held by previous-child")
+    assert "active_write_claim_present" in read["stop_conditions"]
+    assert read["residual_risk"].startswith("Live write claim remains")
 
 
 def test_open_next_refuses_missing_loop_state_even_with_fabricated_decision(

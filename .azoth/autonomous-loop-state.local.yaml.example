@@ -15,6 +15,7 @@ autonomy_budget:
   stop_conditions:
     - active_scope_present
     - active_session_gate_conflict
+    - active_write_claim_present
     - budget_exhausted
     - protected_gate_required
     - async_stop_packet

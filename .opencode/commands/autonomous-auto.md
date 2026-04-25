@@ -62,6 +62,13 @@ Autonomous auto must still deliver with an adaptive pipeline:
   alignment bands.
 - Research/explore waves are inserted when the goal is not ready to hydrate or deliver.
 - Hydration and implementation stay separate artifact-class stages when both are needed.
+- Each opened child scope carries a compact `delegation_plan` in `.azoth/scope-gate.json`.
+  Treat it as a deterministic reminder and audit scaffold, not a full scheduler: the
+  orchestrator still uses architect judgment, but may not silently replace required
+  context-isolation, review-independence, context-budget, or protected gates with inline work.
+- Each child scope starts with an active `.azoth/run-ledger.local.yaml` run entry. Delegated
+  stages must record `stage_spawns` and `stage_summaries`; inline exceptions must be explicit
+  and justified against the `delegation_plan.inline_policy`.
 - E1–E6 from `.claude/commands/eval.md` decide whether `/eval-swarm` is inserted.
 - Bounded replay handles failed review/eval findings; stop at the replay threshold.
 - Scope/pipeline gates, write claims, run-ledger evidence, and closeout remain mechanical.
@@ -82,11 +89,12 @@ bounded loop of normal Azoth sessions:
    operator has approved the campaign declaration. Otherwise stop at `missing_loop_state`.
 5. Use `scripts/autonomous_loop.py decide-next --json` to emit the next decision.
 6. If the decision is not `stop`, use `scripts/autonomous_loop.py open-next --decision <path>`
-   to open the next `pipeline_command=autonomous-auto` scope and acquire the write claim.
+   to open the next `pipeline_command=autonomous-auto` scope, persist its `delegation_plan`,
+   create the child run-ledger entry, and acquire the write claim.
 7. Use `scripts/autonomous_loop.py status --operator-read` for concise operator alignment
-   packets, `record-alignment` / `apply-alignment` for async packet state, and
-   `record-vision-score` / `materialize-self-capture` for vision scoring and inbox-first
-   mistake capture.
+   packets including live write-claim drift, `record-alignment` / `apply-alignment` for async
+   packet state, and `record-vision-score` / `materialize-self-capture` for vision scoring and
+   inbox-first mistake capture.
 
 Local loop state lives in `.azoth/autonomous-loop-state.local.yaml`; the tracked
 `.azoth/autonomous-loop-state.local.yaml.example` documents its shape. The loop governor

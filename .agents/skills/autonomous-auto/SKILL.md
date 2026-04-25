@@ -83,6 +83,13 @@ adapt the stage list to the actual scope:
 - Use research/explore waves before hydration when knowledge is incomplete.
 - Hydrate planning artifacts only when readiness and `approval_basis` are explicit.
 - Open implementation as a separate delivery stage when the hydrated task is ready.
+- Each opened child scope carries a compact `delegation_plan` in `.azoth/scope-gate.json`.
+  Treat it as a deterministic reminder and audit scaffold, not a full scheduler: the
+  orchestrator still uses architect judgment, but may not silently replace required
+  context-isolation, review-independence, context-budget, or protected gates with inline work.
+- Each child scope starts with an active `.azoth/run-ledger.local.yaml` run entry. Delegated
+  stages must record `stage_spawns` and `stage_summaries`; inline exceptions must be explicit
+  and justified against the `delegation_plan.inline_policy`.
 - Insert `/eval-swarm` when `.claude/commands/eval.md` E1–E6 triggers fire.
 - Use bounded replay for failed review/eval findings; stop at the threshold.
 - Close out through the normal session lifecycle and record the autonomous approval basis.
@@ -122,9 +129,11 @@ Use `scripts/autonomous_loop.py` for deterministic continuation decisions:
   Use `--vision-declaration-json` after the operator approves the campaign vision so
   the simple prompt discussion becomes durable loop state.
 - `status` reports loop state and whether a live scope blocks continuation.
-- `status --operator-read` reports a concise operator-facing alignment packet.
+- `status --operator-read` reports a concise operator-facing alignment packet, including any
+  live write claim that would make a checkpoint unsafe to continue.
 - `decide-next --json` emits the next architect decision.
-- `open-next --decision <path>` writes the next scope gate and acquires a write claim.
+- `open-next --decision <path>` writes the next scope gate with a `delegation_plan`, creates
+  the child run-ledger entry, and acquires a write claim.
 - `record-alignment` and `apply-alignment` persist async operator alignment packets and
   dispositions in the loop state.
 - `record-vision-score` records the latest UX-anchor score; continue opening eligible
@@ -159,7 +168,7 @@ Stop before the affected edge when:
 - kernel, governance, M1, destructive, credential, or network expansion appears,
 - the autonomy budget no longer covers the next artifact class,
 - eval/review replay exceeds the threshold,
-- scope/pipeline gates or write claims are invalid,
+- scope/pipeline gates or write claims are invalid or still live from a previous child scope,
 - external freshness is material and cannot be verified.
 
 ## Relation to Other Modes

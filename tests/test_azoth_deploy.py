@@ -1407,6 +1407,10 @@ def test_autonomous_auto_defines_standalone_async_self_development_mode() -> Non
         "record-vision-score",
         "materialize-self-capture",
         "architect decision capsule",
+        "delegation_plan",
+        "stage_spawns",
+        "stage_summaries",
+        "inline_policy",
     ):
         assert needle in content, f"autonomous-auto skill missing {needle!r}"
 

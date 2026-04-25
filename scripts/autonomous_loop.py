@@ -18,7 +18,7 @@ from typing import Any
 
 import yaml
 
-from run_ledger import acquire_write_claim
+from run_ledger import acquire_write_claim, load_write_claim, release_write_claim, upsert_run
 from session_gate import active_session_gate, normalized_session_mode
 from yaml_helpers import safe_load_yaml_path
 
@@ -96,6 +96,7 @@ DEFAULT_VISION_TARGET_BAND = "green"
 DEFAULT_STOP_CONDITIONS = [
     "active_scope_present",
     "active_session_gate_conflict",
+    "active_write_claim_present",
     "budget_exhausted",
     "protected_gate_required",
     "async_stop_packet",
@@ -218,6 +219,30 @@ def _session_conflict_detail(
     )
 
 
+def _write_claim_status(root: Path) -> dict[str, Any]:
+    claim = load_write_claim(root)
+    if not isinstance(claim, dict):
+        return {"held": False, "stale": False}
+    expires_at = str(claim.get("expires_at") or "")
+    expiry = _parse_iso(expires_at)
+    stale = bool(expiry and expiry <= _utc_now())
+    return {
+        "held": True,
+        "stale": stale,
+        "session_id": str(claim.get("session_id") or ""),
+        "expires_at": expires_at,
+        "worktree_path": str(claim.get("worktree_path") or ""),
+        "branch": str(claim.get("branch") or ""),
+    }
+
+
+def _blocking_write_claim(root: Path) -> dict[str, Any] | None:
+    claim = _write_claim_status(root)
+    if claim.get("held") and not claim.get("stale"):
+        return claim
+    return None
+
+
 def _approval_basis(state: dict[str, Any]) -> str:
     budget = state.get("autonomy_budget")
     if isinstance(budget, dict):
@@ -242,6 +267,15 @@ def _allowed_actions(state: dict[str, Any]) -> set[str]:
     if not isinstance(raw, list):
         return set(VALID_ACTIONS) - {"stop"}
     return {str(item).strip() for item in raw if str(item).strip() in VALID_ACTIONS}
+
+
+def _stop_conditions_for_read(budget: dict[str, Any]) -> list[str]:
+    raw = budget.get("stop_conditions") if isinstance(budget, dict) else None
+    conditions = [str(item) for item in raw] if isinstance(raw, list) else list(DEFAULT_STOP_CONDITIONS)
+    for condition in DEFAULT_STOP_CONDITIONS:
+        if condition not in conditions:
+            conditions.append(condition)
+    return conditions
 
 
 def _budget_mapping(state: dict[str, Any]) -> dict[str, Any]:
@@ -652,6 +686,145 @@ def _candidate_snapshot(action: str, candidate: dict[str, Any], source: str) -> 
     }
 
 
+def _delegation_stage(stage_id: str, subagent_type: str, trigger: str, purpose: str) -> dict[str, str]:
+    return {
+        "stage_id": stage_id,
+        "subagent_type": subagent_type,
+        "trigger": trigger,
+        "purpose": purpose,
+    }
+
+
+def _delegation_plan_for_decision(decision: dict[str, Any], *, session_id: str) -> dict[str, Any]:
+    """Return model-guidance for child-scope orchestration, not a hard scheduler."""
+    action = str(decision.get("action") or "").strip()
+    base_prefix = "autonomous_auto"
+    stage_map: dict[str, list[dict[str, str]]] = {
+        "ship_task": [
+            _delegation_stage(
+                f"{base_prefix}_s1_architect",
+                "architect",
+                "context-isolation",
+                "Confirm scope, UX-anchor fit, dependencies, and protected boundaries.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s2_planner",
+                "planner",
+                "context-isolation",
+                "Convert the selected task into deterministic implementation and test steps.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s3_builder",
+                "builder",
+                "context-budget",
+                "Implement the scoped change and run focused verification.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s4_evaluator",
+                "evaluator",
+                "review-independence",
+                "Evaluate output against acceptance, UX anchor, and replay threshold.",
+            ),
+        ],
+        "hydrate_task": [
+            _delegation_stage(
+                f"{base_prefix}_s1_architect",
+                "architect",
+                "context-isolation",
+                "Confirm readiness, approval_basis, hydration boundary, and non-goals.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s2_planner",
+                "planner",
+                "context-isolation",
+                "Prepare the hydration plan and task-spec acceptance payload.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s3_reviewer",
+                "reviewer",
+                "review-independence",
+                "Review the planned roadmap/backlog/spec write boundary before mutation.",
+            ),
+        ],
+        "research_initiative": [
+            _delegation_stage(
+                f"{base_prefix}_s1_architect",
+                "architect",
+                "context-isolation",
+                "Define research questions, freshness needs, and stop conditions.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s2_researcher",
+                "researcher",
+                "context-isolation",
+                "Gather or refresh evidence without mutating executable backlog state.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s3_evaluator",
+                "evaluator",
+                "review-independence",
+                "Judge research completeness and whether hydration is now justified.",
+            ),
+        ],
+        "refine_proposal": [
+            _delegation_stage(
+                f"{base_prefix}_s1_architect",
+                "architect",
+                "context-isolation",
+                "Reframe the proposal against current roadmap truth and UX-anchor value.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s2_reviewer",
+                "reviewer",
+                "review-independence",
+                "Check for overreach, missing gates, stale evidence, and boundary drift.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s3_evaluator",
+                "evaluator",
+                "review-independence",
+                "Score readiness/richness and decide whether a follow-on hydration is safe.",
+            ),
+        ],
+        "capture_self_improvement": [
+            _delegation_stage(
+                f"{base_prefix}_s1_reviewer",
+                "reviewer",
+                "review-independence",
+                "Validate the captured lesson as a real process defect or improvement signal.",
+            ),
+            _delegation_stage(
+                f"{base_prefix}_s2_builder",
+                "builder",
+                "context-budget",
+                "Materialize the smallest repo-native inbox/proposal/backlog artifact.",
+            ),
+        ],
+    }
+    stages = stage_map.get(action, [])
+    return {
+        "plan_schema_version": 1,
+        "plan_id": f"{session_id}-delegation",
+        "mode": "guidance",
+        "principle": (
+            "Use model judgment for orchestration, but do not silently collapse required "
+            "fresh-context or review-independence stages inline."
+        ),
+        "inline_policy": (
+            "Inline is acceptable only for a bounded trivial slice with an explicit "
+            "justification and no required context-isolation, review-independence, "
+            "context-budget, or protected gate."
+        ),
+        "run_ledger_evidence": {
+            "run_id": session_id,
+            "record_spawn": "python3 scripts/run_ledger.py record-spawn",
+            "record_summary": "python3 scripts/run_ledger.py record-summary",
+            "require_evidence": "python3 scripts/run_ledger.py require-stage-evidence",
+        },
+        "stages": stages,
+    }
+
+
 def _possible_alternatives(
     root: Path, state: dict[str, Any], selected_id: str
 ) -> list[dict[str, Any]]:
@@ -974,6 +1147,17 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
             state,
             "active_scope_present",
             detail=f"Live scope {active.get('session_id')} must close before opening the next autonomous-auto iteration.",
+        )
+    write_claim = _blocking_write_claim(root)
+    if write_claim:
+        return _stop_decision(
+            state,
+            "active_write_claim_present",
+            detail=(
+                "Live write claim "
+                f"{write_claim.get('session_id')} remains until {write_claim.get('expires_at')}; "
+                "release or resolve it before opening the next autonomous-auto iteration."
+            ),
         )
     blocking_packet = _blocking_alignment_packet(state)
     if blocking_packet:
@@ -1420,6 +1604,12 @@ def open_next(
     target_layer = str(decision.get("target_layer") or "infrastructure")
     delivery_pipeline = str(decision.get("delivery_pipeline") or "standard")
     state = _load_yaml_mapping(state_path)
+    delegation_plan = _delegation_plan_for_decision(decision, session_id=session_id)
+    stage_ids = [
+        str(stage.get("stage_id") or "")
+        for stage in delegation_plan.get("stages", [])
+        if isinstance(stage, dict) and str(stage.get("stage_id") or "")
+    ]
     scope = {
         "approved": True,
         "expires_at": expiry,
@@ -1435,6 +1625,7 @@ def open_next(
         "autonomy_mode": "autonomous-auto",
         "alignment_mode": "async",
         "operator_lines_are_sequential_gates": False,
+        "delegation_plan": delegation_plan,
         "loop_id": decision.get("loop_id"),
         "loop_iteration": decision.get("iteration"),
         "autonomy_budget": state.get("autonomy_budget", {}),
@@ -1450,6 +1641,26 @@ def open_next(
     ok, info = acquire_write_claim(root, session_id, expiry, harness="autonomous-loop")
     if not ok:
         raise SystemExit(f"write claim denied: {info}")
+    try:
+        upsert_run(
+            root,
+            run_id=session_id,
+            mode="autonomous-auto",
+            goal=str(decision["goal"]),
+            status="active",
+            next_action=(
+                "Execute child scope using scope-gate delegation_plan; record "
+                "stage_spawns and stage_summaries for delegated stages."
+            ),
+            session_id=session_id,
+            backlog_id=str(decision.get("backlog_id") or "AD-HOC"),
+            ide="codex",
+            active_stage_id=stage_ids[0] if stage_ids else None,
+            pending_stage_ids=stage_ids or None,
+        )
+    except Exception:
+        release_write_claim(root, session_id)
+        raise
     _write_json_mapping(root / SCOPE_GATE_REL, scope)
 
     materialization: dict[str, Any] | None = None
@@ -1465,6 +1676,7 @@ def open_next(
             "decision_path": str(decision_path),
             "architect_judgment": decision.get("architect_judgment"),
             "alignment_checkpoint_summary": decision.get("alignment_checkpoint_summary"),
+            "delegation_plan_id": delegation_plan.get("plan_id"),
         }
         if materialization:
             entry["self_capture_materialization"] = materialization
@@ -1492,6 +1704,8 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
     state = _load_yaml_mapping(path)
     active = _active_scope(root)
     session_conflict = _active_session_conflict(root, active)
+    write_claim = _write_claim_status(root)
+    blocking_write_claim = bool(write_claim.get("held") and not write_claim.get("stale"))
     blocking_packet = _blocking_alignment_packet(state) if state else None
     vision = _vision_state(state) if state else _vision_state({})
     completion_reason = _completion_reason(state) if state else ""
@@ -1503,18 +1717,21 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
             or _approval_basis(state).startswith("Autonomous-auto loop state did not")
         )
     )
-    stop_reason = state.get("stop_reason") if state else "missing_loop_state"
+    explicit_stop_reason = str(state.get("stop_reason") or "") if state else "missing_loop_state"
+    stop_reason = explicit_stop_reason
     if completion_reason:
         stop_reason = None
-    elif session_conflict:
+    elif not explicit_stop_reason and session_conflict:
         stop_reason = "active_session_gate_conflict"
-    elif active:
+    elif not explicit_stop_reason and active:
         stop_reason = "active_scope_present"
-    elif budget_exhausted:
+    elif not explicit_stop_reason and blocking_write_claim:
+        stop_reason = "active_write_claim_present"
+    elif not explicit_stop_reason and budget_exhausted:
         stop_reason = "budget_exhausted"
-    elif missing_basis:
+    elif not explicit_stop_reason and missing_basis:
         stop_reason = "missing_approval_basis"
-    elif blocking_packet:
+    elif not explicit_stop_reason and blocking_packet:
         stop_reason = "async_stop_packet"
     iteration = int(state.get("iteration") or 0) if state else 0
     max_iterations = _max_iterations(state) if state else 0
@@ -1537,6 +1754,7 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
             and not completion_reason
             and not active
             and not session_conflict
+            and not blocking_write_claim
             and not budget_exhausted
             and not missing_basis
             and not blocking_packet
@@ -1545,6 +1763,7 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
         "completion_reason": completion_reason,
         "alignment": _alignment_summary(state) if state else _alignment_summary({}),
         "vision": vision,
+        "write_claim": write_claim,
         "next_candidate": state.get("next_candidate") if state else None,
     }
 
@@ -1568,6 +1787,23 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         next_move = f"blocked: {status.get('stop_reason')}"
     continuation = _continuation_summary(state, status, decision)
     vision = status.get("vision", {})
+    write_claim = status.get("write_claim") if isinstance(status.get("write_claim"), dict) else {}
+    write_claim_read = (
+        f"held by {write_claim.get('session_id')} until {write_claim.get('expires_at')}"
+        if write_claim.get("held") and not write_claim.get("stale")
+        else f"stale claim by {write_claim.get('session_id')}"
+        if write_claim.get("held")
+        else "none"
+    )
+    residual_risk = (
+        f"Live write claim remains: {write_claim_read}."
+        if write_claim.get("held") and not write_claim.get("stale")
+        else "Green-ready only for branch-local, non-protected iterations."
+        if status.get("can_continue")
+        else "Campaign reached its completion condition; open a fresh budget to continue."
+        if status.get("completion_reason")
+        else "Continuation is blocked until the stop reason is resolved."
+    )
     return {
         "title": "Autonomous-auto operator read",
         "objective": str(state.get("objective") or state.get("loop_id") or "autonomous-auto loop"),
@@ -1583,20 +1819,13 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         "vision_band": vision.get("current_band", "unevaluated"),
         "vision_target": vision.get("target_band", DEFAULT_VISION_TARGET_BAND),
         "vision_realized": vision.get("realized", False),
+        "write_claim": write_claim_read,
         "continuation_required": continuation["required"],
         "continuation_reason": continuation["reason"],
         "stop_reason": status.get("stop_reason"),
         "completion_reason": status.get("completion_reason"),
-        "stop_conditions": budget.get("stop_conditions")
-        if isinstance(budget.get("stop_conditions"), list)
-        else DEFAULT_STOP_CONDITIONS,
-        "residual_risk": (
-            "Green-ready only for branch-local, non-protected iterations."
-            if status.get("can_continue")
-            else "Campaign reached its completion condition; open a fresh budget to continue."
-            if status.get("completion_reason")
-            else "Continuation is blocked until the stop reason is resolved."
-        ),
+        "stop_conditions": _stop_conditions_for_read(budget),
+        "residual_risk": residual_risk,
     }
 
 
@@ -1613,6 +1842,7 @@ def _format_operator_read(payload: dict[str, Any]) -> str:
             f"Continue: {continuation} ({payload.get('continuation_reason')})",
             f"Approval basis: {payload.get('approval_basis')}",
             f"Pending alignment packets: {payload.get('pending_alignment_packets')}",
+            f"Write claim: {payload.get('write_claim')}",
             f"Completion reason: {payload.get('completion_reason') or 'none'}",
             f"Stop reason: {payload.get('stop_reason') or 'none'}",
             f"Stop conditions: {stop_conditions}",
