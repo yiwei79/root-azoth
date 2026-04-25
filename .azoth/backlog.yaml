@@ -3159,10 +3159,11 @@ items:
   source: initiative-bank-INI-AUTO-001-slice-auto-001-d
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 3
   created_date: '2026-04-25'
+  completed_date: '2026-04-25'
   description: Implement a one-iteration autonomous-auto wakeup driver that checks
     loop state, campaign reports, gates, run ledger, write claims, and stop conditions
     before opening any child scope.

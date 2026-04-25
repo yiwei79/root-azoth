@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.59 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 59
+0.1.3.60 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 60
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-slice-auto-001-d-2
+- **Session**: 2026-04-25-autonomous-auto-t-026-3
 - **Goal**: Durable autonomous-auto wakeup driver
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-421 (success)
+- **Episode**: ep-422 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
