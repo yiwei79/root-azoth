@@ -5,19 +5,31 @@ branch: codex/autonomous-roadmap-self-development
 autonomy_budget:
   approval_basis: User approved a branch-local autonomous Azoth self-development test.
   max_iterations: 3
+  replay_threshold: 2
   allowed_actions:
     - ship_task
     - hydrate_task
     - research_initiative
     - refine_proposal
     - capture_self_improvement
+  stop_conditions:
+    - active_scope_present
+    - active_session_gate_conflict
+    - budget_exhausted
+    - protected_gate_required
+    - async_stop_packet
+    - no_safe_candidate
 iteration: 0
 last_session_id: null
 parent_session_id: null
 queue: []
 self_capture_queue: []
+alignment_packets: []
+alignment_dispositions: []
 history: []
-next_candidate: null
+next_candidate:
+  status: empty
+  note: Optional preview/hold field for the next architect decision; status reads it but decide-next remains authoritative.
 stop_reason: null
 automation:
   recommended_driver: codex-cron

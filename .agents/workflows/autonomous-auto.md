@@ -32,6 +32,10 @@ apply them at the next safe checkpoint while non-blocked work continues.
 Autonomous auto must still deliver with an adaptive pipeline:
 
 - Stage 0 classification and `skills/auto-router/SKILL.md` composition are required.
+- When autonomous-mode behavior is in scope, read
+  `.azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md`; architect stages emit
+  `UX Anchor Fit` and evaluator stages emit `UX Anchor Scorecard` using Green/Yellow/Red
+  alignment bands.
 - Research/explore waves are inserted when the goal is not ready to hydrate or deliver.
 - Hydration and implementation stay separate artifact-class stages when both are needed.
 - E1–E6 from `.claude/commands/eval.md` decide whether `/eval-swarm` is inserted.
@@ -50,11 +54,18 @@ bounded loop of normal Azoth sessions:
 4. Use `scripts/autonomous_loop.py decide-next --json` to emit the next decision.
 5. If the decision is not `stop`, use `scripts/autonomous_loop.py open-next --decision <path>`
    to open the next `pipeline_command=autonomous-auto` scope and acquire the write claim.
+6. Use `scripts/autonomous_loop.py status --operator-read` for concise operator alignment
+   packets, `record-alignment` / `apply-alignment` for async packet state, and
+   `materialize-self-capture` for inbox-first mistake capture.
 
 Local loop state lives in `.azoth/autonomous-loop-state.local.yaml`; the tracked
 `.azoth/autonomous-loop-state.local.yaml.example` documents its shape. The loop governor
 must stop when state is missing, budget is exhausted, another scope is active, a protected
 gate is required, or no safe candidate is discoverable.
+
+Non-stop loop decisions carry an architect decision capsule with selected candidate,
+rejected alternatives where visible, readiness/risk/value scoring, and alignment checkpoint
+summary. Opened scope gates should persist the autonomy budget and decision capsule.
 
 For durable self-development over time, prefer a Codex automation or cron-style wakeup that
 runs one bounded iteration per wakeup. A single long interactive thread is acceptable for

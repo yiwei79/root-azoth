@@ -37,6 +37,7 @@ def _state(root: Path, **overrides: object) -> Path:
         "autonomy_budget": {
             "approval_basis": "User approved branch-local autonomous-auto testing.",
             "max_iterations": 3,
+            "replay_threshold": 2,
             "allowed_actions": [
                 "ship_task",
                 "hydrate_task",
@@ -44,10 +45,20 @@ def _state(root: Path, **overrides: object) -> Path:
                 "refine_proposal",
                 "capture_self_improvement",
             ],
+            "stop_conditions": [
+                "active_scope_present",
+                "active_session_gate_conflict",
+                "budget_exhausted",
+                "protected_gate_required",
+                "async_stop_packet",
+                "no_safe_candidate",
+            ],
         },
         "iteration": 0,
         "queue": [],
         "self_capture_queue": [],
+        "alignment_packets": [],
+        "alignment_dispositions": [],
         "history": [],
     }
     data.update(overrides)
@@ -599,3 +610,175 @@ def test_open_next_refuses_action_not_in_current_budget(tmp_path: Path) -> None:
             "2026-04-25T12:00:00Z",
         )
     assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+
+def test_alignment_packet_record_and_apply_updates_approval_basis(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+
+    packet = autonomous_loop.record_alignment_packet(
+        state_path,
+        message="Use this updated approval basis for the branch-local autonomy budget.",
+        packet_type="approval_basis",
+        checkpoint="before_next_scope",
+    )
+    applied = autonomous_loop.apply_alignment_packet(
+        state_path,
+        packet_id=packet["packet_id"],
+        disposition="applied",
+        affected_artifact=".azoth/scope-gate.json",
+        approval_basis="Updated branch-local approval basis.",
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+
+    assert applied["disposition"] == "applied"
+    assert state["autonomy_budget"]["approval_basis"] == "Updated branch-local approval basis."
+    assert status["alignment"]["packet_count"] == 1
+    assert status["alignment"]["disposition_count"] == 1
+
+
+def test_pending_async_stop_alignment_packet_blocks_decide_next(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    autonomous_loop.record_alignment_packet(
+        state_path,
+        message="Stop before the next autonomous iteration.",
+        packet_type="async_stop",
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "async_stop_packet"
+    assert decision["alignment_checkpoint_summary"]["pending_count"] == 1
+    assert status["can_continue"] is False
+    assert status["stop_reason"] == "async_stop_packet"
+
+
+def test_materialize_self_capture_writes_inbox_and_consumes_candidate(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        self_capture_queue=[
+            {
+                "candidate_id": "lesson-a",
+                "title": "Capture async alignment gap",
+                "summary": "Async alignment needs durable packet state.",
+                "evidence": "UX retrospective found packet classes were only declarative.",
+                "recommended_action": "Add packet ledger tests.",
+                "tags": ["autonomous-auto", "async-alignment"],
+            }
+        ],
+    )
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    decision_path = _decision_path(tmp_path, decision)
+
+    autonomous_loop.open_next(
+        tmp_path,
+        state_path,
+        decision_path,
+        "2026-04-25T12:00:00Z",
+    )
+
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    materialization = state["history"][0]["self_capture_materialization"]
+    inbox_path = tmp_path / materialization["artifact_path"]
+    entry = json.loads(inbox_path.read_text(encoding="utf-8").splitlines()[0])
+    assert state["self_capture_queue"] == []
+    assert materialization["entry_id"] == entry["id"]
+    assert entry["summary"] == "Async alignment needs durable packet state."
+
+
+def test_decision_includes_architect_scorecard_and_rejected_alternatives(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "schema_version": 1,
+            "items": [
+                {
+                    "id": "T-123",
+                    "status": "ready",
+                    "priority": 2,
+                    "title": "Ship ready task",
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                },
+            ],
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/proposal-a.yaml",
+        {"proposal_schema_version": 1, "title": "Proposal A", "status": "draft"},
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    judgment = decision["architect_judgment"]
+
+    assert judgment["selected"]["candidate_id"] == "T-123"
+    assert judgment["selected"]["scorecard"]["total"] > 0
+    assert [item["candidate_id"] for item in judgment["rejected_alternatives"]] == ["proposal-a"]
+
+
+def test_operator_read_summarizes_next_move_and_alignment(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "refine_proposal",
+                "candidate_id": "proposal-a",
+                "title": "Refine proposal A",
+                "target_layer": "planning",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    autonomous_loop.record_alignment_packet(
+        state_path,
+        message="Prefer concise operator status.",
+        packet_type="async_advisory",
+    )
+
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert read["next_likely_move"] == "refine_proposal (proposal-a)"
+    assert read["approval_basis"] == "User approved branch-local autonomous-auto testing."
+    assert read["pending_alignment_packets"] == 1
+
+
+def test_open_next_persists_budget_and_decision_capsule(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    decision_path = _decision_path(tmp_path, decision)
+
+    autonomous_loop.open_next(
+        tmp_path,
+        state_path,
+        decision_path,
+        "2026-04-25T12:00:00Z",
+    )
+
+    scope = json.loads((tmp_path / ".azoth/scope-gate.json").read_text(encoding="utf-8"))
+    assert scope["autonomy_budget"]["replay_threshold"] == 2
+    assert scope["loop_decision"]["architect_judgment"]["selected"]["candidate_id"] == "T-321"

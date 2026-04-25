@@ -61,6 +61,10 @@ Autonomous auto must still deliver with pipeline discipline. At Checkpoint Γ, r
 Stage 0 classification and `skills/auto-router/SKILL.md` composition used by `/auto`, then
 adapt the stage list to the actual scope:
 
+- When autonomous-mode behavior is in scope, read
+  `.azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md` before architect or
+  evaluator work. Architect outputs must include `UX Anchor Fit`; evaluator outputs must
+  include `UX Anchor Scorecard` using the anchor's Green/Yellow/Red bands.
 - Use research/explore waves before hydration when knowledge is incomplete.
 - Hydrate planning artifacts only when readiness and `approval_basis` are explicit.
 - Open implementation as a separate delivery stage when the hydrated task is ready.
@@ -98,13 +102,23 @@ iteration count, last session, queued work, history, stop reason, and automation
 Use `scripts/autonomous_loop.py` for deterministic continuation decisions:
 
 - `status` reports loop state and whether a live scope blocks continuation.
+- `status --operator-read` reports a concise operator-facing alignment packet.
 - `decide-next --json` emits the next architect decision.
 - `open-next --decision <path>` writes the next scope gate and acquires a write claim.
+- `record-alignment` and `apply-alignment` persist async operator alignment packets and
+  dispositions in the loop state.
+- `materialize-self-capture` writes the next self-improvement capture candidate to
+  `.azoth/inbox/` as the inbox-first mistake-to-artifact path.
 - `stop --reason <reason>` records a terminal local stop.
 
 `decide-next` must stop, not improvise, when loop state is missing, the iteration budget is
 exhausted, another live scope is active, a protected gate is required, or no safe candidate
 is discoverable.
+
+Every non-stop decision should include an architect decision capsule with the selected
+candidate, rejected alternatives where visible, readiness/risk/value scoring, and the
+alignment checkpoint summary. Scope gates opened by the loop should carry the autonomy
+budget and decision capsule so the run can be reconstructed from durable artifacts.
 
 For durable self-building over time, prefer a Codex automation or cron-style wakeup that
 runs one bounded iteration per wakeup. A single long interactive thread may be used for

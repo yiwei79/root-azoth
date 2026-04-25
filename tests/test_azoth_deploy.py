@@ -1394,6 +1394,12 @@ def test_autonomous_auto_defines_standalone_async_self_development_mode() -> Non
         "branch-local autonomy budget",
         "adaptive pipeline",
         "pipeline_command=autonomous-auto",
+        "UX Anchor Fit",
+        "UX Anchor Scorecard",
+        "status --operator-read",
+        "record-alignment",
+        "materialize-self-capture",
+        "architect decision capsule",
     ):
         assert needle in content, f"autonomous-auto skill missing {needle!r}"
 

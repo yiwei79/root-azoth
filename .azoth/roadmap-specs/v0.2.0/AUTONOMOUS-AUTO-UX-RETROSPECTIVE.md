@@ -9,6 +9,13 @@ Anchor: `.azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md`
 
 Alignment band: Yellow.
 
+Post-delivery update from `2026-04-25-adhoc-autonomous-auto-full-ready`: the Yellow gaps below
+were used as the success criteria for the follow-up Green slice. That follow-up added durable
+alignment packets, inbox-first self-capture materialization, architect decision capsules,
+`status --operator-read`, and UX-anchor architect/evaluator contract wiring. The analysis below
+is retained as the historical pre-fix retrospective; use the update above plus the current code
+and tests when evaluating the shipped state.
+
 `autonomous-auto` is not just a renamed `/auto` run. The repo now has a standalone command/skill surface, a deterministic loop governor, explicit `approval_basis` propagation, bounded next-scope opening, stale-decision refusal, protected-gate stops, and tests for core continuation paths.
 
 The feature is not yet Green against the UX anchor because the strongest operator-experience promises are still thin or mostly declarative:
