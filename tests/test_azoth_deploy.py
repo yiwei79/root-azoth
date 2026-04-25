@@ -1413,6 +1413,19 @@ def test_autonomous_auto_reaches_entrypoint_and_skill_mirrors() -> None:
         assert "alignment_mode: async" in content, f"{rel} missing async alignment marker"
 
 
+def test_subagent_router_includes_autonomous_auto_in_bl011_bl012_contracts() -> None:
+    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    for needle in (
+        "pipeline: autonomous-auto | deliver-full | deliver | auto",
+        "approved pattern for `/auto`, `/autonomous-auto`, `/deliver`, and",
+        "Set `pipeline` to `auto`, `autonomous-auto`, `deliver`, or `deliver-full`",
+        "## Stage briefs: autonomous-auto",
+    ):
+        assert needle in content, f"subagent-router missing autonomous-auto contract: {needle!r}"
+
+
 def test_subagent_router_defines_execution_budget_for_bounded_nesting() -> None:
     content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
     for needle in (

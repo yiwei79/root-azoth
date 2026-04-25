@@ -114,7 +114,7 @@ optional `Read` targets. Role behavior, routing tables, and stage briefs live in
 ### Required template
 
 ```yaml
-pipeline: deliver-full | deliver | auto
+pipeline: autonomous-auto | deliver-full | deliver | auto
 stage_id: <string>   # e.g. deliver_full_s3 — see §Stage briefs
 subagent_type: <architect|planner|builder|reviewer|evaluator|...>
 trigger: <review-independence|context-isolation|context-budget|parallel-execution>
@@ -173,7 +173,8 @@ handoff is an **orchestrator failure**, not an evaluator failure.
 | **After (contract)**      | 120–400 tokens: YAML block above + `Read` of this skill + archetype file                         |
 
 
-**After** is the only approved pattern for `/auto`, `/deliver`, and `/deliver-full` execution.
+**After** is the only approved pattern for `/auto`, `/autonomous-auto`, `/deliver`, and
+`/deliver-full` execution.
 
 ### Static-prefix-friendly ordering (P1-011)
 
@@ -195,7 +196,7 @@ prefix stays stable for provider-side prompt caching.
 When the stage finishes (before returning control to the orchestrator), emit a **YAML**
 document that validates against `pipelines/stage-summary.schema.yaml`:
 
-- Set `pipeline` to `auto`, `deliver`, or `deliver-full` to match the active command.
+- Set `pipeline` to `auto`, `autonomous-auto`, `deliver`, or `deliver-full` to match the active command.
 - Set `stage_id` to the same value used in the spawn template for this stage.
 - Set `stage_kind` to one of `research` | `build` | `eval` | `audit` (semantic bucket for the handoff).
 - Keep `done`, `decisions`, and `open` within schema array limits (max 5 bullets each).
@@ -250,6 +251,14 @@ For `pipeline: auto`, set `stage_id` to a stable identifier per composed stage (
 `auto_s1_architect`, `auto_s2_reviewer`) and fill `subagent_type` + `trigger` from the
 routing table above. Full composition rules remain in `skills/auto-router/SKILL.md` and
 `pipelines/auto.pipeline.yaml`.
+
+## Stage briefs: autonomous-auto
+
+For `pipeline: autonomous-auto`, use the same stage-family routing as `auto`, with
+stable loop-aware stage ids (for example `autonomous_auto_s1_architect`,
+`autonomous_auto_s2_reviewer`, or `loop_governor_s5_planner`). The active loop budget and
+`approval_basis` are scope inputs; they do not replace BL-011 spawn payloads or BL-012
+typed summaries.
 
 ### Agent Crafter meta-loop (governed M1)
 

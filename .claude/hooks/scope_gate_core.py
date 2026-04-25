@@ -33,7 +33,9 @@ _EDIT_TOOL_NAMES = {
     "apply_patch",
 }
 _PATCH_TARGET_RE = re.compile(r"^\*\*\* (?:Update|Add|Delete) File: ([^\n]+)$", re.MULTILINE)
-_PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
+_PIPELINE_COMMANDS = frozenset(
+    {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
+)
 
 _REMINDER = (
     "[scope-gate] Write/Edit blocked — no approved scope card found.\n"

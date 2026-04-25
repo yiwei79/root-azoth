@@ -1,0 +1,25 @@
+schema_version: 1
+loop_id: autonomous-auto-demo
+status: active
+branch: codex/autonomous-roadmap-self-development
+autonomy_budget:
+  approval_basis: User approved a branch-local autonomous Azoth self-development test.
+  max_iterations: 3
+  allowed_actions:
+    - ship_task
+    - hydrate_task
+    - research_initiative
+    - refine_proposal
+    - capture_self_improvement
+iteration: 0
+last_session_id: null
+parent_session_id: null
+queue: []
+self_capture_queue: []
+history: []
+next_candidate: null
+stop_reason: null
+automation:
+  recommended_driver: codex-cron
+  run_policy: one_bounded_iteration_per_wakeup
+  heartbeat_policy: short_same_thread_experiments_only
