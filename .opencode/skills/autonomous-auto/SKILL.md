@@ -18,13 +18,28 @@ asynchronously.
 
 ## Autonomy Budget
 
-At session start, declare:
+At session start, simple operator prompts such as "start the next autonomous campaign"
+enter a **Vision Declaration** phase before the loop begins. Do not require the operator
+to paste a large structured prompt. Instead:
+
+1. Read current repo state, initiative/proposal/backlog surfaces, and the UX anchor.
+2. Offer a concise campaign vision declaration with objective, selected seed or initiative,
+   allowed action classes, budget, stop conditions, and protected boundaries.
+3. Discuss scope with the operator in the same session until the campaign vision is clear.
+4. Start autonomous self-development only after the operator approves the declaration.
+
+After approval, persist the locked declaration in loop state under `vision.declaration`
+and use it as the campaign's success anchor. Routine branch-local approvals may then be
+satisfied by the declaration's `approval_basis`; protected gates still stop.
+
+The approved declaration must include:
 
 - goal
 - selected mode = `autonomous-auto`
 - `pipeline_command=autonomous-auto`
 - `alignment_mode: async`
 - branch-local autonomy budget and `approval_basis`
+- selected seed, initiative, proposal, or "repo-best-next" basis
 - adaptive pipeline stages that are expected now
 - replay threshold and recomposition stop conditions
 - protected human-gate boundaries that still stop the run
@@ -84,7 +99,8 @@ When the operator grants a continuing self-development budget, `autonomous-auto`
 a loop rather than a single delivery. Each iteration is still a normal scoped Azoth session:
 
 1. Execute the current adaptive pipeline.
-2. Close out through the normal session lifecycle.
+2. Close out through the normal session lifecycle. Treat closeout as a loop checkpoint,
+   not terminal completion, unless the UX vision score is Green or a stop condition fires.
 3. Reflect on mistakes, failed assumptions, missing workflow affordances, and closeout drift.
 4. Make an architect judgment for the next move.
 5. Capture self-improvement signals as repo-native inbox, proposal, initiative, or backlog
@@ -101,19 +117,29 @@ iteration count, last session, queued work, history, stop reason, and automation
 
 Use `scripts/autonomous_loop.py` for deterministic continuation decisions:
 
+- `init --approval-basis <text>` initializes `.azoth/autonomous-loop-state.local.yaml`
+  from an explicit branch-local autonomy budget when the loop state is missing.
+  Use `--vision-declaration-json` after the operator approves the campaign vision so
+  the simple prompt discussion becomes durable loop state.
 - `status` reports loop state and whether a live scope blocks continuation.
 - `status --operator-read` reports a concise operator-facing alignment packet.
 - `decide-next --json` emits the next architect decision.
 - `open-next --decision <path>` writes the next scope gate and acquires a write claim.
 - `record-alignment` and `apply-alignment` persist async operator alignment packets and
   dispositions in the loop state.
+- `record-vision-score` records the latest UX-anchor score; continue opening eligible
+  child scopes until the target band is reached or a real stop condition blocks the loop.
+  When the target band is reached, the loop records `status: completed` and
+  `completion_reason: vision_realized` so successful bounded completion does not read as
+  blocked budget exhaustion.
 - `materialize-self-capture` writes the next self-improvement capture candidate to
   `.azoth/inbox/` as the inbox-first mistake-to-artifact path.
 - `stop --reason <reason>` records a terminal local stop.
 
 `decide-next` must stop, not improvise, when loop state is missing, the iteration budget is
 exhausted, another live scope is active, a protected gate is required, or no safe candidate
-is discoverable.
+is discoverable. Do not stop merely because one child scope closed; continue from the loop
+state while the UX vision is not yet realized and the budget still permits safe work.
 
 Every non-stop decision should include an architect decision capsule with the selected
 candidate, rejected alternatives where visible, readiness/risk/value scoring, and the

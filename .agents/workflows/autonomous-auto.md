@@ -21,6 +21,23 @@ Before execution, declare:
 - replay threshold and stop conditions
 - protected human-gate boundaries
 
+## Vision Declaration
+
+For realistic use, the operator should be able to start with a short prompt such as
+"start the next autonomous campaign." Do not require a long structured budget prompt.
+Instead, begin with a Vision Declaration phase:
+
+1. Inspect current repo state plus initiative, proposal, roadmap, and backlog surfaces.
+2. Propose a concise campaign declaration: objective, selected seed or initiative,
+   allowed action classes, iteration budget, replay threshold, stop conditions, and
+   protected boundaries.
+3. Discuss and revise the declaration with the operator in the same session.
+4. After explicit approval, initialize the loop and persist the locked declaration under
+   `.azoth/autonomous-loop-state.local.yaml` `vision.declaration`.
+
+Autonomous self-development starts after that approval. The declaration's `approval_basis`
+may satisfy branch-local routine approval fields, but protected human gates still stop.
+
 ## Async Alignment
 
 Operator lines are not sequential gates. Treat later human messages as alignment packets,
@@ -47,21 +64,28 @@ Autonomous auto must still deliver with an adaptive pipeline:
 When the operator grants a continuing self-development budget, run `autonomous-auto` as a
 bounded loop of normal Azoth sessions:
 
-1. Finish the current adaptive pipeline and close out.
+1. Finish the current adaptive pipeline and close out. Treat that closeout as a checkpoint,
+   not a terminal stop, unless the UX vision score is Green or a real stop condition fires.
 2. Reflect on mistakes, failed assumptions, missing workflow affordances, and closeout drift.
 3. Make an architect judgment for exactly one next action: `ship_task`, `hydrate_task`,
    `research_initiative`, `refine_proposal`, `capture_self_improvement`, or `stop`.
-4. Use `scripts/autonomous_loop.py decide-next --json` to emit the next decision.
-5. If the decision is not `stop`, use `scripts/autonomous_loop.py open-next --decision <path>`
+4. If loop state is missing and the current operator message grants an explicit branch-local
+   autonomy budget, use `scripts/autonomous_loop.py init --approval-basis <text>` to create
+   `.azoth/autonomous-loop-state.local.yaml`; include `--vision-declaration-json` once the
+   operator has approved the campaign declaration. Otherwise stop at `missing_loop_state`.
+5. Use `scripts/autonomous_loop.py decide-next --json` to emit the next decision.
+6. If the decision is not `stop`, use `scripts/autonomous_loop.py open-next --decision <path>`
    to open the next `pipeline_command=autonomous-auto` scope and acquire the write claim.
-6. Use `scripts/autonomous_loop.py status --operator-read` for concise operator alignment
+7. Use `scripts/autonomous_loop.py status --operator-read` for concise operator alignment
    packets, `record-alignment` / `apply-alignment` for async packet state, and
-   `materialize-self-capture` for inbox-first mistake capture.
+   `record-vision-score` / `materialize-self-capture` for vision scoring and inbox-first
+   mistake capture.
 
 Local loop state lives in `.azoth/autonomous-loop-state.local.yaml`; the tracked
 `.azoth/autonomous-loop-state.local.yaml.example` documents its shape. The loop governor
 must stop when state is missing, budget is exhausted, another scope is active, a protected
-gate is required, or no safe candidate is discoverable.
+gate is required, or no safe candidate is discoverable. Do not stop after a child closeout
+while the UX vision is still below target and safe work remains in budget.
 
 Non-stop loop decisions carry an architect decision capsule with selected candidate,
 rejected alternatives where visible, readiness/risk/value scoring, and alignment checkpoint
