@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.37 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 37
+0.1.3.42 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 42
 
 ## Last Session
-- **Session**: 2026-04-25-adhoc-autonomous-auto-full-ready
-- **Goal**: AD-HOC: ship autonomous-auto to Green using the UX retrospective as success criteria
+- **Session**: 2026-04-25-autoauto-vision-declaration-entry
+- **Goal**: AD-HOC: add autonomous-auto vision declaration entry path for realistic simple prompts
 - **Session mode**: delivery
-- **Pipeline**: dynamic-full-auto
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-389 (success)
+- **Episode**: ep-394 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
