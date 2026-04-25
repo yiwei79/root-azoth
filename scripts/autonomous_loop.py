@@ -24,6 +24,7 @@ from yaml_helpers import safe_load_yaml_path
 
 STATE_REL = ".azoth/autonomous-loop-state.local.yaml"
 SCOPE_GATE_REL = ".azoth/scope-gate.json"
+PIPELINE_GATE_REL = ".azoth/pipeline-gate.json"
 INBOX_DIR_REL = ".azoth/inbox"
 HANDOFFS_DIR_REL = ".azoth/handoffs"
 DECISION_SCHEMA_VERSION = 1
@@ -2055,6 +2056,315 @@ def _selected_lifecycle_candidate(
     }
 
 
+def _candidate_hydrated_task_ref(candidate: dict[str, Any]) -> str:
+    hydration_plan = (
+        candidate.get("hydration_plan") if isinstance(candidate.get("hydration_plan"), dict) else {}
+    )
+    return str(hydration_plan.get("hydrated_task_ref") or candidate.get("proposed_task_id") or "")
+
+
+def _candidate_hydrated_spec_ref(candidate: dict[str, Any], task_ref: str) -> str:
+    hydration_plan = (
+        candidate.get("hydration_plan") if isinstance(candidate.get("hydration_plan"), dict) else {}
+    )
+    if hydration_plan.get("hydrated_spec_ref"):
+        return str(hydration_plan.get("hydrated_spec_ref"))
+    if task_ref:
+        return f".azoth/roadmap-specs/v0.2.0/{task_ref}.yaml"
+    return ""
+
+
+def _candidate_planning_vs_executable_status(
+    root: Path,
+    candidate: dict[str, Any],
+    task_ref: str,
+) -> str:
+    status = str(candidate.get("status") or "").strip().lower()
+    task_complete = _hydrated_task_is_complete(root, task_ref)
+    artifacts_exist = _hydrated_task_artifacts_exist(root, task_ref)
+    if task_complete or status == "complete":
+        return "completed_hydrated_task"
+    if status == "hydrated" and artifacts_exist:
+        return "executable_hydrated_task"
+    if status == "hydrated":
+        return "hydrated_missing_executable_artifacts"
+    if artifacts_exist:
+        return "executable_artifacts_present"
+    if status == "candidate":
+        return "planning_candidate"
+    if status in {"parked", "rejected"}:
+        return f"planning_{status}"
+    return "planning_status_unknown"
+
+
+def _candidate_slice_rows(root: Path, doc: dict[str, Any]) -> list[dict[str, Any]]:
+    candidates = (
+        doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    )
+    rows: list[dict[str, Any]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        task_ref = _candidate_hydrated_task_ref(candidate)
+        artifacts_exist = _hydrated_task_artifacts_exist(root, task_ref)
+        task_complete = _hydrated_task_is_complete(root, task_ref)
+        status = str(candidate.get("status") or "").strip().lower()
+        rows.append(
+            {
+                "candidate_id": str(candidate.get("candidate_id") or ""),
+                "title": str(candidate.get("title") or ""),
+                "initiative_ref": str(candidate.get("initiative_ref") or ""),
+                "status": status or "missing",
+                "hydrated_task_ref": task_ref,
+                "hydrated_spec_ref": _candidate_hydrated_spec_ref(candidate, task_ref),
+                "target_layer": str(candidate.get("target_layer") or ""),
+                "delivery_pipeline": str(candidate.get("delivery_pipeline") or ""),
+                "planning_vs_executable_status": _candidate_planning_vs_executable_status(
+                    root, candidate, task_ref
+                ),
+                "task_artifacts_exist": artifacts_exist,
+                "task_complete": task_complete,
+                "repeat_hydration_blocked": bool(
+                    status in {"hydrated", "complete"} or artifacts_exist or task_complete
+                ),
+                "ship_blocked": bool(
+                    task_complete or (status == "hydrated" and not artifacts_exist)
+                ),
+            }
+        )
+    return rows
+
+
+def _hydration_history_rows(root: Path, doc: dict[str, Any]) -> list[dict[str, Any]]:
+    history = doc.get("hydration_history") if isinstance(doc.get("hydration_history"), list) else []
+    rows: list[dict[str, Any]] = []
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        task_ref = str(item.get("task_ref") or item.get("hydrated_task_ref") or "")
+        row = dict(item)
+        row["task_ref"] = task_ref
+        row["task_artifacts_exist"] = _hydrated_task_artifacts_exist(root, task_ref)
+        row["task_complete"] = _hydrated_task_is_complete(root, task_ref)
+        rows.append(row)
+    return rows
+
+
+def _initiative_bank_rows(root: Path) -> list[dict[str, Any]]:
+    bank_dir = root / ".azoth/initiative-banks"
+    if not bank_dir.is_dir():
+        return []
+    rows: list[dict[str, Any]] = []
+    for path in sorted(bank_dir.glob("*.yaml")):
+        doc = _load_yaml_mapping(path)
+        if doc.get("bank_type") != "initiative":
+            continue
+        readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
+        candidates = (
+            doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+        )
+        rows.append(
+            {
+                "initiative_id": str(doc.get("initiative_id") or path.stem),
+                "title": str(doc.get("title") or ""),
+                "status": str(doc.get("status") or ""),
+                "path": _repo_artifact_ref(root, path),
+                "proposal_refs": doc.get("source_proposal_refs")
+                if isinstance(doc.get("source_proposal_refs"), list)
+                else [],
+                "readiness_status": str(readiness.get("readiness_status") or ""),
+                "candidate_first_slice": str(readiness.get("candidate_first_slice") or ""),
+                "candidate_count": len([item for item in candidates if isinstance(item, dict)]),
+                "hydration_history_count": len(doc.get("hydration_history") or [])
+                if isinstance(doc.get("hydration_history"), list)
+                else 0,
+            }
+        )
+    return rows
+
+
+def _active_run_status(root: Path) -> dict[str, Any]:
+    ledger = _load_yaml_mapping(root / ".azoth/run-ledger.local.yaml")
+    runs = ledger.get("runs") if isinstance(ledger.get("runs"), list) else []
+    for run in runs:
+        if isinstance(run, dict) and str(run.get("status") or "") == "active":
+            return {
+                "present": True,
+                "run_id": str(run.get("run_id") or ""),
+                "mode": str(run.get("mode") or ""),
+                "goal": str(run.get("goal") or ""),
+                "active_stage_id": str(run.get("active_stage_id") or ""),
+                "pending_stage_ids": run.get("pending_stage_ids")
+                if isinstance(run.get("pending_stage_ids"), list)
+                else [],
+            }
+    return {"present": False}
+
+
+def _pipeline_gate_status(root: Path, active_scope: dict[str, Any]) -> dict[str, Any]:
+    path = root / PIPELINE_GATE_REL
+    if not path.exists():
+        return {"present": False, "active": False, "path": PIPELINE_GATE_REL}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {
+            "present": True,
+            "active": False,
+            "path": PIPELINE_GATE_REL,
+            "malformed": True,
+            "failure_reason": f"invalid_json: {exc.msg}",
+        }
+    if not isinstance(data, dict):
+        return {
+            "present": True,
+            "active": False,
+            "path": PIPELINE_GATE_REL,
+            "malformed": True,
+            "failure_reason": "pipeline_gate_must_be_object",
+        }
+    expires_at = str(data.get("expires_at") or "")
+    expiry = _parse_iso(expires_at)
+    expired = bool(expiry and expiry <= _utc_now())
+    session_id = str(data.get("session_id") or "")
+    active_scope_session = str(active_scope.get("session_id") or "")
+    session_matches_scope = bool(
+        session_id and active_scope_session and session_id == active_scope_session
+    )
+    approved = data.get("approved") is True
+    return {
+        "present": True,
+        "active": bool(approved and not expired),
+        "path": PIPELINE_GATE_REL,
+        "approved": approved,
+        "expired": expired,
+        "session_id": session_id,
+        "expires_at": expires_at,
+        "pipeline_command": str(data.get("pipeline_command") or data.get("pipeline") or ""),
+        "session_matches_active_scope": session_matches_scope,
+    }
+
+
+def _lifecycle_gate_status(root: Path) -> dict[str, Any]:
+    active_scope = _active_scope(root)
+    return {
+        "active_scope": active_scope,
+        "active_session_conflict": _active_session_conflict(root, active_scope),
+        "pipeline_gate": _pipeline_gate_status(root, active_scope),
+        "active_run": _active_run_status(root),
+    }
+
+
+def _protected_gate_status(readiness_report: dict[str, Any]) -> dict[str, Any]:
+    target_layer = str(readiness_report.get("target_layer") or "").lower()
+    delivery_pipeline = str(readiness_report.get("delivery_pipeline") or "").lower()
+    reasons: list[str] = []
+    if target_layer in PROTECTED_TARGET_LAYERS:
+        reasons.append(f"target_layer {target_layer} requires protected gate")
+    if delivery_pipeline in PROTECTED_PIPELINES:
+        reasons.append(f"delivery_pipeline {delivery_pipeline} requires protected gate")
+    return {"required": bool(reasons), "reasons": reasons}
+
+
+def _evaluator_evidence_status(
+    reflections: list[dict[str, Any]],
+    reflection_errors: list[str],
+) -> dict[str, Any]:
+    evidence_entries: list[dict[str, str]] = []
+    for entry in reflections:
+        tags = entry.get("tags") if isinstance(entry.get("tags"), list) else []
+        tag_text = " ".join(str(tag).lower() for tag in tags)
+        if (
+            "eval" in tag_text
+            or "evaluator" in str(entry.get("source") or "").lower()
+            or entry.get("score") is not None
+        ):
+            evidence_entries.append(
+                {
+                    "id": str(entry.get("id") or ""),
+                    "summary": str(entry.get("summary") or ""),
+                    "score": str(entry.get("score") or ""),
+                }
+            )
+    status = "recorded" if evidence_entries else "not_recorded"
+    return {
+        "status": status,
+        "evidence_count": len(evidence_entries),
+        "entries": evidence_entries,
+        "reflection_failure_reasons": reflection_errors,
+    }
+
+
+def _lifecycle_residual_risks(
+    *,
+    candidate_rows: list[dict[str, Any]],
+    route_decision: dict[str, Any],
+    gate_status: dict[str, Any],
+    write_claim: dict[str, Any],
+    evaluator_evidence: dict[str, Any],
+    campaign: dict[str, Any],
+) -> list[dict[str, str]]:
+    risks: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+
+    def add_risk(risk: str, basis: str, mitigation: str) -> None:
+        key = (risk, mitigation)
+        if key in seen:
+            return
+        seen.add(key)
+        risks.append({"risk": risk, "basis": basis, "mitigation": mitigation})
+
+    for row in candidate_rows:
+        if row.get("task_complete"):
+            task_ref = str(row.get("hydrated_task_ref") or "hydrated task")
+            add_risk(
+                f"Completed hydrated task {task_ref} blocks hidden continuation "
+                "and repeat hydration.",
+                "candidate task is terminal in roadmap/backlog truth",
+                "Select a fresh candidate or refresh initiative readiness.",
+            )
+    if gate_status.get("active_scope"):
+        add_risk(
+            "Active scope gate is present.",
+            "scope-gate reports a live session",
+            "Close or reconcile the active scope before opening another child.",
+        )
+    if gate_status.get("active_session_conflict"):
+        add_risk(
+            "Active session gate conflicts with the lifecycle report context.",
+            "session-gate session does not match the active scope",
+            "Resolve session-gate state before continuing.",
+        )
+    if write_claim.get("held") and not write_claim.get("stale"):
+        add_risk(
+            "Active write claim is held.",
+            "run-ledger write claim is not stale",
+            "Do not open write work until the claim is released or expires.",
+        )
+    if evaluator_evidence.get("status") != "recorded":
+        add_risk(
+            "Evaluator evidence is not recorded in the lifecycle inputs.",
+            "reflection/evaluator evidence was absent or unscored",
+            "Treat route quality as unscored until evaluator evidence is attached.",
+        )
+    observation = (
+        campaign.get("observation") if isinstance(campaign.get("observation"), dict) else {}
+    )
+    if observation.get("fresh_budget_required"):
+        add_risk(
+            "Campaign report requires a fresh budget or explicit continuation authority.",
+            str(observation.get("reason") or "campaign observation is stale or incomplete"),
+            "Do not infer authority from stale handoff or completed campaign evidence.",
+        )
+    if route_decision.get("selected_route") == "stop":
+        add_risk(
+            "Selected route is stop.",
+            str(route_decision.get("route_state") or "route decision stopped"),
+            str(route_decision.get("approval_needed") or "Resolve blockers first."),
+        )
+    return risks
+
+
 def _lifecycle_next_safe_actions(
     doc: dict[str, Any],
     readiness_report: dict[str, Any],
@@ -2600,11 +2910,6 @@ def build_initiative_lifecycle_report(
         "candidate_task_complete": candidate_task_complete,
     }
     campaign = campaign_report(root, state_path, handoff_path=handoff_path)
-    target_layer = str(readiness_report.get("target_layer") or "").lower()
-    delivery_pipeline = str(readiness_report.get("delivery_pipeline") or "").lower()
-    protected_gate_required = (
-        target_layer in PROTECTED_TARGET_LAYERS or delivery_pipeline in PROTECTED_PIPELINES
-    )
     reflection_observable = reflection_path is not None and reflection_path.exists()
 
     if candidate_task_complete:
@@ -2629,12 +2934,23 @@ def build_initiative_lifecycle_report(
         if reflection_observable
         else "No reflection artifact was available, so report-quality implications are limited."
     )
+    candidate_rows = _candidate_slice_rows(root, doc)
+    initiative_rows = _initiative_bank_rows(root)
+    hydration_history = _hydration_history_rows(root, doc)
+    gate_status = _lifecycle_gate_status(root)
+    write_claim = _write_claim_status(root)
+    protected_gate_status = _protected_gate_status(readiness_report)
+    evaluator_evidence = _evaluator_evidence_status(reflections, reflection_errors)
 
-    return {
+    report = {
         "report_schema_version": 1,
         "report_type": "initiative_lifecycle_report",
         "source_artifacts": {
             "initiative_bank": _repo_artifact_ref(root, initiative_path),
+            "initiative_bank_count": len(initiative_rows),
+            "proposal_refs": doc.get("source_proposal_refs")
+            if isinstance(doc.get("source_proposal_refs"), list)
+            else [],
             "reflection": {
                 "observable": reflection_observable,
                 "path": _repo_artifact_ref(root, reflection_path),
@@ -2666,20 +2982,31 @@ def build_initiative_lifecycle_report(
             "source_proposal_refs": doc.get("source_proposal_refs")
             if isinstance(doc.get("source_proposal_refs"), list)
             else [],
+            "proposal_refs": doc.get("source_proposal_refs")
+            if isinstance(doc.get("source_proposal_refs"), list)
+            else [],
             "local_findings_count": len(doc.get("local_findings") or [])
             if isinstance(doc.get("local_findings"), list)
             else 0,
         },
+        "initiative_banks": initiative_rows,
         "candidate": candidate,
+        "candidate_slices": candidate_rows,
+        "hydration_history": hydration_history,
         "readiness": {
             **lifecycle_readiness,
         },
+        "readiness_blockers": lifecycle_readiness.get("blocking_reasons")
+        if isinstance(lifecycle_readiness.get("blocking_reasons"), list)
+        else [],
         "campaign_context": {
             "current_loop_status": campaign.get("current_loop", {}).get("status"),
             "handoff_observable": campaign.get("handoff_campaign", {}).get("observable"),
             "fresh_budget_required": campaign.get("observation", {}).get("fresh_budget_required"),
             "observation_reason": campaign.get("observation", {}).get("reason"),
+            "campaign_report": campaign,
         },
+        "evaluator_evidence": evaluator_evidence,
         "quality": {
             "reflection_observable": reflection_observable,
             "quality_signals": _quality_signals_from_reflections(reflections),
@@ -2688,7 +3015,7 @@ def build_initiative_lifecycle_report(
                 {
                     "name": "autonomous_auto_campaign_orchestrator_report",
                     "score": None,
-                    "status": "not_recorded_in_source_artifacts",
+                    "status": evaluator_evidence["status"],
                     "meaning": "No evaluator score artifact was provided; quality must be treated as unscored.",
                 }
             ],
@@ -2709,15 +3036,29 @@ def build_initiative_lifecycle_report(
             },
         ],
         "safety": {
-            "protected_gate_required": protected_gate_required,
+            "protected_gate_required": protected_gate_status["required"],
             "hydration_safe_now": bool(readiness_report.get("ready_to_hydrate"))
-            and not protected_gate_required,
+            and not protected_gate_status["required"],
             "approval_basis": readiness.get("approval_basis") or "",
             "human_decision": readiness_report.get("human_decision"),
         },
+        "gate_status": gate_status,
+        "write_claim": write_claim,
+        "protected_gate_status": protected_gate_status,
         "next_safe_actions": _lifecycle_next_safe_actions(doc, lifecycle_readiness, reflections),
         "blocked_actions": _lifecycle_blocked_actions(lifecycle_readiness),
     }
+    route_decision = _route_decision_from_lifecycle_report(root, report)
+    report["selected_route_decision"] = route_decision
+    report["residual_risks"] = _lifecycle_residual_risks(
+        candidate_rows=candidate_rows,
+        route_decision=route_decision,
+        gate_status=gate_status,
+        write_claim=write_claim,
+        evaluator_evidence=evaluator_evidence,
+        campaign=campaign,
+    )
+    return report
 
 
 def build_initiative_route_decision_capsule(
@@ -2747,6 +3088,30 @@ def _format_lifecycle_report(payload: dict[str, Any]) -> str:
     readiness = payload.get("readiness") if isinstance(payload.get("readiness"), dict) else {}
     safety = payload.get("safety") if isinstance(payload.get("safety"), dict) else {}
     quality = payload.get("quality") if isinstance(payload.get("quality"), dict) else {}
+    evaluator = (
+        payload.get("evaluator_evidence")
+        if isinstance(payload.get("evaluator_evidence"), dict)
+        else {}
+    )
+    route = (
+        payload.get("selected_route_decision")
+        if isinstance(payload.get("selected_route_decision"), dict)
+        else {}
+    )
+    gates = payload.get("gate_status") if isinstance(payload.get("gate_status"), dict) else {}
+    active_scope = gates.get("active_scope") if isinstance(gates.get("active_scope"), dict) else {}
+    session_conflict = (
+        gates.get("active_session_conflict")
+        if isinstance(gates.get("active_session_conflict"), dict)
+        else {}
+    )
+    pipeline_gate = (
+        gates.get("pipeline_gate") if isinstance(gates.get("pipeline_gate"), dict) else {}
+    )
+    write_claim = payload.get("write_claim") if isinstance(payload.get("write_claim"), dict) else {}
+    residual_risks = (
+        payload.get("residual_risks") if isinstance(payload.get("residual_risks"), list) else []
+    )
     next_actions = payload.get("next_safe_actions")
     blocked_actions = payload.get("blocked_actions")
     next_action_items = next_actions if isinstance(next_actions, list) else []
@@ -2759,6 +3124,17 @@ def _format_lifecycle_report(payload: dict[str, Any]) -> str:
     blocked_text = ", ".join(
         str(item.get("action")) for item in blocked_action_items if isinstance(item, dict)
     )
+    gate_text = (
+        f"scope={active_scope.get('session_id') or 'none'}, "
+        f"session_conflict={session_conflict.get('session_id') or 'none'}, "
+        f"pipeline={pipeline_gate.get('pipeline_command') or 'none'}"
+    )
+    claim_text = f"held by {write_claim.get('session_id')}" if write_claim.get("held") else "none"
+    risk_text = "; ".join(
+        str(item.get("risk") or "")
+        for item in residual_risks
+        if isinstance(item, dict) and str(item.get("risk") or "")
+    )
     return "\n".join(
         [
             "Autonomous-auto initiative lifecycle report",
@@ -2767,9 +3143,14 @@ def _format_lifecycle_report(payload: dict[str, Any]) -> str:
             f"Readiness: {readiness.get('readiness_status')} (hydrate={readiness.get('ready_to_hydrate')})",
             f"Human decision: {readiness.get('human_decision')} ({readiness.get('approval_scope') or 'no scope'})",
             f"Quality: {'observed' if quality.get('reflection_observable') else 'not observed'}; evaluator score recorded=False",
+            f"Evaluator evidence: {evaluator.get('status') or 'unknown'}",
+            f"Selected route: {route.get('selected_route') or 'unknown'} ({route.get('route_state') or 'unknown'})",
             f"Protected gate required: {safety.get('protected_gate_required')}",
+            f"Gate summary: {gate_text}",
+            f"Write claim: {claim_text}",
             f"Next safe actions: {next_text or 'none'}",
             f"Blocked actions: {blocked_text or 'none'}",
+            f"Residual risks: {risk_text or 'none'}",
         ]
     )
 

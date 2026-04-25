@@ -28,6 +28,12 @@ def _write_json(path: Path, data: dict) -> None:
     path.write_text(json.dumps(data), encoding="utf-8")
 
 
+def _snapshot_files(root: Path) -> dict[str, bytes]:
+    return {
+        str(path.relative_to(root)): path.read_bytes() for path in root.rglob("*") if path.is_file()
+    }
+
+
 def _state(root: Path, **overrides: object) -> Path:
     data: dict = {
         "schema_version": 1,
@@ -1789,6 +1795,210 @@ def _write_completed_task_artifacts(tmp_path: Path, task_id: str) -> None:
     )
 
 
+def test_lifecycle_report_json_includes_discoverability_spine_without_writes(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-d",
+            "proposed_task_id": "T-026",
+            "title": "Durable autonomous-auto wakeup driver",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "hydrated",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Completed wakeup slice must not silently continue.",
+            "acceptance_criteria": ["Wakeup checks gates before opening work."],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not create a daemon."],
+            "open_questions": [],
+            "hydration_plan": {
+                "hydrated_task_ref": "T-026",
+                "hydrated_spec_ref": ".azoth/roadmap-specs/v0.2.0/T-026.yaml",
+                "hydrated_at": "2026-04-25T19:34:23Z",
+            },
+        }
+    )
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-e",
+            "proposed_task_id": "T-027",
+            "title": "Initiative lifecycle evaluator and discoverability spine",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "hydrated",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Read-only lifecycle report.",
+            "acceptance_criteria": ["List lifecycle state and next safe actions."],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not mutate planning state."],
+            "open_questions": [],
+            "hydration_plan": {
+                "hydrated_task_ref": "T-027",
+                "hydrated_spec_ref": ".azoth/roadmap-specs/v0.2.0/T-027.yaml",
+                "hydrated_at": "2026-04-25T20:14:59Z",
+            },
+        }
+    )
+    doc["readiness"].update(
+        {
+            "candidate_first_slice": "slice-auto-001-e",
+            "approval_scope": "hydration_specific_slice_auto_001_e",
+        }
+    )
+    doc["hydration_history"] = [
+        {
+            "candidate_slice_ref": "slice-auto-001-d",
+            "task_ref": "T-026",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-026.yaml",
+            "session_id": "2026-04-25-autonomous-auto-t-026-3",
+        },
+        {
+            "candidate_slice_ref": "slice-auto-001-e",
+            "task_ref": "T-027",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-027.yaml",
+            "session_id": "2026-04-25-autonomous-auto-t-027-3",
+        },
+    ]
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-026")
+    _write_hydrated_task_artifacts(tmp_path, "T-027")
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "tasks": [
+                {"id": "T-027", "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-027.yaml"},
+            ],
+            "versions": [
+                {
+                    "id": "v0.2.0-p3",
+                    "completed_tasks": [
+                        {
+                            "id": "T-026",
+                            "title": "Durable autonomous-auto wakeup driver",
+                            "completed_date": "2026-04-25",
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {"id": "T-026", "status": "complete", "completed_date": "2026-04-25"},
+            {"id": "T-027", "status": "pending"},
+        ],
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "session_id": "scope-session",
+            "approved": True,
+            "scope_status": "active",
+            "expires_at": _future_expiry(),
+            "pipeline_command": "autonomous-auto",
+        },
+    )
+    _write_active_session_gate(tmp_path, session_id="other-session")
+    _write_json(
+        tmp_path / ".azoth/pipeline-gate.json",
+        {
+            "session_id": "scope-session",
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "opened_at": "2026-04-25T20:00:00Z",
+            "pipeline_command": "autonomous-auto",
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/run-ledger.local.yaml",
+        {
+            "write_claim": {
+                "session_id": "claim-session",
+                "expires_at": _future_expiry(),
+                "worktree_path": str(tmp_path),
+                "branch": "codex/autonomous-roadmap-self-development",
+            }
+        },
+    )
+    before = _snapshot_files(tmp_path)
+
+    report = autonomous_loop.build_initiative_lifecycle_report(
+        tmp_path,
+        initiative_path,
+        state_path=state_path,
+        candidate_id="slice-auto-001-e",
+    )
+
+    assert report["initiative"]["source_proposal_refs"] == [
+        ".azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml"
+    ]
+    assert report["source_artifacts"]["initiative_bank_count"] == 1
+    assert report["initiative_banks"][0]["initiative_id"] == "INI-AUTO-001"
+    assert report["initiative_banks"][0]["candidate_count"] == 3
+    assert {row["candidate_id"] for row in report["candidate_slices"]} == {
+        "slice-auto-001-a",
+        "slice-auto-001-d",
+        "slice-auto-001-e",
+    }
+    t026 = next(
+        row for row in report["candidate_slices"] if row["candidate_id"] == "slice-auto-001-d"
+    )
+    assert t026["hydrated_task_ref"] == "T-026"
+    assert t026["planning_vs_executable_status"] == "completed_hydrated_task"
+    assert t026["repeat_hydration_blocked"] is True
+    t027 = next(
+        row for row in report["candidate_slices"] if row["candidate_id"] == "slice-auto-001-e"
+    )
+    assert t027["planning_vs_executable_status"] == "executable_hydrated_task"
+    assert report["hydration_history"][0]["task_complete"] is True
+    assert report["readiness_blockers"]
+    assert report["selected_route_decision"]["selected_route"] == "ship_task"
+    assert report["evaluator_evidence"]["status"] == "not_recorded"
+    assert report["campaign_context"]["campaign_report"]["report_schema_version"] == 1
+    assert report["gate_status"]["active_scope"]["session_id"] == "scope-session"
+    assert report["gate_status"]["active_session_conflict"]["session_id"] == "other-session"
+    assert report["gate_status"]["pipeline_gate"]["approved"] is True
+    assert report["gate_status"]["active_run"]["present"] is False
+    assert report["write_claim"]["held"] is True
+    assert report["protected_gate_status"]["required"] is False
+    assert any(item["action"] == "ship_task" for item in report["next_safe_actions"])
+    assert any(item["action"] == "hydrate_task" for item in report["blocked_actions"])
+    assert any("T-026" in item["risk"] for item in report["residual_risks"])
+    assert all("basis" in item for item in report["residual_risks"])
+    assert _snapshot_files(tmp_path) == before
+
+
+def test_lifecycle_report_completed_t026_blocks_repeat_hydration_and_hidden_shipping(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["candidate_id"] = "slice-auto-001-d"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-026"
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["readiness"]["candidate_first_slice"] = "slice-auto-001-d"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_d"
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-026")
+
+    report = autonomous_loop.build_initiative_lifecycle_report(tmp_path, initiative_path)
+
+    assert report["readiness"]["candidate_task_complete"] is True
+    assert report["selected_route_decision"]["selected_route"] == "stop"
+    assert all(item["action"] != "ship_task" for item in report["next_safe_actions"])
+    assert {item["action"] for item in report["blocked_actions"]} >= {
+        "hydrate_task",
+        "ship_task",
+    }
+    assert any("hidden continuation" in item["risk"] for item in report["residual_risks"])
+
+
 def test_lifecycle_report_reuses_readiness_report_and_reflection_without_writes(
     tmp_path: Path,
 ) -> None:
@@ -1868,7 +2078,12 @@ def test_lifecycle_report_cli_plain_text(
 
     assert "Autonomous-auto initiative lifecycle report" in output
     assert "Readiness: continue_research (hydrate=False)" in output
+    assert "Human decision: approved (planning_seed_only_no_hydration)" in output
+    assert "Evaluator evidence: not_recorded" in output
+    assert "Gate summary: scope=none, session_conflict=none, pipeline=none" in output
+    assert "Write claim: none" in output
     assert "Blocked actions: hydrate_task, ship_task" in output
+    assert "Residual risks:" in output
 
 
 def test_lifecycle_report_missing_reflection_is_observable_false_and_read_only(
