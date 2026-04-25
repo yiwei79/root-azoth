@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "status": "synced",
-  "updated_at": "2026-04-25T00:58:20Z",
+  "updated_at": "2026-04-25T01:22:17Z",
   "source": "session-closeout",
-  "session_id": "2026-04-24-t-020",
-  "goal": "T-020: Planning-bank surfacing and routing in session dashboards",
-  "latest_episode_id": "ep-383",
+  "session_id": "2026-04-25-t-021",
+  "goal": "T-021: Planning-bank ID and coverage policy",
+  "latest_episode_id": "ep-384",
   "latest_episode_summary": "Completed session closeout via scripts/do_closeout.py (W1-W4).",
   "next_action": "Run `/next` to select the next scoped task.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
   "reason": "",
-  "synced_at": "2026-04-25T00:58:20Z"
+  "synced_at": "2026-04-25T01:22:17Z"
 }
