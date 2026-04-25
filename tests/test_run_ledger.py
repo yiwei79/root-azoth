@@ -242,6 +242,60 @@ def test_validate_rejects_invalid_pause_reason() -> None:
     assert any("pause_reason" in error for error in errors)
 
 
+def test_validate_rejects_terminal_run_with_resumable_checkpoint_fields() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-terminal-stale",
+                "mode": "autonomous-auto",
+                "goal": "Test terminal cleanup",
+                "status": "complete",
+                "created_at": "2026-04-10T10:00:00+00:00",
+                "updated_at": "2026-04-10T10:30:00+00:00",
+                "next_action": "done",
+                "active_stage_id": "builder_apply",
+                "pending_stage_ids": ["reviewer_gate"],
+                "pause_reason": "human-gate",
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+
+    assert any("terminal status 'complete'" in error for error in errors)
+    assert any("active_stage_id" in error for error in errors)
+    assert any("pending_stage_ids" in error for error in errors)
+    assert any("pause_reason" in error for error in errors)
+
+
+def test_append_failed_status_clears_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    _append(
+        ledger,
+        run_id="run-terminal-failed-clear",
+        status="active",
+        active_stage_id="builder_apply",
+        pending_stage_ids=["reviewer_gate"],
+        pause_reason="retry",
+    )
+
+    result = _append(
+        ledger,
+        run_id="run-terminal-failed-clear",
+        status="failed",
+        next_action="stopped",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["status"] == "failed"
+    assert "active_stage_id" not in run
+    assert "pending_stage_ids" not in run
+    assert "pause_reason" not in run
+
+
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
 
 
@@ -453,6 +507,33 @@ def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
     assert run["pending_stage_ids"] == ["builder_apply", "reviewer_gate"]
     assert run["pause_reason"] == "human-gate"
     assert run["stages_completed"] == ["planner_stage0"]
+
+
+def test_append_terminal_status_clears_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    _append(
+        ledger,
+        run_id="run-terminal-clear",
+        status="active",
+        active_stage_id="architect_brief",
+        pending_stage_ids=["builder_apply", "reviewer_gate"],
+        pause_reason="human-gate",
+    )
+
+    result = _append(
+        ledger,
+        run_id="run-terminal-clear",
+        status="complete",
+        next_action="done",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["status"] == "complete"
+    assert "active_stage_id" not in run
+    assert "pending_stage_ids" not in run
+    assert "pause_reason" not in run
 
 
 def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None:

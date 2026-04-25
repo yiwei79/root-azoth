@@ -34,6 +34,13 @@ VALID_ACTIONS = {
     "capture_self_improvement",
     "stop",
 }
+DEFAULT_ALLOWED_ACTIONS = [
+    "ship_task",
+    "hydrate_task",
+    "research_initiative",
+    "refine_proposal",
+    "capture_self_improvement",
+]
 SAFE_BACKLOG_STATUSES = {"pending", "planned", "ready", "todo"}
 READY_INITIATIVE_STATUSES = {"active_refinement", "ready", "ready_to_hydrate"}
 PROPOSAL_STATUSES = {"draft", "active_refinement", "submitted", "proposed"}
@@ -83,6 +90,9 @@ PROTECTED_FLAG_VALUES = {
 ALIGNMENT_PACKET_TYPES = {"async_advisory", "async_override", "async_stop", "approval_basis"}
 ALIGNMENT_DISPOSITIONS = {"pending", "applied", "deferred", "rejected"}
 DEFAULT_ALIGNMENT_CHECKPOINT = "next_safe_checkpoint"
+VISION_BANDS = {"red": 0, "yellow": 1, "green": 2}
+DEFAULT_VISION_ANCHOR = ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
+DEFAULT_VISION_TARGET_BAND = "green"
 DEFAULT_STOP_CONDITIONS = [
     "active_scope_present",
     "active_session_gate_conflict",
@@ -129,6 +139,26 @@ def _write_yaml_mapping(path: Path, data: dict[str, Any]) -> None:
 def _write_json_mapping(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+
+
+def _current_branch(root: Path) -> str:
+    git_path = root / ".git"
+    head_path = git_path / "HEAD"
+    if git_path.is_file():
+        text = git_path.read_text(encoding="utf-8").strip()
+        prefix = "gitdir:"
+        if text.startswith(prefix):
+            git_dir = Path(text[len(prefix) :].strip())
+            if not git_dir.is_absolute():
+                git_dir = (root / git_dir).resolve()
+            head_path = git_dir / "HEAD"
+    if not head_path.exists():
+        return ""
+    head = head_path.read_text(encoding="utf-8").strip()
+    ref_prefix = "ref: refs/heads/"
+    if head.startswith(ref_prefix):
+        return head[len(ref_prefix) :]
+    return "detached"
 
 
 def _state_path(root: Path, state_arg: str | None) -> Path:
@@ -257,9 +287,15 @@ def classify_alignment_packet(message: str, packet_type: str | None = None) -> s
     text = str(message or "").strip().lower()
     if any(marker in text for marker in ("stop", "abort", "do not continue", "pause", "halt")):
         return "async_stop"
-    if any(marker in text for marker in ("approval_basis", "approved", "approval basis", "autonomy budget")):
+    if any(
+        marker in text
+        for marker in ("approval_basis", "approved", "approval basis", "autonomy budget")
+    ):
         return "approval_basis"
-    if any(marker in text for marker in ("override", "instead", "change scope", "acceptance", "priority", "pivot")):
+    if any(
+        marker in text
+        for marker in ("override", "instead", "change scope", "acceptance", "priority", "pivot")
+    ):
         return "async_override"
     return "async_advisory"
 
@@ -362,7 +398,9 @@ def _blocking_alignment_packet(state: dict[str, Any]) -> dict[str, Any] | None:
 
 def _alignment_summary(state: dict[str, Any]) -> dict[str, Any]:
     packets = _alignment_packets(state)
-    pending = [packet for packet in packets if str(packet.get("disposition") or "pending") == "pending"]
+    pending = [
+        packet for packet in packets if str(packet.get("disposition") or "pending") == "pending"
+    ]
     latest = packets[-1] if packets else {}
     return {
         "packet_count": len(packets),
@@ -372,6 +410,103 @@ def _alignment_summary(state: dict[str, Any]) -> dict[str, Any]:
         "latest_disposition": str(latest.get("disposition") or ""),
         "disposition_count": len(_alignment_dispositions(state)),
     }
+
+
+def _vision_state(state: dict[str, Any]) -> dict[str, Any]:
+    raw = state.get("vision")
+    vision = raw if isinstance(raw, dict) else {}
+    target_band = str(vision.get("target_band") or DEFAULT_VISION_TARGET_BAND).strip().lower()
+    current_band = str(vision.get("current_band") or "unevaluated").strip().lower()
+    target_rank = VISION_BANDS.get(target_band, VISION_BANDS[DEFAULT_VISION_TARGET_BAND])
+    current_rank = VISION_BANDS.get(current_band)
+    realized = bool(current_rank is not None and current_rank >= target_rank)
+    return {
+        "anchor": str(vision.get("anchor") or DEFAULT_VISION_ANCHOR),
+        "target_band": target_band if target_band in VISION_BANDS else DEFAULT_VISION_TARGET_BAND,
+        "current_band": current_band,
+        "realized": realized,
+        "updated_at": str(vision.get("updated_at") or ""),
+        "note": str(vision.get("note") or ""),
+    }
+
+
+def _normalize_vision_declaration(
+    raw: dict[str, Any] | None,
+    *,
+    approval_basis: str,
+    objective: str,
+    allowed_actions: list[str],
+    locked_at: str,
+) -> dict[str, Any]:
+    declaration = raw if isinstance(raw, dict) else {}
+    summary = str(
+        declaration.get("summary")
+        or declaration.get("vision")
+        or declaration.get("campaign_vision")
+        or objective
+    ).strip()
+    selected_seed = str(
+        declaration.get("selected_seed")
+        or declaration.get("initiative_id")
+        or declaration.get("candidate_id")
+        or ""
+    ).strip()
+    selected_seed_type = str(
+        declaration.get("selected_seed_type")
+        or declaration.get("seed_type")
+        or ("initiative" if selected_seed.startswith("INI-") else "")
+    ).strip()
+    scope_notes = str(
+        declaration.get("scope_notes")
+        or declaration.get("scope")
+        or declaration.get("discussion_summary")
+        or ""
+    ).strip()
+    return {
+        "status": str(declaration.get("status") or "approved").strip(),
+        "summary": summary,
+        "selected_seed": selected_seed,
+        "selected_seed_type": selected_seed_type,
+        "scope_notes": scope_notes,
+        "allowed_actions": list(allowed_actions),
+        "approval_basis": str(declaration.get("approval_basis") or approval_basis).strip(),
+        "locked_at": str(declaration.get("locked_at") or locked_at).strip(),
+    }
+
+
+def _completion_reason(state: dict[str, Any]) -> str:
+    if not state:
+        return ""
+    explicit = str(state.get("completion_reason") or "").strip()
+    if explicit:
+        return explicit
+    if _vision_state(state).get("realized"):
+        return "vision_realized"
+    return ""
+
+
+def _continuation_summary(
+    state: dict[str, Any],
+    status: dict[str, Any],
+    decision: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if not state:
+        return {"required": False, "reason": "missing_loop_state"}
+    vision = (
+        status.get("vision") if isinstance(status.get("vision"), dict) else _vision_state(state)
+    )
+    if vision.get("realized"):
+        return {"required": False, "reason": "vision_realized"}
+    stop_reason = str(status.get("stop_reason") or "")
+    if stop_reason:
+        return {"required": False, "reason": f"blocked:{stop_reason}"}
+    if decision and decision.get("action") == "stop":
+        return {"required": False, "reason": str(decision.get("stop_reason") or "stop_decision")}
+    if int(status.get("remaining_iterations") or 0) <= 0:
+        return {"required": False, "reason": "budget_exhausted"}
+    if not status.get("can_continue"):
+        return {"required": False, "reason": "not_continuable"}
+    return {"required": True, "reason": "vision_not_realized"}
 
 
 def _priority(item: dict[str, Any]) -> tuple[int, str]:
@@ -456,7 +591,9 @@ def _candidate_identity(candidate: dict[str, Any]) -> str:
 
 
 def _candidate_title(candidate: dict[str, Any]) -> str:
-    return str(candidate.get("title") or candidate.get("proposed_title") or _candidate_identity(candidate)).strip()
+    return str(
+        candidate.get("title") or candidate.get("proposed_title") or _candidate_identity(candidate)
+    ).strip()
 
 
 def _score_candidate(action: str, candidate: dict[str, Any], source: str) -> dict[str, Any]:
@@ -515,17 +652,25 @@ def _candidate_snapshot(action: str, candidate: dict[str, Any], source: str) -> 
     }
 
 
-def _possible_alternatives(root: Path, state: dict[str, Any], selected_id: str) -> list[dict[str, Any]]:
+def _possible_alternatives(
+    root: Path, state: dict[str, Any], selected_id: str
+) -> list[dict[str, Any]]:
     alternatives: list[dict[str, Any]] = []
     self_capture = state.get("self_capture_queue")
     if isinstance(self_capture, list) and self_capture:
-        first = self_capture[0] if isinstance(self_capture[0], dict) else {"title": str(self_capture[0])}
+        first = (
+            self_capture[0]
+            if isinstance(self_capture[0], dict)
+            else {"title": str(self_capture[0])}
+        )
         candidate = {
             "candidate_id": str(first.get("candidate_id") or "self-capture"),
             "title": str(first.get("title") or "Capture autonomous-auto self-improvement"),
             "source": "self-capture",
         }
-        alternatives.append(_candidate_snapshot("capture_self_improvement", candidate, "self-capture"))
+        alternatives.append(
+            _candidate_snapshot("capture_self_improvement", candidate, "self-capture")
+        )
     for action, candidate, source in (
         ("ship_task", _first_backlog_candidate(root), "backlog"),
         ("hydrate_task", _first_ready_initiative_candidate(root), "initiative-bank"),
@@ -579,12 +724,19 @@ def _stop_decision(
     detail: str = "",
     candidate: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    residual_risk = (
+        "Campaign reached its completion condition; open a fresh budget to continue."
+        if reason == "vision_realized"
+        else "Continuation blocked until the stop reason is resolved."
+    )
     return {
         "decision_schema_version": DECISION_SCHEMA_VERSION,
         "loop_id": str(state.get("loop_id") or ""),
         "iteration": int(state.get("iteration") or 0),
         "action": "stop",
-        "candidate_id": str((candidate or {}).get("id") or (candidate or {}).get("candidate_id") or ""),
+        "candidate_id": str(
+            (candidate or {}).get("id") or (candidate or {}).get("candidate_id") or ""
+        ),
         "source": str((candidate or {}).get("source") or "governor"),
         "goal": detail or reason,
         "backlog_id": str((candidate or {}).get("id") or "AD-HOC"),
@@ -598,7 +750,7 @@ def _stop_decision(
         "architect_judgment": {
             "decision": "stop",
             "rationale": detail or reason,
-            "residual_risk": "Continuation blocked until the stop reason is resolved.",
+            "residual_risk": residual_risk,
         },
         "alignment_checkpoint_summary": _alignment_summary(state),
     }
@@ -618,7 +770,9 @@ def _action_decision(
     target_layer = str(candidate.get("target_layer") or "infrastructure").strip()
     delivery_pipeline = str(candidate.get("delivery_pipeline") or "standard").strip()
     governance_mode = _governance_mode(target_layer, delivery_pipeline, candidate)
-    backlog_id = str(candidate.get("backlog_id") or candidate.get("proposed_task_id") or candidate_id or "AD-HOC").strip()
+    backlog_id = str(
+        candidate.get("backlog_id") or candidate.get("proposed_task_id") or candidate_id or "AD-HOC"
+    ).strip()
     return {
         "decision_schema_version": DECISION_SCHEMA_VERSION,
         "loop_id": str(state.get("loop_id") or ""),
@@ -700,8 +854,7 @@ def _first_backlog_candidate(root: Path) -> dict[str, Any] | None:
     candidates = [
         item
         for item in items
-        if isinstance(item, dict)
-        and str(item.get("status") or "").strip() in SAFE_BACKLOG_STATUSES
+        if isinstance(item, dict) and str(item.get("status") or "").strip() in SAFE_BACKLOG_STATUSES
     ]
     if not candidates:
         return None
@@ -737,7 +890,9 @@ def _first_ready_initiative_candidate(root: Path) -> dict[str, Any] | None:
         candidate = selected or {}
         if str(candidate.get("status") or "").strip() in {"complete", "hydrated"}:
             continue
-        candidate.setdefault("candidate_id", slice_id or str(data.get("initiative_id") or path.stem))
+        candidate.setdefault(
+            "candidate_id", slice_id or str(data.get("initiative_id") or path.stem)
+        )
         candidate.setdefault("title", str(data.get("title") or candidate["candidate_id"]))
         candidate.setdefault("target_layer", readiness.get("target_layer") or "infrastructure")
         candidate.setdefault("delivery_pipeline", readiness.get("delivery_pipeline") or "standard")
@@ -783,13 +938,26 @@ def _first_proposal_candidate(root: Path) -> dict[str, Any] | None:
 
 def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
     if not state_path.exists():
-        return _stop_decision({}, "missing_loop_state", detail=f"Loop state missing at {state_path}")
+        return _stop_decision(
+            {}, "missing_loop_state", detail=f"Loop state missing at {state_path}"
+        )
     state = _load_yaml_mapping(state_path)
     if int(state.get("schema_version") or 0) != 1:
-        return _stop_decision(state, "invalid_loop_state", detail="Loop state schema_version must be 1.")
+        return _stop_decision(
+            state, "invalid_loop_state", detail="Loop state schema_version must be 1."
+        )
+    completion_reason = _completion_reason(state)
+    if completion_reason:
+        return _stop_decision(
+            state,
+            completion_reason,
+            detail="Autonomous-auto campaign has reached its completion condition.",
+        )
     if str(state.get("status") or "").strip() != "active":
         return _stop_decision(state, "loop_not_active", detail="Loop state is not active.")
-    if not _approval_basis(state) or _approval_basis(state).startswith("Autonomous-auto loop state did not"):
+    if not _approval_basis(state) or _approval_basis(state).startswith(
+        "Autonomous-auto loop state did not"
+    ):
         return _stop_decision(state, "missing_approval_basis")
     if int(state.get("iteration") or 0) >= _max_iterations(state):
         return _stop_decision(state, "budget_exhausted")
@@ -823,7 +991,9 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
     if queued:
         action = str(queued.get("action") or "").strip()
         if action not in VALID_ACTIONS:
-            return _stop_decision(state, "invalid_queued_action", detail=f"Invalid queued action: {action}")
+            return _stop_decision(
+                state, "invalid_queued_action", detail=f"Invalid queued action: {action}"
+            )
         if action == "stop":
             return _stop_decision(state, str(queued.get("stop_reason") or "queued_stop"))
         if action not in allowed:
@@ -841,7 +1011,11 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
 
     self_capture = state.get("self_capture_queue")
     if isinstance(self_capture, list) and self_capture and "capture_self_improvement" in allowed:
-        first = self_capture[0] if isinstance(self_capture[0], dict) else {"title": str(self_capture[0])}
+        first = (
+            self_capture[0]
+            if isinstance(self_capture[0], dict)
+            else {"title": str(self_capture[0])}
+        )
         candidate = {
             "candidate_id": str(first.get("candidate_id") or "self-capture"),
             "title": str(first.get("title") or "Capture autonomous-auto self-improvement"),
@@ -966,9 +1140,19 @@ def _selected_self_capture_item(state: dict[str, Any], decision: dict[str, Any])
 
 
 def _self_capture_entry(decision: dict[str, Any], item: dict[str, Any]) -> dict[str, Any]:
-    candidate_id = str(item.get("candidate_id") or item.get("id") or decision.get("candidate_id") or "self-capture")
-    entry_id = str(item.get("entry_id") or f"SRF-{_utc_now().strftime('%Y-%m-%d')}-AUTOAUTO-{_slug(candidate_id, 'self-capture').upper()}")
-    summary = str(item.get("summary") or item.get("title") or decision.get("goal") or "Autonomous-auto self-improvement capture.")
+    candidate_id = str(
+        item.get("candidate_id") or item.get("id") or decision.get("candidate_id") or "self-capture"
+    )
+    entry_id = str(
+        item.get("entry_id")
+        or f"SRF-{_utc_now().strftime('%Y-%m-%d')}-AUTOAUTO-{_slug(candidate_id, 'self-capture').upper()}"
+    )
+    summary = str(
+        item.get("summary")
+        or item.get("title")
+        or decision.get("goal")
+        or "Autonomous-auto self-improvement capture."
+    )
     return {
         "id": entry_id,
         "source": "autonomous-auto-loop",
@@ -982,8 +1166,12 @@ def _self_capture_entry(decision: dict[str, Any], item: dict[str, Any]) -> dict[
         "recommended_action": str(item.get("recommended_action") or item.get("action") or summary),
         "auto_applicable": bool(item.get("auto_applicable", True)),
         "requires_human_gate": bool(item.get("requires_human_gate", False)),
-        "related_sessions": item.get("related_sessions") if isinstance(item.get("related_sessions"), list) else [],
-        "tags": item.get("tags") if isinstance(item.get("tags"), list) else ["autonomous-auto", "self-capture"],
+        "related_sessions": item.get("related_sessions")
+        if isinstance(item.get("related_sessions"), list)
+        else [],
+        "tags": item.get("tags")
+        if isinstance(item.get("tags"), list)
+        else ["autonomous-auto", "self-capture"],
     }
 
 
@@ -1011,7 +1199,10 @@ def materialize_self_capture(
 ) -> dict[str, Any]:
     item = _selected_self_capture_item(state, decision)
     entry = _self_capture_entry(decision, item)
-    rel_path = Path(INBOX_DIR_REL) / f"session-reflection-{_utc_now().strftime('%Y-%m-%d')}-autonomous-auto-self-capture.jsonl"
+    rel_path = (
+        Path(INBOX_DIR_REL)
+        / f"session-reflection-{_utc_now().strftime('%Y-%m-%d')}-autonomous-auto-self-capture.jsonl"
+    )
     artifact_path = root / rel_path
     _append_jsonl_once(artifact_path, entry)
     return {
@@ -1022,7 +1213,192 @@ def materialize_self_capture(
     }
 
 
-def open_next(root: Path, state_path: Path, decision_path: Path, expires_at: str | None) -> dict[str, Any]:
+def _load_json_argument(raw: str, *, label: str) -> dict[str, Any]:
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"{label} must be a JSON object: {exc}") from exc
+    if not isinstance(data, dict):
+        raise SystemExit(f"{label} must be a JSON object")
+    return data
+
+
+def init_loop(
+    root: Path,
+    state_path: Path,
+    *,
+    approval_basis: str,
+    objective: str,
+    loop_id: str,
+    branch: str,
+    max_iterations: int,
+    replay_threshold: int,
+    allowed_actions: list[str],
+    queue: list[dict[str, Any]] | None = None,
+    self_capture_queue: list[dict[str, Any]] | None = None,
+    vision_declaration: dict[str, Any] | None = None,
+    parent_session_id: str = "",
+    replace: bool = False,
+) -> dict[str, Any]:
+    if state_path.exists() and not replace:
+        raise SystemExit(
+            f"loop state already exists at {state_path}; use --replace to overwrite it"
+        )
+    basis = str(approval_basis or "").strip()
+    if not basis:
+        raise SystemExit("--approval-basis is required")
+    if max_iterations < 1:
+        raise SystemExit("--max-iterations must be at least 1")
+    if replay_threshold < 0:
+        raise SystemExit("--replay-threshold must be zero or greater")
+    resolved_actions = allowed_actions or DEFAULT_ALLOWED_ACTIONS
+    invalid_actions = [
+        action for action in resolved_actions if action not in DEFAULT_ALLOWED_ACTIONS
+    ]
+    if invalid_actions:
+        raise SystemExit(f"invalid allowed action(s): {', '.join(invalid_actions)}")
+
+    now = _iso(_utc_now())
+    state = {
+        "schema_version": 1,
+        "loop_id": loop_id or f"autonomous-auto-{_utc_now().strftime('%Y%m%d%H%M%S')}",
+        "objective": str(objective or "autonomous-auto loop"),
+        "status": "active",
+        "branch": branch or _current_branch(root),
+        "autonomy_budget": {
+            "approval_basis": basis,
+            "max_iterations": max_iterations,
+            "replay_threshold": replay_threshold,
+            "allowed_actions": resolved_actions,
+            "stop_conditions": DEFAULT_STOP_CONDITIONS,
+        },
+        "iteration": 0,
+        "last_session_id": None,
+        "parent_session_id": parent_session_id or None,
+        "queue": queue or [],
+        "self_capture_queue": self_capture_queue or [],
+        "alignment_packets": [
+            {
+                "packet_id": "align-001",
+                "packet_type": "approval_basis",
+                "source": "operator",
+                "message": basis,
+                "received_at": now,
+                "applies_at_checkpoint": "loop_init",
+                "disposition": "applied",
+                "disposition_at": now,
+                "affected_artifact": STATE_REL,
+                "replay_required": False,
+                "disposition_note": "Initial branch-local autonomy budget recorded during loop initialization.",
+            }
+        ],
+        "alignment_dispositions": [
+            {
+                "packet_id": "align-001",
+                "packet_type": "approval_basis",
+                "disposition": "applied",
+                "affected_artifact": STATE_REL,
+                "replay_required": False,
+                "recorded_at": now,
+                "note": "Initial branch-local autonomy budget recorded during loop initialization.",
+            }
+        ],
+        "vision": {
+            "anchor": DEFAULT_VISION_ANCHOR,
+            "target_band": DEFAULT_VISION_TARGET_BAND,
+            "current_band": "unevaluated",
+            "realized": False,
+            "updated_at": "",
+            "note": "Vision score is unevaluated until an autonomous-auto closeout records it.",
+            "declaration": _normalize_vision_declaration(
+                vision_declaration,
+                approval_basis=basis,
+                objective=str(objective or "autonomous-auto loop"),
+                allowed_actions=resolved_actions,
+                locked_at=now,
+            ),
+        },
+        "history": [],
+        "next_candidate": {
+            "status": "unresolved",
+            "note": "Run decide-next after initialization to select the first eligible child scope.",
+        },
+        "stop_reason": None,
+        "automation": {
+            "recommended_driver": "codex-cron",
+            "run_policy": "one_bounded_iteration_per_wakeup",
+            "heartbeat_policy": "short_same_thread_experiments_only",
+        },
+    }
+    _write_yaml_mapping(state_path, state)
+    return {
+        "initialized": True,
+        "state_path": str(state_path),
+        "loop_id": state["loop_id"],
+        "objective": state["objective"],
+        "max_iterations": max_iterations,
+        "allowed_actions": resolved_actions,
+        "queue_count": len(state["queue"]),
+        "self_capture_count": len(state["self_capture_queue"]),
+    }
+
+
+def record_vision_score(
+    state_path: Path,
+    *,
+    band: str,
+    note: str = "",
+    scorecard: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    state = _load_yaml_mapping(state_path)
+    if not state:
+        raise SystemExit(f"loop state missing at {state_path}")
+    normalized_band = str(band or "").strip().lower()
+    if normalized_band not in VISION_BANDS:
+        raise SystemExit(f"invalid vision band: {band}")
+    vision = state.setdefault("vision", {})
+    if not isinstance(vision, dict):
+        vision = {}
+        state["vision"] = vision
+    target_band = str(vision.get("target_band") or DEFAULT_VISION_TARGET_BAND).strip().lower()
+    if target_band not in VISION_BANDS:
+        target_band = DEFAULT_VISION_TARGET_BAND
+    updated_at = _iso(_utc_now())
+    realized = VISION_BANDS[normalized_band] >= VISION_BANDS[target_band]
+    vision.update(
+        {
+            "anchor": str(vision.get("anchor") or DEFAULT_VISION_ANCHOR),
+            "target_band": target_band,
+            "current_band": normalized_band,
+            "realized": realized,
+            "updated_at": updated_at,
+            "note": str(note or ""),
+            "scorecard": scorecard or {},
+        }
+    )
+    history = state.setdefault("vision_history", [])
+    if isinstance(history, list):
+        history.append(
+            {
+                "band": normalized_band,
+                "target_band": target_band,
+                "realized": realized,
+                "recorded_at": updated_at,
+                "note": str(note or ""),
+                "scorecard": scorecard or {},
+            }
+        )
+    if realized:
+        state["status"] = "completed"
+        state["completion_reason"] = "vision_realized"
+        state["stop_reason"] = None
+    _write_yaml_mapping(state_path, state)
+    return _vision_state(state)
+
+
+def open_next(
+    root: Path, state_path: Path, decision_path: Path, expires_at: str | None
+) -> dict[str, Any]:
     decision = json.loads(decision_path.read_text(encoding="utf-8"))
     if decision.get("action") == "stop":
         raise SystemExit(f"refusing to open stopped decision: {decision.get('stop_reason')}")
@@ -1117,13 +1493,20 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
     active = _active_scope(root)
     session_conflict = _active_session_conflict(root, active)
     blocking_packet = _blocking_alignment_packet(state) if state else None
+    vision = _vision_state(state) if state else _vision_state({})
+    completion_reason = _completion_reason(state) if state else ""
     budget_exhausted = bool(state and int(state.get("iteration") or 0) >= _max_iterations(state))
     missing_basis = bool(
         state
-        and (not _approval_basis(state) or _approval_basis(state).startswith("Autonomous-auto loop state did not"))
+        and (
+            not _approval_basis(state)
+            or _approval_basis(state).startswith("Autonomous-auto loop state did not")
+        )
     )
     stop_reason = state.get("stop_reason") if state else "missing_loop_state"
-    if session_conflict:
+    if completion_reason:
+        stop_reason = None
+    elif session_conflict:
         stop_reason = "active_session_gate_conflict"
     elif active:
         stop_reason = "active_scope_present"
@@ -1133,18 +1516,25 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
         stop_reason = "missing_approval_basis"
     elif blocking_packet:
         stop_reason = "async_stop_packet"
+    iteration = int(state.get("iteration") or 0) if state else 0
+    max_iterations = _max_iterations(state) if state else 0
+    raw_status = str(state.get("status") or "") if state else "missing_state"
+    status = "completed" if completion_reason else raw_status
     return {
         "state_path": str(path),
-        "status": state.get("status") if state else "missing_state",
+        "status": status,
+        "raw_status": raw_status,
         "loop_id": state.get("loop_id") if state else "",
-        "iteration": state.get("iteration") if state else 0,
-        "max_iterations": _max_iterations(state) if state else 0,
+        "iteration": iteration,
+        "max_iterations": max_iterations,
+        "remaining_iterations": max(0, max_iterations - iteration),
         "active_scope_id": active.get("session_id", ""),
         "active_session_id": session_conflict.get("session_id", ""),
         "active_session_conflict": bool(session_conflict),
         "can_continue": bool(
             state
             and state.get("status") == "active"
+            and not completion_reason
             and not active
             and not session_conflict
             and not budget_exhausted
@@ -1152,7 +1542,9 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
             and not blocking_packet
         ),
         "stop_reason": stop_reason,
+        "completion_reason": completion_reason,
         "alignment": _alignment_summary(state) if state else _alignment_summary({}),
+        "vision": vision,
         "next_candidate": state.get("next_candidate") if state else None,
     }
 
@@ -1170,24 +1562,39 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         candidate = str(decision.get("candidate_id") or "")
         if candidate:
             next_move = f"{next_move} ({candidate})"
+    elif status.get("completion_reason"):
+        next_move = f"complete: {status.get('completion_reason')}"
     elif status.get("stop_reason"):
         next_move = f"blocked: {status.get('stop_reason')}"
+    continuation = _continuation_summary(state, status, decision)
+    vision = status.get("vision", {})
     return {
         "title": "Autonomous-auto operator read",
         "objective": str(state.get("objective") or state.get("loop_id") or "autonomous-auto loop"),
         "loop_state": str(status.get("status") or "missing_state"),
         "iteration": status.get("iteration"),
         "max_iterations": status.get("max_iterations"),
+        "remaining_iterations": status.get("remaining_iterations"),
         "can_continue": status.get("can_continue"),
         "next_likely_move": next_move,
         "approval_basis": _approval_basis(state) if state else "",
         "pending_alignment_packets": status.get("alignment", {}).get("pending_count", 0),
         "latest_alignment_packet": status.get("alignment", {}).get("latest_packet_id", ""),
+        "vision_band": vision.get("current_band", "unevaluated"),
+        "vision_target": vision.get("target_band", DEFAULT_VISION_TARGET_BAND),
+        "vision_realized": vision.get("realized", False),
+        "continuation_required": continuation["required"],
+        "continuation_reason": continuation["reason"],
         "stop_reason": status.get("stop_reason"),
-        "stop_conditions": budget.get("stop_conditions") if isinstance(budget.get("stop_conditions"), list) else DEFAULT_STOP_CONDITIONS,
+        "completion_reason": status.get("completion_reason"),
+        "stop_conditions": budget.get("stop_conditions")
+        if isinstance(budget.get("stop_conditions"), list)
+        else DEFAULT_STOP_CONDITIONS,
         "residual_risk": (
             "Green-ready only for branch-local, non-protected iterations."
             if status.get("can_continue")
+            else "Campaign reached its completion condition; open a fresh budget to continue."
+            if status.get("completion_reason")
             else "Continuation is blocked until the stop reason is resolved."
         ),
     }
@@ -1195,15 +1602,19 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
 
 def _format_operator_read(payload: dict[str, Any]) -> str:
     stop_conditions = ", ".join(str(item) for item in payload.get("stop_conditions") or [])
+    continuation = "required" if payload.get("continuation_required") else "not required"
     return "\n".join(
         [
             str(payload.get("title") or "Autonomous-auto operator read"),
             f"Objective: {payload.get('objective')}",
             f"Loop: {payload.get('loop_state')} ({payload.get('iteration')}/{payload.get('max_iterations')})",
+            f"Vision: {payload.get('vision_band')} -> target {payload.get('vision_target')} (realized={payload.get('vision_realized')})",
             f"Next: {payload.get('next_likely_move')}",
+            f"Continue: {continuation} ({payload.get('continuation_reason')})",
             f"Approval basis: {payload.get('approval_basis')}",
             f"Pending alignment packets: {payload.get('pending_alignment_packets')}",
-            f"Stop reason: {payload.get('stop_reason')}",
+            f"Completion reason: {payload.get('completion_reason') or 'none'}",
+            f"Stop reason: {payload.get('stop_reason') or 'none'}",
             f"Stop conditions: {stop_conditions}",
             f"Residual risk: {payload.get('residual_risk')}",
         ]
@@ -1215,12 +1626,45 @@ def cmd_status(args: argparse.Namespace) -> None:
     path = _state_path(root, args.state)
     if args.operator_read:
         payload = operator_read(root, path)
-        print(json.dumps(payload, indent=2, sort_keys=False) if args.json else _format_operator_read(payload))
+        print(
+            json.dumps(payload, indent=2, sort_keys=False)
+            if args.json
+            else _format_operator_read(payload)
+        )
         return
     payload = {
         **loop_status(root, path),
     }
     print(json.dumps(payload, indent=2, sort_keys=False) if args.json else payload)
+
+
+def cmd_init(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    state_path = _state_path(root, args.state)
+    queue = [_load_json_argument(item, label="--queue-json") for item in args.queue_json]
+    self_capture_queue = [
+        _load_json_argument(item, label="--self-capture-json") for item in args.self_capture_json
+    ]
+    result = init_loop(
+        root,
+        state_path,
+        approval_basis=args.approval_basis,
+        objective=args.objective,
+        loop_id=args.loop_id,
+        branch=args.branch,
+        max_iterations=args.max_iterations,
+        replay_threshold=args.replay_threshold,
+        allowed_actions=args.allowed_action or DEFAULT_ALLOWED_ACTIONS,
+        queue=queue,
+        self_capture_queue=self_capture_queue,
+        vision_declaration=_load_json_argument(
+            args.vision_declaration_json,
+            label="--vision-declaration-json",
+        ),
+        parent_session_id=args.parent_session_id,
+        replace=args.replace,
+    )
+    print(json.dumps(result, indent=2, sort_keys=False))
 
 
 def cmd_decide_next(args: argparse.Namespace) -> None:
@@ -1283,6 +1727,19 @@ def cmd_apply_alignment(args: argparse.Namespace) -> None:
     print(json.dumps(packet, indent=2, sort_keys=False))
 
 
+def cmd_record_vision_score(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    state_path = _state_path(root, args.state)
+    scorecard = _load_json_argument(args.scorecard_json, label="--scorecard-json")
+    result = record_vision_score(
+        state_path,
+        band=args.band,
+        note=args.note,
+        scorecard=scorecard,
+    )
+    print(json.dumps(result, indent=2, sort_keys=False))
+
+
 def cmd_materialize_self_capture(args: argparse.Namespace) -> None:
     root = Path(args.root).resolve()
     state_path = _state_path(root, args.state)
@@ -1307,8 +1764,42 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = sub.add_parser("status", help="Print loop status.")
     status.add_argument("--json", action="store_true")
-    status.add_argument("--operator-read", action="store_true", help="Print concise operator status.")
+    status.add_argument(
+        "--operator-read", action="store_true", help="Print concise operator status."
+    )
     status.set_defaults(func=cmd_status)
+
+    init = sub.add_parser("init", help="Initialize a local autonomous-auto loop state.")
+    init.add_argument("--approval-basis", required=True)
+    init.add_argument("--objective", default="autonomous-auto loop")
+    init.add_argument("--loop-id", default="")
+    init.add_argument("--branch", default="")
+    init.add_argument("--max-iterations", type=int, default=1)
+    init.add_argument("--replay-threshold", type=int, default=1)
+    init.add_argument(
+        "--allowed-action",
+        action="append",
+        choices=DEFAULT_ALLOWED_ACTIONS,
+        default=None,
+        help="Allowed action for the initialized budget; repeat to narrow the budget.",
+    )
+    init.add_argument(
+        "--queue-json", action="append", default=[], help="Seed one queued JSON object."
+    )
+    init.add_argument(
+        "--self-capture-json",
+        action="append",
+        default=[],
+        help="Seed one self-capture JSON object.",
+    )
+    init.add_argument(
+        "--vision-declaration-json",
+        default="{}",
+        help="Locked campaign vision declaration JSON captured after operator approval.",
+    )
+    init.add_argument("--parent-session-id", default="")
+    init.add_argument("--replace", action="store_true", help="Overwrite an existing loop state.")
+    init.set_defaults(func=cmd_init)
 
     decide = sub.add_parser("decide-next", help="Decide the next autonomous-auto action.")
     decide.add_argument("--json", action="store_true")
@@ -1341,7 +1832,17 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument("--approval-basis", default="")
     apply.set_defaults(func=cmd_apply_alignment)
 
-    materialize = sub.add_parser("materialize-self-capture", help="Write the next self-capture candidate to inbox.")
+    vision = sub.add_parser(
+        "record-vision-score", help="Record the latest autonomous-auto UX vision score."
+    )
+    vision.add_argument("--band", choices=sorted(VISION_BANDS), required=True)
+    vision.add_argument("--note", default="")
+    vision.add_argument("--scorecard-json", default="{}")
+    vision.set_defaults(func=cmd_record_vision_score)
+
+    materialize = sub.add_parser(
+        "materialize-self-capture", help="Write the next self-capture candidate to inbox."
+    )
     materialize.set_defaults(func=cmd_materialize_self_capture)
     return parser
 

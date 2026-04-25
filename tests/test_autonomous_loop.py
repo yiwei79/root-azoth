@@ -98,6 +98,230 @@ def test_missing_loop_state_stops(tmp_path: Path) -> None:
     assert decision["stop_reason"] == "missing_loop_state"
 
 
+def test_init_loop_writes_active_state_with_approval_packet(tmp_path: Path) -> None:
+    state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+
+    result = autonomous_loop.init_loop(
+        tmp_path,
+        state_path,
+        approval_basis="User approved one branch-local autonomous-auto iteration.",
+        objective="Vision-bounded autonomous-auto iteration",
+        loop_id="loop-init-test",
+        branch="codex/test",
+        max_iterations=3,
+        replay_threshold=1,
+        allowed_actions=["ship_task", "capture_self_improvement"],
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert result["initialized"] is True
+    assert state["status"] == "active"
+    assert state["objective"] == "Vision-bounded autonomous-auto iteration"
+    assert state["autonomy_budget"]["approval_basis"] == (
+        "User approved one branch-local autonomous-auto iteration."
+    )
+    assert state["autonomy_budget"]["max_iterations"] == 3
+    assert state["autonomy_budget"]["replay_threshold"] == 1
+    assert state["alignment_packets"][0]["packet_type"] == "approval_basis"
+    assert state["alignment_packets"][0]["disposition"] == "applied"
+    assert state["vision"]["target_band"] == "green"
+    assert state["vision"]["current_band"] == "unevaluated"
+    assert state["vision"]["declaration"]["status"] == "approved"
+    assert state["vision"]["declaration"]["summary"] == "Vision-bounded autonomous-auto iteration"
+    assert state["vision"]["declaration"]["allowed_actions"] == [
+        "ship_task",
+        "capture_self_improvement",
+    ]
+    assert read["loop_state"] == "active"
+    assert read["next_likely_move"] == "ship_task (T-321)"
+    assert read["pending_alignment_packets"] == 0
+    assert read["vision_target"] == "green"
+    assert read["continuation_required"] is True
+
+
+def test_init_loop_refuses_existing_state_without_replace(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+
+    with pytest.raises(SystemExit, match="already exists"):
+        autonomous_loop.init_loop(
+            tmp_path,
+            state_path,
+            approval_basis="User approved one branch-local autonomous-auto iteration.",
+            objective="Vision-bounded autonomous-auto iteration",
+            loop_id="loop-init-test",
+            branch="codex/test",
+            max_iterations=1,
+            replay_threshold=1,
+            allowed_actions=["ship_task"],
+        )
+
+
+def test_init_loop_persists_locked_vision_declaration(tmp_path: Path) -> None:
+    state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+
+    autonomous_loop.init_loop(
+        tmp_path,
+        state_path,
+        approval_basis="User approved campaign vision declaration.",
+        objective="Autonomous Campaign 2",
+        loop_id="loop-vision-test",
+        branch="codex/test",
+        max_iterations=4,
+        replay_threshold=1,
+        allowed_actions=["research_initiative", "hydrate_task", "ship_task"],
+        vision_declaration={
+            "summary": "Improve Azoth planning-bank lifecycle autonomy.",
+            "selected_seed": "INI-EVI-002",
+            "selected_seed_type": "initiative",
+            "scope_notes": "Research, hydrate, and ship one bounded planning-bank slice.",
+        },
+    )
+
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    declaration = state["vision"]["declaration"]
+
+    assert declaration["status"] == "approved"
+    assert declaration["summary"] == "Improve Azoth planning-bank lifecycle autonomy."
+    assert declaration["selected_seed"] == "INI-EVI-002"
+    assert declaration["selected_seed_type"] == "initiative"
+    assert declaration["scope_notes"] == (
+        "Research, hydrate, and ship one bounded planning-bank slice."
+    )
+    assert declaration["allowed_actions"] == [
+        "research_initiative",
+        "hydrate_task",
+        "ship_task",
+    ]
+    assert declaration["approval_basis"] == "User approved campaign vision declaration."
+    assert declaration["locked_at"]
+
+
+def test_record_vision_score_green_marks_continuation_not_required(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "yellow",
+            "realized": False,
+        },
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+
+    vision = autonomous_loop.record_vision_score(
+        state_path,
+        band="green",
+        note="UX anchors are Green after bounded delivery.",
+        scorecard={"continuation": "green"},
+    )
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+
+    assert vision["current_band"] == "green"
+    assert vision["realized"] is True
+    assert state["status"] == "completed"
+    assert state["completion_reason"] == "vision_realized"
+    assert read["loop_state"] == "completed"
+    assert read["vision_band"] == "green"
+    assert read["next_likely_move"] == "complete: vision_realized"
+    assert read["continuation_required"] is False
+    assert read["continuation_reason"] == "vision_realized"
+    assert read["completion_reason"] == "vision_realized"
+    assert read["stop_reason"] is None
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "vision_realized"
+    assert decision["architect_judgment"]["residual_risk"] == (
+        "Campaign reached its completion condition; open a fresh budget to continue."
+    )
+
+
+def test_existing_green_active_state_reads_as_completed_not_blocked(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert status["status"] == "completed"
+    assert status["raw_status"] == "active"
+    assert status["stop_reason"] is None
+    assert status["completion_reason"] == "vision_realized"
+    assert read["next_likely_move"] == "complete: vision_realized"
+    assert read["residual_risk"] == (
+        "Campaign reached its completion condition; open a fresh budget to continue."
+    )
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "vision_realized"
+
+
+def test_completed_loop_read_ignores_unrelated_active_scope(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "session_id": "unrelated-active-scope",
+        },
+    )
+
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert status["status"] == "completed"
+    assert status["active_scope_id"] == "unrelated-active-scope"
+    assert status["completion_reason"] == "vision_realized"
+    assert status["stop_reason"] is None
+    assert read["next_likely_move"] == "complete: vision_realized"
+
+
 def test_active_scope_blocks_next_iteration(tmp_path: Path) -> None:
     state_path = _state(tmp_path)
     scope_path = tmp_path / ".azoth/scope-gate.json"

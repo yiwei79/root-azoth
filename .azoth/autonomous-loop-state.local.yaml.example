@@ -26,10 +26,32 @@ queue: []
 self_capture_queue: []
 alignment_packets: []
 alignment_dispositions: []
+vision:
+  anchor: .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+  target_band: green
+  current_band: unevaluated
+  realized: false
+  updated_at: null
+  note: Vision score is unevaluated until an autonomous-auto closeout records it.
+  declaration:
+    status: approved
+    summary: Concise campaign vision approved after the in-session declaration discussion.
+    selected_seed: repo-best-next
+    selected_seed_type: operator-approved
+    scope_notes: Keep the campaign vision-bounded and branch-local.
+    allowed_actions:
+      - research_initiative
+      - refine_proposal
+      - hydrate_task
+      - ship_task
+      - capture_self_improvement
+    approval_basis: Operator approved the campaign vision declaration.
+    locked_at: null
 history: []
 next_candidate:
   status: empty
   note: Optional preview/hold field for the next architect decision; status reads it but decide-next remains authoritative.
+completion_reason: null
 stop_reason: null
 automation:
   recommended_driver: codex-cron

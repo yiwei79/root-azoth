@@ -344,9 +344,7 @@ def test_builder_posture_projects_to_agent_transforms() -> None:
 
 def test_orchestrator_stage0_checkpoint_projects_to_agent_transforms() -> None:
     agents = load_agents(Path(__file__).resolve().parent.parent)
-    orchestrator = next(
-        agent for agent in agents if agent["meta"].get("name") == "orchestrator"
-    )
+    orchestrator = next(agent for agent in agents if agent["meta"].get("name") == "orchestrator")
     outputs = {
         "claude": transform_agent_claude(orchestrator),
         "copilot": transform_agent_copilot(orchestrator),
@@ -581,7 +579,9 @@ def _write_codex_templates(root: Path) -> None:
         encoding="utf-8",
     )
     (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
-    (adapter / "hooks.verbose.json.template").write_text('{"hooks": {"SessionStart": []}}\n', encoding="utf-8")
+    (adapter / "hooks.verbose.json.template").write_text(
+        '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+    )
     (adapter / "azoth-seamless.star.template").write_text(
         'prefix_rule(pattern=["git", "status"])\n',
         encoding="utf-8",
@@ -729,7 +729,9 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         n, _ = deploy_codex_adapter(root, dry_run=False)
         assert n == 6
         assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
-        assert (root / ".codex" / "config.seamless.toml").read_text(encoding="utf-8") == seamless_config
+        assert (root / ".codex" / "config.seamless.toml").read_text(
+            encoding="utf-8"
+        ) == seamless_config
         assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
         assert (root / ".codex" / "hooks.verbose.json").read_text(encoding="utf-8") == verbose_hooks
         assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
@@ -783,7 +785,9 @@ def test_deploy_codex_adapter_ignores_local_permission_marker_for_tracked_output
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
-        seamless_config = 'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n'
+        seamless_config = (
+            'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n'
+        )
         hooks = '{"hooks": {}}\n'
         verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
         rules = 'prefix_rule(pattern=["git", "status"])\n'
@@ -801,7 +805,9 @@ def test_deploy_codex_adapter_ignores_local_permission_marker_for_tracked_output
 
         assert n == 6
         assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
-        assert (root / ".codex" / "config.seamless.toml").read_text(encoding="utf-8") == seamless_config
+        assert (root / ".codex" / "config.seamless.toml").read_text(
+            encoding="utf-8"
+        ) == seamless_config
         assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
         assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
             encoding="utf-8"
@@ -1370,18 +1376,14 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
 
 
 def test_dynamic_full_auto_does_not_define_autonomous_self_development_mode() -> None:
-    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert "## Autonomous Self-Development Mode" not in content
     assert "operator lines are not sequential gates" not in content
     assert "alignment packets" not in content
 
 
 def test_autonomous_auto_defines_standalone_async_self_development_mode() -> None:
-    content = (_REPO_ROOT / "skills" / "autonomous-auto" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    content = (_REPO_ROOT / "skills" / "autonomous-auto" / "SKILL.md").read_text(encoding="utf-8")
     for needle in (
         "## Autonomous Auto Mode",
         "selected mode = `autonomous-auto`",
@@ -1394,10 +1396,15 @@ def test_autonomous_auto_defines_standalone_async_self_development_mode() -> Non
         "branch-local autonomy budget",
         "adaptive pipeline",
         "pipeline_command=autonomous-auto",
+        "Vision Declaration",
+        "simple operator prompts",
+        "vision.declaration",
+        "--vision-declaration-json",
         "UX Anchor Fit",
         "UX Anchor Scorecard",
         "status --operator-read",
         "record-alignment",
+        "record-vision-score",
         "materialize-self-capture",
         "architect decision capsule",
     ):
@@ -1420,9 +1427,7 @@ def test_autonomous_auto_reaches_entrypoint_and_skill_mirrors() -> None:
 
 
 def test_subagent_router_includes_autonomous_auto_in_bl011_bl012_contracts() -> None:
-    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
     for needle in (
         "pipeline: autonomous-auto | deliver-full | deliver | auto",
         "approved pattern for `/auto`, `/autonomous-auto`, `/deliver`, and",

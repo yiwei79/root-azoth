@@ -304,6 +304,17 @@ def validate_ledger(data: dict) -> list[str]:
             errors.append(
                 f"{prefix}: pause_reason {pause_reason!r} not in {sorted(_PAUSE_REASON_ENUM)}"
             )
+        if status in {"complete", "failed"}:
+            stale_fields = [
+                field
+                for field in ("active_stage_id", "pending_stage_ids", "pause_reason")
+                if field in entry
+            ]
+            if stale_fields:
+                errors.append(
+                    f"{prefix}: terminal status {status!r} must not keep resumable fields: "
+                    f"{', '.join(stale_fields)}"
+                )
 
         for field_name, timestamp_field, extra_required in (
             ("stage_spawns", "spawned_at", ()),
@@ -903,6 +914,11 @@ def upsert_run(
             entry["pause_reason"] = pause_reason
         else:
             entry.pop("pause_reason", None)
+
+    if status in {"complete", "failed"}:
+        entry.pop("active_stage_id", None)
+        entry.pop("pending_stage_ids", None)
+        entry.pop("pause_reason", None)
 
     if wave_entry is not _UNSET:
         if wave_entry is not None:
