@@ -4,7 +4,7 @@ initiative_id: INI-AUTO-001
 title: Autonomous initiative lifecycle orchestration
 status: active_refinement
 created_at: "2026-04-25T12:10:00+00:00"
-updated_at: "2026-04-25T14:18:00Z"
+updated_at: "2026-04-25T21:30:00Z"
 owner: codex
 source_sessions:
   - session_id: 2026-04-25-autonomous-initiative-lifecycle-seed
@@ -39,6 +39,7 @@ source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
   - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
   - .azoth/proposals/planning-banks-layer.yaml
+  - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
 research_questions:
   - question_id: rq-auto-001-001
     question: What does "throw an initiative at Azoth" mean as a safe input contract?
@@ -115,6 +116,25 @@ research_questions:
       - scripts/autonomous_loop.py
       - .azoth/scope-gate.json
       - .azoth/handoffs/2026-04-25-autonomous-auto-development-handoff.md
+  - question_id: rq-auto-001-005
+    question: How should autonomous-auto evaluate completed campaigns and prove learning closure?
+    status: active
+    opened_at: "2026-04-25T21:30:00Z"
+    needed_for: campaign_evaluation_learning_closure
+    answer: >
+      The next layer should treat each autonomous-auto campaign as a lifecycle
+      object with declaration, route decisions, child scopes, delegation plans,
+      run-ledger stage evidence, evaluator outputs, changed artifacts, closeout
+      episodes, lessons, follow-on tasks, commits, and later reinforcement
+      evidence. The first buildable form should be a read-only campaign audit
+      report, followed by a learning-closure ledger only after the report proves
+      which repo-native artifacts are reliable enough to join.
+    evidence_refs:
+      - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
+      - .azoth/autonomous-loop-state.local.yaml
+      - scripts/autonomous_loop.py
+      - scripts/run_ledger.py
+      - .azoth/memory/episodes.jsonl
 research_refs: []
 local_findings:
   - finding_id: lf-auto-001-001
@@ -162,6 +182,15 @@ local_findings:
     evidence_refs:
       - scripts/autonomous_loop.py
       - .agents/skills/autonomous-auto/SKILL.md
+  - finding_id: lf-auto-001-008
+    status: active
+    summary: Autonomous-auto has enough repo-native traces for manual campaign audit, but lacks a joined campaign-evaluation spine that can turn traces into reliable cross-campaign learning-closure data.
+    evidence_refs:
+      - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
+      - .azoth/autonomous-loop-state.local.yaml
+      - scripts/autonomous_loop.py
+      - scripts/run_ledger.py
+      - .azoth/memory/episodes.jsonl
 external_findings: []
 assumptions:
   - assumption_id: as-auto-001-001
@@ -590,6 +619,54 @@ candidate_slices:
       - Do not repeat hydration for T-026 or any completed candidate.
       - Do not bypass evaluator evidence, protected gates, active run checks, or write-claim checks.
     open_questions: []
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-f
+    proposed_task_id: T-AUTO-F
+    title: Autonomous-auto campaign evaluation and learning closure spine
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Add a read-only campaign audit and learning-closure surface that joins
+      autonomous-auto loop state, child scopes, run-ledger stage evidence,
+      evaluator outputs, closeout episodes, lessons, artifacts, commits, tests,
+      and follow-on changes into one traceability report.
+    placement_decision:
+      disposition: dedicated_campaign_audit_report_before_any_writer
+      rationale: >
+        Start as an evaluator/reporting layer, not as a new planner or writer.
+        The system already has trace fragments; the missing slice is the
+        normalized join that can prove where evidence is reliable, where it is
+        missing, and which lessons actually closed through proposal/task/code
+        or instruction changes.
+    acceptance_criteria:
+      - The report reconstructs a completed autonomous-auto campaign's declaration, budget, route decisions, child-scope timeline, completion reason, and vision score.
+      - The report compares each child scope's delegation_plan against observed run-ledger stage_spawns and stage_summaries.
+      - The report surfaces evaluator scores, UX Anchor Scorecards, verification commands, residual risks, changed artifacts, and closeout episode ids when available.
+      - The report emits learning-closure rows that classify lessons as observed, captured, triaged, planned, implemented, verified, reinforced, stale, or missing-evidence.
+      - The report distinguishes repo-native evidence from chat-only or missing evidence so downstream insight mining can be trusted.
+      - The report recommends the next safe route without opening work or mutating planning state.
+    research_evidence_refs:
+      - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
+      - .azoth/autonomous-loop-state.local.yaml
+      - scripts/autonomous_loop.py
+      - scripts/run_ledger.py
+      - .azoth/memory/episodes.jsonl
+      - .azoth/inbox/session-reflection-2026-04-25-autonomous-auto-campaign-report.jsonl
+      - .azoth/inbox/session-reflection-2026-04-25-autonomous-auto-ledger-serialization.jsonl
+      - .azoth/proposals/run-ledger-atomic-stage-evidence.yaml
+    known_non_goals:
+      - Do not mutate roadmap, backlog, specs, memory, or loop state from the audit report.
+      - Do not replace campaign-report, lifecycle-report, closeout, or planning_bank_validate.py.
+      - Do not require non-repo chat transcripts for the first implementation slice.
+      - Do not automatically open follow-on work from audit findings.
+      - Do not score traceability as passing when evaluator evidence or subagent summaries are missing.
+    open_questions:
+      - Which artifact is authoritative for completed child-scope stage summaries after run-ledger local state is no longer active?
+      - How should chat-only subagent reasoning be represented without pretending it is repo-native evidence?
+      - What minimum fields make a learning-closure row safe enough for automatic routing?
+      - Should the first command live in scripts/autonomous_loop.py or a dedicated campaign-audit helper?
     recommended_phase: v0.2.0-p3
 readiness:
   evaluated_at: "2026-04-25T20:06:11Z"
