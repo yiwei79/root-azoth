@@ -47,10 +47,13 @@ At session start, declare:
 
 - goal
 - selected mode = `dynamic-full-auto`
+- optional autonomy_mode, e.g. `autonomous-self-development`
+- alignment_mode, e.g. `async` when the operator has approved non-sequential alignment
 - replay threshold
 - whether discovery / evidence insertion may happen automatically
 - recomposition stop conditions
 - required human-gate boundaries
+- approval_basis for any branch-local autonomous approval fields
 
 After approval, the orchestrator may continue end-to-end until a required human gate,
 threshold stop, or explicit abort condition is reached.
@@ -61,6 +64,41 @@ threshold stop, or explicit abort condition is reached.
 
 Align `<active_roadmap_version>` with `.azoth/roadmap.yaml` top-level `active_version` (D48).
 
+## Autonomous Self-Development Mode
+
+`autonomy_mode: autonomous-self-development` is a branch-local submode of
+`dynamic-full-auto` for Azoth improving Azoth. Use it only when the operator explicitly
+grants a branch-local autonomy budget, and record the reason in `approval_basis` on every
+scope gate, initiative readiness field, hydration decision, or closeout artifact that
+would otherwise look like a fresh human approval.
+
+When the budget declares `alignment_mode: async`, operator lines are not sequential gates.
+Treat later human messages as **alignment packets** that can arrive while non-blocked work
+continues. The orchestrator polls for them at stage boundaries, after discovery/research
+waves, before first write in a new artifact class, before bounded replay, and before
+closeout. Apply each packet at the next safe checkpoint; do not rewind completed work unless
+the packet invalidates scope, acceptance, or safety.
+
+Classify each alignment packet before acting:
+
+- `async_advisory` — preference, emphasis, or ranking signal. Record the disposition in the
+  stage summary or artifact note and continue.
+- `async_override` — changes scope, acceptance, non-goals, branch target, or task priority.
+  Apply at the next safe checkpoint; if it conflicts with completed work, open a bounded
+  replay or split a follow-on scope instead of silently rewriting history.
+- `async_stop` — explicit stop/abort/no, kernel/M1/governance expansion, destructive action,
+  network or credential blocker, or any protected human gate. Stop before the affected edge
+  and ask for a fresh decision.
+- `approval_basis` — the packet supplies or updates the branch-local autonomy basis. Persist
+  it beside any `human_decision: approved` or gate field it supports.
+
+This submode keeps the adaptive graph live: research, exploration, hydration, implementation,
+evaluation, bounded replay, and closeout may proceed under the same branch-local autonomy
+budget while async alignment is pending. It does not skip mechanical scope/pipeline gates,
+write claims, run-ledger evidence, final safety checks, or kernel/governance/M1 approvals.
+The phrase "no human gate" only means no sequential chat turn is required for already-scoped
+branch-local self-development edges; protected gates still fail closed.
+
 ## Prerequisites
 
 Before running DYNAMIC-FULL-AUTO+ end-to-end:
@@ -68,7 +106,7 @@ Before running DYNAMIC-FULL-AUTO+ end-to-end:
 - **Scope** — A valid `.azoth/scope-gate.json` (and `.azoth/pipeline-gate.json` when delivery is governed or `target_layer: M1`) before **any** `Write/Edit`, including digest updates (`append-pack` outcomes committed to disk). Discovery waves are read-mostly, but mutating the digest file is a write.
 - **Roadmap alignment** — Digest path matches `active_version` in `.azoth/roadmap.yaml` (D48).
 - **Orchestration** — Ability to spawn parallel `Task` / `Agent` workers per wave (BL-011); queen merges in the orchestrator thread.
-- **Human** — Available for **Checkpoint Γ** pipeline declaration and for any review stop; for **delivery** after handoff, same gates as `/auto` / `/deliver` / `/deliver-full`.
+- **Human** — Available for **Checkpoint Γ** pipeline declaration and for any review stop; for **delivery** after handoff, same gates as `/auto` / `/deliver` / `/deliver-full`. In `alignment_mode: async`, Checkpoint Γ may proceed under the recorded branch-local autonomy budget unless an `async_stop` packet or protected gate is present.
 - **Cursor** — Third-party rules/skills toggle enabled where applicable; **no** PreToolUse hooks — simulate scope-gate / pipeline-gate checks before every write (`.cursor/rules/claude-code-parity.mdc`).
 
 ## Non-goals (this skill / P1-012 slice)

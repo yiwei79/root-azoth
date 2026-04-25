@@ -1369,6 +1369,36 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
     assert "max_threads: 10, max_depth: 2" in content
 
 
+def test_dynamic_full_auto_defines_async_autonomous_self_development_mode() -> None:
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    for needle in (
+        "## Autonomous Self-Development Mode",
+        "alignment_mode: async",
+        "operator lines are not sequential gates",
+        "alignment packets",
+        "approval_basis",
+        "next safe checkpoint",
+        "async_stop",
+        "branch-local autonomy budget",
+    ):
+        assert needle in content, f"dynamic-full-auto skill missing {needle!r}"
+
+
+def test_dynamic_full_auto_async_mode_reaches_entrypoint_and_skill_mirrors() -> None:
+    for rel in (
+        ".claude/commands/dynamic-full-auto.md",
+        ".github/prompts/dynamic-full-auto.prompt.md",
+        ".opencode/commands/dynamic-full-auto.md",
+        ".agents/skills/dynamic-full-auto/SKILL.md",
+        ".opencode/skills/dynamic-full-auto/SKILL.md",
+    ):
+        content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "Autonomous Self-Development Mode" in content, f"{rel} missing mode marker"
+        assert "alignment_mode: async" in content, f"{rel} missing async alignment marker"
+
+
 def test_subagent_router_defines_execution_budget_for_bounded_nesting() -> None:
     content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
     for needle in (
