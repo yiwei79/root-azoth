@@ -621,17 +621,18 @@ candidate_slices:
     open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-f
-    proposed_task_id: T-AUTO-F
-    title: Autonomous-auto campaign evaluation and learning closure spine
+    proposed_task_id: T-029
+    title: Autonomous-auto campaign audit report
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: hydrated
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: >
-      Add a read-only campaign audit and learning-closure surface that joins
-      autonomous-auto loop state, child scopes, run-ledger stage evidence,
-      evaluator outputs, closeout episodes, lessons, artifacts, commits, tests,
-      and follow-on changes into one traceability report.
+      Add the first read-only campaign audit report for autonomous-auto. The
+      report reconstructs completed campaigns, joins repo-native stage,
+      evaluator, closeout, lesson, artifact, commit, and test evidence,
+      classifies learning-closure rows, and recommends next safe routes without
+      mutating planning, loop, roadmap, backlog, spec, or memory state.
     placement_decision:
       disposition: dedicated_campaign_audit_report_before_any_writer
       rationale: >
@@ -647,6 +648,9 @@ candidate_slices:
       - The report emits learning-closure rows that classify lessons as observed, captured, triaged, planned, implemented, verified, reinforced, stale, or missing-evidence.
       - The report distinguishes repo-native evidence from chat-only or missing evidence so downstream insight mining can be trusted.
       - The report recommends the next safe route without opening work or mutating planning state.
+      - The report labels ambiguous fields with repo_native, chat_only, missing, or conflict provenance.
+      - The report refuses to mark a lesson as reinforced unless a later campaign shows changed behavior or reduced recurrence.
+      - The implementation exposes a thin `scripts/autonomous_loop.py campaign-audit --loop-id <id> --json` command while keeping heavy join logic eligible for a dedicated helper/module.
     research_evidence_refs:
       - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
       - .azoth/autonomous-loop-state.local.yaml
@@ -662,32 +666,76 @@ candidate_slices:
       - Do not require non-repo chat transcripts for the first implementation slice.
       - Do not automatically open follow-on work from audit findings.
       - Do not score traceability as passing when evaluator evidence or subagent summaries are missing.
-    open_questions:
-      - Which artifact is authoritative for completed child-scope stage summaries after run-ledger local state is no longer active?
-      - How should chat-only subagent reasoning be represented without pretending it is repo-native evidence?
-      - What minimum fields make a learning-closure row safe enough for automatic routing?
-      - Should the first command live in scripts/autonomous_loop.py or a dedicated campaign-audit helper?
+    resolved_open_questions:
+      - question: Which artifact is authoritative for completed child-scope stage summaries after run-ledger local state is no longer active?
+        decision: run_ledger_stage_rows_are_primary_when_present
+        note: Closeout episodes, handoffs, and campaign-report output are historical support; delegation_plan alone is not execution proof.
+      - question: How should chat-only subagent reasoning be represented without pretending it is repo-native evidence?
+        decision: label_chat_only_as_non_durable_context
+        note: Chat-only reasoning may inform residual-risk text but must not count as repo-native traceability evidence.
+      - question: What minimum fields make a learning-closure row safe enough for automatic routing?
+        decision: require_lesson_source_state_refs_provenance_verification_residual_risk_and_route
+        note: Reinforced requires later-campaign behavior evidence, not implementation or verification alone.
+      - question: Should the first command live in scripts/autonomous_loop.py or a dedicated campaign-audit helper?
+        decision: thin_autonomous_loop_cli_with_future_helper_boundary
+        note: autonomous_loop.py should expose the discoverable CLI; heavy joins may move to a dedicated helper/module.
+    implementation_assumptions:
+      - The first implementation slice is read-only and stdout-first.
+      - Historical scope-gate payloads may be recovered from closeout episodes or handoffs when the live scope gate has moved on.
+      - Missing evaluator scores, UX scorecards, verification commands, or subagent summaries must appear as residual risks rather than passing evidence.
+    sample_audit_findings:
+      - campaign: Initiative Lifecycle Discoverability Spine
+        expected_findings:
+          - rich staged evidence exists
+          - ledger ordering, duplicate-summary, or replay complexity must be visible when present
+          - completed or stale campaign state must remain non-continuation authority
+      - campaign: Run-Ledger Atomic Stage Evidence
+        expected_findings:
+          - capture/refine/hydrate/ship progression is reconstructable
+          - run-ledger stage evidence is cleaner after serialization work
+          - evaluator scores, UX scorecards, and exact verification details are still not uniformly typed
+    hydration_plan:
+      mode: executed
+      proposed_title: Autonomous-auto campaign audit report
+      proposed_task_kind: roadmap_backed_task
+      expected_task_ref_at_review_time: T-029
+      approval_scope_required: hydration_specific_slice_auto_001_f
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-f, the read-only campaign-audit command contract, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Autonomous-auto campaign audit report" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-f --description "Implement a read-only autonomous-auto campaign audit report that reconstructs completed campaigns, joins repo-native stage/evaluator/closeout evidence, classifies learning-closure rows, and recommends next safe routes without mutating planning, loop, roadmap, backlog, spec, or memory state." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - readiness_status is ready_to_hydrate
+        - approval_scope is hydration_specific_slice_auto_001_f
+        - approval_basis names INI-AUTO-001, slice-auto-001-f, and the exact scaffold command
+        - manual sample audits cover Initiative Lifecycle Discoverability Spine and Run-Ledger Atomic Stage Evidence campaigns
+        - evaluator evidence is recorded
+        - current readiness child is closed and write claim is released
+        - no protected gate, active scope, stale budget, or active write claim blocks the write edge
+      hydrated_task_ref: T-029
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-029.yaml
+      hydrated_at: "2026-04-25T22:00:00Z"
+    open_questions: []
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-25T20:06:11Z"
+  evaluated_at: "2026-04-25T21:58:00Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   readiness_status: continue_research
-  goal_clarity: lifecycle_discoverability_spine_hydrated_for_separate_delivery
-  evidence_coverage: slice_e_hydrated_to_t_027_without_implementation
-  freshness_status: reconciled_after_slice_e_hydration
+  goal_clarity: campaign_audit_report_hydrated_as_t_029
+  evidence_coverage: proposal_refined_sample_expectations_recorded_and_task_spec_created
+  freshness_status: reconciled_after_slice_f_hydration
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-auto-001-e
+  candidate_first_slice: slice-auto-001-f
   target_layer: infrastructure
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: deliver_T_027_only_after_separate_scoped_delivery
-  next_candidate_ref: slice-auto-001-e
-  hydration_recommendation: Slice-auto-001-e is hydrated as T-027; do not hydrate again or implement the lifecycle discoverability report in this hydration child.
+  next_readiness_gate: deliver_T_029_only_after_separate_scoped_delivery_child
+  next_candidate_ref: slice-auto-001-f
+  hydration_recommendation: Slice-auto-001-f is hydrated as T-029; do not hydrate again or implement the campaign audit report in the hydration child.
   human_decision: approved
-  approval_scope: hydration_specific_slice_auto_001_e
-  approval_basis: Operator locked the Initiative Lifecycle Discoverability Spine Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-e and approved readiness refinement toward a later hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard`; approval covers readiness promotion and later roadmap/backlog/spec hydration only, and excludes implementation in this child, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, repeat T-026 hydration, and cross-branch work.
+  approval_scope: hydration_specific_slice_auto_001_f
+  approval_basis: Operator locked the Autonomous-Auto Campaign Evaluation & Learning Closure Spine campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-f. Approval covers a later hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Autonomous-auto campaign audit report" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-f --description "Implement a read-only autonomous-auto campaign audit report that reconstructs completed campaigns, joins repo-native stage/evaluator/closeout evidence, classifies learning-closure rows, and recommends next safe routes without mutating planning, loop, roadmap, backlog, spec, or memory state." --target-layer infrastructure --delivery-pipeline standard`; approval excludes implementation in the hydration child, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work.
 hydration_history:
   - hydrated_at: "2026-04-25T13:43:00Z"
     session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1
@@ -737,3 +785,15 @@ hydration_history:
     scaffold_command: >
       python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard
     result: Created roadmap/backlog/spec artifacts for T-027 and linked them to INI-AUTO-001; no implementation or shipping work was performed.
+  - hydrated_at: "2026-04-25T22:00:00Z"
+    session_id: 2026-04-25-autonomous-auto-slice-auto-001-f-4
+    candidate_slice_ref: slice-auto-001-f
+    task_ref: T-029
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-029.yaml
+    backlog_ref: T-029
+    roadmap_ref: T-029
+    approval_scope: hydration_specific_slice_auto_001_f
+    approval_basis: Operator locked the Autonomous-Auto Campaign Evaluation & Learning Closure Spine campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-f; approval covers the exact roadmap_scaffold.py command for hydration only and excludes implementation, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work.
+    scaffold_command: >
+      python3 scripts/roadmap_scaffold.py --title "Autonomous-auto campaign audit report" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-f --description "Implement a read-only autonomous-auto campaign audit report that reconstructs completed campaigns, joins repo-native stage/evaluator/closeout evidence, classifies learning-closure rows, and recommends next safe routes without mutating planning, loop, roadmap, backlog, spec, or memory state." --target-layer infrastructure --delivery-pipeline standard
+    result: Created roadmap/backlog/spec artifacts for T-029 and linked them to INI-AUTO-001; no implementation or shipping work was performed.

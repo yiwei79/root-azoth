@@ -3219,3 +3219,25 @@ items:
   - D46
   - D50
   - D52
+- id: T-029
+  title: Autonomous-auto campaign audit report
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-f
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  description: Implement a read-only autonomous-auto campaign audit report that reconstructs
+    completed campaigns, joins repo-native stage/evaluator/closeout evidence, classifies
+    learning-closure rows, and recommends next safe routes without mutating planning,
+    loop, roadmap, backlog, spec, or memory state.
+  roadmap_ref: T-029
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D21
+  - D23
+  - D48
+  - D50
+  - D52

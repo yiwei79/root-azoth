@@ -1,0 +1,67 @@
+id: T-029
+roadmap_version: v0.2.0
+title: Autonomous-auto campaign audit report
+decision_ref:
+- D11
+- D21
+- D23
+- D48
+- D50
+- D52
+intent: Implement a read-only autonomous-auto campaign audit report that reconstructs
+  completed campaigns from repo-native artifacts and classifies traceability,
+  learning-closure, residual-risk, and next-route evidence without opening work
+  or mutating planning state.
+problem: Autonomous-auto campaigns now leave useful traces across loop state,
+  scope gates, run-ledger stage evidence, closeout episodes, inbox reflections,
+  initiative/proposal/task artifacts, commits, and tests, but the repo lacks a
+  joined audit surface that can answer whether agent decisions are traceable and
+  whether self-improvement lessons actually closed.
+scope:
+- Add a thin operator-facing campaign-audit command surface, expected as
+  `python3 scripts/autonomous_loop.py campaign-audit --loop-id <id> --json`.
+- Reconstruct campaign declaration, autonomy budget, selected seed, route
+  decisions, child-scope timeline, completion reason, and vision score from
+  repo-native artifacts.
+- Join run-ledger stage_spawns/stage_summaries, evaluator evidence, closeout
+  episodes, verification commands, changed artifacts, lessons, and follow-on
+  planning/task/code refs into one report.
+- Label ambiguous fields with repo_native, chat_only, missing, or conflict
+  provenance.
+- Keep heavy join/parsing logic eligible for a dedicated helper/module instead
+  of turning autonomous_loop.py into a reporting monolith.
+non_goals:
+- Do not mutate roadmap, backlog, specs, memory, loop state, gates, or run
+  ledger from the audit report.
+- Do not open follow-on work or treat stale completed-campaign evidence as
+  continuation authority.
+- Do not replace campaign-report, lifecycle-report, closeout, or
+  planning_bank_validate.py.
+- Do not depend on non-repo chat transcripts for the first implementation
+  slice.
+- Do not mark traceability as passing when evaluator evidence, subagent
+  summaries, verification, or closeout evidence is missing.
+acceptance:
+- The report identifies campaign objective, loop id, budget, iteration count,
+  completion reason, vision band, approval basis, and stop conditions.
+- The report lists child scopes with action, candidate id, route rationale,
+  stage plan, stage spawn/summary evidence, evaluator disposition, verification,
+  changed artifacts, and closeout episode id when available.
+- The report computes learning-closure rows with observed, captured, triaged,
+  planned, implemented, verified, reinforced, stale_or_rejected, or
+  missing_evidence states.
+- Reinforced requires later-campaign behavior evidence or reduced recurrence;
+  implementation or verification alone is not enough.
+- The report distinguishes repo-native, chat-only, missing, and conflicting
+  evidence and carries missing/conflicting data as residual risk.
+- The report emits a next-route recommendation with confidence and residual
+  risks without opening work or mutating state.
+- Focused tests cover at least the Initiative Lifecycle Discoverability Spine
+  and Run-Ledger Atomic Stage Evidence sample cases or equivalent fixture data.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.
