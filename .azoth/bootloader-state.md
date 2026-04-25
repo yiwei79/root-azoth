@@ -4,12 +4,12 @@
 0.1.3.53 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 53
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-t-025-2
-- **Goal**: Hydrate T-025 under INI-PLT-006 with canonical surfaces, fallback semantics, audit trace, and anti-leak acceptance tests.
+- **Session**: 2026-04-25-autonomous-auto-t-025-1
+- **Goal**: Ship the T-025 runtime resolver implementation after pre-implementation gate confirmation.
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-412 (success)
+- **Episode**: ep-413 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
