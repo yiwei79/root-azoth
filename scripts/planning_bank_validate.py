@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -77,6 +78,7 @@ INITIATIVE_SLICE_REQUIRED_FIELDS = {
 DESIGN_READINESS = {"continue_refinement", "ready_to_route", "defer", "reject"}
 INITIATIVE_READINESS = {"continue_research", "ready_to_hydrate", "defer", "reject"}
 INITIATIVE_SLICE_STATUS = {"candidate", "hydrated", "complete", "parked", "rejected"}
+DESIGN_BANK_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 INITIATIVE_SLICE_STRING_FIELDS = {
     "candidate_id",
@@ -169,6 +171,11 @@ def validate_design_bank(path: Path, *, repo_root: Path = ROOT) -> None:
         raise PlanningBankValidationError(f"{rel}: schema_version must be 1")
     if doc.get("bank_type") != "design":
         raise PlanningBankValidationError(f"{rel}: bank_type must be 'design'")
+    bank_id = _require_string(doc, "id", label=str(rel))
+    if not DESIGN_BANK_ID_RE.fullmatch(bank_id):
+        raise PlanningBankValidationError(f"{rel}: id must be slug-style lowercase kebab-case")
+    if bank_id != rel.stem:
+        raise PlanningBankValidationError(f"{rel}: id must match filename stem")
     for key in (
         "source_proposal_refs",
         "related_initiative_refs",
@@ -202,6 +209,9 @@ def validate_initiative_bank(path: Path, *, repo_root: Path = ROOT) -> None:
         raise PlanningBankValidationError(f"{rel}: schema_version must be 1")
     if doc.get("bank_type") != "initiative":
         raise PlanningBankValidationError(f"{rel}: bank_type must be 'initiative'")
+    initiative_id = _require_string(doc, "initiative_id", label=str(rel))
+    if initiative_id != rel.stem:
+        raise PlanningBankValidationError(f"{rel}: initiative_id must match filename stem")
     for key in (
         "contacts",
         "source_proposal_refs",
@@ -222,7 +232,6 @@ def validate_initiative_bank(path: Path, *, repo_root: Path = ROOT) -> None:
         allowed=INITIATIVE_READINESS,
         ready_status="ready_to_hydrate",
     )
-    initiative_id = doc.get("initiative_id")
     candidate_ids: set[str] = set()
     for index, candidate in enumerate(doc.get("candidate_slices") or []):
         if not isinstance(candidate, dict):
@@ -415,6 +424,90 @@ def validate_roadmap_refs(*, repo_root: Path = ROOT) -> None:
             raise PlanningBankValidationError(
                 f".azoth/roadmap.yaml: authoritative proposal ref points at ignored/untracked file: {ref}"
             )
+    for initiative in roadmap.get("initiatives") or []:
+        if not isinstance(initiative, dict):
+            continue
+        initiative_id = str(initiative.get("id") or "").strip()
+        bank_ref = str(initiative.get("initiative_bank_ref") or "").strip()
+        if not bank_ref:
+            continue
+        bank_path = repo_root / bank_ref
+        if not bank_path.exists():
+            raise PlanningBankValidationError(
+                f".azoth/roadmap.yaml: initiative_bank_ref for {initiative_id} is missing: {bank_ref}"
+            )
+        validate_initiative_bank(bank_path, repo_root=repo_root)
+        bank = _load_yaml(bank_path)
+        if bank.get("initiative_id") != initiative_id:
+            raise PlanningBankValidationError(
+                f".azoth/roadmap.yaml: initiative_bank_ref for {initiative_id} points at bank for {bank.get('initiative_id')!r}"
+            )
+
+
+def build_planning_bank_coverage_report(repo_root: Path = ROOT) -> dict[str, Any]:
+    roadmap = _load_yaml(repo_root / ".azoth" / "roadmap.yaml")
+    initiatives: list[dict[str, Any]] = []
+    required = covered = missing_required = invalid_required = 0
+    not_required = 0
+
+    for initiative in roadmap.get("initiatives") or []:
+        if not isinstance(initiative, dict):
+            continue
+        initiative_id = str(initiative.get("id") or "").strip()
+        if not initiative_id:
+            continue
+        bank_ref = str(initiative.get("initiative_bank_ref") or "").strip()
+        coverage_required = bool(bank_ref)
+        item: dict[str, Any] = {
+            "initiative_id": initiative_id,
+            "phase": initiative.get("phase"),
+            "initiative_bank_ref": bank_ref or None,
+            "coverage_required": coverage_required,
+            "covered": False,
+            "status": "not_required",
+        }
+
+        if not coverage_required:
+            not_required += 1
+            initiatives.append(item)
+            continue
+
+        required += 1
+        bank_path = repo_root / bank_ref
+        if not bank_path.exists():
+            missing_required += 1
+            item["status"] = "missing"
+            item["error"] = f"{bank_ref} does not exist"
+            initiatives.append(item)
+            continue
+
+        try:
+            validate_initiative_bank(bank_path, repo_root=repo_root)
+            bank = _load_yaml(bank_path)
+            if bank.get("initiative_id") != initiative_id:
+                raise PlanningBankValidationError(
+                    f"bank initiative_id {bank.get('initiative_id')!r} does not match {initiative_id!r}"
+                )
+        except PlanningBankValidationError as exc:
+            invalid_required += 1
+            item["status"] = "invalid"
+            item["error"] = str(exc)
+        else:
+            covered += 1
+            item["covered"] = True
+            item["status"] = "covered"
+        initiatives.append(item)
+
+    return {
+        "summary": {
+            "required": required,
+            "covered": covered,
+            "missing_required": missing_required,
+            "invalid_required": invalid_required,
+            "not_required": not_required,
+        },
+        "initiatives": initiatives,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -435,6 +528,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Reject authoritative roadmap refs to ignored/untracked proposal files.",
     )
+    parser.add_argument(
+        "--coverage-report",
+        action="store_true",
+        help="Print a read-only planning-bank coverage report as YAML.",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -448,6 +546,10 @@ def main(argv: list[str] | None = None) -> int:
                 candidate_id=args.candidate_id,
             )
             print(yaml.safe_dump({"readiness_reports": [report]}, sort_keys=False), end="")
+            return 0
+        if args.coverage_report:
+            report = build_planning_bank_coverage_report()
+            print(yaml.safe_dump({"planning_bank_coverage": report}, sort_keys=False), end="")
             return 0
     except PlanningBankValidationError as exc:
         print(f"planning_bank_validate: {exc}", file=sys.stderr)

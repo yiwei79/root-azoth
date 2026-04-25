@@ -13,6 +13,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
+import planning_bank_validate  # noqa: E402
 from planning_bank_validate import (  # noqa: E402
     PlanningBankValidationError,
     build_initiative_readiness_report,
@@ -71,7 +72,7 @@ def test_ini_evi_002_candidate_slices_are_planning_evidence_only() -> None:
             assert candidate["known_non_goals"]
 
 
-def test_ini_evi_002_bank_second_slice_is_complete_after_delivery() -> None:
+def test_ini_evi_002_bank_third_slice_is_hydrated_for_delivery() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     readiness = bank.get("readiness")
     completed_candidate = next(
@@ -79,7 +80,7 @@ def test_ini_evi_002_bank_second_slice_is_complete_after_delivery() -> None:
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-b"
     )
-    seeded_candidate = next(
+    hydrated_candidate = next(
         candidate
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-c"
@@ -87,19 +88,19 @@ def test_ini_evi_002_bank_second_slice_is_complete_after_delivery() -> None:
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
-    assert readiness["readiness_status"] == "continue_research"
-    assert readiness["human_decision"] == "approved_seed_only"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["human_decision"] == "approved"
     assert readiness["candidate_first_slice"] == "slice-evi-002-c"
-    assert readiness["next_readiness_gate"] == "research_refinement_before_hydration"
+    assert readiness["next_readiness_gate"] == "hydrated_as_t_021"
     assert bank["hydration_history"]
-    assert bank["hydration_history"][-1]["task_ref"] == "T-019"
+    assert bank["hydration_history"][-1]["task_ref"] == "T-021"
     assert completed_candidate["status"] == "complete"
     assert completed_candidate["proposed_task_id"] == "T-019"
     assert completed_candidate["acceptance_criteria"]
     assert completed_candidate["open_questions"] == []
-    assert seeded_candidate["status"] == "candidate"
-    assert seeded_candidate["proposed_task_id"] == "TBD-EVI-002-C"
-    assert seeded_candidate["open_questions"]
+    assert hydrated_candidate["status"] == "hydrated"
+    assert hydrated_candidate["proposed_task_id"] == "T-021"
+    assert hydrated_candidate["open_questions"] == []
 
 
 def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
@@ -107,20 +108,18 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
 
     assert report == {
         "initiative_id": "INI-EVI-002",
-        "readiness_status": "continue_research",
-        "human_decision": "approved_seed_only",
+        "readiness_status": "ready_to_hydrate",
+        "human_decision": "approved",
         "candidate_first_slice": "slice-evi-002-c",
         "candidate_id": "slice-evi-002-c",
-        "candidate_task_ref": "TBD-EVI-002-C",
-        "candidate_status": "candidate",
-        "acceptance_criteria_status": "seeded",
-        "non_goals_status": "seeded",
-        "freshness_status": "refreshed_after_t_020",
-        "hydration_recommendation": "Seeded slice-evi-002-c for research/refinement. Run /next or /start to discover the bank, then run a research/refinement session before any hydration.",
+        "candidate_task_ref": "T-021",
+        "candidate_status": "hydrated",
+        "acceptance_criteria_status": "stable",
+        "non_goals_status": "stable",
+        "freshness_status": "refreshed_for_branch_local_autonomous_test",
+        "hydration_recommendation": "Hydrated slice-evi-002-c as T-021 under the branch-local autonomous self-development test; next step is scoped delivery, not another raw candidate hydration.",
         "blocking_reasons": [
-            "readiness.readiness_status must be ready_to_hydrate",
-            "readiness.human_decision must be approved",
-            "candidate.open_questions must be empty",
+            "candidate.status is hydrated; no hydration action remains",
         ],
         "ready_to_hydrate": False,
     }
@@ -176,7 +175,7 @@ def test_readiness_report_can_target_completed_prior_candidate() -> None:
     assert "candidate.status is complete; no hydration action remains" in report["blocking_reasons"]
 
 
-def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
+def test_ini_evi_002_has_hydrated_third_slice_as_active_task() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     roadmap = _load_yaml(ROADMAP_PATH)
     backlog = _load_yaml(BACKLOG_PATH)
@@ -193,8 +192,8 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
     ]
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
-    assert initiative["phase"] is None
-    assert initiative["task_ref"] == "T-019"
+    assert initiative["phase"] == "v0.2.0-p3"
+    assert initiative["task_ref"] == "T-021"
     assert initiative["slices"] == [
         {
             "task_ref": "T-018",
@@ -209,6 +208,13 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
             "phase": "v0.2.0-p3",
             "status": "complete",
             "role": "historical",
+        },
+        {
+            "task_ref": "T-021",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-021.yaml",
+            "phase": "v0.2.0-p3",
+            "status": "active",
+            "role": "primary",
         },
     ]
     assert initiative["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
@@ -226,9 +232,9 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
         "T-018",
         "T-019",
     ]
-    assert seeded_candidate["proposed_task_id"] == "TBD-EVI-002-C"
-    assert seeded_candidate["status"] == "candidate"
-    assert hydrated_candidates == []
+    assert seeded_candidate["proposed_task_id"] == "T-021"
+    assert seeded_candidate["status"] == "hydrated"
+    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == ["T-021"]
 
     roadmap_task_ids = {
         str(task.get("id"))
@@ -249,6 +255,49 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
     assert "T-019" in roadmap_task_ids
     assert "T-019" in backlog_ids
     assert "T-019" in spec_ids
+    assert "T-021" in roadmap_task_ids
+    assert "T-021" in backlog_ids
+    assert "T-021" in spec_ids
+
+
+def test_design_bank_id_must_match_filename(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path = repo / ".azoth" / "design-banks" / "not-planning-banks-layer.yaml"
+    bank_path.parent.mkdir(parents=True)
+    bank = _load_yaml(DESIGN_BANK_PATH)
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match="id must match filename stem"):
+        validate_design_bank(bank_path, repo_root=repo)
+
+
+def test_initiative_bank_filename_must_match_initiative_id(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path = repo / ".azoth" / "initiative-banks" / "INI-WRONG.yaml"
+    bank_path.parent.mkdir(parents=True)
+    bank = _load_yaml(INITIATIVE_BANK_PATH)
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(
+        PlanningBankValidationError,
+        match="initiative_id must match filename stem",
+    ):
+        validate_initiative_bank(bank_path, repo_root=repo)
+
+
+def test_planning_bank_coverage_report_only_requires_declared_bank_refs() -> None:
+    report = planning_bank_validate.build_planning_bank_coverage_report(ROOT)
+    initiatives = {
+        item["initiative_id"]: item
+        for item in report["initiatives"]
+    }
+
+    assert initiatives["INI-EVI-002"]["coverage_required"] is True
+    assert initiatives["INI-EVI-002"]["covered"] is True
+    assert initiatives["INI-EVI-002"]["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
+    assert initiatives["INI-MEM-002"]["coverage_required"] is False
+    assert initiatives["INI-MEM-002"]["covered"] is False
+    assert report["summary"]["missing_required"] == 0
 
 
 def test_roadmap_has_no_authoritative_refs_to_ignored_proposal_inbox_files() -> None:
@@ -413,6 +462,34 @@ def test_validator_cli_readiness_report_is_read_only() -> None:
     )
 
     assert result.returncode == 0, result.stderr
+    assert before == {path: path.read_bytes() for path in guarded_paths}
+
+
+def test_validator_cli_coverage_report_is_read_only() -> None:
+    guarded_paths = [
+        DESIGN_BANK_PATH,
+        INITIATIVE_BANK_PATH,
+        ROADMAP_PATH,
+        BACKLOG_PATH,
+    ]
+    before = {path: path.read_bytes() for path in guarded_paths}
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "planning_bank_validate.py"),
+            "--coverage-report",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    output = yaml.safe_load(result.stdout)
+    assert set(output) == {"planning_bank_coverage"}
+    assert output["planning_bank_coverage"]["summary"]["missing_required"] == 0
     assert before == {path: path.read_bytes() for path in guarded_paths}
 
 
