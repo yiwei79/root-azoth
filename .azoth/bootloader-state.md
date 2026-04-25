@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.33 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 33
+0.1.3.34 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 34
 
 ## Last Session
-- **Session**: 2026-04-25-t-021
-- **Goal**: T-021: Planning-bank ID and coverage policy
+- **Session**: 2026-04-25-adhoc-autonomous-self-development-mode
+- **Goal**: AD-HOC: build autonomous self-development mode with async alignment
 - **Session mode**: delivery
-- **Pipeline**: auto
+- **Pipeline**: dynamic-full-auto
 - **Outcome**: closed
-- **Episode**: ep-384 (success)
+- **Episode**: ep-385 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
