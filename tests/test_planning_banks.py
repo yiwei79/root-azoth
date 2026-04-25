@@ -430,7 +430,7 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
             "task_ref": "T-022",
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-022.yaml",
             "phase": "v0.2.0-p3",
-            "status": "active",
+            "status": "complete",
             "role": "primary",
         },
     ]
@@ -453,9 +453,9 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
     assert hydrated_candidates == []
-    assert initiative["discovery_status"] == "plan_only_handoff_helper_hydrated"
-    assert "T-022 is hydrated" in initiative["next_discovery_action"]
-    assert "ship_task" in initiative["next_discovery_action"]
+    assert initiative["discovery_status"] == "plan_only_handoff_helper_complete"
+    assert "T-022 is complete" in initiative["next_discovery_action"]
+    assert "fresh budget" in initiative["next_discovery_action"]
 
     roadmap_task_ids = {
         str(task.get("id"))

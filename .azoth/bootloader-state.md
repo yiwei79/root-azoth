@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.44 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 44
+0.1.3.45 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 45
 
 ## Last Session
-- **Session**: 2026-04-25-autonomous-auto-plan-only-initiative-hydration-handoff-3
-- **Goal**: Hydrate a standard roadmap/backlog/task-spec handoff for the plan-only initiative hydration helper from the refined proposal; stop before implementation.
+- **Session**: 2026-04-25-autonomous-auto-t-022-4
+- **Goal**: Plan-only initiative hydration handoff helper
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-397 (success)
+- **Episode**: ep-398 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

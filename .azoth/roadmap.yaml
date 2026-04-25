@@ -507,18 +507,18 @@ initiatives:
   - task_ref: T-022
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
     phase: v0.2.0-p3
-    status: active
+    status: complete
     role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
   design_bank_refs:
   - .azoth/design-banks/planning-banks-layer.yaml
   research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
-  discovery_status: plan_only_handoff_helper_hydrated
+  discovery_status: plan_only_handoff_helper_complete
   candidate_slice_ref: slice-evi-002-c
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: T-022 is hydrated as the active plan-only handoff helper;
-    deliver it in a later ship_task child before hydrating another INI-EVI-002 slice.
+  next_discovery_action: T-022 is complete; open a fresh budget before hydrating another
+    INI-EVI-002 slice or extending the helper toward write-mode behavior.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
@@ -1682,7 +1682,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 45
+  current_patch: 46
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1701,15 +1701,7 @@ versions:
 
     '
   pending_task_refs: []
-  tasks:
-  - id: T-022
-    title: Plan-only initiative hydration handoff helper
-    decision_ref:
-    - D11
-    - D23
-    - D48
-    - D50
-    initiative_ref: INI-EVI-002
+  tasks: []
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1831,6 +1823,14 @@ versions:
     - D52
   - id: T-021
     title: Planning-bank ID and coverage policy
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+  - id: T-022
+    title: Plan-only initiative hydration handoff helper
     completed_date: '2026-04-25'
     decision_ref:
     - D11
