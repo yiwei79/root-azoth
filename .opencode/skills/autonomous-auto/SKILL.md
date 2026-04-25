@@ -74,6 +74,43 @@ branch-local autonomy budget while async alignment is pending. It does not skip 
 scope/pipeline gates, write claims, run-ledger evidence, final safety checks, or
 kernel/governance/M1 approvals.
 
+## Loop Governor
+
+When the operator grants a continuing self-development budget, `autonomous-auto` may run as
+a loop rather than a single delivery. Each iteration is still a normal scoped Azoth session:
+
+1. Execute the current adaptive pipeline.
+2. Close out through the normal session lifecycle.
+3. Reflect on mistakes, failed assumptions, missing workflow affordances, and closeout drift.
+4. Make an architect judgment for the next move.
+5. Capture self-improvement signals as repo-native inbox, proposal, initiative, or backlog
+   candidates when they should change future behavior.
+6. Select exactly one next action: `ship_task`, `hydrate_task`, `research_initiative`,
+   `refine_proposal`, `capture_self_improvement`, or `stop`.
+7. Open the next `autonomous-auto` scope only when the loop state, autonomy budget, gates,
+   and write claim allow it.
+
+Use `.azoth/autonomous-loop-state.local.yaml` for local loop state. The tracked
+`.azoth/autonomous-loop-state.local.yaml.example` documents the expected fields. The loop
+state records `loop_id`, branch, `autonomy_budget.approval_basis`, max iterations,
+iteration count, last session, queued work, history, stop reason, and automation hints.
+
+Use `scripts/autonomous_loop.py` for deterministic continuation decisions:
+
+- `status` reports loop state and whether a live scope blocks continuation.
+- `decide-next --json` emits the next architect decision.
+- `open-next --decision <path>` writes the next scope gate and acquires a write claim.
+- `stop --reason <reason>` records a terminal local stop.
+
+`decide-next` must stop, not improvise, when loop state is missing, the iteration budget is
+exhausted, another live scope is active, a protected gate is required, or no safe candidate
+is discoverable.
+
+For durable self-building over time, prefer a Codex automation or cron-style wakeup that
+runs one bounded iteration per wakeup. A single long interactive thread may be used for
+experiments and calibration, but it is not the durable default. Heartbeat continuation is
+only appropriate for short same-thread runs where the operator is still actively observing.
+
 ## Stop Conditions
 
 Stop before the affected edge when:
@@ -89,5 +126,6 @@ Stop before the affected edge when:
 
 `/auto` is the default composed delivery path. `dynamic-full-auto` is the high-autonomy
 one-session adaptive delivery pipeline with discovery/research insertion. `autonomous-auto`
-is the branch-local self-development mode with async alignment and explicit
-`approval_basis` persistence.
+is the branch-local self-development mode with async alignment, explicit `approval_basis`
+persistence, and an optional loop governor for continuing from one proposal, initiative,
+or task to the next.

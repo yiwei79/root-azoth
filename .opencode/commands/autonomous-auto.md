@@ -45,6 +45,28 @@ Autonomous auto must still deliver with an adaptive pipeline:
 - Bounded replay handles failed review/eval findings; stop at the replay threshold.
 - Scope/pipeline gates, write claims, run-ledger evidence, and closeout remain mechanical.
 
+## Loop Governor
+
+When the operator grants a continuing self-development budget, run `autonomous-auto` as a
+bounded loop of normal Azoth sessions:
+
+1. Finish the current adaptive pipeline and close out.
+2. Reflect on mistakes, failed assumptions, missing workflow affordances, and closeout drift.
+3. Make an architect judgment for exactly one next action: `ship_task`, `hydrate_task`,
+   `research_initiative`, `refine_proposal`, `capture_self_improvement`, or `stop`.
+4. Use `scripts/autonomous_loop.py decide-next --json` to emit the next decision.
+5. If the decision is not `stop`, use `scripts/autonomous_loop.py open-next --decision <path>`
+   to open the next `pipeline_command=autonomous-auto` scope and acquire the write claim.
+
+Local loop state lives in `.azoth/autonomous-loop-state.local.yaml`; the tracked
+`.azoth/autonomous-loop-state.local.yaml.example` documents its shape. The loop governor
+must stop when state is missing, budget is exhausted, another scope is active, a protected
+gate is required, or no safe candidate is discoverable.
+
+For durable self-development over time, prefer a Codex automation or cron-style wakeup that
+runs one bounded iteration per wakeup. A single long interactive thread is acceptable for
+calibration experiments, but not the durable default.
+
 ## Gates
 
 `autonomous-auto` does not skip protected human gates. Stop for kernel, governance, M1,
