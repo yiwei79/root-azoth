@@ -536,10 +536,10 @@ candidate_slices:
     open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-e
-    proposed_task_id: T-AUTO-E
+    proposed_task_id: T-027
     title: Initiative lifecycle evaluator and discoverability spine
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: hydrated
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Provide one generated operator/agent view of active initiatives, proposals, candidate slices, readiness, campaign reports, gates, and next safe actions.
@@ -558,7 +558,7 @@ candidate_slices:
       - The report shows why completed hydrated tasks such as T-026 cannot silently authorize continuation or repeat hydration.
       - The report is deterministic and useful to a fresh chat session.
     hydration_plan:
-      mode: plan_only_not_executed
+      mode: executed
       proposed_title: Initiative lifecycle evaluator and discoverability spine
       proposed_task_kind: roadmap_backed_task
       approval_scope_required: hydration_specific_slice_auto_001_e
@@ -571,6 +571,9 @@ candidate_slices:
         - approval_basis names INI-AUTO-001, slice-auto-001-e, the dedicated read-only lifecycle/discoverability report helper, and the exact scaffold command
         - reviewer and evaluator evidence confirm this readiness-refinement child stayed plan-only
         - no protected gate or active write claim blocks the write edge
+      hydrated_task_ref: T-027
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-027.yaml
+      hydrated_at: "2026-04-25T20:14:59Z"
     research_evidence_refs:
       - scripts/planning_bank_surfacing.py
       - scripts/planning_bank_validate.py
@@ -591,10 +594,10 @@ candidate_slices:
 readiness:
   evaluated_at: "2026-04-25T20:06:11Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
-  readiness_status: ready_to_hydrate
-  goal_clarity: lifecycle_discoverability_spine_ready_for_hydration
-  evidence_coverage: slice_e_plan_only_handoff_refined_after_t_026_completion
-  freshness_status: reconciled_after_T_026_completion
+  readiness_status: continue_research
+  goal_clarity: lifecycle_discoverability_spine_hydrated_for_separate_delivery
+  evidence_coverage: slice_e_hydrated_to_t_027_without_implementation
+  freshness_status: reconciled_after_slice_e_hydration
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
   candidate_first_slice: slice-auto-001-e
@@ -602,9 +605,9 @@ readiness:
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: hydrate_slice_auto_001_e_only_in_a_separate_child
+  next_readiness_gate: deliver_T_027_only_after_separate_scoped_delivery
   next_candidate_ref: slice-auto-001-e
-  hydration_recommendation: Hydrate slice-auto-001-e only in a later child using the exact scaffold command recorded in its plan-only hydration handoff; do not execute the scaffold or implement the report command in this readiness-refinement child.
+  hydration_recommendation: Slice-auto-001-e is hydrated as T-027; do not hydrate again or implement the lifecycle discoverability report in this hydration child.
   human_decision: approved
   approval_scope: hydration_specific_slice_auto_001_e
   approval_basis: Operator locked the Initiative Lifecycle Discoverability Spine Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-e and approved readiness refinement toward a later hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard`; approval covers readiness promotion and later roadmap/backlog/spec hydration only, and excludes implementation in this child, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, repeat T-026 hydration, and cross-branch work.
@@ -645,3 +648,15 @@ hydration_history:
     scaffold_command: >
       python3 scripts/roadmap_scaffold.py --title "Durable autonomous-auto wakeup driver" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-d --description "Implement a one-iteration autonomous-auto wakeup driver that checks loop state, campaign reports, gates, run ledger, write claims, and stop conditions before opening any child scope." --target-layer infrastructure --delivery-pipeline standard
     result: Created roadmap/backlog/spec artifacts for T-026 and linked them to INI-AUTO-001; no implementation or shipping work was performed.
+  - hydrated_at: "2026-04-25T20:14:59Z"
+    session_id: 2026-04-25-autonomous-auto-slice-auto-001-e-2
+    candidate_slice_ref: slice-auto-001-e
+    task_ref: T-027
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-027.yaml
+    backlog_ref: T-027
+    roadmap_ref: T-027
+    approval_scope: hydration_specific_slice_auto_001_e
+    approval_basis: Operator locked the Initiative Lifecycle Discoverability Spine Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-e; approval covers the exact roadmap_scaffold.py command for hydration only and excludes implementation, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, repeat T-026 hydration, and cross-branch work.
+    scaffold_command: >
+      python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard
+    result: Created roadmap/backlog/spec artifacts for T-027 and linked them to INI-AUTO-001; no implementation or shipping work was performed.

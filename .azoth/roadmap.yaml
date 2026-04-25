@@ -503,15 +503,20 @@ initiatives:
     phase: v0.2.0-p3
     status: complete
     role: historical
+  - task_ref: T-027
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-027.yaml
+    phase: v0.2.0-p3
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
   discovery_status: active_refinement
   candidate_slice_ref: slice-auto-001-e
   readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
-  next_discovery_action: Hydrate slice-auto-001-e in a later autonomous-auto child
-    only after evaluator-backed green readiness; do not repeat T-026 hydration or implement
-    the lifecycle discoverability report during readiness refinement.
+  next_discovery_action: Deliver T-027 only after a separate scoped delivery child;
+    do not repeat hydration or implement the lifecycle discoverability report from
+    the hydration child.
   summary: 'Make autonomous-auto capable of taking an operator-provided initiative
     and working it through Azoth-native lifecycle states: intake, evidence building,
     architecture challenge, readiness reporting, approved hydration, bounded delivery,
@@ -526,8 +531,8 @@ initiatives:
   - D48
   - D50
   - D52
-  task_ref: null
-  spec_ref: null
+  task_ref: T-027
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-027.yaml
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline
@@ -1766,7 +1771,16 @@ versions:
 
     '
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-027
+    title: Initiative lifecycle evaluator and discoverability spine
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+    initiative_ref: INI-AUTO-001
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1929,4 +1943,12 @@ versions:
       - D48
       - D50
       - D52
-    - {id: T-026, title: "Durable autonomous-auto wakeup driver", completed_date: "2026-04-25", decision_ref: [D11, D23, D48, D50, D52]}
+    - id: T-026
+      title: Durable autonomous-auto wakeup driver
+      completed_date: '2026-04-25'
+      decision_ref:
+      - D11
+      - D23
+      - D48
+      - D50
+      - D52

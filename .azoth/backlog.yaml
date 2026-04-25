@@ -3175,3 +3175,24 @@ items:
   - D48
   - D50
   - D52
+- id: T-027
+  title: Initiative lifecycle evaluator and discoverability spine
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-e
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-25'
+  description: Implement a read-only initiative lifecycle report that reconciles initiative
+    banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness,
+    evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto
+    discoverability.
+  roadmap_ref: T-027
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
