@@ -391,6 +391,101 @@ def test_queued_candidate_wins_inside_budget(tmp_path: Path) -> None:
     assert decision["architect_judgment"]["decision"] == "refine_proposal"
 
 
+def test_queued_candidate_can_override_lifecycle_route_stop(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "route-authority-governor-repair",
+                "title": "Repair route authority",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert decision["action"] == "ship_task"
+    assert decision["candidate_id"] == "route-authority-governor-repair"
+    assert read["route_authority"] == "queued-override"
+
+
+def test_lifecycle_route_stop_blocks_generic_initiative_fallback(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "schema_version": 1,
+            "items": [
+                {
+                    "id": "READY-1",
+                    "title": "Ready fallback task",
+                    "status": "ready",
+                    "priority": 1,
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                }
+            ],
+        },
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["candidate_id"] == "INI-AUTO-001"
+    assert decision["stop_reason"] == "lifecycle_route_stop_completed_or_stale_campaign"
+    assert decision["route_decision"]["selected_route"] == "stop"
+    assert read["route_authority"] == "stop:completed_or_stale_campaign"
+
+
+def test_lifecycle_route_uses_current_state_path(tmp_path: Path) -> None:
+    default_state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+    state_path = tmp_path / ".azoth/custom-autonomous-loop-state.yaml"
+    _state(tmp_path)
+    default_state_path.unlink()
+    data = {
+        "schema_version": 1,
+        "loop_id": "custom-loop-test",
+        "status": "active",
+        "autonomy_budget": {
+            "approval_basis": "User approved custom autonomous-auto state.",
+            "max_iterations": 1,
+            "allowed_actions": ["research_initiative"],
+        },
+        "iteration": 0,
+        "queue": [],
+        "self_capture_queue": [],
+        "alignment_packets": [],
+        "alignment_dispositions": [],
+        "history": [],
+    }
+    _write_yaml(state_path, data)
+    _write_lifecycle_initiative_bank(tmp_path)
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "research_initiative"
+    assert decision["candidate_id"] == "INI-AUTO-001"
+
+
 def test_protected_queued_candidate_stops(tmp_path: Path) -> None:
     state_path = _state(
         tmp_path,

@@ -934,6 +934,7 @@ def _stop_decision(
         "approval_basis": _approval_basis(state),
         "reason": detail or reason,
         "stop_reason": reason,
+        "route_decision": (candidate or {}).get("route_decision"),
         "architect_judgment": {
             "decision": "stop",
             "rationale": detail or reason,
@@ -1085,6 +1086,8 @@ def _first_ready_initiative_candidate(root: Path) -> dict[str, Any] | None:
         candidate.setdefault("delivery_pipeline", readiness.get("delivery_pipeline") or "standard")
         candidate.setdefault("proposed_task_id", str(candidate.get("proposed_task_id") or "AD-HOC"))
         candidate["source"] = "initiative-bank"
+        candidate["source_bank_ref"] = _repo_artifact_ref(root, path)
+        candidate["initiative_ref"] = str(data.get("initiative_id") or path.stem)
         return candidate
     return None
 
@@ -1102,6 +1105,8 @@ def _first_research_initiative_candidate(root: Path) -> dict[str, Any] | None:
                 "target_layer": "planning",
                 "delivery_pipeline": "standard",
                 "source": "initiative-bank",
+                "source_bank_ref": _repo_artifact_ref(root, path),
+                "initiative_ref": str(data.get("initiative_id") or path.stem),
             }
     return None
 
@@ -1120,6 +1125,69 @@ def _first_proposal_candidate(root: Path) -> dict[str, Any] | None:
                 "delivery_pipeline": "standard",
                 "source": "proposal",
             }
+    return None
+
+
+def _initiative_route_stop_decision(
+    root: Path,
+    state_path: Path,
+    state: dict[str, Any],
+    candidate: dict[str, Any],
+) -> dict[str, Any] | None:
+    source_bank_ref = str(candidate.get("source_bank_ref") or "").strip()
+    initiative_ref = str(candidate.get("initiative_ref") or "").strip()
+    candidate_id = str(candidate.get("candidate_id") or "").strip()
+    if source_bank_ref:
+        initiative_path = root / source_bank_ref
+    elif initiative_ref:
+        initiative_path = root / ".azoth" / "initiative-banks" / f"{initiative_ref}.yaml"
+    elif candidate_id:
+        initiative_path = root / ".azoth" / "initiative-banks" / f"{candidate_id}.yaml"
+    else:
+        return None
+    if not initiative_path.exists():
+        return None
+    route_label = initiative_ref or candidate_id or initiative_path.stem
+    try:
+        capsule = build_initiative_route_decision_capsule(
+            root,
+            initiative_path,
+            state_path=state_path,
+        )
+    except Exception as exc:
+        return _stop_decision(
+            state,
+            "lifecycle_route_unreadable",
+            detail=f"Lifecycle route for {route_label} could not be read: {exc}",
+            candidate=candidate,
+        )
+    if str(capsule.get("selected_route") or "") != "stop":
+        return None
+    route_state = str(capsule.get("route_state") or "unknown")
+    reason = f"Lifecycle route for {route_label} selected stop ({route_state})."
+    return _stop_decision(
+        state,
+        f"lifecycle_route_stop_{route_state}",
+        detail=reason,
+        candidate={
+            **candidate,
+            "route_decision": capsule,
+            "governance_mode": str(candidate.get("governance_mode") or "standard"),
+        },
+    )
+
+
+def _implicit_initiative_route_stop_decision(
+    root: Path, state_path: Path, state: dict[str, Any]
+) -> dict[str, Any] | None:
+    if _first_ready_initiative_candidate(root):
+        return None
+    candidate = _first_research_initiative_candidate(root)
+    if not candidate:
+        return None
+    route_stop = _initiative_route_stop_decision(root, state_path, state, candidate)
+    if route_stop:
+        return route_stop
     return None
 
 
@@ -1207,6 +1275,10 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
             root=root,
         )
 
+    route_stop = _implicit_initiative_route_stop_decision(root, state_path, state)
+    if route_stop:
+        return route_stop
+
     self_capture = state.get("self_capture_queue")
     if isinstance(self_capture, list) and self_capture and "capture_self_improvement" in allowed:
         first = (
@@ -1259,6 +1331,9 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
 
     research_candidate = _first_research_initiative_candidate(root)
     if research_candidate and "research_initiative" in allowed:
+        route_stop = _initiative_route_stop_decision(root, state_path, state, research_candidate)
+        if route_stop:
+            return route_stop
         return _action_decision(
             state,
             action="research_initiative",
@@ -1578,7 +1653,19 @@ def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
         }
     try:
         report = loop_status(root, state_path)
-        report["operator_read"] = operator_read(root, state_path)
+        report["operator_read"] = {
+            "title": "Autonomous-auto operator read",
+            "objective": str(report.get("loop_id") or "autonomous-auto loop"),
+            "loop_state": str(report.get("status") or "missing_state"),
+            "iteration": report.get("iteration"),
+            "max_iterations": report.get("max_iterations"),
+            "remaining_iterations": report.get("remaining_iterations"),
+            "can_continue": report.get("can_continue"),
+            "next_likely_move": "not-evaluated",
+            "route_authority": "not-evaluated",
+            "stop_reason": report.get("stop_reason"),
+            "completion_reason": report.get("completion_reason"),
+        }
     except Exception as exc:
         return {
             "state_path": str(state_path),
@@ -2853,6 +2940,20 @@ def loop_status(root: Path, state_path: Path) -> dict[str, Any]:
     }
 
 
+def _route_authority_read(decision: dict[str, Any]) -> str:
+    stop_reason = str(decision.get("stop_reason") or "")
+    if stop_reason.startswith("lifecycle_route_stop_"):
+        return f"stop:{stop_reason.removeprefix('lifecycle_route_stop_')}"
+    if stop_reason == "lifecycle_route_unreadable":
+        return "stop:lifecycle_route_unreadable"
+    source = str(decision.get("source") or "")
+    if source == "initiative-bank":
+        return "checked:continue"
+    if source in {"queue", "campaign-strategy"}:
+        return "queued-override"
+    return "not-applicable"
+
+
 def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
     state = _load_yaml_mapping(state_path)
     status = loop_status(root, state_path)
@@ -2898,6 +2999,7 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         "remaining_iterations": status.get("remaining_iterations"),
         "can_continue": status.get("can_continue"),
         "next_likely_move": next_move,
+        "route_authority": _route_authority_read(decision) if decision else "not-evaluated",
         "approval_basis": _approval_basis(state) if state else "",
         "pending_alignment_packets": status.get("alignment", {}).get("pending_count", 0),
         "latest_alignment_packet": status.get("alignment", {}).get("latest_packet_id", ""),
@@ -2924,6 +3026,7 @@ def _format_operator_read(payload: dict[str, Any]) -> str:
             f"Loop: {payload.get('loop_state')} ({payload.get('iteration')}/{payload.get('max_iterations')})",
             f"Vision: {payload.get('vision_band')} -> target {payload.get('vision_target')} (realized={payload.get('vision_realized')})",
             f"Next: {payload.get('next_likely_move')}",
+            f"Route authority: {payload.get('route_authority')}",
             f"Continue: {continuation} ({payload.get('continuation_reason')})",
             f"Approval basis: {payload.get('approval_basis')}",
             f"Pending alignment packets: {payload.get('pending_alignment_packets')}",
