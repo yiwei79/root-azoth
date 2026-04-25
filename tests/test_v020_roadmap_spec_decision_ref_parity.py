@@ -100,7 +100,7 @@ def test_codex_model_selection_shipped_continuity() -> None:
     assert "T-015" in completed_tasks, "v0.2.0-p3 should retain T-015 as completed history."
     assert "T-016" in completed_tasks, "v0.2.0-p3 should retain T-016 as completed history."
     assert "T-017" in completed_tasks, "v0.2.0-p3 should preserve T-017 as shipped history."
-    assert "T-025" in active_tasks, "v0.2.0-p3 should expose T-025 as the runtime resolver follow-on."
+    assert "T-025" in completed_tasks, "v0.2.0-p3 should preserve T-025 as shipped history."
     assert completed_tasks["T-015"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
     assert completed_tasks["T-016"].get("decision_ref") == ["D19", "D46", "D50", "D52"]
     assert completed_tasks["T-017"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
@@ -116,7 +116,7 @@ def test_codex_model_selection_shipped_continuity() -> None:
     assert backlog_t017.get("status") == "complete"
     assert backlog_t017.get("initiative_ref") == "INI-PLT-006"
     assert backlog_t017.get("roadmap_ref") == "T-017"
-    assert backlog_t025.get("status") == "pending"
+    assert backlog_t025.get("status") == "complete"
     assert backlog_t025.get("initiative_ref") == "INI-PLT-006"
     assert backlog_t025.get("roadmap_ref") == "T-025"
 
@@ -129,8 +129,8 @@ def test_codex_model_selection_shipped_continuity() -> None:
     assert t017_slice.get("status") == "complete"
     assert t017_slice.get("role") == "historical"
     t025_slice = next(item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-025")
-    assert t025_slice.get("status") == "active"
-    assert t025_slice.get("role") == "primary"
+    assert t025_slice.get("status") == "complete"
+    assert t025_slice.get("role") == "historical"
 
     shipped_follow_on = proposal["details"]["shipped_follow_on"]
     assert shipped_follow_on["backlog_id"] == "T-017"
