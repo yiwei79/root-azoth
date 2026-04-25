@@ -74,24 +74,32 @@ def test_ini_evi_002_candidate_slices_are_planning_evidence_only() -> None:
 def test_ini_evi_002_bank_second_slice_is_complete_after_delivery() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     readiness = bank.get("readiness")
-    next_candidate = next(
+    completed_candidate = next(
         candidate
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-b"
+    )
+    seeded_candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
     )
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
     assert readiness["readiness_status"] == "continue_research"
-    assert readiness["human_decision"] == "approved"
-    assert readiness["candidate_first_slice"] == "slice-evi-002-b"
-    assert readiness["next_readiness_gate"] == "select_or_refine_next_candidate_slice"
+    assert readiness["human_decision"] == "approved_seed_only"
+    assert readiness["candidate_first_slice"] == "slice-evi-002-c"
+    assert readiness["next_readiness_gate"] == "research_refinement_before_hydration"
     assert bank["hydration_history"]
     assert bank["hydration_history"][-1]["task_ref"] == "T-019"
-    assert next_candidate["status"] == "complete"
-    assert next_candidate["proposed_task_id"] == "T-019"
-    assert next_candidate["acceptance_criteria"]
-    assert next_candidate["open_questions"] == []
+    assert completed_candidate["status"] == "complete"
+    assert completed_candidate["proposed_task_id"] == "T-019"
+    assert completed_candidate["acceptance_criteria"]
+    assert completed_candidate["open_questions"] == []
+    assert seeded_candidate["status"] == "candidate"
+    assert seeded_candidate["proposed_task_id"] == "TBD-EVI-002-C"
+    assert seeded_candidate["open_questions"]
 
 
 def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
@@ -100,18 +108,19 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     assert report == {
         "initiative_id": "INI-EVI-002",
         "readiness_status": "continue_research",
-        "human_decision": "approved",
-        "candidate_first_slice": "slice-evi-002-b",
-        "candidate_id": "slice-evi-002-b",
-        "candidate_task_ref": "T-019",
-        "candidate_status": "complete",
-        "acceptance_criteria_status": "delivered",
-        "non_goals_status": "delivered",
-        "freshness_status": "refreshed_2026_04_24",
-        "hydration_recommendation": "T-019 is complete for slice-evi-002-b. Run /next to select or refine the next candidate slice.",
+        "human_decision": "approved_seed_only",
+        "candidate_first_slice": "slice-evi-002-c",
+        "candidate_id": "slice-evi-002-c",
+        "candidate_task_ref": "TBD-EVI-002-C",
+        "candidate_status": "candidate",
+        "acceptance_criteria_status": "seeded",
+        "non_goals_status": "seeded",
+        "freshness_status": "refreshed_after_t_020",
+        "hydration_recommendation": "Seeded slice-evi-002-c for research/refinement. Run /next or /start to discover the bank, then run a research/refinement session before any hydration.",
         "blocking_reasons": [
-            "candidate.status is complete; no hydration action remains",
             "readiness.readiness_status must be ready_to_hydrate",
+            "readiness.human_decision must be approved",
+            "candidate.open_questions must be empty",
         ],
         "ready_to_hydrate": False,
     }
@@ -159,7 +168,7 @@ def test_readiness_report_fails_closed_when_human_decision_is_absent(tmp_path: P
 def test_readiness_report_can_target_completed_prior_candidate() -> None:
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH, candidate_id="slice-evi-002-a")
 
-    assert report["candidate_first_slice"] == "slice-evi-002-b"
+    assert report["candidate_first_slice"] == "slice-evi-002-c"
     assert report["candidate_id"] == "slice-evi-002-a"
     assert report["candidate_task_ref"] == "T-018"
     assert report["candidate_status"] == "complete"
@@ -184,7 +193,7 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
     ]
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
-    assert initiative["phase"] == "v0.2.0-p3"
+    assert initiative["phase"] is None
     assert initiative["task_ref"] == "T-019"
     assert initiative["slices"] == [
         {
@@ -199,18 +208,26 @@ def test_ini_evi_002_has_completed_second_slice_as_completed_task() -> None:
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-019.yaml",
             "phase": "v0.2.0-p3",
             "status": "complete",
-            "role": "primary",
+            "role": "historical",
         },
     ]
     assert initiative["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
     assert initiative["design_bank_refs"] == [".azoth/design-banks/planning-banks-layer.yaml"]
     assert initiative["research_refs"] == [".azoth/research/ini-evi-002-research-bank.yaml"]
-    assert initiative["candidate_slice_ref"] == "slice-evi-002-b"
+    assert initiative["candidate_slice_ref"] == "slice-evi-002-c"
     assert initiative["readiness_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml#readiness"
     assert "proposal_refs" not in initiative
-    assert completed_candidates == bank["candidate_slices"]
-    assert completed_candidates[0]["proposed_task_id"] == "T-018"
-    assert completed_candidates[1]["proposed_task_id"] == "T-019"
+    seeded_candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    assert [candidate["proposed_task_id"] for candidate in completed_candidates] == [
+        "T-018",
+        "T-019",
+    ]
+    assert seeded_candidate["proposed_task_id"] == "TBD-EVI-002-C"
+    assert seeded_candidate["status"] == "candidate"
     assert hydrated_candidates == []
 
     roadmap_task_ids = {

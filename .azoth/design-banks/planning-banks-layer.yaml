@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-24T21:30:23+00:00"
+updated_at: "2026-04-25T00:42:48+00:00"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -52,6 +52,12 @@ open_questions:
   - question_id: db-planning-002
     status: open
     question: Should all initiatives get banks, or only discovery-active initiatives?
+  - question_id: db-planning-003
+    status: open
+    question: Should `/next` remain read-only for planning-bank seeds, or should it offer a dedicated hydration prompt when readiness is approved?
+  - question_id: db-planning-004
+    status: open
+    question: How should closeout append planning-bank history without creating merge churn across concurrent sessions?
 research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
 challenge_log:
@@ -71,20 +77,51 @@ routing_candidates:
     rationale: T-018/T-019 stabilized the contract, validator, readiness report, and
       advisory richness adapter; the next route is operator-facing surfacing without
       adding write-mode hydration behavior.
+  - route: next_command_readback
+    status: seeded
+    target: commands/next/body.md
+    rationale: >
+      After T-020, `/next` should show tracked planning-bank seeds when there is
+      no claimable backlog item, while keeping them read-only and non-executable
+      until explicit hydration creates backlog/spec state.
+  - route: research_refinement
+    status: seeded
+    target: planning-bank-id-and-coverage-policy
+    rationale: >
+      Open questions about design-bank id shape and which initiatives deserve
+      banks need a future research/refinement pass before becoming command or
+      validator policy.
+  - route: initiative_candidate
+    status: seeded
+    target: INI-EVI-002#slice-evi-002-c
+    rationale: >
+      INI-EVI-002 needs a post-T-019 candidate seed for research/refinement so
+      the next useful knowledge-richness slice remains discoverable without
+      premature hydration.
+  - route: proposal_refinement
+    status: seeded
+    target: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+    rationale: >
+      The write-mode hydration helper and task-research derivation path remain
+      proposal/refinement work until readiness evidence and human approval justify
+      executable backlog/spec hydration.
 readiness:
-  evaluated_at: "2026-04-24T21:30:23+00:00"
+  evaluated_at: "2026-04-25T00:42:48+00:00"
   readiness_status: continue_refinement
-  freshness_status: refreshed_after_t_018_t_019
-  target_route: dashboard_routing_surfacing
+  freshness_status: refreshed_after_t_020
+  target_route: next_command_seed_discoverability
   blocking_questions:
     - db-planning-001
     - db-planning-002
+    - db-planning-003
+    - db-planning-004
   contradiction_disposition: none_blocking_recorded
   source_refs:
     - .azoth/proposals/planning-banks-layer.yaml
     - .azoth/initiative-banks/INI-EVI-002.yaml
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
-  recommended_next_artifact: T-020
+    - commands/next/body.md
+  recommended_next_artifact: planning-bank-id-and-coverage-policy
   human_decision: approved
 history:
   - timestamp: "2026-04-24T17:43:19+00:00"
@@ -95,3 +132,8 @@ history:
     summary: Refreshed the design bank after T-018/T-019 completion and routed the
       next continuation slice to T-020 for planning-bank surfacing and session
       routing discoverability.
+  - timestamp: "2026-04-25T00:42:48+00:00"
+    event: planted_post_t020_seeds
+    summary: Seeded post-T-020 readback and research/refinement routes so `/next`,
+      `/start`, and `/roadmap` can surface planning-bank follow-ons without
+      converting them into executable backlog before explicit hydration.

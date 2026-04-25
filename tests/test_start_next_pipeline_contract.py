@@ -65,3 +65,24 @@ def test_next_refuses_to_overwrite_live_scope(rel: str) -> None:
     assert "route to `/resume`, `/park`, or `/session-closeout` instead" in text, (
         f"{rel}: missing active-scope hard stop guidance"
     )
+
+
+@pytest.mark.parametrize(
+    "rel",
+    [
+        "commands/next/body.md",
+        ".claude/commands/next.md",
+        ".github/prompts/next.prompt.md",
+        ".opencode/commands/next.md",
+    ],
+)
+def test_next_surfaces_planning_bank_seeds_before_roadmap_preview(rel: str) -> None:
+    text = _read(rel)
+    for needle in (
+        "Planning-bank fallback when no candidate tasks exist",
+        ".azoth/design-banks/*.yaml",
+        ".azoth/initiative-banks/*.yaml",
+        "Planning banks are seeds, not scopes",
+        "Do **not** read `.azoth/proposals/` as a candidate source",
+    ):
+        assert needle in text, f"{rel}: missing {needle!r}"

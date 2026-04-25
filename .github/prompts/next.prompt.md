@@ -36,6 +36,20 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
      (`active` items are already claimed by a running session — skip them; `deferred` items target a future `target_version`)
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
    Sort by `priority` ascending (lower = higher priority).
+3b. **Planning-bank fallback when no candidate tasks exist**: If Step 3 finds no
+   claimable backlog candidates, read tracked planning banks before falling back to
+   the next roadmap-version preview.
+   - Read only `.azoth/design-banks/*.yaml` and `.azoth/initiative-banks/*.yaml`.
+   - Do **not** read `.azoth/proposals/` as a candidate source. Proposal paths may be
+     shown only when a tracked bank cites them as provenance.
+   - Summarize up to three active planning seeds, preferring banks with
+     `readiness.human_decision`, `readiness.candidate_first_slice`,
+     `readiness.hydration_recommendation`, `routing_candidates`, or open questions.
+   - Treat these as **read-only discovery seeds**, not scope authority. Do not write
+     `scope-gate.json`, claim a run, or mutate backlog/roadmap/spec state from a
+     bank seed alone.
+   - Route the operator to `/plan`, research/refinement, proposal refinement, or an
+     explicit hydration/scaffold step before any future `/next` scope approval.
 4. **Select primary task**: Highest-priority unblocked item.
 5. **Select secondary tasks** (optional, max 2):
    - Next unblocked items after primary
@@ -153,6 +167,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 **Why:** {decision_ref} — {one-line decision summary from DECISIONS_INDEX.md}
 **Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
 **Excluded:** {N} item(s) skipped — claimed by another session ({id}, …)    ← omit if excluded-ids set is empty (Step 0b)
+**Planning-bank seeds:** {bank_id or initiative_id}: {readiness/human decision/candidate/readiness gate}    ← only when Step 3 has no candidate tasks and Step 3b finds tracked banks
 
 **Architecture proposal (read-only, informational only):** `{backlog_id}` — {title} — status {status}    ← only if step 8b matches exactly one file
 
@@ -170,8 +185,12 @@ Type `skip` to skip primary and show next candidate.
   `/session-closeout` when the session ends
 - **If a live scope already exists**, stop and route to `/resume`, `/park`, or `/session-closeout`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
-- **Skip completed items** — if all backlog items are complete, congratulate and show the
-  next version entry from `roadmap.yaml versions:` as a preview
+- **Skip completed items** — if all backlog items are complete, congratulate, surface any
+  tracked planning-bank seeds as read-only discovery context, then show the next version
+  entry from `roadmap.yaml versions:` as a preview
+- **Planning banks are seeds, not scopes** — design and initiative banks can make
+  research/refinement or hydration candidates discoverable, but they do not authorize
+  scope-gate writes until a concrete backlog/roadmap/spec boundary is approved
 - **If backlog.yaml is missing**, suggest running `/bootstrap` to initialize
 - **Scope card validator**: if a mixed card would result, show the conflict and propose
   the primary-only card instead

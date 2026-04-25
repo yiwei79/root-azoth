@@ -490,6 +490,75 @@ def test_render_dashboard_shows_drift_warning_panel(tmp_path: Path) -> None:
     assert "INI-MEM-001" in out
 
 
+def test_render_dashboard_surfaces_tracked_planning_bank_panel(tmp_path: Path) -> None:
+    import io
+
+    from rich.console import Console
+
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "design-banks").mkdir()
+    (azoth_dir / "initiative-banks").mkdir()
+    roadmap_yaml = azoth_dir / "roadmap.yaml"
+    roadmap_yaml.write_text(
+        "schema_version: 2\n"
+        "active_version: v0.2.0\n"
+        "versions:\n"
+        "  - id: v0.2.0\n"
+        "    status: active\n"
+        "    goal: Test milestone\n"
+        "    tasks: []\n"
+        "    completed_tasks: []\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "design-banks" / "planning-banks-layer.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: design\n"
+        "id: planning-banks-layer\n"
+        "title: Planning banks layer\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/local-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_refinement\n"
+        "  target_route: dashboard_routing_surfacing\n"
+        "  human_decision: approved\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "initiative-banks" / "INI-TEST.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: initiative\n"
+        "initiative_id: INI-TEST\n"
+        "title: Initiative test bank\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/ignored-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_research\n"
+        "  human_decision: approved\n"
+        "  hydration_recommendation: refine candidate before hydration\n"
+        "  candidate_first_slice: slice-test\n"
+        "candidate_slices:\n"
+        "  - candidate_id: slice-test\n"
+        "    proposed_task_id: TBD-TEST\n"
+        "    status: candidate\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    c = Console(record=True, width=120, file=buf)
+    roadmap_dashboard.render_dashboard(roadmap_path=roadmap_yaml, console=c)
+    out = c.export_text()
+    assert "Planning Banks" in out
+    assert "planning-banks-layer" in out
+    assert "INI-TEST" in out
+    assert "human: approved" in out
+    assert "Proposal drafts are source history" in out
+    assert "hydrate explicitly before backlog/spec work" in out
+    assert ".azoth/proposals/local-draft.yaml" not in out
+    assert ".azoth/proposals/ignored-draft.yaml" not in out
+
+
 def test_render_dashboard_no_crash_when_no_initiatives(tmp_path: Path) -> None:
     import io
 

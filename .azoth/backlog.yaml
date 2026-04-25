@@ -3021,10 +3021,11 @@ items:
   source: planning-bank-surfacing-routing-2026-04-24
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p3
   priority: 2
   created_date: '2026-04-24'
+  completed_date: '2026-04-25'
   description: Continue the planning-bank layer after T-018/T-019 by surfacing tracked
     design-bank and initiative-bank state in operator-facing routing surfaces. The
     slice should make planning banks discoverable from session dashboards or roadmap

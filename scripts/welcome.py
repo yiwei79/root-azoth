@@ -26,6 +26,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from planning_bank_surfacing import format_planning_bank_plain
+from planning_bank_surfacing import format_planning_bank_rich
+from planning_bank_surfacing import load_planning_bank_summaries
 from run_ledger import load_active_run as load_active_ledger_run
 from run_ledger import load_resumable_sessions
 from session_gate import active_session_gate, normalized_session_mode
@@ -457,6 +460,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     complete_ids = {item["id"] for item in items if item.get("status") in {"complete", "completed"}}
     top3 = filter_unblocked_items(items, complete_ids)[:3]
     unphased_initiatives = gather_unphased_initiatives(roadmap_data)
+    planning_banks = load_planning_bank_summaries(ROOT)
 
     return {
         "azoth": azoth,
@@ -479,6 +483,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "complete_ids": complete_ids,
         "top3": top3,
         "unphased_initiatives": unphased_initiatives,
+        "planning_banks": planning_banks,
         "open_sessions": open_sessions,
         "continuity": continuity_status(
             scope,
@@ -525,6 +530,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    planning_banks = state.get("planning_banks", {})
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
@@ -676,9 +682,20 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             lines.append(f"    {layer} · {pipeline}")
             lines.append("")
     else:
+        planning_lines = format_planning_bank_plain(planning_banks)
+        if planning_lines:
+            lines.extend(planning_lines)
+            lines.append("  No claimable backlog item is required before refining a planning bank.")
+            lines.append("")
+            return_to_backlog = True
+        else:
+            return_to_backlog = False
         ini_fallback = state.get("unphased_initiatives", [])[:3]
         if ini_fallback:
-            lines.append("  No unblocked pending backlog items — unscheduled initiatives:")
+            if not return_to_backlog:
+                lines.append("  No unblocked pending backlog items — unscheduled initiatives:")
+            else:
+                lines.append("  Also visible from roadmap initiatives:")
             lines.append("")
             for ini in ini_fallback:
                 iid = ini.get("id", "?")
@@ -687,7 +704,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
                 lines.append(f"  {iid}  [priority: {prio}]")
                 lines.append(f"    {title}")
                 lines.append("")
-        else:
+        elif not planning_lines:
             lines.append("  (all backlog items complete)")
             lines.append("")
 
@@ -746,7 +763,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append(sep)
 
     out = "\n".join(lines) + "\n"
-    console.print(out)
+    console.print(out, markup=False)
 
 
 def render_dashboard() -> None:
@@ -767,6 +784,7 @@ def render_dashboard() -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    planning_banks = state.get("planning_banks", {})
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
@@ -937,7 +955,10 @@ def render_dashboard() -> None:
             f"  [dim]{layer} · {pipeline}[/dim]"
         )
     if not top3:
+        planning_body = format_planning_bank_rich(planning_banks)
         ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if planning_body:
+            backlog_lines.append(planning_body)
         if ini_fallback:
             for ini in ini_fallback:
                 iid = ini.get("id", "?")
@@ -949,7 +970,7 @@ def render_dashboard() -> None:
                     f"  {title}\n"
                     f"  [dim]initiative · unscheduled[/dim]"
                 )
-        else:
+        elif not planning_body:
             backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
     backlog_panel = Panel(
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED

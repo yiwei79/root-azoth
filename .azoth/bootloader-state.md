@@ -4,12 +4,12 @@
 0.1.3.31 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 31
 
 ## Last Session
-- **Session**: 2026-04-24-planning-bank-surfacing-routing
-- **Goal**: AD-HOC: planning-bank surfacing and routing continuation
+- **Session**: 2026-04-24-t-020
+- **Goal**: T-020: Planning-bank surfacing and routing in session dashboards
 - **Session mode**: delivery
-- **Pipeline**: dynamic-full-auto
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-382 (success)
+- **Episode**: ep-383 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

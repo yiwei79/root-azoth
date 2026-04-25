@@ -527,6 +527,67 @@ def test_plain_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.Mo
     assert "Finish stage 4 handoff" in out
 
 
+def test_plain_dashboard_surfaces_tracked_planning_banks_without_claimable_backlog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 0.2.0\nphase: 8\n", encoding="utf-8")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n", encoding="utf-8")
+    (azoth_dir / "roadmap.yaml").write_text("schema_version: 2\nversions: []\n", encoding="utf-8")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "design-banks").mkdir()
+    (azoth_dir / "initiative-banks").mkdir()
+    (azoth_dir / "design-banks" / "planning-banks-layer.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: design\n"
+        "id: planning-banks-layer\n"
+        "title: Planning banks layer\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/local-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_refinement\n"
+        "  target_route: dashboard_routing_surfacing\n"
+        "  human_decision: approved\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "initiative-banks" / "INI-TEST.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: initiative\n"
+        "initiative_id: INI-TEST\n"
+        "title: Initiative test bank\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/ignored-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_research\n"
+        "  human_decision: approved\n"
+        "  hydration_recommendation: refine candidate before hydration\n"
+        "  candidate_first_slice: slice-test\n"
+        "candidate_slices:\n"
+        "  - candidate_id: slice-test\n"
+        "    proposed_task_id: TBD-TEST\n"
+        "    status: candidate\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Tracked planning banks (read-only planning/readiness state)" in out
+    assert "planning-banks-layer" in out
+    assert "INI-TEST" in out
+    assert "human: approved" in out
+    assert "Proposal drafts are source history only" in out
+    assert ".azoth/proposals/local-draft.yaml" not in out
+    assert ".azoth/proposals/ignored-draft.yaml" not in out
+    assert "No claimable backlog item is required before refining a planning bank." in out
+
+
 def test_rich_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Rich layout shows the optional active-run summary when ledger state exists."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")

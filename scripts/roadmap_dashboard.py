@@ -25,6 +25,8 @@ from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
 from rich.text import Text
+from planning_bank_surfacing import load_planning_bank_summaries
+from planning_bank_surfacing import render_planning_bank_panel
 from yaml_helpers import safe_load_yaml, safe_load_yaml_path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -360,6 +362,12 @@ def _backlog_path_for_roadmap(roadmap_path: Path) -> Path:
     if sibling.exists():
         return sibling
     return DEFAULT_BACKLOG
+
+
+def _repo_root_for_roadmap(roadmap_path: Path) -> Path:
+    if roadmap_path.name == "roadmap.yaml" and roadmap_path.parent.name == ".azoth":
+        return roadmap_path.parent.parent
+    return roadmap_path.parent
 
 
 def _empty_roadmap_panel_body(path: Path, reason: str | None) -> str:
@@ -808,6 +816,13 @@ def render_dashboard(
     )
     if drift_panel is not None:
         out.print(drift_panel)
+        out.print()
+
+    planning_bank_panel = render_planning_bank_panel(
+        load_planning_bank_summaries(_repo_root_for_roadmap(path))
+    )
+    if planning_bank_panel is not None:
+        out.print(planning_bank_panel)
         out.print()
 
     ini_panel = render_initiatives_panel(gather_initiatives(filtered_data))
