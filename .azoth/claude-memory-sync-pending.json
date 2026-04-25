@@ -1,14 +1,13 @@
 {
   "schema_version": 1,
-  "status": "synced",
-  "updated_at": "2026-04-25T10:07:25Z",
+  "status": "pending",
+  "updated_at": "2026-04-25T10:25:53Z",
   "source": "session-closeout",
-  "session_id": "2026-04-25-adhoc-autonomous-auto-full-ready",
-  "goal": "AD-HOC: ship autonomous-auto to Green using the UX retrospective as success criteria",
-  "latest_episode_id": "ep-389",
-  "latest_episode_summary": "Completed session closeout via scripts/do_closeout.py (W1-W4).",
-  "next_action": "Run `/next` to select the next scoped task.",
+  "session_id": "2026-04-25-autonomous-auto-initiative-bank-tooling-and-hydration-helper-2",
+  "goal": "Refine the initiative-bank tooling and hydration-helper proposal after planning truth is reconciled, preserving hydration and implementation gates.",
+  "latest_episode_id": "ep-396",
+  "latest_episode_summary": "Partial session closeout via scripts/do_closeout.py stopped after W2; roadmap YAML was repaired and the autonomous campaign stopped at the entropy ceiling.",
+  "next_action": "Package the autonomous-auto checkpoint, then continue only with fresh delegation evidence.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "reason": "",
-  "synced_at": "2026-04-25T10:07:25Z"
+  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'"
 }
