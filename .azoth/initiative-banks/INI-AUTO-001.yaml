@@ -543,41 +543,71 @@ candidate_slices:
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Provide one generated operator/agent view of active initiatives, proposals, candidate slices, readiness, campaign reports, gates, and next safe actions.
+    placement_decision:
+      disposition: dedicated_read_only_lifecycle_discoverability_report
+      rationale: >
+        Implement as a dedicated read-only lifecycle/discoverability report helper
+        rather than folding the surface into welcome.py or treating campaign-report
+        as sufficient. The helper may reuse planning_bank_surfacing.py,
+        planning_bank_validate.py readiness reports, autonomous_loop.py
+        lifecycle/campaign report evidence, and run-ledger/gate state.
     acceptance_criteria:
-      - The report lists initiative banks, proposal refs, candidate slice states, readiness status, blockers, and safe next actions.
+      - The report lists initiative banks, proposal refs, candidate slice states, hydrated task refs, completed-vs-active distinctions, readiness status, blockers, and safe next actions.
       - The report distinguishes planning evidence from executable backlog/roadmap tasks.
-      - Residual risks and protected gates are visible.
+      - Residual risks, evaluator evidence status, route decisions, active gates, write claims, and protected gates are visible.
+      - The report shows why completed hydrated tasks such as T-026 cannot silently authorize continuation or repeat hydration.
       - The report is deterministic and useful to a fresh chat session.
+    hydration_plan:
+      mode: plan_only_not_executed
+      proposed_title: Initiative lifecycle evaluator and discoverability spine
+      proposed_task_kind: roadmap_backed_task
+      approval_scope_required: hydration_specific_slice_auto_001_e
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-e, the dedicated read-only lifecycle/discoverability report helper, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - readiness_status is ready_to_hydrate
+        - approval_scope is hydration_specific_slice_auto_001_e
+        - approval_basis names INI-AUTO-001, slice-auto-001-e, the dedicated read-only lifecycle/discoverability report helper, and the exact scaffold command
+        - reviewer and evaluator evidence confirm this readiness-refinement child stayed plan-only
+        - no protected gate or active write claim blocks the write edge
     research_evidence_refs:
       - scripts/planning_bank_surfacing.py
+      - scripts/planning_bank_validate.py
       - scripts/autonomous_loop.py
+      - scripts/run_ledger.py
+      - .azoth/scope-gate.json
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
     known_non_goals:
       - Do not mutate planning state from the report command.
       - Do not treat every phase-null initiative as bank-backed or actionable.
-    open_questions:
-      - Should this extend campaign-report, planning_bank_surfacing.py, welcome.py, or become a dedicated discover command?
+      - Do not replace /next.
+      - Do not hydrate or implement in this readiness-refinement child.
+      - Do not create a daemon, scheduler, hidden continuation path, or repeated wakeup loop.
+      - Do not repeat hydration for T-026 or any completed candidate.
+      - Do not bypass evaluator evidence, protected gates, active run checks, or write-claim checks.
+    open_questions: []
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-25T19:34:23Z"
+  evaluated_at: "2026-04-25T20:06:11Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
-  readiness_status: continue_research
-  goal_clarity: durable_wakeup_driver_hydrated_for_separate_delivery
-  evidence_coverage: slice_d_hydrated_to_t_026_without_implementation
-  freshness_status: reconciled_after_slice_d_hydration
+  readiness_status: ready_to_hydrate
+  goal_clarity: lifecycle_discoverability_spine_ready_for_hydration
+  evidence_coverage: slice_e_plan_only_handoff_refined_after_t_026_completion
+  freshness_status: reconciled_after_T_026_completion
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-auto-001-d
+  candidate_first_slice: slice-auto-001-e
   target_layer: infrastructure
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: deliver_T_026_only_after_separate_scoped_delivery
-  next_candidate_ref: slice-auto-001-d
-  hydration_recommendation: Slice-auto-001-d is hydrated as T-026; do not hydrate again or implement the wakeup driver in this hydration child.
+  next_readiness_gate: hydrate_slice_auto_001_e_only_in_a_separate_child
+  next_candidate_ref: slice-auto-001-e
+  hydration_recommendation: Hydrate slice-auto-001-e only in a later child using the exact scaffold command recorded in its plan-only hydration handoff; do not execute the scaffold or implement the report command in this readiness-refinement child.
   human_decision: approved
-  approval_scope: hydration_specific_slice_auto_001_d
-  approval_basis: Operator locked the Durable Wakeup Driver Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-d and approved the separate hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Durable autonomous-auto wakeup driver" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-d --description "Implement a one-iteration autonomous-auto wakeup driver that checks loop state, campaign reports, gates, run ledger, write claims, and stop conditions before opening any child scope." --target-layer infrastructure --delivery-pipeline standard`; approval covers roadmap/backlog/spec hydration and excludes implementation, kernel, governance, M1, destructive, credential, network, hidden daemon, unbounded scheduler, and cross-branch work.
+  approval_scope: hydration_specific_slice_auto_001_e
+  approval_basis: Operator locked the Initiative Lifecycle Discoverability Spine Campaign on 2026-04-25 for INI-AUTO-001 slice-auto-001-e and approved readiness refinement toward a later hydration child using the exact scaffold command `python3 scripts/roadmap_scaffold.py --title "Initiative lifecycle evaluator and discoverability spine" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-e --description "Implement a read-only initiative lifecycle report that reconciles initiative banks, proposal refs, candidate slices, roadmap/backlog/spec state, readiness, evaluator evidence, campaign reports, gates, and safe next actions for autonomous-auto discoverability." --target-layer infrastructure --delivery-pipeline standard`; approval covers readiness promotion and later roadmap/backlog/spec hydration only, and excludes implementation in this child, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, repeat T-026 hydration, and cross-branch work.
 hydration_history:
   - hydrated_at: "2026-04-25T13:43:00Z"
     session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1

@@ -501,17 +501,17 @@ initiatives:
   - task_ref: T-026
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-026.yaml
     phase: v0.2.0-p3
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
   discovery_status: active_refinement
-  candidate_slice_ref: slice-auto-001-d
+  candidate_slice_ref: slice-auto-001-e
   readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
-  next_discovery_action: Deliver T-026 only after a separate scoped delivery child;
-    do not repeat hydration or implement the durable wakeup driver from stale campaign
-    evidence.
+  next_discovery_action: Hydrate slice-auto-001-e in a later autonomous-auto child
+    only after evaluator-backed green readiness; do not repeat T-026 hydration or implement
+    the lifecycle discoverability report during readiness refinement.
   summary: 'Make autonomous-auto capable of taking an operator-provided initiative
     and working it through Azoth-native lifecycle states: intake, evidence building,
     architecture challenge, readiness reporting, approved hydration, bounded delivery,
@@ -526,8 +526,8 @@ initiatives:
   - D48
   - D50
   - D52
-  task_ref: T-026
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-026.yaml
+  task_ref: null
+  spec_ref: null
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline
