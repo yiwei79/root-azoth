@@ -17,6 +17,7 @@ from typing import Any
 
 import yaml
 
+from autonomous_campaign_audit import build_campaign_audit
 from planning_bank_validate import build_initiative_readiness_report
 from run_ledger import acquire_write_claim, load_write_claim, release_write_claim, upsert_run
 from session_gate import active_session_gate, normalized_session_mode
@@ -3843,6 +3844,51 @@ def cmd_campaign_report(args: argparse.Namespace) -> None:
     )
 
 
+def _format_campaign_audit(payload: dict[str, Any]) -> str:
+    campaign = payload.get("campaign") if isinstance(payload.get("campaign"), dict) else {}
+    route = (
+        payload.get("next_route_recommendation")
+        if isinstance(payload.get("next_route_recommendation"), dict)
+        else {}
+    )
+    scorecard = (
+        payload.get("traceability_scorecard")
+        if isinstance(payload.get("traceability_scorecard"), dict)
+        else {}
+    )
+    residuals = (
+        payload.get("residual_risks")
+        if isinstance(payload.get("residual_risks"), list)
+        else []
+    )
+    return "\n".join(
+        [
+            f"Campaign audit: {campaign.get('loop_id') or 'unknown'}",
+            f"Campaign status: {campaign.get('status') or 'unknown'}",
+            f"Overall provenance: {scorecard.get('overall_provenance') or 'unknown'}",
+            f"Next route: {route.get('route') or 'unknown'}",
+            f"Residual risks: {len(residuals)}",
+        ]
+    )
+
+
+def cmd_campaign_audit(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    result = build_campaign_audit(
+        root,
+        args.loop_id,
+        state_path=args.audit_state,
+        ledger_path=args.ledger,
+        episodes_path=args.episodes,
+        inbox_dir=args.inbox_dir,
+    )
+    print(
+        json.dumps(result, indent=2, sort_keys=False)
+        if args.json
+        else _format_campaign_audit(result)
+    )
+
+
 def _resolve_optional_path(root: Path, value: str | None) -> Path | None:
     if not value:
         return None
@@ -3978,6 +4024,22 @@ def build_parser() -> argparse.ArgumentParser:
     campaign.add_argument("--handoff", default=None, help="Handoff markdown path.")
     campaign.add_argument("--json", action="store_true")
     campaign.set_defaults(func=cmd_campaign_report)
+
+    audit = sub.add_parser(
+        "campaign-audit", help="Build a read-only autonomous-auto campaign audit report."
+    )
+    audit.add_argument("--loop-id", required=True, help="Autonomous-auto loop/campaign id.")
+    audit.add_argument("--json", action="store_true")
+    audit.add_argument(
+        "--state",
+        dest="audit_state",
+        default=None,
+        help=f"Loop state path, default {STATE_REL}.",
+    )
+    audit.add_argument("--ledger", default=None, help="Run ledger path.")
+    audit.add_argument("--episodes", default=None, help="Memory episodes JSONL path.")
+    audit.add_argument("--inbox-dir", default=None, help="Inbox directory path.")
+    audit.set_defaults(func=cmd_campaign_audit)
 
     wake = sub.add_parser(
         "wakeup",
