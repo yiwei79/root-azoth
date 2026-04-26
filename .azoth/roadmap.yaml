@@ -516,6 +516,11 @@ initiatives:
   - task_ref: T-029
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-029.yaml
     phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-030
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
+    phase: v0.2.0-p3
     status: active
     role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
@@ -541,8 +546,8 @@ initiatives:
   - D48
   - D50
   - D52
-  task_ref: T-029
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-029.yaml
+  task_ref: T-030
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline
@@ -1762,7 +1767,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 64
+  current_patch: 67
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1972,4 +1977,14 @@ versions:
       - D46
       - D50
       - D52
-    - {id: T-029, title: "Autonomous-auto campaign audit report", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D48, D50, D52]}
+    - id: T-029
+      title: Autonomous-auto campaign audit report
+      completed_date: '2026-04-26'
+      decision_ref:
+      - D11
+      - D21
+      - D23
+      - D48
+      - D50
+      - D52
+    - {id: T-030, title: "Autonomous campaign strategy budget repair", completed_date: "2026-04-26", decision_ref: [D11, D23, D48, D50, D52]}

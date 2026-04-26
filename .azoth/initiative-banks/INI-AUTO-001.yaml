@@ -4,7 +4,7 @@ initiative_id: INI-AUTO-001
 title: Autonomous initiative lifecycle orchestration
 status: active_refinement
 created_at: "2026-04-25T12:10:00+00:00"
-updated_at: "2026-04-25T21:30:00Z"
+updated_at: "2026-04-26T12:14:10Z"
 owner: codex
 source_sessions:
   - session_id: 2026-04-25-autonomous-initiative-lifecycle-seed
@@ -154,7 +154,7 @@ research_questions:
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
   - question_id: rq-auto-001-007
     question: How much strategy budget should autonomous-auto spend before initializing or opening the next campaign?
-    status: active
+    status: answered
     opened_at: "2026-04-26T10:35:00Z"
     needed_for: campaign_strategy_preflight
     answer: >
@@ -170,6 +170,24 @@ research_questions:
       - scripts/autonomous_loop.py
       - .agents/skills/autonomous-auto/SKILL.md
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+      - .azoth/run-ledger.local.yaml#2026-04-26-autonomous-auto-ini-auto-001-1
+  - question_id: rq-auto-001-008
+    question: What should the orchestrator do after a staged subagent wave returns inside an approved autonomous-auto campaign?
+    status: answered
+    opened_at: "2026-04-26T11:52:30Z"
+    needed_for: campaign_strategy_preflight
+    answer: >
+      A staged subagent wave is an orchestration checkpoint, not a user handoff.
+      The orchestrator must record stage summaries, require paired stage
+      evidence, synthesize the architect/researcher/evaluator results into the
+      repo-native strategy surface, apply any async alignment packets, then make
+      the next lifecycle-route decision inside the approved budget. It stops
+      only when route authority, protected gates, scope/write-claim state,
+      approval scope, replay threshold, or budget exhaustion says stop.
+    evidence_refs:
+      - .azoth/autonomous-loop-state.local.yaml#alignment_packets.align-002
+      - .azoth/run-ledger.local.yaml#2026-04-26-autonomous-auto-ini-auto-001-1
+      - .agents/skills/autonomous-auto/SKILL.md#Loop-Governor
 research_refs: []
 local_findings:
   - finding_id: lf-auto-001-001
@@ -241,6 +259,13 @@ local_findings:
       - tests/test_autonomous_loop.py
       - .azoth/autonomous-loop-state.local.yaml
       - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
+  - finding_id: lf-auto-001-011
+    status: active
+    summary: The orchestrator must not convert every child-scope checkpoint into a human command gate; after staged subagents return, it should synthesize evidence and continue to the next repo-native route decision within the approved campaign budget.
+    evidence_refs:
+      - .azoth/autonomous-loop-state.local.yaml#alignment_packets.align-002
+      - .azoth/run-ledger.local.yaml#2026-04-26-autonomous-auto-ini-auto-001-1
+      - .agents/skills/autonomous-auto/SKILL.md
 external_findings: []
 assumptions:
   - assumption_id: as-auto-001-001
@@ -813,10 +838,10 @@ candidate_slices:
     open_questions: []
     recommended_phase: v0.2.0-p3
   - candidate_id: slice-auto-001-h
-    proposed_task_id: T-AUTO-H
+    proposed_task_id: T-030
     title: Autonomous campaign strategy budget repair
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: hydrated
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: >
@@ -831,6 +856,7 @@ candidate_slices:
       - Strategy preflight classifies the selected target as live, stale, research-only, hydration-ready, delivery-ready, protected, or route-conflicted before init/open-next.
       - If recommendation and lifecycle-route disagree, the system stops before opening work and emits the mismatch plus the next safe repair action.
       - Campaign declaration text includes the strategy-preflight verdict, selected route, blocked alternatives, and why this campaign shape is broad or narrow enough.
+      - Staged subagent completion requires orchestrator synthesis, run-ledger summary evidence, async alignment disposition, and the next repo-native route decision; it does not require a new user command unless a real stop condition fires.
       - Tests prove open-next/init cannot proceed from advisory recommendation alone and that initiative candidates carry lifecycle-route evidence in the declaration/preflight packet.
     research_evidence_refs:
       - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
@@ -838,24 +864,57 @@ candidate_slices:
       - tests/test_autonomous_loop.py
       - .agents/skills/autonomous-auto/SKILL.md
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+      - .azoth/autonomous-loop-state.local.yaml#alignment_packets.align-002
+      - .azoth/run-ledger.local.yaml#2026-04-26-autonomous-auto-ini-auto-001-1
+      - .azoth/run-ledger.local.yaml#2026-04-26-autonomous-auto-ini-auto-001-2
     known_non_goals:
       - Do not create a daemon or scheduler.
       - Do not make recommendation packets continuation authority.
       - Do not bypass lifecycle-route, run-ledger, scope-gate, or write-claim checks.
       - Do not hydrate roadmap/backlog/spec state in the research child.
       - Do not expand into kernel, governance, M1, destructive, credential, network, or cross-branch work.
-    open_questions:
-      - Should strategy preflight be a read-only command, an embedded campaign-report packet, or both?
-      - Which command should own the hard refusal before init/open-next when recommendation and lifecycle-route conflict?
-      - What minimum declaration fields make the campaign's strategic reasoning auditable without over-bureaucratizing small safe slices?
+    resolved_open_questions:
+      - question: Should strategy preflight be a read-only command, an embedded campaign-report packet, or both?
+        decision: both_read_only_report_and_embedded_declaration_packet
+        note: The report gives deterministic route evidence; the declaration packet makes the strategy visible before init/open-next.
+      - question: Which command should own the hard refusal before init/open-next when recommendation and lifecycle-route conflict?
+        decision: autonomous_loop_init_and_open_next_refuse_route_conflicts
+        note: Campaign-report/declaration text is advisory context; lifecycle-route remains the authority for opening work.
+      - question: What minimum declaration fields make the campaign's strategic reasoning auditable without over-bureaucratizing small safe slices?
+        decision: minimal_strategy_preflight_fields
+        note: Record verdict, selected_route, route_state, approval_scope, approval_basis_present, source_artifacts, blocked_alternatives, fresh_campaign_authority, current_loop_authority, and mismatch_reason when present.
+      - question: What happens after architect/researcher/evaluator subagents return inside a planned campaign?
+        decision: orchestrator_synthesis_then_route_decision
+        note: Record stage summaries, require evidence, apply async alignment, synthesize into repo-native state, then decide the next route without asking for a new command unless a stop condition fires.
+      - question: What is the narrow hydration handoff after strategy-preflight research completes?
+        decision: plan_only_hydration_handoff
+        note: Capture the scaffold command and do-not-run gates in the initiative bank; do not run roadmap_scaffold.py until fresh hydration_specific_slice_auto_001_h approval exists.
+    open_questions: []
+    hydration_plan:
+      mode: executed
+      proposed_title: Autonomous campaign strategy budget repair
+      proposed_task_kind: roadmap_backed_task
+      approval_scope_required: hydration_specific_slice_auto_001_h
+      approval_basis_required: Must name INI-AUTO-001, slice-auto-001-h, the campaign strategy preflight contract, and the exact scaffold command before any roadmap/backlog/spec write.
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Autonomous campaign strategy budget repair" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-h --description "Implement a mandatory pre-open autonomous-auto strategy preflight that reconciles recommendation packets with lifecycle-route, readiness, approval scope, gates, and write claims before init/open-next." --target-layer infrastructure --delivery-pipeline standard
+      do_not_run_until:
+        - readiness_status is ready_to_hydrate
+        - approval_scope is hydration_specific_slice_auto_001_h
+        - approval_basis names INI-AUTO-001, slice-auto-001-h, and the exact scaffold command
+        - planning_bank_validate.py readiness report is green for slice-auto-001-h
+        - no protected gate, active scope, active write claim, stale budget, or async alignment scope change blocks the write edge
+      hydrated_task_ref: T-030
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
+      hydrated_at: "2026-04-26T12:22:21Z"
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-26T10:35:00Z"
+  evaluated_at: "2026-04-26T12:22:21Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
-  readiness_status: continue_research
+  readiness_status: ready_to_hydrate
   goal_clarity: campaign_strategy_budget_repair_seeded
-  evidence_coverage: strategy_preflight_gap_captured_with_candidate_slice
-  freshness_status: next_campaign_truth_needs_preopen_strategy_reconciliation
+  evidence_coverage: strategy_preflight_research_wave_complete_with_hydration_specific_approval
+  freshness_status: current_as_of_2026_04_26_hydrated_to_t_030
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
   candidate_first_slice: slice-auto-001-h
@@ -863,12 +922,12 @@ readiness:
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: research_strategy_preflight_before_init_or_open_next
+  next_readiness_gate: ship_hydrated_task_t_030_in_separate_delivery_child
   next_candidate_ref: slice-auto-001-h
-  hydration_recommendation: Slice-auto-001-h is research-only until strategy-preflight behavior is specified and tested; do not hydrate, ship, initialize a delivery loop, or mutate roadmap/backlog/spec state from the research child.
+  hydration_recommendation: Slice-auto-001-h has been hydrated as T-030. Do not repeat hydration; route any implementation or shipping through a separate delivery child with route, gate, and write-claim checks.
   human_decision: approved
-  approval_scope: research_to_readiness_slice_auto_001_h
-  approval_basis: Operator approved the Autonomous Campaign Strategy Budget Repair campaign on 2026-04-26 for INI-AUTO-001 slice-auto-001-h. Approval covers research_initiative and capture_self_improvement only; hydration, implementation, roadmap/backlog/spec mutation, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work are excluded unless a fresh approval explicitly names the write edge.
+  approval_scope: hydration_specific_slice_auto_001_h
+  approval_basis: Operator said "Now continue the campaign" on 2026-04-26 after lifecycle-route stopped at awaiting_hydration_approval. Approval is hydration-specific for INI-AUTO-001 slice-auto-001-h and the exact scaffold command in candidate_slices.slice-auto-001-h.hydration_plan.scaffold_command. Approval excludes implementation, shipping, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work.
 hydration_history:
   - hydrated_at: "2026-04-25T13:43:00Z"
     session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1
@@ -930,3 +989,15 @@ hydration_history:
     scaffold_command: >
       python3 scripts/roadmap_scaffold.py --title "Autonomous-auto campaign audit report" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-f --description "Implement a read-only autonomous-auto campaign audit report that reconstructs completed campaigns, joins repo-native stage/evaluator/closeout evidence, classifies learning-closure rows, and recommends next safe routes without mutating planning, loop, roadmap, backlog, spec, or memory state." --target-layer infrastructure --delivery-pipeline standard
     result: Created roadmap/backlog/spec artifacts for T-029 and linked them to INI-AUTO-001; no implementation or shipping work was performed.
+  - hydrated_at: "2026-04-26T12:22:21Z"
+    session_id: 2026-04-26-autonomous-auto-slice-auto-001-h-1
+    candidate_slice_ref: slice-auto-001-h
+    task_ref: T-030
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
+    backlog_ref: T-030
+    roadmap_ref: T-030
+    approval_scope: hydration_specific_slice_auto_001_h
+    approval_basis: Operator said "Now continue the campaign" on 2026-04-26 after lifecycle-route stopped at awaiting_hydration_approval. Approval is hydration-specific for INI-AUTO-001 slice-auto-001-h and the exact scaffold command in candidate_slices.slice-auto-001-h.hydration_plan.scaffold_command. Approval excludes implementation, shipping, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work.
+    scaffold_command: >
+      python3 scripts/roadmap_scaffold.py --title "Autonomous campaign strategy budget repair" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D23 D48 D50 D52 --source initiative-bank-INI-AUTO-001-slice-auto-001-h --description "Implement a mandatory pre-open autonomous-auto strategy preflight that reconciles recommendation packets with lifecycle-route, readiness, approval scope, gates, and write claims before init/open-next." --target-layer infrastructure --delivery-pipeline standard
+    result: Created roadmap/backlog/spec artifacts for T-030 and linked them to INI-AUTO-001; no implementation or shipping work was performed.

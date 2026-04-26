@@ -3242,3 +3242,24 @@ items:
   - D48
   - D50
   - D52
+- id: T-030
+  title: Autonomous campaign strategy budget repair
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-h
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-26'
+  completed_date: '2026-04-26'
+  description: Implement a mandatory pre-open autonomous-auto strategy preflight that
+    reconciles recommendation packets with lifecycle-route, readiness, approval scope,
+    gates, and write claims before init/open-next.
+  roadmap_ref: T-030
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
