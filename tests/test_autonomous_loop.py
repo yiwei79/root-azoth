@@ -258,6 +258,19 @@ def test_record_vision_score_green_marks_continuation_not_required(tmp_path: Pat
     assert decision["architect_judgment"]["residual_risk"] == (
         "Campaign reached its completion condition; open a fresh budget to continue."
     )
+    packet = decision["next_campaign_recommendation"]
+    assert packet["packet_type"] == "autonomous_auto_next_campaign_recommendation"
+    assert packet["status"] == "advisory_only"
+    assert packet["requires_fresh_approval"] is True
+    assert packet["may_open_scope"] is False
+    assert packet["fresh_budget_required"] is True
+    assert packet["safe_to_continue_current_loop"] is False
+    assert packet["hidden_continuation_allowed"] is False
+    assert read["next_campaign_recommendation"]["packet_type"] == packet["packet_type"]
+    assert read["next_campaign_recommendation"]["status"] == "advisory_only"
+    assert read["next_campaign_recommendation"]["candidate_strategy"]["reason"] == (
+        "no_non_protected_candidate"
+    )
 
 
 def test_existing_green_active_state_reads_as_completed_not_blocked(tmp_path: Path) -> None:
@@ -291,6 +304,8 @@ def test_existing_green_active_state_reads_as_completed_not_blocked(tmp_path: Pa
     )
     assert decision["action"] == "stop"
     assert decision["stop_reason"] == "vision_realized"
+    assert decision["next_campaign_recommendation"]["status"] == "advisory_only"
+    assert read["next_campaign_recommendation"]["fresh_budget_required"] is True
 
 
 def test_completed_loop_read_ignores_unrelated_active_scope(tmp_path: Path) -> None:
@@ -326,6 +341,211 @@ def test_completed_loop_read_ignores_unrelated_active_scope(tmp_path: Path) -> N
     assert status["completion_reason"] == "vision_realized"
     assert status["stop_reason"] is None
     assert read["next_likely_move"] == "complete: vision_realized"
+
+
+def test_completed_green_campaign_report_exposes_advisory_next_campaign_packet(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    packet = report["next_campaign_recommendation"]
+
+    assert report["current_loop"]["status"] == "completed"
+    assert report["observation"]["fresh_budget_required"] is True
+    assert packet["packet_type"] == "autonomous_auto_next_campaign_recommendation"
+    assert packet["current_loop_authority"] == "closed"
+    assert packet["fresh_budget_required"] is True
+    assert packet["safe_to_continue_current_loop"] is False
+    assert packet["hidden_continuation_allowed"] is False
+    assert packet["requires_fresh_approval"] is True
+    assert packet["may_open_scope"] is False
+    assert packet["hidden_continuation"] is False
+
+
+def test_completed_green_recommendation_packet_ranks_candidates_without_mutation(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "items": [
+                {
+                    "id": "AUTO-NEXT-001",
+                    "title": "Improve autonomous continuation strategy",
+                    "status": "pending",
+                    "priority": 1,
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                }
+            ]
+        },
+    )
+    before = _snapshot_files(tmp_path)
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    packet = report["next_campaign_recommendation"]
+
+    assert _snapshot_files(tmp_path) == before
+    assert packet["available"] is True
+    assert packet["mode"] == "recommendation_only"
+    assert packet["ranked_recommendations"][0]["candidate_id"] == "AUTO-NEXT-001"
+    assert packet["ranked_recommendations"][0]["action"] == "ship_task"
+    assert packet["draft_campaign_declaration"]["selected_seed"] == "AUTO-NEXT-001"
+    assert packet["blocked_actions"] == [
+        {
+            "action": "open_next",
+            "reason": "fresh approval required after vision_realized",
+        },
+        {
+            "action": "continue_old_campaign",
+            "reason": "completed campaign evidence is not continuation authority",
+        },
+    ]
+
+
+def test_completed_green_stop_decision_includes_ranked_recommendations_without_mutation(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "items": [
+                {
+                    "id": "AUTO-NEXT-002",
+                    "title": "Recommend the next autonomous campaign",
+                    "status": "pending",
+                    "priority": 1,
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                }
+            ]
+        },
+    )
+    before = _snapshot_files(tmp_path)
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    packet = decision["next_campaign_recommendation"]
+
+    assert _snapshot_files(tmp_path) == before
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "vision_realized"
+    assert packet["packet_type"] == "autonomous_auto_next_campaign_recommendation"
+    assert packet["requires_fresh_approval"] is True
+    assert packet["may_open_scope"] is False
+    assert packet["ranked_recommendations"][0]["candidate_id"] == "AUTO-NEXT-002"
+    assert packet["draft_campaign_declaration"]["selected_seed"] == "AUTO-NEXT-002"
+
+
+def test_completed_green_plain_operator_and_campaign_outputs_show_recommendation(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        iteration=3,
+        autonomy_budget={
+            "approval_basis": "User approved branch-local autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["ship_task"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "items": [
+                {
+                    "id": "AUTO-NEXT-003",
+                    "title": "Expose recommendation in plain output",
+                    "status": "pending",
+                    "priority": 1,
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                }
+            ]
+        },
+    )
+
+    assert (
+        autonomous_loop.main(
+            ["--root", str(tmp_path), "--state", str(state_path), "status", "--operator-read"]
+        )
+        == 0
+    )
+    operator_output = capsys.readouterr().out
+    assert "Next campaign recommendation: advisory_only" in operator_output
+    assert "fresh_approval=True" in operator_output
+    assert "may_open_scope=False" in operator_output
+    assert "top=ship_task:AUTO-NEXT-003" in operator_output
+
+    assert (
+        autonomous_loop.main(
+            ["--root", str(tmp_path), "--state", str(state_path), "campaign-report"]
+        )
+        == 0
+    )
+    report_output = capsys.readouterr().out
+    assert "Next campaign recommendation: advisory_only" in report_output
+    assert "fresh_approval=True" in report_output
+    assert "may_open_scope=False" in report_output
+    assert "top=ship_task:AUTO-NEXT-003" in report_output
 
 
 def test_active_scope_blocks_next_iteration(tmp_path: Path) -> None:
@@ -1778,12 +1998,30 @@ def test_wakeup_fails_closed_for_completed_vision(tmp_path: Path) -> None:
         },
     )
 
-    report = autonomous_loop.wakeup(tmp_path, state_path, open_scope=True)
+    decision_out = tmp_path / ".azoth/completed-green-decision.json"
+    before = _snapshot_files(tmp_path)
+
+    report = autonomous_loop.wakeup(
+        tmp_path,
+        state_path,
+        open_scope=True,
+        decision_out=decision_out,
+    )
 
     assert report["opened"] is False
     assert report["stop_reason"] == "vision_realized"
     assert report["fresh_budget_required"] is True
     assert "fresh budget" in report["residual_risk"]
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
+    assert report["decision"]["action"] == "stop"
+    assert report["next_campaign_recommendation"]["requires_fresh_approval"] is True
+    assert report["next_campaign_recommendation"]["may_open_scope"] is False
+    assert report["decision"]["next_campaign_recommendation"]["status"] == "advisory_only"
+    assert json.loads(decision_out.read_text(encoding="utf-8")) == report["decision"]
+    after = _snapshot_files(tmp_path)
+    expected = dict(before)
+    expected[str(decision_out.relative_to(tmp_path))] = decision_out.read_bytes()
+    assert after == expected
 
 
 def test_wakeup_fails_closed_for_protected_candidate_and_no_safe_candidate(
@@ -1861,6 +2099,7 @@ def test_wakeup_cli_json_writes_report_and_decision(
             "loop_status",
             "campaign_report",
             "operator_read",
+            "next_campaign_recommendation",
             "gate_status",
             "write_claim",
             "autonomy_budget",

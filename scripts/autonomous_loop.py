@@ -557,6 +557,124 @@ def _continuation_summary(
     return {"required": True, "reason": "vision_not_realized"}
 
 
+def _recommendation_action_for_candidate(candidate: dict[str, Any], source: str) -> str:
+    if source == "backlog":
+        return "ship_task"
+    if source == "initiative-bank":
+        return "hydrate_task" if candidate.get("proposed_task_id") else "research_initiative"
+    if source == "proposal":
+        return (
+            "hydrate_task"
+            if str(candidate.get("recommended_route") or "") == "hydrate_task"
+            else "refine_proposal"
+        )
+    return str(candidate.get("action") or "stop")
+
+
+def _next_campaign_recommendation(
+    root: Path, state: dict[str, Any], status: dict[str, Any]
+) -> dict[str, Any]:
+    if not state:
+        return {"available": False, "reason": "missing_loop_state", "ranked_recommendations": []}
+    if str(status.get("completion_reason") or "") != "vision_realized":
+        return {
+            "available": False,
+            "reason": str(status.get("stop_reason") or "loop_not_completed_green"),
+            "ranked_recommendations": [],
+        }
+    if status.get("active_scope_id") or status.get("active_session_conflict"):
+        return {
+            "available": False,
+            "reason": "active_scope_or_session_gate",
+            "ranked_recommendations": [],
+        }
+    write_claim = status.get("write_claim") if isinstance(status.get("write_claim"), dict) else {}
+    if write_claim.get("held") and not write_claim.get("stale"):
+        return {
+            "available": False,
+            "reason": "active_write_claim_present",
+            "ranked_recommendations": [],
+        }
+
+    raw_candidates: list[tuple[str, dict[str, Any], str]] = []
+    for candidate, source in (
+        (_first_backlog_candidate(root), "backlog"),
+        (_first_ready_initiative_candidate(root), "initiative-bank"),
+        (_first_research_initiative_candidate(root), "initiative-bank"),
+        (_first_proposal_candidate(root), "proposal"),
+    ):
+        if candidate:
+            raw_candidates.append(
+                (_recommendation_action_for_candidate(candidate, source), candidate, source)
+            )
+
+    ranked: list[dict[str, Any]] = []
+    blocked: list[dict[str, Any]] = []
+    for action, candidate, source in raw_candidates:
+        snapshot = _candidate_snapshot(action, candidate, source)
+        if snapshot.get("protected"):
+            blocked.append(
+                {
+                    "action": action,
+                    "candidate_id": snapshot.get("candidate_id"),
+                    "reason": "protected boundary requires a fresh human gate",
+                }
+            )
+            continue
+        ranked.append(snapshot)
+    ranked.sort(key=lambda item: int(item.get("scorecard", {}).get("total") or 0), reverse=True)
+    selected = ranked[0] if ranked else None
+    if not selected:
+        return {
+            "available": False,
+            "reason": "no_non_protected_candidate",
+            "ranked_recommendations": [],
+            "blocked_recommendations": blocked,
+        }
+    return {
+        "available": True,
+        "reason": "completed_green_campaign_ready_for_fresh_budget",
+        "selection_basis": [
+            "repo_native_candidate_surfaces",
+            "ux_anchor_gap_continuation_after_closeout",
+            "risk",
+            "readiness",
+            "fresh_budget_required",
+        ],
+        "evidence_refs": [
+            ".azoth/autonomous-loop-state.local.yaml",
+            ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            ".azoth/initiative-banks/",
+            ".azoth/proposals/",
+            ".azoth/backlog.yaml",
+        ],
+        "ux_anchor_gaps": [
+            "continuation_after_closeout",
+            "direction_over_micromanagement",
+            "architect_level_orchestration",
+        ],
+        "ranked_recommendations": ranked[:3],
+        "blocked_recommendations": blocked,
+        "draft_campaign_declaration": {
+            "goal": f"Prepare next autonomous-auto campaign for {selected.get('title')}.",
+            "selected_mode": "autonomous-auto",
+            "pipeline_command": "autonomous-auto",
+            "alignment_mode": "async",
+            "selected_seed": selected.get("candidate_id"),
+            "allowed_action_classes": [selected.get("action"), "capture_self_improvement"],
+            "budget": {"max_iterations": 3, "replay_threshold": 1},
+            "protected_boundaries": [
+                "kernel/governance/M1",
+                "destructive actions",
+                "credential/network expansion",
+                "active scope or write claim",
+                "unbounded hidden continuation",
+            ],
+            "fresh_operator_approval_required": True,
+        },
+    }
+
+
 def _priority(item: dict[str, Any]) -> tuple[int, str]:
     raw = item.get("priority")
     try:
@@ -906,19 +1024,120 @@ def _architect_judgment(
     }
 
 
+def _next_campaign_recommendation_packet(
+    state: dict[str, Any],
+    reason: str,
+    status: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    vision = _vision_state(state)
+    if (
+        reason != "vision_realized"
+        or vision.get("current_band") != "green"
+        or vision.get("target_band") != "green"
+        or not vision.get("realized")
+    ):
+        return {}
+    status = status or {}
+    write_claim = status.get("write_claim") if isinstance(status.get("write_claim"), dict) else {}
+    return {
+        "packet_schema_version": 1,
+        "packet_type": "autonomous_auto_next_campaign_recommendation",
+        "mode": "recommendation_only",
+        "status": "advisory_only",
+        "source": "completed_green_loop",
+        "requires_fresh_approval": True,
+        "may_open_scope": False,
+        "hidden_continuation": False,
+        "current_loop_authority": "closed",
+        "fresh_budget_required": True,
+        "safe_to_continue_current_loop": False,
+        "hidden_continuation_allowed": False,
+        "completed_loop": {
+            "loop_id": str(state.get("loop_id") or ""),
+            "iteration": int(status.get("iteration") or state.get("iteration") or 0),
+            "completion_reason": "vision_realized",
+            "vision_band": str(vision.get("current_band") or ""),
+            "vision_target": str(vision.get("target_band") or ""),
+        },
+        "safety_preflight": {
+            "active_scope": bool(status.get("active_scope_id")),
+            "active_scope_id": str(status.get("active_scope_id") or ""),
+            "active_session_conflict": bool(status.get("active_session_conflict")),
+            "active_write_claim": bool(write_claim.get("held") and not write_claim.get("stale")),
+            "safe_to_open_without_approval": False,
+        },
+        "recommended_operator_action": (
+            "Review and approve a fresh autonomous-auto campaign declaration before opening "
+            "another child scope."
+        ),
+        "recommended_commands": [
+            "python3 scripts/autonomous_loop.py status --operator-read",
+            "python3 scripts/autonomous_loop.py campaign-report --json",
+            "python3 scripts/run_ledger.py status",
+        ],
+        "blocked_actions": [
+            {
+                "action": "open_next",
+                "reason": "fresh approval required after vision_realized",
+            },
+            {
+                "action": "continue_old_campaign",
+                "reason": "completed campaign evidence is not continuation authority",
+            },
+        ],
+        "approval_boundary": (
+            "This packet may recommend the next campaign, but it must not initialize a new "
+            "loop or open scope without a fresh operator-approved declaration."
+        ),
+    }
+
+
+def _next_campaign_recommendation_report_packet(
+    root: Path,
+    state: dict[str, Any],
+    status: dict[str, Any],
+) -> dict[str, Any]:
+    packet = _next_campaign_recommendation_packet(
+        state,
+        str(status.get("completion_reason") or ""),
+        status,
+    )
+    if not packet:
+        return {}
+    strategy = _next_campaign_recommendation(root, state, status)
+    packet["available"] = bool(strategy.get("available"))
+    packet["candidate_strategy"] = strategy
+    for field in (
+        "reason",
+        "selection_basis",
+        "evidence_refs",
+        "ux_anchor_gaps",
+        "ranked_recommendations",
+        "blocked_recommendations",
+    ):
+        if field in strategy:
+            packet[field] = strategy[field]
+    declaration = strategy.get("draft_campaign_declaration")
+    if isinstance(declaration, dict):
+        packet["draft_campaign_declaration"] = declaration
+    return packet
+
+
 def _stop_decision(
     state: dict[str, Any],
     reason: str,
     *,
     detail: str = "",
     candidate: dict[str, Any] | None = None,
+    root: Path | None = None,
+    status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     residual_risk = (
         "Campaign reached its completion condition; open a fresh budget to continue."
         if reason == "vision_realized"
         else "Continuation blocked until the stop reason is resolved."
     )
-    return {
+    decision = {
         "decision_schema_version": DECISION_SCHEMA_VERSION,
         "loop_id": str(state.get("loop_id") or ""),
         "iteration": int(state.get("iteration") or 0),
@@ -944,6 +1163,19 @@ def _stop_decision(
         },
         "alignment_checkpoint_summary": _alignment_summary(state),
     }
+    packet = _next_campaign_recommendation_packet(state, reason, status)
+    if packet and root is not None:
+        report_status = status or {
+            "completion_reason": reason,
+            "iteration": int(state.get("iteration") or 0),
+            "write_claim": {},
+        }
+        enriched = _next_campaign_recommendation_report_packet(root, state, report_status)
+        if enriched:
+            packet = enriched
+    if packet:
+        decision["next_campaign_recommendation"] = packet
+    return decision
 
 
 def _action_decision(
@@ -1461,10 +1693,13 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
         )
     completion_reason = _completion_reason(state)
     if completion_reason:
+        status = loop_status(root, state_path)
         return _stop_decision(
             state,
             completion_reason,
             detail="Autonomous-auto campaign has reached its completion condition.",
+            root=root,
+            status=status,
         )
     if str(state.get("status") or "").strip() != "active":
         return _stop_decision(state, "loop_not_active", detail="Loop state is not active.")
@@ -1918,6 +2153,7 @@ def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
             "failure_reason": "missing_loop_state",
             "completion_reason": "",
             "operator_read": {},
+            "next_campaign_recommendation": {},
         }
     try:
         report = loop_status(root, state_path)
@@ -1934,6 +2170,10 @@ def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
             "stop_reason": report.get("stop_reason"),
             "completion_reason": report.get("completion_reason"),
         }
+        state = _load_yaml_mapping(state_path)
+        report["next_campaign_recommendation"] = _next_campaign_recommendation_report_packet(
+            root, state, report
+        )
     except Exception as exc:
         return {
             "state_path": str(state_path),
@@ -1942,6 +2182,7 @@ def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
             "failure_reason": f"malformed_loop_state: {exc}",
             "completion_reason": "",
             "operator_read": {},
+            "next_campaign_recommendation": {},
         }
     report["observable"] = True
     report.setdefault("failure_reason", "")
@@ -1972,6 +2213,7 @@ def campaign_report(
         "report_schema_version": 1,
         "current_loop": current_loop,
         "handoff_campaign": handoff_campaign,
+        "next_campaign_recommendation": current_loop.get("next_campaign_recommendation", {}),
         "observation": {
             "fresh_budget_required": bool(
                 fail_closed or observed_old_campaign or ambiguous_observation
@@ -2052,6 +2294,7 @@ def _safe_operator_read(root: Path, state_path: Path) -> dict[str, Any]:
             "completion_reason": "",
             "stop_conditions": DEFAULT_STOP_CONDITIONS,
             "residual_risk": "Loop state is malformed; wakeup must fail closed.",
+            "next_campaign_recommendation": {},
         }
 
 
@@ -2089,6 +2332,7 @@ def _safe_campaign_report(
                 "safe_to_continue_old_campaign": False,
                 "reason": "fail_closed",
             },
+            "next_campaign_recommendation": {},
         }
 
 
@@ -2212,6 +2456,10 @@ def wakeup(
         "loop_status": status,
         "campaign_report": campaign,
         "operator_read": operator,
+        "next_campaign_recommendation": campaign.get("next_campaign_recommendation")
+        or operator.get("next_campaign_recommendation")
+        or decision.get("next_campaign_recommendation")
+        or {},
         "gate_status": _wakeup_gate_status(status),
         "write_claim": status.get("write_claim") or _write_claim_status(root),
         "autonomy_budget": state.get("autonomy_budget", {}) if state else {},
@@ -3893,6 +4141,7 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         if status.get("completion_reason")
         else "Continuation is blocked until the stop reason is resolved."
     )
+    recommendation_packet = _next_campaign_recommendation_report_packet(root, state, status)
     return {
         "title": "Autonomous-auto operator read",
         "objective": str(state.get("objective") or state.get("loop_id") or "autonomous-auto loop"),
@@ -3916,12 +4165,32 @@ def operator_read(root: Path, state_path: Path) -> dict[str, Any]:
         "completion_reason": status.get("completion_reason"),
         "stop_conditions": _stop_conditions_for_read(budget),
         "residual_risk": residual_risk,
+        "next_campaign_recommendation": recommendation_packet,
     }
 
 
 def _format_operator_read(payload: dict[str, Any]) -> str:
     stop_conditions = ", ".join(str(item) for item in payload.get("stop_conditions") or [])
     continuation = "required" if payload.get("continuation_required") else "not required"
+    recommendation = (
+        payload.get("next_campaign_recommendation")
+        if isinstance(payload.get("next_campaign_recommendation"), dict)
+        else {}
+    )
+    ranked = (
+        recommendation.get("ranked_recommendations")
+        if isinstance(recommendation.get("ranked_recommendations"), list)
+        else []
+    )
+    top = ranked[0] if ranked and isinstance(ranked[0], dict) else {}
+    recommendation_read = "none"
+    if recommendation:
+        recommendation_read = (
+            f"{recommendation.get('status') or 'available'}; "
+            f"fresh_approval={recommendation.get('requires_fresh_approval')}; "
+            f"may_open_scope={recommendation.get('may_open_scope')}; "
+            f"top={top.get('action') or 'none'}:{top.get('candidate_id') or 'none'}"
+        )
     return "\n".join(
         [
             str(payload.get("title") or "Autonomous-auto operator read"),
@@ -3936,6 +4205,7 @@ def _format_operator_read(payload: dict[str, Any]) -> str:
             f"Write claim: {payload.get('write_claim')}",
             f"Completion reason: {payload.get('completion_reason') or 'none'}",
             f"Stop reason: {payload.get('stop_reason') or 'none'}",
+            f"Next campaign recommendation: {recommendation_read}",
             f"Stop conditions: {stop_conditions}",
             f"Residual risk: {payload.get('residual_risk')}",
         ]
@@ -4083,6 +4353,25 @@ def _format_campaign_report(payload: dict[str, Any]) -> str:
         payload.get("handoff_campaign") if isinstance(payload.get("handoff_campaign"), dict) else {}
     )
     observation = payload.get("observation") if isinstance(payload.get("observation"), dict) else {}
+    recommendation = (
+        payload.get("next_campaign_recommendation")
+        if isinstance(payload.get("next_campaign_recommendation"), dict)
+        else {}
+    )
+    ranked = (
+        recommendation.get("ranked_recommendations")
+        if isinstance(recommendation.get("ranked_recommendations"), list)
+        else []
+    )
+    top = ranked[0] if ranked and isinstance(ranked[0], dict) else {}
+    recommendation_read = "none"
+    if recommendation:
+        recommendation_read = (
+            f"{recommendation.get('status') or 'available'}; "
+            f"fresh_approval={recommendation.get('requires_fresh_approval')}; "
+            f"may_open_scope={recommendation.get('may_open_scope')}; "
+            f"top={top.get('action') or 'none'}:{top.get('candidate_id') or 'none'}"
+        )
     return "\n".join(
         [
             "Autonomous-auto campaign report",
@@ -4092,6 +4381,7 @@ def _format_campaign_report(payload: dict[str, Any]) -> str:
             f"Vision band: {handoff.get('vision_band') or 'unknown'}",
             f"Fresh budget required: {observation.get('fresh_budget_required')}",
             f"Safe to continue old campaign: {observation.get('safe_to_continue_old_campaign')}",
+            f"Next campaign recommendation: {recommendation_read}",
         ]
     )
 
