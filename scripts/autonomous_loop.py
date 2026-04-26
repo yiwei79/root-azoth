@@ -111,6 +111,7 @@ ROUTE_TABLE_STATES = [
     "candidate_ready_for_review",
     "approved_for_hydration",
     "delivery_ready",
+    "refresh_initiative_candidate",
     "completed_or_stale_campaign",
     "high_severity_self_capture",
 ]
@@ -3128,6 +3129,19 @@ def _campaign_requires_fresh_budget(report: dict[str, Any]) -> bool:
     return bool(campaign.get("fresh_budget_required")) and current_status not in {"active"}
 
 
+def _research_to_readiness_refresh_target(readiness: dict[str, Any]) -> str:
+    approval_scope = str(readiness.get("approval_scope") or "").strip()
+    prefix = "research_to_readiness_"
+    if not approval_scope.startswith(prefix):
+        return ""
+    target_key = approval_scope.removeprefix(prefix)
+    for field in ("candidate_first_slice", "next_candidate_ref", "candidate_id"):
+        value = str(readiness.get(field) or "").strip()
+        if value and _markdown_key(value) == target_key:
+            return value
+    return target_key.replace("_", "-")
+
+
 def _action_from_report_actions(report: dict[str, Any], action: str) -> dict[str, str] | None:
     actions = report.get("next_safe_actions")
     if not isinstance(actions, list):
@@ -3194,6 +3208,7 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
     approval_scope = str(readiness.get("approval_scope") or "")
     candidate_id = str(readiness.get("candidate_id") or "")
     expected_scope = _hydration_scope_for_candidate(candidate_id)
+    refresh_target = _research_to_readiness_refresh_target(readiness)
     task_ref = str(readiness.get("candidate_task_ref") or candidate.get("proposed_task_id") or "")
     blocked_actions = [
         dict(item) for item in report.get("blocked_actions") or [] if isinstance(item, dict)
@@ -3255,9 +3270,6 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
         ux_basis = "Seed-only approval remains visible and blocks delivery writes."
     elif candidate_status == "hydrated":
         if bool(readiness.get("candidate_task_complete")):
-            selected_route = "stop"
-            route_state = "completed_or_stale_campaign"
-            approval_needed = "fresh initiative candidate or readiness refresh"
             blocked_actions.append(
                 {
                     "action": "ship_task",
@@ -3270,7 +3282,19 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
                     "reason": "repeat hydration is blocked for an already completed candidate",
                 }
             )
-            ux_basis = "Completed task truth blocks stale autonomous delivery."
+            if refresh_target and readiness.get("approval_basis"):
+                selected_route = "research_initiative"
+                route_state = "refresh_initiative_candidate"
+                approval_needed = "covered by research-to-readiness scope only"
+                ux_basis = (
+                    "Completed task truth blocks stale delivery, but fresh "
+                    "research-to-readiness approval can refresh initiative candidate state."
+                )
+            else:
+                selected_route = "stop"
+                route_state = "completed_or_stale_campaign"
+                approval_needed = "fresh initiative candidate or readiness refresh"
+                ux_basis = "Completed task truth blocks stale autonomous delivery."
         elif _hydrated_task_artifacts_exist(root, task_ref):
             selected_route = "ship_task"
             route_state = "delivery_ready"
@@ -3368,6 +3392,7 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
             "candidate_status": readiness.get("candidate_status"),
             "candidate_task_ref": readiness.get("candidate_task_ref"),
             "candidate_task_complete": bool(readiness.get("candidate_task_complete")),
+            "refresh_candidate_id": refresh_target,
             "scaffold_command": readiness.get("scaffold_command"),
         },
         "ux_anchor_rationale": {

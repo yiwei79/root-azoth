@@ -2867,6 +2867,155 @@ def test_lifecycle_report_completed_hydrated_task_blocks_stale_ship_task(
     assert capsule["readiness_evidence"]["candidate_task_complete"] is True
 
 
+def test_route_decision_capsule_completed_candidate_can_route_to_refresh_with_fresh_research_budget(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-g",
+            "proposed_task_id": "T-AUTO-G",
+            "title": "Lifecycle route refresh-state repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Refresh route state after a completed candidate.",
+            "acceptance_criteria": ["Refresh candidate readiness before hydration."],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship the completed candidate."],
+            "open_questions": ["Which route state should represent refresh?"],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "candidate_first_slice": "slice-auto-001-g",
+            "approval_scope": "research_to_readiness_slice_auto_001_g",
+            "approval_basis": (
+                "Operator approved research-to-readiness for INI-AUTO-001 "
+                "slice-auto-001-g."
+            ),
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        candidate_id="slice-auto-001-a",
+    )
+
+    assert capsule["selected_route"] == "research_initiative"
+    assert capsule["route_state"] == "refresh_initiative_candidate"
+    assert capsule["approval_needed"] == "covered by research-to-readiness scope only"
+    assert capsule["readiness_evidence"]["candidate_id"] == "slice-auto-001-a"
+    assert capsule["readiness_evidence"]["candidate_task_complete"] is True
+    assert capsule["readiness_evidence"]["refresh_candidate_id"] == "slice-auto-001-g"
+    assert {item["action"] for item in capsule["blocked_actions"]} >= {
+        "hydrate_task",
+        "ship_task",
+    }
+    assert all(
+        item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"]
+    )
+    assert "fresh research-to-readiness approval" in capsule["ux_anchor_rationale"]["route_basis"]
+
+
+def test_route_decision_capsule_completed_candidate_with_refresh_scope_still_stops_without_active_budget(
+    tmp_path: Path,
+) -> None:
+    _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"].update(
+        {
+            "candidate_first_slice": "slice-auto-001-g",
+            "approval_scope": "research_to_readiness_slice_auto_001_g",
+            "approval_basis": "Operator approved research-to-readiness for slice-auto-001-g.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        candidate_id="slice-auto-001-a",
+    )
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "completed_or_stale_campaign"
+    assert any(item["action"] == "open_next_without_budget" for item in capsule["blocked_actions"])
+
+
+def test_lifecycle_route_plain_text_exposes_refresh_state(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-g",
+            "proposed_task_id": "T-AUTO-G",
+            "title": "Lifecycle route refresh-state repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Refresh route state after a completed candidate.",
+            "acceptance_criteria": ["Refresh candidate readiness before hydration."],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship the completed candidate."],
+            "open_questions": ["Which route state should represent refresh?"],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "candidate_first_slice": "slice-auto-001-g",
+            "approval_scope": "research_to_readiness_slice_auto_001_g",
+            "approval_basis": "Operator approved research-to-readiness for slice-auto-001-g.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    _write_completed_task_artifacts(tmp_path, "T-AUTO-A")
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "lifecycle-route",
+                "--initiative",
+                str(initiative_path),
+                "--candidate-id",
+                "slice-auto-001-a",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+
+    assert "Selected route: research_initiative (refresh_initiative_candidate)" in output
+    assert "Approval needed: covered by research-to-readiness scope only" in output
+    assert "Blocked actions: hydrate_task, ship_task" in output
+
+
 def test_route_decision_capsule_delivery_ready_requires_hydrated_task_artifacts(
     tmp_path: Path,
 ) -> None:
