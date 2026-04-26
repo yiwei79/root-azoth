@@ -40,6 +40,8 @@ LEARNING_STATE_RANK = {
     "stale_or_rejected": -1,
     "missing_evidence": -1,
 }
+VISION_BANDS = {"unevaluated": -1, "red": 0, "yellow": 1, "green": 2}
+DEFAULT_VISION_TARGET_BAND = "green"
 
 
 def _utc_now_iso() -> str:
@@ -143,6 +145,108 @@ def _safe_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def _safe_scalar_list(value: Any) -> list[Any]:
+    if value in (None, "", [], {}):
+        return []
+    if isinstance(value, list):
+        return [item for item in value if item not in (None, "", [], {})]
+    return [value]
+
+
+def _first_present(*values: Any) -> Any:
+    for value in values:
+        if value not in (None, "", [], {}):
+            return value
+    return None
+
+
+def _sort_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 1_000_000_000
+
+
+def _child_scope_sort_key(scope: dict[str, Any]) -> tuple[int, str, str, str]:
+    return (
+        _sort_int(scope.get("loop_iteration")),
+        str(scope.get("timestamp") or ""),
+        str(scope.get("session_id") or ""),
+        str(scope.get("run_id") or ""),
+    )
+
+
+def _sorted_child_scopes(scopes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(scopes, key=_child_scope_sort_key)
+
+
+def _vision_from_mapping(value: Any, provenance: str) -> dict[str, Any]:
+    vision = _safe_mapping(value)
+    latest = _safe_mapping(vision.get("latest"))
+    scorecard = _first_present(vision.get("scorecard"), latest.get("scorecard"))
+    score = _first_present(
+        vision.get("score"),
+        latest.get("score"),
+        _safe_mapping(scorecard).get("score") if isinstance(scorecard, dict) else None,
+        _safe_mapping(scorecard).get("total") if isinstance(scorecard, dict) else None,
+    )
+    target_band = str(
+        _first_present(vision.get("target_band"), latest.get("target_band"))
+        or DEFAULT_VISION_TARGET_BAND
+    ).strip().lower()
+    band = str(
+        _first_present(
+            vision.get("current_band"),
+            vision.get("band"),
+            latest.get("current_band"),
+            latest.get("band"),
+        )
+        or "unevaluated"
+    ).strip().lower()
+    target_rank = VISION_BANDS.get(target_band, VISION_BANDS[DEFAULT_VISION_TARGET_BAND])
+    current_rank = VISION_BANDS.get(band)
+    realized = vision.get("realized")
+    if not isinstance(realized, bool):
+        realized = bool(current_rank is not None and current_rank >= target_rank)
+    has_evidence = bool(
+        vision
+        and any(
+            item not in (None, "", [], {})
+            for item in (
+                band,
+                score,
+                scorecard,
+                vision.get("updated_at"),
+                latest.get("updated_at"),
+                vision.get("note"),
+                latest.get("note"),
+            )
+        )
+    )
+    return {
+        "band": band,
+        "target_band": target_band
+        if target_band in VISION_BANDS
+        else DEFAULT_VISION_TARGET_BAND,
+        "score": score,
+        "scorecard": scorecard if isinstance(scorecard, dict) else {},
+        "realized": realized,
+        "updated_at": str(_first_present(vision.get("updated_at"), latest.get("updated_at")) or ""),
+        "note": str(_first_present(vision.get("note"), latest.get("note")) or ""),
+        "provenance": provenance if has_evidence else PROVENANCE_MISSING,
+    }
+
+
+def _completion_reason_from_state(state: dict[str, Any]) -> str:
+    explicit = str(state.get("completion_reason") or "").strip()
+    if explicit:
+        return explicit
+    vision = _vision_from_mapping(state.get("vision"), PROVENANCE_REPO_NATIVE)
+    if vision.get("realized"):
+        return "vision_realized"
+    return ""
+
+
 def _closeout_episode_child_scopes(
     episodes: list[dict[str, Any]], loop_id: str
 ) -> list[dict[str, Any]]:
@@ -155,6 +259,7 @@ def _closeout_episode_child_scopes(
         loop_decision = _safe_mapping(payload.get("loop_decision"))
         delegation_plan = _safe_mapping(payload.get("delegation_plan"))
         budget = _safe_mapping(payload.get("autonomy_budget"))
+        handoff_campaign = _safe_mapping(payload.get("handoff_campaign"))
         architect_judgment = _safe_mapping(loop_decision.get("architect_judgment"))
         selected = _safe_mapping(architect_judgment.get("selected"))
         session_id = str(payload.get("session_id") or record.get("session_id") or "").strip()
@@ -177,6 +282,13 @@ def _closeout_episode_child_scopes(
                 "action": str(loop_decision.get("action") or ""),
                 "candidate_id": candidate_id,
                 "status": "closed",
+                "loop_iteration": _first_present(
+                    payload.get("loop_iteration"),
+                    payload.get("iteration"),
+                    loop_decision.get("loop_iteration"),
+                    loop_decision.get("iteration"),
+                ),
+                "timestamp": str(record.get("timestamp") or payload.get("timestamp") or ""),
                 "provenance": PROVENANCE_REPO_NATIVE,
                 "approval_basis": str(
                     payload.get("approval_basis") or budget.get("approval_basis") or ""
@@ -191,13 +303,38 @@ def _closeout_episode_child_scopes(
                 "stage_plan": stage_plan,
                 "selected_seed": payload.get("selected_seed"),
                 "selected_candidate": selected or None,
+                "completion_reason": str(
+                    _first_present(
+                        payload.get("completion_reason"),
+                        loop_decision.get("completion_reason"),
+                        handoff_campaign.get("completion_reason"),
+                    )
+                    or ""
+                ),
+                "vision": _first_present(
+                    payload.get("vision"),
+                    loop_decision.get("vision"),
+                    handoff_campaign.get("vision"),
+                ),
+                "structured_scores": _structured_scores(payload)
+                + _structured_scores(loop_decision)
+                + _structured_scores(handoff_campaign),
+                "ux_scorecards": _ux_scorecards(payload)
+                + _ux_scorecards(loop_decision)
+                + _ux_scorecards(handoff_campaign),
+                "verification_commands": list(
+                    dict.fromkeys(
+                        _verification_commands(payload)
+                        + _verification_commands(loop_decision)
+                        + _verification_commands(handoff_campaign)
+                    )
+                ),
                 "route_rationale": str(
                     loop_decision.get("reason") or architect_judgment.get("rationale") or ""
                 ),
             }
         )
-    scopes.sort(key=lambda scope: str(scope.get("session_id") or ""))
-    return scopes
+    return _sorted_child_scopes(scopes)
 
 
 def _child_run_ids(child_scopes: list[dict[str, Any]]) -> list[str]:
@@ -219,6 +356,7 @@ def _campaign_detail_from_children(
 
 def _state_history_child_scopes(state: dict[str, Any], loop_id: str) -> list[dict[str, Any]]:
     scopes: list[dict[str, Any]] = []
+    state_loop_id = str(state.get("loop_id") or "").strip()
     history = state.get("history")
     if not isinstance(history, list):
         return scopes
@@ -226,7 +364,7 @@ def _state_history_child_scopes(state: dict[str, Any], loop_id: str) -> list[dic
         if not isinstance(item, dict):
             continue
         session_id = str(item.get("session_id") or item.get("run_id") or "").strip()
-        if loop_id and session_id and session_id != loop_id:
+        if loop_id and state_loop_id != loop_id and session_id and session_id != loop_id:
             continue
         scopes.append(
             {
@@ -234,6 +372,8 @@ def _state_history_child_scopes(state: dict[str, Any], loop_id: str) -> list[dic
                 "action": str(item.get("action") or ""),
                 "candidate_id": str(item.get("candidate_id") or ""),
                 "status": str(item.get("result") or item.get("status") or ""),
+                "loop_iteration": item.get("loop_iteration") or item.get("iteration"),
+                "timestamp": str(item.get("timestamp") or item.get("recorded_at") or ""),
                 "provenance": PROVENANCE_REPO_NATIVE,
             }
         )
@@ -248,6 +388,8 @@ def _ledger_child_scope(run: dict[str, Any], loop_id: str) -> dict[str, Any]:
         "action": "",
         "candidate_id": str(run.get("backlog_id") or ""),
         "status": str(run.get("status") or ""),
+        "loop_iteration": run.get("loop_iteration") or run.get("iteration"),
+        "timestamp": str(run.get("created_at") or ""),
         "provenance": PROVENANCE_REPO_NATIVE,
     }
 
@@ -279,7 +421,7 @@ def _child_scopes(
             "status": str(state.get("status") or ""),
             "provenance": PROVENANCE_REPO_NATIVE,
         }
-    return [by_session[key] for key in sorted(by_session)]
+    return _sorted_child_scopes(list(by_session.values()))
 
 
 def _latest_by_stage(entries: Any) -> dict[str, dict[str, Any]]:
@@ -304,6 +446,49 @@ def _expected_stage_ids(run: dict[str, Any]) -> list[str]:
     ids.extend(_latest_by_stage(run.get("stage_spawns")).keys())
     ids.extend(_latest_by_stage(run.get("stage_summaries")).keys())
     return sorted(dict.fromkeys(ids))
+
+
+def _structured_scores(summary: dict[str, Any]) -> list[Any]:
+    scores: list[Any] = []
+    for field in ("scores", "evaluator_scores"):
+        scores.extend(_safe_scalar_list(summary.get(field)))
+    if summary.get("score") is not None:
+        scores.append(summary.get("score"))
+    scorecard = _safe_mapping(summary.get("scorecard"))
+    for field in ("score", "total", "overall", "consensus"):
+        if scorecard.get(field) is not None:
+            scores.append(scorecard[field])
+            break
+    return scores
+
+
+def _ux_scorecards(summary: dict[str, Any]) -> list[dict[str, Any]]:
+    scorecards: list[dict[str, Any]] = []
+    for field in ("ux_anchor_scorecard", "ux_scorecard", "UX Anchor Scorecard"):
+        scorecard = _safe_mapping(summary.get(field))
+        if scorecard:
+            scorecards.append(scorecard)
+    scorecard = _safe_mapping(summary.get("scorecard"))
+    if scorecard and any("ux" in str(key).lower() for key in scorecard):
+        scorecards.append(scorecard)
+    return scorecards
+
+
+def _verification_commands(summary: dict[str, Any]) -> list[str]:
+    commands: list[str] = []
+    for field in ("verification_commands", "validation_commands", "tests_run"):
+        for command in _safe_scalar_list(summary.get(field)):
+            text = str(command).strip()
+            if text:
+                commands.append(text)
+    verification = _safe_mapping(summary.get("verification"))
+    for command in _safe_scalar_list(
+        _first_present(verification.get("commands"), verification.get("command"))
+    ):
+        text = str(command).strip()
+        if text:
+            commands.append(text)
+    return list(dict.fromkeys(commands))
 
 
 def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -337,11 +522,16 @@ def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
             "session_id": str(run.get("session_id") or run.get("run_id") or ""),
             "spawn_provenance": spawn_provenance,
             "summary_provenance": summary_provenance,
+            "spawned_at": str((spawn or {}).get("spawned_at") or ""),
+            "summary_recorded_at": str((summary or {}).get("summary_recorded_at") or ""),
             "subagent_type": str(
                 (summary or spawn or {}).get("subagent_type") or ""
             ),
             "summary_status": str((summary or {}).get("summary_status") or ""),
             "summary_disposition": str((summary or {}).get("summary_disposition") or ""),
+            "structured_scores": _structured_scores(summary or {}),
+            "ux_scorecards": _ux_scorecards(summary or {}),
+            "verification_commands": _verification_commands(summary or {}),
         }
     if not stages:
         residuals.append("missing stage evidence for campaign")
@@ -385,10 +575,40 @@ def _stage_evidence_for_runs(
     return {"provenance": aggregate, "stages": combined}, residuals
 
 
-def _evaluator_evidence(stage_evidence: dict[str, Any]) -> dict[str, Any]:
+def _child_quality_evidence(child_scopes: list[dict[str, Any]]) -> dict[str, Any]:
+    structured_scores: list[Any] = []
+    ux_scorecards: list[dict[str, Any]] = []
+    verification_commands: list[str] = []
+    for scope in child_scopes:
+        structured_scores.extend(_safe_scalar_list(scope.get("structured_scores")))
+        ux_scorecards.extend(
+            scorecard
+            for scorecard in _safe_list(scope.get("ux_scorecards"))
+            if isinstance(scorecard, dict)
+        )
+        verification_commands.extend(
+            str(command)
+            for command in _safe_list(scope.get("verification_commands"))
+            if str(command or "").strip()
+        )
+    return {
+        "structured_scores": structured_scores,
+        "ux_scorecards": ux_scorecards,
+        "verification_commands": list(dict.fromkeys(verification_commands)),
+    }
+
+
+def _evaluator_evidence(
+    stage_evidence: dict[str, Any], child_scopes: list[dict[str, Any]]
+) -> dict[str, Any]:
     stages = stage_evidence.get("stages")
+    child_quality = _child_quality_evidence(child_scopes)
     if not isinstance(stages, dict):
-        return {"provenance": PROVENANCE_MISSING, "stages": []}
+        return {
+            "provenance": PROVENANCE_MISSING,
+            "stages": [],
+            **child_quality,
+        }
     evaluator_stage_ids = [
         stage_id
         for stage_id, evidence in stages.items()
@@ -400,12 +620,47 @@ def _evaluator_evidence(stage_evidence: dict[str, Any]) -> dict[str, Any]:
         )
     ]
     if not evaluator_stage_ids:
-        return {"provenance": PROVENANCE_MISSING, "stages": []}
+        provenance = (
+            PROVENANCE_REPO_NATIVE
+            if any(child_quality.values())
+            else PROVENANCE_MISSING
+        )
+        return {
+            "provenance": provenance,
+            "stages": [],
+            **child_quality,
+        }
     provenance = _aggregate_provenance(
         str(stages[stage_id].get("provenance") or PROVENANCE_MISSING)
         for stage_id in evaluator_stage_ids
     )
-    return {"provenance": provenance, "stages": evaluator_stage_ids}
+    structured_scores: list[Any] = []
+    ux_scorecards: list[dict[str, Any]] = []
+    verification_commands: list[str] = []
+    for stage_id in evaluator_stage_ids:
+        evidence = stages[stage_id]
+        structured_scores.extend(_safe_scalar_list(evidence.get("structured_scores")))
+        ux_scorecards.extend(
+            scorecard
+            for scorecard in _safe_list(evidence.get("ux_scorecards"))
+            if isinstance(scorecard, dict)
+        )
+        verification_commands.extend(
+            str(command)
+            for command in _safe_list(evidence.get("verification_commands"))
+            if str(command or "").strip()
+        )
+    return {
+        "provenance": provenance,
+        "stages": evaluator_stage_ids,
+        "structured_scores": structured_scores + child_quality["structured_scores"],
+        "ux_scorecards": ux_scorecards + child_quality["ux_scorecards"],
+        "verification_commands": list(
+            dict.fromkeys(
+                verification_commands + child_quality["verification_commands"]
+            )
+        ),
+    }
 
 
 def _record_matches_campaign(record: dict[str, Any], loop_id: str) -> bool:
@@ -514,20 +769,46 @@ def _recommend_next_route(
         return {
             "route": "repair_evidence",
             "reason": "Stage evidence is incomplete or contradictory.",
+            "confidence": 0.8,
+            "confidence_basis": [
+                f"stage_evidence provenance is {stage_evidence['provenance']}"
+            ],
         }
     if evaluator_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}:
         return {
             "route": "repair_evidence",
             "reason": "Evaluator evidence is missing or incomplete.",
+            "confidence": 0.8,
+            "confidence_basis": [
+                f"evaluator_evidence provenance is {evaluator_evidence['provenance']}"
+            ],
         }
     if _best_learning_rank(learning_rows) < LEARNING_STATE_RANK["implemented"]:
         return {
             "route": "plan_learning_closure",
-            "reason": "Learning evidence is captured but not implemented or verified.",
+            "reason": "Learning evidence is missing or below implemented or verified.",
+            "confidence": 0.7,
+            "confidence_basis": [
+                "best learning state is below implemented",
+                f"learning rows observed: {len(learning_rows)}",
+            ],
         }
     if residuals:
-        return {"route": "review_residuals", "reason": "Residual risks remain."}
-    return {"route": "stop", "reason": "Campaign evidence is complete and learning is closed."}
+        return {
+            "route": "review_residuals",
+            "reason": "Residual risks remain.",
+            "confidence": 0.6,
+            "confidence_basis": [f"residual risk count: {len(residuals)}"],
+        }
+    return {
+        "route": "stop",
+        "reason": "Campaign evidence is complete and learning is closed.",
+        "confidence": 1.0,
+        "confidence_basis": [
+            "stage, evaluator, and learning evidence are repo-native",
+            "no residual risks remain",
+        ],
+    }
 
 
 def build_campaign_audit(
@@ -550,8 +831,9 @@ def build_campaign_audit(
     ledger, ledger_errors = _load_yaml_mapping(resolved_ledger)
     episodes, episode_errors = _load_jsonl(resolved_episodes)
     closeout_scopes = _closeout_episode_child_scopes(episodes, loop_id)
+    state_history_scopes = _state_history_child_scopes(state, loop_id)
     primary_run = _matching_run(ledger, loop_id)
-    child_run_ids = _child_run_ids(closeout_scopes)
+    child_run_ids = _child_run_ids(closeout_scopes + state_history_scopes)
     runs = _matching_runs(ledger, [loop_id, *child_run_ids])
     if primary_run and all(run is not primary_run for run in runs):
         runs.insert(0, primary_run)
@@ -576,7 +858,7 @@ def build_campaign_audit(
         runs,
         expected_child_run_ids=child_run_ids,
     )
-    evaluator_evidence = _evaluator_evidence(stage_evidence)
+    evaluator_evidence = _evaluator_evidence(stage_evidence, child_scopes)
     residuals = list(stage_residuals)
     if state_errors:
         residuals.extend(state_errors)
@@ -586,6 +868,13 @@ def build_campaign_audit(
         residuals.extend(learning_errors)
     if not learning_rows:
         residuals.append("missing learning closure evidence")
+    if evaluator_evidence["provenance"] != PROVENANCE_MISSING:
+        if not evaluator_evidence.get("structured_scores"):
+            residuals.append("missing structured evaluator score fields")
+        if not evaluator_evidence.get("ux_scorecards"):
+            residuals.append("missing UX Anchor Scorecard fields")
+        if not evaluator_evidence.get("verification_commands"):
+            residuals.append("missing evaluator verification command fields")
 
     scorecard = {
         "source_artifacts": _aggregate_provenance(
@@ -625,6 +914,19 @@ def build_campaign_audit(
         if isinstance(budget, dict) and isinstance(budget.get("stop_conditions"), list)
         else _campaign_detail_from_children(child_scopes, "stop_conditions") or []
     )
+    child_vision = _campaign_detail_from_children(child_scopes, "vision")
+    vision = (
+        _vision_from_mapping(state.get("vision"), PROVENANCE_REPO_NATIVE)
+        if state_matches_loop
+        else _vision_from_mapping(child_vision, PROVENANCE_REPO_NATIVE)
+        if child_vision
+        else _vision_from_mapping({}, PROVENANCE_MISSING)
+    )
+    completion_reason = (
+        _completion_reason_from_state(state)
+        if state_matches_loop
+        else str(_campaign_detail_from_children(child_scopes, "completion_reason") or "")
+    )
     return {
         "schema_version": 1,
         "generated_at": _utc_now_iso(),
@@ -642,13 +944,15 @@ def build_campaign_audit(
                 or run.get("status")
                 or ""
             ),
-            "completion_reason": str(
-                state.get("completion_reason") if state_matches_loop else ""
-            ),
+            "completion_reason": completion_reason,
             "iteration": state.get("iteration") if state_matches_loop else len(child_scopes) or None,
             "max_iterations": budget.get("max_iterations")
             if isinstance(budget, dict)
             else None,
+            "vision": vision,
+            "vision_band": vision["band"],
+            "vision_score": vision["score"],
+            "vision_provenance": vision["provenance"],
             "approval_basis": str(
                 (budget.get("approval_basis") if isinstance(budget, dict) else "")
                 or _campaign_detail_from_children(child_scopes, "approval_basis")
@@ -678,6 +982,7 @@ def build_campaign_audit(
         "child_scopes": child_scopes,
         "stage_evidence": stage_evidence,
         "evaluator_evidence": evaluator_evidence,
+        "verification_commands": evaluator_evidence["verification_commands"],
         "learning_closure_rows": learning_rows,
         "traceability_scorecard": scorecard,
         "next_route_recommendation": route,
