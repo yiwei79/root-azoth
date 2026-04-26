@@ -1121,12 +1121,26 @@ def _first_proposal_candidate(root: Path) -> dict[str, Any] | None:
     for path in sorted(proposal_dir.glob("*.yaml")):
         data = _load_yaml_mapping(path)
         if str(data.get("status") or "").strip() in PROPOSAL_STATUSES:
+            hydration_slice = _proposal_hydration_slice(data)
+            placement = (
+                hydration_slice.get("placement")
+                if isinstance(hydration_slice.get("placement"), dict)
+                else {}
+            )
             return {
                 "candidate_id": path.stem,
-                "title": str(data.get("title") or path.stem),
-                "target_layer": "planning",
-                "delivery_pipeline": "standard",
+                "title": str(
+                    hydration_slice.get("exact_title")
+                    or hydration_slice.get("title")
+                    or data.get("title")
+                    or path.stem
+                ),
+                "target_layer": str(placement.get("target_layer") or "planning"),
+                "delivery_pipeline": str(placement.get("delivery_pipeline") or "standard"),
                 "source": "proposal",
+                "proposal_ref": _repo_artifact_ref(root, path),
+                "proposed_task_id": str(hydration_slice.get("proposed_task_id") or ""),
+                "recommended_route": str(hydration_slice.get("route") or ""),
             }
     return None
 
@@ -1338,6 +1352,37 @@ def _queued_proposal_hydration_decision(
                 "live_task_truth": match,
             },
         },
+    )
+
+
+def _proposal_discovery_decision(
+    root: Path, state: dict[str, Any], candidate: dict[str, Any], allowed: set[str]
+) -> dict[str, Any] | None:
+    if str(candidate.get("recommended_route") or "") != "hydrate_task":
+        return None
+    hydration_candidate = {**candidate, "action": "hydrate_task"}
+    live_truth_decision = _queued_proposal_hydration_decision(
+        root, state, hydration_candidate, allowed
+    )
+    if live_truth_decision:
+        return live_truth_decision
+    if "hydrate_task" not in allowed:
+        return _stop_decision(
+            state,
+            "proposal_hydration_requires_approval",
+            detail=(
+                "Discovered proposal-backed hydration recommendation requires "
+                "hydrate_task approval before opening work."
+            ),
+            candidate=hydration_candidate,
+        )
+    return _action_decision(
+        state,
+        action="hydrate_task",
+        candidate=hydration_candidate,
+        source="proposal",
+        reason="Selected a discovered proposal-backed hydration recommendation.",
+        root=root,
     )
 
 
@@ -1561,6 +1606,12 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
         )
 
     proposal_candidate = _first_proposal_candidate(root)
+    if proposal_candidate:
+        proposal_decision = _proposal_discovery_decision(
+            root, state, proposal_candidate, allowed
+        )
+        if proposal_decision:
+            return proposal_decision
     if proposal_candidate and "refine_proposal" in allowed:
         return _action_decision(
             state,

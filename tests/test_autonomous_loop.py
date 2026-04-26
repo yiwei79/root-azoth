@@ -617,6 +617,198 @@ def test_queued_proposal_hydration_existing_task_stops_without_artifacts(
     assert decision["route_decision"]["live_task_truth"]["artifacts_exist"] is False
 
 
+def test_discovered_proposal_hydration_stops_when_matching_task_is_complete(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {
+                "id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": "proposal-run-ledger-atomic-stage-evidence",
+                "status": "complete",
+                "completed_date": "2026-04-25",
+            }
+        ],
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "proposal_hydration_already_completed"
+    assert decision["candidate_id"] == "T-028"
+    assert decision["route_decision"]["selected_route"] == "stop"
+
+
+def test_discovered_proposal_hydration_routes_existing_pending_task_to_ship(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "proposed_task_id": "T-028",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-028.yaml",
+        {"id": "T-028", "title": "Run-ledger serialized stage evidence writes"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {"tasks": [{"id": "T-028", "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-028.yaml"}]},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [{"id": "T-028", "source": "proposal-run-ledger-atomic-stage-evidence", "status": "blocked"}],
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "ship_task"
+    assert decision["candidate_id"] == "T-028"
+    assert decision["source"] == ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml"
+    assert decision["route_decision"]["existing_task_id"] == "T-028"
+
+
+def test_discovered_proposal_hydration_existing_task_stops_without_ship_budget(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": "User approved hydration-only autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["hydrate_task"],
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "proposed_task_id": "T-028",
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-028.yaml",
+        {"id": "T-028", "title": "Run-ledger serialized stage evidence writes"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {"tasks": [{"id": "T-028", "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-028.yaml"}]},
+    )
+    _write_yaml(tmp_path / ".azoth/backlog.yaml", [{"id": "T-028", "status": "blocked"}])
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "proposal_hydration_existing_task_requires_ship_approval"
+    assert decision["candidate_id"] == "T-028"
+
+
+def test_discovered_proposal_hydration_protected_match_stops(tmp_path: Path) -> None:
+    state_path = _state(tmp_path)
+    _write_yaml(
+        tmp_path / ".azoth/proposals/protected-hydration.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Protected hydration",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Protected hydration",
+                    "route": "hydrate_task",
+                    "proposed_task_id": "T-PROTECTED",
+                    "placement": {"target_layer": "governance"},
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-PROTECTED.yaml",
+        {"id": "T-PROTECTED", "title": "Protected hydration"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "tasks": [
+                {
+                    "id": "T-PROTECTED",
+                    "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-PROTECTED.yaml",
+                }
+            ]
+        },
+    )
+    _write_yaml(tmp_path / ".azoth/backlog.yaml", [{"id": "T-PROTECTED", "status": "blocked"}])
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "protected_gate_required"
+    assert decision["candidate_id"] == "T-PROTECTED"
+
+
+def test_discovered_proposal_hydration_routes_fresh_task_when_allowed(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    _write_yaml(
+        tmp_path / ".azoth/proposals/fresh-hydration.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Fresh hydration",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Fresh hydration",
+                    "route": "hydrate_task",
+                    "placement": {"target_layer": "infrastructure"},
+                }
+            },
+        },
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "hydrate_task"
+    assert decision["candidate_id"] == "fresh-hydration"
+
+
 def test_queued_candidate_can_override_lifecycle_route_stop(tmp_path: Path) -> None:
     state_path = _state(
         tmp_path,
