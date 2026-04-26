@@ -111,6 +111,7 @@ ROUTE_TABLE_STATES = [
     "candidate_ready_for_review",
     "approved_for_hydration",
     "delivery_ready",
+    "campaign_strategy_preflight",
     "refresh_initiative_candidate",
     "completed_or_stale_campaign",
     "high_severity_self_capture",
@@ -612,7 +613,7 @@ def _next_campaign_recommendation(
     ranked: list[dict[str, Any]] = []
     blocked: list[dict[str, Any]] = []
     for action, candidate, source in raw_candidates:
-        snapshot = _candidate_snapshot(action, candidate, source)
+        snapshot = _candidate_snapshot(action, candidate, source, root)
         if snapshot.get("protected"):
             blocked.append(
                 {
@@ -632,6 +633,36 @@ def _next_campaign_recommendation(
             "ranked_recommendations": [],
             "blocked_recommendations": blocked,
         }
+    route_preflight = (
+        selected.get("route_preflight") if isinstance(selected.get("route_preflight"), dict) else {}
+    )
+    draft_declaration = {
+        "goal": f"Prepare next autonomous-auto campaign for {selected.get('title')}.",
+        "selected_mode": "autonomous-auto",
+        "pipeline_command": "autonomous-auto",
+        "alignment_mode": "async",
+        "selected_seed": selected.get("candidate_id"),
+        "allowed_action_classes": [selected.get("action"), "capture_self_improvement"],
+        "budget": {"max_iterations": 3, "replay_threshold": 1},
+        "protected_boundaries": [
+            "kernel/governance/M1",
+            "destructive actions",
+            "credential/network expansion",
+            "active scope or write claim",
+            "unbounded hidden continuation",
+        ],
+        "fresh_operator_approval_required": True,
+    }
+    if route_preflight:
+        draft_declaration.update(
+            {
+                "strategy_preflight_verdict": route_preflight.get("verdict"),
+                "selected_route": route_preflight.get("selected_route"),
+                "route_state": route_preflight.get("route_state"),
+                "approval_scope": route_preflight.get("approval_scope"),
+                "blocked_alternatives": route_preflight.get("blocked_actions") or [],
+            }
+        )
     return {
         "available": True,
         "reason": "completed_green_campaign_ready_for_fresh_budget",
@@ -656,23 +687,7 @@ def _next_campaign_recommendation(
         ],
         "ranked_recommendations": ranked[:3],
         "blocked_recommendations": blocked,
-        "draft_campaign_declaration": {
-            "goal": f"Prepare next autonomous-auto campaign for {selected.get('title')}.",
-            "selected_mode": "autonomous-auto",
-            "pipeline_command": "autonomous-auto",
-            "alignment_mode": "async",
-            "selected_seed": selected.get("candidate_id"),
-            "allowed_action_classes": [selected.get("action"), "capture_self_improvement"],
-            "budget": {"max_iterations": 3, "replay_threshold": 1},
-            "protected_boundaries": [
-                "kernel/governance/M1",
-                "destructive actions",
-                "credential/network expansion",
-                "active scope or write claim",
-                "unbounded hidden continuation",
-            ],
-            "fresh_operator_approval_required": True,
-        },
+        "draft_campaign_declaration": draft_declaration,
     }
 
 
@@ -808,8 +823,79 @@ def _score_candidate(action: str, candidate: dict[str, Any], source: str) -> dic
     }
 
 
-def _candidate_snapshot(action: str, candidate: dict[str, Any], source: str) -> dict[str, Any]:
+def _initiative_candidate_route_preflight(
+    root: Path, candidate: dict[str, Any], source: str
+) -> dict[str, Any]:
+    if source != "initiative-bank":
+        return {}
+    source_bank_ref = str(candidate.get("source_bank_ref") or "").strip()
+    initiative_ref = str(candidate.get("initiative_ref") or "").strip()
+    if source_bank_ref:
+        initiative_path = root / source_bank_ref
+    elif initiative_ref:
+        initiative_path = root / ".azoth" / "initiative-banks" / f"{initiative_ref}.yaml"
+    else:
+        return {}
+    if not initiative_path.exists():
+        return {
+            "verdict": "stop_missing_initiative_bank",
+            "initiative_ref": initiative_ref,
+            "selected_route": "stop",
+            "route_state": "missing_initiative_bank",
+        }
+    route_candidate_id = str(candidate.get("route_candidate_id") or "").strip() or None
+    try:
+        capsule = build_initiative_route_decision_capsule(
+            root,
+            initiative_path,
+            candidate_id=route_candidate_id,
+        )
+    except Exception as exc:
+        return {
+            "verdict": "stop_lifecycle_route_unreadable",
+            "initiative_ref": initiative_ref or initiative_path.stem,
+            "selected_route": "stop",
+            "route_state": "lifecycle_route_unreadable",
+            "reason": str(exc),
+        }
+    selected_route = str(capsule.get("selected_route") or "")
+    route_state = str(capsule.get("route_state") or "")
+    readiness = (
+        capsule.get("readiness_evidence")
+        if isinstance(capsule.get("readiness_evidence"), dict)
+        else {}
+    )
+    if selected_route == "research_initiative" and route_state in {
+        "campaign_strategy_preflight",
+        "refresh_initiative_candidate",
+        "discovery_active",
+        "raw_initiative",
+    }:
+        verdict = "can_initialize_research_campaign"
+    elif selected_route == "stop":
+        verdict = "stop_route_conflict"
+    else:
+        verdict = f"route_{selected_route or 'unknown'}"
     return {
+        "verdict": verdict,
+        "selected_route": selected_route,
+        "route_state": route_state,
+        "approval_scope": str(readiness.get("approval_scope") or ""),
+        "approval_basis_present": bool(readiness.get("approval_basis_present")),
+        "fresh_research_to_readiness_approval": bool(
+            readiness.get("fresh_research_to_readiness_approval")
+        ),
+        "strategy_preflight_required": bool(readiness.get("strategy_preflight_required")),
+        "candidate_id": str(readiness.get("candidate_id") or ""),
+        "refresh_candidate_id": str(readiness.get("refresh_candidate_id") or ""),
+        "blocked_actions": capsule.get("blocked_actions") or [],
+    }
+
+
+def _candidate_snapshot(
+    action: str, candidate: dict[str, Any], source: str, root: Path | None = None
+) -> dict[str, Any]:
+    snapshot = {
         "action": action,
         "candidate_id": _candidate_identity(candidate),
         "title": _candidate_title(candidate),
@@ -817,6 +903,12 @@ def _candidate_snapshot(action: str, candidate: dict[str, Any], source: str) -> 
         "scorecard": _score_candidate(action, candidate, source),
         "protected": _is_protected(candidate),
     }
+    preflight = (
+        _initiative_candidate_route_preflight(root, candidate, source) if root is not None else {}
+    )
+    if preflight:
+        snapshot["route_preflight"] = preflight
+    return snapshot
 
 
 def _delegation_stage(
@@ -1335,6 +1427,10 @@ def _first_research_initiative_candidate(root: Path) -> dict[str, Any] | None:
     for path in sorted(bank_dir.glob("*.yaml")):
         data = _load_yaml_mapping(path)
         if str(data.get("status") or "").strip() in {"active_refinement", "research_needed"}:
+            readiness = data.get("readiness") if isinstance(data.get("readiness"), dict) else {}
+            route_candidate_id = str(
+                readiness.get("candidate_first_slice") or readiness.get("next_candidate_ref") or ""
+            ).strip()
             return {
                 "candidate_id": str(data.get("initiative_id") or path.stem),
                 "title": str(data.get("title") or path.stem),
@@ -1343,6 +1439,7 @@ def _first_research_initiative_candidate(root: Path) -> dict[str, Any] | None:
                 "source": "initiative-bank",
                 "source_bank_ref": _repo_artifact_ref(root, path),
                 "initiative_ref": str(data.get("initiative_id") or path.stem),
+                "route_candidate_id": route_candidate_id,
             }
     return None
 
@@ -1625,6 +1722,34 @@ def _initiative_route_stop_decision(
     state: dict[str, Any],
     candidate: dict[str, Any],
 ) -> dict[str, Any] | None:
+    capsule = _initiative_route_capsule(root, state_path, state, candidate)
+    if not isinstance(capsule, dict):
+        return capsule
+    if capsule.get("action") == "stop":
+        return capsule
+    if str(capsule.get("selected_route") or "") != "stop":
+        return None
+    route_state = str(capsule.get("route_state") or "unknown")
+    route_label = str(candidate.get("initiative_ref") or candidate.get("candidate_id") or "")
+    reason = f"Lifecycle route for {route_label or 'initiative'} selected stop ({route_state})."
+    return _stop_decision(
+        state,
+        f"lifecycle_route_stop_{route_state}",
+        detail=reason,
+        candidate={
+            **candidate,
+            "route_decision": capsule,
+            "governance_mode": str(candidate.get("governance_mode") or "standard"),
+        },
+    )
+
+
+def _initiative_route_capsule(
+    root: Path,
+    state_path: Path,
+    state: dict[str, Any],
+    candidate: dict[str, Any],
+) -> dict[str, Any] | None:
     source_bank_ref = str(candidate.get("source_bank_ref") or "").strip()
     initiative_ref = str(candidate.get("initiative_ref") or "").strip()
     candidate_id = str(candidate.get("candidate_id") or "").strip()
@@ -1640,10 +1765,12 @@ def _initiative_route_stop_decision(
         return None
     route_label = initiative_ref or candidate_id or initiative_path.stem
     try:
-        capsule = build_initiative_route_decision_capsule(
+        route_candidate_id = str(candidate.get("route_candidate_id") or "").strip() or None
+        return build_initiative_route_decision_capsule(
             root,
             initiative_path,
             state_path=state_path,
+            candidate_id=route_candidate_id,
         )
     except Exception as exc:
         return _stop_decision(
@@ -1652,20 +1779,6 @@ def _initiative_route_stop_decision(
             detail=f"Lifecycle route for {route_label} could not be read: {exc}",
             candidate=candidate,
         )
-    if str(capsule.get("selected_route") or "") != "stop":
-        return None
-    route_state = str(capsule.get("route_state") or "unknown")
-    reason = f"Lifecycle route for {route_label} selected stop ({route_state})."
-    return _stop_decision(
-        state,
-        f"lifecycle_route_stop_{route_state}",
-        detail=reason,
-        candidate={
-            **candidate,
-            "route_decision": capsule,
-            "governance_mode": str(candidate.get("governance_mode") or "standard"),
-        },
-    )
 
 
 def _implicit_initiative_route_stop_decision(
@@ -1829,9 +1942,26 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
 
     research_candidate = _first_research_initiative_candidate(root)
     if research_candidate and "research_initiative" in allowed:
-        route_stop = _initiative_route_stop_decision(root, state_path, state, research_candidate)
-        if route_stop:
-            return route_stop
+        route_capsule = _initiative_route_capsule(root, state_path, state, research_candidate)
+        if isinstance(route_capsule, dict) and route_capsule.get("action") == "stop":
+            return route_capsule
+        if isinstance(route_capsule, dict):
+            selected_route = str(route_capsule.get("selected_route") or "")
+            route_state = str(route_capsule.get("route_state") or "")
+            if selected_route == "stop":
+                return _initiative_route_stop_decision(root, state_path, state, research_candidate)
+            if selected_route not in {"research_initiative", "refine_proposal"}:
+                return _stop_decision(
+                    state,
+                    f"lifecycle_route_conflict_{route_state or selected_route or 'unknown'}",
+                    detail=(
+                        "Lifecycle route did not agree with the discovered research "
+                        f"candidate: {selected_route or 'unknown'} ({route_state or 'unknown'})."
+                    ),
+                    candidate={**research_candidate, "route_decision": route_capsule},
+                )
+            if selected_route == "research_initiative":
+                research_candidate = {**research_candidate, "route_decision": route_capsule}
         return _action_decision(
             state,
             action="research_initiative",
@@ -2145,7 +2275,9 @@ def _parse_handoff_campaign(path: Path | None) -> dict[str, Any]:
     }
 
 
-def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
+def _current_loop_report(
+    root: Path, state_path: Path, *, include_next_campaign_recommendation: bool = True
+) -> dict[str, Any]:
     if not state_path.exists():
         return {
             "state_path": str(state_path),
@@ -2172,8 +2304,10 @@ def _current_loop_report(root: Path, state_path: Path) -> dict[str, Any]:
             "completion_reason": report.get("completion_reason"),
         }
         state = _load_yaml_mapping(state_path)
-        report["next_campaign_recommendation"] = _next_campaign_recommendation_report_packet(
-            root, state, report
+        report["next_campaign_recommendation"] = (
+            _next_campaign_recommendation_report_packet(root, state, report)
+            if include_next_campaign_recommendation
+            else {}
         )
     except Exception as exc:
         return {
@@ -2194,10 +2328,15 @@ def campaign_report(
     root: Path,
     state_path: Path,
     handoff_path: Path | None = None,
+    include_next_campaign_recommendation: bool = True,
 ) -> dict[str, Any]:
     root = Path(root)
     state_path = Path(state_path)
-    current_loop = _current_loop_report(root, state_path)
+    current_loop = _current_loop_report(
+        root,
+        state_path,
+        include_next_campaign_recommendation=include_next_campaign_recommendation,
+    )
 
     resolved_handoff = (
         Path(handoff_path) if handoff_path is not None else _latest_autonomous_handoff(root)
@@ -3142,6 +3281,28 @@ def _research_to_readiness_refresh_target(readiness: dict[str, Any]) -> str:
     return target_key.replace("_", "-")
 
 
+def _fresh_research_to_readiness_approval(readiness: dict[str, Any]) -> bool:
+    return bool(
+        _research_to_readiness_refresh_target(readiness)
+        and str(readiness.get("approval_basis") or "").strip()
+        and str(readiness.get("human_decision") or "").strip() == "approved"
+    )
+
+
+def _strategy_preflight_required(readiness: dict[str, Any], candidate_id: str) -> bool:
+    refresh_target = _research_to_readiness_refresh_target(readiness)
+    if not refresh_target or _markdown_key(refresh_target) != _markdown_key(candidate_id):
+        return False
+    fields = (
+        readiness.get("next_readiness_gate"),
+        readiness.get("hydration_recommendation"),
+        readiness.get("goal_clarity"),
+        readiness.get("freshness_status"),
+    )
+    text = " ".join(str(value or "").lower() for value in fields)
+    return "strategy" in text or "preflight" in text or "open_next" in text
+
+
 def _action_from_report_actions(report: dict[str, Any], action: str) -> dict[str, str] | None:
     actions = report.get("next_safe_actions")
     if not isinstance(actions, list):
@@ -3209,6 +3370,8 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
     candidate_id = str(readiness.get("candidate_id") or "")
     expected_scope = _hydration_scope_for_candidate(candidate_id)
     refresh_target = _research_to_readiness_refresh_target(readiness)
+    fresh_research_to_readiness = _fresh_research_to_readiness_approval(readiness)
+    strategy_preflight_required = _strategy_preflight_required(readiness, candidate_id)
     task_ref = str(readiness.get("candidate_task_ref") or candidate.get("proposed_task_id") or "")
     blocked_actions = [
         dict(item) for item in report.get("blocked_actions") or [] if isinstance(item, dict)
@@ -3242,6 +3405,39 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
         route_state = "high_severity_self_capture"
         approval_needed = "inbox-first capture allowed unless protected boundary expands"
         ux_basis = "High-severity operator feedback is surfaced before more continuation."
+    elif (
+        fresh_research_to_readiness
+        and strategy_preflight_required
+        and candidate_status not in {"hydrated", "complete", "completed", "closed", "shipped"}
+        and readiness_status == "continue_research"
+    ):
+        selected_route = "research_initiative"
+        route_state = "campaign_strategy_preflight"
+        approval_needed = "covered by research-to-readiness scope only"
+        blocked_actions.extend(
+            [
+                {
+                    "action": "hydrate_task",
+                    "reason": "strategy preflight is research-only until readiness is refreshed",
+                },
+                {
+                    "action": "ship_task",
+                    "reason": "strategy preflight is research-only and has no executable task",
+                },
+                {
+                    "action": "open_next_without_strategy_preflight",
+                    "reason": (
+                        "recommendation, lifecycle-route, readiness, and approval scope must "
+                        "be reconciled before opening delivery"
+                    ),
+                },
+            ]
+        )
+        ux_basis = (
+            "Old completed loop evidence cannot authorize continuation, but a fresh "
+            "research-to-readiness approval can route this candidate into campaign strategy "
+            "preflight before any init/open-next edge."
+        )
     elif _campaign_requires_fresh_budget(report):
         selected_route = "stop"
         route_state = "completed_or_stale_campaign"
@@ -3393,6 +3589,8 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
             "candidate_task_ref": readiness.get("candidate_task_ref"),
             "candidate_task_complete": bool(readiness.get("candidate_task_complete")),
             "refresh_candidate_id": refresh_target,
+            "fresh_research_to_readiness_approval": fresh_research_to_readiness,
+            "strategy_preflight_required": strategy_preflight_required,
             "scaffold_command": readiness.get("scaffold_command"),
         },
         "ux_anchor_rationale": {
@@ -3449,7 +3647,12 @@ def build_initiative_lifecycle_report(
         "next_readiness_gate": readiness.get("next_readiness_gate") or "",
         "candidate_task_complete": candidate_task_complete,
     }
-    campaign = campaign_report(root, state_path, handoff_path=handoff_path)
+    campaign = campaign_report(
+        root,
+        state_path,
+        handoff_path=handoff_path,
+        include_next_campaign_recommendation=False,
+    )
     reflection_observable = reflection_path is not None and reflection_path.exists()
 
     if candidate_task_complete:
@@ -3704,11 +3907,13 @@ def _format_route_decision_capsule(payload: dict[str, Any]) -> str:
     blocked = (
         payload.get("blocked_actions") if isinstance(payload.get("blocked_actions"), list) else []
     )
-    blocked_actions = [
-        str(item.get("action") or "")
-        for item in blocked
-        if isinstance(item, dict) and str(item.get("action") or "")
-    ]
+    blocked_actions = list(
+        dict.fromkeys(
+            str(item.get("action") or "")
+            for item in blocked
+            if isinstance(item, dict) and str(item.get("action") or "")
+        )
+    )
     return "\n".join(
         [
             "Autonomous-auto initiative route decision",
@@ -4124,6 +4329,13 @@ def _route_authority_read(decision: dict[str, Any]) -> str:
         return "stop:lifecycle_route_unreadable"
     source = str(decision.get("source") or "")
     if source == "initiative-bank":
+        route_decision = (
+            decision.get("route_decision") if isinstance(decision.get("route_decision"), dict) else {}
+        )
+        selected_route = str(route_decision.get("selected_route") or "")
+        route_state = str(route_decision.get("route_state") or "")
+        if selected_route and route_state:
+            return f"{selected_route}:{route_state}"
         return "checked:continue"
     if source in {"queue", "campaign-strategy"}:
         return "queued-override"

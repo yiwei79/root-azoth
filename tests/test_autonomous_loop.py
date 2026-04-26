@@ -437,6 +437,83 @@ def test_completed_green_recommendation_packet_ranks_candidates_without_mutation
     ]
 
 
+def test_next_campaign_recommendation_includes_initiative_strategy_preflight(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        iteration=1,
+        autonomy_budget={
+            "approval_basis": "Previous loop completed green.",
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative"],
+        },
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "green",
+            "realized": True,
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next."
+            ],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": ["Which preflight surface owns the refusal?"],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": "research_strategy_preflight_before_init_or_open_next",
+            "hydration_recommendation": (
+                "Slice-auto-001-h is research-only until strategy-preflight behavior is "
+                "specified and tested."
+            ),
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": (
+                "Operator approved the Autonomous Campaign Strategy Budget Repair campaign "
+                "for INI-AUTO-001 slice-auto-001-h."
+            ),
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    before = _snapshot_files(tmp_path)
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    packet = report["next_campaign_recommendation"]
+    top = packet["ranked_recommendations"][0]
+
+    assert _snapshot_files(tmp_path) == before
+    assert top["candidate_id"] == "INI-AUTO-001"
+    assert top["route_preflight"]["selected_route"] == "research_initiative"
+    assert top["route_preflight"]["route_state"] == "campaign_strategy_preflight"
+    assert top["route_preflight"]["verdict"] == "can_initialize_research_campaign"
+    assert top["route_preflight"]["approval_scope"] == "research_to_readiness_slice_auto_001_h"
+    assert packet["draft_campaign_declaration"]["strategy_preflight_verdict"] == (
+        "can_initialize_research_campaign"
+    )
+    assert packet["draft_campaign_declaration"]["selected_route"] == "research_initiative"
+
+
 def test_completed_green_stop_decision_includes_ranked_recommendations_without_mutation(
     tmp_path: Path,
 ) -> None:
@@ -2958,6 +3035,145 @@ def test_route_decision_capsule_completed_candidate_with_refresh_scope_still_sto
     assert capsule["selected_route"] == "stop"
     assert capsule["route_state"] == "completed_or_stale_campaign"
     assert any(item["action"] == "open_next_without_budget" for item in capsule["blocked_actions"])
+
+
+def test_lifecycle_route_strategy_preflight_candidate_survives_completed_old_loop(
+    tmp_path: Path,
+) -> None:
+    _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next."
+            ],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": ["Which preflight surface owns the refusal?"],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": "research_strategy_preflight_before_init_or_open_next",
+            "hydration_recommendation": (
+                "Slice-auto-001-h is research-only until strategy-preflight behavior is "
+                "specified and tested."
+            ),
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": (
+                "Operator approved the Autonomous Campaign Strategy Budget Repair campaign "
+                "for INI-AUTO-001 slice-auto-001-h."
+            ),
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        candidate_id="slice-auto-001-h",
+    )
+
+    assert capsule["selected_route"] == "research_initiative"
+    assert capsule["route_state"] == "campaign_strategy_preflight"
+    assert capsule["approval_needed"] == "covered by research-to-readiness scope only"
+    assert capsule["readiness_evidence"]["candidate_id"] == "slice-auto-001-h"
+    assert capsule["readiness_evidence"]["strategy_preflight_required"] is True
+    assert capsule["readiness_evidence"]["fresh_research_to_readiness_approval"] is True
+    assert "completed loop" in capsule["ux_anchor_rationale"]["route_basis"]
+    assert {item["action"] for item in capsule["blocked_actions"]} >= {
+        "hydrate_task",
+        "ship_task",
+        "open_next_without_strategy_preflight",
+    }
+    assert all(
+        item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"]
+    )
+
+
+def test_decide_next_can_open_strategy_preflight_research_from_completed_old_loop(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="active",
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved research_to_readiness_slice_auto_001_h strategy "
+                "preflight repair."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative", "capture_self_improvement"],
+            "replay_threshold": 1,
+            "stop_conditions": ["protected_gate_required"],
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next."
+            ],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": ["Which preflight surface owns the refusal?"],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": "research_strategy_preflight_before_init_or_open_next",
+            "hydration_recommendation": (
+                "Slice-auto-001-h is research-only until strategy-preflight behavior is "
+                "specified and tested."
+            ),
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": (
+                "Operator approved the Autonomous Campaign Strategy Budget Repair campaign "
+                "for INI-AUTO-001 slice-auto-001-h."
+            ),
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert decision["action"] == "research_initiative"
+    assert decision["candidate_id"] == "INI-AUTO-001"
+    assert decision["route_decision"]["route_state"] == "campaign_strategy_preflight"
+    assert decision["route_decision"]["selected_route"] == "research_initiative"
+    assert read["route_authority"] == "research_initiative:campaign_strategy_preflight"
 
 
 def test_lifecycle_route_plain_text_exposes_refresh_state(
