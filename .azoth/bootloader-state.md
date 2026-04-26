@@ -4,12 +4,12 @@
 0.1.3.64 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 64
 
 ## Last Session
-- **Session**: 2026-04-26-autonomous-auto-ini-auto-001-1
-- **Goal**: Autonomous initiative lifecycle orchestration
+- **Session**: 2026-04-26-autonomous-auto-slice-auto-001-g-1
+- **Goal**: Lifecycle route refresh-state repair
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-439 (success)
+- **Episode**: ep-440 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
