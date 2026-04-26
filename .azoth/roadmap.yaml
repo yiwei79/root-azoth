@@ -1781,17 +1781,7 @@ versions:
 
     '
   pending_task_refs: []
-  tasks:
-  - id: T-029
-    title: Autonomous-auto campaign audit report
-    decision_ref:
-    - D11
-    - D21
-    - D23
-    - D48
-    - D50
-    - D52
-    initiative_ref: INI-AUTO-001
+  tasks: []
   completed_tasks:
   - id: T-015
     title: Codex intelligent model selection seed and proposal
@@ -1982,3 +1972,4 @@ versions:
       - D46
       - D50
       - D52
+    - {id: T-029, title: "Autonomous-auto campaign audit report", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D48, D50, D52]}
