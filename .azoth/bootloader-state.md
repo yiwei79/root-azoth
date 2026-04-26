@@ -4,12 +4,12 @@
 0.1.3.64 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 64
 
 ## Last Session
-- **Session**: 2026-04-26-autonomous-auto-proposal-run-ledger-atomic-stage-evidence-1
-- **Goal**: Hydrate a narrow roadmap-backed task for Run-ledger serialized stage evidence writes from .azoth/proposals/run-ledger-atomic-stage-evidence.yaml under INI-RST-003; do not implement run_ledger.py in the hydration child.
+- **Session**: 2026-04-26-autonomous-auto-stale-proposal-route-repair-1
+- **Goal**: Repair autonomous-auto proposal-backed hydration route selection so stale completed tasks are refused before opening a child scope.
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-435 (success)
+- **Episode**: ep-436 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
