@@ -110,6 +110,7 @@ ROUTE_TABLE_STATES = [
     "discovery_active",
     "candidate_ready_for_review",
     "approved_for_hydration",
+    "awaiting_hydration_approval",
     "delivery_ready",
     "campaign_strategy_preflight",
     "refresh_initiative_candidate",
@@ -512,7 +513,7 @@ def _normalize_vision_declaration(
         or declaration.get("discussion_summary")
         or ""
     ).strip()
-    return {
+    normalized = {
         "status": str(declaration.get("status") or "approved").strip(),
         "summary": summary,
         "selected_seed": selected_seed,
@@ -522,6 +523,31 @@ def _normalize_vision_declaration(
         "approval_basis": str(declaration.get("approval_basis") or approval_basis).strip(),
         "locked_at": str(declaration.get("locked_at") or locked_at).strip(),
     }
+    lifecycle_route = declaration.get("lifecycle_route")
+    if not isinstance(lifecycle_route, dict):
+        lifecycle_route = declaration.get("route_preflight")
+    if isinstance(lifecycle_route, dict):
+        normalized["lifecycle_route"] = lifecycle_route
+    return normalized
+
+
+def _reject_advisory_vision_declaration(raw: dict[str, Any] | None) -> None:
+    if not isinstance(raw, dict):
+        return
+    status = str(raw.get("status") or "").strip().lower()
+    mode = str(raw.get("mode") or "").strip().lower()
+    packet_type = str(raw.get("packet_type") or "").strip()
+    if (
+        bool(raw.get("fresh_operator_approval_required"))
+        or raw.get("may_open_scope") is False
+        or status in {"advisory_only", "recommendation_only"}
+        or mode == "recommendation_only"
+        or packet_type == "autonomous_auto_next_campaign_recommendation"
+    ):
+        raise SystemExit(
+            "advisory recommendation cannot initialize an autonomous-auto loop; "
+            "record fresh operator approval first"
+        )
 
 
 def _completion_reason(state: dict[str, Any]) -> str:
@@ -654,6 +680,16 @@ def _next_campaign_recommendation(
         "fresh_operator_approval_required": True,
     }
     if route_preflight:
+        lifecycle_route = {
+            "verdict": route_preflight.get("verdict"),
+            "selected_route": route_preflight.get("selected_route"),
+            "route_state": route_preflight.get("route_state"),
+            "approval_scope": route_preflight.get("approval_scope"),
+            "approval_needed": route_preflight.get("approval_needed"),
+            "readiness_evidence": route_preflight.get("readiness_evidence") or {},
+            "source_artifacts": route_preflight.get("source_artifacts") or {},
+            "blocked_actions": route_preflight.get("blocked_actions") or [],
+        }
         draft_declaration.update(
             {
                 "strategy_preflight_verdict": route_preflight.get("verdict"),
@@ -661,6 +697,7 @@ def _next_campaign_recommendation(
                 "route_state": route_preflight.get("route_state"),
                 "approval_scope": route_preflight.get("approval_scope"),
                 "blocked_alternatives": route_preflight.get("blocked_actions") or [],
+                "lifecycle_route": lifecycle_route,
             }
         )
     return {
@@ -888,6 +925,10 @@ def _initiative_candidate_route_preflight(
         "strategy_preflight_required": bool(readiness.get("strategy_preflight_required")),
         "candidate_id": str(readiness.get("candidate_id") or ""),
         "refresh_candidate_id": str(readiness.get("refresh_candidate_id") or ""),
+        "approval_needed": capsule.get("approval_needed"),
+        "readiness_evidence": readiness,
+        "source_artifacts": capsule.get("source_artifacts") or {},
+        "rejected_alternatives": capsule.get("rejected_alternatives") or [],
         "blocked_actions": capsule.get("blocked_actions") or [],
     }
 
@@ -909,6 +950,236 @@ def _candidate_snapshot(
     if preflight:
         snapshot["route_preflight"] = preflight
     return snapshot
+
+
+def _strategy_route_state_for_action(action: str, candidate: dict[str, Any]) -> str:
+    if action == "ship_task":
+        return "delivery_ready"
+    if action == "hydrate_task":
+        return "approved_for_hydration"
+    if action == "research_initiative":
+        return "discovery_active"
+    if action == "refine_proposal":
+        return "candidate_ready_for_review"
+    if action == "capture_self_improvement":
+        return "high_severity_self_capture"
+    return str(candidate.get("route_state") or "unknown")
+
+
+def _strategy_target_classification(
+    action: str,
+    candidate: dict[str, Any],
+    *,
+    protected: bool,
+    route_conflict: bool,
+) -> str:
+    if protected:
+        return "protected"
+    if route_conflict:
+        return "route-conflicted"
+    if action == "research_initiative":
+        return "research-only"
+    if action == "hydrate_task":
+        return "hydration-ready"
+    if action == "ship_task":
+        return "delivery-ready"
+    return "live"
+
+
+def _strategy_next_safe_action(
+    *,
+    action: str,
+    route_selected: str,
+    route_state: str,
+    blocked: list[dict[str, str]],
+) -> str:
+    if not blocked:
+        return action
+    if route_selected and route_selected != action:
+        return "stop_and_reconcile_lifecycle_route"
+    if any(item.get("reason", "").startswith("active scope") for item in blocked):
+        return "close_active_scope_before_open_next"
+    if any(item.get("reason", "").startswith("active write claim") for item in blocked):
+        return "release_or_resolve_write_claim_before_open_next"
+    if any("protected boundary" in item.get("reason", "") for item in blocked):
+        return "request_protected_human_gate"
+    if any("approval_basis" in item.get("reason", "") for item in blocked):
+        return "record_fresh_approval_basis"
+    return f"stop_before_{route_state or route_selected or 'unknown'}"
+
+
+def _strategy_preflight_for_decision(
+    root: Path | None,
+    state: dict[str, Any],
+    *,
+    action: str,
+    candidate: dict[str, Any],
+    source: str,
+) -> dict[str, Any]:
+    route_decision = (
+        candidate.get("route_decision") if isinstance(candidate.get("route_decision"), dict) else {}
+    )
+    route_selected = str(route_decision.get("selected_route") or action)
+    route_state = str(route_decision.get("route_state") or _strategy_route_state_for_action(action, candidate))
+    route_conflict = bool(route_decision and route_selected and route_selected != action)
+    protected = _is_protected(candidate)
+    write_claim = _write_claim_status(root) if root is not None else {"held": False}
+    active_scope = _active_scope(root) if root is not None else {}
+    approval_basis_present = bool(_approval_basis(state))
+    blocked: list[dict[str, str]] = []
+    mismatch_reason = ""
+    if protected:
+        blocked.append(
+            {
+                "action": action,
+                "reason": "protected boundary requires a fresh human gate",
+            }
+        )
+    if active_scope:
+        blocked.append(
+            {
+                "action": action,
+                "reason": f"active scope {active_scope.get('session_id') or 'unknown'} blocks opening",
+            }
+        )
+    if write_claim.get("held") and not write_claim.get("stale"):
+        blocked.append(
+            {
+                "action": action,
+                "reason": f"active write claim {write_claim.get('session_id') or 'unknown'} blocks opening",
+            }
+        )
+    if not approval_basis_present:
+        blocked.append({"action": action, "reason": "approval_basis is missing"})
+    if route_conflict:
+        mismatch_reason = (
+            f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
+        )
+        blocked.append({"action": action, "reason": mismatch_reason})
+
+    verdict = "allow_open" if not blocked else "stop_route_conflict" if route_conflict else "stop_blocked"
+    candidate_id = _candidate_identity(candidate)
+    readiness = (
+        route_decision.get("readiness_evidence")
+        if isinstance(route_decision.get("readiness_evidence"), dict)
+        else {}
+    )
+    return {
+        "packet_schema_version": 1,
+        "packet_type": "autonomous_auto_strategy_preflight",
+        "edge": "open_next",
+        "verdict": verdict,
+        "may_open_scope": verdict == "allow_open",
+        "selected_action": action,
+        "candidate_id": candidate_id,
+        "source": source,
+        "target_classification": _strategy_target_classification(
+            action,
+            candidate,
+            protected=protected,
+            route_conflict=route_conflict,
+        ),
+        "selected_route": route_selected,
+        "route_state": route_state,
+        "route_authority": f"{route_selected}:{route_state}" if route_selected and route_state else action,
+        "approval_scope": str(readiness.get("approval_scope") or route_decision.get("approval_scope") or ""),
+        "approval_basis_present": approval_basis_present,
+        "freshness_status": str(
+            readiness.get("freshness_status") or "current_route_gate_and_claim_state"
+        ),
+        "fresh_campaign_authority": approval_basis_present and str(state.get("status") or "") == "active",
+        "current_loop_authority": str(state.get("status") or "missing"),
+        "source_artifacts": route_decision.get("source_artifacts") or {},
+        "gate_status": {
+            "active_scope": bool(active_scope),
+            "active_scope_id": str(active_scope.get("session_id") or ""),
+            "active_write_claim": bool(write_claim.get("held") and not write_claim.get("stale")),
+            "write_claim_session_id": str(write_claim.get("session_id") or ""),
+            "protected": protected,
+        },
+        "blocked_alternatives": _dedupe_action_reasons(blocked),
+        "mismatch_reason": mismatch_reason,
+        "next_safe_action": _strategy_next_safe_action(
+            action=action,
+            route_selected=route_selected,
+            route_state=route_state,
+            blocked=blocked,
+        ),
+        "ux_anchor_fit": (
+            "Strategy preflight reconciles route authority, approval basis, gates, "
+            "write claims, and candidate classification before opening work."
+        ),
+    }
+
+
+def _stable_strategy_value(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _strategy_preflight_signature(
+    preflight: dict[str, Any],
+) -> tuple[str, str, str, str, str, str, str, str, str, str, str]:
+    return (
+        str(preflight.get("verdict") or ""),
+        str(preflight.get("selected_action") or ""),
+        str(preflight.get("candidate_id") or ""),
+        str(preflight.get("source") or ""),
+        str(preflight.get("selected_route") or ""),
+        str(preflight.get("route_state") or ""),
+        str(preflight.get("approval_scope") or ""),
+        str(preflight.get("freshness_status") or ""),
+        str(preflight.get("next_safe_action") or ""),
+        _stable_strategy_value(preflight.get("gate_status") or {}),
+        _stable_strategy_value(preflight.get("blocked_alternatives") or []),
+    )
+
+
+def _reject_advisory_decision_payload(decision: dict[str, Any]) -> None:
+    status = str(decision.get("status") or "").strip().lower()
+    mode = str(decision.get("mode") or "").strip().lower()
+    packet_type = str(decision.get("packet_type") or "").strip()
+    if (
+        bool(decision.get("fresh_operator_approval_required"))
+        or decision.get("may_open_scope") is False
+        or status in {"advisory_only", "recommendation_only"}
+        or mode == "recommendation_only"
+        or packet_type == "autonomous_auto_next_campaign_recommendation"
+    ):
+        raise SystemExit(
+            "refusing to open advisory recommendation as a scope decision; "
+            "record fresh operator approval and run decide-next first"
+        )
+
+
+def _validate_strategy_preflight_evidence(
+    decision: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    expected_preflight = (
+        expected.get("strategy_preflight")
+        if isinstance(expected.get("strategy_preflight"), dict)
+        else {}
+    )
+    if not expected_preflight:
+        return
+    actual_preflight = (
+        decision.get("strategy_preflight")
+        if isinstance(decision.get("strategy_preflight"), dict)
+        else {}
+    )
+    if not actual_preflight:
+        raise SystemExit(
+            "refusing to open decision with missing strategy-preflight evidence"
+        )
+    if actual_preflight.get("packet_type") != "autonomous_auto_strategy_preflight":
+        raise SystemExit("refusing to open decision with invalid strategy-preflight packet")
+    if actual_preflight.get("may_open_scope") is not True:
+        raise SystemExit("refusing to open decision because strategy-preflight blocks opening")
+    if str(actual_preflight.get("verdict") or "") != "allow_open":
+        raise SystemExit("refusing to open decision because strategy-preflight did not allow opening")
+    if _strategy_preflight_signature(actual_preflight) != _strategy_preflight_signature(
+        expected_preflight
+    ):
+        raise SystemExit("refusing to open stale or conflicting strategy-preflight evidence")
 
 
 def _delegation_stage(
@@ -1288,6 +1559,13 @@ def _action_decision(
     backlog_id = str(
         candidate.get("backlog_id") or candidate.get("proposed_task_id") or candidate_id or "AD-HOC"
     ).strip()
+    strategy_preflight = _strategy_preflight_for_decision(
+        root,
+        state,
+        action=action,
+        candidate=candidate,
+        source=source,
+    )
     return {
         "decision_schema_version": DECISION_SCHEMA_VERSION,
         "loop_id": str(state.get("loop_id") or ""),
@@ -1305,6 +1583,7 @@ def _action_decision(
         "reason": reason,
         "stop_reason": None,
         "route_decision": candidate.get("route_decision"),
+        "strategy_preflight": strategy_preflight,
         "architect_judgment": _architect_judgment(
             root,
             state,
@@ -1998,6 +2277,7 @@ def _session_id_for_decision(decision: dict[str, Any]) -> str:
 
 
 def _validate_decision_is_current(root: Path, state_path: Path, decision: dict[str, Any]) -> None:
+    _reject_advisory_decision_payload(decision)
     expected = decide_next(root, state_path)
     if expected.get("action") == "stop":
         stop_reason = str(expected.get("stop_reason") or "")
@@ -2029,6 +2309,48 @@ def _validate_decision_is_current(root: Path, state_path: Path, decision: dict[s
                 "refusing to open stale or mismatched autonomous-auto decision: "
                 f"{field} is {decision.get(field)!r}, expected {expected.get(field)!r}"
             )
+    _validate_lifecycle_route_evidence(decision, expected)
+    _validate_strategy_preflight_evidence(decision, expected)
+
+
+def _route_signature(route: dict[str, Any]) -> tuple[str, str, str, str, str]:
+    readiness = (
+        route.get("readiness_evidence") if isinstance(route.get("readiness_evidence"), dict) else {}
+    )
+    return (
+        str(route.get("selected_route") or ""),
+        str(route.get("route_state") or ""),
+        str(route.get("approval_needed") or ""),
+        str(readiness.get("candidate_id") or ""),
+        str(readiness.get("candidate_task_ref") or ""),
+    )
+
+
+def _validate_lifecycle_route_evidence(
+    decision: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    if str(expected.get("source") or "") != "initiative-bank":
+        return
+    expected_route = (
+        expected.get("route_decision")
+        if isinstance(expected.get("route_decision"), dict)
+        else {}
+    )
+    if not expected_route:
+        return
+    actual_route = (
+        decision.get("route_decision")
+        if isinstance(decision.get("route_decision"), dict)
+        else {}
+    )
+    if not actual_route:
+        raise SystemExit(
+            "refusing to open initiative decision with missing lifecycle-route evidence"
+        )
+    if _route_signature(actual_route) != _route_signature(expected_route):
+        raise SystemExit(
+            "refusing to open initiative decision with lifecycle-route conflict"
+        )
 
 
 def _selected_self_capture_item(state: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
@@ -2694,6 +3016,7 @@ def _selected_lifecycle_candidate(
     non_goals = candidate.get("known_non_goals")
     open_questions = candidate.get("open_questions")
     evidence_refs = candidate.get("research_evidence_refs")
+    hydration_plan = candidate.get("hydration_plan")
     return {
         "candidate_id": candidate.get("candidate_id") or readiness_report.get("candidate_id"),
         "title": candidate.get("title") or readiness_report.get("proposed_title"),
@@ -2708,6 +3031,7 @@ def _selected_lifecycle_candidate(
         "non_goals_count": len(non_goals) if isinstance(non_goals, list) else 0,
         "open_questions": open_questions if isinstance(open_questions, list) else [],
         "research_evidence_refs": evidence_refs if isinstance(evidence_refs, list) else [],
+        "hydration_plan": hydration_plan if isinstance(hydration_plan, dict) else {},
     }
 
 
@@ -3160,6 +3484,36 @@ def _scaffold_command_names_candidate(readiness: dict[str, Any]) -> bool:
     return bool(candidate_id and command and candidate_id in command)
 
 
+def _candidate_scaffold_command(candidate: dict[str, Any]) -> str:
+    hydration_plan = candidate.get("hydration_plan")
+    if not isinstance(hydration_plan, dict):
+        return ""
+    return str(hydration_plan.get("scaffold_command") or "").strip()
+
+
+def _awaiting_hydration_approval(
+    readiness: dict[str, Any],
+    candidate: dict[str, Any],
+    *,
+    expected_scope: str,
+) -> bool:
+    if str(readiness.get("readiness_status") or "").strip() != "continue_research":
+        return False
+    if str(readiness.get("approval_scope") or "").strip().startswith("hydration_specific_"):
+        return False
+    if not expected_scope:
+        return False
+    next_gate = str(readiness.get("next_readiness_gate") or "").strip()
+    if expected_scope not in next_gate:
+        return False
+    blockers = readiness.get("blocking_reasons")
+    if blockers != ["readiness.readiness_status must be ready_to_hydrate"]:
+        return False
+    command = _candidate_scaffold_command(candidate)
+    candidate_id = str(readiness.get("candidate_id") or "").strip()
+    return bool(command and candidate_id and candidate_id in command)
+
+
 def _yaml_tree_contains_task_ref(data: Any, task_ref: str) -> bool:
     if isinstance(data, dict):
         if str(data.get("id") or "") == task_ref or str(data.get("task_ref") or "") == task_ref:
@@ -3405,6 +3759,36 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
         route_state = "high_severity_self_capture"
         approval_needed = "inbox-first capture allowed unless protected boundary expands"
         ux_basis = "High-severity operator feedback is surfaced before more continuation."
+    elif _awaiting_hydration_approval(
+        readiness,
+        candidate,
+        expected_scope=expected_scope,
+    ):
+        selected_route = "stop"
+        route_state = "awaiting_hydration_approval"
+        approval_needed = expected_scope
+        blocked_actions.extend(
+            [
+                {
+                    "action": "hydrate_task",
+                    "reason": (
+                        f"fresh {expected_scope} approval_basis must name the exact "
+                        "scaffold command before roadmap/backlog/spec hydration"
+                    ),
+                },
+                {
+                    "action": "research_initiative",
+                    "reason": (
+                        "strategy-preflight research is complete; repeated research "
+                        "will not resolve the missing hydration approval"
+                    ),
+                },
+            ]
+        )
+        ux_basis = (
+            "Strategy-preflight research is complete, so the autonomous loop stops with "
+            "a precise hydration approval request instead of opening another research child."
+        )
     elif (
         fresh_research_to_readiness
         and strategy_preflight_required
@@ -3984,6 +4368,7 @@ def init_loop(
     basis = str(approval_basis or "").strip()
     if not basis:
         raise SystemExit("--approval-basis is required")
+    _reject_advisory_vision_declaration(vision_declaration)
     if max_iterations < 1:
         raise SystemExit("--max-iterations must be at least 1")
     if replay_threshold < 0:
@@ -4187,6 +4572,8 @@ def open_next(
             "candidate_id": decision.get("candidate_id"),
             "source": decision.get("source"),
             "reason": decision.get("reason"),
+            "route_decision": decision.get("route_decision"),
+            "strategy_preflight": decision.get("strategy_preflight"),
             "architect_judgment": decision.get("architect_judgment"),
             "alignment_checkpoint_summary": decision.get("alignment_checkpoint_summary"),
         },
@@ -4230,6 +4617,7 @@ def open_next(
             "architect_judgment": decision.get("architect_judgment"),
             "alignment_checkpoint_summary": decision.get("alignment_checkpoint_summary"),
             "delegation_plan_id": delegation_plan.get("plan_id"),
+            "strategy_preflight": decision.get("strategy_preflight"),
         }
         if materialization:
             entry["self_capture_materialization"] = materialization

@@ -212,6 +212,32 @@ def test_init_loop_persists_locked_vision_declaration(tmp_path: Path) -> None:
     assert declaration["locked_at"]
 
 
+def test_init_loop_rejects_advisory_recommendation_as_approval(tmp_path: Path) -> None:
+    state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+
+    with pytest.raises(SystemExit, match="advisory recommendation"):
+        autonomous_loop.init_loop(
+            tmp_path,
+            state_path,
+            approval_basis="Recommendation packet suggested INI-AUTO-001.",
+            objective="Autonomous Campaign 2",
+            loop_id="loop-advisory-test",
+            branch="codex/test",
+            max_iterations=3,
+            replay_threshold=1,
+            allowed_actions=["research_initiative"],
+            vision_declaration={
+                "selected_seed": "INI-AUTO-001",
+                "selected_seed_type": "initiative",
+                "fresh_operator_approval_required": True,
+                "selected_route": "research_initiative",
+                "route_state": "campaign_strategy_preflight",
+            },
+        )
+
+    assert not state_path.exists()
+
+
 def test_record_vision_score_green_marks_continuation_not_required(tmp_path: Path) -> None:
     state_path = _state(
         tmp_path,
@@ -508,10 +534,20 @@ def test_next_campaign_recommendation_includes_initiative_strategy_preflight(
     assert top["route_preflight"]["route_state"] == "campaign_strategy_preflight"
     assert top["route_preflight"]["verdict"] == "can_initialize_research_campaign"
     assert top["route_preflight"]["approval_scope"] == "research_to_readiness_slice_auto_001_h"
+    assert top["route_preflight"]["readiness_evidence"]["candidate_id"] == "slice-auto-001-h"
+    assert top["route_preflight"]["source_artifacts"]["initiative_bank"].endswith(
+        "INI-AUTO-001.yaml"
+    )
     assert packet["draft_campaign_declaration"]["strategy_preflight_verdict"] == (
         "can_initialize_research_campaign"
     )
     assert packet["draft_campaign_declaration"]["selected_route"] == "research_initiative"
+    assert packet["draft_campaign_declaration"]["lifecycle_route"]["route_state"] == (
+        "campaign_strategy_preflight"
+    )
+    assert packet["draft_campaign_declaration"]["lifecycle_route"]["readiness_evidence"][
+        "candidate_id"
+    ] == "slice-auto-001-h"
 
 
 def test_completed_green_stop_decision_includes_ranked_recommendations_without_mutation(
@@ -1363,6 +1399,13 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
         "evaluator",
     ]
     assert scope["loop_decision"]["action"] == "ship_task"
+    assert scope["loop_decision"]["strategy_preflight"]["packet_type"] == (
+        "autonomous_auto_strategy_preflight"
+    )
+    assert scope["loop_decision"]["strategy_preflight"]["verdict"] == "allow_open"
+    assert scope["loop_decision"]["strategy_preflight"]["target_classification"] == (
+        "delivery-ready"
+    )
     ledger = yaml.safe_load((tmp_path / ".azoth/run-ledger.local.yaml").read_text(encoding="utf-8"))
     run = next(item for item in ledger["runs"] if item["run_id"] == result["session_id"])
     assert run["status"] == "active"
@@ -1378,6 +1421,50 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
     assert state["queue"] == []
     assert state["history"][0]["candidate_id"] == "T-321"
     assert state["history"][0]["delegation_plan_id"] == scope["delegation_plan"]["plan_id"]
+    assert state["history"][0]["strategy_preflight"]["verdict"] == "allow_open"
+
+
+def test_open_next_refuses_advisory_recommendation_packet_as_decision(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "T-321",
+                "title": "Ship task",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    decision_path = _decision_path(
+        tmp_path,
+        {
+            "packet_type": "autonomous_auto_next_campaign_recommendation",
+            "mode": "recommendation_only",
+            "status": "advisory_only",
+            "may_open_scope": False,
+            "fresh_operator_approval_required": True,
+            "ranked_recommendations": [
+                {
+                    "action": "ship_task",
+                    "candidate_id": "T-321",
+                }
+            ],
+        },
+    )
+
+    with pytest.raises(SystemExit, match="advisory recommendation"):
+        autonomous_loop.open_next(
+            tmp_path,
+            state_path,
+            decision_path,
+            "2026-04-25T12:00:00Z",
+        )
+
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
 
 
 def test_open_next_consumes_only_selected_queue_candidate(tmp_path: Path) -> None:
@@ -1703,6 +1790,186 @@ def test_open_next_refuses_action_not_in_current_budget(tmp_path: Path) -> None:
             "2026-04-25T12:00:00Z",
         )
     assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+
+def test_open_next_refuses_initiative_decision_without_route_evidence(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved research_to_readiness_slice_auto_001_h strategy preflight."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative"],
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next."
+            ],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": [],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": "research_strategy_preflight_before_init_or_open_next",
+            "hydration_recommendation": "Strategy preflight is required before open-next.",
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": "Operator approved research strategy preflight.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    stale_decision = dict(decision)
+    stale_decision.pop("route_decision", None)
+    decision_path = _decision_path(tmp_path, stale_decision)
+
+    with pytest.raises(SystemExit, match="missing lifecycle-route evidence"):
+        autonomous_loop.open_next(
+            tmp_path,
+            state_path,
+            decision_path,
+            "2026-04-25T12:00:00Z",
+        )
+
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+
+def test_open_next_refuses_initiative_decision_with_route_conflict(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved research_to_readiness_slice_auto_001_h strategy preflight."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative"],
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next."
+            ],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": [],
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": "research_strategy_preflight_before_init_or_open_next",
+            "hydration_recommendation": "Strategy preflight is required before open-next.",
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": "Operator approved research strategy preflight.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+    conflicted_decision = dict(decision)
+    conflicted_decision["route_decision"] = {
+        **decision["route_decision"],
+        "selected_route": "ship_task",
+        "route_state": "delivery_ready",
+    }
+    decision_path = _decision_path(tmp_path, conflicted_decision)
+
+    with pytest.raises(SystemExit, match="lifecycle-route conflict"):
+        autonomous_loop.open_next(
+            tmp_path,
+            state_path,
+            decision_path,
+            "2026-04-25T12:00:00Z",
+        )
+
+    assert not (tmp_path / ".azoth/scope-gate.json").exists()
+
+
+def test_strategy_preflight_generated_route_conflict_has_repair_action(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    candidate = {
+        "candidate_id": "INI-AUTO-001",
+        "title": "Autonomous initiative lifecycle orchestration",
+        "target_layer": "planning",
+        "delivery_pipeline": "standard",
+        "route_decision": {
+            "selected_route": "ship_task",
+            "route_state": "delivery_ready",
+            "approval_needed": "normal scoped delivery approval",
+            "readiness_evidence": {
+                "candidate_id": "slice-auto-001-h",
+                "candidate_task_ref": "T-030",
+                "approval_scope": "hydration_specific_slice_auto_001_h",
+                "freshness_status": "current_as_of_test",
+            },
+            "source_artifacts": {
+                "initiative_bank": ".azoth/initiative-banks/INI-AUTO-001.yaml"
+            },
+            "blocked_actions": [
+                {"action": "hydrate_task", "reason": "repeat hydration is blocked"}
+            ],
+        },
+    }
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="research_initiative",
+        candidate=candidate,
+        source="initiative-bank",
+    )
+
+    assert preflight["verdict"] == "stop_route_conflict"
+    assert preflight["may_open_scope"] is False
+    assert preflight["target_classification"] == "route-conflicted"
+    assert preflight["selected_route"] == "ship_task"
+    assert preflight["route_state"] == "delivery_ready"
+    assert preflight["approval_scope"] == "hydration_specific_slice_auto_001_h"
+    assert preflight["freshness_status"] == "current_as_of_test"
+    assert preflight["next_safe_action"] == "stop_and_reconcile_lifecycle_route"
+    assert "does not match lifecycle-route" in preflight["mismatch_reason"]
+    assert preflight["source_artifacts"]["initiative_bank"].endswith("INI-AUTO-001.yaml")
+    assert any(
+        item["action"] == "research_initiative"
+        and "does not match lifecycle-route" in item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
 
 
 def test_alignment_packet_record_and_apply_updates_approval_basis(tmp_path: Path) -> None:
@@ -3174,6 +3441,90 @@ def test_decide_next_can_open_strategy_preflight_research_from_completed_old_loo
     assert decision["route_decision"]["route_state"] == "campaign_strategy_preflight"
     assert decision["route_decision"]["selected_route"] == "research_initiative"
     assert read["route_authority"] == "research_initiative:campaign_strategy_preflight"
+
+
+def test_strategy_preflight_handoff_stops_for_hydration_approval_instead_of_research_loop(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="active",
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved research_to_readiness_slice_auto_001_h strategy "
+                "preflight repair."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative", "capture_self_improvement"],
+            "replay_threshold": 1,
+            "stop_conditions": ["protected_gate_required"],
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "complete"
+    doc["candidate_slices"].append(
+        {
+            "candidate_id": "slice-auto-001-h",
+            "proposed_task_id": "T-AUTO-H",
+            "title": "Autonomous campaign strategy budget repair",
+            "initiative_ref": "INI-AUTO-001",
+            "status": "candidate",
+            "target_layer": "infrastructure",
+            "delivery_pipeline": "standard",
+            "summary": "Repair pre-open strategy budget before another campaign opens.",
+            "acceptance_criteria": [
+                "Recommendation and lifecycle-route are reconciled before open-next.",
+            ],
+            "research_evidence_refs": ["scripts/autonomous_loop.py"],
+            "known_non_goals": ["Do not hydrate or ship from the strategy child."],
+            "open_questions": [],
+            "hydration_plan": {
+                "proposed_title": "Autonomous campaign strategy budget repair",
+                "approval_scope_required": "hydration_specific_slice_auto_001_h",
+                "scaffold_command": (
+                    "python3 scripts/roadmap_scaffold.py --source "
+                    "initiative-bank-INI-AUTO-001-slice-auto-001-h"
+                ),
+            },
+        }
+    )
+    doc["readiness"].update(
+        {
+            "readiness_status": "continue_research",
+            "candidate_first_slice": "slice-auto-001-h",
+            "next_candidate_ref": "slice-auto-001-h",
+            "next_readiness_gate": (
+                "request_or_record_hydration_specific_slice_auto_001_h_approval"
+            ),
+            "hydration_recommendation": (
+                "Slice-auto-001-h has a plan-only hydration handoff; request fresh "
+                "hydration approval before writes."
+            ),
+            "approval_scope": "research_to_readiness_slice_auto_001_h",
+            "approval_basis": (
+                "Operator approved research only for INI-AUTO-001 slice-auto-001-h."
+            ),
+            "acceptance_criteria_status": "stable",
+            "non_goals_status": "stable",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(
+        tmp_path,
+        initiative_path,
+        candidate_id="slice-auto-001-h",
+    )
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "awaiting_hydration_approval"
+    assert capsule["approval_needed"] == "hydration_specific_slice_auto_001_h"
+    assert any(item["action"] == "research_initiative" for item in capsule["blocked_actions"])
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "lifecycle_route_stop_awaiting_hydration_approval"
+    assert decision["route_decision"]["approval_needed"] == "hydration_specific_slice_auto_001_h"
 
 
 def test_lifecycle_route_plain_text_exposes_refresh_state(
