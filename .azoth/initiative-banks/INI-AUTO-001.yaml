@@ -137,7 +137,7 @@ research_questions:
       - .azoth/memory/episodes.jsonl
   - question_id: rq-auto-001-006
     question: How should lifecycle-route handle a completed current candidate when a fresh research-to-readiness budget exists?
-    status: active
+    status: answered
     opened_at: "2026-04-26T10:12:00Z"
     needed_for: refresh_state_route
     answer: >
@@ -151,6 +151,24 @@ research_questions:
       - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
       - scripts/autonomous_loop.py
       - .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
+      - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+  - question_id: rq-auto-001-007
+    question: How much strategy budget should autonomous-auto spend before initializing or opening the next campaign?
+    status: active
+    opened_at: "2026-04-26T10:35:00Z"
+    needed_for: campaign_strategy_preflight
+    answer: >
+      The next layer should add a mandatory Stage -1 campaign strategy
+      preflight: reconcile advisory next-campaign recommendation packets with
+      lifecycle-route output, initiative readiness, active gates, write claims,
+      and operator approval_basis before init or open-next. The preflight should
+      classify the target as live, stale, research-only, hydration-ready,
+      delivery-ready, protected, or route-conflicted, and it should stop or seed
+      a repair instead of opening a narrowly scoped or stale campaign.
+    evidence_refs:
+      - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
+      - scripts/autonomous_loop.py
+      - .agents/skills/autonomous-auto/SKILL.md
       - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
 research_refs: []
 local_findings:
@@ -215,6 +233,14 @@ local_findings:
       - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
       - scripts/autonomous_loop.py
       - .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
+  - finding_id: lf-auto-001-010
+    status: active
+    summary: Autonomous-auto can recommend the next campaign after a Green closeout, but it still under-budgets the strategy layer unless recommendation, lifecycle-route, readiness, and approval scope are reconciled before init/open-next.
+    evidence_refs:
+      - scripts/autonomous_loop.py
+      - tests/test_autonomous_loop.py
+      - .azoth/autonomous-loop-state.local.yaml
+      - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
 external_findings: []
 assumptions:
   - assumption_id: as-auto-001-001
@@ -284,6 +310,11 @@ challenge_log:
     prompt: Should a completed selected candidate always stop an initiative-level autonomous-auto research campaign?
     disposition: route_to_refresh_when_research_budget_exists
     result: No. Completed candidate truth must block stale hydrate_task and ship_task, but a fresh research-to-readiness budget should allow research_initiative to refresh the initiative's candidate/readiness state and identify the next live slice.
+  - challenge_id: ch-auto-001-011
+    challenged_at: "2026-04-26T10:35:00Z"
+    prompt: Are autonomous-auto campaigns under-budgeting strategic thinking before their next move?
+    disposition: require_stage_minus_one_strategy_preflight
+    result: Yes. The campaign should reserve explicit pre-open strategy budget to reconcile recommendation packets, lifecycle-route, readiness, and approval scope before it initializes a loop or opens a child scope.
 candidate_slices:
   - candidate_id: slice-auto-001-a
     proposed_task_id: T-023
@@ -749,7 +780,7 @@ candidate_slices:
     proposed_task_id: T-AUTO-G
     title: Lifecycle route refresh-state repair
     initiative_ref: INI-AUTO-001
-    status: candidate
+    status: complete
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: Teach autonomous-auto lifecycle routing to distinguish completed stale candidates from initiative-level refresh work so a fresh research-to-readiness budget can route to research_initiative instead of a blunt stop.
@@ -769,31 +800,75 @@ candidate_slices:
       - Do not mutate roadmap/backlog/spec state in the research child.
       - Do not make completed campaign evidence continuation authority.
       - Do not bypass lifecycle-route or write-claim checks.
+    resolved_open_questions:
+      - question: Should refresh-state routing be represented as a new route_state value or as discovery_active with explicit stale_candidate evidence?
+        decision: use_refresh_initiative_candidate_route_state
+        note: Keep selected_route research_initiative and add route_state refresh_initiative_candidate so stale hydrate/ship paths remain blocked.
+      - question: Should next-campaign recommendation packets call lifecycle-route for initiative candidates before ranking them as openable?
+        decision: defer_to_strategy_preflight_slice
+        note: The need is broader than recommendation ranking; it belongs in Stage -1 campaign strategy preflight.
+      - question: What is the minimum acceptance test that proves route-before-open prevents this mistake from recurring?
+        decision: test_refresh_state_route_and_plain_surface
+        note: Tests now prove stop without fresh research budget, route to research_initiative with fresh research-to-readiness scope, and plain lifecycle-route visibility.
+    open_questions: []
+    recommended_phase: v0.2.0-p3
+  - candidate_id: slice-auto-001-h
+    proposed_task_id: T-AUTO-H
+    title: Autonomous campaign strategy budget repair
+    initiative_ref: INI-AUTO-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Add a mandatory pre-open strategy preflight so autonomous-auto spends
+      enough reasoning budget on campaign selection before initializing a loop
+      or opening a child scope. The preflight reconciles advisory next-campaign
+      recommendations with lifecycle-route, initiative readiness, approval
+      scope, gates, and write claims, then emits a declaration verdict that
+      either routes safely or stops with a repair/capture recommendation.
+    acceptance_criteria:
+      - A completed Green recommendation packet cannot be treated as open authority until a strategy preflight records fresh approval, active gate/claim status, lifecycle-route state, and readiness evidence.
+      - Strategy preflight classifies the selected target as live, stale, research-only, hydration-ready, delivery-ready, protected, or route-conflicted before init/open-next.
+      - If recommendation and lifecycle-route disagree, the system stops before opening work and emits the mismatch plus the next safe repair action.
+      - Campaign declaration text includes the strategy-preflight verdict, selected route, blocked alternatives, and why this campaign shape is broad or narrow enough.
+      - Tests prove open-next/init cannot proceed from advisory recommendation alone and that initiative candidates carry lifecycle-route evidence in the declaration/preflight packet.
+    research_evidence_refs:
+      - .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-route-before-open.jsonl
+      - scripts/autonomous_loop.py
+      - tests/test_autonomous_loop.py
+      - .agents/skills/autonomous-auto/SKILL.md
+      - .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+    known_non_goals:
+      - Do not create a daemon or scheduler.
+      - Do not make recommendation packets continuation authority.
+      - Do not bypass lifecycle-route, run-ledger, scope-gate, or write-claim checks.
+      - Do not hydrate roadmap/backlog/spec state in the research child.
+      - Do not expand into kernel, governance, M1, destructive, credential, network, or cross-branch work.
     open_questions:
-      - Should refresh-state routing be represented as a new route_state value or as discovery_active with explicit stale_candidate evidence?
-      - Should next-campaign recommendation packets call lifecycle-route for initiative candidates before ranking them as openable?
-      - What is the minimum acceptance test that proves route-before-open prevents this mistake from recurring?
+      - Should strategy preflight be a read-only command, an embedded campaign-report packet, or both?
+      - Which command should own the hard refusal before init/open-next when recommendation and lifecycle-route conflict?
+      - What minimum declaration fields make the campaign's strategic reasoning auditable without over-bureaucratizing small safe slices?
     recommended_phase: v0.2.0-p3
 readiness:
-  evaluated_at: "2026-04-26T10:12:00Z"
+  evaluated_at: "2026-04-26T10:35:00Z"
   source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   readiness_status: continue_research
-  goal_clarity: route_refresh_state_repair_seeded
-  evidence_coverage: route_stop_gap_captured_with_candidate_slice
-  freshness_status: stale_candidate_truth_needs_refresh_route
+  goal_clarity: campaign_strategy_budget_repair_seeded
+  evidence_coverage: strategy_preflight_gap_captured_with_candidate_slice
+  freshness_status: next_campaign_truth_needs_preopen_strategy_reconciliation
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-auto-001-g
+  candidate_first_slice: slice-auto-001-h
   target_layer: infrastructure
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: research_refresh_state_route_before_hydration
-  next_candidate_ref: slice-auto-001-g
-  hydration_recommendation: Slice-auto-001-g is research-only until lifecycle-route refresh-state behavior is specified and tested; do not hydrate, ship, or mutate roadmap/backlog/spec state in the research child.
+  next_readiness_gate: research_strategy_preflight_before_init_or_open_next
+  next_candidate_ref: slice-auto-001-h
+  hydration_recommendation: Slice-auto-001-h is research-only until strategy-preflight behavior is specified and tested; do not hydrate, ship, initialize a delivery loop, or mutate roadmap/backlog/spec state from the research child.
   human_decision: approved
-  approval_scope: research_to_readiness_slice_auto_001_g
-  approval_basis: Operator approved the Lifecycle Route Refresh-State Repair campaign on 2026-04-26 for INI-AUTO-001 slice-auto-001-g. Approval covers research_initiative and capture_self_improvement only; hydration, implementation, roadmap/backlog/spec mutation, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work are excluded unless a fresh approval explicitly names the write edge.
+  approval_scope: research_to_readiness_slice_auto_001_h
+  approval_basis: Operator approved the Autonomous Campaign Strategy Budget Repair campaign on 2026-04-26 for INI-AUTO-001 slice-auto-001-h. Approval covers research_initiative and capture_self_improvement only; hydration, implementation, roadmap/backlog/spec mutation, kernel, governance, M1, destructive, credential, network, daemon, scheduler, hidden continuation, and cross-branch work are excluded unless a fresh approval explicitly names the write edge.
 hydration_history:
   - hydrated_at: "2026-04-25T13:43:00Z"
     session_id: 2026-04-25-autonomous-auto-slice-auto-001-a-1
