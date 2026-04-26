@@ -4,12 +4,12 @@
 0.1.3.64 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 64
 
 ## Last Session
-- **Session**: 2026-04-26-autonomous-auto-stale-proposal-route-repair-1
-- **Goal**: Repair autonomous-auto proposal-backed hydration route selection so stale completed tasks are refused before opening a child scope.
+- **Session**: 2026-04-26-autonomous-auto-proposal-discovery-route-truth-extension-1
+- **Goal**: Extend proposal-backed hydration live-truth reconciliation into automatic proposal discovery while preserving plain draft refine_proposal behavior.
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-436 (success)
+- **Episode**: ep-437 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
