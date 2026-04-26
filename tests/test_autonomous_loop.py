@@ -397,6 +397,226 @@ def test_queued_candidate_wins_inside_budget(tmp_path: Path) -> None:
     assert decision["architect_judgment"]["decision"] == "refine_proposal"
 
 
+def test_queued_proposal_hydration_stops_when_matching_task_is_complete(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "hydrate_task",
+                "candidate_id": "proposal-run-ledger-atomic-stage-evidence",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "placement": {
+                        "initiative_ref": "INI-RST-003",
+                        "source": "proposal-run-ledger-atomic-stage-evidence",
+                        "target_layer": "infrastructure",
+                        "delivery_pipeline": "standard",
+                    },
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-028.yaml",
+        {"id": "T-028", "title": "Run-ledger serialized stage evidence writes"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "versions": [
+                {
+                    "id": "v0.2.0-p3",
+                    "completed_tasks": [
+                        {
+                            "id": "T-028",
+                            "title": "Run-ledger serialized stage evidence writes",
+                            "completed_date": "2026-04-25",
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {
+                "id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": "proposal-run-ledger-atomic-stage-evidence",
+                "initiative_ref": "INI-RST-003",
+                "status": "complete",
+                "completed_date": "2026-04-25",
+                "roadmap_ref": "T-028",
+            }
+        ],
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "proposal_hydration_already_completed"
+    assert decision["candidate_id"] == "T-028"
+    assert decision["route_decision"]["selected_route"] == "stop"
+    assert decision["route_decision"]["existing_task_id"] == "T-028"
+
+
+def test_queued_proposal_hydration_routes_existing_pending_task_to_ship(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "hydrate_task",
+                "candidate_id": "proposal-run-ledger-atomic-stage-evidence",
+                "proposed_task_id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_hydrated_task_artifacts(tmp_path, "T-028")
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "ship_task"
+    assert decision["candidate_id"] == "T-028"
+    assert decision["route_decision"]["selected_route"] == "ship_task"
+    assert decision["route_decision"]["existing_task_id"] == "T-028"
+
+
+def test_queued_proposal_hydration_existing_task_stops_without_ship_budget(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": "User approved hydration-only autonomous-auto testing.",
+            "max_iterations": 3,
+            "allowed_actions": ["hydrate_task"],
+        },
+        queue=[
+            {
+                "action": "hydrate_task",
+                "candidate_id": "proposal-run-ledger-atomic-stage-evidence",
+                "proposed_task_id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                }
+            },
+        },
+    )
+    _write_hydrated_task_artifacts(tmp_path, "T-028")
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "proposal_hydration_existing_task_requires_ship_approval"
+    assert decision["candidate_id"] == "T-028"
+
+
+def test_queued_proposal_hydration_existing_task_stops_without_artifacts(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "hydrate_task",
+                "candidate_id": "run-ledger-atomic-stage-evidence",
+                "proposed_task_id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": "proposal",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {
+                "id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": "proposal-run-ledger-atomic-stage-evidence",
+                "status": "pending",
+            }
+        ],
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "stop"
+    assert decision["stop_reason"] == "proposal_hydration_existing_task_requires_ship_approval"
+    assert decision["route_decision"]["existing_task_id"] == "T-028"
+    assert decision["route_decision"]["live_task_truth"]["artifacts_exist"] is False
+
+
 def test_queued_candidate_can_override_lifecycle_route_stop(tmp_path: Path) -> None:
     state_path = _state(
         tmp_path,

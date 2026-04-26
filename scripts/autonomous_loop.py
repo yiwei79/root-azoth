@@ -979,6 +979,7 @@ def _action_decision(
         "approval_basis": _approval_basis(state),
         "reason": reason,
         "stop_reason": None,
+        "route_decision": candidate.get("route_decision"),
         "architect_judgment": _architect_judgment(
             root,
             state,
@@ -1130,6 +1131,216 @@ def _first_proposal_candidate(root: Path) -> dict[str, Any] | None:
     return None
 
 
+def _proposal_path_for_candidate(root: Path, candidate: dict[str, Any]) -> Path | None:
+    for field in ("proposal_ref", "proposal_path", "source_ref", "source"):
+        value = str(candidate.get(field) or "").strip()
+        if not value:
+            continue
+        path = root / value
+        if value.startswith(".azoth/proposals/") and path.exists():
+            return path
+    candidate_id = str(candidate.get("candidate_id") or "").strip()
+    if str(candidate.get("source") or "").strip() == "proposal" and candidate_id:
+        path = root / ".azoth/proposals" / f"{candidate_id}.yaml"
+        if path.exists():
+            return path
+    if candidate_id.startswith("proposal-"):
+        path = root / ".azoth/proposals" / f"{candidate_id.removeprefix('proposal-')}.yaml"
+        if path.exists():
+            return path
+    return None
+
+
+def _proposal_titles_for_hydration(data: dict[str, Any]) -> set[str]:
+    titles = {str(data.get("title") or "").strip()}
+    details = data.get("details") if isinstance(data.get("details"), dict) else {}
+    for section_name in ("recommended_next_slice", "recommended_first_slice"):
+        section = details.get(section_name) if isinstance(details.get(section_name), dict) else {}
+        for field in ("exact_title", "title"):
+            titles.add(str(section.get(field) or "").strip())
+        placement = section.get("placement") if isinstance(section.get("placement"), dict) else {}
+        titles.add(str(placement.get("title") or "").strip())
+    return {title for title in titles if title}
+
+
+def _proposal_hydration_slice(data: dict[str, Any]) -> dict[str, Any]:
+    details = data.get("details") if isinstance(data.get("details"), dict) else {}
+    for section_name in ("recommended_next_slice", "recommended_first_slice"):
+        section = details.get(section_name)
+        if isinstance(section, dict) and str(section.get("route") or "") == "hydrate_task":
+            return section
+    return {}
+
+
+def _walk_task_nodes(data: Any) -> list[dict[str, Any]]:
+    nodes: list[dict[str, Any]] = []
+    if isinstance(data, dict):
+        if any(str(data.get(field) or "").strip() for field in ("id", "task_ref", "roadmap_ref")):
+            nodes.append(data)
+        for value in data.values():
+            nodes.extend(_walk_task_nodes(value))
+    elif isinstance(data, list):
+        for item in data:
+            nodes.extend(_walk_task_nodes(item))
+    return nodes
+
+
+def _proposal_task_match(
+    root: Path, proposal_path: Path, candidate: dict[str, Any]
+) -> dict[str, Any] | None:
+    proposal = _load_yaml_mapping(proposal_path)
+    hydration_slice = _proposal_hydration_slice(proposal)
+    if not hydration_slice:
+        return None
+    titles = _proposal_titles_for_hydration(proposal)
+    placement = (
+        hydration_slice.get("placement")
+        if isinstance(hydration_slice.get("placement"), dict)
+        else {}
+    )
+    proposal_sources = {
+        proposal_path.stem,
+        f"proposal-{proposal_path.stem}",
+        str(placement.get("source") or "").strip(),
+        str(candidate.get("candidate_id") or "").strip(),
+    }
+    proposal_sources = {source for source in proposal_sources if source}
+    initiative_ref = str(placement.get("initiative_ref") or candidate.get("initiative_ref") or "")
+    proposed_task_id = str(candidate.get("proposed_task_id") or "").strip()
+    for rel_path in (".azoth/backlog.yaml", ".azoth/roadmap.yaml"):
+        path = root / rel_path
+        if not path.exists():
+            continue
+        for item in _walk_task_nodes(safe_load_yaml_path(path)):
+            task_id = str(item.get("id") or item.get("task_ref") or item.get("roadmap_ref") or "")
+            title = str(item.get("title") or "").strip()
+            source = str(item.get("source") or "").strip()
+            task_initiative = str(item.get("initiative_ref") or "").strip()
+            task_matches = bool(
+                (title and title in titles)
+                or (source and source in proposal_sources)
+                or (proposed_task_id and task_id == proposed_task_id)
+            )
+            if not task_matches:
+                continue
+            if initiative_ref and task_initiative and task_initiative != initiative_ref:
+                continue
+            status = str(item.get("status") or "").strip().lower()
+            complete = bool(
+                status in TERMINAL_TASK_STATUSES
+                or item.get("completed_date")
+                or (task_id and _hydrated_task_is_complete(root, task_id))
+            )
+            return {
+                "task_id": task_id or "matched-task",
+                "title": title or task_id or proposal_path.stem,
+                "source": source or proposal_path.stem,
+                "status": status or ("completed" if complete else "pending"),
+                "initiative_ref": task_initiative,
+                "complete": complete,
+                "artifacts_exist": _hydrated_task_artifacts_exist(root, task_id),
+            }
+    return None
+
+
+def _queued_proposal_hydration_decision(
+    root: Path, state: dict[str, Any], candidate: dict[str, Any], allowed: set[str]
+) -> dict[str, Any] | None:
+    proposal_path = _proposal_path_for_candidate(root, candidate)
+    if not proposal_path:
+        return None
+    match = _proposal_task_match(root, proposal_path, candidate)
+    if not match:
+        return None
+    task_id = match["task_id"]
+    if match.get("complete"):
+        return _stop_decision(
+            state,
+            "proposal_hydration_already_completed",
+            detail=(
+                "Proposal-backed hydration candidate "
+                f"{proposal_path.relative_to(root)} already maps to completed task {task_id}; "
+                "refresh route state instead of opening duplicate hydration."
+            ),
+            candidate={
+                **candidate,
+                "id": task_id,
+                "candidate_id": task_id,
+                "backlog_id": task_id,
+                "route_decision": {
+                    "selected_route": "stop",
+                    "route_state": "completed_or_stale_campaign",
+                    "proposal_ref": str(proposal_path.relative_to(root)),
+                    "existing_task_id": task_id,
+                    "live_task_truth": match,
+                    "blocked_actions": [
+                        {
+                            "action": "hydrate_task",
+                            "reason": f"proposal-backed task {task_id} is already complete",
+                        }
+                    ],
+                },
+            },
+        )
+    if match.get("artifacts_exist") and "ship_task" in allowed:
+        ship_candidate = {
+            **candidate,
+            "id": task_id,
+            "candidate_id": task_id,
+            "backlog_id": task_id,
+            "title": match.get("title") or task_id,
+            "source": str(proposal_path.relative_to(root)),
+            "route_decision": {
+                "selected_route": "ship_task",
+                "route_state": "delivery_ready",
+                "proposal_ref": str(proposal_path.relative_to(root)),
+                "existing_task_id": task_id,
+                "live_task_truth": match,
+                "blocked_actions": [
+                    {
+                        "action": "hydrate_task",
+                        "reason": f"proposal-backed task {task_id} is already hydrated",
+                    }
+                ],
+            },
+        }
+        if _is_protected(ship_candidate):
+            return _stop_decision(state, "protected_gate_required", candidate=ship_candidate)
+        return _action_decision(
+            state,
+            action="ship_task",
+            candidate=ship_candidate,
+            source=str(proposal_path.relative_to(root)),
+            reason=(
+                "Proposal-backed hydration target already exists as an executable task; "
+                "routing to scoped delivery instead of duplicate hydration."
+            ),
+            root=root,
+        )
+    return _stop_decision(
+        state,
+        "proposal_hydration_existing_task_requires_ship_approval",
+        detail=(
+            "Proposal-backed hydration candidate "
+            f"{proposal_path.relative_to(root)} maps to existing task {task_id}; "
+            "ship_task approval and hydrated artifacts are required before delivery."
+        ),
+        candidate={
+            **candidate,
+            "id": task_id,
+            "candidate_id": task_id,
+            "backlog_id": task_id,
+            "route_decision": {
+                "selected_route": "stop",
+                "route_state": "delivery_ready_without_approval",
+                "proposal_ref": str(proposal_path.relative_to(root)),
+                "existing_task_id": task_id,
+                "live_task_truth": match,
+            },
+        },
+    )
+
+
 def _initiative_route_stop_decision(
     root: Path,
     state_path: Path,
@@ -1268,6 +1479,10 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
             return _stop_decision(state, "action_not_in_budget", candidate=queued)
         if _is_protected(queued):
             return _stop_decision(state, "protected_gate_required", candidate=queued)
+        if action == "hydrate_task":
+            proposal_decision = _queued_proposal_hydration_decision(root, state, queued, allowed)
+            if proposal_decision:
+                return proposal_decision
         return _action_decision(
             state,
             action=action,
