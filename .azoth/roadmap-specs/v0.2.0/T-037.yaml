@@ -38,6 +38,20 @@ evidence:
   validation_command: python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke
   validation_result: passed; bash consumer install passed; PowerShell skipped because pwsh/powershell is not installed on this host
   human_gate: Public checkout rsync, commit, tag, push, and GitHub release publication require explicit operator approval.
+- date: '2026-04-28'
+  status: v0.2.0-rc.1-published; stable not published
+  approval: Operator accepted the RC evidence and approved publishing v0.2.0-rc.1 through the T-037 public handoff; stable release remained explicitly out of scope.
+  source_root_commit: f5dc6d3155ed521dd26b8d9921567d557ff3fe89
+  public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  tag: v0.2.0-rc.1
+  tag_object: f7c7d6a9f0d54faf8d54ab1f22d43a34d5660f9e
+  release_url: https://github.com/yiwei79/azoth/releases/tag/v0.2.0-rc.1
+  validation:
+  - python3 scripts/product_release_smoke.py --out /private/tmp/azoth-v0.2.0-rc.1 passed from root source.
+  - Public temporary worktree validate-only passed.
+  - Public temporary worktree ruff check scripts/ passed.
+  - Public temporary worktree product_release_smoke.py --out /private/tmp/azoth-public-rc-smoke passed.
+  - PowerShell smoke remained skipped on this host because pwsh/powershell is unavailable.
 dependencies:
 - T-036
 delivery:
