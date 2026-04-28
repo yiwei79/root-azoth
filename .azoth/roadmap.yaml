@@ -2046,7 +2046,9 @@ versions:
   current_patch: 1
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
-    the personal root control-plane deployment model.'
+    the personal root control-plane deployment model. The first stable release must
+    also prove included features end-to-end, including the campaign-bounded
+    autonomous learning/self-heal contract.'
   phase_scope:
   - 4
   themes:
@@ -2067,7 +2069,10 @@ versions:
   note: This phase is a stabilization freeze, not a feature-growth phase. It exists
     to make Azoth safe to use for real projects by separating root-azoth as the private
     development workshop, azoth as the clean published product, and the operator personal
-    root as an installed Azoth control-plane deployment.
+    root as an installed Azoth control-plane deployment. Stable release closeout requires
+    a green full root test suite and evidence that autonomous-auto learning/self-heal is
+    supervised, campaign-bounded, and still blocked by fresh approval and protected-boundary
+    gates.
   pending_task_refs: []
   tasks:
   - id: T-036

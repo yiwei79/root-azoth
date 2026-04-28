@@ -17,10 +17,15 @@ intent: >
 problem: >
   A release phase can appear complete if each slice passes locally, but Azoth needs
   one final operator-facing proof bundle before it is safe to use for real projects.
+  The proof bundle must show that included features work end-to-end, including the
+  calibrated autonomous-auto learning/self-heal promise.
 scope:
-- 'Run root validation: generated mirrors, pipeline lint, extraction validation, and focused tests.'
+- 'Run root validation: generated mirrors, pipeline lint, extraction validation, focused tests, and the full root pytest suite.'
 - 'Run product validation: full extract, product tree smoke, public CI expectations, and release notes.'
 - 'Run personal deployment validation: rehearsal or documented dry run of the personal root install model.'
+- Prove autonomous-auto learning/self-heal behavior from repo-native evidence;
+  learning route visibility, protected/cross-system stop behavior, completed-loop
+  fresh-approval boundary, and no active write claim.
 - Collect residual risks and explicit deferred features.
 - Record the post-p4 continuation route for unfinished initiatives after the
   release/update loop is available.
@@ -32,8 +37,18 @@ non_goals:
 acceptance:
 - All p4 predecessor tasks are complete or explicitly deferred with accepted residual risk.
 - Root validation commands pass and are recorded in the release-candidate evidence bundle.
+- The full root pytest suite passes before any release-candidate or final stable tag.
+- Any current or newly discovered full-suite failures are either fixed or named as
+  operator-accepted release blockers that prevent stable tagging.
 - Product extraction and consumer smoke evidence are recorded with exact commands and paths.
 - Personal root deployment model has either a successful rehearsal or a clear approved deferral.
+- The learning/self-heal evidence bundle records exact outputs for `status --operator-read`,
+  `campaign-report`, strategy-preflight protected/cross-system blocking, and focused
+  autonomous-loop tests.
+- Release notes state that automatic self-healing is supervised and campaign-bounded;
+  approved campaigns can continue through safe child work without per-step babysitting,
+  but protected changes, cross-system changes, and post-Green continuation still require
+  human approval or inbox/intake.
 - Post-p4 continuation explicitly routes unfinished initiatives back through initiative
   banks, planning banks, inbox, and backlog surfaces after the rollout loop is proven.
 - The final handoff states whether the next action is public release, personal deployment, or blocked risk repair.

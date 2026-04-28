@@ -28,6 +28,9 @@ non_goals:
 - Do not replace inbox/intake, promote, memory-capture, campaign-audit, lifecycle-report, or closeout flows.
 - Do not mark a learning item as reinforced until a later campaign demonstrates changed behavior.
 - Do not treat campaign-audit output alone as write authority.
+- Do not market `auto_self_heal_now` as global hands-free learning. The stable
+  release claim is campaign-bounded supervised autonomy; safe internal defects may
+  route automatically only inside an approved budget and through normal gates.
 acceptance:
 - The harvester reads campaign-audit residuals, self-capture rows, closeout episodes, route failures, proposal/refinement outputs, and retrospective evidence without relying on chat-only memory.
 - Each learning signal is deduplicated and classified as auto_self_heal_now, capture_only, proposal_needed, human_gate_required, defer_to_intake, or stale_or_rejected.
@@ -37,6 +40,9 @@ acceptance:
 - Strategy-preflight includes the harvester recommendation before opening a child scope, and campaign reports show the chosen learning route plus rejected alternatives.
 - Tests prove safe internal defects can be selected for self-heal, protected changes stop, duplicate signals collapse, stale campaign evidence does not authorize work, and capture-only rows do not pile up without route visibility.
 - Verification includes at least one historical autonomous-auto campaign sample showing a captured learning signal progressing to a planned or implemented self-heal route without claiming reinforcement prematurely.
+- Stable release evidence states the operator promise precisely; no per-child
+  babysitting for safe internal self-heal inside an approved campaign, but fresh
+  campaign approval, protected-boundary stops, and inbox/intake lanes remain intact.
 dependencies: []
 delivery:
   target_layer: infrastructure

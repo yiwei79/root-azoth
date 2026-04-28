@@ -3458,8 +3458,11 @@ items:
   created_date: '2026-04-28'
   description: Run the final release-candidate checklist across root tests, generated
     mirrors, product extraction, public product smoke tests, personal control-plane
-    install rehearsal, operator documentation, and release handoff before closing
-    v0.2.0-p4.
+    install rehearsal, operator documentation, autonomous learning/self-heal evidence,
+    and release handoff before closing v0.2.0-p4. The first stable release cannot
+    be tagged until the full root test suite is green and the operator-facing claim
+    is calibrated as supervised campaign-bounded autonomy, not global ungated
+    self-modification.
   roadmap_ref: T-039
   decision_ref:
   - D34
