@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.67 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 67
+0.1.3.78 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 78
 
 ## Last Session
-- **Session**: 2026-04-26-autonomous-auto-t-030-1
-- **Goal**: Autonomous campaign strategy budget repair
+- **Session**: 2026-04-26-autonomous-auto-t-033-3
+- **Goal**: Autonomous-auto learning harvester and self-heal router
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-443 (success)
+- **Episode**: ep-456 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
