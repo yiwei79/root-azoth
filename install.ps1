@@ -6,9 +6,21 @@
 
 $ErrorActionPreference = "Stop"
 
-$AZOTH_VERSION = "0.1.0-dev"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TARGET_DIR = Get-Location
+
+function Get-AzothVersion {
+    $manifest = Join-Path $SCRIPT_DIR "azoth.yaml"
+    if (Test-Path $manifest) {
+        $line = Get-Content $manifest | Where-Object { $_ -match '^version:\s*(.+)$' } | Select-Object -First 1
+        if ($line -match '^version:\s*(.+)$') {
+            return $Matches[1].Trim()
+        }
+    }
+    return "0.1.0"
+}
+
+$AZOTH_VERSION = Get-AzothVersion
 
 # ── Helpers ─────────────────────────────────────────────────────
 function Info($msg)  { Write-Host "[azoth] $msg" -ForegroundColor Cyan }
