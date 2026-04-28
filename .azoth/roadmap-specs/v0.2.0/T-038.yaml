@@ -35,6 +35,16 @@ acceptance:
 - Knowledge-base boundaries distinguish toolkit memory, personal memory, and per-project memory.
 - The model includes a low-friction project onboarding flow from personal root to new projects.
 - Open decisions are explicit, especially repository path, privacy boundary, and publication cadence.
+evidence:
+- date: '2026-04-28'
+  status: documented
+  artifact: .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+  run_id: 2026-04-28-t-038-personal-root-model
+  notes:
+  - Defines root-azoth, public azoth, and personal root as separate planes with owner, purpose, allowed state, forbidden state, and update path.
+  - Defines personal root as an installed Azoth deployment and keeps live repository creation blocked on operator approval.
+  - Documents toolkit, personal, per-project, and inbox/reflection knowledge boundaries.
+  - Includes low-friction project onboarding flow and explicit open decisions for path, privacy, source connections, pilots, and RC/stable cadence.
 dependencies:
 - T-034
 delivery:

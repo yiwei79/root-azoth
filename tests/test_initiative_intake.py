@@ -16,7 +16,6 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import initiative_intake  # noqa: E402
 from initiative_intake import (  # noqa: E402
     APPROVAL_SCOPE,
     EXECUTABLE_OUTPUTS,

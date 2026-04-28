@@ -2,6 +2,7 @@ id: T-039
 roadmap_version: v0.2.0
 title: Release candidate validation and rollout closeout
 decision_ref:
+- D11
 - D34
 - D35
 - D37
@@ -13,7 +14,8 @@ decision_ref:
 - D52
 intent: >
   Run the final release-candidate checklist and close v0.2.0-p4 only when root,
-  product, and personal-control-plane rollout evidence are all reviewable.
+  product, personal-control-plane, and learning-system rollout evidence are all
+  reviewable.
 problem: >
   A release phase can appear complete if each slice passes locally, but Azoth needs
   one final operator-facing proof bundle before it is safe to use for real projects.
@@ -23,6 +25,9 @@ scope:
 - 'Run root validation: generated mirrors, pipeline lint, extraction validation, focused tests, and the full root pytest suite.'
 - 'Run product validation: full extract, product tree smoke, public CI expectations, and release notes.'
 - 'Run personal deployment validation: rehearsal or documented dry run of the personal root install model.'
+- Repair release-blocking learning-system defects that would make the first stable
+  contract untrue, including inbox schema drift, route-chain gaps, protected-stop
+  proof gaps, or missing supervised-autonomy documentation.
 - Prove autonomous-auto learning/self-heal behavior from repo-native evidence;
   learning route visibility, protected/cross-system stop behavior, completed-loop
   fresh-approval boundary, and no active write claim.
@@ -34,17 +39,24 @@ non_goals:
 - Do not add new release-scope tasks during closeout unless a gate fails.
 - Do not publish final release artifacts without the operator's release approval.
 - Do not claim package-manager availability unless T-037 added and verified it.
+- Do not auto-drain `.azoth/inbox/`, make `$azoth-intake` decisions, or mutate
+  governance/instructions automatically as part of first stable.
 acceptance:
 - All p4 predecessor tasks are complete or explicitly deferred with accepted residual risk.
 - Root validation commands pass and are recorded in the release-candidate evidence bundle.
 - The full root pytest suite passes before any release-candidate or final stable tag.
 - Any current or newly discovered full-suite failures are either fixed or named as
   operator-accepted release blockers that prevent stable tagging.
+- Current learning-system blockers, including inbox schema drift and any route-chain
+  regressions, are fixed or explicitly listed as blockers that prevent stable tagging.
 - Product extraction and consumer smoke evidence are recorded with exact commands and paths.
 - Personal root deployment model has either a successful rehearsal or a clear approved deferral.
 - The learning/self-heal evidence bundle records exact outputs for `status --operator-read`,
   `campaign-report`, strategy-preflight protected/cross-system blocking, and focused
   autonomous-loop tests.
+- Learning captures and inbox reflections used as release evidence are schema-valid
+  and deliberately routed to `auto_self_heal_now`, `capture_only`, `defer_to_intake`,
+  or `human_gate_required`; no release claim treats inbox rows as silently applied.
 - Release notes state that automatic self-healing is supervised and campaign-bounded;
   approved campaigns can continue through safe child work without per-step babysitting,
   but protected changes, cross-system changes, and post-Green continuation still require
@@ -52,6 +64,19 @@ acceptance:
 - Post-p4 continuation explicitly routes unfinished initiatives back through initiative
   banks, planning banks, inbox, and backlog surfaces after the rollout loop is proven.
 - The final handoff states whether the next action is public release, personal deployment, or blocked risk repair.
+evidence:
+- date: '2026-04-28'
+  status: pipeline_reconciliation_active
+  session_id: 2026-04-28-t-039-pipeline-reconciliation
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/T-039-PIPELINE-RECONCILIATION.md
+  decision: Accept the already-validated release-readiness repairs as local evidence with an explicit process-deviation note; do not claim stable readiness until T-038, final T-039 closeout, and operator acceptance pass.
+- date: '2026-04-28'
+  status: rc_evidence_ready_pending_operator_acceptance
+  session_id: 2026-04-28-t-039-final-rc-closeout
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-EVIDENCE-BUNDLE.md
+  decision: Candidate evidence is assembled without publication or stable claim; full root pytest passed after write-claim release and the operator must explicitly accept the evidence before RC publication.
 dependencies:
 - T-035
 - T-036

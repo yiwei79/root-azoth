@@ -2059,6 +2059,7 @@ versions:
     no_new_initiatives: true
     allowed_work:
     - release_readiness_repairs
+    - learning_system_stabilization
     - product_extraction_and_publish
     - personal_control_plane_deployment_model
     - documentation_and_ci_rollout
@@ -2072,43 +2073,15 @@ versions:
     root as an installed Azoth control-plane deployment. Stable release closeout requires
     a green full root test suite and evidence that autonomous-auto learning/self-heal is
     supervised, campaign-bounded, and still blocked by fresh approval and protected-boundary
-    gates.
+    gates. Inbox reflections remain governed evidence unless a route is explicitly
+    safe, campaign-bounded, and applied through strategy-preflight; the first stable
+    release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
   tasks:
-  - id: T-036
-    title: Product extraction release candidate and consumer smoke test
-    decision_ref:
-    - D34
-    - D35
-    - D37
-    - D38
-    - D42
-    - D46
-    - D48
-  - id: T-037
-    title: Public azoth publishing pipeline and release automation
-    decision_ref:
-    - D35
-    - D37
-    - D38
-    - D46
-    - D48
-    - D50
-  - id: T-038
-    title: Personal root control-plane deployment model
-    decision_ref:
-    - D11
-    - D34
-    - D35
-    - D37
-    - D38
-    - D42
-    - D48
-    - D50
-    - D52
   - id: T-039
     title: Release candidate validation and rollout closeout
     decision_ref:
+    - D11
     - D34
     - D35
     - D37
@@ -2136,6 +2109,40 @@ versions:
     completed_date: '2026-04-28'
     decision_ref:
     - D46
+    - D48
+    - D50
+    - D52
+  - id: T-036
+    title: Product extraction release candidate and consumer smoke test
+    completed_date: '2026-04-28'
+    decision_ref:
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D46
+    - D48
+  - id: T-037
+    title: Public azoth publishing pipeline and release automation
+    completed_date: '2026-04-28'
+    decision_ref:
+    - D35
+    - D37
+    - D38
+    - D46
+    - D48
+    - D50
+  - id: T-038
+    title: Personal root control-plane deployment model
+    completed_date: '2026-04-28'
+    decision_ref:
+    - D11
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
     - D48
     - D50
     - D52

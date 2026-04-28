@@ -135,6 +135,26 @@ Optional: one line `role_hint:` repeating the canonical D21 audit string for tha
 (see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
 model identifier at spawn time. If omitted, defaults to `standard`.
 
+## Codex Model Selector Contract (T-025)
+
+For Codex-hosted spawns, `model_tier` is portable intent, not the final runtime
+payload. Before spawning a Codex subagent, the orchestrator must resolve the tier
+through `scripts/codex_model_selector.py`, using `.azoth/codex-model-selector-policy.yaml`
+as policy input and appending selector evidence to
+`.azoth/codex-model-selector-traces.local.jsonl`.
+
+The resolved spawn payload must include explicit runtime fields:
+
+```yaml
+model_tier: premium | standard | fast
+model: <resolved-model>
+reasoning_effort: <low|medium|high|xhigh>
+```
+
+Do not omit `model` or `reasoning_effort` on Codex subagent spawns. Parent `xhigh` reasoning must not leak into leaf workers by omission; `xhigh` is allowed only when
+the selector policy, an explicit operator override, or evaluator-backed escalation
+chooses it for that stage.
+
 **`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
 `orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
 The root orchestrator owns the global execution budget and should reserve capacity for queen

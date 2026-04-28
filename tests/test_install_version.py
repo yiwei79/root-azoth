@@ -41,3 +41,9 @@ def test_install_sh_generates_manifest_with_source_version(tmp_path: Path) -> No
 
     generated = _manifest_version(tmp_path / "azoth.yaml")
     assert generated == _manifest_version()
+
+    generated_manifest = yaml.safe_load((tmp_path / "azoth.yaml").read_text(encoding="utf-8"))
+    platforms = generated_manifest["platforms"]
+    assert isinstance(platforms, list)
+    assert platforms
+    assert all(isinstance(platform, str) and " " not in platform for platform in platforms)

@@ -33,6 +33,17 @@ acceptance:
 - Scaffold-only paths from `sync-config.yaml` are absent from the product tree.
 - Sanitization checks find no configured source-org patterns in extracted text files.
 - A documented consumer install smoke test passes or records a precise blocker with the smallest follow-up task.
+evidence:
+- date: '2026-04-28'
+  status: passed
+  command: python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke
+  extract_path: /private/tmp/azoth-product-rc-smoke
+  bash_consumer_path: /var/folders/3y/6txc959n5gsbdty4w1_mkr7r0000gp/T/azoth-consumer-smoke-zwrl64tj
+  powershell_consumer_status: skipped; pwsh/powershell not found on this host
+  notes:
+  - Product extraction now skips local runtime/cache artifacts such as .venv, .pytest_cache, .ruff_cache, .DS_Store, and .claude/worktrees.
+  - kernel/templates is intentionally retained in the product tree because install.sh and install.ps1 render consumer boot files from those templates.
+  - install.sh now emits platforms as a YAML list instead of a single whitespace-joined scalar.
 dependencies:
 - T-034
 - T-035

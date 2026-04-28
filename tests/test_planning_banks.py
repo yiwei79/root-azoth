@@ -598,7 +598,7 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     ]
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
-    assert initiative["phase"] == "v0.2.0-p3"
+    assert initiative["phase"] is None
     assert initiative["task_ref"] == "T-022"
     assert initiative["slices"] == [
         {

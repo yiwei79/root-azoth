@@ -31,6 +31,13 @@ acceptance:
 - CI/release validation blocks stale generated mirrors, extraction failure, sanitization leaks, and failing product smoke checks.
 - Release notes template names scope, version, source commit, extract command, validation evidence, and known residual risks.
 - Final public push/release remains human-gated.
+evidence:
+- date: '2026-04-28'
+  status: handoff-ready; publish not executed
+  handoff_doc: .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-RELEASE-HANDOFF.md
+  validation_command: python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke
+  validation_result: passed; bash consumer install passed; PowerShell skipped because pwsh/powershell is not installed on this host
+  human_gate: Public checkout rsync, commit, tag, push, and GitHub release publication require explicit operator approval.
 dependencies:
 - T-036
 delivery:

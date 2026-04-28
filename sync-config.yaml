@@ -67,6 +67,18 @@ product_extraction:
   exclude_paths:
     # Never ship scaffold git history into the product tree (extract uses source.rglob).
     - ".git/"
+    # Never ship workstation-local generated state, caches, or ignored runtime files.
+    - ".DS_Store"
+    - ".pytest_cache/"
+    - ".ruff_cache/"
+    - ".mypy_cache/"
+    - ".tox/"
+    - ".nox/"
+    - ".venv/"
+    - "venv/"
+    - "__pycache__/"
+    - "dist/"
+    - "build/"
     # Entire `.azoth/` in root-azoth is workshop/runtime: backlog, roadmap, bootloader,
     # handoffs, proposals, gates, inbox, memory, telemetry, session orientation, etc.
     # Consumer `.azoth/kernel/` is created by install from `kernel/` (D42), not by copying this tree.
@@ -75,8 +87,11 @@ product_extraction:
     - ".claude/hooks/"             # Scaffold-only Claude Code hook scripts, not consumer install artifacts
     - ".claude/settings.json"      # Scaffold dev settings
     - ".claude/settings.local.json"
+    - ".claude/worktrees/"          # Claude Code local worktree state
+    - ".codex/hooks.mode.local"
+    - ".codex/permission_profile.local"
     - ".github/"                   # Scaffold CI/CD; public repo gets its own minimal CI (P4-004)
-    - "kernel/templates/"           # Raw scaffold .template files — consumers get rendered copies via install (D42)
+    # Keep kernel/templates/: install.sh/install.ps1 render consumer boot files from these templates.
     - "research_antigravity_parity/"  # Scaffold research workspace, not public product content
     - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
     - "tests/"                     # Scaffold tests (product gets its own)

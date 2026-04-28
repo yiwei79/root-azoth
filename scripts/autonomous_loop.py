@@ -1023,6 +1023,14 @@ def _strategy_preflight_for_decision(
     route_state = str(route_decision.get("route_state") or _strategy_route_state_for_action(action, candidate))
     route_conflict = bool(route_decision and route_selected and route_selected != action)
     protected = _is_protected(candidate)
+    completion_reason = _completion_reason(state)
+    raw_loop_status = str(state.get("status") or "missing").strip() or "missing"
+    current_loop_authority = "completed" if completion_reason else raw_loop_status
+    approval_basis = _approval_basis(state)
+    approval_basis_is_present = bool(approval_basis) and not approval_basis.startswith(
+        "Autonomous-auto loop state did not"
+    )
+    active_approved_campaign = current_loop_authority == "active" and approval_basis_is_present
     harvester_decision = learning_harvester_decision(
         {
             "id": _candidate_identity(candidate),
@@ -1033,7 +1041,7 @@ def _strategy_preflight_for_decision(
             "learning_state": candidate.get("learning_state"),
             "tags": candidate.get("tags"),
         },
-        approval_basis=_approval_basis(state),
+        approval_basis=approval_basis if active_approved_campaign else "",
         selected_action=action,
     )
     corpus_harvester: dict[str, Any] = {}
@@ -1051,9 +1059,18 @@ def _strategy_preflight_for_decision(
             corpus_harvester = {}
     write_claim = _write_claim_status(root) if root is not None else {"held": False}
     active_scope = _active_scope(root) if root is not None else {}
-    approval_basis_present = bool(_approval_basis(state))
+    approval_basis_present = approval_basis_is_present
     blocked: list[dict[str, str]] = []
     mismatch_reason = ""
+    if current_loop_authority != "active":
+        blocked.append(
+            {
+                "action": action,
+                "reason": (
+                    f"current loop authority {current_loop_authority} requires fresh campaign approval"
+                ),
+            }
+        )
     if protected:
         blocked.append(
             {
@@ -1135,8 +1152,8 @@ def _strategy_preflight_for_decision(
         "freshness_status": str(
             readiness.get("freshness_status") or "current_route_gate_and_claim_state"
         ),
-        "fresh_campaign_authority": approval_basis_present and str(state.get("status") or "") == "active",
-        "current_loop_authority": str(state.get("status") or "missing"),
+        "fresh_campaign_authority": active_approved_campaign,
+        "current_loop_authority": current_loop_authority,
         "source_artifacts": route_decision.get("source_artifacts") or {},
         "learning_harvester": {
             "consumed": True,
@@ -2610,6 +2627,9 @@ def _self_capture_entry(decision: dict[str, Any], item: dict[str, Any]) -> dict[
     )
     return {
         "id": entry_id,
+        "session_id": str(item.get("session_id") or decision.get("loop_id") or ""),
+        "loop_id": str(item.get("loop_id") or decision.get("loop_id") or ""),
+        "learning_state": str(item.get("learning_state") or "captured"),
         "source": "autonomous-auto-loop",
         "source_type": "agent",
         "timestamp": _iso(_utc_now()),

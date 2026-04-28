@@ -13,6 +13,21 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 import autonomous_loop  # noqa: E402
 
+D32_REQUIRED_FIELDS = {
+    "id",
+    "source",
+    "source_type",
+    "timestamp",
+    "category",
+    "severity",
+    "target",
+    "summary",
+    "evidence",
+    "recommended_action",
+    "auto_applicable",
+    "requires_human_gate",
+}
+
 
 def _future_expiry() -> str:
     return (datetime.now(timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -2145,6 +2160,88 @@ def test_strategy_preflight_includes_learning_harvester_gate(
     )
 
 
+def test_strategy_preflight_blocks_user_governed_learning_to_intake(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    candidate = {
+        "candidate_id": "user-governed-learning-signal",
+        "title": "user-governed cross-system autonomous-auto improvement",
+    }
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="ship_task",
+        candidate=candidate,
+        source="queue",
+    )
+
+    harvester = preflight["learning_harvester"]
+    assert harvester["decision"]["route"] == "defer_to_intake"
+    assert harvester["decision"]["selected_action"] == "defer_to_inbox_intake"
+    assert preflight["may_open_scope"] is False
+    assert any(
+        "learning harvester routed signal to defer_to_intake" in item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
+def test_strategy_preflight_requires_active_approved_campaign_for_auto_self_heal(
+    tmp_path: Path,
+) -> None:
+    candidate = {
+        "candidate_id": "safe-learning-signal",
+        "title": "low autonomous-auto lifecycle-route report visibility defect",
+    }
+
+    active_without_approval = {
+        "schema_version": 1,
+        "loop_id": "loop-test",
+        "status": "active",
+        "autonomy_budget": {},
+    }
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        None,
+        active_without_approval,
+        action="ship_task",
+        candidate=candidate,
+        source="queue",
+    )
+    assert preflight["fresh_campaign_authority"] is False
+    assert preflight["learning_harvester"]["decision"]["route"] == "capture_only"
+    assert preflight["may_open_scope"] is False
+    assert {"action": "ship_task", "reason": "approval_basis is missing"} in preflight[
+        "blocked_alternatives"
+    ]
+
+    completed_with_old_approval = {
+        "schema_version": 1,
+        "loop_id": "loop-test",
+        "status": "completed",
+        "completion_reason": "vision_realized",
+        "autonomy_budget": {
+            "approval_basis": "Old Green campaign approval is terminal, not fresh authority.",
+        },
+    }
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        None,
+        completed_with_old_approval,
+        action="ship_task",
+        candidate=candidate,
+        source="queue",
+    )
+    assert preflight["current_loop_authority"] == "completed"
+    assert preflight["fresh_campaign_authority"] is False
+    assert preflight["learning_harvester"]["decision"]["route"] == "capture_only"
+    assert preflight["may_open_scope"] is False
+    assert any(
+        "current loop authority completed requires fresh campaign approval" == item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
 def test_campaign_report_exposes_learning_harvester_route_and_rejected_alternatives(
     tmp_path: Path,
 ) -> None:
@@ -2265,6 +2362,22 @@ def test_materialize_self_capture_writes_inbox_and_consumes_candidate(tmp_path: 
     assert state["self_capture_queue"] == []
     assert materialization["entry_id"] == entry["id"]
     assert entry["summary"] == "Async alignment needs durable packet state."
+    assert D32_REQUIRED_FIELDS <= set(entry)
+    assert entry["session_id"] == "loop-test"
+    assert entry["loop_id"] == "loop-test"
+    assert entry["learning_state"] == "captured"
+
+    report = autonomous_loop.campaign_report(
+        tmp_path,
+        state_path,
+        include_next_campaign_recommendation=False,
+    )
+    decisions = report["learning_harvester"]["decisions"]
+    assert any(
+        decision["signal_id"] == "Async alignment needs durable packet state."
+        and materialization["artifact_path"] in decision["source_refs"]
+        for decision in decisions
+    )
 
 
 def test_decision_includes_architect_scorecard_and_rejected_alternatives(tmp_path: Path) -> None:

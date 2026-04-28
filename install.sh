@@ -322,6 +322,15 @@ fi
 ok "Gitignore updated"
 
 # ── Step 9: Generate manifest ──────────────────────────────────
+platforms_manifest_yaml() {
+    local platform
+    for platform in $PLATFORMS; do
+        printf '  - %s\n' "$platform"
+    done
+}
+
+PLATFORMS_YAML="$(platforms_manifest_yaml)"
+
 cat > "azoth.yaml" << MANIFEST
 name: azoth
 version: $AZOTH_VERSION
@@ -330,7 +339,8 @@ installed:
   kernel: true
   skills: $INSTALL_SKILLS
   agents: $INSTALL_AGENTS
-platforms: [$PLATFORMS]
+platforms:
+$PLATFORMS_YAML
 MANIFEST
 
 ok "Manifest generated (azoth.yaml)"

@@ -3380,13 +3380,16 @@ items:
   source: v020-p4-stabilization-rollout-2026-04-28
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 2
   created_date: '2026-04-28'
   description: Turn the existing product extractor into a release-candidate path by
     extracting a clean azoth tree, validating sanitization and generated public CI,
-    then smoke-testing installation into a temporary consumer project.
+    then smoke-testing installation into a temporary consumer project. Completed
+    with python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke;
+    bash consumer install passed and PowerShell was explicitly skipped because
+    pwsh/powershell is unavailable on this host.
   roadmap_ref: T-036
   decision_ref:
   - D34
@@ -3404,13 +3407,16 @@ items:
   source: v020-p4-stabilization-rollout-2026-04-28
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 2
   created_date: '2026-04-28'
   description: Define and implement the controlled CI/CD path from root-azoth extraction
     to the public azoth repository, including release tags, GitHub release notes,
-    fail-closed checks, and no manual copying of scaffold-only state.
+    fail-closed checks, and no manual copying of scaffold-only state. Completed as
+    a handoff-ready, human-gated public release lane in
+    .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-RELEASE-HANDOFF.md; public rsync,
+    commit, tag, push, and GitHub release publication were not executed.
   roadmap_ref: T-037
   decision_ref:
   - D35
@@ -3426,14 +3432,17 @@ items:
   source: v020-p4-stabilization-rollout-2026-04-28
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 2
   created_date: '2026-04-28'
   description: Design the operator personal root as an installed Azoth deployment
     separate from root-azoth development and public azoth product publishing, including
     knowledge-base boundaries, source connections, update cadence, and project onboarding
-    ergonomics.
+    ergonomics. Completed as a design-only deployment model in
+    .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md; live personal-root
+    repository creation remains blocked on explicit operator approval of target
+    path, privacy boundary, source connections, pilots, and RC/stable cadence.
   roadmap_ref: T-038
   decision_ref:
   - D11
@@ -3459,12 +3468,15 @@ items:
   description: Run the final release-candidate checklist across root tests, generated
     mirrors, product extraction, public product smoke tests, personal control-plane
     install rehearsal, operator documentation, autonomous learning/self-heal evidence,
+    learning capture/inbox schema validity, route-chain proof, protected-stop proof,
     and release handoff before closing v0.2.0-p4. The first stable release cannot
-    be tagged until the full root test suite is green and the operator-facing claim
-    is calibrated as supervised campaign-bounded autonomy, not global ungated
-    self-modification.
+    be tagged until the full root test suite is green, the learning-system blockers
+    are fixed or listed as release blockers, and the operator-facing claim is
+    calibrated as supervised campaign-bounded autonomy, not global ungated
+    self-modification or silent inbox draining.
   roadmap_ref: T-039
   decision_ref:
+  - D11
   - D34
   - D35
   - D37
