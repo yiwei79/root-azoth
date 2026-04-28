@@ -14,6 +14,7 @@ STATE_REL = ".azoth/autonomous-loop-state.local.yaml"
 LEDGER_REL = ".azoth/run-ledger.local.yaml"
 EPISODES_REL = ".azoth/memory/episodes.jsonl"
 INBOX_DIR_REL = ".azoth/inbox"
+PROPOSALS_DIR_REL = ".azoth/proposals"
 PROVENANCE_REPO_NATIVE = "repo_native"
 PROVENANCE_CHAT_ONLY = "chat_only"
 PROVENANCE_MISSING = "missing"
@@ -42,6 +43,56 @@ LEARNING_STATE_RANK = {
 }
 VISION_BANDS = {"unevaluated": -1, "red": 0, "yellow": 1, "green": 2}
 DEFAULT_VISION_TARGET_BAND = "green"
+HARVESTER_ROUTES = {
+    "auto_self_heal_now",
+    "capture_only",
+    "proposal_needed",
+    "human_gate_required",
+    "defer_to_intake",
+    "stale_or_rejected",
+}
+HARVESTER_ROUTE_PRIORITY = {
+    "human_gate_required": 60,
+    "defer_to_intake": 50,
+    "auto_self_heal_now": 40,
+    "proposal_needed": 30,
+    "capture_only": 20,
+    "stale_or_rejected": 10,
+}
+PROTECTED_SIGNAL_MARKERS = {
+    "kernel",
+    "governance",
+    "m1",
+    "destructive",
+    "credential",
+    "credentials",
+    "network",
+    "cross-branch",
+    "protected",
+    "human gate",
+    "human-gate",
+}
+CROSS_SYSTEM_SIGNAL_MARKERS = {
+    "cross-system",
+    "user-governed",
+    "inbox/intake",
+    "intake",
+    "promote",
+}
+INTERNAL_SELF_HEAL_MARKERS = {
+    "autonomous-auto",
+    "campaign audit",
+    "campaign-audit",
+    "lifecycle-route",
+    "strategy-preflight",
+    "scope-gate",
+    "run-ledger",
+    "write claim",
+    "stage evidence",
+    "readiness",
+    "retrospective",
+    "self-capture",
+}
 
 
 def _utc_now_iso() -> str:
@@ -672,6 +723,14 @@ def _record_matches_campaign(record: dict[str, Any], loop_id: str) -> bool:
     return False
 
 
+def _mapping_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return " ".join([str(key) for key in value.keys()] + [_mapping_text(item) for item in value.values()])
+    if isinstance(value, list):
+        return " ".join(_mapping_text(item) for item in value)
+    return str(value or "")
+
+
 def _learning_state(record: dict[str, Any]) -> str:
     state = str(record.get("learning_state") or record.get("state") or "").strip()
     return state if state in LEARNING_STATES else "missing_evidence"
@@ -731,6 +790,64 @@ def _learning_rows(
     return rows, errors
 
 
+def _proposal_learning_rows(root: Path, loop_id: str, proposals_dir: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    rows: list[dict[str, Any]] = []
+    errors: list[str] = []
+    if not proposals_dir.is_dir():
+        return rows, errors
+    for path in sorted(proposals_dir.glob("*.yaml")):
+        data, yaml_errors = _load_yaml_mapping(path)
+        errors.extend(yaml_errors)
+        if not data:
+            continue
+        text = _mapping_text(data).casefold()
+        if loop_id.casefold() not in text and not (
+            "autonomous-auto" in text and "learning" in text
+        ):
+            continue
+        status = str(data.get("status") or data.get("proposal_status") or "captured")
+        state = "planned" if status in {"accepted", "approved", "ready", "hydrated"} else "captured"
+        rows.append(
+            {
+                "learning_state": state,
+                "provenance": PROVENANCE_REPO_NATIVE,
+                "source": _rel(root, path),
+                "summary": str(data.get("title") or data.get("summary") or path.stem),
+            }
+        )
+    return rows, errors
+
+
+def _route_failure_rows(state: dict[str, Any], loop_id: str) -> list[dict[str, Any]]:
+    if str(state.get("loop_id") or "") != loop_id:
+        return []
+    rows: list[dict[str, Any]] = []
+    for index, item in enumerate(_safe_list(state.get("history")), start=1):
+        if not isinstance(item, dict):
+            continue
+        preflight = _safe_mapping(item.get("strategy_preflight"))
+        if not preflight:
+            continue
+        route = str(preflight.get("verdict") or "")
+        blocked = _safe_list(preflight.get("blocked_alternatives"))
+        if route == "allow_open" and not blocked:
+            continue
+        rows.append(
+            {
+                "learning_state": "observed",
+                "provenance": PROVENANCE_REPO_NATIVE,
+                "source": f"{STATE_REL}#history[{index}].strategy_preflight",
+                "summary": str(
+                    preflight.get("mismatch_reason")
+                    or preflight.get("next_safe_action")
+                    or route
+                    or "strategy-preflight route failure"
+                ),
+            }
+        )
+    return rows
+
+
 def _aggregate_provenance(values: Any) -> str:
     provenances = [str(value) for value in values if str(value or "")]
     if not provenances:
@@ -744,10 +861,49 @@ def _aggregate_provenance(values: Any) -> str:
     return PROVENANCE_REPO_NATIVE
 
 
-def _learning_score(rows: list[dict[str, Any]]) -> str:
+def _truthful_inline_absence(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    accepted_rows: list[dict[str, Any]] = []
+    for row in rows:
+        rank = LEARNING_STATE_RANK.get(str(row.get("learning_state")), -1)
+        if rank < LEARNING_STATE_RANK["implemented"]:
+            continue
+        summary = str(row.get("summary") or "").lower()
+        if (
+            ("inline" in summary or "no fake" in summary or "without fake" in summary)
+            and "stage" in summary
+            and ("evidence" in summary or "subagent" in summary)
+        ):
+            accepted_rows.append(row)
+    return {
+        "accepted": bool(accepted_rows),
+        "provenance": PROVENANCE_REPO_NATIVE if accepted_rows else PROVENANCE_MISSING,
+        "row_count": len(accepted_rows),
+        "sources": sorted(
+            {
+                str(row.get("source") or "")
+                for row in accepted_rows
+                if str(row.get("source") or "")
+            }
+        ),
+        "basis": (
+            "Implemented or verified learning closure records that absent delegated stage "
+            "rows were an explicit inline-execution exception, not evidence to backfill."
+            if accepted_rows
+            else ""
+        ),
+    }
+
+
+def _learning_score(
+    rows: list[dict[str, Any]],
+    *,
+    truthful_absence: dict[str, Any] | None = None,
+) -> str:
     if not rows:
         return PROVENANCE_MISSING
-    if any(row["learning_state"] == "missing_evidence" for row in rows):
+    if any(row["learning_state"] == "missing_evidence" for row in rows) and not (
+        truthful_absence or {}
+    ).get("accepted"):
         return PROVENANCE_CONFLICT
     return _aggregate_provenance(row["provenance"] for row in rows)
 
@@ -758,6 +914,179 @@ def _best_learning_rank(rows: list[dict[str, Any]]) -> int:
     return max(LEARNING_STATE_RANK.get(str(row.get("learning_state")), -1) for row in rows)
 
 
+def _contains_marker(text: str, markers: set[str]) -> bool:
+    folded = text.casefold()
+    return any(marker in folded for marker in markers)
+
+
+def _signal_text(signal: dict[str, Any]) -> str:
+    values = [
+        signal.get("summary"),
+        signal.get("recommended_action"),
+        signal.get("reason"),
+        signal.get("title"),
+        signal.get("source"),
+        signal.get("learning_state"),
+    ]
+    tags = signal.get("tags")
+    if isinstance(tags, list):
+        values.extend(str(tag) for tag in tags)
+    return " ".join(str(value or "") for value in values)
+
+
+def _signal_severity(signal: dict[str, Any], text: str) -> str:
+    severity = str(signal.get("severity") or "").strip().lower()
+    if severity in {"critical", "high", "medium", "low"}:
+        return severity
+    folded = text.casefold()
+    if "critical" in folded:
+        return "critical"
+    if "high" in folded:
+        return "high"
+    if "medium" in folded or "repeated" in folded or "shared surface" in folded:
+        return "medium"
+    return "low"
+
+
+def learning_harvester_decision(
+    signal: dict[str, Any],
+    *,
+    approval_basis: str = "",
+    selected_action: str = "",
+) -> dict[str, Any]:
+    """Classify one learning signal without granting write authority."""
+    text = _signal_text(signal)
+    learning_state = str(signal.get("learning_state") or signal.get("state") or "").strip()
+    signal_id = str(signal.get("id") or signal.get("signal_id") or signal.get("summary") or "learning-signal")
+    source = str(signal.get("source") or signal.get("path") or "").strip()
+    protected = bool(signal.get("protected_gate_required") or signal.get("requires_human_gate"))
+    protected = protected or _contains_marker(text, PROTECTED_SIGNAL_MARKERS)
+    cross_system = bool(signal.get("cross_system") or signal.get("defer_to_intake"))
+    cross_system = cross_system or _contains_marker(text, CROSS_SYSTEM_SIGNAL_MARKERS)
+    stale = learning_state == "stale_or_rejected" or _contains_marker(
+        text, {"stale", "rejected", "superseded", "obsolete", "duplicate"}
+    )
+    residual_signal = bool(signal.get("residual_signal"))
+    internal = _contains_marker(text, INTERNAL_SELF_HEAL_MARKERS)
+    severity = _signal_severity(signal, text)
+    shared_or_medium = severity in {"medium", "high", "critical"} or "shared surface" in text.casefold()
+
+    if protected:
+        route = "human_gate_required"
+        action = "stop_for_human_gate"
+        residual = "Protected boundary blocks autonomous self-heal."
+    elif cross_system:
+        route = "defer_to_intake"
+        action = "defer_to_inbox_intake"
+        residual = "Cross-system or user-governed signal stays in inbox/intake."
+    elif stale:
+        route = "stale_or_rejected"
+        action = "none"
+        residual = "Signal is stale, duplicate, superseded, or intentionally rejected."
+    elif residual_signal:
+        route = "capture_only"
+        action = "capture_only"
+        residual = "Audit residual remains visible but is not itself a fresh self-heal candidate."
+    elif internal and approval_basis and not shared_or_medium:
+        route = "auto_self_heal_now"
+        action = selected_action or "open_normal_child_scope"
+        residual = ""
+    elif internal:
+        route = "proposal_needed" if shared_or_medium else "capture_only"
+        action = "refine_proposal" if route == "proposal_needed" else "capture_only"
+        residual = (
+            "Evaluator or proposal review is required before auto self-heal."
+            if route == "proposal_needed"
+            else "Signal remains visible but does not justify immediate repair."
+        )
+    else:
+        route = "capture_only"
+        action = "capture_only"
+        residual = "Signal remains visible but does not justify immediate repair."
+
+    source_refs = [source] if source else []
+    rejected = sorted(HARVESTER_ROUTES - {route})
+    return {
+        "signal_id": signal_id,
+        "source_refs": source_refs,
+        "dedupe_key": str(signal.get("summary") or signal_id).casefold(),
+        "severity": severity,
+        "blast_radius": "protected" if protected else "cross_system" if cross_system else "internal",
+        "route": route,
+        "protected_gate_required": protected,
+        "selected_action": action,
+        "rejected_alternatives": rejected,
+        "approval_basis": str(approval_basis or ""),
+        "verification_requirement": (
+            "human approval required"
+            if protected
+            else "intake triage required"
+            if cross_system
+            else "evaluator review required"
+            if route == "proposal_needed"
+            else "normal scope-gate, run-ledger, write-claim, lifecycle-route, and strategy-preflight checks"
+            if route == "auto_self_heal_now"
+            else "capture visibility in campaign report"
+        ),
+        "residual_risk": residual,
+    }
+
+
+def build_learning_harvester_report(
+    *,
+    learning_rows: list[dict[str, Any]],
+    residuals: list[str],
+    approval_basis: str = "",
+) -> dict[str, Any]:
+    """Deduplicate and route repo-native autonomous-auto learning signals."""
+    raw_signals: list[dict[str, Any]] = [dict(row) for row in learning_rows]
+    raw_signals.extend(
+        {
+            "id": f"residual-{index}",
+            "source": "campaign-audit",
+            "summary": residual,
+            "learning_state": "observed",
+            "residual_signal": True,
+        }
+        for index, residual in enumerate(residuals, start=1)
+    )
+    decisions_by_key: dict[str, dict[str, Any]] = {}
+    for signal in raw_signals:
+        decision = learning_harvester_decision(signal, approval_basis=approval_basis)
+        key = str(decision.get("dedupe_key") or decision.get("signal_id") or "")
+        current = decisions_by_key.get(key)
+        if current is not None:
+            source_refs = list(dict.fromkeys(current.get("source_refs", []) + decision.get("source_refs", [])))
+            current["source_refs"] = source_refs
+        if current is None or HARVESTER_ROUTE_PRIORITY[decision["route"]] > HARVESTER_ROUTE_PRIORITY[current["route"]]:
+            if current is not None:
+                decision["source_refs"] = list(
+                    dict.fromkeys(current.get("source_refs", []) + decision.get("source_refs", []))
+                )
+            decisions_by_key[key] = decision
+    decisions = sorted(
+        decisions_by_key.values(),
+        key=lambda item: (-HARVESTER_ROUTE_PRIORITY[item["route"]], item["dedupe_key"]),
+    )
+    route_counts = {route: 0 for route in sorted(HARVESTER_ROUTES)}
+    for decision in decisions:
+        route_counts[decision["route"]] += 1
+    selected_route = decisions[0]["route"] if decisions else "capture_only"
+    return {
+        "schema_version": 1,
+        "decisions": decisions,
+        "route_counts": route_counts,
+        "selected_learning_route": selected_route,
+        "rejected_alternatives": sorted(HARVESTER_ROUTES - {selected_route}),
+        "summary": (
+            "Harvester found no learning signals."
+            if not decisions
+            else f"Harvester routed {len(decisions)} deduplicated learning signal(s)."
+        ),
+        "write_authority": "advisory_only_strategy_preflight_still_required",
+    }
+
+
 def _recommend_next_route(
     *,
     residuals: list[str],
@@ -765,7 +1094,18 @@ def _recommend_next_route(
     evaluator_evidence: dict[str, Any],
     learning_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    if stage_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}:
+    stage_absence_accepted = bool(
+        _safe_mapping(stage_evidence.get("truthful_absence")).get("accepted")
+        and stage_evidence.get("provenance") == PROVENANCE_MISSING
+    )
+    evaluator_absence_accepted = bool(
+        _safe_mapping(evaluator_evidence.get("truthful_absence")).get("accepted")
+        and evaluator_evidence.get("provenance") == PROVENANCE_MISSING
+    )
+    if (
+        stage_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}
+        and not stage_absence_accepted
+    ):
         return {
             "route": "repair_evidence",
             "reason": "Stage evidence is incomplete or contradictory.",
@@ -774,7 +1114,10 @@ def _recommend_next_route(
                 f"stage_evidence provenance is {stage_evidence['provenance']}"
             ],
         }
-    if evaluator_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}:
+    if (
+        evaluator_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}
+        and not evaluator_absence_accepted
+    ):
         return {
             "route": "repair_evidence",
             "reason": "Evaluator evidence is missing or incomplete.",
@@ -802,13 +1145,53 @@ def _recommend_next_route(
         }
     return {
         "route": "stop",
-        "reason": "Campaign evidence is complete and learning is closed.",
+        "reason": (
+            "Campaign evidence is complete and learning is closed."
+            if not stage_absence_accepted
+            else "Campaign evidence is closed; absent delegated stage rows are truthfully recorded as inline execution rather than backfilled."
+        ),
         "confidence": 1.0,
         "confidence_basis": [
-            "stage, evaluator, and learning evidence are repo-native",
+            (
+                "stage, evaluator, and learning evidence are repo-native"
+                if not stage_absence_accepted
+                else "inline-execution absence is repo-native and non-repairable"
+            ),
             "no residual risks remain",
         ],
     }
+
+
+def _effective_evidence_provenance(evidence: dict[str, Any]) -> str:
+    if (
+        _safe_mapping(evidence.get("truthful_absence")).get("accepted")
+        and evidence.get("provenance") == PROVENANCE_MISSING
+    ):
+        return PROVENANCE_REPO_NATIVE
+    return str(evidence.get("provenance") or PROVENANCE_MISSING)
+
+
+def _nonblocking_absence_residuals(
+    residuals: list[str],
+    *,
+    truthful_absence: dict[str, Any],
+) -> tuple[list[str], list[str]]:
+    if not truthful_absence.get("accepted"):
+        return residuals, []
+    blocking: list[str] = []
+    accepted: list[str] = []
+    for residual in residuals:
+        text = residual.lower()
+        if (
+            "missing stage evidence" in text
+            or "missing evaluator" in text
+            or "missing structured evaluator" in text
+            or "missing ux anchor scorecard" in text
+        ):
+            accepted.append(residual)
+        else:
+            blocking.append(residual)
+    return blocking, accepted
 
 
 def build_campaign_audit(
@@ -826,6 +1209,7 @@ def build_campaign_audit(
     resolved_ledger = _resolve(root, ledger_path, LEDGER_REL)
     resolved_episodes = _resolve(root, episodes_path, EPISODES_REL)
     resolved_inbox = _resolve(root, inbox_dir, INBOX_DIR_REL)
+    resolved_proposals = root / PROPOSALS_DIR_REL
 
     state, state_errors = _load_yaml_mapping(resolved_state)
     ledger, ledger_errors = _load_yaml_mapping(resolved_ledger)
@@ -846,12 +1230,19 @@ def build_campaign_audit(
         episodes=episodes,
         episode_errors=episode_errors,
     )
+    episode_artifact_errors = list(learning_errors)
+    proposal_rows, proposal_errors = _proposal_learning_rows(root, loop_id, resolved_proposals)
+    learning_rows.extend(proposal_rows)
+    learning_rows.extend(_route_failure_rows(state, loop_id))
+    learning_rows.sort(key=lambda row: (row["source"], row["learning_state"], row["summary"]))
+    learning_errors.extend(proposal_errors)
 
     source_artifacts = {
         "state": _artifact(resolved_state, errors=state_errors),
         "ledger": _artifact(resolved_ledger, errors=ledger_errors),
-        "episodes": _artifact(resolved_episodes, errors=learning_errors),
+        "episodes": _artifact(resolved_episodes, errors=episode_artifact_errors),
         "inbox": _artifact(resolved_inbox),
+        "proposals": _artifact(resolved_proposals, errors=proposal_errors),
     }
     child_scopes = _child_scopes(state, run, loop_id, closeout_scopes)
     stage_evidence, stage_residuals = _stage_evidence_for_runs(
@@ -859,6 +1250,10 @@ def build_campaign_audit(
         expected_child_run_ids=child_run_ids,
     )
     evaluator_evidence = _evaluator_evidence(stage_evidence, child_scopes)
+    truthful_absence = _truthful_inline_absence(learning_rows)
+    if truthful_absence.get("accepted"):
+        stage_evidence["truthful_absence"] = truthful_absence
+        evaluator_evidence["truthful_absence"] = truthful_absence
     residuals = list(stage_residuals)
     if state_errors:
         residuals.extend(state_errors)
@@ -875,17 +1270,26 @@ def build_campaign_audit(
             residuals.append("missing UX Anchor Scorecard fields")
         if not evaluator_evidence.get("verification_commands"):
             residuals.append("missing evaluator verification command fields")
+    residuals, accepted_absence_residuals = _nonblocking_absence_residuals(
+        residuals,
+        truthful_absence=truthful_absence,
+    )
 
     scorecard = {
         "source_artifacts": _aggregate_provenance(
-            artifact["provenance"] for artifact in source_artifacts.values()
+            artifact["provenance"]
+            for key, artifact in source_artifacts.items()
+            if key != "proposals" or artifact["exists"] or artifact["errors"]
         ),
         "child_scopes": _aggregate_provenance(
             scope["provenance"] for scope in child_scopes
         ),
-        "stage_evidence": stage_evidence["provenance"],
-        "evaluator_evidence": evaluator_evidence["provenance"],
-        "learning_closure": _learning_score(learning_rows),
+        "stage_evidence": _effective_evidence_provenance(stage_evidence),
+        "evaluator_evidence": _effective_evidence_provenance(evaluator_evidence),
+        "learning_closure": _learning_score(
+            learning_rows,
+            truthful_absence=truthful_absence,
+        ),
     }
     scorecard["overall_provenance"] = _aggregate_provenance(scorecard.values())
     route = _recommend_next_route(
@@ -902,6 +1306,16 @@ def build_campaign_audit(
         else PROVENANCE_CONFLICT
     )
     state_matches_loop = bool(state and str(state.get("loop_id") or "") == loop_id)
+    approval_basis = str(
+        (_safe_mapping(state.get("autonomy_budget")).get("approval_basis") if state_matches_loop else "")
+        or _campaign_detail_from_children(child_scopes, "approval_basis")
+        or ""
+    )
+    learning_harvester = build_learning_harvester_report(
+        learning_rows=learning_rows,
+        residuals=residuals,
+        approval_basis=approval_basis,
+    )
     budget = (
         state.get("autonomy_budget")
         if state_matches_loop and isinstance(state.get("autonomy_budget"), dict)
@@ -953,11 +1367,7 @@ def build_campaign_audit(
             "vision_band": vision["band"],
             "vision_score": vision["score"],
             "vision_provenance": vision["provenance"],
-            "approval_basis": str(
-                (budget.get("approval_basis") if isinstance(budget, dict) else "")
-                or _campaign_detail_from_children(child_scopes, "approval_basis")
-                or ""
-            ),
+            "approval_basis": approval_basis,
             "budget": budget,
             "stop_conditions": stop_conditions,
             "selected_seed": (
@@ -984,6 +1394,8 @@ def build_campaign_audit(
         "evaluator_evidence": evaluator_evidence,
         "verification_commands": evaluator_evidence["verification_commands"],
         "learning_closure_rows": learning_rows,
+        "learning_harvester": learning_harvester,
+        "accepted_absence_residuals": accepted_absence_residuals,
         "traceability_scorecard": scorecard,
         "next_route_recommendation": route,
         "residual_risks": residuals,

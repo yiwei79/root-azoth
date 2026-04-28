@@ -17,6 +17,7 @@ import planning_bank_validate  # noqa: E402
 from planning_bank_validate import (  # noqa: E402
     PlanningBankValidationError,
     build_initiative_readiness_report,
+    hydrate_approved_initiative_candidate,
     validate_design_bank,
     validate_initiative_bank,
     validate_roadmap_refs,
@@ -168,6 +169,35 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     assert report["scaffold_command"] is None
 
 
+def test_terminal_initiative_readiness_validates_without_selected_candidate(
+    tmp_path: Path,
+) -> None:
+    bank_path, bank = _write_temp_initiative_bank(tmp_path)
+    bank["status"] = "complete"
+    bank["readiness"].update(
+        {
+            "readiness_status": "complete",
+            "candidate_first_slice": "",
+            "next_candidate_ref": "",
+            "next_readiness_gate": "none_feature_complete",
+            "approval_scope": "feature_closure_no_hydration",
+            "hydration_recommendation": "Feature is complete; do not repeat hydration.",
+        }
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    validate_initiative_bank(bank_path, repo_root=tmp_path)
+    report = build_initiative_readiness_report(bank_path, repo_root=tmp_path)
+
+    assert report["readiness_status"] == "complete"
+    assert report["candidate_id"] == "missing"
+    assert report["ready_to_hydrate"] is False
+    assert report["blocking_reasons"] == [
+        "readiness.readiness_status is complete; no hydration action remains",
+        "readiness.readiness_status must be ready_to_hydrate",
+    ]
+
+
 def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
     tmp_path: Path,
 ) -> None:
@@ -244,6 +274,107 @@ def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
             "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
         ),
     }
+
+
+def test_hydrate_approved_candidate_delegates_to_roadmap_scaffold_and_records_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["approval_scope"] = "hydration_specific_slice_evi_002_c"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    calls: list[list[str]] = []
+
+    def fake_run(args, **kwargs):
+        calls.append(list(args))
+        assert kwargs["cwd"] == repo
+        assert kwargs["capture_output"] is True
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            stdout=(
+                "T-999\n"
+                f"{repo}/.azoth/backlog.yaml\n"
+                f"{repo}/.azoth/roadmap.yaml\n"
+                f"{repo}/.azoth/roadmap-specs/v0.2.0/T-999.yaml\n"
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(planning_bank_validate.subprocess, "run", fake_run)
+
+    result = hydrate_approved_initiative_candidate(
+        bank_path,
+        repo_root=repo,
+        candidate_id="slice-evi-002-c",
+        session_id="session-test",
+        timestamp="2026-04-26T13:31:45Z",
+    )
+
+    assert result["task_ref"] == "T-999"
+    assert calls[0][:2] == [sys.executable, "scripts/roadmap_scaffold.py"]
+    loaded = _load_yaml(bank_path)
+    hydrated = next(
+        item for item in loaded["candidate_slices"] if item["candidate_id"] == "slice-evi-002-c"
+    )
+    assert hydrated["status"] == "hydrated"
+    assert hydrated["proposed_task_id"] == "T-999"
+    assert hydrated["hydration_plan"]["mode"] == "executed"
+    assert hydrated["hydration_plan"]["hydrated_spec_ref"].endswith("T-999.yaml")
+    assert loaded["hydration_history"][0]["session_id"] == "session-test"
+    assert loaded["hydration_history"][0]["task_ref"] == "T-999"
+    assert loaded["readiness"]["hydration_recommendation"].startswith(
+        "slice-evi-002-c has been hydrated as T-999"
+    )
+
+
+def test_hydrate_approved_candidate_refuses_non_scaffold_command(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["approval_scope"] = "hydration_specific_slice_evi_002_c"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = "python3 scripts/not_scaffold.py"
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match="roadmap_scaffold.py"):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+        )
 
 
 def test_readiness_report_fails_closed_when_candidate_status_is_missing(tmp_path: Path) -> None:

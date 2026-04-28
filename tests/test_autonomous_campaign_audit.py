@@ -289,6 +289,87 @@ def test_build_campaign_audit_missing_stage_summary_reports_residual_risk(
     assert report["next_route_recommendation"]["confidence_basis"]
 
 
+def test_build_campaign_audit_accepts_truthful_inline_stage_absence(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    ledger["runs"][0]["stages_completed"] = []
+    ledger["runs"][0]["stage_spawns"] = []
+    ledger["runs"][0]["stage_summaries"] = []
+    _write_yaml(paths["ledger_path"], ledger)
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-inline-exception.jsonl",
+        [
+            {
+                "id": "inline-exception-verified",
+                "session_id": LOOP_ID,
+                "learning_state": "implemented",
+                "summary": (
+                    "Implemented inline execution exception: no fake stage evidence "
+                    "should be backfilled when subagents were not spawned."
+                ),
+                "tags": [
+                    "autonomous-auto",
+                    "learning-closure",
+                    "stage-evidence",
+                    "inline-exception",
+                ],
+            }
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["stage_evidence"]["provenance"] == "missing"
+    assert report["stage_evidence"]["stages"] == {}
+    assert report["stage_evidence"]["truthful_absence"]["accepted"] is True
+    assert report["evaluator_evidence"]["truthful_absence"]["accepted"] is True
+    assert report["accepted_absence_residuals"] == [
+        "missing stage evidence for child scope 2026-04-26-autonomous-auto-t-029-1"
+    ]
+    assert report["traceability_scorecard"]["stage_evidence"] == "repo_native"
+    assert report["traceability_scorecard"]["evaluator_evidence"] == "repo_native"
+    assert report["traceability_scorecard"]["overall_provenance"] == "repo_native"
+    assert report["next_route_recommendation"]["route"] == "stop"
+    assert report["residual_risks"] == []
+
+
+def test_truthful_inline_absence_does_not_mask_partial_stage_conflict(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    ledger["runs"][0]["stage_summaries"] = [
+        summary
+        for summary in ledger["runs"][0]["stage_summaries"]
+        if summary["stage_id"] != "autonomous_auto_s1_architect"
+    ]
+    _write_yaml(paths["ledger_path"], ledger)
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-inline-exception.jsonl",
+        [
+            {
+                "id": "inline-exception-verified",
+                "session_id": LOOP_ID,
+                "learning_state": "implemented",
+                "summary": (
+                    "Implemented inline execution exception: no fake stage evidence "
+                    "should be backfilled when subagents were not spawned."
+                ),
+                "tags": ["autonomous-auto", "learning-closure", "stage-evidence"],
+            }
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["stage_evidence"]["provenance"] == "conflict"
+    assert report["traceability_scorecard"]["stage_evidence"] == "conflict"
+    assert report["next_route_recommendation"]["route"] == "repair_evidence"
+    assert any("missing stage summary" in risk for risk in report["residual_risks"])
+
+
 def test_build_campaign_audit_infers_completion_from_green_vision(
     tmp_path: Path,
 ) -> None:
@@ -353,6 +434,149 @@ def test_build_campaign_audit_inbox_learning_capture_without_episode_is_triaged(
     ]
     assert report["traceability_scorecard"]["learning_closure"] == "repo_native"
     assert report["next_route_recommendation"]["route"] == "plan_learning_closure"
+
+
+def test_build_campaign_audit_includes_learning_harvester_routes(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    state = yaml.safe_load(paths["state_path"].read_text(encoding="utf-8"))
+    state["autonomy_budget"] = {
+        "approval_basis": "Approved autonomous-auto internal self-heal campaign."
+    }
+    _write_yaml(paths["state_path"], state)
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-harvester.jsonl",
+        [
+            {
+                "id": "safe-route-failure",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "low autonomous-auto lifecycle-route readiness defect",
+                "tags": ["autonomous-auto", "learning-closure"],
+            },
+            {
+                "id": "safe-route-failure-duplicate",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "low autonomous-auto lifecycle-route readiness defect",
+                "tags": ["autonomous-auto", "learning-closure"],
+            },
+            {
+                "id": "protected-network",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "network credential protected improvement must stop",
+                "tags": ["autonomous-auto", "learning-closure"],
+            },
+            {
+                "id": "cross-system",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "cross-system user-governed improvement belongs in inbox/intake",
+                "tags": ["autonomous-auto", "learning-closure"],
+            },
+            {
+                "id": "stale-signal",
+                "session_id": LOOP_ID,
+                "learning_state": "stale_or_rejected",
+                "summary": "stale duplicate learning signal",
+                "tags": ["autonomous-auto", "learning-closure"],
+            },
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+    harvester = report["learning_harvester"]
+    decisions = harvester["decisions"]
+
+    assert harvester["write_authority"] == "advisory_only_strategy_preflight_still_required"
+    assert harvester["route_counts"]["auto_self_heal_now"] >= 1
+    assert harvester["route_counts"]["human_gate_required"] == 1
+    assert harvester["route_counts"]["defer_to_intake"] == 1
+    assert harvester["route_counts"]["stale_or_rejected"] == 1
+    assert sum(
+        1
+        for decision in decisions
+        if decision["signal_id"] == "low autonomous-auto lifecycle-route readiness defect"
+    ) == 1
+    assert any(
+        decision["protected_gate_required"] and decision["route"] == "human_gate_required"
+        for decision in decisions
+    )
+
+
+def test_learning_harvester_reads_proposals_route_failures_and_cross_source_duplicates(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    state = yaml.safe_load(paths["state_path"].read_text(encoding="utf-8"))
+    state["autonomy_budget"] = {
+        "approval_basis": "Approved autonomous-auto internal self-heal campaign."
+    }
+    state["history"].append(
+        {
+            "strategy_preflight": {
+                "verdict": "stop_route_conflict",
+                "mismatch_reason": "strategy-preflight lifecycle-route failure",
+            }
+        }
+    )
+    _write_yaml(paths["state_path"], state)
+    _write_jsonl(
+        paths["episodes_path"],
+        [
+            {
+                "id": "shared-signal-episode",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "shared autonomous-auto route failure signal",
+                "tags": ["autonomous-auto", "learning-closure"],
+            }
+        ],
+    )
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-shared.jsonl",
+        [
+            {
+                "id": "shared-signal-inbox",
+                "session_id": LOOP_ID,
+                "learning_state": "captured",
+                "summary": "shared autonomous-auto route failure signal",
+                "tags": ["autonomous-auto", "learning-closure"],
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/autonomous-auto-learning-proposal.yaml",
+        {
+            "title": "Autonomous-auto proposal refinement learning output",
+            "summary": "proposal refinement output for autonomous-auto learning closure",
+            "loop_id": LOOP_ID,
+            "status": "draft",
+        },
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+    decisions = report["learning_harvester"]["decisions"]
+
+    assert report["source_artifacts"]["proposals"]["exists"] is True
+    assert any(
+        ".azoth/proposals/autonomous-auto-learning-proposal.yaml" in decision["source_refs"]
+        for decision in decisions
+    )
+    assert any(
+        ".azoth/autonomous-loop-state.local.yaml" in source
+        for decision in decisions
+        for source in decision["source_refs"]
+    )
+    shared = [
+        decision
+        for decision in decisions
+        if decision["signal_id"] == "shared autonomous-auto route failure signal"
+    ]
+    assert len(shared) == 1
+    assert len(shared[0]["source_refs"]) == 2
 
 
 def test_build_campaign_audit_orders_children_by_iteration_then_timestamp(

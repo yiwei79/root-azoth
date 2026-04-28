@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import shlex
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +78,7 @@ INITIATIVE_SLICE_REQUIRED_FIELDS = {
 }
 
 DESIGN_READINESS = {"continue_refinement", "ready_to_route", "defer", "reject"}
-INITIATIVE_READINESS = {"continue_research", "ready_to_hydrate", "defer", "reject"}
+INITIATIVE_READINESS = {"continue_research", "ready_to_hydrate", "complete", "defer", "reject"}
 INITIATIVE_SLICE_STATUS = {"candidate", "hydrated", "complete", "parked", "rejected"}
 DESIGN_BANK_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -352,7 +354,10 @@ def build_initiative_readiness_report(
     goals_to_exclude = _list_or_empty(non_goals)
     blocking_reasons: list[str] = []
     use_readiness_candidate_status = selected_candidate_id == candidate_first_slice
+    terminal_readiness = readiness_status == "complete"
 
+    if terminal_readiness:
+        blocking_reasons.append("readiness.readiness_status is complete; no hydration action remains")
     if isinstance(candidate, dict) and candidate_status is None:
         blocking_reasons.append("candidate.status must be present")
     elif candidate_status in {"hydrated", "complete"}:
@@ -371,30 +376,32 @@ def build_initiative_readiness_report(
         blocking_reasons.append(
             "readiness.approval_scope planning_seed_only_no_hydration does not authorize hydration"
         )
-    if not isinstance(candidate, dict):
+    if not isinstance(candidate, dict) and not terminal_readiness:
         if selected_candidate_id:
             blocking_reasons.append(
                 f"candidate_slices must include selected candidate_id {selected_candidate_id!r}"
             )
         else:
             blocking_reasons.append("candidate_slices must include a selected candidate")
-    if not isinstance(acceptance_criteria, list) or not acceptance_criteria:
+    if not terminal_readiness and (
+        not isinstance(acceptance_criteria, list) or not acceptance_criteria
+    ):
         blocking_reasons.append("candidate.acceptance_criteria must be a non-empty list")
-    if not isinstance(non_goals, list) or not non_goals:
+    if not terminal_readiness and (not isinstance(non_goals, list) or not non_goals):
         blocking_reasons.append("candidate.known_non_goals must be a non-empty list")
     if isinstance(open_questions, list) and open_questions:
         blocking_reasons.append("candidate.open_questions must be empty")
-    elif not isinstance(open_questions, list):
+    elif not terminal_readiness and not isinstance(open_questions, list):
         blocking_reasons.append("candidate.open_questions must be a list")
-    if target_layer is None:
+    if not terminal_readiness and target_layer is None:
         blocking_reasons.append("candidate.target_layer must be a non-empty string")
-    if delivery_pipeline is None:
+    if not terminal_readiness and delivery_pipeline is None:
         blocking_reasons.append("candidate.delivery_pipeline must be a non-empty string")
-    if proposed_title is None:
+    if not terminal_readiness and proposed_title is None:
         blocking_reasons.append(
             "candidate.hydration_plan.proposed_title must be a non-empty string"
         )
-    if isinstance(candidate, dict) and scaffold_command_candidate is None:
+    if not terminal_readiness and isinstance(candidate, dict) and scaffold_command_candidate is None:
         blocking_reasons.append(
             "candidate.hydration_plan.scaffold_command must be a non-empty string"
         )
@@ -435,6 +442,131 @@ def build_initiative_readiness_report(
         "blocking_reasons": blocking_reasons,
         "ready_to_hydrate": ready_to_hydrate,
         "scaffold_command": scaffold_command,
+    }
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _scaffold_args(command: str) -> list[str]:
+    parts = shlex.split(command)
+    if not parts:
+        raise PlanningBankValidationError("scaffold_command must not be empty")
+    if parts[0] in {"python", "python3", sys.executable} and len(parts) >= 2:
+        script = parts[1]
+        rest = parts[2:]
+    else:
+        script = parts[0]
+        rest = parts[1:]
+    if script not in {"scripts/roadmap_scaffold.py", "./scripts/roadmap_scaffold.py"}:
+        raise PlanningBankValidationError(
+            "scaffold_command must delegate to scripts/roadmap_scaffold.py"
+        )
+    return [sys.executable, "scripts/roadmap_scaffold.py", *rest]
+
+
+def hydrate_approved_initiative_candidate(
+    path: Path,
+    *,
+    repo_root: Path = ROOT,
+    candidate_id: str | None = None,
+    session_id: str = "",
+    timestamp: str | None = None,
+) -> dict[str, Any]:
+    """Hydrate a ready initiative candidate through roadmap_scaffold.py delegation."""
+    report = build_initiative_readiness_report(path, repo_root=repo_root, candidate_id=candidate_id)
+    if not report.get("ready_to_hydrate"):
+        reasons = "; ".join(str(item) for item in report.get("blocking_reasons") or [])
+        raise PlanningBankValidationError(f"candidate is not ready to hydrate: {reasons}")
+
+    command = str(report.get("scaffold_command") or "").strip()
+    args = _scaffold_args(command)
+    result = subprocess.run(args, cwd=repo_root, text=True, capture_output=True, check=False)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "roadmap_scaffold.py failed").strip()
+        raise PlanningBankValidationError(f"roadmap_scaffold.py delegation failed: {detail}")
+
+    output_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    task_ref = output_lines[0] if output_lines else ""
+    if not task_ref:
+        raise PlanningBankValidationError("roadmap_scaffold.py did not emit a task id")
+    spec_ref = f".azoth/roadmap-specs/v0.2.0/{task_ref}.yaml"
+    for line in output_lines[1:]:
+        marker = ".azoth/roadmap-specs/"
+        if marker in line and line.endswith(".yaml"):
+            spec_ref = line[line.index(marker) :]
+            break
+
+    doc = _load_yaml(path)
+    candidates = doc.get("candidate_slices")
+    if not isinstance(candidates, list):
+        raise PlanningBankValidationError("candidate_slices must be a list")
+    selected = str(report.get("candidate_id") or candidate_id or "")
+    candidate = next(
+        (
+            item
+            for item in candidates
+            if isinstance(item, dict) and str(item.get("candidate_id") or "") == selected
+        ),
+        None,
+    )
+    if not isinstance(candidate, dict):
+        raise PlanningBankValidationError(f"candidate_slices must include {selected!r}")
+
+    hydrated_at = timestamp or _utc_now()
+    candidate["status"] = "hydrated"
+    candidate["proposed_task_id"] = task_ref
+    hydration_plan = candidate.setdefault("hydration_plan", {})
+    if not isinstance(hydration_plan, dict):
+        hydration_plan = {}
+        candidate["hydration_plan"] = hydration_plan
+    hydration_plan["mode"] = "executed"
+    hydration_plan["hydrated_task_ref"] = task_ref
+    hydration_plan["hydrated_spec_ref"] = spec_ref
+    hydration_plan["hydrated_at"] = hydrated_at
+
+    history = doc.setdefault("hydration_history", [])
+    if not isinstance(history, list):
+        raise PlanningBankValidationError("hydration_history must be a list")
+    history.insert(
+        0,
+        {
+            "hydrated_at": hydrated_at,
+            "session_id": session_id or "unknown-session",
+            "candidate_slice_ref": selected,
+            "task_ref": task_ref,
+            "spec_ref": spec_ref,
+            "backlog_ref": task_ref,
+            "roadmap_ref": task_ref,
+            "approval_scope": report.get("approval_scope") or "",
+            "approval_basis": report.get("approval_basis") or "",
+            "scaffold_command": command,
+            "result": (
+                f"Created roadmap/backlog/spec artifacts for {task_ref}; "
+                "implementation and shipping remain separate."
+            ),
+        },
+    )
+
+    readiness = doc.get("readiness")
+    if isinstance(readiness, dict):
+        readiness["freshness_status"] = (
+            f"current_as_of_{hydrated_at[:10].replace('-', '_')}_hydrated_to_"
+            f"{task_ref.lower().replace('-', '_')}"
+        )
+        readiness["hydration_recommendation"] = (
+            f"{selected} has been hydrated as {task_ref}. Do not repeat hydration; "
+            "route implementation through a separate delivery child."
+        )
+
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    return {
+        "hydrated": True,
+        "candidate_id": selected,
+        "task_ref": task_ref,
+        "spec_ref": spec_ref,
+        "source_bank_ref": report.get("source_bank_ref"),
     }
 
 
@@ -604,6 +736,17 @@ def main(argv: list[str] | None = None) -> int:
         metavar="PATH",
         help="Print a read-only initiative intake contract validation report as YAML.",
     )
+    parser.add_argument(
+        "--hydrate-approved",
+        type=Path,
+        metavar="PATH",
+        help="Hydrate a ready initiative candidate by delegating to roadmap_scaffold.py.",
+    )
+    parser.add_argument(
+        "--session-id",
+        default="",
+        help="Session id to record in hydration_history for --hydrate-approved.",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -627,6 +770,14 @@ def main(argv: list[str] | None = None) -> int:
 
             report = initiative_intake.validate_intake_contract(_load_yaml(args.intake_contract))
             print(yaml.safe_dump({"initiative_intake_reports": [report]}, sort_keys=False), end="")
+            return 0
+        if args.hydrate_approved is not None:
+            result = hydrate_approved_initiative_candidate(
+                args.hydrate_approved,
+                candidate_id=args.candidate_id,
+                session_id=args.session_id,
+            )
+            print(yaml.safe_dump({"hydration": result}, sort_keys=False), end="")
             return 0
     except PlanningBankValidationError as exc:
         print(f"planning_bank_validate: {exc}", file=sys.stderr)

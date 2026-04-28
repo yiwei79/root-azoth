@@ -521,17 +521,32 @@ initiatives:
   - task_ref: T-030
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
     phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-031
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-031.yaml
+    phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-032
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-032.yaml
+    phase: v0.2.0-p3
+    status: complete
+    role: historical
+  - task_ref: T-033
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-033.yaml
+    phase: v0.2.0-p3
     status: active
     role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
-  discovery_status: active_refinement
-  candidate_slice_ref: slice-auto-001-e
+  discovery_status: complete
+  candidate_slice_ref: slice-auto-001-i
   readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
-  next_discovery_action: Deliver T-027 only after a separate scoped delivery child;
-    do not repeat hydration or implement the lifecycle discoverability report from
-    the hydration child.
+  next_discovery_action: INI-AUTO-001 tracked autonomous-auto feature work is complete;
+    follow-on slice-auto-001-i is loaded as the learning harvester candidate and requires
+    a fresh approved improvement campaign before hydration or delivery.
   summary: 'Make autonomous-auto capable of taking an operator-provided initiative
     and working it through Azoth-native lifecycle states: intake, evidence building,
     architecture challenge, readiness reporting, approved hydration, bounded delivery,
@@ -546,8 +561,8 @@ initiatives:
   - D48
   - D50
   - D52
-  task_ref: T-030
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-030.yaml
+  task_ref: T-033
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-033.yaml
 - id: INI-EVI-002
   title: Knowledge richness evaluation for project-management artifacts
   category: pipeline
@@ -1767,7 +1782,7 @@ versions:
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
   status: active
-  current_patch: 67
+  current_patch: 79
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1987,4 +2002,32 @@ versions:
       - D48
       - D50
       - D52
-    - {id: T-030, title: "Autonomous campaign strategy budget repair", completed_date: "2026-04-26", decision_ref: [D11, D23, D48, D50, D52]}
+    - id: T-030
+      title: Autonomous campaign strategy budget repair
+      completed_date: '2026-04-26'
+      decision_ref:
+      - D11
+      - D23
+      - D48
+      - D50
+      - D52
+    - id: T-031
+      title: Approved write-mode hydration delegation
+      completed_date: '2026-04-26'
+      decision_ref:
+      - D11
+      - D23
+      - D48
+      - D50
+      - D52
+    - id: T-032
+      title: Proposal refinement to hydration readiness bridge
+      completed_date: '2026-04-26'
+      decision_ref:
+      - D11
+      - D21
+      - D23
+      - D48
+      - D50
+      - D52
+    - {id: T-033, title: "Autonomous-auto learning harvester and self-heal router", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D45, D48, D50, D52]}

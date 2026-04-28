@@ -3263,3 +3263,73 @@ items:
   - D48
   - D50
   - D52
+- id: T-031
+  title: Approved write-mode hydration delegation
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-c
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-26'
+  completed_date: '2026-04-26'
+  description: Implement a carefully gated write-mode hydration delegation helper
+    that consumes plan-only handoff evidence, refuses unsafe inputs, delegates roadmap/backlog/spec
+    writes to roadmap_scaffold.py, and records hydration_history after success.
+  roadmap_ref: T-031
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52
+- id: T-032
+  title: Proposal refinement to hydration readiness bridge
+  source: proposal-autonomous-auto-campaign-evaluation-learning-closure-hydration-bridge
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-26'
+  completed_date: '2026-04-26'
+  description: Teach autonomous-auto strategy-preflight and lifecycle discovery to
+    route exact proposal-backed hydration plans after refine_proposal children, so
+    stale completed initiative readiness cannot mask a fresh proposal-backed hydration
+    candidate; use retrospective evidence normalization as the first validation case
+    without mutating campaign state from audit reports.
+  roadmap_ref: T-032
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D21
+  - D23
+  - D48
+  - D50
+  - D52
+- id: T-033
+  title: Autonomous-auto learning harvester and self-heal router
+  source: initiative-bank-INI-AUTO-001-slice-auto-001-i
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p3
+  priority: 3
+  created_date: '2026-04-26'
+  completed_date: '2026-04-26'
+  description: Implement an autonomous-auto learning harvester that classifies campaign
+    audit residuals, self-capture rows, closeout episodes, route failures, and retrospective
+    evidence into safe self-heal, capture-only, proposal, intake, or human-gate routes
+    while preserving strategy-preflight, scope-gate, run-ledger, write-claim, and
+    protected-boundary checks.
+  roadmap_ref: T-033
+  initiative_ref: INI-AUTO-001
+  decision_ref:
+  - D11
+  - D21
+  - D23
+  - D45
+  - D48
+  - D50
+  - D52

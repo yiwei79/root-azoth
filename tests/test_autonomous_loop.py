@@ -1207,6 +1207,149 @@ def test_lifecycle_route_stop_blocks_generic_initiative_fallback(tmp_path: Path)
     assert read["route_authority"] == "stop:completed_or_stale_campaign"
 
 
+def test_lifecycle_route_terminal_initiative_readiness_stops_cleanly(tmp_path: Path) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["status"] = "complete"
+    doc["readiness"].update(
+        {
+            "readiness_status": "complete",
+            "candidate_first_slice": "",
+            "next_candidate_ref": "",
+            "next_readiness_gate": "none_feature_complete",
+            "approval_scope": "feature_closure_no_hydration",
+            "hydration_recommendation": "Feature is complete; do not repeat hydration.",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "completed_or_stale_campaign"
+    assert capsule["approval_needed"] == "fresh initiative, proposal, or improvement campaign"
+    assert capsule["readiness_evidence"]["readiness_status"] == "complete"
+    assert any(
+        item["action"] == "hydrate_task"
+        and item["reason"] == "initiative readiness is complete; no hydration action remains"
+        for item in capsule["blocked_actions"]
+    )
+
+
+def test_declared_proposal_hydrated_task_bypasses_stale_initiative_readiness(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        vision={
+            "anchor": ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
+            "target_band": "green",
+            "current_band": "unevaluated",
+            "declaration": {
+                "status": "approved",
+                "selected_seed": "proposal-hydration-bridge",
+                "selected_seed_type": "proposal",
+                "summary": "Proposal refinement to hydration readiness bridge",
+            },
+        },
+    )
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["candidate_slices"][0]["status"] = "hydrated"
+    doc["candidate_slices"][0]["proposed_task_id"] = "T-AUTO-A"
+    doc["readiness"]["approval_scope"] = "hydration_specific_slice_auto_001_a"
+    _write_yaml(initiative_path, doc)
+    _write_yaml(
+        tmp_path / ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Autonomous-auto campaign evaluation learning closure",
+            "status": "draft",
+            "details": {
+                "post_run_refinement": {
+                    "selected_next_slice": {
+                        "title": "Proposal refinement to hydration readiness bridge",
+                        "route": "hydrate_task_after_refinement",
+                        "proposed_hydration_plan": {
+                            "hydrated_task_ref": "T-032",
+                            "scaffold_command": (
+                                "python3 scripts/roadmap_scaffold.py --title "
+                                '"Proposal refinement to hydration readiness bridge"'
+                            ),
+                        },
+                    }
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-AUTO-A.yaml",
+        {"id": "T-AUTO-A", "title": "Completed stale task"},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.2.0/T-032.yaml",
+        {
+            "id": "T-032",
+            "title": "Proposal refinement to hydration readiness bridge",
+            "source_proposal_ref": (
+                ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml"
+            ),
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "tasks": [
+                {
+                    "id": "T-032",
+                    "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-032.yaml",
+                }
+            ],
+            "versions": [
+                {
+                    "id": "v0.2.0-p3",
+                    "completed_tasks": [
+                        {
+                            "id": "T-AUTO-A",
+                            "title": "Completed stale task",
+                            "completed_date": "2026-04-25",
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {"id": "T-AUTO-A", "status": "complete", "completed_date": "2026-04-25"},
+            {
+                "id": "T-032",
+                "title": "Proposal refinement to hydration readiness bridge",
+                "status": "pending",
+                "source": "proposal-autonomous-auto-campaign-evaluation-learning-closure",
+            },
+        ],
+    )
+
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert decision["action"] == "ship_task"
+    assert decision["candidate_id"] == "T-032"
+    assert decision["route_decision"]["selected_route"] == "ship_task"
+    assert decision["route_decision"]["proposal_ref"] == (
+        ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml"
+    )
+    artifacts = decision["strategy_preflight"]["source_artifacts"]
+    assert artifacts["proposal_ref"] == (
+        ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml"
+    )
+    assert artifacts["exact_scaffold_command_present"] is True
+    assert artifacts["stale_initiative_route"]["selected_route"] == "stop"
+    assert artifacts["stale_initiative_route"]["route_state"] == "completed_or_stale_campaign"
+
+
 def test_lifecycle_route_uses_current_state_path(tmp_path: Path) -> None:
     default_state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
     state_path = tmp_path / ".azoth/custom-autonomous-loop-state.yaml"
@@ -1970,6 +2113,71 @@ def test_strategy_preflight_generated_route_conflict_has_repair_action(
         and "does not match lifecycle-route" in item["reason"]
         for item in preflight["blocked_alternatives"]
     )
+
+
+def test_strategy_preflight_includes_learning_harvester_gate(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    candidate = {
+        "candidate_id": "protected-learning-signal",
+        "title": "network credential protected autonomous-auto improvement",
+    }
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="ship_task",
+        candidate=candidate,
+        source="queue",
+    )
+
+    harvester = preflight["learning_harvester"]
+    assert harvester["consumed"] is True
+    assert harvester["write_authority"] == "advisory_only_scope_gates_still_required"
+    assert harvester["decision"]["route"] == "human_gate_required"
+    assert harvester["decision"]["protected_gate_required"] is True
+    assert preflight["may_open_scope"] is False
+    assert any(
+        "learning harvester routed signal to human_gate_required" in item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
+def test_campaign_report_exposes_learning_harvester_route_and_rejected_alternatives(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    inbox = tmp_path / ".azoth/inbox/session-reflection-2026-04-26-report.jsonl"
+    inbox.parent.mkdir(parents=True, exist_ok=True)
+    inbox.write_text(
+        json.dumps(
+            {
+                "id": "report-signal",
+                "session_id": "loop-test",
+                "learning_state": "captured",
+                "summary": "low autonomous-auto lifecycle-route report visibility defect",
+                "tags": ["autonomous-auto", "learning-closure"],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = autonomous_loop.campaign_report(
+        tmp_path,
+        state_path,
+        include_next_campaign_recommendation=False,
+    )
+    harvester = report["learning_harvester"]
+    text = autonomous_loop._format_campaign_report(report)
+
+    assert harvester["selected_learning_route"] == "auto_self_heal_now"
+    assert "capture_only" in harvester["rejected_alternatives"]
+    assert harvester["route_counts"]["auto_self_heal_now"] == 1
+    assert "Learning route: auto_self_heal_now" in text
+    assert "Learning rejected alternatives:" in text
 
 
 def test_alignment_packet_record_and_apply_updates_approval_basis(tmp_path: Path) -> None:

@@ -17,7 +17,7 @@ from typing import Any
 
 import yaml
 
-from autonomous_campaign_audit import build_campaign_audit
+from autonomous_campaign_audit import build_campaign_audit, learning_harvester_decision
 from planning_bank_validate import build_initiative_readiness_report
 from run_ledger import acquire_write_claim, load_write_claim, release_write_claim, upsert_run
 from session_gate import active_session_gate, normalized_session_mode
@@ -1023,6 +1023,32 @@ def _strategy_preflight_for_decision(
     route_state = str(route_decision.get("route_state") or _strategy_route_state_for_action(action, candidate))
     route_conflict = bool(route_decision and route_selected and route_selected != action)
     protected = _is_protected(candidate)
+    harvester_decision = learning_harvester_decision(
+        {
+            "id": _candidate_identity(candidate),
+            "source": source,
+            "summary": _candidate_title(candidate),
+            "reason": candidate.get("reason"),
+            "protected_gate_required": protected,
+            "learning_state": candidate.get("learning_state"),
+            "tags": candidate.get("tags"),
+        },
+        approval_basis=_approval_basis(state),
+        selected_action=action,
+    )
+    corpus_harvester: dict[str, Any] = {}
+    if root is not None and state.get("loop_id"):
+        try:
+            corpus_harvester = build_campaign_audit(
+                root,
+                str(state.get("loop_id")),
+                state_path=root / STATE_REL,
+                ledger_path=root / ".azoth/run-ledger.local.yaml",
+                episodes_path=root / ".azoth/memory/episodes.jsonl",
+                inbox_dir=root / INBOX_DIR_REL,
+            ).get("learning_harvester", {})
+        except Exception:
+            corpus_harvester = {}
     write_claim = _write_claim_status(root) if root is not None else {"held": False}
     active_scope = _active_scope(root) if root is not None else {}
     approval_basis_present = bool(_approval_basis(state))
@@ -1051,6 +1077,28 @@ def _strategy_preflight_for_decision(
         )
     if not approval_basis_present:
         blocked.append({"action": action, "reason": "approval_basis is missing"})
+    harvester_route = str(harvester_decision.get("route") or "")
+    if harvester_route in {"human_gate_required", "defer_to_intake"}:
+        blocked.append(
+            {
+                "action": action,
+                "reason": (
+                    "learning harvester routed signal to "
+                    f"{harvester_route}; do not open autonomous self-heal"
+                ),
+            }
+        )
+    corpus_route = str(corpus_harvester.get("selected_learning_route") or "")
+    if corpus_route in {"human_gate_required", "defer_to_intake"}:
+        blocked.append(
+            {
+                "action": action,
+                "reason": (
+                    "learning harvester corpus recommendation is "
+                    f"{corpus_route}; route through inbox/intake or human gate first"
+                ),
+            }
+        )
     if route_conflict:
         mismatch_reason = (
             f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
@@ -1090,6 +1138,12 @@ def _strategy_preflight_for_decision(
         "fresh_campaign_authority": approval_basis_present and str(state.get("status") or "") == "active",
         "current_loop_authority": str(state.get("status") or "missing"),
         "source_artifacts": route_decision.get("source_artifacts") or {},
+        "learning_harvester": {
+            "consumed": True,
+            "decision": harvester_decision,
+            "campaign_recommendation": corpus_harvester,
+            "write_authority": "advisory_only_scope_gates_still_required",
+        },
         "gate_status": {
             "active_scope": bool(active_scope),
             "active_scope_id": str(active_scope.get("session_id") or ""),
@@ -1775,15 +1829,30 @@ def _proposal_path_for_candidate(root: Path, candidate: dict[str, Any]) -> Path 
 
 
 def _proposal_titles_for_hydration(data: dict[str, Any]) -> set[str]:
-    titles = {str(data.get("title") or "").strip()}
+    titles: set[str] = set()
     details = data.get("details") if isinstance(data.get("details"), dict) else {}
+    selected_hydration = _proposal_hydration_slice(data)
+    for field in ("exact_title", "title"):
+        titles.add(str(selected_hydration.get(field) or "").strip())
+    placement = (
+        selected_hydration.get("placement")
+        if isinstance(selected_hydration.get("placement"), dict)
+        else {}
+    )
+    titles.add(str(placement.get("title") or "").strip())
+    titles = {title for title in titles if title}
+    if titles:
+        return titles
     for section_name in ("recommended_next_slice", "recommended_first_slice"):
         section = details.get(section_name) if isinstance(details.get(section_name), dict) else {}
         for field in ("exact_title", "title"):
             titles.add(str(section.get(field) or "").strip())
         placement = section.get("placement") if isinstance(section.get("placement"), dict) else {}
         titles.add(str(placement.get("title") or "").strip())
-    return {title for title in titles if title}
+    titles = {title for title in titles if title}
+    if titles:
+        return titles
+    return {str(data.get("title") or "").strip()} - {""}
 
 
 def _proposal_hydration_slice(data: dict[str, Any]) -> dict[str, Any]:
@@ -1792,6 +1861,42 @@ def _proposal_hydration_slice(data: dict[str, Any]) -> dict[str, Any]:
         section = details.get(section_name)
         if isinstance(section, dict) and str(section.get("route") or "") == "hydrate_task":
             return section
+    for section in _walk_mapping_values(details):
+        if not isinstance(section, dict):
+            continue
+        route = str(section.get("route") or "").strip()
+        plan = (
+            section.get("proposed_hydration_plan")
+            if isinstance(section.get("proposed_hydration_plan"), dict)
+            else {}
+        )
+        if route not in {"hydrate_task", "hydrate_task_after_refinement"} and not plan:
+            continue
+        normalized = dict(section)
+        normalized["route"] = "hydrate_task"
+        normalized.setdefault("exact_title", section.get("title") or data.get("title"))
+        if plan:
+            normalized.setdefault(
+                "proposed_task_id",
+                plan.get("hydrated_task_ref") or plan.get("proposed_task_id") or "",
+            )
+            placement = (
+                normalized.get("placement") if isinstance(normalized.get("placement"), dict) else {}
+            )
+            normalized["placement"] = {
+                **placement,
+                "target_layer": placement.get("target_layer")
+                or section.get("target_layer")
+                or plan.get("target_layer")
+                or "infrastructure",
+                "delivery_pipeline": placement.get("delivery_pipeline")
+                or section.get("delivery_pipeline")
+                or plan.get("delivery_pipeline")
+                or "standard",
+            }
+            if plan.get("scaffold_command"):
+                normalized["scaffold_command"] = plan.get("scaffold_command")
+        return normalized
     return {}
 
 
@@ -1806,6 +1911,90 @@ def _walk_task_nodes(data: Any) -> list[dict[str, Any]]:
         for item in data:
             nodes.extend(_walk_task_nodes(item))
     return nodes
+
+
+def _walk_mapping_values(data: Any) -> list[dict[str, Any]]:
+    nodes: list[dict[str, Any]] = []
+    if isinstance(data, dict):
+        nodes.append(data)
+        for value in data.values():
+            nodes.extend(_walk_mapping_values(value))
+    elif isinstance(data, list):
+        for item in data:
+            nodes.extend(_walk_mapping_values(item))
+    return nodes
+
+
+def _slug_tokens(value: str) -> set[str]:
+    return {token for token in re.split(r"[^a-z0-9]+", value.lower()) if token}
+
+
+def _proposal_matches_seed(path: Path, proposal: dict[str, Any], seed: str) -> bool:
+    seed_text = str(seed or "").strip().lower()
+    if not seed_text:
+        return False
+    exact_ids = {
+        path.stem.lower(),
+        f"proposal-{path.stem}".lower(),
+        str(proposal.get("id") or "").strip().lower(),
+        str(proposal.get("proposal_id") or "").strip().lower(),
+        str(proposal.get("backlog_id") or "").strip().lower(),
+    }
+    if seed_text in exact_ids:
+        return True
+    seed_tokens = _slug_tokens(seed_text)
+    seed_tokens.discard("proposal")
+    if not seed_tokens:
+        return False
+    searchable = " ".join(
+        [
+            path.stem,
+            str(proposal.get("title") or ""),
+            str(proposal.get("summary") or ""),
+            json.dumps(proposal.get("details") or {}, sort_keys=True, default=str),
+        ]
+    )
+    return seed_tokens.issubset(_slug_tokens(searchable))
+
+
+def _declared_proposal_candidate(root: Path, state: dict[str, Any]) -> dict[str, Any] | None:
+    vision = state.get("vision") if isinstance(state.get("vision"), dict) else {}
+    declaration = (
+        vision.get("declaration") if isinstance(vision.get("declaration"), dict) else {}
+    )
+    if str(declaration.get("selected_seed_type") or "").strip() != "proposal":
+        return None
+    seed = str(declaration.get("selected_seed") or "").strip()
+    proposal_dir = root / ".azoth/proposals"
+    if not seed or not proposal_dir.is_dir():
+        return None
+    for path in sorted(proposal_dir.glob("*.yaml")):
+        data = _load_yaml_mapping(path)
+        if not _proposal_matches_seed(path, data, seed):
+            continue
+        hydration_slice = _proposal_hydration_slice(data)
+        placement = (
+            hydration_slice.get("placement")
+            if isinstance(hydration_slice.get("placement"), dict)
+            else {}
+        )
+        return {
+            "candidate_id": seed,
+            "title": str(
+                hydration_slice.get("exact_title")
+                or hydration_slice.get("title")
+                or data.get("title")
+                or seed
+            ),
+            "target_layer": str(placement.get("target_layer") or "planning"),
+            "delivery_pipeline": str(placement.get("delivery_pipeline") or "standard"),
+            "source": "proposal",
+            "proposal_ref": _repo_artifact_ref(root, path),
+            "proposed_task_id": str(hydration_slice.get("proposed_task_id") or ""),
+            "recommended_route": str(hydration_slice.get("route") or ""),
+            "scaffold_command": str(hydration_slice.get("scaffold_command") or ""),
+        }
+    return None
 
 
 def _proposal_task_match(
@@ -1876,13 +2065,23 @@ def _queued_proposal_hydration_decision(
     if not match:
         return None
     task_id = match["task_id"]
+    proposal_ref = str(proposal_path.relative_to(root))
+    source_artifacts = {
+        "proposal_ref": proposal_ref,
+        "existing_task_id": task_id,
+        "task_artifacts_exist": bool(match.get("artifacts_exist")),
+        "exact_scaffold_command_present": bool(str(candidate.get("scaffold_command") or "")),
+    }
+    stale_route = candidate.get("stale_initiative_route_decision")
+    if isinstance(stale_route, dict):
+        source_artifacts["stale_initiative_route"] = stale_route.get("route_decision") or stale_route
     if match.get("complete"):
         return _stop_decision(
             state,
             "proposal_hydration_already_completed",
             detail=(
                 "Proposal-backed hydration candidate "
-                f"{proposal_path.relative_to(root)} already maps to completed task {task_id}; "
+                f"{proposal_ref} already maps to completed task {task_id}; "
                 "refresh route state instead of opening duplicate hydration."
             ),
             candidate={
@@ -1893,9 +2092,10 @@ def _queued_proposal_hydration_decision(
                 "route_decision": {
                     "selected_route": "stop",
                     "route_state": "completed_or_stale_campaign",
-                    "proposal_ref": str(proposal_path.relative_to(root)),
+                    "proposal_ref": proposal_ref,
                     "existing_task_id": task_id,
                     "live_task_truth": match,
+                    "source_artifacts": source_artifacts,
                     "blocked_actions": [
                         {
                             "action": "hydrate_task",
@@ -1912,13 +2112,14 @@ def _queued_proposal_hydration_decision(
             "candidate_id": task_id,
             "backlog_id": task_id,
             "title": match.get("title") or task_id,
-            "source": str(proposal_path.relative_to(root)),
+            "source": proposal_ref,
             "route_decision": {
                 "selected_route": "ship_task",
                 "route_state": "delivery_ready",
-                "proposal_ref": str(proposal_path.relative_to(root)),
+                "proposal_ref": proposal_ref,
                 "existing_task_id": task_id,
                 "live_task_truth": match,
+                "source_artifacts": source_artifacts,
                 "blocked_actions": [
                     {
                         "action": "hydrate_task",
@@ -1943,11 +2144,11 @@ def _queued_proposal_hydration_decision(
     return _stop_decision(
         state,
         "proposal_hydration_existing_task_requires_ship_approval",
-        detail=(
-            "Proposal-backed hydration candidate "
-            f"{proposal_path.relative_to(root)} maps to existing task {task_id}; "
-            "ship_task approval and hydrated artifacts are required before delivery."
-        ),
+            detail=(
+                "Proposal-backed hydration candidate "
+                f"{proposal_ref} maps to existing task {task_id}; "
+                "ship_task approval and hydrated artifacts are required before delivery."
+            ),
         candidate={
             **candidate,
             "id": task_id,
@@ -1956,9 +2157,10 @@ def _queued_proposal_hydration_decision(
             "route_decision": {
                 "selected_route": "stop",
                 "route_state": "delivery_ready_without_approval",
-                "proposal_ref": str(proposal_path.relative_to(root)),
+                "proposal_ref": proposal_ref,
                 "existing_task_id": task_id,
                 "live_task_truth": match,
+                "source_artifacts": source_artifacts,
             },
         },
     )
@@ -2164,6 +2366,30 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
             reason="Selected first queued autonomous-auto candidate inside the autonomy budget.",
             root=root,
         )
+
+    declared_proposal = _declared_proposal_candidate(root, state)
+    if declared_proposal:
+        stale_route_stop = _implicit_initiative_route_stop_decision(root, state_path, state)
+        if stale_route_stop:
+            declared_proposal = {
+                **declared_proposal,
+                "stale_initiative_route_decision": stale_route_stop,
+            }
+        proposal_decision = _proposal_discovery_decision(root, state, declared_proposal, allowed)
+        if proposal_decision:
+            return proposal_decision
+        if "refine_proposal" in allowed:
+            return _action_decision(
+                state,
+                action="refine_proposal",
+                candidate=declared_proposal,
+                source="proposal",
+                reason=(
+                    "Selected the campaign-declared proposal before stale initiative "
+                    "readiness fallback."
+                ),
+                root=root,
+            )
 
     route_stop = _implicit_initiative_route_stop_decision(root, state_path, state)
     if route_stop:
@@ -2666,6 +2892,26 @@ def campaign_report(
     if resolved_handoff is not None and not resolved_handoff.is_absolute():
         resolved_handoff = root / resolved_handoff
     handoff_campaign = _parse_handoff_campaign(resolved_handoff)
+    state_snapshot, state_error = _safe_state_snapshot(state_path)
+    learning_harvester: dict[str, Any] = {}
+    loop_id = str(state_snapshot.get("loop_id") or "")
+    if loop_id and not state_error:
+        try:
+            learning_harvester = build_campaign_audit(
+                root,
+                loop_id,
+                state_path=state_path,
+                ledger_path=root / ".azoth/run-ledger.local.yaml",
+                episodes_path=root / ".azoth/memory/episodes.jsonl",
+                inbox_dir=root / INBOX_DIR_REL,
+            ).get("learning_harvester", {})
+        except Exception as exc:
+            learning_harvester = {
+                "selected_learning_route": "unknown",
+                "rejected_alternatives": [],
+                "route_counts": {},
+                "error": str(exc),
+            }
     completion_reason = str(handoff_campaign.get("completion_reason") or "")
     fail_closed = not current_loop.get("observable") or not handoff_campaign.get("observable")
     vision_realized = completion_reason == "vision_realized"
@@ -2675,6 +2921,7 @@ def campaign_report(
         "report_schema_version": 1,
         "current_loop": current_loop,
         "handoff_campaign": handoff_campaign,
+        "learning_harvester": learning_harvester,
         "next_campaign_recommendation": current_loop.get("next_campaign_recommendation", {}),
         "observation": {
             "fresh_budget_required": bool(
@@ -3759,6 +4006,23 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
         route_state = "high_severity_self_capture"
         approval_needed = "inbox-first capture allowed unless protected boundary expands"
         ux_basis = "High-severity operator feedback is surfaced before more continuation."
+    elif readiness_status == "complete":
+        selected_route = "stop"
+        route_state = "completed_or_stale_campaign"
+        approval_needed = "fresh initiative, proposal, or improvement campaign"
+        blocked_actions.extend(
+            [
+                {
+                    "action": "hydrate_task",
+                    "reason": "initiative readiness is complete; no hydration action remains",
+                },
+                {
+                    "action": "ship_task",
+                    "reason": "initiative readiness is complete; no delivery action remains",
+                },
+            ]
+        )
+        ux_basis = "Terminal initiative truth blocks stale autonomous delivery."
     elif _awaiting_hydration_approval(
         readiness,
         candidate,
@@ -4802,6 +5066,11 @@ def _format_operator_read(payload: dict[str, Any]) -> str:
         if isinstance(payload.get("next_campaign_recommendation"), dict)
         else {}
     )
+    harvester = (
+        payload.get("learning_harvester")
+        if isinstance(payload.get("learning_harvester"), dict)
+        else {}
+    )
     ranked = (
         recommendation.get("ranked_recommendations")
         if isinstance(recommendation.get("ranked_recommendations"), list)
@@ -4978,6 +5247,11 @@ def _format_campaign_report(payload: dict[str, Any]) -> str:
         payload.get("handoff_campaign") if isinstance(payload.get("handoff_campaign"), dict) else {}
     )
     observation = payload.get("observation") if isinstance(payload.get("observation"), dict) else {}
+    harvester = (
+        payload.get("learning_harvester")
+        if isinstance(payload.get("learning_harvester"), dict)
+        else {}
+    )
     recommendation = (
         payload.get("next_campaign_recommendation")
         if isinstance(payload.get("next_campaign_recommendation"), dict)
@@ -5006,6 +5280,8 @@ def _format_campaign_report(payload: dict[str, Any]) -> str:
             f"Vision band: {handoff.get('vision_band') or 'unknown'}",
             f"Fresh budget required: {observation.get('fresh_budget_required')}",
             f"Safe to continue old campaign: {observation.get('safe_to_continue_old_campaign')}",
+            f"Learning route: {harvester.get('selected_learning_route') or 'unknown'}",
+            f"Learning rejected alternatives: {', '.join(harvester.get('rejected_alternatives') or []) or 'none'}",
             f"Next campaign recommendation: {recommendation_read}",
         ]
     )
@@ -5042,12 +5318,19 @@ def _format_campaign_audit(payload: dict[str, Any]) -> str:
         if isinstance(payload.get("residual_risks"), list)
         else []
     )
+    harvester = (
+        payload.get("learning_harvester")
+        if isinstance(payload.get("learning_harvester"), dict)
+        else {}
+    )
     return "\n".join(
         [
             f"Campaign audit: {campaign.get('loop_id') or 'unknown'}",
             f"Campaign status: {campaign.get('status') or 'unknown'}",
             f"Overall provenance: {scorecard.get('overall_provenance') or 'unknown'}",
             f"Next route: {route.get('route') or 'unknown'}",
+            f"Learning route: {harvester.get('selected_learning_route') or 'unknown'}",
+            f"Learning rejected alternatives: {', '.join(harvester.get('rejected_alternatives') or []) or 'none'}",
             f"Residual risks: {len(residuals)}",
         ]
     )

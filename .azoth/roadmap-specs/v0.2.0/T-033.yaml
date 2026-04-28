@@ -1,0 +1,46 @@
+id: T-033
+roadmap_version: v0.2.0
+title: Autonomous-auto learning harvester and self-heal router
+decision_ref:
+- D11
+- D21
+- D23
+- D45
+- D48
+- D50
+- D52
+intent: Implement the campaign-internal autonomous-auto learning harvester and self-heal router for INI-AUTO-001.
+problem: >
+  Autonomous-auto already records campaign audit residuals, self-capture rows,
+  closeout episodes, route failures, proposal/refinement outputs, and retrospective
+  evidence, but those learning signals can remain passive unless an operator manually
+  notices and routes them. The harvester should normalize, deduplicate, classify, and
+  surface those signals so safe internal defects can route to governed self-heal work
+  while protected or cross-system improvements stay behind inbox/intake or human gates.
+scope:
+- Add a repo-native learning harvester that reads autonomous-auto learning signals without relying on chat-only memory.
+- Classify each learning signal as auto_self_heal_now, capture_only, proposal_needed, human_gate_required, defer_to_intake, or stale_or_rejected.
+- Integrate the harvester recommendation into strategy-preflight and campaign-report visibility before opening child work.
+- Preserve lifecycle-route, scope-gate, run-ledger, write-claim, and protected-boundary checks for every selected self-heal route.
+non_goals:
+- Do not create an unbounded daemon, scheduler, or hidden continuation path.
+- Do not auto-apply protected, governance, M1, credential, network, destructive, cross-branch, unclear-ownership, user-governed, or cross-system changes.
+- Do not replace inbox/intake, promote, memory-capture, campaign-audit, lifecycle-report, or closeout flows.
+- Do not mark a learning item as reinforced until a later campaign demonstrates changed behavior.
+- Do not treat campaign-audit output alone as write authority.
+acceptance:
+- The harvester reads campaign-audit residuals, self-capture rows, closeout episodes, route failures, proposal/refinement outputs, and retrospective evidence without relying on chat-only memory.
+- Each learning signal is deduplicated and classified as auto_self_heal_now, capture_only, proposal_needed, human_gate_required, defer_to_intake, or stale_or_rejected.
+- auto_self_heal_now is allowed only for safe autonomous-auto internal defects inside the approved campaign budget and must still pass scope-gate, run-ledger, write-claim, lifecycle-route, and strategy-preflight checks.
+- Protected, governance, M1, destructive, credential, network, cross-branch, unclear ownership, user-governed, or cross-system changes always route to human_gate_required or defer_to_intake.
+- The existing inbox/intake and promote paths remain the governed lane for user-approved or cross-system self-improvement, and the harvester does not bypass them.
+- Strategy-preflight includes the harvester recommendation before opening a child scope, and campaign reports show the chosen learning route plus rejected alternatives.
+- Tests prove safe internal defects can be selected for self-heal, protected changes stop, duplicate signals collapse, stale campaign evidence does not authorize work, and capture-only rows do not pile up without route visibility.
+- Verification includes at least one historical autonomous-auto campaign sample showing a captured learning signal progressing to a planned or implemented self-heal route without claiming reinforcement prematurely.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

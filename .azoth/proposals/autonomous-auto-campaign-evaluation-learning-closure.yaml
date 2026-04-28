@@ -272,17 +272,102 @@ details:
       - "Do not replace closeout, lifecycle-report, campaign-report, or planning_bank_validate.py."
       - "Do not auto-open follow-on work from the audit report."
   readiness_notes:
-    current_status: "hydrated_to_t_029_ready_for_separate_delivery"
+    current_status: "t029_complete_audit_v1_revealed_retrospective_evidence_gap"
     why_not_ready_to_hydrate: >
-      Hydration has already happened. The next safe edge is a separate scoped
-      implementation campaign for T-029, not repeated hydration.
+      Hydration and delivery for T-029 have already happened. The next safe
+      edge is not repeated hydration or another broad campaign-audit build; it
+      is a narrow refinement that normalizes completed-campaign retrospective
+      evidence so learning-closure rows can move from observed/captured signals
+      toward planned, implemented, verified, and later reinforced states.
     next_research_questions:
-      - "Which initiative-bank fields should be updated before hydration so lifecycle-route no longer falls back to stale slice-auto-001-e readiness?"
-      - "What exact roadmap_scaffold.py command should hydrate the read-only campaign-audit implementation task?"
-      - "Which focused tests should accompany the first helper/module implementation?"
+      - "How should repo-native architect/evaluator retrospective entries identify the campaign loop they evaluate?"
+      - "Which fields should campaign-audit treat as learning-state evidence instead of defaulting to missing_evidence?"
+      - "How should audit reports distinguish async-capable from async-tested, external freshness not-material from not-researched, and true staged delegation from inline exceptions?"
+  post_t029_retrospective_refinement:
+    observed_at: "2026-04-26T13:54:08Z"
+    source_artifacts:
+      - path: ".azoth/inbox/session-reflection-2026-04-26-autonomous-auto-initiative-achievement-retro.jsonl"
+        note: "Six architect-retrospective improvement signals from the completed INI-AUTO-001 Initiative Achievement Campaign."
+      - path: ".azoth/autonomous-loop-state.local.yaml"
+        note: "Fresh Learning Closure & Audit Fidelity campaign approval and first refine_proposal child."
+      - path: "scripts/autonomous_loop.py campaign-audit --loop-id ini-auto-001-initiative-achievement-20260426 --json"
+        note: "Audit now observes one learning-closure row but still classifies it as missing_evidence because the retrospective signal is not normalized."
+    current_truth:
+      - "T-029 campaign-audit v1 is complete and should not be rehydrated."
+      - "T-030 strategy-preflight and T-031 write-mode hydration delegation are complete."
+      - "The completed INI-AUTO-001 campaign reached Green, but the audit layer still reports learning_closure as conflict when retrospective evidence lacks normalized state fields."
+      - "The first child in the new campaign is proposal refinement; hydration and implementation must wait for an exact scaffold command and readiness."
+    improvement_points:
+      - id: run_id_auditability
+        severity: medium
+        summary: "Campaign audits need campaign-instance or child-session uniqueness evidence so old closed child runs do not mingle with fresh campaign evidence."
+      - id: post_completion_readiness_refresh
+        severity: medium
+        summary: "Completed candidate readiness should surface terminal/completed truth and select a next live slice or require fresh campaign authority."
+      - id: external_freshness_materiality
+        severity: low
+        summary: "Strategy-preflight should record external_freshness or external_research_materiality, including not_material when repo-local work does not require external research."
+      - id: async_tested_status
+        severity: low
+        summary: "UX scorecards should distinguish async-capable approval-basis support from a run that actually exercised advisory, override, or stop packets."
+      - id: stage_execution_mode
+        severity: medium
+        summary: "Stage evidence should expose execution_mode, optional agent/transcript references, and inline_exception_reason instead of treating ledger rows alone as full delegation proof."
+      - id: retrospective_evaluator_normalization
+        severity: low
+        summary: "Architect/evaluator retrospectives should become normalized evaluator or learning-closure evidence so lifecycle and campaign reports do not treat them as chat-only or missing."
+    selected_next_slice:
+      title: "Proposal refinement to hydration readiness bridge"
+      route: "hydrate_task_after_refinement"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      purpose: >
+        Remove the root-cause disruption where a refine_proposal child can
+        produce an exact next hydration plan but the next autonomous-auto route
+        still falls back to a stale initiative-bank readiness pointer. The
+        bridge should make proposal-refinement outputs route-visible when they
+        contain an exact scaffold command, approval scope, validation evidence,
+        and explicit non-goals, while preserving fail-closed behavior for stale
+        completed initiative candidates.
+      include:
+        - "Let proposal-backed hydration recommendations be selected from a refined proposal when the proposal names an exact scaffold command and hydration-specific approval scope."
+        - "Do not let stale initiative readiness, such as completed slice-auto-001-c/T-031, mask a fresh proposal-backed hydration candidate."
+        - "Teach campaign-audit and lifecycle-report outputs to surface the proposal-backed candidate and the stale readiness conflict explicitly."
+        - "Keep retrospective evidence normalization as the first concrete use case: inbox retrospective rows should become captured or triaged learning rows once the bridge makes the proposed task route-visible."
+        - "Add focused tests around queued proposal hydration, stale initiative readiness conflict, and the 2026-04-26 INI-AUTO-001 retrospective shape."
+      exclude:
+        - "Do not add a new writer or mutate campaign state from campaign-audit."
+        - "Do not rehydrate or reopen T-029, T-030, or T-031."
+        - "Do not require external services or chat transcripts."
+        - "Do not claim reinforcement until a later campaign demonstrates changed behavior."
+      proposed_hydration_plan:
+        mode: executed
+        proposed_title: "Proposal refinement to hydration readiness bridge"
+        proposed_task_kind: roadmap_backed_task
+        approval_scope_required: hydration_specific_proposal_hydration_bridge
+        approval_basis_required: >
+          Must name the Proposal Refinement to Hydration Readiness Bridge
+          campaign, the autonomous-auto-campaign-evaluation-learning-closure
+          proposal, stale slice-auto-001-c/T-031 readiness as the root-cause
+          blocker, and the exact scaffold command before any roadmap/backlog/spec
+          write.
+        scaffold_command: >
+          python3 scripts/roadmap_scaffold.py --title "Proposal refinement to hydration readiness bridge" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source proposal-autonomous-auto-campaign-evaluation-learning-closure-hydration-bridge --description "Teach autonomous-auto strategy-preflight and lifecycle discovery to route exact proposal-backed hydration plans after refine_proposal children, so stale completed initiative readiness cannot mask a fresh proposal-backed hydration candidate; use retrospective evidence normalization as the first validation case without mutating campaign state from audit reports." --target-layer infrastructure --delivery-pipeline standard
+        do_not_run_until:
+          - "This proposal validates with `scripts/architecture_proposal_validate.py`."
+          - "The current refine_proposal child records lifecycle/audit evidence and closes or checkpoints cleanly."
+          - "No active write claim or protected gate blocks roadmap/backlog/spec hydration."
+          - "Strategy-preflight selects hydrate_task with fresh approval for this exact scaffold command."
+        hydrated_task_ref: T-032
+        hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-032.yaml
+        hydrated_at: "2026-04-26T14:08:20Z"
+        hydration_session_id: 2026-04-26-autonomous-auto-proposal-hydration-bridge-2
+        result: "Created roadmap/backlog/spec artifacts for T-032 and kept implementation for a separate ship_task child."
   validation_plan:
     - "Validate this proposal with `scripts/architecture_proposal_validate.py`."
+    - "Run `scripts/autonomous_loop.py campaign-audit --loop-id ini-auto-001-initiative-achievement-20260426 --json` and confirm current learning-closure gaps are visible."
+    - "Run `scripts/autonomous_loop.py lifecycle-route --initiative .azoth/initiative-banks/INI-AUTO-001.yaml --reflection .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-initiative-achievement-retro.jsonl --json` and confirm the reflection is observable but does not authorize hidden continuation."
     - "Run `scripts/autonomous_loop.py lifecycle-report --initiative .azoth/initiative-banks/INI-AUTO-001.yaml --candidate-id slice-auto-001-f --json` and confirm hydration remains blocked until readiness is updated intentionally."
     - "Run a manual sample audit over the Initiative Lifecycle Discoverability Spine Campaign and Run-Ledger Atomic Stage Evidence Campaign."
     - "Run `scripts/run_ledger.py validate` and require-stage-evidence for the proposal-refinement child."
-    - "Only after the sample audit, hydrate a narrow read-only implementation task."
+    - "Only after the current proposal refinement is closed, hydrate the narrow proposal-hydration bridge task if strategy-preflight selects it."

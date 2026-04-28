@@ -1,0 +1,60 @@
+id: T-032
+roadmap_version: v0.2.0
+title: Proposal refinement to hydration readiness bridge
+decision_ref:
+- D11
+- D21
+- D23
+- D48
+- D50
+- D52
+intent: Teach autonomous-auto to carry a refined proposal-backed hydration plan into
+  the next safe route without falling back to stale initiative readiness.
+problem: >
+  The Learning Closure & Audit Fidelity campaign refined a proposal into an exact
+  next hydration plan, but the next generic route still inspected INI-AUTO-001
+  readiness first and stopped on completed slice-auto-001-c/T-031. That refusal was
+  safe, but it exposed a root-cause bridge gap: proposal refinement can produce a
+  valid hydration candidate that is not first-class enough for lifecycle discovery,
+  strategy-preflight, and campaign-audit to route without manual queue repair.
+scope:
+- Add a proposal-backed hydration readiness bridge for autonomous-auto route
+  selection after refine_proposal children.
+- Make exact proposal hydration plans discoverable when they include scaffold
+  command, approval scope, source proposal, target initiative, target layer,
+  delivery pipeline, and explicit non-goals.
+- Preserve fail-closed behavior for stale completed initiative readiness such as
+  slice-auto-001-c/T-031.
+- Use the retrospective evidence normalization plan as the first validation case
+  for the bridge.
+non_goals:
+- Do not rehydrate or reopen T-029, T-030, or T-031.
+- Do not mutate campaign state from campaign-audit report commands.
+- Do not claim learning reinforcement until a later campaign demonstrates changed
+  behavior.
+- Do not require external services or non-repo chat transcripts.
+- Do not bypass lifecycle-route, strategy-preflight, scope gates, run-ledger, or
+  write-claim checks.
+acceptance:
+- A refined proposal with an exact hydration plan can be selected as a hydrate_task
+  candidate without being masked by stale completed initiative readiness.
+- Strategy-preflight records proposal-backed route authority, source proposal,
+  exact scaffold command presence, and stale initiative-readiness conflict.
+- Lifecycle/campaign audit output surfaces the proposal-backed candidate and the
+  stale completed candidate as distinct facts.
+- Tests cover queued proposal hydration, stale initiative readiness conflict, and
+  the 2026-04-26 INI-AUTO-001 retrospective evidence shape.
+- The implementation remains standard infrastructure scope and does not introduce
+  kernel/governance/M1 behavior.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.
+source_proposal_ref: .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
+source_campaign_ref: learning-closure-root-cause-bridge-20260426
+source_issue_refs:
+- .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-initiative-achievement-retro.jsonl
+- .azoth/autonomous-loop-state.local.yaml
