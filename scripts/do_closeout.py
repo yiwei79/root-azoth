@@ -29,6 +29,7 @@ from session_gate import active_session_gate, close_session_gate, normalized_ses
 from session_continuity import active_scope
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
+from yaml_helpers import safe_load_yaml_path
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
@@ -96,8 +97,7 @@ def load_yaml(path: pathlib.Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        with open(path, "r", encoding="utf-8") as handle:
-            data = yaml.safe_load(handle) or {}
+        data = safe_load_yaml_path(path) or {}
     except (OSError, yaml.YAMLError) as exc:
         raise CloseoutError(f"Could not read/parse YAML in {path}: {exc}") from exc
     if not isinstance(data, dict):

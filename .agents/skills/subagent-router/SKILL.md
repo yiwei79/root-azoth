@@ -135,33 +135,6 @@ Optional: one line `role_hint:` repeating the canonical D21 audit string for tha
 (see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
 model identifier at spawn time. If omitted, defaults to `standard`.
 
-### Codex Model Selector Contract (T-025)
-
-For Codex runtime spawns, `model_tier` remains the portable intent field, but it is
-not sufficient for the active spawn API. Before calling the Codex spawn API, resolve
-the YAML payload through `scripts/codex_model_selector.py` using the policy artifact at
-`.azoth/codex-model-selector-policy.yaml`.
-
-The resolved Codex spawn call must include these explicit fields:
-
-```yaml
-model: <resolved-model>
-reasoning_effort: <low|medium|high|xhigh>
-```
-
-Do not omit `model` or `reasoning_effort`. Parent `xhigh` reasoning must not leak
-into leaf subagents by omission; `xhigh` is allowed only when the resolver returns it
-from explicit stage policy, human override, or eval-backed escalation.
-
-Selector decisions are local audit evidence. Write them to
-`.azoth/codex-model-selector-traces.local.jsonl` with the resolved model,
-`reasoning_effort`, `model_tier`, `policy_ref`, confidence, fallback reason, source
-observation date, and any override reference/reason.
-
-The resolver fails closed for deprecated, unavailable, unsupported-effort, or
-mandatory-tool-mismatched aliases unless both `override_ref` and `override_reason`
-are present and traced.
-
 **`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
 `orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
 The root orchestrator owns the global execution budget and should reserve capacity for queen

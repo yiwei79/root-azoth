@@ -5066,11 +5066,6 @@ def _format_operator_read(payload: dict[str, Any]) -> str:
         if isinstance(payload.get("next_campaign_recommendation"), dict)
         else {}
     )
-    harvester = (
-        payload.get("learning_harvester")
-        if isinstance(payload.get("learning_harvester"), dict)
-        else {}
-    )
     ranked = (
         recommendation.get("ranked_recommendations")
         if isinstance(recommendation.get("ranked_recommendations"), list)

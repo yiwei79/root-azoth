@@ -1955,79 +1955,79 @@ versions:
     - D23
     - D46
     - D52
-    - id: T-024
-      title: Lifecycle router over initiative readiness surfaces
-      completed_date: '2026-04-25'
-      decision_ref:
-      - D11
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-026
-      title: Durable autonomous-auto wakeup driver
-      completed_date: '2026-04-25'
-      decision_ref:
-      - D11
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-027
-      title: Initiative lifecycle evaluator and discoverability spine
-      completed_date: '2026-04-25'
-      decision_ref:
-      - D11
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-028
-      title: Run-ledger serialized stage evidence writes
-      completed_date: '2026-04-25'
-      decision_ref:
-      - D11
-      - D21
-      - D23
-      - D46
-      - D50
-      - D52
-    - id: T-029
-      title: Autonomous-auto campaign audit report
-      completed_date: '2026-04-26'
-      decision_ref:
-      - D11
-      - D21
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-030
-      title: Autonomous campaign strategy budget repair
-      completed_date: '2026-04-26'
-      decision_ref:
-      - D11
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-031
-      title: Approved write-mode hydration delegation
-      completed_date: '2026-04-26'
-      decision_ref:
-      - D11
-      - D23
-      - D48
-      - D50
-      - D52
-    - id: T-032
-      title: Proposal refinement to hydration readiness bridge
-      completed_date: '2026-04-26'
-      decision_ref:
-      - D11
-      - D21
-      - D23
-      - D48
-      - D50
-      - D52
-    - {id: T-033, title: "Autonomous-auto learning harvester and self-heal router", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D45, D48, D50, D52]}
+  - id: T-024
+    title: Lifecycle router over initiative readiness surfaces
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-026
+    title: Durable autonomous-auto wakeup driver
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-027
+    title: Initiative lifecycle evaluator and discoverability spine
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-028
+    title: Run-ledger serialized stage evidence writes
+    completed_date: '2026-04-25'
+    decision_ref:
+    - D11
+    - D21
+    - D23
+    - D46
+    - D50
+    - D52
+  - id: T-029
+    title: Autonomous-auto campaign audit report
+    completed_date: '2026-04-26'
+    decision_ref:
+    - D11
+    - D21
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-030
+    title: Autonomous campaign strategy budget repair
+    completed_date: '2026-04-26'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-031
+    title: Approved write-mode hydration delegation
+    completed_date: '2026-04-26'
+    decision_ref:
+    - D11
+    - D23
+    - D48
+    - D50
+    - D52
+  - id: T-032
+    title: Proposal refinement to hydration readiness bridge
+    completed_date: '2026-04-26'
+    decision_ref:
+    - D11
+    - D21
+    - D23
+    - D48
+    - D50
+    - D52
+  - {id: T-033, title: "Autonomous-auto learning harvester and self-heal router", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D45, D48, D50, D52]}
