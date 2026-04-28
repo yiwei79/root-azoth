@@ -8,6 +8,12 @@ description: |
 
 # Autonomous Auto Mode
 
+## Overview
+
+This skill defines the canonical branch-local autonomous self-development mode
+for Azoth. It keeps autonomous campaigns auditable through vision declarations,
+async alignment handling, bounded replay, and normal gate enforcement.
+
 ## Autonomous Auto Mode
 
 `autonomous-auto` is a standalone mode for fully autonomous Azoth self-development.
@@ -15,6 +21,13 @@ It is not a submode of `dynamic-full-auto`. Use it when the operator grants a
 branch-local autonomy budget for Azoth to refine initiatives, hydrate tasks, implement,
 evaluate, replay bounded fixes, and close out while human alignment can arrive
 asynchronously.
+
+## When to Use
+
+Use `autonomous-auto` when Azoth is developing Azoth itself under a branch-local
+autonomy budget, especially for initiative refinement, task hydration, governed
+implementation, bounded replay, self-heal routing, and campaign closeout where the
+operator wants async alignment packets instead of sequential human gates.
 
 ## Autonomy Budget
 

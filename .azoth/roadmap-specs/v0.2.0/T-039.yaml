@@ -1,0 +1,50 @@
+id: T-039
+roadmap_version: v0.2.0
+title: Release candidate validation and rollout closeout
+decision_ref:
+- D34
+- D35
+- D37
+- D38
+- D42
+- D46
+- D48
+- D50
+- D52
+intent: >
+  Run the final release-candidate checklist and close v0.2.0-p4 only when root,
+  product, and personal-control-plane rollout evidence are all reviewable.
+problem: >
+  A release phase can appear complete if each slice passes locally, but Azoth needs
+  one final operator-facing proof bundle before it is safe to use for real projects.
+scope:
+- 'Run root validation: generated mirrors, pipeline lint, extraction validation, and focused tests.'
+- 'Run product validation: full extract, product tree smoke, public CI expectations, and release notes.'
+- 'Run personal deployment validation: rehearsal or documented dry run of the personal root install model.'
+- Collect residual risks and explicit deferred features.
+- Record the post-p4 continuation route for unfinished initiatives after the
+  release/update loop is available.
+- Close the p4 milestone only after the operator accepts the release candidate evidence.
+non_goals:
+- Do not add new release-scope tasks during closeout unless a gate fails.
+- Do not publish final release artifacts without the operator's release approval.
+- Do not claim package-manager availability unless T-037 added and verified it.
+acceptance:
+- All p4 predecessor tasks are complete or explicitly deferred with accepted residual risk.
+- Root validation commands pass and are recorded in the release-candidate evidence bundle.
+- Product extraction and consumer smoke evidence are recorded with exact commands and paths.
+- Personal root deployment model has either a successful rehearsal or a clear approved deferral.
+- Post-p4 continuation explicitly routes unfinished initiatives back through initiative
+  banks, planning banks, inbox, and backlog surfaces after the rollout loop is proven.
+- The final handoff states whether the next action is public release, personal deployment, or blocked risk repair.
+dependencies:
+- T-035
+- T-036
+- T-037
+- T-038
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: If a gate fails, open the narrowest blocker task inside p4; do not reopen
+  feature initiative development by default.

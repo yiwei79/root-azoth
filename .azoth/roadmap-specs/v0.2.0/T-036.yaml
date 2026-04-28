@@ -1,0 +1,44 @@
+id: T-036
+roadmap_version: v0.2.0
+title: Product extraction release candidate and consumer smoke test
+decision_ref:
+- D34
+- D35
+- D37
+- D38
+- D42
+- D46
+- D48
+intent: >
+  Prove that the public `azoth` product can be mechanically extracted from
+  root-azoth and installed into a fresh consumer project without scaffold-only
+  state, org leakage, or broken bootstrapping.
+problem: >
+  `azoth_extract_product.py --validate-only` currently proves config and template
+  shape, but release readiness needs a full extracted tree plus a consumer install
+  smoke test.
+scope:
+- Extract a clean release-candidate tree to a temporary staging path.
+- Validate `sync-config.yaml` exclusions, transforms, sanitization, public CI, and README generation.
+- Smoke-test `install.sh` and `install.ps1` expectations against a temporary consumer project where feasible.
+- Add or update tests/scripts so the smoke path can run repeatedly before each release candidate.
+- Record exact commands for the public product repo handoff.
+non_goals:
+- Do not push to the public repository.
+- Do not add package-manager distribution such as PyPI, npm, or Homebrew.
+- Do not ship root-azoth `.azoth/` runtime state into the product.
+acceptance:
+- '`python3 scripts/azoth_extract_product.py --validate-only` passes.'
+- A full extract to a temporary directory succeeds and contains the generated public CI and README.
+- Scaffold-only paths from `sync-config.yaml` are absent from the product tree.
+- Sanitization checks find no configured source-org patterns in extracted text files.
+- A documented consumer install smoke test passes or records a precise blocker with the smallest follow-up task.
+dependencies:
+- T-034
+- T-035
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Keep this to product extraction and consumer install proof. Publishing
+  mechanics remain T-037.

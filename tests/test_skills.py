@@ -32,6 +32,7 @@ EXPECTED_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "autonomous-auto",
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
@@ -58,6 +59,7 @@ NEW_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "autonomous-auto",
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
@@ -307,7 +309,7 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 11, "Should have 11 new skills"
+        assert len(NEW_SKILLS) == 12, "Should have 12 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_skill_index_lists_all_expected_skills(self) -> None:

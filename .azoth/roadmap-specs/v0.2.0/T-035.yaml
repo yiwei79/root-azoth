@@ -1,0 +1,41 @@
+id: T-035
+roadmap_version: v0.2.0
+title: Generated surface and planning-truth stabilization
+decision_ref:
+- D46
+- D48
+- D50
+- D52
+intent: >
+  Repair release-readiness truth across generated surfaces, roadmap dashboards,
+  installers, orientation text, and validation commands before extracting or
+  publishing the product.
+problem: >
+  The repo can report an autonomous campaign as complete while still failing
+  deploy parity, showing planning drift, and exposing stale version text in the
+  installer. Those are release-blocking truth mismatches.
+scope:
+- Run and repair `python3 scripts/azoth-deploy.py --check`.
+- Resolve roadmap/dashboard planning drift surfaced by `python3 scripts/roadmap_dashboard.py`.
+- Align installer-visible version truth with `azoth.yaml` and release policy.
+- Refresh orientation skill mirrors and generated platform surfaces through deploy tooling.
+- Keep fixes focused to release-readiness truth; split unrelated feature work out.
+non_goals:
+- Do not publish the product repository.
+- Do not redesign the roadmap, planning-bank, or initiative-bank schemas.
+- Do not use generated mirrors as canonical edit surfaces.
+acceptance:
+- '`python3 scripts/azoth-deploy.py --check` passes.'
+- '`python3 scripts/roadmap_dashboard.py` renders the p4 freeze milestone without planning drift warnings.'
+- Installer version handling no longer advertises stale `0.1.0-dev` for a release candidate.
+- Focused tests covering changed release/truth surfaces pass.
+- '`git status --short` contains no untracked generated artifacts from validation.'
+dependencies:
+- T-034
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: If parity repair and installer/version repair diverge, finish parity
+  first and split installer hardening into a follow-on p4 task only with explicit
+  operator approval.

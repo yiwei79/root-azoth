@@ -1,0 +1,45 @@
+id: T-038
+roadmap_version: v0.2.0
+title: Personal root control-plane deployment model
+decision_ref:
+- D11
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Design the operator personal root as an installed Azoth deployment that can
+  act as a global project and knowledge control plane without being the same
+  checkout as root-azoth development or public azoth publishing.
+problem: >
+  root-azoth currently carries development history, roadmap state, proposals,
+  tests, generated adapters, and release machinery. That makes it a poor direct
+  home for personal global operations unless the deployment boundary is made explicit.
+scope:
+- 'Define the three-plane operating model: root-azoth, public azoth, personal root.'
+- Specify what personal knowledge, project inventory, and source connections belong in the personal root.
+- Specify what must never be copied from root-azoth into personal root by default.
+- Define update cadence from public azoth into personal root and onward into individual projects.
+- Document project onboarding ergonomics for future personal projects.
+non_goals:
+- Do not migrate personal knowledge into root-azoth.
+- Do not create a live personal root repository until the operator approves the target path and install moment.
+- Do not require every downstream project to adopt the full planning/control-plane layer.
+acceptance:
+- A deployment-model document names the purpose, owner, allowed state, forbidden state, and update path for each plane.
+- The personal root is defined as an Azoth deployment, not as the root-azoth development repo.
+- Knowledge-base boundaries distinguish toolkit memory, personal memory, and per-project memory.
+- The model includes a low-friction project onboarding flow from personal root to new projects.
+- Open decisions are explicit, especially repository path, privacy boundary, and publication cadence.
+dependencies:
+- T-034
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Produce the model first. Actual personal-root creation is a separate
+  operator-approved deployment step.

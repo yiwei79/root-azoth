@@ -3333,3 +3333,146 @@ items:
   - D48
   - D50
   - D52
+- id: T-034
+  title: Freeze milestone baseline and release-readiness gate
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-28'
+  description: Declare the v0.2.0-p4 stabilization freeze, repair release-readiness
+    truth, and define the acceptance gates that must pass before Azoth can be used
+    as a split development/product/control-plane system for real projects.
+  roadmap_ref: T-034
+  decision_ref:
+  - D34
+  - D35
+  - D37
+  - D38
+  - D46
+  - D48
+  - D50
+  - D52
+- id: T-035
+  title: Generated surface and planning-truth stabilization
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-28'
+  description: Repair generated mirror drift, roadmap/dashboard drift, installer/version
+    truth, and stale planning surfaces so the repository has one truthful release-readiness
+    story before product extraction or publishing.
+  roadmap_ref: T-035
+  decision_ref:
+  - D46
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-034
+- id: T-036
+  title: Product extraction release candidate and consumer smoke test
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 2
+  created_date: '2026-04-28'
+  description: Turn the existing product extractor into a release-candidate path by
+    extracting a clean azoth tree, validating sanitization and generated public CI,
+    then smoke-testing installation into a temporary consumer project.
+  roadmap_ref: T-036
+  decision_ref:
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D46
+  - D48
+  blocked_by:
+  - T-034
+  - T-035
+- id: T-037
+  title: Public azoth publishing pipeline and release automation
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 2
+  created_date: '2026-04-28'
+  description: Define and implement the controlled CI/CD path from root-azoth extraction
+    to the public azoth repository, including release tags, GitHub release notes,
+    fail-closed checks, and no manual copying of scaffold-only state.
+  roadmap_ref: T-037
+  decision_ref:
+  - D35
+  - D37
+  - D38
+  - D46
+  - D48
+  - D50
+  blocked_by:
+  - T-036
+- id: T-038
+  title: Personal root control-plane deployment model
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 2
+  created_date: '2026-04-28'
+  description: Design the operator personal root as an installed Azoth deployment
+    separate from root-azoth development and public azoth product publishing, including
+    knowledge-base boundaries, source connections, update cadence, and project onboarding
+    ergonomics.
+  roadmap_ref: T-038
+  decision_ref:
+  - D11
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-034
+- id: T-039
+  title: Release candidate validation and rollout closeout
+  source: v020-p4-stabilization-rollout-2026-04-28
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-28'
+  description: Run the final release-candidate checklist across root tests, generated
+    mirrors, product extraction, public product smoke tests, personal control-plane
+    install rehearsal, operator documentation, and release handoff before closing
+    v0.2.0-p4.
+  roadmap_ref: T-039
+  decision_ref:
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D46
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-035
+  - T-036
+  - T-037
+  - T-038

@@ -1,5 +1,6 @@
-current_phase: 3
-current_phase_title: v0.2.0 — swarm · memory · UX (milestone phase 3)
+current_phase: 4
+current_phase_title: v0.2.0 — stabilization · release · control plane (milestone phase
+  4)
 lifecycle_phase: 8
 tasks:
 - id: BL-002
@@ -125,7 +126,7 @@ tasks:
     entries.'
   blocked_by: null
 schema_version: 2
-active_version: v0.2.0-p3
+active_version: v0.2.0-p4
 task_id_policy:
   legacy_milestones:
   - milestone: v0.2.0
@@ -212,7 +213,7 @@ initiatives:
     tracks:
     - write-claims
     - multi-writer-safety
-  phase: v0.2.0-p3
+  phase: null
   priority: high
   task_ref: T-028
   slices:
@@ -224,8 +225,8 @@ initiatives:
   - task_ref: T-028
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-028.yaml
     phase: v0.2.0-p3
-    status: active
-    role: primary
+    status: complete
+    role: historical
   blocked_by:
   - P1-014
   summary: 'Add explicit write-claim and lock enforcement for concurrent sessions
@@ -490,7 +491,7 @@ initiatives:
     - planning-bank-routing
     - durable-wakeups
     - discoverability
-  phase: v0.2.0-p3
+  phase: null
   priority: high
   slices:
   - task_ref: T-023
@@ -536,8 +537,8 @@ initiatives:
   - task_ref: T-033
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-033.yaml
     phase: v0.2.0-p3
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
   source_proposal_refs:
   - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
@@ -545,8 +546,8 @@ initiatives:
   candidate_slice_ref: slice-auto-001-i
   readiness_ref: .azoth/initiative-banks/INI-AUTO-001.yaml#readiness
   next_discovery_action: INI-AUTO-001 tracked autonomous-auto feature work is complete;
-    follow-on slice-auto-001-i is loaded as the learning harvester candidate and requires
-    a fresh approved improvement campaign before hydration or delivery.
+    future autonomous-auto feature expansion is deferred until the stabilization and
+    rollout phase proves the current product/control-plane split is release-safe.
   summary: 'Make autonomous-auto capable of taking an operator-provided initiative
     and working it through Azoth-native lifecycle states: intake, evidence building,
     architecture challenge, readiness reporting, approved hydration, bounded delivery,
@@ -580,7 +581,7 @@ initiatives:
     - knowledge-richness
     - proposal-evaluation
     - project-management-quality
-  phase: v0.2.0-p3
+  phase: null
   priority: high
   task_ref: T-022
   slices:
@@ -1781,8 +1782,8 @@ versions:
     deferred_to: v0.2.0-p3
     reason: Follow-on Karpathy slice scheduled after the p2 boundary.
 - id: v0.2.0-p3
-  status: active
-  current_patch: 79
+  status: complete
+  final_patch: 79
   goal: 'Carry-forward hardening: incomplete p2 work, memory policy, platform parity,
     roadmap tooling, and bounded evidence refresh'
   phase_scope:
@@ -1793,11 +1794,10 @@ versions:
   - D
   note: 'Third working phase of the v0.2.0 milestone. Phase-2 carry-forward drift
     has been repaired, the Karpathy follow-on slices (T-KRP-A through T-KRP-E) are
-    complete, T-020 made tracked planning banks discoverable, and the branch-local
-    autonomous self-development test has completed T-021 for planning-bank ID and
-    coverage policy. Completed memory/platform carry-forward work stays in history,
-    while unscheduled initiatives remain phase-null until explicitly scheduled into
-    a future slice.
+    complete, planning-bank and initiative-bank routing slices are complete, and the
+    branch-local autonomous-auto campaign reached Green with T-033. Completed memory/platform/autonomy
+    carry-forward work stays in history, while unscheduled initiatives remain phase-null
+    until explicitly scheduled into a future slice.
 
     '
   pending_task_refs: []
@@ -2030,4 +2030,107 @@ versions:
     - D48
     - D50
     - D52
-  - {id: T-033, title: "Autonomous-auto learning harvester and self-heal router", completed_date: "2026-04-26", decision_ref: [D11, D21, D23, D45, D48, D50, D52]}
+  - id: T-033
+    title: Autonomous-auto learning harvester and self-heal router
+    completed_date: '2026-04-26'
+    decision_ref:
+    - D11
+    - D21
+    - D23
+    - D45
+    - D48
+    - D50
+    - D52
+- id: v0.2.0-p4
+  status: active
+  current_patch: 1
+  goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
+    truth, prove product extraction, publish a clean azoth product surface, and define
+    the personal root control-plane deployment model.'
+  phase_scope:
+  - 4
+  themes:
+  - release
+  - productization
+  - control-plane
+  freeze_policy:
+    no_new_initiatives: true
+    allowed_work:
+    - release_readiness_repairs
+    - product_extraction_and_publish
+    - personal_control_plane_deployment_model
+    - documentation_and_ci_rollout
+    - verification_and_release_candidate_closeout
+    deferred_work_rule: All new feature, autonomy, memory, planning-bank, and platform
+      ideas remain unscheduled proposal or initiative-bank evidence until this phase
+      closes.
+  note: This phase is a stabilization freeze, not a feature-growth phase. It exists
+    to make Azoth safe to use for real projects by separating root-azoth as the private
+    development workshop, azoth as the clean published product, and the operator personal
+    root as an installed Azoth control-plane deployment.
+  pending_task_refs: []
+  tasks:
+  - id: T-036
+    title: Product extraction release candidate and consumer smoke test
+    decision_ref:
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D46
+    - D48
+  - id: T-037
+    title: Public azoth publishing pipeline and release automation
+    decision_ref:
+    - D35
+    - D37
+    - D38
+    - D46
+    - D48
+    - D50
+  - id: T-038
+    title: Personal root control-plane deployment model
+    decision_ref:
+    - D11
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D48
+    - D50
+    - D52
+  - id: T-039
+    title: Release candidate validation and rollout closeout
+    decision_ref:
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D46
+    - D48
+    - D50
+    - D52
+  completed_tasks:
+  - id: T-034
+    title: Freeze milestone baseline and release-readiness gate
+    completed_date: '2026-04-28'
+    decision_ref:
+    - D34
+    - D35
+    - D37
+    - D38
+    - D46
+    - D48
+    - D50
+    - D52
+  - id: T-035
+    title: Generated surface and planning-truth stabilization
+    completed_date: '2026-04-28'
+    decision_ref:
+    - D46
+    - D48
+    - D50
+    - D52

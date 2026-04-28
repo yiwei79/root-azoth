@@ -1,0 +1,46 @@
+id: T-034
+roadmap_version: v0.2.0
+title: Freeze milestone baseline and release-readiness gate
+decision_ref:
+- D34
+- D35
+- D37
+- D38
+- D46
+- D48
+- D50
+- D52
+intent: >
+  Lock v0.2.0-p4 as a stabilization and rollout freeze, with no new feature
+  initiatives scheduled until the release surface, product extraction path, and
+  personal control-plane model are trustworthy.
+problem: >
+  Autonomous-auto reached its Green campaign target, but that does not make the
+  whole repository release-clean. The roadmap, generated mirrors, installer
+  versioning, public-product extraction, and personal deployment boundaries need
+  one explicit release-readiness gate before Azoth becomes a real project tool.
+scope:
+- Update the roadmap phase boundary so v0.2.0-p4 is the active freeze milestone.
+- Record the no-new-initiatives policy and the allowed work classes for the phase.
+- Define the release-readiness gates that T-035 through T-039 must satisfy.
+- Keep root-azoth, public azoth, and personal root control-plane boundaries visible.
+non_goals:
+- Do not add new autonomy, memory, planning-bank, platform, or product features.
+- Do not publish a public release in this baseline slice.
+- Do not collapse the personal control plane into the root-azoth development checkout.
+acceptance:
+- '`.azoth/roadmap.yaml` shows v0.2.0-p4 as the active stabilization phase.'
+- 'The p4 version block states `no_new_initiatives: true` and lists only release,
+  productization, control-plane, documentation, and validation work classes.'
+- Roadmap-backed tasks T-034 through T-039 exist with backlog rows and specs.
+- 'The phase plan names the three-plane model: root-azoth development, azoth product,
+  and personal root control-plane deployment.'
+- Future feature ideas are explicitly deferred to proposal or initiative-bank evidence
+  until the freeze closes.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Keep this as a planning and truth-setting slice only; execution belongs
+  to T-035 through T-039.

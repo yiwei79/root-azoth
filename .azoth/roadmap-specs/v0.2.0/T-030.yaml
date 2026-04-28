@@ -30,10 +30,10 @@ scope:
 - Refuse `init` and `open-next` when recommendation and lifecycle-route
   conflict, when the target is stale/completed without fresh budget, or when
   gate/claim/protected boundaries block the edge.
-- Preserve staged-subagent execution semantics: after architect/planner/reviewer
-  or research/evaluator waves return, the orchestrator records summaries,
-  requires evidence, synthesizes the result, and makes the next repo-native
-  route decision without treating the checkpoint as a user handoff.
+- 'Preserve staged-subagent execution semantics: after architect/planner/reviewer
+  or research/evaluator waves return, the orchestrator records summaries, requires
+  evidence, synthesizes the result, and makes the next repo-native route decision
+  without treating the checkpoint as a user handoff.'
 non_goals:
 - Do not create a daemon, scheduler, hidden continuation path, or unbounded
   wakeup loop.

@@ -18,7 +18,7 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.2
+**Version**: v0.1.4.0
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: Codex (skill-routed via `.codex/` + `.agents/skills/azoth-*` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).
@@ -70,7 +70,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 5. **Claude Code primary**. `.claude/` is the development surface. Other platforms via adapters.
 6. **Architecture-first**. Read `docs/AZOTH_ARCHITECTURE.md` before making structural changes.
 7. **Effect labels**. Every `.claude/commands/*.md` file declares `azoth_effect: read | write | mixed` in its frontmatter (`kernel/GOVERNANCE.md`). If a prompt can trigger **Write/Edit** (build path), it must be clearly marked — never hide implementation behind read-only wording.
-8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
+8. **Cursor (Claude)**: Enable Settings → Rules → third-party plugin configs; run `python3 scripts/azoth-deploy.py` (includes `--platforms cursor`) after changing `kernel/templates/platform-adapters/cursor/*.mdc.template` so `.cursor/rules/` stays coupled. Hooks do not run in Cursor; parity rules simulate scope/pipeline gates. For delivery pipelines (`/auto`, `/autonomous-auto`, `/dynamic-full-auto`, `/deliver`, `/deliver-full`), use the **`Task`** tool with `subagent_type` matching each stage per `skills/subagent-router/SKILL.md` — do not inline all stages in main chat when `Task` is available. See `docs/AZOTH_ARCHITECTURE.md` Cursor parity. **Rich welcome UI in Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel) for the full designed layout (ANSI colors, box drawing). **Bash** tool output for the same command may appear collapsed—**expand** the block to see the Rich layout in chat.
    **Codex:** Azoth's custom command UX in Codex is skill-routed. In the **Codex app**, enabled `azoth-*` skills can appear in the slash list. In **Codex CLI/IDE**, use `/skills` or `$azoth-auto`, `$azoth-next`, `$azoth-start`, etc.; the generated `.agents/skills/azoth-*` wrappers are the discoverable command surface there. Raw `/auto`-style tokens are a compatibility fallback only. The default Codex adapter is **instruction-first, skill-routed**, with a single narrow `UserPromptSubmit` compatibility hook; governance and non-Bash tool discipline remain behavioral in `.codex/config.toml`.
 9. **SessionStart orientation (Claude Code):** `hooks.SessionStart` runs **`.claude/hooks/session_start_welcome.py`**, which invokes **`welcome.py --plain`** with correct repo `cwd`, mirrors stdout to **`.azoth/session-orientation.txt`** (gitignored), and **injects** the same text into model context. Treat that as the **single mechanical source**; avoid duplicating the full blob with **`Read`** unless the user needs verbatim output in chat.
    - **Default (token-efficient):** Use the injected SessionStart text as-is. Short proactive routing (e.g. “try `/next` for P5-004”) is **OK** without re-pasting the entire dashboard.
@@ -106,7 +106,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ### Skill index (drift checks)
 
-`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `dynamic-full-auto`, `orientation`
+`context-map`, `structured-autonomy-plan`, `agentic-eval`, `remember`, `prompt-engineer`, `entropy-guard`, `alignment-sync`, `self-improve`, `subagent-router`, `auto-router`, `autonomous-auto`, `stage6-rubric`, `context-recall`, `cursor-review-insights`, `dynamic-full-auto`, `orientation`
 
 ### Coding Standards
 
@@ -136,7 +136,7 @@ Two permanent branches; all other branches are short-lived:
 
 ```
 main                  ← stable releases only (tagged on squash-merge from phase branch)
-phase/v0.2.0-p3       ← active integration branch; receives all merges for current phase
+phase/v0.2.0-p4       ← active integration branch; receives all merges for current phase
   └── patch/<bl-id>   ← one branch per backlog item; deleted immediately after merge
   └── feat/<slug>     ← ad-hoc feature work; deleted immediately after merge
 ```
@@ -184,7 +184,7 @@ multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 3 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p3` for the phase-3 working slice under the `v0.2.0` milestone. Phase 1 (v0.2.0-p1) complete with 45 patches (25 tasks delivered). Phase 2 is closed as complete enough; Phase 3 focus is carry-forward hardening across memory policy, platform parity, roadmap tooling, and bounded evidence refresh. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
+**Current phase:** Phase 4 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p4` for the stabilization, rollout, product extraction, and personal control-plane deployment slice under the `v0.2.0` milestone. Phase 3 is closed after the autonomous-auto campaign reached Green with T-033. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
 
 ## Origin
 

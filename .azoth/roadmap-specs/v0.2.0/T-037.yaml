@@ -1,0 +1,41 @@
+id: T-037
+roadmap_version: v0.2.0
+title: Public azoth publishing pipeline and release automation
+decision_ref:
+- D35
+- D37
+- D38
+- D46
+- D48
+- D50
+intent: >
+  Define and implement a controlled publish path from root-azoth to the public
+  `azoth` repository using mechanical extraction, release checks, tags, and
+  release notes instead of manual copying.
+problem: >
+  The architecture already says root-azoth is the workshop and azoth is the
+  public product, but the CI/CD handoff is not yet an executable release lane
+  with fail-closed validation.
+scope:
+- Define the publish flow from root checkout to extracted staging tree to public product repo.
+- Add or update CI/CD scripts for release-candidate validation and product-repo update handoff.
+- Define tag policy for `v0.2.0-rc.N` and final `v0.2.0` release candidates.
+- Generate release notes from roadmap tasks and release-plan evidence.
+- Keep manual human approval before any public push or release publication unless separately approved.
+non_goals:
+- Do not merge or publish without explicit operator approval.
+- Do not create package-manager distribution channels.
+- Do not change Azoth governance semantics to support publishing.
+acceptance:
+- A documented command sequence can update a clean public azoth checkout from an extracted release candidate.
+- CI/release validation blocks stale generated mirrors, extraction failure, sanitization leaks, and failing product smoke checks.
+- Release notes template names scope, version, source commit, extract command, validation evidence, and known residual risks.
+- Final public push/release remains human-gated.
+dependencies:
+- T-036
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Start with GitHub repo/tag/release automation. Defer package channels
+  until after the first clean public product release.

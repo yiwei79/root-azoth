@@ -29,8 +29,8 @@ non_goals:
   bank.
 - Do not mutate M1/kernel governance policy.
 acceptance:
-- `/start`, `/roadmap`, or a closely related routing surface exposes tracked planning-bank
-  state when no backlog item is claimable.
+- '`/start`, `/roadmap`, or a closely related routing surface exposes tracked planning-bank
+  state when no backlog item is claimable.'
 - The surfaced state distinguishes design banks, initiative banks, proposal drafts,
   and executable backlog/spec work.
 - The routing text recommends refinement or explicit hydration rather than direct

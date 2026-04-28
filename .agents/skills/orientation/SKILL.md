@@ -11,8 +11,9 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p3 working slice**
-(Phase 8 in `azoth.yaml`), and the **expanded development workflow** so agents load it
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p4
+stabilization and rollout slice** (lifecycle Phase 8 in `azoth.yaml`), and the
+**expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
 ## When to Use
@@ -91,21 +92,18 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 2) — memory · declarative swarm depth · platform strategy 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 4) — stabilization · release · control plane 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 2`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p3` for the current working slice, `current_phase: 2`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** planning drift repair moved stale p2 carry-forward work into history. The live `v0.2.0-p3` slice now contains only **T-KRP-A** through **T-KRP-E** for **INI-KRP-001**. **T-KRP-A** is hydrated into real backlog/spec state and is the next scope-ready task; **T-KRP-B** through **T-KRP-E** remain roadmap-planned follow-ons. High-priority open initiatives now include **INI-KRP-001**, **INI-RST-001**, **INI-MEM-004**, and **INI-RST-003**; completed carry-forward containers such as **INI-MEM-001**, **INI-PLT-001**, and **INI-PLT-006** are phase-null history until a new live slice is scheduled. **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
-- **Workstreams (roadmap task ids / initiatives):**
-  - **T-KRP-A / INI-KRP-001** — next scope-ready slice: embed the Karpathy behavioral layer into `CLAUDE.md` as the lowest-effort, highest-reach activation point.
-  - **T-KRP-B / INI-KRP-001** — queued follow-on slice: add a dedicated `karpathy-principles` skill for injectable discipline.
-  - **T-KRP-C / INI-KRP-001** — queued follow-on slice: harden builder posture around surgical changes and simplicity-first execution.
-  - **T-KRP-D / INI-KRP-001** — queued follow-on slice: add orchestrator assumption-surfacing at goal classification time.
-  - **T-KRP-E / INI-KRP-001** — queued follow-on slice: add goal-to-success-criteria gating in `structured-autonomy-plan` before the autonomous loop expands.
-  - **P1-015 / INI-RST-003** — true multi-writer safety remains staged behind the platform/bootstrap path.
-  - **P1-002 / INI-RST-001** — declarative swarm / eval-wave specification remains the run-state depth track after ledger foundations.
-  - **P1-009 / INI-PLT-002** — Cursor session-open parity remains a medium-priority adapter-hardening slice.
-  - **P1-011 / INI-EFF-001** — token and inference efficiency remains available once platform/memory triage settles.
-  - **P5-006 / INI-UX-001** — deferred narrow-terminal UX polish.
+- **Canonical state:** `azoth.yaml` `version: 0.1.4.0`, `phase: 4`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p4`, `current_phase: 4`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; rollout plan **`.azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md`**.
+- **Phase policy:** v0.2.0-p4 is a stabilization freeze. Do not schedule new feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until release readiness closes.
+- **Execution queue:** p3 carry-forward and autonomous-auto feature work are complete through **T-033**. The live p4 queue is task-backed rather than initiative-backed:
+  - **T-034** — freeze milestone baseline and release-readiness gate.
+  - **T-035** — generated surface and planning-truth stabilization.
+  - **T-036** — product extraction release candidate and consumer smoke test.
+  - **T-037** — public azoth publishing pipeline and release automation.
+  - **T-038** — personal root control-plane deployment model.
+  - **T-039** — release candidate validation and rollout closeout.
+- **Operating model:** keep three planes separate: `root-azoth` as private development workshop, `azoth` as clean extracted public product, and the operator personal root as an installed Azoth deployment for project and knowledge control.
 
 ## Planning Sources
 
