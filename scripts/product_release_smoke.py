@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 EXTRACTOR = ROOT / "scripts" / "azoth_extract_product.py"
 
 TEXT_SUFFIXES = {".md", ".yaml", ".yml", ".json", ".py", ".txt", ".toml"}
+REDACTION_PLACEHOLDER = "{{REDACTED}}"
 
 ABSENT_PREFIXES = (
     ".azoth/",
@@ -134,12 +135,15 @@ def assert_absent_prefixes(root: Path) -> None:
 
 
 def assert_sanitized(root: Path, strip_patterns: list[str]) -> None:
+    effective_patterns = [
+        pattern for pattern in strip_patterns if pattern and pattern != REDACTION_PLACEHOLDER
+    ]
     hits: list[str] = []
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        for pattern in strip_patterns:
+        for pattern in effective_patterns:
             if pattern in text:
                 hits.append(f"{path.relative_to(root).as_posix()}:{pattern}")
     if hits:
