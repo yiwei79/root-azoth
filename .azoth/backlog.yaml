@@ -3386,10 +3386,10 @@ items:
   created_date: '2026-04-28'
   description: Turn the existing product extractor into a release-candidate path by
     extracting a clean azoth tree, validating sanitization and generated public CI,
-    then smoke-testing installation into a temporary consumer project. Completed
-    with python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke;
-    bash consumer install passed and PowerShell was explicitly skipped because
-    pwsh/powershell is unavailable on this host.
+    then smoke-testing installation into a temporary consumer project. Completed with
+    python3 scripts/product_release_smoke.py --out /private/tmp/azoth-product-rc-smoke;
+    bash consumer install passed and PowerShell was explicitly skipped because pwsh/powershell
+    is unavailable on this host.
   roadmap_ref: T-036
   decision_ref:
   - D34
@@ -3414,9 +3414,8 @@ items:
   description: Define and implement the controlled CI/CD path from root-azoth extraction
     to the public azoth repository, including release tags, GitHub release notes,
     fail-closed checks, and no manual copying of scaffold-only state. Completed as
-    a handoff-ready, human-gated public release lane in
-    .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-RELEASE-HANDOFF.md; public rsync,
-    commit, tag, push, and GitHub release publication were not executed.
+    a handoff-ready, human-gated public release lane in .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-RELEASE-HANDOFF.md;
+    public rsync, commit, tag, push, and GitHub release publication were not executed.
   roadmap_ref: T-037
   decision_ref:
   - D35
@@ -3439,10 +3438,9 @@ items:
   description: Design the operator personal root as an installed Azoth deployment
     separate from root-azoth development and public azoth product publishing, including
     knowledge-base boundaries, source connections, update cadence, and project onboarding
-    ergonomics. Completed as a design-only deployment model in
-    .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md; live personal-root
-    repository creation remains blocked on explicit operator approval of target
-    path, privacy boundary, source connections, pilots, and RC/stable cadence.
+    ergonomics. Completed as a design-only deployment model in .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md;
+    live personal-root repository creation remains blocked on explicit operator approval
+    of target path, privacy boundary, source connections, pilots, and RC/stable cadence.
   roadmap_ref: T-038
   decision_ref:
   - D11
@@ -3472,9 +3470,9 @@ items:
     learning capture/inbox schema validity, route-chain proof, protected-stop proof,
     and release handoff before closing v0.2.0-p4. The first stable release cannot
     be tagged until the full root test suite is green, the learning-system blockers
-    are fixed or listed as release blockers, and the operator-facing claim is
-    calibrated as supervised campaign-bounded autonomy, not global ungated
-    self-modification or silent inbox draining.
+    are fixed or listed as release blockers, and the operator-facing claim is calibrated
+    as supervised campaign-bounded autonomy, not global ungated self-modification
+    or silent inbox draining.
   roadmap_ref: T-039
   decision_ref:
   - D11
@@ -3554,3 +3552,32 @@ items:
   - D52
   blocked_by:
   - T-040
+- id: T-042
+  title: Personal knowledge Batch 0 candidate review artifact
+  source: roadmap-scaffold-2026-04-29
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  completed_date: '2026-04-29'
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-04-29'
+  description: Create a root-side Batch 0 candidate-review artifact for 5-10 personal
+    knowledge candidates with provenance, rationale, safety classification, decision
+    state, and validator evidence. Stop before personal-root mutation, card creation,
+    recall integration, source registry/project onboarding, or public release work.
+  roadmap_ref: T-042
+  initiative_ref: INI-PKB-001
+  decision_ref:
+  - D11
+  - D30
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-041

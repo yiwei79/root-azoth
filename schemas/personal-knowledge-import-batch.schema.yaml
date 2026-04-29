@@ -11,6 +11,11 @@ required:
 candidate_required:
   - candidate_id
   - decision
+  - rationale
+  - safety_classification
+  - privacy
+  - authority_home
+  - freshness
   - source_refs
 enums:
   source_plane:
@@ -24,9 +29,19 @@ enums:
     - rejected
     - revise
     - defer
+  safety_classification:
+    - approved_source_candidate
+    - manual_excerpt_required
+    - blocked_raw_bulk_import
+  privacy:
+    - public
+    - internal
+    - private
+    - secret_pointer_only
 constraints:
   candidates_min: 1
   approved_candidates_require_card_path: true
   approved_card_path_prefix: .azoth/knowledge/cards/
   rejected_candidates_require_reason: true
+  candidate_review_after_required: true
   operator_review_required_before_deploy: true

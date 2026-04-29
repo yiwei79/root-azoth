@@ -1,0 +1,88 @@
+id: T-042
+roadmap_version: v0.2.0
+title: Personal knowledge Batch 0 candidate review artifact
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Create a root-side Batch 0 candidate-review artifact for a tiny reviewed set
+  of personal knowledge candidates. The artifact should make candidate source
+  pointers, rationale, safety classification, decision state, and validation
+  evidence explicit, then stop for operator review before any card deployment.
+problem: >
+  T-040 created the empty personal-root knowledge skeleton and validator, and
+  T-041 added read-only source inventory. The next unsafe leap would be creating
+  personal-root cards or recall infrastructure directly. This slice proves the
+  candidate-review boundary first, inside root-azoth, without mutating
+  personal-root or draining inbox/memory surfaces.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+- .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+- .azoth/roadmap-specs/v0.2.0/T-041.yaml
+scope:
+- Create only a root-side Batch 0 candidate-review artifact, expected at
+  `.azoth/knowledge-import-candidates/batch-000-root-azoth.yaml` unless the
+  implementation plan identifies a better repo-local reviewed-candidate path.
+- Include 5 to 10 candidate entries selected from approved root-side source
+  inventory evidence, with source pointer, source plane, rationale, safety
+  classification, privacy/authority framing, decision state, and freshness
+  metadata.
+- Use the existing personal knowledge validator path where possible, or extend
+  it narrowly if the review artifact contract needs a small root-side check.
+- Preserve the three-plane boundary: root-azoth owns review evidence,
+  personal-root receives nothing in this slice, and public azoth release work
+  stays closed.
+- End with an operator-facing review handoff that clearly separates approve,
+  reject, and revise decisions for each candidate.
+non_goals:
+- Do not mutate `/Users/yiwei/GithubRepos/personal-azoth-root` or any
+  personal-root files.
+- Do not create personal knowledge card files or deploy Batch 0 cards.
+- Do not create source registry rows, project inventory rows, project onboarding
+  state, or external-source connections.
+- Do not add recall, retrieval, vector, graph, or session-start integration.
+- Do not process untrusted-source autonomous-auto inbox items or run a broad
+  source-normalization/intake sweep.
+- Do not reopen p4 release blockers, publish public azoth artifacts, or mutate
+  governance/kernel/instruction surfaces.
+acceptance:
+- Candidate artifact validates structurally.
+- Every candidate has source pointer, rationale, safety classification, and
+  decision state.
+- No personal-root files are mutated.
+- No Batch 0 card files are created.
+- Source registry/project onboarding, recall integration, and public release
+  work remain untouched.
+- >
+  `python3 scripts/personal_knowledge_validate.py --batch .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml`
+  passes, or the implementation records the exact narrower validator command if
+  the review artifact intentionally remains pre-deployment.
+- >
+  `python3 scripts/roadmap_dashboard.py` passes after implementation.
+- >
+  `python3 scripts/azoth-deploy.py --check` passes after implementation.
+- The final handoff presents candidate decisions for operator review and
+  explicitly confirms no personal-root mutation, no cards, no recall, no source
+  onboarding, and no public release action happened.
+dependencies:
+- T-041
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Keep this as a candidate-review artifact slice only. If candidate selection,
+  validator refinement, or review-handoff design grows too large, split before
+  implementation and preserve card deployment, recall, source onboarding, and
+  public release as later explicit tasks.

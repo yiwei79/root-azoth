@@ -14,7 +14,6 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import personal_knowledge_validate  # noqa: E402
 from personal_knowledge_validate import (  # noqa: E402
     PersonalKnowledgeValidationError,
     validate_card,
@@ -71,6 +70,17 @@ def _valid_candidate(**overrides: Any) -> dict[str, Any]:
     candidate = {
         "candidate_id": "candidate-001",
         "decision": "approved",
+        "rationale": (
+            "Candidate captures a small release-readiness lesson from approved root-side "
+            "evidence without deploying it before operator review."
+        ),
+        "safety_classification": "approved_source_candidate",
+        "authority_home": "root-azoth",
+        "privacy": "private",
+        "freshness": {
+            "reviewed_at": "2026-04-29",
+            "review_after": "2026-05-29",
+        },
         "card_path": ".azoth/knowledge/cards/root-azoth/kb-root-azoth-001.yaml",
         "source_refs": [_valid_source_ref()],
         "proposed_card": _valid_card(),
@@ -161,6 +171,16 @@ def test_schema_files_encode_personal_knowledge_contract() -> None:
         "glossary_term",
     ]
     assert batch_schema["constraints"]["operator_review_required_before_deploy"] is True
+    assert "rationale" in batch_schema["candidate_required"]
+    assert "safety_classification" in batch_schema["candidate_required"]
+    assert "privacy" in batch_schema["candidate_required"]
+    assert "authority_home" in batch_schema["candidate_required"]
+    assert "freshness" in batch_schema["candidate_required"]
+    assert batch_schema["enums"]["safety_classification"] == [
+        "approved_source_candidate",
+        "manual_excerpt_required",
+        "blocked_raw_bulk_import",
+    ]
     assert batch_schema["enums"]["candidate_decision"] == [
         "approved",
         "rejected",
@@ -222,6 +242,81 @@ def test_valid_import_batch_passes(tmp_path: Path) -> None:
     batch_path = _write_yaml(tmp_path / "batch.yaml", _valid_batch())
 
     validate_import_batch(batch_path)
+
+
+def test_deferred_pre_deployment_batch_requires_review_metadata(tmp_path: Path) -> None:
+    deferred = _valid_candidate(decision="defer")
+    deferred.pop("card_path")
+    batch_path = _write_yaml(
+        tmp_path / "batch.yaml",
+        _valid_batch(
+            candidates=[deferred],
+            operator_review={"approved": False, "reviewed_by": "operator"},
+        ),
+    )
+
+    validate_import_batch(batch_path)
+
+
+def test_batch_candidate_requires_rationale(tmp_path: Path) -> None:
+    candidate = _valid_candidate(decision="defer")
+    candidate.pop("card_path")
+    candidate.pop("rationale")
+    batch_path = _write_yaml(
+        tmp_path / "batch.yaml",
+        _valid_batch(
+            candidates=[candidate],
+            operator_review={"approved": False, "reviewed_by": "operator"},
+        ),
+    )
+
+    with pytest.raises(PersonalKnowledgeValidationError, match="rationale"):
+        validate_import_batch(batch_path)
+
+
+def test_batch_candidate_invalid_safety_classification_fails_closed(tmp_path: Path) -> None:
+    candidate = _valid_candidate(decision="defer", safety_classification="trust_me")
+    candidate.pop("card_path")
+    batch_path = _write_yaml(
+        tmp_path / "batch.yaml",
+        _valid_batch(
+            candidates=[candidate],
+            operator_review={"approved": False, "reviewed_by": "operator"},
+        ),
+    )
+
+    with pytest.raises(PersonalKnowledgeValidationError, match="safety_classification"):
+        validate_import_batch(batch_path)
+
+
+@pytest.mark.parametrize(
+    ("candidate_update", "expected_match"),
+    [
+        ({"privacy": "broadcast"}, "privacy"),
+        ({"authority_home": ""}, "authority_home"),
+        ({"freshness": {"review_after": "2026-05-29"}}, "freshness.reviewed_at"),
+        ({"freshness": {"reviewed_at": "2026-04-29"}}, "freshness.review_after"),
+        ({"freshness": {"reviewed_at": "soon", "review_after": "2026-05-29"}}, "freshness.reviewed_at"),
+        ({"freshness": {"reviewed_at": "2026-04-29", "review_after": "later"}}, "freshness.review_after"),
+    ],
+)
+def test_batch_candidate_review_metadata_fails_closed(
+    tmp_path: Path,
+    candidate_update: dict[str, Any],
+    expected_match: str,
+) -> None:
+    candidate = _valid_candidate(decision="defer", **candidate_update)
+    candidate.pop("card_path")
+    batch_path = _write_yaml(
+        tmp_path / "batch.yaml",
+        _valid_batch(
+            candidates=[candidate],
+            operator_review={"approved": False, "reviewed_by": "operator"},
+        ),
+    )
+
+    with pytest.raises(PersonalKnowledgeValidationError, match=expected_match):
+        validate_import_batch(batch_path)
 
 
 def test_batch_enums_fail_closed(tmp_path: Path) -> None:

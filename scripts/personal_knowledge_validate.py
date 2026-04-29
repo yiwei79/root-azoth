@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import sys
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -261,13 +260,38 @@ def _validate_candidate(
     *,
     label: str,
     candidate_required: list[str],
-    allowed_decisions: list[str],
+    enums: dict[str, Any],
     has_operator_deploy_approval: bool,
 ) -> None:
     candidate_doc = _require_mapping(candidate, label=label)
     _require_fields(candidate_doc, candidate_required, label=label)
     _require_non_empty_string(candidate_doc.get("candidate_id"), label=f"{label}: candidate_id")
-    _require_enum(candidate_doc, "decision", allowed_decisions, label=label)
+    decisions = enums.get("candidate_decision")
+    safety_classifications = enums.get("safety_classification")
+    privacy_values = enums.get("privacy")
+    if not isinstance(decisions, list) or not isinstance(
+        safety_classifications,
+        list,
+    ) or not isinstance(privacy_values, list):
+        raise PersonalKnowledgeValidationError(
+            "schemas/personal-knowledge-import-batch.schema.yaml: missing candidate enum contract"
+        )
+    _require_enum(candidate_doc, "decision", decisions, label=label)
+    _require_non_empty_string(candidate_doc.get("rationale"), label=f"{label}: rationale")
+    _require_enum(
+        candidate_doc,
+        "safety_classification",
+        safety_classifications,
+        label=label,
+    )
+    _require_enum(candidate_doc, "privacy", privacy_values, label=label)
+    _require_non_empty_string(
+        candidate_doc.get("authority_home"),
+        label=f"{label}: authority_home",
+    )
+    freshness = _require_mapping(candidate_doc.get("freshness"), label=f"{label}: freshness")
+    _require_date_like(freshness.get("reviewed_at"), label=f"{label}: freshness.reviewed_at")
+    _require_date_like(freshness.get("review_after"), label=f"{label}: freshness.review_after")
     _validate_source_refs(candidate_doc.get("source_refs"), label=f"{label}: source_refs")
 
     card_path = candidate_doc.get("card_path")
@@ -337,7 +361,7 @@ def _validate_import_batch_doc(doc: dict[str, Any], *, label: str) -> None:
             candidate,
             label=f"{label}: candidates[{index}]",
             candidate_required=candidate_required,
-            allowed_decisions=decisions,
+            enums=enums,
             has_operator_deploy_approval=has_operator_deploy_approval,
         )
 

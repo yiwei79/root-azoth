@@ -636,6 +636,57 @@ initiatives:
   - D50
   - D52
   spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
+- id: INI-PKB-001
+  title: Personal knowledge Batch 0 and deployment finalization
+  category: personal-control-plane
+  theme: E
+  dimensions:
+    themes:
+    - E
+    categories:
+    - personal-control-plane
+    tracks:
+    - personal-knowledge
+    - batch-zero
+    - deployment-finalization
+  phase: v0.2.0-p4
+  priority: high
+  task_ref: T-042
+  slices:
+  - task_ref: T-042
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: primary
+  initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
+  source_proposal_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+  discovery_status: slice_pkb_001_a_complete_waiting_operator_candidate_decisions
+  candidate_slice_ref: slice-pkb-001-a
+  readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
+  next_discovery_action: Review the deferred Batch 0 candidates in .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml;
+    only after operator candidate decisions should a later session consider slice-pkb-001-b
+    card deployment readiness.
+  summary: 'Plan the post-v0.2.0 personal knowledge continuation in small governed
+    increments: Batch 0 candidate review first, approved card deployment later, recall
+    only after the card contract proves useful, and source registry onboarding as
+    a separate future slice. This initiative must not mutate personal-root, create
+    cards, process untrusted inbox items, or reopen public release work in the Batch
+    0 review slice.
+
+    '
+  decision_ref:
+  - D11
+  - D30
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2043,12 +2094,12 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 3
+  current_patch: 4
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
-    also prove included features end-to-end, including the campaign-bounded
-    autonomous learning/self-heal contract.'
+    also prove included features end-to-end, including the campaign-bounded autonomous
+    learning/self-heal contract.'
   phase_scope:
   - 4
   themes:
@@ -2071,8 +2122,8 @@ versions:
     to make Azoth safe to use for real projects by separating root-azoth as the private
     development workshop, azoth as the clean published product, and the operator personal
     root as an installed Azoth control-plane deployment. Stable release closeout requires
-    a green full root test suite and evidence that autonomous-auto learning/self-heal is
-    supervised, campaign-bounded, and still blocked by fresh approval and protected-boundary
+    a green full root test suite and evidence that autonomous-auto learning/self-heal
+    is supervised, campaign-bounded, and still blocked by fresh approval and protected-boundary
     gates. Inbox reflections remain governed evidence unless a route is explicitly
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
@@ -2163,6 +2214,20 @@ versions:
     - D52
   - id: T-041
     title: Personal knowledge read-only root inventory
+    completed_date: '2026-04-29'
+    decision_ref:
+    - D11
+    - D30
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D48
+    - D50
+    - D52
+  - id: T-042
+    title: Personal knowledge Batch 0 candidate review artifact
     completed_date: '2026-04-29'
     decision_ref:
     - D11
