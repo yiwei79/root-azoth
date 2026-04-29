@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.0 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 1
+0.1.4.1 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 2
 
 ## Last Session
-- **Session**: 2026-04-29-v0.2.0-stable-publish
-- **Goal**: Publish stable v0.2.0 through the T-037 public handoff after accepted RC and stable-preflight evidence; skip Windows/PowerShell proof for this release and record T-039 closeout evidence.
+- **Session**: 2026-04-29-t-040
+- **Goal**: T-040: Personal knowledge skeleton, schemas, and validator
 - **Session mode**: delivery
-- **Pipeline**: dynamic-full-auto
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-457 (success)
+- **Episode**: ep-458 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.
