@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shlex
 import re
 import subprocess
@@ -38,6 +39,7 @@ DESIGN_REQUIRED_FIELDS = {
     "challenge_log",
     "routing_candidates",
     "readiness",
+    "closeout_history_policy",
     "history",
 }
 
@@ -81,6 +83,19 @@ DESIGN_READINESS = {"continue_refinement", "ready_to_route", "defer", "reject"}
 INITIATIVE_READINESS = {"continue_research", "ready_to_hydrate", "complete", "defer", "reject"}
 INITIATIVE_SLICE_STATUS = {"candidate", "hydrated", "complete", "parked", "rejected"}
 DESIGN_BANK_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CLOSEOUT_HISTORY_POLICY_ID = "planning_bank_closeout_history_merge_policy_v1"
+CLOSEOUT_HISTORY_REQUIRED_METADATA = [
+    "hydrated_at",
+    "session_id",
+    "candidate_slice_ref",
+    "task_ref",
+    "spec_ref",
+    "approval_scope",
+    "approval_basis",
+    "append_policy_ref",
+    "append_mode",
+    "merge_key",
+]
 
 INITIATIVE_SLICE_STRING_FIELDS = {
     "candidate_id",
@@ -162,6 +177,13 @@ def _require_string(doc: dict[str, Any], key: str, *, label: str) -> str:
     return value
 
 
+def _require_mapping(doc: dict[str, Any], key: str, *, label: str) -> dict[str, Any]:
+    value = doc.get(key)
+    if not isinstance(value, dict):
+        raise PlanningBankValidationError(f"{label}: {key} must be a mapping")
+    return value
+
+
 def _validate_readiness(
     readiness: Any,
     *,
@@ -182,6 +204,61 @@ def _validate_readiness(
     if status == ready_status and human_decision != "approved":
         raise PlanningBankValidationError(
             f"{label}: {ready_status} requires readiness.human_decision == 'approved'"
+        )
+
+
+def _validate_closeout_history_policy(policy: Any, *, label: str) -> None:
+    if not isinstance(policy, dict):
+        raise PlanningBankValidationError(f"{label}: closeout_history_policy must be a mapping")
+    if policy.get("policy_id") != CLOSEOUT_HISTORY_POLICY_ID:
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.policy_id must be {CLOSEOUT_HISTORY_POLICY_ID!r}"
+        )
+    if policy.get("merge_strategy") != "append_only":
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.merge_strategy must be 'append_only'"
+        )
+
+    routine_closeout = _require_mapping(
+        policy,
+        "routine_closeout",
+        label=f"{label}: closeout_history_policy",
+    )
+    if routine_closeout.get("planning_bank_write_mode") != "forbidden":
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.routine_closeout.planning_bank_write_mode "
+            "must be 'forbidden'"
+        )
+
+    explicit_history = _require_mapping(
+        policy,
+        "explicit_hydration_history",
+        label=f"{label}: closeout_history_policy",
+    )
+    if explicit_history.get("append_path") != "hydration_history":
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.explicit_hydration_history.append_path "
+            "must be 'hydration_history'"
+        )
+    if explicit_history.get("append_position") != "append_tail":
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.explicit_hydration_history.append_position "
+            "must be 'append_tail'"
+        )
+    if explicit_history.get("required_metadata") != CLOSEOUT_HISTORY_REQUIRED_METADATA:
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.explicit_hydration_history.required_metadata "
+            "must match the validated append metadata contract"
+        )
+    non_laundering_rule = _non_empty_string(policy.get("non_laundering_rule"))
+    if (
+        non_laundering_rule is None
+        or "historical" not in non_laundering_rule
+        or "non retroactive pipeline compliance" not in non_laundering_rule
+    ):
+        raise PlanningBankValidationError(
+            f"{label}: closeout_history_policy.non_laundering_rule must preserve "
+            "historical/non retroactive pipeline compliance language"
         )
 
 
@@ -219,6 +296,7 @@ def validate_design_bank(path: Path, *, repo_root: Path = ROOT) -> None:
         allowed=DESIGN_READINESS,
         ready_status="ready_to_route",
     )
+    _validate_closeout_history_policy(doc.get("closeout_history_policy"), label=str(rel))
 
 
 def validate_initiative_bank(path: Path, *, repo_root: Path = ROOT) -> None:
@@ -416,7 +494,7 @@ def build_initiative_readiness_report(
     non_goals_status = readiness.get("non_goals_status") if use_readiness_candidate_status else None
     scaffold_command = scaffold_command_candidate if ready_to_hydrate else None
 
-    return {
+    report = {
         "initiative_id": doc.get("initiative_id"),
         "initiative_ref": initiative_ref,
         "source_bank_ref": rel.as_posix(),
@@ -443,6 +521,10 @@ def build_initiative_readiness_report(
         "ready_to_hydrate": ready_to_hydrate,
         "scaffold_command": scaffold_command,
     }
+    non_laundering_note = _non_empty_string(readiness.get("non_laundering_note"))
+    if non_laundering_note:
+        report["non_laundering_note"] = non_laundering_note
+    return report
 
 
 def _utc_now() -> str:
@@ -466,6 +548,120 @@ def _scaffold_args(command: str) -> list[str]:
     return [sys.executable, "scripts/roadmap_scaffold.py", *rest]
 
 
+def _parse_instant(value: Any, *, label: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise PlanningBankValidationError(f"{label} must be present")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise PlanningBankValidationError(f"{label} must be an ISO-8601 instant") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _load_scope_gate(repo_root: Path) -> dict[str, Any]:
+    path = repo_root / ".azoth" / "scope-gate.json"
+    if not path.exists():
+        raise PlanningBankValidationError(
+            "hydration requires a live approved scope-gate.json with pipeline_command"
+        )
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PlanningBankValidationError("scope-gate.json must be valid JSON") from exc
+    if not isinstance(loaded, dict):
+        raise PlanningBankValidationError("scope-gate.json root must be a mapping")
+    return loaded
+
+
+def _require_hydration_pipeline_authority(
+    repo_root: Path,
+    report: dict[str, Any],
+    *,
+    session_id: str,
+) -> None:
+    gate = _load_scope_gate(repo_root)
+    if gate.get("approved") is not True:
+        raise PlanningBankValidationError("hydration requires scope-gate.approved == true")
+    if gate.get("closed_at"):
+        raise PlanningBankValidationError("hydration requires an open scope gate")
+    expires_at = _parse_instant(gate.get("expires_at"), label="scope-gate.expires_at")
+    if expires_at <= datetime.now(timezone.utc):
+        raise PlanningBankValidationError("hydration requires an unexpired scope gate")
+
+    if not _non_empty_string(session_id):
+        raise PlanningBankValidationError(
+            "hydration requires --session-id matching the approved scope gate"
+        )
+    gate_session_id = _non_empty_string(gate.get("session_id"))
+    if gate_session_id != session_id:
+        raise PlanningBankValidationError(
+            "hydration session_id must match the approved scope gate"
+        )
+    if not _non_empty_string(gate.get("pipeline_command")):
+        raise PlanningBankValidationError(
+            "hydration requires an approved pipeline_command on scope-gate.json"
+        )
+
+    forbidden_outputs = set(_list_or_empty(gate.get("forbidden_outputs")))
+    blocked_outputs = {
+        "roadmap_hydration",
+        "backlog_mutation",
+        "roadmap_spec_mutation",
+    }
+    forbidden_overlap = sorted(forbidden_outputs & blocked_outputs)
+    if forbidden_overlap:
+        raise PlanningBankValidationError(
+            "scope gate explicitly forbids hydration output(s): "
+            + ", ".join(forbidden_overlap)
+        )
+
+    approval_scope = _non_empty_string(report.get("approval_scope"))
+    if not approval_scope:
+        raise PlanningBankValidationError(
+            "hydration requires a hydration-specific approval_scope"
+        )
+    if not approval_scope.startswith("hydration_specific_"):
+        raise PlanningBankValidationError(
+            "hydration approval_scope must be hydration-specific"
+        )
+    gate_approval_scope = _non_empty_string(gate.get("approval_scope"))
+    if not gate_approval_scope:
+        raise PlanningBankValidationError(
+            "scope gate approval_scope must be present for hydration"
+        )
+    if gate_approval_scope != approval_scope:
+        raise PlanningBankValidationError(
+            "scope gate approval_scope must match the hydration-specific approval scope"
+        )
+
+    initiative_id = _non_empty_string(report.get("initiative_id"))
+    source_bank_ref = _non_empty_string(report.get("source_bank_ref"))
+    source_artifacts = set(str(item) for item in _list_or_empty(gate.get("source_artifacts")))
+    if not initiative_id:
+        raise PlanningBankValidationError("hydration report must name initiative_id")
+    gate_initiative_ref = _non_empty_string(gate.get("source_initiative_ref"))
+    if not gate_initiative_ref:
+        raise PlanningBankValidationError(
+            "scope gate source_initiative_ref must be present"
+        )
+    if gate_initiative_ref != initiative_id:
+        raise PlanningBankValidationError(
+            "scope gate source_initiative_ref must match the hydrated initiative"
+        )
+    if not source_bank_ref:
+        raise PlanningBankValidationError("hydration report must name source_bank_ref")
+    if not source_artifacts:
+        raise PlanningBankValidationError(
+            "scope gate source_artifacts must include the hydrated initiative bank"
+        )
+    if source_bank_ref not in source_artifacts:
+        raise PlanningBankValidationError(
+            "scope gate source_artifacts must include the hydrated initiative bank"
+        )
+
+
 def hydrate_approved_initiative_candidate(
     path: Path,
     *,
@@ -482,6 +678,7 @@ def hydrate_approved_initiative_candidate(
 
     command = str(report.get("scaffold_command") or "").strip()
     args = _scaffold_args(command)
+    _require_hydration_pipeline_authority(repo_root, report, session_id=session_id)
     result = subprocess.run(args, cwd=repo_root, text=True, capture_output=True, check=False)
     if result.returncode != 0:
         detail = (result.stderr or result.stdout or "roadmap_scaffold.py failed").strip()
@@ -529,8 +726,7 @@ def hydrate_approved_initiative_candidate(
     history = doc.setdefault("hydration_history", [])
     if not isinstance(history, list):
         raise PlanningBankValidationError("hydration_history must be a list")
-    history.insert(
-        0,
+    history.append(
         {
             "hydrated_at": hydrated_at,
             "session_id": session_id or "unknown-session",
@@ -541,6 +737,9 @@ def hydrate_approved_initiative_candidate(
             "roadmap_ref": task_ref,
             "approval_scope": report.get("approval_scope") or "",
             "approval_basis": report.get("approval_basis") or "",
+            "append_policy_ref": CLOSEOUT_HISTORY_POLICY_ID,
+            "append_mode": "explicit_hydration_append",
+            "merge_key": f"{selected}:{task_ref}:{hydrated_at}",
             "scaffold_command": command,
             "result": (
                 f"Created roadmap/backlog/spec artifacts for {task_ref}; "

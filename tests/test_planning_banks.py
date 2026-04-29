@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -45,6 +46,7 @@ def _write_temp_initiative_bank(repo: Path, *, initiative_id: str = "INI-TEST") 
     bank["initiative_id"] = initiative_id
     if isinstance(bank.get("readiness"), dict):
         bank["readiness"]["source_bank_ref"] = f".azoth/initiative-banks/{initiative_id}.yaml"
+        bank["readiness"].pop("non_laundering_note", None)
     for candidate in bank["candidate_slices"]:
         candidate["initiative_ref"] = initiative_id
         hydration_plan = candidate.get("hydration_plan")
@@ -60,9 +62,135 @@ def _write_temp_initiative_bank(repo: Path, *, initiative_id: str = "INI-TEST") 
     return bank_path, bank
 
 
+def _write_hydration_scope_gate(
+    repo: Path,
+    *,
+    session_id: str = "session-test",
+    initiative_id: str = "INI-TEST",
+    source_bank_ref: str = ".azoth/initiative-banks/INI-TEST.yaml",
+    approval_scope: str = "hydration_specific_slice_evi_002_c",
+) -> Path:
+    gate_path = repo / ".azoth" / "scope-gate.json"
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "approved_by": "human",
+                "session_id": session_id,
+                "expires_at": "2099-01-01T00:00:00Z",
+                "goal": "Hydrate approved planning-bank candidate",
+                "backlog_id": "AD-HOC",
+                "pipeline_command": "dynamic-full-auto",
+                "delivery_pipeline": "dynamic-full-auto",
+                "target_layer": "planning",
+                "source_initiative_ref": initiative_id,
+                "source_artifacts": [source_bank_ref],
+                "approval_scope": approval_scope,
+                "approval_basis": f"Explicitly approves {approval_scope}.",
+            }
+        ),
+        encoding="utf-8",
+    )
+    return gate_path
+
+
+def _write_ready_hydration_candidate(
+    repo: Path,
+    *,
+    approval_scope: str = "hydration_specific_slice_evi_002_c",
+) -> Path:
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["approval_scope"] = approval_scope
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    return bank_path
+
+
 def test_live_planning_banks_validate() -> None:
     validate_design_bank(DESIGN_BANK_PATH)
     validate_initiative_bank(INITIATIVE_BANK_PATH)
+
+
+def test_design_bank_declares_closeout_history_policy() -> None:
+    bank = _load_yaml(DESIGN_BANK_PATH)
+    policy = bank["closeout_history_policy"]
+
+    assert policy["policy_id"] == "planning_bank_closeout_history_merge_policy_v1"
+    assert policy["merge_strategy"] == "append_only"
+    assert policy["routine_closeout"]["planning_bank_write_mode"] == "forbidden"
+    assert policy["explicit_hydration_history"]["append_path"] == "hydration_history"
+    assert policy["explicit_hydration_history"]["append_position"] == "append_tail"
+    assert policy["explicit_hydration_history"]["required_metadata"] == [
+        "hydrated_at",
+        "session_id",
+        "candidate_slice_ref",
+        "task_ref",
+        "spec_ref",
+        "approval_scope",
+        "approval_basis",
+        "append_policy_ref",
+        "append_mode",
+        "merge_key",
+    ]
+    assert "historical" in policy["non_laundering_rule"]
+    assert "non retroactive pipeline compliance" in policy["non_laundering_rule"]
+
+
+def test_design_bank_validation_requires_closeout_history_policy(tmp_path: Path) -> None:
+    repo = tmp_path
+    bank_path = repo / ".azoth" / "design-banks" / "planning-banks-layer.yaml"
+    bank_path.parent.mkdir(parents=True)
+    bank = _load_yaml(DESIGN_BANK_PATH)
+    bank.pop("closeout_history_policy", None)
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match="closeout_history_policy"):
+        validate_design_bank(bank_path, repo_root=repo)
+
+
+@pytest.mark.parametrize(
+    ("policy_update", "routine_update", "error_match"),
+    [
+        ({"merge_strategy": "newest_first"}, {}, "merge_strategy"),
+        ({}, {"planning_bank_write_mode": "append"}, "planning_bank_write_mode"),
+        ({"non_laundering_rule": "Do not launder."}, {}, "non_laundering_rule"),
+    ],
+)
+def test_design_bank_validation_rejects_non_merge_safe_closeout_policy(
+    tmp_path: Path,
+    policy_update: dict,
+    routine_update: dict,
+    error_match: str,
+) -> None:
+    repo = tmp_path
+    bank_path = repo / ".azoth" / "design-banks" / "planning-banks-layer.yaml"
+    bank_path.parent.mkdir(parents=True)
+    bank = _load_yaml(DESIGN_BANK_PATH)
+    policy = bank["closeout_history_policy"]
+    policy.update(policy_update)
+    policy["routine_closeout"].update(routine_update)
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match=error_match):
+        validate_design_bank(bank_path, repo_root=repo)
 
 
 def test_ini_evi_002_bank_is_authoritative_planning_state() -> None:
@@ -95,7 +223,7 @@ def test_ini_evi_002_candidate_slices_are_planning_evidence_only() -> None:
             assert candidate["known_non_goals"]
 
 
-def test_ini_evi_002_bank_reconciles_completed_helper_and_blocks_duplicate_hydration() -> None:
+def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     readiness = bank.get("readiness")
     completed_candidate = next(
@@ -113,20 +241,25 @@ def test_ini_evi_002_bank_reconciles_completed_helper_and_blocks_duplicate_hydra
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-d"
     )
+    distinct_follow_on = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-e"
+    )
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
-    assert readiness["readiness_status"] == "continue_research"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["human_decision"] == "approved"
-    assert readiness["approval_scope"] == "planning_seed_only_no_hydration"
-    assert readiness["candidate_first_slice"] == "slice-evi-002-d"
-    assert readiness["next_readiness_gate"] == "define_distinct_follow_on_before_hydration"
-    assert (
-        readiness["next_candidate_ref"]
-        == ".azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml"
-    )
+    assert readiness["approval_scope"] == "hydration_specific_slice_evi_002_e"
+    assert readiness["candidate_first_slice"] == "slice-evi-002-e"
+    assert readiness["next_readiness_gate"] == "hydrate_distinct_closeout_history_policy_slice"
+    assert readiness["next_candidate_ref"] == "slice-evi-002-e"
     assert bank["hydration_history"]
-    assert bank["hydration_history"][-1]["task_ref"] == "T-022"
+    latest_hydration = bank["hydration_history"][0]
+    assert latest_hydration["task_ref"] == "T-043"
+    assert latest_hydration["pipeline_compliance"] == "historically_bypassed"
+    assert "not retroactively pipeline-compliant" in latest_hydration["audit_note"]
     assert completed_candidate["status"] == "complete"
     assert completed_candidate["proposed_task_id"] == "T-019"
     assert completed_candidate["acceptance_criteria"]
@@ -137,6 +270,9 @@ def test_ini_evi_002_bank_reconciles_completed_helper_and_blocks_duplicate_hydra
     assert next_candidate["status"] == "complete"
     assert next_candidate["proposed_task_id"] == "T-022"
     assert next_candidate["open_questions"] == []
+    assert distinct_follow_on["status"] == "hydrated"
+    assert distinct_follow_on["proposed_task_id"] == "T-043"
+    assert distinct_follow_on["open_questions"] == []
 
 
 def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
@@ -144,37 +280,36 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     candidate = next(
         candidate
         for candidate in bank["candidate_slices"]
-        if candidate["candidate_id"] == "slice-evi-002-d"
+        if candidate["candidate_id"] == "slice-evi-002-e"
     )
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
     assert report["initiative_id"] == "INI-EVI-002"
     assert report["initiative_ref"] == "INI-EVI-002"
     assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
-    assert report["readiness_status"] == "continue_research"
+    assert report["readiness_status"] == "ready_to_hydrate"
     assert report["human_decision"] == "approved"
-    assert report["approval_scope"] == "planning_seed_only_no_hydration"
-    assert report["candidate_first_slice"] == "slice-evi-002-d"
-    assert report["candidate_id"] == "slice-evi-002-d"
-    assert report["candidate_slice_ref"] == "slice-evi-002-d"
-    assert report["candidate_task_ref"] == "T-022"
-    assert report["candidate_status"] == "complete"
-    assert report["proposed_title"] == "Plan-only initiative hydration handoff helper"
+    assert report["approval_scope"] == "hydration_specific_slice_evi_002_e"
+    assert report["candidate_first_slice"] == "slice-evi-002-e"
+    assert report["candidate_id"] == "slice-evi-002-e"
+    assert report["candidate_slice_ref"] == "slice-evi-002-e"
+    assert report["candidate_task_ref"] == "T-043"
+    assert report["candidate_status"] == "hydrated"
+    assert report["proposed_title"] == "Planning-bank closeout history merge policy"
     assert report["target_layer"] == "infrastructure"
     assert report["delivery_pipeline"] == "standard"
     assert report["acceptance"] == candidate["acceptance_criteria"]
     assert report["acceptance_criteria_status"] == "stable"
     assert report["non_goals"] == candidate["known_non_goals"]
     assert report["non_goals_status"] == "stable"
-    assert report["freshness_status"] == "replay_reconciled_after_t022_duplicate_detection"
+    assert report["freshness_status"] == "current_as_of_2026_04_29_hydrated_to_t_043"
+    assert "historically bypassed" in report["non_laundering_note"]
     assert (
         report["hydration_recommendation"]
-        == "T-022 already completed the plan-only initiative hydration handoff helper. Do not create T-043 for the same helper identity; define a distinct follow-on before any new hydration."
+        == "slice-evi-002-e has been hydrated as T-043. Do not repeat hydration; route implementation through a separate delivery child."
     )
     assert report["blocking_reasons"] == [
-        "candidate.status is complete; no hydration action remains",
-        "readiness.readiness_status must be ready_to_hydrate",
-        "readiness.approval_scope planning_seed_only_no_hydration does not authorize hydration",
+        "candidate.status is hydrated; no hydration action remains",
     ]
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
@@ -310,7 +445,17 @@ def test_hydrate_approved_candidate_delegates_to_roadmap_scaffold_and_records_hi
         'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
         "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
     )
+    sentinel_history = {
+        "hydrated_at": "2026-01-01T00:00:00Z",
+        "session_id": "sentinel-session",
+        "candidate_slice_ref": "sentinel-slice",
+        "task_ref": "T-000",
+        "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-000.yaml",
+        "result": "Existing sentinel row must remain at index 0.",
+    }
+    bank["hydration_history"] = [sentinel_history]
     bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    _write_hydration_scope_gate(repo)
 
     calls: list[list[str]] = []
 
@@ -350,11 +495,198 @@ def test_hydrate_approved_candidate_delegates_to_roadmap_scaffold_and_records_hi
     assert hydrated["proposed_task_id"] == "T-999"
     assert hydrated["hydration_plan"]["mode"] == "executed"
     assert hydrated["hydration_plan"]["hydrated_spec_ref"].endswith("T-999.yaml")
-    assert loaded["hydration_history"][0]["session_id"] == "session-test"
-    assert loaded["hydration_history"][0]["task_ref"] == "T-999"
+    assert loaded["hydration_history"][0] == sentinel_history
+    appended_history = loaded["hydration_history"][-1]
+    assert appended_history["session_id"] == "session-test"
+    assert appended_history["task_ref"] == "T-999"
+    assert appended_history["append_policy_ref"] == (
+        "planning_bank_closeout_history_merge_policy_v1"
+    )
+    assert appended_history["append_mode"] == "explicit_hydration_append"
+    assert appended_history["merge_key"] == (
+        "slice-evi-002-c:T-999:2026-04-26T13:31:45Z"
+    )
     assert loaded["readiness"]["hydration_recommendation"].startswith(
         "slice-evi-002-c has been hydrated as T-999"
     )
+
+
+def test_hydrate_approved_candidate_refuses_without_pipeline_scope(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["approval_scope"] = "hydration_specific_slice_evi_002_c"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match="scope-gate.json"):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+            session_id="session-test",
+        )
+
+
+def test_hydrate_approved_candidate_refuses_scope_that_forbids_hydration(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = "approved"
+    readiness["freshness_status"] = "fresh"
+    readiness["approval_scope"] = "hydration_specific_slice_evi_002_c"
+    readiness["candidate_first_slice"] = "slice-evi-002-c"
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-c"
+    )
+    candidate["status"] = "candidate"
+    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
+    candidate["open_questions"] = []
+    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
+    candidate["hydration_plan"]["scaffold_command"] = (
+        'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
+        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
+    )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    _write_hydration_scope_gate(repo)
+    gate_path = repo / ".azoth" / "scope-gate.json"
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    gate["forbidden_outputs"] = ["roadmap_hydration"]
+    gate_path.write_text(json.dumps(gate), encoding="utf-8")
+
+    with pytest.raises(PlanningBankValidationError, match="forbids hydration"):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+            session_id="session-test",
+        )
+
+
+@pytest.mark.parametrize(
+    ("gate_updates", "remove_keys", "error_match"),
+    [
+        ({"approved": False}, (), "approved == true"),
+        ({"closed_at": "2098-01-01T00:00:00Z"}, (), "open scope gate"),
+        ({"expires_at": "2000-01-01T00:00:00Z"}, (), "unexpired scope gate"),
+        ({"session_id": "other-session"}, (), "session_id must match"),
+        ({}, ("approval_scope",), "approval_scope must be present"),
+        ({"approval_scope": "hydration_specific_other"}, (), "approval_scope must match"),
+        ({}, ("source_initiative_ref",), "source_initiative_ref must be present"),
+        ({"source_initiative_ref": "INI-OTHER"}, (), "source_initiative_ref must match"),
+        ({}, ("source_artifacts",), "source_artifacts must include"),
+        (
+            {"source_artifacts": [".azoth/initiative-banks/INI-OTHER.yaml"]},
+            (),
+            "source_artifacts must include",
+        ),
+    ],
+)
+def test_hydrate_approved_candidate_refuses_malformed_pipeline_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    gate_updates: dict,
+    remove_keys: tuple[str, ...],
+    error_match: str,
+) -> None:
+    repo = tmp_path
+    bank_path = _write_ready_hydration_candidate(repo)
+    gate_path = _write_hydration_scope_gate(repo)
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    for key in remove_keys:
+        gate.pop(key, None)
+    gate.update(gate_updates)
+    gate_path.write_text(json.dumps(gate), encoding="utf-8")
+
+    def fail_run(*args, **kwargs):  # pragma: no cover - assertion helper
+        raise AssertionError("roadmap_scaffold.py must not run without authority")
+
+    monkeypatch.setattr(planning_bank_validate.subprocess, "run", fail_run)
+
+    with pytest.raises(PlanningBankValidationError, match=error_match):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+            session_id="session-test",
+        )
+
+
+@pytest.mark.parametrize(
+    ("approval_scope", "error_match"),
+    [
+        ("", "hydration-specific approval_scope"),
+        ("planning_seed_only_no_hydration", "planning_seed_only_no_hydration"),
+        ("general_pipeline_approval", "approval_scope must be hydration-specific"),
+    ],
+)
+def test_hydrate_approved_candidate_requires_hydration_specific_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    approval_scope: str,
+    error_match: str,
+) -> None:
+    repo = tmp_path
+    bank_path = _write_ready_hydration_candidate(repo, approval_scope=approval_scope)
+    _write_hydration_scope_gate(repo, approval_scope=approval_scope)
+
+    def fail_run(*args, **kwargs):  # pragma: no cover - assertion helper
+        raise AssertionError("roadmap_scaffold.py must not run without authority")
+
+    monkeypatch.setattr(planning_bank_validate.subprocess, "run", fail_run)
+
+    with pytest.raises(PlanningBankValidationError, match=error_match):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+            session_id="session-test",
+        )
+
+
+def test_hydrate_approved_candidate_requires_session_id(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = tmp_path
+    bank_path = _write_ready_hydration_candidate(repo)
+    _write_hydration_scope_gate(repo)
+
+    def fail_run(*args, **kwargs):  # pragma: no cover - assertion helper
+        raise AssertionError("roadmap_scaffold.py must not run without authority")
+
+    monkeypatch.setattr(planning_bank_validate.subprocess, "run", fail_run)
+
+    with pytest.raises(PlanningBankValidationError, match="--session-id"):
+        hydrate_approved_initiative_candidate(
+            bank_path,
+            repo_root=repo,
+            candidate_id="slice-evi-002-c",
+            session_id="",
+        )
 
 
 def test_hydrate_approved_candidate_refuses_non_scaffold_command(
@@ -583,7 +915,7 @@ def test_readiness_report_fails_closed_when_human_decision_is_absent(tmp_path: P
 def test_readiness_report_can_target_completed_prior_candidate() -> None:
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH, candidate_id="slice-evi-002-a")
 
-    assert report["candidate_first_slice"] == "slice-evi-002-d"
+    assert report["candidate_first_slice"] == "slice-evi-002-e"
     assert report["candidate_id"] == "slice-evi-002-a"
     assert report["candidate_task_ref"] == "T-018"
     assert report["candidate_status"] == "complete"
@@ -591,7 +923,15 @@ def test_readiness_report_can_target_completed_prior_candidate() -> None:
     assert "candidate.status is complete; no hydration action remains" in report["blocking_reasons"]
 
 
-def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
+def test_do_closeout_does_not_target_planning_bank_directories() -> None:
+    closeout_source = (ROOT / "scripts" / "do_closeout.py").read_text(encoding="utf-8")
+
+    assert ".azoth/design-banks" not in closeout_source
+    assert ".azoth/initiative-banks" not in closeout_source
+    assert "hydration_history" not in closeout_source
+
+
+def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     roadmap = _load_yaml(ROADMAP_PATH)
     backlog = _load_yaml(BACKLOG_PATH)
@@ -608,8 +948,8 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     ]
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
-    assert initiative["phase"] is None
-    assert initiative["task_ref"] == "T-022"
+    assert initiative["phase"] == "v0.2.0-p4"
+    assert initiative["task_ref"] == "T-043"
     assert initiative["slices"] == [
         {
             "task_ref": "T-018",
@@ -637,13 +977,20 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-022.yaml",
             "phase": "v0.2.0-p3",
             "status": "complete",
+            "role": "historical",
+        },
+        {
+            "task_ref": "T-043",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-043.yaml",
+            "phase": "v0.2.0-p4",
+            "status": "active",
             "role": "primary",
         },
     ]
     assert initiative["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
     assert initiative["design_bank_refs"] == [".azoth/design-banks/planning-banks-layer.yaml"]
     assert initiative["research_refs"] == [".azoth/research/ini-evi-002-research-bank.yaml"]
-    assert initiative["candidate_slice_ref"] == "slice-evi-002-c"
+    assert initiative["candidate_slice_ref"] == "slice-evi-002-e"
     assert initiative["readiness_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml#readiness"
     assert "proposal_refs" not in initiative
     seeded_candidate = next(
@@ -659,10 +1006,10 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     ]
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
-    assert hydrated_candidates == []
-    assert initiative["discovery_status"] == "plan_only_handoff_helper_complete"
-    assert "T-022 is complete" in initiative["next_discovery_action"]
-    assert "fresh budget" in initiative["next_discovery_action"]
+    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == ["T-043"]
+    assert initiative["discovery_status"] == "closeout_history_policy_hydrated"
+    assert "T-043 is hydrated" in initiative["next_discovery_action"]
+    assert "/next and /auto" in initiative["next_discovery_action"]
 
     roadmap_task_ids = {
         str(task.get("id"))
@@ -675,9 +1022,9 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     spec_ids = {path.stem for path in SPECS_DIR.glob("*.yaml")}
 
     assert blocked_candidate_ids == set()
-    assert "T-043" not in roadmap_task_ids
-    assert "T-043" not in backlog_ids
-    assert "T-043" not in spec_ids
+    assert "T-043" in roadmap_task_ids
+    assert "T-043" in backlog_ids
+    assert "T-043" in spec_ids
     assert "T-018" in roadmap_task_ids
     assert "T-018" in backlog_ids
     assert "T-018" in spec_ids
