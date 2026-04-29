@@ -10,10 +10,11 @@ summary: >
   readiness, candidate slices, contacts, and contradictions, and a future helper
   can emit reviewed hydration plans before any roadmap or backlog write occurs.
   T-018, T-019, and T-021 have now delivered the first validator, readiness
-  report, richness adapter, and planning-bank policy groundwork. This proposal
-  now narrows the remaining design space to plan-only hydration handoff and
-  task-capsule derivation, without creating a second roadmap writer.
-status: draft
+  report, richness adapter, and planning-bank policy groundwork, and T-022
+  delivered the plan-only hydration handoff helper. This proposal now preserves
+  the completed handoff boundary and keeps any future write-mode or task-capsule
+  derivation as separate, explicitly approved follow-on work.
+status: submitted
 decision_refs:
   - D11
   - D23
@@ -355,6 +356,42 @@ details:
     recommended_starting_point: >
       Start with option D next. Keep write-mode hydration for a later explicit
       approval after plan-only handoff behavior proves stable.
+  stabilization_control_plane_refinement:
+    refined_at: "2026-04-29T20:35:24Z"
+    trigger_session_id: "2026-04-29-ini-evi-002-helper-refinement"
+    release_lane_fit: >
+      This helper belongs to the stabilization/control-plane lane because it
+      reduces operator ambiguity before future roadmap hydration. It does not
+      expand public release scope, mutate personal-root state, or add a new
+      runtime feature without a hydrated task.
+    completed_slice_reconciliation:
+      candidate_slice_ref: "slice-evi-002-d"
+      completed_task_id: "T-022"
+      title: "Plan-only initiative hydration handoff helper"
+      readiness: "complete_do_not_rehydrate"
+      rationale: >
+        T-018, T-019, T-020, and T-021 already delivered validation,
+        readiness reporting, surfacing, richness adapters, and bank identity
+        policy. T-022 then delivered the plan-only helper itself, so a later
+        T-043 with the same title and behavior would be duplicate hydration
+        rather than a new planning-bank slice.
+      acceptance_criteria:
+        - "Reads a selected initiative-bank candidate through the existing planning-bank validation path."
+        - "Refuses complete, hydrated, rejected, or missing candidate slices."
+        - "Refuses plan emission when readiness_status is not ready_to_hydrate or human_decision is not approved for hydration."
+        - "Emits a plan-only payload with initiative_ref, source_bank_ref, candidate_slice_ref, proposed task title, target_layer, delivery_pipeline, acceptance criteria, non-goals, test strategy, and scaffold command."
+        - "Does not write roadmap.yaml, backlog.yaml, roadmap-spec files, or hydration_history in plan-only mode."
+      non_goals:
+        - "No write-mode hydration in this slice."
+        - "No new roadmap/backlog writer."
+        - "No changes to /next scope-card authority."
+        - "No broad advisory richness scoring changes."
+        - "No M1/governance implementation."
+    next_gate: >
+      Do not hydrate T-043 for this helper identity. Any future INI-EVI-002
+      continuation must first name a distinct follow-on beyond completed T-022,
+      then pass explicit hydration approval before roadmap_scaffold.py or
+      implementation.
   governance:
     human_gates:
       - "Approve the bank-tooling proposal before implementing reusable helpers."

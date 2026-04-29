@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-25T10:21:19Z"
+updated_at: "2026-04-29T20:35:24Z"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -55,8 +55,13 @@ open_questions:
     question: Should all initiatives get banks, or only discovery-active initiatives?
     answer: T-021 selected declared coverage only; initiatives require banks when roadmap state declares an initiative_bank_ref, not merely because they are phase-null.
   - question_id: db-planning-003
-    status: open
+    status: answered
     question: Should `/next` remain read-only for planning-bank seeds, or should it offer a dedicated hydration prompt when readiness is approved?
+    answer: >
+      `/next` remains read-only for planning-bank seeds. Hydration prompting
+      belongs in a dedicated plan-only initiative handoff helper that emits a
+      reviewed scaffold plan and still requires explicit human approval before
+      roadmap/backlog/spec writes.
   - question_id: db-planning-004
     status: open
     question: How should closeout append planning-bank history without creating merge churn across concurrent sessions?
@@ -99,19 +104,25 @@ routing_candidates:
       Slice-evi-002-c was hydrated and completed as T-021; the initiative should
       not hydrate another raw slice until the helper proposal is refined.
   - route: proposal_refinement
-    status: active
+    status: complete
     target: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
     rationale: >
       The write-mode hydration helper and task-research derivation path remain
       proposal/refinement work until readiness evidence and human approval justify
       executable backlog/spec hydration.
+  - route: candidate_hydration_review
+    status: complete
+    target: T-022
+    rationale: >
+      Replay found the apparent T-043 helper candidate duplicated completed
+      T-022. The plan-only helper handoff route is therefore complete; any
+      future hydration must name a distinct follow-on.
 readiness:
-  evaluated_at: "2026-04-25T10:21:19Z"
+  evaluated_at: "2026-04-29T20:35:24Z"
   readiness_status: continue_refinement
-  freshness_status: reconciled_after_t_021_completion
-  target_route: proposal_refinement
+  freshness_status: replay_reconciled_after_t022_duplicate_detection
+  target_route: no_active_helper_candidate_after_t022
   blocking_questions:
-    - db-planning-003
     - db-planning-004
   contradiction_disposition: none_blocking_recorded
   source_refs:
@@ -141,3 +152,13 @@ history:
     summary: Marked the planning-bank ID and coverage policy route complete after
       T-021 shipped, answered the id and coverage policy questions, and routed the
       next autonomous campaign move to initiative-bank helper proposal refinement.
+  - timestamp: "2026-04-29T20:35:24Z"
+    event: submitted_helper_candidate_seed
+    summary: Answered the `/next` read-only boundary question, marked helper proposal
+      refinement complete, and routed the next planning-bank move to explicit
+      hydration review for INI-EVI-002 slice-evi-002-d.
+  - timestamp: "2026-04-30T00:00:00Z"
+    event: reconciled_duplicate_helper_candidate
+    summary: Marked the helper hydration-review route complete after eval-swarm
+      found T-022 already delivered the plan-only handoff helper; future work
+      must define a distinct follow-on before hydration.

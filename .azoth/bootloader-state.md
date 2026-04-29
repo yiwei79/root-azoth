@@ -1,23 +1,23 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.3 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 4
+0.1.4.4 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 4
 
 ## Last Session
-- **Session**: 2026-04-29-t-042
-- **Goal**: T-042: Personal knowledge Batch 0 candidate review artifact
-- **Session mode**: delivery
-- **Pipeline**: auto
+- **Session**: 2026-04-30-ini-evi-002-duplicate-helper-replay
+- **Goal**: Targeted eval replay for INI-EVI-002 duplicate helper candidate
+- **Session mode**: eval-replay
+- **Pipeline**: eval-swarm-targeted-replay
 - **Outcome**: closed
-- **Episode**: ep-465 (success)
+- **Episode**: ep-468 (success)
 
 ## Key Changes This Session
-1. W1 appended the closeout episode.
-2. W2 closed the scope gate and refreshed repo-local handoff state.
-3. W3/W4 mirrored the closeout state and bumped the patch version.
+1. Reconciled duplicate `T-043` helper planning state against completed `T-022`.
+2. Updated planning-bank/proposal/design-bank readback so future work must define a distinct follow-on.
+3. Preserved the no-hydration boundary for INI-EVI-002 until explicit approval for a non-duplicate slice.
 
 ## Open Decisions
 - None.
 
 ## Next Action
-- T-042 closed. Run `/next` to select the next scoped task.
+- Run `/next` to select the next scoped task.

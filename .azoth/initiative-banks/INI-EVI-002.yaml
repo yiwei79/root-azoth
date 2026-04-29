@@ -4,7 +4,7 @@ initiative_id: INI-EVI-002
 title: Knowledge richness evaluation for project-management artifacts
 status: active_refinement
 created_at: "2026-04-24T00:00:00+00:00"
-updated_at: "2026-04-25T10:21:19Z"
+updated_at: "2026-04-29T20:35:24Z"
 owner: codex
 source_sessions:
   - session_id: 2026-04-24-initiative-discovery-bridge-proposal
@@ -31,6 +31,14 @@ source_sessions:
     kind: autonomous-auto-planning-truth-reconciliation
     artifact: .azoth/initiative-banks/INI-EVI-002.yaml
     note: Reconciled post-T-021 initiative-bank readback with completed roadmap/backlog state and routed the next campaign move to helper proposal refinement.
+  - session_id: 2026-04-29-ini-evi-002-helper-refinement
+    kind: planning-refinement
+    artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+    note: Submitted the helper proposal as a concrete plan-only candidate and seeded slice-evi-002-d for explicit hydration review without mutating roadmap/backlog/spec state.
+  - session_id: 2026-04-30-ini-evi-002-eval-replay
+    kind: eval-replay-reconciliation
+    artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+    note: Reconciled slice-evi-002-d against completed T-022 after eval-swarm found that a new T-043 helper candidate would duplicate already hydrated work.
 contacts:
   - id: operator
     role: human decision owner
@@ -134,6 +142,21 @@ research_questions:
       - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
       - scripts/proposal_knowledge_richness.py
       - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - question_id: rq-evi-002-008
+    question: What should happen after helper proposal refinement is complete?
+    status: answered
+    opened_at: "2026-04-29T20:35:24Z"
+    answered_at: "2026-04-29T20:35:24Z"
+    needed_for: post_helper_proposal_hydration_review
+    answer: >
+      Do not seed a new T-043 for the plan-only initiative hydration handoff
+      helper. Eval replay found that T-022 already completed that helper, so
+      slice-evi-002-d should record the completed T-022 handoff and block
+      repeat hydration until a distinct follow-on is defined.
+    evidence_refs:
+      - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+      - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
+      - scripts/planning_bank_validate.py
 research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
 local_findings:
@@ -183,6 +206,13 @@ local_findings:
       - scripts/planning_bank_validate.py
       - scripts/planning_bank_surfacing.py
       - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - finding_id: lf-evi-002-008
+    status: active
+    summary: After T-021, the helper proposal looked like a candidate seed, but replay found T-022 already completed the plan-only handoff helper; no duplicate T-043 hydration should be opened.
+    evidence_refs:
+      - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#stabilization_control_plane_refinement
+      - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
+      - scripts/planning_bank_validate.py
 external_findings:
   - finding_id: ef-evi-002-001
     status: active
@@ -269,6 +299,14 @@ challenge_log:
       branch-local self-development slice that answers the open design-bank id
       and coverage questions while preserving advisory-richness and no-write
       hydration boundaries.
+  - challenge_id: ch-evi-002-009
+    challenged_at: "2026-04-29T20:35:24Z"
+    prompt: Should helper proposal refinement immediately hydrate or implement the next INI-EVI-002 task?
+    disposition: retire_duplicate_candidate
+    result: >
+      No. Eval replay found T-022 already completed the plan-only helper. The
+      duplicate T-043 route is retired; future work must define a distinct
+      follow-on before roadmap_scaffold.py or implementation.
 candidate_slices:
   - candidate_id: slice-evi-002-a
     proposed_task_id: T-018
@@ -378,25 +416,62 @@ candidate_slices:
         - readiness.human_decision must be approved for hydration, not only seed approval.
         - open_questions must be answered or explicitly non-blocking.
         - the selected direction must have acceptance criteria and non-goals stable enough for /next.
+  - candidate_id: slice-evi-002-d
+    proposed_task_id: T-022
+    title: Plan-only initiative hydration handoff helper
+    initiative_ref: INI-EVI-002
+    status: complete
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: Completed plan-only scaffold payload helper for one approved initiative-bank candidate slice while refusing complete, hydrated, rejected, pending, or stale candidates and preserving the existing roadmap_scaffold.py write boundary.
+    acceptance_criteria:
+      - Reads a selected initiative-bank candidate through the existing planning-bank validation path.
+      - Refuses complete, hydrated, rejected, or missing candidate slices.
+      - Refuses plan emission when readiness_status is not ready_to_hydrate or human_decision is not approved for hydration.
+      - Emits a plan-only payload with initiative_ref, source_bank_ref, candidate_slice_ref, proposed task title, target_layer, delivery_pipeline, acceptance criteria, non-goals, test strategy, and scaffold command.
+      - Does not write roadmap.yaml, backlog.yaml, roadmap-spec files, or hydration_history in plan-only mode.
+    research_evidence_refs:
+      - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#stabilization_control_plane_refinement
+      - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
+      - scripts/planning_bank_validate.py
+      - scripts/roadmap_scaffold.py
+    known_non_goals:
+      - Do not implement write-mode hydration.
+      - Do not create a second roadmap/backlog writer.
+      - Do not change /next scope-card authority.
+      - Do not broaden advisory richness scoring.
+      - Do not touch M1 or governance surfaces.
+    open_questions: []
+    recommended_phase: v0.2.0-p4
+    hydration_plan:
+      proposed_title: Plan-only initiative hydration handoff helper
+      hydrated_task_ref: T-022
+      hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
+      scaffold_command: scripts/roadmap_scaffold.py --title "Plan-only initiative hydration handoff helper" --initiative-ref INI-EVI-002 --target-layer infrastructure --delivery-pipeline standard
+      pre_hydration_requirements:
+        - T-022 is already complete; do not repeat hydration for this helper identity.
+        - Any future helper follow-on must be distinct from the completed plan-only handoff helper.
+        - Explicit hydration approval remains required before any future roadmap/backlog/spec writes.
 readiness:
-  evaluated_at: "2026-04-25T10:21:19Z"
+  evaluated_at: "2026-04-29T20:35:24Z"
   source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
   readiness_status: continue_research
-  goal_clarity: t_021_complete_next_helper_refinement
-  evidence_coverage: research_complete_for_t_021_next_proposal_refinement_seeded
-  freshness_status: reconciled_after_t_021_completion
+  goal_clarity: t_022_complete_no_duplicate_t043
+  evidence_coverage: helper_handoff_completed_as_t_022
+  freshness_status: replay_reconciled_after_t022_duplicate_detection
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-evi-002-c
+  candidate_first_slice: slice-evi-002-d
   target_layer: infrastructure
   delivery_pipeline: standard
   acceptance_criteria_status: stable
   non_goals_status: stable
-  next_readiness_gate: helper_proposal_refinement_before_next_hydration
+  next_readiness_gate: define_distinct_follow_on_before_hydration
   next_candidate_ref: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-  hydration_recommendation: T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate.
+  hydration_recommendation: T-022 already completed the plan-only initiative hydration handoff helper. Do not create T-043 for the same helper identity; define a distinct follow-on before any new hydration.
   human_decision: approved
-  approval_basis: Operator approved the planning-bank continuation autonomous-auto campaign on 2026-04-25 with replay_threshold=3 and up to 4 bounded iterations.
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: Operator asked on 2026-04-29 to continue the stabilization and control-plane release plan with a planning/refinement session from INI-EVI-002. This approves proposal and bank refinement only, not roadmap/backlog/spec hydration or helper implementation.
 research_completion_assessment:
   candidate_slice_ref: slice-evi-002-c
   completed_at: "2026-04-25T01:15:06+00:00"
@@ -411,15 +486,15 @@ research_completion_assessment:
     - hydration_boundary
   unresolved_before_hydration: []
 next_seed_assessment:
-  candidate_slice_ref: slice-evi-002-c
-  seeded_at: "2026-04-25T10:21:19Z"
-  status: t_021_complete_next_helper_refinement_seeded
+  candidate_slice_ref: slice-evi-002-d
+  seeded_at: "2026-04-29T20:35:24Z"
+  status: reconciled_complete_as_t_022_no_duplicate_t043
   source_refs:
     - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
     - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
     - .azoth/roadmap-specs/v0.2.0/T-021.yaml
-  note: The planning-bank ID and coverage policy seed is complete as T-021; the next campaign move is helper proposal refinement before any new hydration or helper implementation.
+  note: Eval replay found the helper identity already completed as T-022; no T-043 hydration should be opened unless a distinct follow-on is defined and explicitly approved.
 hydration_history:
   - hydrated_at: "2026-04-24T18:50:00+00:00"
     session_id: 2026-04-24-ini-evi-002-readiness-research
@@ -439,3 +514,9 @@ hydration_history:
     task_ref: T-021
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-021.yaml
     result: Hydrated standard infrastructure task under branch-local autonomous self-development approval basis.
+  - hydrated_at: "2026-04-25T10:23:31Z"
+    session_id: 2026-04-25-autonomous-auto-plan-only-initiative-hydration-handoff-3
+    candidate_slice_ref: slice-evi-002-d
+    task_ref: T-022
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
+    result: Completed plan-only initiative hydration handoff helper; replay confirms no duplicate T-043 hydration should be opened for the same helper identity.

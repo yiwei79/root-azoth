@@ -95,7 +95,7 @@ def test_ini_evi_002_candidate_slices_are_planning_evidence_only() -> None:
             assert candidate["known_non_goals"]
 
 
-def test_ini_evi_002_bank_third_slice_is_complete_and_routes_helper_refinement() -> None:
+def test_ini_evi_002_bank_reconciles_completed_helper_and_blocks_duplicate_hydration() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     readiness = bank.get("readiness")
     completed_candidate = next(
@@ -108,19 +108,25 @@ def test_ini_evi_002_bank_third_slice_is_complete_and_routes_helper_refinement()
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-c"
     )
+    next_candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-d"
+    )
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
     assert readiness["readiness_status"] == "continue_research"
     assert readiness["human_decision"] == "approved"
-    assert readiness["candidate_first_slice"] == "slice-evi-002-c"
-    assert readiness["next_readiness_gate"] == "helper_proposal_refinement_before_next_hydration"
+    assert readiness["approval_scope"] == "planning_seed_only_no_hydration"
+    assert readiness["candidate_first_slice"] == "slice-evi-002-d"
+    assert readiness["next_readiness_gate"] == "define_distinct_follow_on_before_hydration"
     assert (
         readiness["next_candidate_ref"]
         == ".azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml"
     )
     assert bank["hydration_history"]
-    assert bank["hydration_history"][-1]["task_ref"] == "T-021"
+    assert bank["hydration_history"][-1]["task_ref"] == "T-022"
     assert completed_candidate["status"] == "complete"
     assert completed_candidate["proposed_task_id"] == "T-019"
     assert completed_candidate["acceptance_criteria"]
@@ -128,6 +134,9 @@ def test_ini_evi_002_bank_third_slice_is_complete_and_routes_helper_refinement()
     assert hydrated_candidate["status"] == "complete"
     assert hydrated_candidate["proposed_task_id"] == "T-021"
     assert hydrated_candidate["open_questions"] == []
+    assert next_candidate["status"] == "complete"
+    assert next_candidate["proposed_task_id"] == "T-022"
+    assert next_candidate["open_questions"] == []
 
 
 def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
@@ -135,7 +144,7 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     candidate = next(
         candidate
         for candidate in bank["candidate_slices"]
-        if candidate["candidate_id"] == "slice-evi-002-c"
+        if candidate["candidate_id"] == "slice-evi-002-d"
     )
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
@@ -144,26 +153,28 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
     assert report["readiness_status"] == "continue_research"
     assert report["human_decision"] == "approved"
-    assert report["candidate_first_slice"] == "slice-evi-002-c"
-    assert report["candidate_id"] == "slice-evi-002-c"
-    assert report["candidate_slice_ref"] == "slice-evi-002-c"
-    assert report["candidate_task_ref"] == "T-021"
+    assert report["approval_scope"] == "planning_seed_only_no_hydration"
+    assert report["candidate_first_slice"] == "slice-evi-002-d"
+    assert report["candidate_id"] == "slice-evi-002-d"
+    assert report["candidate_slice_ref"] == "slice-evi-002-d"
+    assert report["candidate_task_ref"] == "T-022"
     assert report["candidate_status"] == "complete"
-    assert report["proposed_title"] == "Planning-bank ID and coverage policy"
+    assert report["proposed_title"] == "Plan-only initiative hydration handoff helper"
     assert report["target_layer"] == "infrastructure"
     assert report["delivery_pipeline"] == "standard"
     assert report["acceptance"] == candidate["acceptance_criteria"]
     assert report["acceptance_criteria_status"] == "stable"
     assert report["non_goals"] == candidate["known_non_goals"]
     assert report["non_goals_status"] == "stable"
-    assert report["freshness_status"] == "reconciled_after_t_021_completion"
+    assert report["freshness_status"] == "replay_reconciled_after_t022_duplicate_detection"
     assert (
         report["hydration_recommendation"]
-        == "T-021 is complete across roadmap and backlog history; do not hydrate another raw slice until the helper proposal is refined into a narrow readiness or helper candidate."
+        == "T-022 already completed the plan-only initiative hydration handoff helper. Do not create T-043 for the same helper identity; define a distinct follow-on before any new hydration."
     )
     assert report["blocking_reasons"] == [
         "candidate.status is complete; no hydration action remains",
         "readiness.readiness_status must be ready_to_hydrate",
+        "readiness.approval_scope planning_seed_only_no_hydration does not authorize hydration",
     ]
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
@@ -207,6 +218,8 @@ def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
     readiness["readiness_status"] = "ready_to_hydrate"
     readiness["human_decision"] = "approved"
     readiness["freshness_status"] = "fresh"
+    readiness["approval_basis"] = "Temp human approval for plan-only handoff."
+    readiness.pop("approval_scope", None)
     readiness["candidate_first_slice"] = "slice-evi-002-c"
     readiness["acceptance_criteria_status"] = "stable"
     readiness["non_goals_status"] = "stable"
@@ -243,10 +256,7 @@ def test_readiness_report_emits_plan_only_handoff_for_approved_temp_candidate(
         "readiness_status": "ready_to_hydrate",
         "human_decision": "approved",
         "approval_scope": None,
-        "approval_basis": (
-            "Operator approved the planning-bank continuation autonomous-auto campaign "
-            "on 2026-04-25 with replay_threshold=3 and up to 4 bounded iterations."
-        ),
+        "approval_basis": "Temp human approval for plan-only handoff.",
         "candidate_first_slice": "slice-evi-002-c",
         "candidate_id": "slice-evi-002-c",
         "candidate_slice_ref": "slice-evi-002-c",
@@ -573,7 +583,7 @@ def test_readiness_report_fails_closed_when_human_decision_is_absent(tmp_path: P
 def test_readiness_report_can_target_completed_prior_candidate() -> None:
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH, candidate_id="slice-evi-002-a")
 
-    assert report["candidate_first_slice"] == "slice-evi-002-c"
+    assert report["candidate_first_slice"] == "slice-evi-002-d"
     assert report["candidate_id"] == "slice-evi-002-a"
     assert report["candidate_task_ref"] == "T-018"
     assert report["candidate_status"] == "complete"
@@ -585,10 +595,10 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     roadmap = _load_yaml(ROADMAP_PATH)
     backlog = _load_yaml(BACKLOG_PATH)
-    pending_candidate_ids = {
+    blocked_candidate_ids = {
         str(candidate["proposed_task_id"])
         for candidate in bank["candidate_slices"]
-        if str(candidate["proposed_task_id"]).startswith("TBD-")
+        if candidate["status"] == "candidate"
     }
     completed_candidates = [
         candidate for candidate in bank["candidate_slices"] if candidate["status"] == "complete"
@@ -645,6 +655,7 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
         "T-018",
         "T-019",
         "T-021",
+        "T-022",
     ]
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
@@ -663,9 +674,10 @@ def test_ini_evi_002_has_completed_third_slice_and_next_helper_route() -> None:
     backlog_ids = {str(item.get("id")) for item in backlog.get("items") or []}
     spec_ids = {path.stem for path in SPECS_DIR.glob("*.yaml")}
 
-    assert pending_candidate_ids.isdisjoint(roadmap_task_ids)
-    assert pending_candidate_ids.isdisjoint(backlog_ids)
-    assert pending_candidate_ids.isdisjoint(spec_ids)
+    assert blocked_candidate_ids == set()
+    assert "T-043" not in roadmap_task_ids
+    assert "T-043" not in backlog_ids
+    assert "T-043" not in spec_ids
     assert "T-018" in roadmap_task_ids
     assert "T-018" in backlog_ids
     assert "T-018" in spec_ids
