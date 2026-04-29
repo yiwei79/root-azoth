@@ -85,6 +85,12 @@ evidence:
   source_root_commit: f5dc6d3155ed521dd26b8d9921567d557ff3fe89
   public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
   decision: RC publication completed after operator approval; final stable v0.2.0 remains unpublished and requires a separate explicit approval.
+- date: '2026-04-29'
+  status: retro_eval_complete_stable_blocked
+  session_id: 2026-04-29-t-039-rc-retro-eval
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
+  decision: Retrospective pipeline/eval run records that v0.2.0-rc.1 publication was approved and evidence-backed but not originally executed through the full staged pipeline; preserve RC, do not publish stable, and require a separate stable approval gate.
 dependencies:
 - T-035
 - T-036
