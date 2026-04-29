@@ -3581,3 +3581,24 @@ items:
   - D52
   blocked_by:
   - T-041
+- id: T-043
+  title: Planning-bank closeout history merge policy
+  source: roadmap-scaffold-2026-04-30
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-04-30'
+  completed_date: '2026-04-29'
+  description: Define and validate the closeout/history append policy for planning
+    banks so routine closeout can preserve append-only auditability without broad
+    design-bank or initiative-bank rewrites across concurrent sessions.
+  roadmap_ref: T-043
+  initiative_ref: INI-EVI-002
+  decision_ref:
+  - D11
+  - D23
+  - D48
+  - D50
+  - D52

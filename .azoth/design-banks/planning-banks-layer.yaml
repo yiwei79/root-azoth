@@ -63,8 +63,14 @@ open_questions:
       reviewed scaffold plan and still requires explicit human approval before
       roadmap/backlog/spec writes.
   - question_id: db-planning-004
-    status: open
+    status: answered
     question: How should closeout append planning-bank history without creating merge churn across concurrent sessions?
+    answer: >
+      Route this into a distinct stabilization slice for planning-bank closeout
+      history merge policy. Routine closeout should not broadly rewrite bank
+      state; any automatic append behavior needs a narrow, validated policy
+      before do_closeout.py or related lifecycle helpers write planning-bank
+      history.
 research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
 challenge_log:
@@ -117,13 +123,19 @@ routing_candidates:
       Replay found the apparent T-043 helper candidate duplicated completed
       T-022. The plan-only helper handoff route is therefore complete; any
       future hydration must name a distinct follow-on.
+  - route: candidate_hydration_review
+    status: ready_to_hydrate
+    target: INI-EVI-002#slice-evi-002-e
+    rationale: >
+      The distinct follow-on is planning-bank closeout history merge policy,
+      which resolves db-planning-004 without reopening the completed T-022
+      helper identity or touching personal-root knowledge deployment.
 readiness:
-  evaluated_at: "2026-04-29T20:35:24Z"
-  readiness_status: continue_refinement
-  freshness_status: replay_reconciled_after_t022_duplicate_detection
-  target_route: no_active_helper_candidate_after_t022
-  blocking_questions:
-    - db-planning-004
+  evaluated_at: "2026-04-30T00:00:00Z"
+  readiness_status: ready_to_route
+  freshness_status: current_as_of_2026_04_30_distinct_follow_on_selected
+  target_route: INI-EVI-002#slice-evi-002-e
+  blocking_questions: []
   contradiction_disposition: none_blocking_recorded
   source_refs:
     - .azoth/proposals/planning-banks-layer.yaml
@@ -131,8 +143,54 @@ readiness:
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
     - .azoth/roadmap-specs/v0.2.0/T-021.yaml
     - commands/next/body.md
-  recommended_next_artifact: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+  recommended_next_artifact: .azoth/initiative-banks/INI-EVI-002.yaml#slice-evi-002-e
   human_decision: approved
+closeout_history_policy:
+  policy_id: planning_bank_closeout_history_merge_policy_v1
+  status: active
+  merge_strategy: append_only
+  routine_closeout:
+    planning_bank_write_mode: forbidden
+    allowed_effects:
+      - Read planning banks for closeout summaries, route context, or residual-risk
+        reporting.
+      - Record ordinary session closure in closeout, run-ledger, inbox, or memory
+        artifacts outside planning-bank directories.
+    blocked_effects:
+      - Do not rewrite .azoth/design-banks during routine closeout.
+      - Do not rewrite .azoth/initiative-banks during routine closeout.
+      - Do not append hydration_history without an explicit hydration action.
+    rationale: >
+      Routine closeout runs often occur concurrently across worktrees. Keeping them
+      non-mutating for planning banks avoids merge churn and prevents session closure
+      from becoming silent planning authority.
+  explicit_hydration_history:
+    append_path: hydration_history
+    append_position: append_tail
+    required_metadata:
+      - hydrated_at
+      - session_id
+      - candidate_slice_ref
+      - task_ref
+      - spec_ref
+      - approval_scope
+      - approval_basis
+      - append_policy_ref
+      - append_mode
+      - merge_key
+    allowed_when:
+      - A selected initiative-bank candidate is ready_to_hydrate.
+      - Human or branch-local autonomy approval is scoped to the concrete hydration.
+      - The helper delegates roadmap/backlog/spec creation through the approved
+        scaffold path instead of writing those artifacts directly.
+    merge_key_shape: candidate_slice_ref:task_ref:hydrated_at
+    audit_rule: >
+      New helper writes append one hydration_history item at the tail and stamp append metadata.
+      Existing entries are not rewritten for cosmetic normalization.
+  non_laundering_rule: >
+    historical planning truth may record a task that was hydrated through a bypassed
+    path, but the bank must label that event explicitly as non retroactive pipeline
+    compliance and must not describe it as retroactively pipeline-compliant.
 history:
   - timestamp: "2026-04-24T17:43:19+00:00"
     event: created_from_architecture_seed
@@ -162,3 +220,8 @@ history:
     summary: Marked the helper hydration-review route complete after eval-swarm
       found T-022 already delivered the plan-only handoff helper; future work
       must define a distinct follow-on before hydration.
+  - timestamp: "2026-04-30T00:00:00Z"
+    event: selected_closeout_history_policy_follow_on
+    summary: Answered db-planning-004 by routing the next distinct stabilization
+      slice to INI-EVI-002 slice-evi-002-e for planning-bank closeout history
+      merge policy.

@@ -40,7 +40,8 @@ scope:
   metadata.
 - Use the existing personal knowledge validator path where possible, or extend
   it narrowly if the review artifact contract needs a small root-side check.
-- Preserve the three-plane boundary: root-azoth owns review evidence,
+- >
+  Preserve the three-plane boundary: root-azoth owns review evidence,
   personal-root receives nothing in this slice, and public azoth release work
   stays closed.
 - End with an operator-facing review handoff that clearly separates approve,
