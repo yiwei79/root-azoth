@@ -91,6 +91,12 @@ evidence:
   pipeline_command: dynamic-full-auto
   evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
   decision: Retrospective pipeline/eval run records that v0.2.0-rc.1 publication was approved and evidence-backed but not originally executed through the full staged pipeline; preserve RC, do not publish stable, and require a separate stable approval gate.
+- date: '2026-04-29'
+  status: stable_preflight_complete_stable_approval_pending
+  session_id: 2026-04-29-t-039-stable-preflight
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md
+  decision: Stable-preflight validation completed with full root pytest, product smoke, learning/self-heal route proof, public release absence checks, operator-approved Windows/PowerShell skip, and evaluator recheck PASS at 0.94; stable v0.2.0 remains unpublished pending a separate explicit approval gate.
 dependencies:
 - T-035
 - T-036
