@@ -3530,10 +3530,11 @@ items:
   source: personal-knowledge-architecture-rollout-2026-04-29
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-04-29'
+  completed_date: '2026-04-29'
   description: 'Hydrate the next post-T-040 personal control-panel continuation slice:
     add a root-side read-only inventory helper and focused tests that enumerate candidate
     source artifacts from approved root-azoth surfaces without writing cards, import
