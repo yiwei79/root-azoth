@@ -2077,7 +2077,20 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-041
+    title: Personal knowledge read-only root inventory
+    decision_ref:
+    - D11
+    - D30
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D48
+    - D50
+    - D52
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate

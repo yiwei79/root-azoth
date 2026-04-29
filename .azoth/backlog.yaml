@@ -3525,3 +3525,31 @@ items:
   blocked_by:
   - T-038
   - T-039
+- id: T-041
+  title: Personal knowledge read-only root inventory
+  source: personal-knowledge-architecture-rollout-2026-04-29
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-29'
+  description: 'Hydrate the next post-T-040 personal control-panel continuation slice:
+    add a root-side read-only inventory helper and focused tests that enumerate candidate
+    source artifacts from approved root-azoth surfaces without writing cards, import
+    batches, personal-root files, source registry rows, project inventory rows, or
+    public release artifacts.'
+  roadmap_ref: T-041
+  decision_ref:
+  - D11
+  - D30
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-040

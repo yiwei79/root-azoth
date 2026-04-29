@@ -1,0 +1,99 @@
+id: T-041
+roadmap_version: v0.2.0
+title: Personal knowledge read-only root inventory
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Deliver the next post-T-040 personal control-panel continuation slice: add a
+  root-side read-only inventory helper that lists approved root-azoth source
+  artifacts which could later inform a reviewed personal knowledge import batch.
+  The helper must write nothing and must not create cards, candidate batches, or
+  personal-root state.
+problem: >
+  T-040 created the empty personal-root knowledge home and validator boundary.
+  The next unsafe leap would be drafting Batch 0 cards directly from memory or
+  chat context. A read-only inventory step gives the operator an auditable source
+  map first, including explicit risk markers for raw memory and inbox surfaces,
+  before any candidate card text is written.
+context_refs:
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- docs/superpowers/plans/2026-04-29-personal-knowledge-architecture-rollout.md
+- .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+- .azoth/roadmap-specs/v0.2.0/T-040.yaml
+scope:
+- Add `scripts/personal_knowledge_inventory.py` as a read-only CLI with
+  `--source-root`, `--source-plane`, and `--json`.
+- Add focused tests in `tests/test_personal_knowledge_inventory.py` that build
+  a temporary source root and prove the helper emits candidate records without
+  writing cards or batches.
+- Inventory approved candidate source artifacts such as
+  `.azoth/memory/patterns.yaml`, `.azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md`,
+  `.azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md`, and
+  `.azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md` when
+  present.
+- Include candidate id, source plane, source path, recommended card type,
+  provenance, risk, risk reason, and later-use notes in inventory output.
+- Mark raw `.azoth/memory/episodes.jsonl` as forbidden bulk-import source
+  material and `.azoth/inbox/**` as requiring intake/manual excerpt instead of
+  direct card generation.
+non_goals:
+- Do not write personal-root files or mutate `/Users/yiwei/GithubRepos/personal-azoth-root`.
+- Do not create Batch 0, candidate batch files, card files, or draft card bodies.
+- Do not extract, summarize, import, or transform root-azoth knowledge into
+  personal knowledge cards.
+- Do not onboard source registry rows, project inventory rows, projects, or
+  external sources.
+- Do not read secrets, credentials, raw mailbox exports, or project-private
+  downstream state.
+- Do not publish or prepare a public `azoth` release.
+- Do not mutate governance, kernel, agent instructions, command behavior, or
+  personal-root recall/session-start behavior.
+acceptance:
+- >
+  `scripts/personal_knowledge_inventory.py --source-root /Users/yiwei/GithubRepos/root-azoth
+  --source-plane root-azoth --json` prints deterministic JSON and writes no files.
+- >
+  The inventory JSON includes candidate records with candidate id, source path,
+  source plane, recommended card type, risk, risk reason, and provenance fields.
+- >
+  Focused tests prove approved source artifacts are listed, raw
+  `.azoth/memory/episodes.jsonl` is marked `raw_memory_bulk_import_forbidden`,
+  `.azoth/inbox/**` is marked `inbox_requires_intake_or_manual_excerpt`, and no
+  card or import-batch files are written.
+- >
+  `PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_knowledge_inventory.py -q`
+  passes.
+- >
+  `python3 scripts/personal_knowledge_inventory.py --source-root /Users/yiwei/GithubRepos/root-azoth
+  --source-plane root-azoth --json` passes and leaves root-azoth and personal-root
+  tracked state unchanged except for the approved root-side helper/test files.
+- >
+  `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_knowledge_validate.py
+  --root /Users/yiwei/GithubRepos/personal-azoth-root --empty-skeleton` still passes.
+- >
+  `python3 scripts/roadmap_dashboard.py` passes after implementation.
+- >
+  `python3 scripts/azoth-deploy.py --check` passes after implementation.
+- The final handoff confirms no extraction/import, no Batch 0 cards or candidate
+  batch files, no personal-root mutation, no source registry/project onboarding,
+  no public release work, and no governance/instruction mutation happened.
+dependencies:
+- T-040
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Implement the read-only helper and tests only. If the inventory rules feel too
+  broad, split before implementation and keep Batch 0 drafting as a later explicit
+  task.
