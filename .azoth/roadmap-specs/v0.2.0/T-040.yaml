@@ -1,0 +1,91 @@
+id: T-040
+roadmap_version: v0.2.0
+title: Personal knowledge skeleton, schemas, and validator
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Deliver the first post-v0.2.0 personal control-panel implementation slice:
+  create an empty personal-root knowledge home, define root-side knowledge card
+  and import-batch schemas, add a focused root-side validator, and deploy only
+  the approved empty skeleton to the personal root with an explicit receipt.
+problem: >
+  The personal knowledge architecture is documented, but the personal root cannot
+  safely receive curated cards until the empty target structure, schemas, and
+  validation boundary exist. Without this slice, later extraction or Batch 0 work
+  would either rely on chat instructions or risk silently mixing raw root memory
+  into the personal control plane.
+context_refs:
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- docs/superpowers/plans/2026-04-29-personal-knowledge-architecture-rollout.md
+- .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+- .azoth/roadmap-specs/v0.2.0/T-038.yaml
+scope:
+- Create the approved empty `.azoth/knowledge/` skeleton in `/Users/yiwei/GithubRepos/personal-azoth-root`,
+  including policy, empty preference/principle/glossary files, empty indexes,
+  empty import ledger, and card/import directories.
+- Add root-side schemas for personal knowledge cards and import batches.
+- Add a root-side `scripts/personal_knowledge_validate.py` validator with focused
+  tests for required fields, enum values, provenance, freshness, card-path safety,
+  and import-batch decision rules.
+- Validate the personal-root skeleton before and after deployment.
+- Record an explicit personal-root deployment receipt naming source panel, target
+  panel, source commit, target path, files changed, commands run, validation result,
+  approval basis, residual risks, and next safe action.
+non_goals:
+- Do not extract, inventory, or import root-azoth knowledge.
+- Do not create Batch 0 cards or any candidate card files.
+- Do not onboard sources, projects, source registries, or project inventories.
+- Do not update personal-root recall/session-start behavior.
+- Do not publish or prepare a new public `azoth` release.
+- Do not mutate governance, kernel, agent instructions, or Azoth command behavior.
+- Do not copy raw `.azoth/memory/`, inbox rows, run-ledger state, gates, credentials,
+  or project secrets into the personal root.
+acceptance:
+- The personal-root `.azoth/knowledge/` skeleton exists and contains no imported
+  cards, candidate batches, source registry rows, project inventory rows, or raw
+  root memory.
+- >
+  `schemas/personal-knowledge-card.schema.yaml` and
+  `schemas/personal-knowledge-import-batch.schema.yaml` exist in root-azoth and
+  encode the required contracts from the architecture doc.
+- >
+  `scripts/personal_knowledge_validate.py` validates cards, import batches, and
+  the personal-root skeleton with fail-closed errors.
+- >
+  `PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_knowledge_validate.py -q`
+  passes.
+- >
+  `python3 scripts/roadmap_dashboard.py` passes after implementation.
+- >
+  `python3 scripts/azoth-deploy.py --check` passes after implementation.
+- >
+  `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root`
+  passes after the approved skeleton deployment.
+- >
+  `git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short --branch`
+  shows a clean personal-root state after the deployment receipt is recorded.
+- The final handoff includes an explicit deployment receipt and confirms that no
+  extraction/import, Batch 0 cards, source registry/project onboarding, public
+  release work, or governance/instruction mutation happened.
+dependencies:
+- T-038
+- T-039
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  If the skeleton and validator are too large for one implementation session,
+  split only after landing the empty personal-root skeleton and root schemas.
+  Keep inventory, Batch 0, recall, project onboarding, and public release work
+  as later explicit tasks.

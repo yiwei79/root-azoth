@@ -3492,3 +3492,35 @@ items:
   - T-036
   - T-037
   - T-038
+- id: T-040
+  title: Personal knowledge skeleton, schemas, and validator
+  source: personal-knowledge-architecture-rollout-2026-04-29
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-29'
+  description: 'Hydrate the first post-v0.2.0 personal control-panel implementation
+    slice from the UX anchor, personal knowledge architecture, rollout plan, and T-038
+    personal-root deployment model: create the empty personal-root knowledge skeleton,
+    add root-side card and import-batch schemas, add a root-side validator with focused
+    tests, and deploy only the approved empty skeleton to the personal root with an
+    explicit receipt. This is not p4 release work and does not authorize extraction,
+    imports, Batch 0 cards, source registry/project onboarding, public azoth release
+    work, or governance/instruction mutation.'
+  roadmap_ref: T-040
+  decision_ref:
+  - D11
+  - D30
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-038
+  - T-039
