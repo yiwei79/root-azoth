@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from codex_model_selector import (  # noqa: E402
     ModelSelectionError,
     SelectionDecision,
     load_policy,
+    main,
     resolve_codex_spawn,
     write_selector_trace,
 )
@@ -27,7 +29,7 @@ TRACE_PATH = ".azoth/codex-model-selector-traces.local.jsonl"
 def test_load_policy_exposes_runtime_contract() -> None:
     policy = load_policy(POLICY_PATH)
 
-    assert policy["policy_ref"] == "codex-model-selector-policy@2026-04-25"
+    assert policy["policy_ref"] == "codex-model-selector-policy@2026-04-29"
     assert policy["trace_path"] == TRACE_PATH
     assert policy["supported_reasoning_efforts"] == ["low", "medium", "high", "xhigh"]
     assert policy["default_model_tier"] == "standard"
@@ -55,6 +57,64 @@ def test_resolve_codex_spawn_prevents_parent_xhigh_leaf_leak() -> None:
     assert decision.to_spawn_kwargs()["reasoning_effort"] == decision.reasoning_effort
 
 
+def test_standard_tier_prefers_gpt55_and_medium_for_unsignaled_judgment_stages() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    decision = resolve_codex_spawn(
+        {
+            "stage_id": "auto_s1_planner",
+            "subagent_type": "planner",
+            "model_tier": "standard",
+        },
+        policy=policy,
+    )
+
+    assert decision.model == "gpt-5.5"
+    assert decision.reasoning_effort == "medium"
+    assert decision.selection_rules == ("type_default",)
+
+
+def test_standard_tier_escalates_judgment_work_from_task_signals() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    decision = resolve_codex_spawn(
+        {
+            "stage_id": "auto_s1_planner",
+            "subagent_type": "planner",
+            "model_tier": "standard",
+            "risk": "governance-change",
+            "complexity": "cross-layer",
+            "knowledge": "instruction-refinement",
+            "target_layer": "M1",
+        },
+        policy=policy,
+    )
+
+    assert decision.model == "gpt-5.5"
+    assert decision.reasoning_effort == "high"
+    assert "risk_high" in decision.selection_rules
+    assert "target_layer_m1" in decision.selection_rules
+    assert "knowledge_high" in decision.selection_rules
+
+
+def test_fast_read_only_scan_prefers_mini_low() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    decision = resolve_codex_spawn(
+        {
+            "stage_id": "auto_s0_repo_search",
+            "subagent_type": "researcher",
+            "model_tier": "fast",
+            "knowledge": "known-pattern",
+        },
+        policy=policy,
+    )
+
+    assert decision.model == "gpt-5.4-mini"
+    assert decision.reasoning_effort == "low"
+    assert "fast_read_only_low" in decision.selection_rules
+
+
 def test_resolve_codex_spawn_falls_back_from_unavailable_policy_alias() -> None:
     policy = load_policy(POLICY_PATH)
     policy = copy.deepcopy(policy)
@@ -67,6 +127,8 @@ def test_resolve_codex_spawn_falls_back_from_unavailable_policy_alias() -> None:
             "subagent_type": "builder",
             "model_tier": "standard",
             "mandatory_tools": ["apply_patch"],
+            "complexity": "multi-file",
+            "triggers": ["failing-tests"],
         },
         policy=policy,
     )
@@ -122,6 +184,21 @@ def test_resolve_codex_spawn_fails_closed_for_unsupported_effort() -> None:
                 "model_alias": "gpt-5.3-codex",
                 "reasoning_effort": "none",
                 "mandatory_tools": ["apply_patch"],
+            },
+            policy=policy,
+        )
+
+
+def test_resolve_codex_spawn_requires_override_for_xhigh() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    with pytest.raises(ModelSelectionError, match="xhigh requires"):
+        resolve_codex_spawn(
+            {
+                "stage_id": "auto_s3_evaluator",
+                "subagent_type": "evaluator",
+                "model_tier": "premium",
+                "reasoning_effort": "xhigh",
             },
             policy=policy,
         )
@@ -196,6 +273,8 @@ def test_write_selector_trace_records_auditable_decision(tmp_path: Path) -> None
             "subagent_type": "builder",
             "model_tier": "standard",
             "mandatory_tools": ["apply_patch"],
+            "complexity": "multi-file",
+            "triggers": ["failing-tests"],
         },
         policy=policy,
     )
@@ -209,7 +288,83 @@ def test_write_selector_trace_records_auditable_decision(tmp_path: Path) -> None
     assert trace["model_tier"] == "standard"
     assert trace["policy_ref"] == policy["policy_ref"]
     assert trace["source_observed_on"] == policy["source_observed_on"]
+    assert trace["complexity"] == "multi-file"
+    assert trace["selection_rules"] == [
+        "type_default",
+        "complexity_high",
+        "trigger_high",
+    ]
     assert "fallback_reason" in trace
+
+
+def test_cli_resolve_outputs_spawn_fields_and_trace(tmp_path: Path) -> None:
+    trace_file = tmp_path / "selector.jsonl"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "codex_model_selector.py"),
+            "resolve",
+            "--stage-id",
+            "auto_s2_builder",
+            "--subagent-type",
+            "builder",
+            "--model-tier",
+            "standard",
+            "--mandatory-tool",
+            "apply_patch",
+            "--complexity",
+            "complex",
+            "--trigger",
+            "bounded-replay",
+            "--trace-path",
+            str(trace_file),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert payload["model"] == "gpt-5.5"
+    assert payload["reasoning_effort"] == "high"
+    assert payload["spawn_fields"] == {
+        "model": "gpt-5.5",
+        "reasoning_effort": "high",
+    }
+    assert payload["selection_rules"] == [
+        "type_default",
+        "complexity_high",
+        "trigger_high",
+    ]
+    trace = json.loads(trace_file.read_text(encoding="utf-8"))
+    assert trace["stage_id"] == "auto_s2_builder"
+
+
+def test_main_no_trace_mode_prints_json_without_trace(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    trace_file = tmp_path / "selector.jsonl"
+
+    assert (
+        main(
+            [
+                "resolve",
+                "--stage-id",
+                "auto_s1_planner",
+                "--subagent-type",
+                "planner",
+                "--model-tier",
+                "standard",
+                "--trace-path",
+                str(trace_file),
+                "--no-trace",
+            ]
+        )
+        == 0
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["spawn_fields"]["model"] == "gpt-5.5"
+    assert trace_file.exists() is False
 
 
 def test_policy_does_not_prefer_deprecated_or_unavailable_aliases() -> None:

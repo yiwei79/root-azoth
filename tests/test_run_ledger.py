@@ -1072,6 +1072,11 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
     spawn = record_stage_spawn(
         tmp_path,
         spawned_at="2026-04-23T10:01:00+00:00",
+        model="gpt-5.5",
+        reasoning_effort="medium",
+        model_tier="standard",
+        policy_ref="codex-model-selector-policy@2026-04-29",
+        selector_trace_ref=".azoth/codex-model-selector-traces.local.jsonl",
         **kwargs,
     )
     summary = record_stage_summary(
@@ -1088,9 +1093,55 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
     )
 
     assert spawn["stage_id"] == "auto_s4_builder"
+    assert spawn["model"] == "gpt-5.5"
+    assert spawn["reasoning_effort"] == "medium"
+    assert spawn["policy_ref"] == "codex-model-selector-policy@2026-04-29"
     assert summary["summary_status"] == "complete"
     assert evidence["spawn"]["spawned_at"] == "2026-04-23T10:01:00+00:00"
     assert evidence["summary"]["summary_disposition"] == "approved"
+
+
+def test_record_spawn_cli_accepts_selector_evidence(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "record-spawn",
+            "--run-id",
+            "run-stage-evidence",
+            "--stage-id",
+            "auto_s4_builder",
+            "--subagent-type",
+            "builder",
+            "--trigger",
+            "context-budget",
+            "--role-hint",
+            "Agent(subagent_type=builder): Implement - trigger: context-budget",
+            "--model",
+            "gpt-5.5",
+            "--reasoning-effort",
+            "medium",
+            "--model-tier",
+            "standard",
+            "--policy-ref",
+            "codex-model-selector-policy@2026-04-29",
+            "--selector-trace-ref",
+            ".azoth/codex-model-selector-traces.local.jsonl",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "stage spawn recorded" in result.stdout
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    spawn = data["runs"][0]["stage_spawns"][0]
+    assert spawn["model"] == "gpt-5.5"
+    assert spawn["reasoning_effort"] == "medium"
 
 
 def test_record_stage_spawn_preserves_concurrent_appends(tmp_path: Path) -> None:

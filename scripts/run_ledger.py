@@ -430,6 +430,16 @@ def validate_ledger(data: dict) -> list[str]:
                     *extra_required,
                 )
                 allowed_fields = set(required_fields)
+                if field_name == "stage_spawns":
+                    allowed_fields.update(
+                        {
+                            "model",
+                            "reasoning_effort",
+                            "model_tier",
+                            "policy_ref",
+                            "selector_trace_ref",
+                        }
+                    )
                 for evidence_field in evidence:
                     if evidence_field not in allowed_fields:
                         errors.append(f"{ep}: unexpected field '{evidence_field}'")
@@ -460,6 +470,30 @@ def validate_ledger(data: dict) -> list[str]:
                     if not _STAGE_ID_RE.match(evidence_stage_id):
                         errors.append(
                             f"{ep}: stage_id must match stage id pattern, got {evidence_stage_id!r}"
+                        )
+
+                if field_name == "stage_spawns":
+                    for optional_field in (
+                        "model",
+                        "reasoning_effort",
+                        "model_tier",
+                        "policy_ref",
+                        "selector_trace_ref",
+                    ):
+                        optional_value = evidence.get(optional_field)
+                        if optional_value is not None and (
+                            not isinstance(optional_value, str) or not optional_value.strip()
+                        ):
+                            errors.append(f"{ep}: '{optional_field}' must be a non-empty string")
+                    reasoning_effort = evidence.get("reasoning_effort")
+                    if reasoning_effort is not None and reasoning_effort not in {
+                        "low",
+                        "medium",
+                        "high",
+                        "xhigh",
+                    }:
+                        errors.append(
+                            f"{ep}: reasoning_effort must be one of low, medium, high, xhigh"
                         )
 
                 timestamp_value = evidence.get(timestamp_field)
@@ -1046,6 +1080,11 @@ def _stage_evidence_entry(
     timestamp: str,
     summary_status: str | None = None,
     summary_disposition: str | None = None,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+    model_tier: str | None = None,
+    policy_ref: str | None = None,
+    selector_trace_ref: str | None = None,
 ) -> dict:
     entry = {
         "run_id": run_id,
@@ -1060,6 +1099,15 @@ def _stage_evidence_entry(
         entry["summary_status"] = summary_status
     if summary_disposition is not None:
         entry["summary_disposition"] = summary_disposition
+    for key, value in (
+        ("model", model),
+        ("reasoning_effort", reasoning_effort),
+        ("model_tier", model_tier),
+        ("policy_ref", policy_ref),
+        ("selector_trace_ref", selector_trace_ref),
+    ):
+        if value is not None:
+            entry[key] = value
     return entry
 
 
@@ -1072,6 +1120,11 @@ def record_stage_spawn(
     trigger: str,
     role_hint: str,
     dependency_summary_refs: list[str] | None = None,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+    model_tier: str | None = None,
+    policy_ref: str | None = None,
+    selector_trace_ref: str | None = None,
     spawned_at: str | None = None,
     ledger_path: Path | None = None,
 ) -> dict:
@@ -1092,6 +1145,11 @@ def record_stage_spawn(
             dependency_summary_refs=dependency_summary_refs,
             timestamp_field="spawned_at",
             timestamp=spawned_at or utc_now_iso(),
+            model=model,
+            reasoning_effort=reasoning_effort,
+            model_tier=model_tier,
+            policy_ref=policy_ref,
+            selector_trace_ref=selector_trace_ref,
         )
         run.setdefault("stage_spawns", []).append(evidence)
         run["updated_at"] = utc_now_iso()
@@ -1765,6 +1823,11 @@ def cmd_record_spawn(args: argparse.Namespace) -> None:
         trigger=args.trigger,
         role_hint=args.role_hint,
         dependency_summary_refs=args.dependency_summary_refs,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        model_tier=args.model_tier,
+        policy_ref=args.policy_ref,
+        selector_trace_ref=args.selector_trace_ref,
         ledger_path=args.ledger,
     )
     print(f"stage spawn recorded: {evidence['run_id']} {evidence['stage_id']}")
@@ -1920,6 +1983,22 @@ def main() -> None:
     )
     rsp.add_argument("--trigger", required=True, metavar="TRIGGER", help="Isolation trigger.")
     rsp.add_argument("--role-hint", required=True, metavar="TEXT", help="Canonical role hint.")
+    rsp.add_argument("--model", metavar="MODEL", default=None, help="Resolved Codex model.")
+    rsp.add_argument(
+        "--reasoning-effort",
+        metavar="EFFORT",
+        choices=["low", "medium", "high", "xhigh"],
+        default=None,
+        help="Resolved Codex reasoning effort.",
+    )
+    rsp.add_argument("--model-tier", metavar="TIER", default=None, help="Portable model tier.")
+    rsp.add_argument("--policy-ref", metavar="REF", default=None, help="Selector policy ref.")
+    rsp.add_argument(
+        "--selector-trace-ref",
+        metavar="PATH",
+        default=None,
+        help="Selector trace artifact path or ref.",
+    )
     rsp.add_argument(
         "--dependency-summary-ref",
         action="append",

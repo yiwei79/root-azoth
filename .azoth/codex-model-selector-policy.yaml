@@ -1,6 +1,6 @@
 schema_version: 1
-policy_ref: codex-model-selector-policy@2026-04-25
-source_observed_on: "2026-04-25"
+policy_ref: codex-model-selector-policy@2026-04-29
+source_observed_on: "2026-04-29"
 trace_path: .azoth/codex-model-selector-traces.local.jsonl
 default_model_tier: standard
 supported_reasoning_efforts:
@@ -8,6 +8,14 @@ supported_reasoning_efforts:
   - medium
   - high
   - xhigh
+selection_notes:
+  - Official Codex docs treat medium as the balanced default, low as speed-sensitive,
+    and high as appropriate for complex logic, assumption checking, edge cases,
+    reviewer, or security-focused agents.
+  - Official model docs recommend gpt-5.5 for complex reasoning and coding, with
+    gpt-5.4-mini or nano for lower-latency and lower-cost workloads.
+  - xhigh remains explicit-override only in Azoth until local evidence proves a
+    bounded default escalation is consistently beneficial.
 tiers:
   premium:
     preferred_aliases:
@@ -23,9 +31,9 @@ tiers:
       builder: medium
   standard:
     preferred_aliases:
+      - gpt-5.5
       - gpt-5.4
       - gpt-5.3-codex
-      - gpt-5.5
     default_reasoning_effort: medium
     reasoning_effort_by_subagent_type:
       architect: medium

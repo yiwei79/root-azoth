@@ -1372,7 +1372,7 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
     content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert "Wave A is mandatory" in content
     assert "official sources before Checkpoint" in content
-    assert "max_threads: 10, max_depth: 2" in content
+    assert "max_threads: 16, max_depth: 3" in content
 
 
 def test_dynamic_full_auto_does_not_define_autonomous_self_development_mode() -> None:

@@ -308,6 +308,21 @@ $defs:
       spawned_at:
         type: string
         pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      model:
+        type: string
+        minLength: 1
+      reasoning_effort:
+        type: string
+        enum: [low, medium, high, xhigh]
+      model_tier:
+        type: string
+        minLength: 1
+      policy_ref:
+        type: string
+        minLength: 1
+      selector_trace_ref:
+        type: string
+        minLength: 1
 
   stage_summary_evidence_entry:
     type: object

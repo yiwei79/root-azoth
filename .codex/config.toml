@@ -23,7 +23,8 @@ NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
 - Before the first substantive write in a turn, validate `.azoth/scope-gate.json` and, for governed work, `.azoth/pipeline-gate.json`. Prefer `python3 scripts/check_gates.py --session-id <active session id>` when a scope session id exists.
 - Simulate write-claim discipline in hook-soft flows: read `.azoth/run-ledger.local.yaml` and do not write while another live session holds `write_claim`.
 - For governed delivery pipelines, keep the orchestrator in the main thread and use staged subagents with the generated custom agents in `.codex/agents/` or Codex built-ins when appropriate. Forward typed YAML stage summaries between stages per `skills/subagent-router/SKILL.md`; do not collapse a multi-stage governed pipeline into one inline reply when isolation is needed.
-- Codex's default execution budget is `max_threads = 10`, `max_depth = 2`. Treat it as a shared budget, not permission to saturate every slot blindly.
+- Before every Codex `spawn_agent` call in Azoth work, run `python3 scripts/codex_model_selector.py resolve` with the stage id, subagent type, model tier, mandatory tools, and known selector signals (`--risk`, `--complexity`, `--knowledge`, `--stage-kind`, `--target-layer`, repeated `--trigger`), then pass the returned `model` and `reasoning_effort` into the actual spawn call. Do not rely on parent-session model inheritance for subagents.
+- Codex's default execution budget is `max_threads = 16`, `max_depth = 3`. Treat it as a shared budget, not permission to saturate every slot blindly.
 - Nested delegation is bounded: only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1, and only when the spawn includes an explicit `execution_budget`. All other agents are leaf-only.
 - An explicit Azoth pipeline invocation (`$azoth-auto`, `$azoth-autonomous-auto`, `$azoth-deliver`, `$azoth-deliver-full`, literal `/auto`, `/autonomous-auto`, `/deliver`, `/deliver-full`, etc.) is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.
 - Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning and no required fresh-context, review-independence, or human gate is being bypassed.
@@ -54,8 +55,8 @@ codex_hooks = true
 multi_agent = true
 
 [agents]
-max_threads = 10
-max_depth = 2
+max_threads = 16
+max_depth = 3
 
 [sandbox_workspace_write]
 network_access = false

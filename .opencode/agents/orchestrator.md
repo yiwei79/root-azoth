@@ -212,13 +212,19 @@ slice, change the pipeline shape, or escalate to the human for a pipeline decisi
 
 ## Model Tiering
 
-Set `model_tier` on every BL-011 spawn contract. The subagent-router resolves tier to a concrete model identifier; the orchestrator only sets the tier.
+Set `model_tier` on every BL-011 spawn contract. On Codex, resolve that tier before every `spawn_agent` call with `python3 scripts/codex_model_selector.py resolve`, pass the returned `model` and `reasoning_effort` into the actual spawn call, and record those selector fields in stage-spawn evidence. Do not rely on parent-session model inheritance.
+
+When calling the selector, include the latest classification signals whenever known:
+`--risk`, `--complexity`, `--knowledge`, `--stage-kind`, `--target-layer`, and one
+`--trigger` per routing or escalation trigger. These signals are part of the
+selection evidence, not extra prompt prose. Keep `xhigh` explicit-override only
+unless a future policy update adds a measured bounded default.
 
 | Tier | When | Spawn field |
 |------|------|-------------|
-| **premium** | `risk == governance-change`, `scope == kernel`, `knowledge == instruction-refinement`, evaluator stages on M1 work | `model_tier: premium` |
+| **premium** | `risk == governance-change`, `scope == kernel`, `knowledge == instruction-refinement`, evaluator stages on M1 work, repeated failure/root-cause loops | `model_tier: premium` |
 | **standard** | Default for all stages not matching premium or fast | `model_tier: standard` |
-| **fast** | `risk == cosmetic`, `scope == docs`, `complexity == simple AND knowledge == known-pattern`, explore-only tasks | `model_tier: fast` |
+| **fast** | `risk == cosmetic`, `scope == docs`, `complexity == simple AND knowledge == known-pattern`, read-only research/explore/search tasks with no `apply_patch` requirement | `model_tier: fast` |
 
 The human may override tier in the Declaration (e.g., "use premium for all stages"). Orchestrator respects explicit tier overrides for all subsequent spawns.
 

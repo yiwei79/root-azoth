@@ -440,10 +440,17 @@ def test_codex_orchestrator_and_auto_wrapper_include_stage0_assumption_checkpoin
 
 def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
     text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
-    assert "max_threads = 10" in text
-    assert "max_depth = 2" in text
+    assert "max_threads = 16" in text
+    assert "max_depth = 3" in text
     assert "Nested delegation is bounded" in text
     assert "`research-orchestrator`, and `architect` may spend depth > 1" in text
+
+
+def test_codex_config_requires_runtime_model_selector_for_spawns() -> None:
+    text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
+    assert "python3 scripts/codex_model_selector.py resolve" in text
+    assert "pass the returned `model` and `reasoning_effort`" in text
+    assert "Do not rely on parent-session model inheritance" in text
 
 
 def test_codex_config_template_and_deployed_output_include_codex_only_style_rubric() -> None:
