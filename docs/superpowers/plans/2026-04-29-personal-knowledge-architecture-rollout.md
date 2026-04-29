@@ -10,6 +10,19 @@
 
 ---
 
+## Required UX Anchor
+
+Before executing any implementation task, read:
+
+```text
+docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+```
+
+The implementation must preserve the multi-control-panel target experience:
+developer work happens in `root-azoth`, generic runtime changes flow through
+the product pipeline, private operator state deploys only to the personal root,
+and project writes require project-scoped approval.
+
 ## File Structure
 
 Root source files:
@@ -569,4 +582,3 @@ Recommended execution path:
 3. Execute Task 6 as a review-only session.
 4. Execute Task 7 only after explicit operator approval of Batch 0.
 5. Delay Task 8 until Batch 0 has proven useful in real operation.
-

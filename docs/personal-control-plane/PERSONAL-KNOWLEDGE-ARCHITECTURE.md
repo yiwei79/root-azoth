@@ -4,6 +4,7 @@ Status: draft architecture source
 Date: 2026-04-29
 Source plane: `root-azoth`
 Deployment target: personal Azoth root
+UX anchor: `docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md`
 
 This document defines the scalable knowledge architecture for the operator
 personal control plane. It extends the T-038 personal-root model without
@@ -358,4 +359,3 @@ personal-root knowledge skeleton and validators. Do not run extraction yet.
 
 The session after that should run Phase 3 in read-only mode and present a
 candidate batch. Only after review should Batch 0 be deployed.
-
