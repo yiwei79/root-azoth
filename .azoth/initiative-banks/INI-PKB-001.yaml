@@ -1,0 +1,300 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-PKB-001
+title: Personal knowledge Batch 0 and deployment finalization
+status: planning_discovery_seed
+classification: planning_discovery_seed
+created_at: "2026-04-29T17:20:00+00:00"
+updated_at: "2026-04-29T17:20:00+00:00"
+owner: codex
+delivery_authorized: false
+source_sessions:
+  - session_id: 2026-04-29-knowledge-deployment-dfa
+    kind: dynamic-full-auto-research-proposal-seed
+    artifact: .azoth/initiative-banks/INI-PKB-001.yaml
+    note: >
+      Seeded a stabilization-phase initiative bank after external research and
+      repo-local exploration. The seed does not authorize hydration, implementation,
+      personal-root mutation, or release work.
+contacts:
+  - id: operator
+    role: human decision owner
+    contact_type: human
+    note: Approves Batch 0 review, deployment, recall integration, and any future hydration.
+  - id: personal-knowledge-architecture
+    role: architecture anchor
+    contact_type: artifact
+    path: docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+    note: Defines the federated source-pointer/card model and personal-root boundaries.
+  - id: deployment-model
+    role: deployment anchor
+    contact_type: artifact
+    path: .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+    note: Defines root-azoth, public azoth, and personal-root deployment responsibilities.
+  - id: p4-research-digest
+    role: external research digest
+    contact_type: artifact
+    path: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+    note: Captures current delivery, provenance, retrieval, and AI safety research.
+source_proposal_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+research_questions:
+  - question_id: rq-pkb-001-001
+    question: What is the smallest useful Batch 0 candidate-review artifact?
+    status: active
+    opened_at: "2026-04-29T17:20:00+00:00"
+    needed_for: slice-pkb-001-a
+    answer: >
+      Start with a root-side candidate review artifact only: 5-10 candidates,
+      explicit provenance, decision state, safety classification, and validator
+      evidence. Do not deploy cards to personal-root in the same slice.
+    evidence_refs:
+      - scripts/personal_knowledge_inventory.py
+      - scripts/personal_knowledge_validate.py
+      - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  - question_id: rq-pkb-001-002
+    question: Which retrieval/search practices should apply before adding recall surfaces?
+    status: active
+    opened_at: "2026-04-29T17:20:00+00:00"
+    needed_for: slice-pkb-001-c
+    answer: >
+      Retrieval should wait until the card schema proves useful. Future recall
+      should preserve source metadata, filters, contextualized chunks, exact
+      identifier search, and eval evidence before broad vector or graph indexing.
+    evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+  - question_id: rq-pkb-001-003
+    question: What release-feedback gates prevent repeating the rushed stable-release mistake?
+    status: active
+    opened_at: "2026-04-29T17:20:00+00:00"
+    needed_for: finalization_lifecycle
+    answer: >
+      Use staged reconcile, preflight, independent review/eval, explicit approval,
+      deploy/publish, verify, and closeout. Treat retrospective evidence as
+      corrective evidence, not retroactive compliance.
+    evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+research_refs:
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+local_findings:
+  - finding_id: lf-pkb-001-001
+    status: active
+    summary: T-038, T-040, and T-041 are complete; Batch 0 does not exist yet.
+    evidence_refs:
+      - .azoth/roadmap.yaml
+      - .azoth/backlog.yaml
+      - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  - finding_id: lf-pkb-001-002
+    status: active
+    summary: Personal-root validates as an approved empty knowledge skeleton and should stay empty until approved cards exist.
+    evidence_refs:
+      - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/releases/applied.yaml
+      - scripts/personal_knowledge_validate.py
+  - finding_id: lf-pkb-001-003
+    status: active
+    summary: T-041 inventory is path-only and broad; Batch 0 must shortlist, not drain inbox or memory surfaces.
+    evidence_refs:
+      - scripts/personal_knowledge_inventory.py
+external_findings:
+  - finding_id: ef-pkb-001-001
+    status: active
+    summary: Delivery health requires speed and instability/recovery signals together, not a single green check.
+    source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+  - finding_id: ef-pkb-001-002
+    status: active
+    summary: GitOps and SLSA reinforce declarative desired state, immutable version history, source provenance, and revision continuity.
+    source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+  - finding_id: ef-pkb-001-003
+    status: active
+    summary: Current RAG practice favors metadata filters, hybrid retrieval, contextual chunks, reranking, and evals before broad indexing.
+    source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+  - finding_id: ef-pkb-001-004
+    status: active
+    summary: OWASP and NIST guidance treat vector stores and AI knowledge flows as governed systems with access, validation, logging, and lifecycle risk controls.
+    source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+assumptions:
+  - assumption_id: as-pkb-001-001
+    status: active
+    statement: A proposal plus initiative-bank seed is the right p4 stabilization output because direct roadmap hydration would cut across freeze posture.
+    validation_path: Revisit only after the operator explicitly approves a hydration route.
+  - assumption_id: as-pkb-001-002
+    status: active
+    statement: Batch 0 usefulness should be proven with a tiny reviewed candidate set before recall or graph/index infrastructure.
+    validation_path: Run a root-side Batch 0 review artifact slice with validator evidence.
+contradictions:
+  - contradiction_id: cx-pkb-001-001
+    status: monitored
+    summary: The personal control plane overlays the dev panel operationally, but it must not supersede root-azoth as source authority.
+    resolution: Preserve source-plane pointers and keep mutation authority in root/public release gates.
+challenge_log:
+  - challenge_id: ch-pkb-001-001
+    status: active
+    prompt: What would make the next slice too broad?
+    answer: >
+      Combining candidate review, card creation, personal-root deployment, recall
+      integration, source registry onboarding, or public release in one slice.
+  - challenge_id: ch-pkb-001-002
+    status: active
+    prompt: What would repeat the rushed-release mistake?
+    answer: >
+      Treating validator success as approval to publish/deploy, or using retrospective
+      evidence as if it were contemporaneous gated evidence.
+candidate_slices:
+  - candidate_id: slice-pkb-001-a
+    proposed_task_id: T-PKB-A
+    title: Batch 0 candidate review artifact only
+    initiative_ref: INI-PKB-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Create a root-side candidate review artifact for 5-10 deferred personal
+      knowledge candidates with provenance, safety classification, decision state,
+      and validator evidence. Do not create cards or deploy to personal-root.
+    acceptance_criteria:
+      - Candidate artifact validates structurally.
+      - Every candidate has source pointer, rationale, safety classification, and decision state.
+      - No personal-root files are mutated.
+      - No Batch 0 cards are created.
+      - Dashboard and deploy parity checks still pass.
+    research_evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+      - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+    known_non_goals:
+      - No personal-root deployment.
+      - No source registry or project onboarding.
+      - No recall integration.
+      - No public azoth release.
+    open_questions:
+      - Which exact 5-10 candidates should the operator approve for review?
+    recommended_phase: post-v0.2.0-stabilization
+    hydration_plan:
+      proposed_title: Personal knowledge Batch 0 candidate review artifact
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Personal knowledge Batch 0 candidate review artifact"
+        --initiative-ref INI-PKB-001 --target-layer infrastructure --delivery-pipeline standard
+  - candidate_id: slice-pkb-001-b
+    proposed_task_id: T-PKB-B
+    title: Approved card deployment receipt and personal-root pointer index
+    initiative_ref: INI-PKB-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      After operator approval of candidate decisions, deploy only approved cards
+      to personal-root with a receipt, pointer index update, validation evidence,
+      and clean-git proof.
+    acceptance_criteria:
+      - Only approved candidate IDs are deployed.
+      - Personal-root validator passes after deployment.
+      - Deployment receipt names source revision, target paths, validation command, and commit.
+      - Root and personal-root git states are clean after closeout.
+    research_evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+    known_non_goals:
+      - No broad import.
+      - No recall or retrieval index.
+      - No public release.
+    open_questions:
+      - Which candidate decisions are approved after slice-pkb-001-a?
+    recommended_phase: post-v0.2.0-stabilization
+    hydration_plan:
+      proposed_title: Approved personal knowledge card deployment receipt
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Approved personal knowledge card deployment receipt"
+        --initiative-ref INI-PKB-001 --target-layer infrastructure --delivery-pipeline standard
+  - candidate_id: slice-pkb-001-c
+    proposed_task_id: T-PKB-C
+    title: Personal knowledge recall pilot and retrieval eval harness
+    initiative_ref: INI-PKB-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      After cards prove useful, add a root-side recall pilot with metadata filters,
+      source-preserving context, exact identifier search, and eval cases before
+      vector or graph infrastructure.
+    acceptance_criteria:
+      - Recall pilot uses approved card metadata only.
+      - Eval cases cover exact source/path lookup, semantic question, freshness, and access-boundary behavior.
+      - Retrieval output preserves source pointers and does not become hidden instruction authority.
+    research_evidence_refs:
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+      - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+    known_non_goals:
+      - No raw inbox or memory indexing.
+      - No GraphRAG production layer.
+      - No autonomous source mutation from retrieved cards.
+    open_questions:
+      - Which card set is sufficient to evaluate recall usefulness?
+      - What latency/cost ceiling should apply to recall?
+    recommended_phase: post-v0.2.0-stabilization
+    hydration_plan:
+      proposed_title: Personal knowledge recall pilot and retrieval eval harness
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Personal knowledge recall pilot and retrieval eval harness"
+        --initiative-ref INI-PKB-001 --target-layer infrastructure --delivery-pipeline standard
+readiness:
+  readiness_status: continue_research
+  human_decision: approved_for_planning_seed_only
+  classification: planning_discovery_seed
+  source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
+  candidate_first_slice: slice-pkb-001-a
+  freshness_status: current_as_of_2026-04-29
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: >
+    Operator invoked azoth-dynamic-full-auto on 2026-04-29 for comprehensive
+    exploration, external research, synthesis, proposal creation, and stabilization
+    roadmap seeds without implementation.
+  allowed_outputs:
+    - initiative_bank_seed
+    - intake_summary
+    - validation_report
+  forbidden_outputs:
+    - backlog_row
+    - credential_access
+    - cross_branch_write
+    - destructive_action
+    - governance_change
+    - hydrate_task
+    - hydration_write
+    - implementation_work
+    - kernel_change
+    - network_expansion
+    - protected_expansion
+    - roadmap_task
+    - run_ledger_entry
+    - scope_gate
+    - ship_task
+    - task_spec
+  blocked_actions:
+    - backlog_row
+    - roadmap_task
+    - task_spec
+    - hydration_write
+    - implementation_work
+    - ship_task
+    - public_release
+    - personal_root_mutation
+  delivery_authorized: false
+  hydrate_authorized: false
+  ship_authorized: false
+  hydration_recommendation: >
+    No hydration is authorized by planning_seed_only_no_hydration. Revisit only
+    after the operator explicitly approves slice-pkb-001-a hydration.
+  next_readiness_gate: operator_selects_batch_zero_review_scope
+hydration_history: []
+raw_intake:
+  initiative_id: INI-PKB-001
+  operator_goal: >
+    Stabilize the personal knowledge architecture and Azoth deployment model before
+    any Batch 0 card creation, personal-root mutation, recall integration, source
+    registry onboarding, or public release work.
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: >
+    Operator invoked azoth-dynamic-full-auto on 2026-04-29 for comprehensive
+    exploration, external research, synthesis, proposal creation, and stabilization
+    roadmap seeds without implementation.
