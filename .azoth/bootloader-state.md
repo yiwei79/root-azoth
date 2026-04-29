@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.3.78 · Phase 3 · active_version: v0.2.0-p3 · current_patch: 78
+0.1.4.0 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 1
 
 ## Last Session
-- **Session**: 2026-04-26-autonomous-auto-t-033-3
-- **Goal**: Autonomous-auto learning harvester and self-heal router
+- **Session**: 2026-04-29-v0.2.0-stable-publish
+- **Goal**: Publish stable v0.2.0 through the T-037 public handoff after accepted RC and stable-preflight evidence; skip Windows/PowerShell proof for this release and record T-039 closeout evidence.
 - **Session mode**: delivery
-- **Pipeline**: autonomous-auto
+- **Pipeline**: dynamic-full-auto
 - **Outcome**: closed
-- **Episode**: ep-456 (success)
+- **Episode**: ep-457 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

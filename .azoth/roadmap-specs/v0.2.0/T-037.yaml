@@ -52,6 +52,19 @@ evidence:
   - Public temporary worktree ruff check scripts/ passed.
   - Public temporary worktree product_release_smoke.py --out /private/tmp/azoth-public-rc-smoke passed.
   - PowerShell smoke remained skipped on this host because pwsh/powershell is unavailable.
+- date: '2026-04-29'
+  status: v0.2.0-stable-published
+  approval: Operator explicitly approved creating and pushing the v0.2.0 stable tag and GitHub release.
+  source_root_evidence_commit: b83d8337767bba060d60e4a3a7ceeba316275b65
+  public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  tag: v0.2.0
+  tag_object: a1d711d24353601b03e476aa94a11bbb56b33408
+  release_url: https://github.com/yiwei79/azoth/releases/tag/v0.2.0
+  validation:
+  - Comprehensive T-039 publishing review passed and is recorded in .azoth/roadmap-specs/v0.2.0/V0.2.0-PUBLISH-REVIEW-CHECKS.md.
+  - Stable publication evidence is recorded in .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md.
+  - The stable public product tree had no diff from the already-green v0.2.0-rc.1 public commit.
+  - PowerShell smoke remained skipped by explicit operator instruction for this release.
 dependencies:
 - T-036
 delivery:

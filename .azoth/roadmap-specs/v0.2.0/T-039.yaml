@@ -103,6 +103,16 @@ evidence:
   pipeline_command: dynamic-full-auto
   evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-PUBLISH-REVIEW-CHECKS.md
   decision: Comprehensive publishing review checks passed across root validation, full pytest, product smoke, public worktree validation, release-state checks, and public CI inspection; stable v0.2.0 remains unpublished until explicit operator approval to create and push the stable tag and GitHub release.
+- date: '2026-04-29'
+  status: stable_v0.2.0_published
+  session_id: 2026-04-29-v0.2.0-stable-publish
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+  public_release_url: https://github.com/yiwei79/azoth/releases/tag/v0.2.0
+  public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  tag: v0.2.0
+  tag_object: a1d711d24353601b03e476aa94a11bbb56b33408
+  decision: Stable v0.2.0 was published after explicit operator approval, using the clean public worktree and reviewed release notes; final release remains bounded by the accepted Windows/PowerShell deferral and no package-manager distribution claim.
 dependencies:
 - T-035
 - T-036
