@@ -3497,10 +3497,11 @@ items:
   source: personal-knowledge-architecture-rollout-2026-04-29
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-04-29'
+  completed_date: '2026-04-29'
   description: 'Hydrate the first post-v0.2.0 personal control-panel implementation
     slice from the UX anchor, personal knowledge architecture, rollout plan, and T-038
     personal-root deployment model: create the empty personal-root knowledge skeleton,

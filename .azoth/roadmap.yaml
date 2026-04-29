@@ -2077,20 +2077,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-040
-    title: Personal knowledge skeleton, schemas, and validator
-    decision_ref:
-    - D11
-    - D30
-    - D34
-    - D35
-    - D37
-    - D38
-    - D42
-    - D48
-    - D50
-    - D52
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2157,6 +2144,20 @@ versions:
     - D38
     - D42
     - D46
+    - D48
+    - D50
+    - D52
+  - id: T-040
+    title: Personal knowledge skeleton, schemas, and validator
+    completed_date: '2026-04-29'
+    decision_ref:
+    - D11
+    - D30
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
     - D48
     - D50
     - D52
