@@ -354,8 +354,13 @@ Stop before implementation if any of the following are true:
 
 ## Near-Term Recommendation
 
-The next implementation session should be Phase 1 plus Phase 2 only: create the
-personal-root knowledge skeleton and validators. Do not run extraction yet.
+The current near-term deployment path is the T-047 procedure in
+`docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md`.
+Treat the personal root as desired state plus reconciliation before any future
+mutation-capable slice.
 
-The session after that should run Phase 3 in read-only mode and present a
-candidate batch. Only after review should Batch 0 be deployed.
+Future personal-root updates should run through T-048 from an approved
+desired-state manifest, then use T-049 for pointer-only project onboarding and
+T-050 for stable deployment closeout. Do not resume older skeleton, inventory,
+or Batch 0 wording as the next action unless the roadmap route explicitly points
+back to it.

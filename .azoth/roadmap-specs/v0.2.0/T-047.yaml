@@ -20,10 +20,10 @@ scope:
 - Define a declarative desired-state contract for the personal root, including
   release/RC input, target path, storage policy, enabled surfaces, approved card
   set, project pilot list, validation commands, and rollback point.
-- Define the reconciliation preflight: root-azoth clean state, product extraction
+- Define the reconciliation preflight - root-azoth clean state, product extraction
   or public azoth revision, personal-root clean state, validator output, write
   claim/scope truth, and explicit operator approval for the exact target.
-- Define the deployment receipt/provenance contract: source revision, product
+- Define the deployment receipt/provenance contract - source revision, product
   revision, candidate/card ids, target paths, validation command/result, applied
   timestamp, rollback reference, and residual-risk statement.
 - Define staged follow-on roadmap candidates for personal-root RC update rehearsal,
@@ -45,15 +45,17 @@ acceptance:
   personal-control-plane route.
 - The procedure describes a declarative desired-state manifest, reconciliation
   preflight, apply step, verification, receipt, rollback, and closeout path.
-- The staged follow-on path is explicit: personal-root RC update rehearsal before
+- The staged follow-on path is explicit - personal-root RC update rehearsal before
   source/project onboarding, and project pilot before stable personal-plane
   closeout.
-- All approval boundaries are visible: release approval does not imply
+- All approval boundaries are visible - release approval does not imply
   personal-root deployment approval, and personal-root approval does not imply
   project-write approval.
 - Validation includes planning-bank validation, roadmap/dashboard rendering,
   azoth-deploy parity, product extraction validation, pipeline lint, and focused
   tests for touched planning surfaces if needed.
+artifacts:
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
 dependencies:
 - T-045
 - BL-077

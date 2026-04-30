@@ -334,6 +334,7 @@ candidate_slices:
   research_evidence_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
   - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
   - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#rollout-phases
   - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
   known_non_goals:
@@ -428,6 +429,42 @@ candidate_slices:
   hydration_plan:
     proposed_title: Project onboarding pilot through personal control plane
     mode: future_after_personal_root_rehearsal
+- candidate_id: slice-pkb-001-g
+  proposed_task_id: T-050
+  title: Stable personal-control-plane deployment closeout
+  initiative_ref: INI-PKB-001
+  status: candidate
+  target_layer: planning
+  delivery_pipeline: governed
+  summary: >
+    After the project onboarding pilot, close the personal-control-plane
+    deployment loop by packaging receipt evidence, documenting release and update
+    cadence, surfacing residual risks, and deciding whether local-only storage,
+    private remote, or encrypted backup is appropriate.
+  acceptance_criteria:
+  - T-047, T-048, and T-049 receipt evidence is linked from the closeout.
+  - The update cadence from root-azoth to public azoth to personal root to
+    project consumers is documented.
+  - Residual risks and deferred boundaries are explicit.
+  - Storage policy is either accepted as local-only or moved to a separately
+    approved private remote/encrypted backup task.
+  research_evidence_refs:
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md#follow-on-route
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-ux
+  known_non_goals:
+  - No new personal-root mutation.
+  - No automatic project updates.
+  - No broad source import.
+  - No retrieval or graph expansion.
+  - No public release without a release-specific gate.
+  open_questions:
+  - Is local-only storage sufficient after the first project pilot?
+  - Which receipt evidence should be summarized back into root-azoth?
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Stable personal-control-plane deployment closeout
+    mode: future_after_project_onboarding_pilot
 readiness:
   readiness_status: continue_research
   human_decision: approved
@@ -450,7 +487,9 @@ readiness:
   hydration_recommendation: T-047 is scaffolded as the next concrete personal-control-plane
     route. Execute T-047 through /next and /auto to write the cloud-native deployment
     procedure before hydrating T-048, rehearsing personal-root updates, onboarding
-    sources/projects, expanding retrieval, or mutating personal-root state.
+    sources/projects, expanding retrieval, or mutating personal-root state. Keep
+    T-048 as future_after_t047, then stage T-049 after the rehearsal and T-050
+    after the project onboarding pilot.
   allowed_outputs:
   - initiative_bank_seed
   - intake_summary
