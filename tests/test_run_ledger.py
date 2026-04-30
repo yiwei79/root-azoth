@@ -33,7 +33,9 @@ from run_ledger import (  # noqa: E402
     load_resumable_sessions,
     load_session,
     record_stage_spawn,
+    record_stage_inline_exception,
     record_stage_summary,
+    require_completion_evidence,
     require_stage_evidence,
     upsert_session,
     validate_ledger,
@@ -1003,6 +1005,16 @@ def _summary_evidence(**overrides: object) -> dict[str, object]:
     return evidence
 
 
+def _inline_exception(**overrides: object) -> dict[str, object]:
+    evidence = {
+        **_stage_evidence_kwargs(),
+        "exception_recorded_at": "2026-04-23T10:00:00+00:00",
+        "exception_reason": "Codex runtime had no safe staged delegation tool for this narrow slice.",
+    }
+    evidence.update(overrides)
+    return evidence
+
+
 def test_validate_accepts_stage_spawn_and_summary_evidence() -> None:
     data = {
         "schema_version": 1,
@@ -1016,6 +1028,54 @@ def test_validate_accepts_stage_spawn_and_summary_evidence() -> None:
     }
 
     assert validate_ledger(data) == []
+
+
+def test_validate_accepts_stage_inline_exception_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_inline_exceptions": [_inline_exception()],
+            }
+        ],
+    }
+
+    assert validate_ledger(data) == []
+
+
+def test_validate_rejects_malformed_stage_inline_exception_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_inline_exceptions": [
+                    {
+                        key: value
+                        for key, value in _inline_exception(
+                            run_id="wrong-run",
+                            exception_recorded_at="not-a-date",
+                            unexpected_field="nope",
+                        ).items()
+                        if key != "exception_reason"
+                    }
+                ],
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("stage_inline_exceptions[0]: run_id" in error for error in errors)
+    assert any("stage_inline_exceptions[0]: 'exception_recorded_at'" in error for error in errors)
+    assert any(
+        "stage_inline_exceptions[0]: missing required field 'exception_reason'" in error
+        for error in errors
+    )
+    assert any(
+        "stage_inline_exceptions[0]: unexpected field 'unexpected_field'" in error
+        for error in errors
+    )
 
 
 def test_validate_rejects_malformed_stage_evidence() -> None:
@@ -1099,6 +1159,168 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
     assert summary["summary_status"] == "complete"
     assert evidence["spawn"]["spawned_at"] == "2026-04-23T10:01:00+00:00"
     assert evidence["summary"]["summary_disposition"] == "approved"
+
+
+def test_require_completion_evidence_accepts_completed_stage_with_valid_pair(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="complete",
+        summary_disposition="approved",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    paired = completion["auto_s4_builder"]["paired_stage_evidence"]
+    assert paired["spawn"]["stage_id"] == "auto_s4_builder"
+    assert paired["summary"]["summary_disposition"] == "approved"
+
+
+def test_record_inline_exception_satisfies_completion_but_not_pair_only_stage_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+
+    exception = record_stage_inline_exception(
+        tmp_path,
+        exception_recorded_at="2026-04-23T10:00:00+00:00",
+        exception_reason="Codex context-budget slice was intentionally executed inline.",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    data["runs"][0]["updated_at"] = "2026-04-23T10:05:00+00:00"
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    assert exception["stage_id"] == "auto_s4_builder"
+    with pytest.raises(ValueError, match="missing stage spawn"):
+        require_stage_evidence(tmp_path, **kwargs)
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+    assert completion["auto_s4_builder"]["inline_exception"]["exception_reason"].startswith(
+        "Codex context-budget"
+    )
+
+
+def test_record_inline_exception_cli_and_require_completion_cli(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    record_result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "record-inline-exception",
+            "--run-id",
+            "run-stage-evidence",
+            "--stage-id",
+            "auto_s4_builder",
+            "--subagent-type",
+            "builder",
+            "--trigger",
+            "context-budget",
+            "--role-hint",
+            "Agent(subagent_type=builder): Implement - trigger: context-budget",
+            "--exception-reason",
+            "Codex staged delegation was unavailable before work started.",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    completion_result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "require-completion-evidence",
+            "--run-id",
+            "run-stage-evidence",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "stage inline exception recorded" in record_result.stdout
+    assert "completion evidence OK" in completion_result.stdout
+
+
+def test_require_completion_evidence_fails_closed_for_declared_stage_without_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing completion evidence"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
+
+
+def test_require_completion_evidence_does_not_let_inline_exception_override_blocking_summary(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="needs-input",
+        summary_disposition="request-changes",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    record_stage_inline_exception(
+        tmp_path,
+        exception_recorded_at="2026-04-23T10:00:00+00:00",
+        exception_reason="Inline exception cannot erase a blocking delegated summary.",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="cannot override invalid paired stage evidence"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
 
 
 def test_record_spawn_cli_accepts_selector_evidence(tmp_path: Path) -> None:

@@ -20,7 +20,7 @@ from episode_store import (
 )
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
 from run_ledger import (
-    assert_no_unresolved_governed_run_evidence,
+    assert_governed_run_completion_evidence,
     release_write_claim,
     upsert_run,
     upsert_session,
@@ -200,7 +200,7 @@ def enforce_governed_closeout_stage_evidence(
         raise CloseoutError("Governed closeout blocked: scope-gate.json is missing session_id.")
 
     try:
-        assert_no_unresolved_governed_run_evidence(repo_root, session_id=session_id)
+        assert_governed_run_completion_evidence(repo_root, session_id=session_id)
     except ValueError as exc:
         raise CloseoutError(f"Governed closeout blocked: {exc}") from exc
 

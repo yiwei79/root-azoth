@@ -266,6 +266,11 @@ $defs:
         items:
           $ref: "#/$defs/stage_summary_evidence_entry"
 
+      stage_inline_exceptions:
+        type: array
+        items:
+          $ref: "#/$defs/stage_inline_exception_entry"
+
       waves:
         type: array
         items:
@@ -358,6 +363,41 @@ $defs:
       summary_disposition:
         type: string
         minLength: 1
+
+  stage_inline_exception_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, exception_recorded_at, exception_reason]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      exception_recorded_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      exception_reason:
+        type: string
+        minLength: 1
+        description: >
+          Why this stage intentionally ran inline. This evidence authorizes
+          completion checks only; require-stage-evidence remains pair-only.
 
   wave_entry:
     type: object

@@ -359,6 +359,7 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
             "Keep the orchestrator in the main thread.",
             "This is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
             "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`; before protected downstream stages, run `scripts/run_ledger.py require-stage-evidence` and fail closed on missing, mismatched, blocked, or needs-input evidence.",
+            "For final completion, run `scripts/run_ledger.py require-completion-evidence`; a declared completed stage needs paired stage evidence or a pre-work `stage_inline_exceptions` entry, and retrospective inbox notes do not satisfy this guard.",
         ]
     )
     if pipeline in {"auto", "autonomous-auto", "dynamic-full-auto"}:

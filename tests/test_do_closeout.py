@@ -115,6 +115,18 @@ def _build_repo(
                     "active_stage_id": "architect_review",
                     "pending_stage_ids": ["builder_apply", "reviewer_gate"],
                     "pause_reason": "human-gate",
+                    "stage_inline_exceptions": [
+                        {
+                            "run_id": "run-123",
+                            "stage_id": "planner",
+                            "subagent_type": "planner",
+                            "trigger": "fixture-resume",
+                            "role_hint": "Agent(subagent_type=planner): Fixture completed planner stage inline",
+                            "dependency_summary_refs": [],
+                            "exception_recorded_at": "2026-04-15T00:00:00+00:00",
+                            "exception_reason": "Test fixture records the prior completed stage inline.",
+                        }
+                    ],
                     "waves": [],
                     "branches": [],
                 }
@@ -218,6 +230,16 @@ def _set_ledger_runs(repo_root: Path, runs: list[dict[str, object]]) -> None:
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["runs"] = runs
+    ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
+
+
+def _clear_first_run_stage_queue(repo_root: Path) -> None:
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    run = ledger["runs"][0]
+    run.pop("active_stage_id", None)
+    run.pop("pending_stage_ids", None)
+    run.pop("pause_reason", None)
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
 
 
@@ -635,6 +657,124 @@ def test_governed_closeout_blocks_unresolved_stage_spawn_before_mutation(
         ]
         is True
     )
+
+
+def test_governed_closeout_blocks_declared_completed_stage_without_evidence_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path)
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-missing-completion-evidence",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_spawns"] = []
+    run["stages_completed"] = ["auto_s4_builder"]
+    _set_ledger_runs(repo_root, [run])
+    version_bump_calls: list[tuple[list[str], Path, bool]] = []
+    monkeypatch.setattr(
+        do_closeout.subprocess,
+        "run",
+        lambda cmd, cwd, check: version_bump_calls.append((cmd, cwd, check)),
+    )
+
+    with pytest.raises(do_closeout.CloseoutError, match="missing completion evidence"):
+        do_closeout.run_closeout(repo_root)
+
+    assert version_bump_calls == []
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8") == ""
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
+
+
+def test_governed_closeout_blocks_live_pending_stages_before_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(
+        tmp_path,
+        include_session_state=True,
+        include_resumable_run=True,
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+
+    _assert_closeout_rejects_before_mutation(
+        repo_root,
+        monkeypatch,
+        expected_message="open governed run stages",
+    )
+
+
+def test_governed_closeout_accepts_declared_completed_stage_inline_exception(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    run = _unresolved_stage_run(
+        run_id="run-inline-completion-evidence",
+        session_id="sess-123",
+        backlog_id="BL-123",
+    )
+    run["stage_spawns"] = []
+    run["stages_completed"] = ["auto_s4_builder"]
+    run["stage_inline_exceptions"] = [
+        {
+            "run_id": "run-inline-completion-evidence",
+            "stage_id": "auto_s4_builder",
+            "subagent_type": "builder",
+            "trigger": "context-budget",
+            "role_hint": "Agent(subagent_type=builder): Implement - trigger: context-budget",
+            "dependency_summary_refs": ["auto_s3_planner"],
+            "exception_recorded_at": "2026-04-23T10:00:30+00:00",
+            "exception_reason": "Codex context-budget slice was intentionally executed inline.",
+        }
+    ]
+    _set_ledger_runs(repo_root, [run])
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    assert ledger["runs"][0]["status"] == "complete"
+    assert len(
+        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ) == 1
 
 
 def test_governed_closeout_rejects_malformed_run_ledger_before_mutation(
@@ -1797,6 +1937,7 @@ def test_governed_closeout_closes_terminal_governed_run_instead_of_parking(
             "decision": "approved",
         },
     )
+    _clear_first_run_stage_queue(repo_root)
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
@@ -1854,6 +1995,7 @@ def test_governed_closeout_clears_checkpoint_fields_in_session_state_when_termin
             "decision": "approved",
         },
     )
+    _clear_first_run_stage_queue(repo_root)
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setenv("HOME", str(fake_home))
 
@@ -1894,6 +2036,7 @@ def test_governed_administrative_finalize_closes_resumable_session_without_versi
             "decision": "approved",
         },
     )
+    _clear_first_run_stage_queue(repo_root)
     version_bump_calls: list[tuple[list[str], Path, bool]] = []
 
     def _fake_run(cmd: list[str], cwd: Path, check: bool) -> None:
@@ -1946,6 +2089,7 @@ def test_governed_administrative_finalize_prefers_closed_delivery_scope_over_sta
             "decision": "approved",
         },
     )
+    _clear_first_run_stage_queue(repo_root)
 
     scope_path = repo_root / ".azoth" / "scope-gate.json"
     scope = json.loads(scope_path.read_text(encoding="utf-8"))
@@ -2086,6 +2230,8 @@ def test_governed_closeout_closes_stale_active_run_instead_of_parking(
     ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
     ledger["runs"][0]["status"] = "active"
     ledger["runs"][0]["pause_reason"] = None
+    ledger["runs"][0].pop("active_stage_id", None)
+    ledger["runs"][0].pop("pending_stage_ids", None)
     ledger_path.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
 
     monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)

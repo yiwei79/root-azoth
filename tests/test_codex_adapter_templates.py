@@ -304,6 +304,8 @@ def test_codex_router_guides_auto_to_ledger_backed_stage_evidence() -> None:
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert LEDGER_EVIDENCE_GUIDANCE in ctx
     assert "require-stage-evidence" in ctx
+    assert "stage_inline_exceptions" in ctx
+    assert "require-completion-evidence" in ctx
     assert "fail closed" in ctx
 
 
@@ -314,6 +316,8 @@ def test_codex_router_guides_dynamic_full_auto_to_ledger_backed_stage_evidence()
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert LEDGER_EVIDENCE_GUIDANCE in ctx
     assert "require-stage-evidence" in ctx
+    assert "stage_inline_exceptions" in ctx
+    assert "require-completion-evidence" in ctx
     assert "fail closed" in ctx
 
 
