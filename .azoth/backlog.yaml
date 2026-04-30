@@ -3677,3 +3677,41 @@ items:
     surfaces without fresh approval.
   roadmap_ref: T-046
   initiative_ref: INI-EVI-002
+- id: BL-076
+  title: Fail-closed Codex dynamic-full-auto staged delegation evidence
+  source: SRF-2026-04-30-DFA-SUBAGENT-TRIGGER-001
+  target_layer: M1
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-30'
+  decision_ref:
+  - D21
+  - D23
+  - D50
+  description: >
+    Add a fail-closed Codex dynamic-full-auto stage gate so nontrivial planning,
+    editing, validation, or review work cannot be marked complete unless the run
+    ledger contains paired stage spawn/summary evidence for the declared stages,
+    or an explicit bounded inline-exception capsule recorded before the inline
+    work. Cover planning-bank edit scenarios with regression tests and update the
+    Codex wrapper/runtime prompt so this is a hard stop rather than advisory prose.
+- id: BL-077
+  title: Guard planning-bank hydration behind live approved scope
+  source: SRF-2026-04-30-HYDRATION-PIPELINE-BYPASS-001
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-30'
+  decision_ref:
+  - D50
+  description: >
+    Treat planning-bank hydration as a mutating pipeline action. Before
+    `planning_bank_validate.py --hydrate-approved` can delegate to
+    `roadmap_scaffold.py`, require a live unexpired approved scope gate with a
+    pipeline command, matching hydration-specific approval scope, matching source
+    initiative or bank, and no forbidden hydration outputs. Preserve T-043 as a
+    historically bypassed hydration rather than retroactively marking it compliant.
