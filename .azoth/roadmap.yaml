@@ -2115,7 +2115,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 9
+  current_patch: 10
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
