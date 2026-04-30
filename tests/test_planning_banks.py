@@ -626,36 +626,27 @@ def test_hydrate_approved_candidate_refuses_without_pipeline_scope(
         )
 
 
+@pytest.mark.parametrize(
+    "forbidden_output",
+    ["roadmap_hydration", "backlog_mutation", "roadmap_spec_mutation"],
+)
 def test_hydrate_approved_candidate_refuses_scope_that_forbids_hydration(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    forbidden_output: str,
 ) -> None:
     repo = tmp_path
-    bank_path, bank = _write_temp_initiative_bank(repo)
-    readiness = bank["readiness"]
-    readiness["readiness_status"] = "ready_to_hydrate"
-    readiness["human_decision"] = "approved"
-    readiness["freshness_status"] = "fresh"
-    readiness["approval_scope"] = "hydration_specific_slice_evi_002_c"
-    readiness["candidate_first_slice"] = "slice-evi-002-c"
-    candidate = next(
-        candidate
-        for candidate in bank["candidate_slices"]
-        if candidate["candidate_id"] == "slice-evi-002-c"
-    )
-    candidate["status"] = "candidate"
-    candidate["proposed_task_id"] = "TBD-INI-TEST-001"
-    candidate["open_questions"] = []
-    candidate["hydration_plan"]["proposed_title"] = "Temp approved planning-bank slice"
-    candidate["hydration_plan"]["scaffold_command"] = (
-        'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
-        "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
-    )
-    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    bank_path = _write_ready_hydration_candidate(repo)
     _write_hydration_scope_gate(repo)
     gate_path = repo / ".azoth" / "scope-gate.json"
     gate = json.loads(gate_path.read_text(encoding="utf-8"))
-    gate["forbidden_outputs"] = ["roadmap_hydration"]
+    gate["forbidden_outputs"] = [forbidden_output]
     gate_path.write_text(json.dumps(gate), encoding="utf-8")
+
+    def fail_run(*args, **kwargs):  # pragma: no cover - assertion helper
+        raise AssertionError("roadmap_scaffold.py must not run when hydration is forbidden")
+
+    monkeypatch.setattr(planning_bank_validate.subprocess, "run", fail_run)
 
     with pytest.raises(PlanningBankValidationError, match="forbids hydration"):
         hydrate_approved_initiative_candidate(
@@ -673,6 +664,7 @@ def test_hydrate_approved_candidate_refuses_scope_that_forbids_hydration(
         ({"closed_at": "2098-01-01T00:00:00Z"}, (), "open scope gate"),
         ({"expires_at": "2000-01-01T00:00:00Z"}, (), "unexpired scope gate"),
         ({"session_id": "other-session"}, (), "session_id must match"),
+        ({}, ("pipeline_command",), "approved pipeline_command"),
         ({}, ("approval_scope",), "approval_scope must be present"),
         ({"approval_scope": "hydration_specific_other"}, (), "approval_scope must match"),
         ({}, ("source_initiative_ref",), "source_initiative_ref must be present"),

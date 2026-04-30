@@ -228,7 +228,7 @@ def test_normalized_governed_state_renders_pipeline_gate_and_start_snapshot(
     assert "codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto" in start_block
 
 
-def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
+def test_resume_closeout_loop_reports_truthful_handoff_when_stage_evidence_complete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -263,10 +263,9 @@ def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
             "next_action": "Finish closeout",
             "pipeline": "deliver-full",
             "pipeline_position": 4,
-            "current_stage_id": "reviewer_gate",
-            "completed_stages": ["planner", "builder"],
-            "pending_stages": ["closeout"],
-            "pause_reason": "human-gate",
+            "current_stage_id": "closeout_ready",
+            "completed_stages": ["planner", "builder", "reviewer_gate"],
+            "pending_stages": [],
             "active_run_id": "run-654",
         },
         run_ledger={
@@ -295,10 +294,89 @@ def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
                     "created_at": "2099-04-18T09:00:00+00:00",
                     "updated_at": "2099-04-18T09:00:00+00:00",
                     "next_action": "Finish closeout",
-                    "stages_completed": ["planner", "builder"],
-                    "active_stage_id": "reviewer_gate",
-                    "pending_stage_ids": ["closeout"],
-                    "pause_reason": "human-gate",
+                    "stages_completed": ["planner", "builder", "reviewer_gate"],
+                    "stage_spawns": [
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "planner",
+                            "subagent_type": "planner",
+                            "trigger": "context-isolation",
+                            "role_hint": (
+                                "Agent(subagent_type=planner): Plan governed closeout "
+                                "journey - trigger: context-isolation"
+                            ),
+                            "dependency_summary_refs": [],
+                            "spawned_at": "2099-04-18T09:01:00+00:00",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "builder",
+                            "subagent_type": "builder",
+                            "trigger": "context-budget",
+                            "role_hint": (
+                                "Agent(subagent_type=builder): Implement governed "
+                                "closeout journey - trigger: context-budget"
+                            ),
+                            "dependency_summary_refs": ["planner"],
+                            "spawned_at": "2099-04-18T09:02:00+00:00",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "reviewer_gate",
+                            "subagent_type": "reviewer",
+                            "trigger": "review-independence",
+                            "role_hint": (
+                                "Agent(subagent_type=reviewer): Review governed "
+                                "closeout journey - trigger: review-independence"
+                            ),
+                            "dependency_summary_refs": ["planner", "builder"],
+                            "spawned_at": "2099-04-18T09:03:00+00:00",
+                        },
+                    ],
+                    "stage_summaries": [
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "planner",
+                            "subagent_type": "planner",
+                            "trigger": "context-isolation",
+                            "role_hint": (
+                                "Agent(subagent_type=planner): Plan governed closeout "
+                                "journey - trigger: context-isolation"
+                            ),
+                            "dependency_summary_refs": [],
+                            "summary_recorded_at": "2099-04-18T09:04:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "builder",
+                            "subagent_type": "builder",
+                            "trigger": "context-budget",
+                            "role_hint": (
+                                "Agent(subagent_type=builder): Implement governed "
+                                "closeout journey - trigger: context-budget"
+                            ),
+                            "dependency_summary_refs": ["planner"],
+                            "summary_recorded_at": "2099-04-18T09:05:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "reviewer_gate",
+                            "subagent_type": "reviewer",
+                            "trigger": "review-independence",
+                            "role_hint": (
+                                "Agent(subagent_type=reviewer): Review governed "
+                                "closeout journey - trigger: review-independence"
+                            ),
+                            "dependency_summary_refs": ["planner", "builder"],
+                            "summary_recorded_at": "2099-04-18T09:06:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                    ],
                     "waves": [],
                     "branches": [],
                 }
