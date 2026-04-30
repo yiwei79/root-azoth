@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.11 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 11
+0.1.4.12 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 12
 
 ## Last Session
-- **Session**: 2026-05-01-bl-077
-- **Goal**: BL-077: Guard planning-bank hydration behind live approved scope
+- **Session**: 2026-05-01-pkb-cloud-native-roadmap
+- **Goal**: AD-HOC: define cloud-native personal control-plane deployment roadmap procedures
 - **Session mode**: delivery
-- **Pipeline**: auto
+- **Pipeline**: plan
 - **Outcome**: closed
-- **Episode**: ep-480 (success)
+- **Episode**: ep-481 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
