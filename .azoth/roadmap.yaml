@@ -643,7 +643,7 @@ initiatives:
   - D52
   spec_ref: .azoth/roadmap-specs/v0.2.0/T-043.yaml
 - id: INI-PKB-001
-  title: Personal knowledge Batch 0 and deployment finalization
+  title: Personal-control-plane distributed knowledge system
   category: personal-control-plane
   theme: E
   dimensions:
@@ -655,9 +655,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-045
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -672,24 +672,24 @@ initiatives:
   - task_ref: T-045
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: slice_pkb_001_c_hydrated
+  discovery_status: post_t045_context_recovery
   candidate_slice_ref: slice-pkb-001-c
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-045 is hydrated as the personal knowledge recall pilot
-    and retrieval eval harness. Do not repeat hydration; route implementation through
-    a fresh `/next` scope card and `/auto` delivery child before adding recall behavior,
-    retrieval indexing, source onboarding, public release, or personal-root mutation.
-  summary: 'Plan the post-v0.2.0 personal knowledge continuation in small governed
-    increments: Batch 0 candidate review first, approved card deployment later, recall
-    only after the card contract proves useful, and source registry onboarding as
-    a separate future slice. This initiative must not mutate personal-root, create
-    cards, process untrusted inbox items, or reopen public release work in the Batch
-    0 review slice.
+  next_discovery_action: All tracked INI-PKB-001 candidate slices through T-045 are
+    hydrated and closed. Before new hydration, delivery, public release, source onboarding,
+    or personal-root mutation, recover the strategic context from the personal knowledge
+    architecture, personal-root deployment model, three-plane control-panel UX anchor,
+    and p4 research digest, then open a fresh scoped continuation.
+  summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
+    in small governed increments across root-azoth, public azoth, personal-root, and
+    project panels. The completed Batch 0 and recall pilot arc proved the pointer/card
+    contract; the next slice must explicitly recover strategic context before adding
+    source registry onboarding, broader recall, public release, or personal-root mutation.
 
     '
   decision_ref:
@@ -703,7 +703,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2280,4 +2280,17 @@ versions:
     - D48
     - D50
     - D52
-    - {id: T-045, title: "Personal knowledge recall pilot and retrieval eval harness", completed_date: "2026-04-30", decision_ref: [D11, D30, D34, D35, D37, D38, D42, D48, D50, D52]}
+  - id: T-045
+    title: Personal knowledge recall pilot and retrieval eval harness
+    completed_date: '2026-04-30'
+    decision_ref:
+    - D11
+    - D30
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
+    - D48
+    - D50
+    - D52

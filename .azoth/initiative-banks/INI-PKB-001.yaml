@@ -1,11 +1,11 @@
 schema_version: 1
 bank_type: initiative
 initiative_id: INI-PKB-001
-title: Personal knowledge Batch 0 and deployment finalization
+title: Personal-control-plane distributed knowledge system
 status: planning_discovery_seed
 classification: planning_discovery_seed
 created_at: '2026-04-29T17:20:00+00:00'
-updated_at: '2026-04-30T01:22:00+00:00'
+updated_at: '2026-04-30T19:05:00+00:00'
 owner: codex
 delivery_authorized: false
 source_sessions:
@@ -244,7 +244,7 @@ candidate_slices:
   proposed_task_id: T-045
   title: Personal knowledge recall pilot and retrieval eval harness
   initiative_ref: INI-PKB-001
-  status: hydrated
+  status: complete
   target_layer: infrastructure
   delivery_pipeline: standard
   summary: 'After cards prove useful, add a root-side recall pilot with metadata filters,
@@ -295,13 +295,13 @@ candidate_slices:
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
     hydrated_at: '2026-04-30T17:33:25Z'
 readiness:
-  readiness_status: ready_to_hydrate
+  readiness_status: complete
   human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-c
-  freshness_status: current_as_of_2026_04_30_hydrated_to_t_045
-  approval_scope: hydration_specific_slice_pkb_001_c
+  freshness_status: current_as_of_2026_04_30_t_045_closed
+  approval_scope: post_t045_continuation_requires_fresh_scope
   approval_basis: 'Operator approved the best native next step on 2026-04-30 and invoked
     $azoth-auto. Approval is scoped to hydrating INI-PKB-001 slice-pkb-001-c into
     a concrete roadmap/backlog/spec boundary for a personal knowledge recall pilot
@@ -312,8 +312,11 @@ readiness:
     '
   acceptance_criteria_status: present_for_slice_pkb_001_c
   non_goals_status: bounded_for_slice_pkb_001_c
-  hydration_recommendation: slice-pkb-001-c has been hydrated as T-045. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  hydration_recommendation: All tracked INI-PKB-001 candidate slices through T-045
+    are hydrated and closed. Do not repeat hydration or route stale implementation;
+    first recover the strategic context for the personal-control-plane distributed
+    knowledge system, then open a fresh scoped continuation before source onboarding,
+    broader recall, public release, or personal-root mutation.
   allowed_outputs:
   - initiative_bank_seed
   - intake_summary
@@ -344,9 +347,9 @@ readiness:
   - public_release
   - personal_root_mutation
   delivery_authorized: false
-  hydrate_authorized: true
+  hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: scope_card_approval_before_implementation
+  next_readiness_gate: context_recovery_before_new_candidate_or_deployment
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card
