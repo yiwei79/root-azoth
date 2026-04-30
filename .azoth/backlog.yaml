@@ -3703,10 +3703,11 @@ items:
   source: SRF-2026-04-30-HYDRATION-PIPELINE-BYPASS-001
   target_layer: infrastructure
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-04-30'
+  completed_date: '2026-04-30'
   decision_ref:
   - D50
   description: >
