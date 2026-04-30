@@ -4,7 +4,7 @@ initiative_id: INI-EVI-002
 title: Knowledge richness evaluation for project-management artifacts
 status: active_refinement
 created_at: '2026-04-24T00:00:00+00:00'
-updated_at: '2026-04-29T20:35:24Z'
+updated_at: '2026-04-30T20:53:18Z'
 owner: codex
 source_sessions:
 - session_id: 2026-04-24-initiative-discovery-bridge-proposal
@@ -48,6 +48,24 @@ source_sessions:
   artifact: .azoth/initiative-banks/INI-EVI-002.yaml
   note: Reconciled slice-evi-002-d against completed T-022 after eval-swarm found
     that a new T-043 helper candidate would duplicate already hydrated work.
+- session_id: 2026-04-30-ini-evi-002-continuation-refresh
+  kind: planning-only-context-recovery
+  artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+  note: Defined slice-evi-002-f as the next distinct follow-on seed after T-043; it
+    remains research-only until task-capsule derivation boundaries are challenged
+    and explicitly approved.
+- session_id: 2026-04-30-ini-evi-002-task-capsule-derivation
+  kind: dynamic-full-auto-planning-refinement
+  artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+  note: Refined slice-evi-002-f with staged explorer and architect evidence; answered
+    task-capsule field, freshness, and output-placement questions while preserving
+    the planning-only no-hydration boundary.
+- session_id: 2026-04-30-ini-evi-002-f-hydration
+  kind: dynamic-full-auto-hydration-approval
+  artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+  note: Converted slice-evi-002-f from planning-only to hydration-specific approval
+    using the operator-approved scaffold command while preserving rq-evi-002-010 freshness
+    and refusal boundaries.
 contacts:
 - id: operator
   role: human decision owner
@@ -183,6 +201,50 @@ research_questions:
   - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
   - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
   - scripts/planning_bank_validate.py
+- question_id: rq-evi-002-009
+  question: What distinct follow-on should continue INI-EVI-002 after T-043 closed
+    the planning-bank history merge-policy slice?
+  status: answered
+  opened_at: '2026-04-30T20:21:17Z'
+  answered_at: '2026-04-30T20:21:17Z'
+  needed_for: post_t043_next_seed_selection
+  answer: Select task research capsule derivation as slice-evi-002-f. The proposal
+    and research bank already deferred derived task-capsule support until bank identity,
+    readiness, handoff, and history policy were stable. T-043 closes that prerequisite
+    chain, but the next step remains planning-only context recovery because capsule
+    derivation must preserve provenance, freshness, and research_sufficiency boundaries
+    before any hydration or delivery work.
+  evidence_refs:
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#task_capsule_deriver
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#suggested_future_research_session
+  - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - .azoth/roadmap-specs/v0.2.0/T-043.yaml
+  - scripts/research_sufficiency.py
+- question_id: rq-evi-002-010
+  question: What boundary should a future slice use to derive task-specific research
+    capsules from initiative-bank evidence?
+  status: answered
+  opened_at: '2026-04-30T20:32:58Z'
+  answered_at: '2026-04-30T20:39:24Z'
+  needed_for: slice_evi_002_f_task_capsule_derivation_boundary
+  answer: A derived task capsule must be a normal repo-local JSON capsule under .azoth/research/
+    when it becomes delivery evidence, because scripts/research_sufficiency.py validates
+    that location and JSON schema. Mandatory inherited sufficiency fields are schema_version,
+    source_session_id, goal, captured_at, volatility, limitations, and questions;
+    each question needs question_id, question, status, answered_at, and fresh_until.
+    The initiative-derived contract additionally requires source_initiative_ref, source_bank_ref,
+    candidate_slice_ref, source_evidence_refs, freshness_window, excluded_stale_evidence,
+    and decision_context. Freshness must be narrowed per derived question from the
+    most restrictive relevant source window; stale or conflicting evidence must be
+    excluded or force refresh. This planning run should record the stdout/readiness-report
+    plan only; standalone .azoth/research/*.json emission belongs to a future explicitly
+    approved implementation slice.
+  evidence_refs:
+  - scripts/research_sufficiency.py
+  - tests/test_research_sufficiency.py
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#task_capsule_deriver
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#artifact_boundary
+  - .azoth/initiative-banks/INI-EVI-002.yaml#slice-evi-002-f
 research_refs:
 - .azoth/research/ini-evi-002-research-bank.yaml
 local_findings:
@@ -253,6 +315,29 @@ local_findings:
   - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#stabilization_control_plane_refinement
   - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
   - scripts/planning_bank_validate.py
+- finding_id: lf-evi-002-009
+  status: active
+  summary: After T-043, the next distinct follow-on is not another hydration or closeout
+    policy task; it is defining how initiative-level evidence can derive task-specific
+    research capsules without copying stale evidence or bypassing research_sufficiency.
+  evidence_refs:
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#task_capsule_deriver
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#suggested_future_research_session
+  - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - scripts/research_sufficiency.py
+- finding_id: lf-evi-002-010
+  status: active
+  summary: Slice-evi-002-f is now better specified but still not hydration-ready;
+    the correct future implementation shape is a plan-only derivation helper that
+    emits or previews a standard .azoth/research/*.json capsule, delegates sufficiency
+    judgment to scripts/research_sufficiency.py, and refuses stale, conflicting, complete,
+    unapproved, protected, or insufficiently evidenced candidates.
+  evidence_refs:
+  - scripts/research_sufficiency.py
+  - tests/test_research_sufficiency.py
+  - scripts/check_gates.py
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#risks
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#suggested_future_research_session
 external_findings:
 - finding_id: ef-evi-002-001
   status: active
@@ -378,6 +463,30 @@ challenge_log:
     follow-on. It resolves the open design-bank question about append-only bank history
     without reopening the completed plan-only hydration helper or deploying personal
     knowledge cards.
+
+    '
+- challenge_id: ch-evi-002-011
+  challenged_at: '2026-04-30T20:21:17Z'
+  prompt: After T-043, should INI-EVI-002 proceed to hydration, delivery, deeper richness
+    scoring, or task research capsule derivation?
+  disposition: select_task_capsule_derivation_seed
+  result: 'Select task research capsule derivation as the next distinct follow-on
+    seed. Deeper richness scoring already has a delivered advisory adapter in T-019,
+    while task-capsule derivation was explicitly deferred until bank identity, handoff,
+    and closeout-history policy were stable. The selected seed is planning-only: it
+    must define provenance, freshness, and research_sufficiency boundaries before
+    any roadmap/backlog/spec hydration or implementation.
+
+    '
+- challenge_id: ch-evi-002-012
+  challenged_at: '2026-04-30T20:39:24Z'
+  prompt: Does answering the task-capsule derivation boundary make slice-evi-002-f
+    ready to hydrate?
+  disposition: keep_planning_only_until_explicit_hydration_approval
+  result: 'No. The boundary is refined, but the approval scope remains planning_seed_only_no_hydration
+    and no scaffold command has been approved. A future hydration session must explicitly
+    name slice-evi-002-f, preserve the derived-capsule refusal matrix, and forbid
+    stale-evidence copying before writing roadmap, backlog, or spec state.
 
     '
 candidate_slices:
@@ -616,33 +725,100 @@ candidate_slices:
     hydrated_task_ref: T-043
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-043.yaml
     hydrated_at: '2026-04-29T22:40:33Z'
-readiness:
-  evaluated_at: '2026-04-30T00:00:00Z'
-  source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
-  readiness_status: ready_to_hydrate
-  goal_clarity: distinct_closeout_history_policy_follow_on
-  evidence_coverage: helper_duplicate_retired_and_design_bank_open_question_selected
-  freshness_status: current_as_of_2026_04_29_hydrated_to_t_043
-  assumption_audit: active_assumptions_recorded
-  contradiction_disposition: none_blocking_recorded
-  candidate_first_slice: slice-evi-002-e
+- candidate_id: slice-evi-002-f
+  proposed_task_id: T-046
+  title: Task research capsule derivation from initiative-bank evidence
+  initiative_ref: INI-EVI-002
+  status: hydrated
   target_layer: infrastructure
   delivery_pipeline: standard
-  acceptance_criteria_status: stable
-  non_goals_status: stable
-  next_readiness_gate: hydrate_distinct_closeout_history_policy_slice
-  next_candidate_ref: slice-evi-002-e
-  hydration_recommendation: slice-evi-002-e has been hydrated as T-043. Do not repeat
+  summary: Define the planning-only boundary for deriving task-specific research capsules
+    from initiative-bank evidence so future hydrated slices can preserve provenance,
+    freshness, and sufficiency checks without copying stale initiative-level context
+    or bypassing task-level research_sufficiency.py.
+  acceptance_criteria:
+  - 'Define a derived-capsule field contract compatible with scripts/research_sufficiency.py:
+    repo-local .azoth/research/*.json output, schema_version, source_session_id, goal,
+    captured_at, volatility, limitations, and questions with question_id, question,
+    status, answered_at, and fresh_until.
+
+    '
+  - 'Require initiative-derived provenance fields in the future helper contract: source_initiative_ref,
+    source_bank_ref, candidate_slice_ref, source_evidence_refs, freshness_window,
+    excluded_stale_evidence, and decision_context.
+
+    '
+  - Specify that derived capsules must call or feed scripts/research_sufficiency.py
+    and derive required question ids from the scoped goal/backlog rather than replacing
+    task-level sufficiency checks.
+  - Preserve traceability from initiative-bank research questions, findings, challenge
+    log, and hydration history into the derived task capsule without duplicating unrelated
+    bank history.
+  - Define a refusal matrix for complete, hydrated, rejected, stale, conflicting,
+    missing, protected, unapproved, or insufficiently evidenced candidate slices.
+  - Keep this run's output plan-only; standalone .azoth/research/*.json emission belongs
+    only in a later explicitly approved implementation slice.
+  research_evidence_refs:
+  - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml#task_capsule_deriver
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#suggested_future_research_session
+  - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - .azoth/roadmap-specs/v0.2.0/T-043.yaml
+  - scripts/research_sufficiency.py
+  known_non_goals:
+  - Do not implement the hydrated task in this hydration seed.
+  - Do not implement a new derivation helper in this planning seed.
+  - Do not emit a standalone .azoth/research/*.json capsule in this planning seed.
+  - Do not replace scripts/research_sufficiency.py.
+  - Do not broaden advisory richness scoring beyond the T-019 adapter.
+  - Do not mutate personal-root, release, deployment, kernel, M1, or governance surfaces.
+  open_questions: []
+  recommended_phase: v0.2.0-p4
+  hydration_plan:
+    proposed_title: Task research capsule derivation from initiative-bank evidence
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Task research capsule
+      derivation from initiative-bank evidence" --initiative-ref INI-EVI-002 --target-layer
+      infrastructure --delivery-pipeline standard
+    pre_hydration_requirements:
+    - readiness.readiness_status must be ready_to_hydrate.
+    - A future hydration approval must preserve the derived-capsule field contract,
+      freshness narrowing rule, and refusal matrix defined in rq-evi-002-010.
+    - Explicit hydration approval must name slice-evi-002-f and forbid stale evidence
+      copying before any roadmap/backlog/spec write.
+    hydrated_task_ref: T-046
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-046.yaml
+    hydrated_at: '2026-04-30T20:53:18Z'
+readiness:
+  evaluated_at: '2026-04-30T20:53:18Z'
+  source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+  readiness_status: ready_to_hydrate
+  goal_clarity: task_research_capsule_derivation_seed_after_t043
+  evidence_coverage: task_capsule_derivation_boundary_refined_and_hydration_approved
+  freshness_status: current_as_of_2026_04_30_hydrated_to_t_046
+  assumption_audit: active_assumptions_recorded
+  contradiction_disposition: none_blocking_recorded
+  candidate_first_slice: slice-evi-002-f
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  acceptance_criteria_status: stable_for_planning
+  non_goals_status: stable_for_planning
+  next_readiness_gate: hydrate_task_capsule_derivation_slice
+  next_candidate_ref: slice-evi-002-f
+  hydration_recommendation: slice-evi-002-f has been hydrated as T-046. Do not repeat
     hydration; route implementation through a separate delivery child.
-  non_laundering_note: T-043 remains historically bypassed because the hydration
-    ran before a live approved pipeline scope was opened; this bank records the
-    task for planning truth but does not mark that action retroactively pipeline-compliant.
+  non_laundering_note: T-043 remains historically bypassed because the hydration ran
+    before a live approved pipeline scope was opened; this bank records the task for
+    planning truth but does not mark that action retroactively pipeline-compliant.
   human_decision: approved
-  approval_scope: hydration_specific_slice_evi_002_e
-  approval_basis: Operator asked on 2026-04-30 to continue completing stabilization
-    with the planning-bank seeds. Approval is scoped to hydrating the distinct closeout-history
-    merge-policy slice and does not authorize personal-root deployment, knowledge
-    card creation, M1/kernel changes, or repeating the completed T-022 helper identity.
+  approval_scope: hydration_specific_slice_evi_002_f
+  approval_basis: Operator approved dynamic-full-auto hydration for INI-EVI-002 candidate
+    slice-evi-002-f with scaffold command python3 scripts/roadmap_scaffold.py --title
+    "Task research capsule derivation from initiative-bank evidence" --initiative-ref
+    INI-EVI-002 --target-layer infrastructure --delivery-pipeline standard. Approval
+    preserves rq-evi-002-010's derived-capsule field contract, freshness narrowing
+    rule, and refusal matrix; forbids stale-evidence copying; and excludes implementation,
+    standalone .azoth/research/*.json capsule emission, kernel/M1/governance changes,
+    personal-root mutation, release, and deployment.
 research_completion_assessment:
   candidate_slice_ref: slice-evi-002-c
   completed_at: '2026-04-25T01:15:06+00:00'
@@ -657,17 +833,22 @@ research_completion_assessment:
   - hydration_boundary
   unresolved_before_hydration: []
 next_seed_assessment:
-  candidate_slice_ref: slice-evi-002-d
-  seeded_at: '2026-04-29T20:35:24Z'
-  status: reconciled_complete_as_t_022_no_duplicate_t043
+  candidate_slice_ref: slice-evi-002-f
+  seeded_at: '2026-04-30T20:21:17Z'
+  refined_at: '2026-04-30T20:39:24Z'
+  hydrated_at: '2026-04-30T20:53:18Z'
+  status: hydrated_as_t_046
   source_refs:
-  - .azoth/design-banks/planning-banks-layer.yaml#routing_candidates
   - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
-  - .azoth/roadmap-specs/v0.2.0/T-020.yaml
-  - .azoth/roadmap-specs/v0.2.0/T-021.yaml
-  note: Eval replay found the helper identity already completed as T-022; no T-043
-    hydration should be opened unless a distinct follow-on is defined and explicitly
-    approved.
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+  - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
+  - .azoth/roadmap-specs/v0.2.0/T-043.yaml
+  - scripts/research_sufficiency.py
+  note: T-043 closed the planning-bank closeout-history merge-policy prerequisite.
+    The next distinct seed, task research capsule derivation from initiative-bank
+    evidence, was refined with provenance, freshness, and research_sufficiency boundary
+    answers and hydrated as T-046. Implementation and standalone task-capsule emission
+    remain separate future work.
 hydration_history:
 - hydrated_at: '2026-04-29T22:40:33Z'
   session_id: 2026-04-30-planning-bank-stabilization-seed-hydration
@@ -716,3 +897,27 @@ hydration_history:
   spec_ref: .azoth/roadmap-specs/v0.2.0/T-022.yaml
   result: Completed plan-only initiative hydration handoff helper; replay confirms
     no duplicate T-043 hydration should be opened for the same helper identity.
+- hydrated_at: '2026-04-30T20:53:18Z'
+  session_id: 2026-04-30-ini-evi-002-f-hydration
+  candidate_slice_ref: slice-evi-002-f
+  task_ref: T-046
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-046.yaml
+  backlog_ref: T-046
+  roadmap_ref: T-046
+  approval_scope: hydration_specific_slice_evi_002_f
+  approval_basis: Operator approved dynamic-full-auto hydration for INI-EVI-002 candidate
+    slice-evi-002-f with scaffold command python3 scripts/roadmap_scaffold.py --title
+    "Task research capsule derivation from initiative-bank evidence" --initiative-ref
+    INI-EVI-002 --target-layer infrastructure --delivery-pipeline standard. Approval
+    preserves rq-evi-002-010's derived-capsule field contract, freshness narrowing
+    rule, and refusal matrix; forbids stale-evidence copying; and excludes implementation,
+    standalone .azoth/research/*.json capsule emission, kernel/M1/governance changes,
+    personal-root mutation, release, and deployment.
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-evi-002-f:T-046:2026-04-30T20:53:18Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Task research capsule
+    derivation from initiative-bank evidence" --initiative-ref INI-EVI-002 --target-layer
+    infrastructure --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-046; implementation and shipping
+    remain separate.

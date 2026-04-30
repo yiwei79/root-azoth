@@ -246,15 +246,20 @@ def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() ->
         for candidate in bank["candidate_slices"]
         if candidate["candidate_id"] == "slice-evi-002-e"
     )
+    continuation_seed = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-f"
+    )
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
     assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["human_decision"] == "approved"
-    assert readiness["approval_scope"] == "hydration_specific_slice_evi_002_e"
-    assert readiness["candidate_first_slice"] == "slice-evi-002-e"
-    assert readiness["next_readiness_gate"] == "hydrate_distinct_closeout_history_policy_slice"
-    assert readiness["next_candidate_ref"] == "slice-evi-002-e"
+    assert readiness["approval_scope"] == "hydration_specific_slice_evi_002_f"
+    assert readiness["candidate_first_slice"] == "slice-evi-002-f"
+    assert readiness["next_readiness_gate"] == "hydrate_task_capsule_derivation_slice"
+    assert readiness["next_candidate_ref"] == "slice-evi-002-f"
     assert bank["hydration_history"]
     latest_hydration = bank["hydration_history"][0]
     assert latest_hydration["task_ref"] == "T-043"
@@ -273,14 +278,17 @@ def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() ->
     assert distinct_follow_on["status"] == "hydrated"
     assert distinct_follow_on["proposed_task_id"] == "T-043"
     assert distinct_follow_on["open_questions"] == []
+    assert continuation_seed["status"] == "hydrated"
+    assert continuation_seed["proposed_task_id"] == "T-046"
+    assert continuation_seed["open_questions"] == []
 
 
-def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
+def test_ini_evi_002_readiness_report_exposes_hydrated_task_capsule_slice() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
     candidate = next(
         candidate
         for candidate in bank["candidate_slices"]
-        if candidate["candidate_id"] == "slice-evi-002-e"
+        if candidate["candidate_id"] == "slice-evi-002-f"
     )
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
@@ -289,30 +297,102 @@ def test_ini_evi_002_readiness_report_exposes_hydration_decision() -> None:
     assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
     assert report["readiness_status"] == "ready_to_hydrate"
     assert report["human_decision"] == "approved"
-    assert report["approval_scope"] == "hydration_specific_slice_evi_002_e"
-    assert report["candidate_first_slice"] == "slice-evi-002-e"
-    assert report["candidate_id"] == "slice-evi-002-e"
-    assert report["candidate_slice_ref"] == "slice-evi-002-e"
-    assert report["candidate_task_ref"] == "T-043"
+    assert report["approval_scope"] == "hydration_specific_slice_evi_002_f"
+    assert report["candidate_first_slice"] == "slice-evi-002-f"
+    assert report["candidate_id"] == "slice-evi-002-f"
+    assert report["candidate_slice_ref"] == "slice-evi-002-f"
+    assert report["candidate_task_ref"] == "T-046"
     assert report["candidate_status"] == "hydrated"
-    assert report["proposed_title"] == "Planning-bank closeout history merge policy"
+    assert report["proposed_title"] == "Task research capsule derivation from initiative-bank evidence"
     assert report["target_layer"] == "infrastructure"
     assert report["delivery_pipeline"] == "standard"
     assert report["acceptance"] == candidate["acceptance_criteria"]
-    assert report["acceptance_criteria_status"] == "stable"
+    assert report["acceptance_criteria_status"] == "stable_for_planning"
     assert report["non_goals"] == candidate["known_non_goals"]
-    assert report["non_goals_status"] == "stable"
-    assert report["freshness_status"] == "current_as_of_2026_04_29_hydrated_to_t_043"
-    assert "historically bypassed" in report["non_laundering_note"]
+    assert report["non_goals_status"] == "stable_for_planning"
     assert (
-        report["hydration_recommendation"]
-        == "slice-evi-002-e has been hydrated as T-043. Do not repeat hydration; route implementation through a separate delivery child."
+        report["freshness_status"]
+        == "current_as_of_2026_04_30_hydrated_to_t_046"
     )
+    assert "historically bypassed" in report["non_laundering_note"]
+    assert "hydrated as T-046" in report["hydration_recommendation"]
     assert report["blocking_reasons"] == [
         "candidate.status is hydrated; no hydration action remains",
     ]
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
+
+
+def test_t046_spec_preserves_task_capsule_derivation_plan_only_boundary() -> None:
+    spec = _load_yaml(SPECS_DIR / "T-046.yaml")
+    contract = spec["derived_capsule_contract"]
+    freshness = spec["freshness_narrowing"]
+    refusal_matrix = spec["refusal_matrix"]
+
+    assert contract["source_question_ref"] == (
+        ".azoth/initiative-banks/INI-EVI-002.yaml#rq-evi-002-010"
+    )
+    assert contract["repo_local_capsule_path"] == ".azoth/research/*.json"
+    assert contract["sufficiency_evaluator"] == "scripts/research_sufficiency.py"
+    assert contract["required_capsule_fields"] == [
+        "schema_version",
+        "source_session_id",
+        "goal",
+        "captured_at",
+        "volatility",
+        "limitations",
+        "questions",
+    ]
+    assert contract["required_question_fields"] == [
+        "question_id",
+        "question",
+        "status",
+        "answered_at",
+        "fresh_until",
+    ]
+    assert contract["initiative_provenance_fields"] == [
+        "source_initiative_ref",
+        "source_bank_ref",
+        "candidate_slice_ref",
+        "source_evidence_refs",
+        "freshness_window",
+        "excluded_stale_evidence",
+        "decision_context",
+    ]
+    assert contract["bypass_policy"] == (
+        "forbidden: initiative banks alone are not task-level sufficiency evidence"
+    )
+    assert contract["output_boundary"] == {
+        "this_scope": "plan_only_definition",
+        "allowed_output": "roadmap spec contract and test coverage only",
+        "forbidden_output": "standalone .azoth/research/*.json capsule emission",
+        "future_scope_required": "explicit helper implementation approval",
+    }
+
+    assert freshness["per_question_rule"] == (
+        "derive fresh_until from the most restrictive relevant source evidence window"
+    )
+    assert freshness["required_trace_fields"] == [
+        "source_evidence_refs",
+        "freshness_window",
+        "excluded_stale_evidence",
+    ]
+    assert freshness["stale_or_conflicting_source_policy"] == [
+        "exclude from source_evidence_refs and record in excluded_stale_evidence",
+        "or force refresh before any derived capsule becomes delivery evidence",
+    ]
+
+    assert refusal_matrix == {
+        "complete": "refuse: no repeat derivation or hydration action remains",
+        "hydrated": "refuse: task already exists; define delivery boundary only",
+        "rejected": "refuse: candidate is not eligible evidence",
+        "stale": "refuse: refresh source evidence before derivation",
+        "conflicting": "refuse: resolve or carry conflict through research_sufficiency.py",
+        "missing": "refuse: required candidate or evidence fields are absent",
+        "protected": "refuse: protected/kernel/governance outputs require human gate",
+        "unapproved": "refuse: explicit approval is required before derivation output",
+        "insufficient": "refuse: research_sufficiency.py must report sufficient",
+    }
 
 
 def test_terminal_initiative_readiness_validates_without_selected_candidate(
@@ -915,7 +995,7 @@ def test_readiness_report_fails_closed_when_human_decision_is_absent(tmp_path: P
 def test_readiness_report_can_target_completed_prior_candidate() -> None:
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH, candidate_id="slice-evi-002-a")
 
-    assert report["candidate_first_slice"] == "slice-evi-002-e"
+    assert report["candidate_first_slice"] == "slice-evi-002-f"
     assert report["candidate_id"] == "slice-evi-002-a"
     assert report["candidate_task_ref"] == "T-018"
     assert report["candidate_status"] == "complete"
@@ -948,8 +1028,8 @@ def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
     ]
 
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-EVI-002")
-    assert initiative["phase"] == "v0.2.0-p4"
-    assert initiative["task_ref"] == "T-043"
+    assert initiative["phase"] is None
+    assert initiative["task_ref"] is None
     assert initiative["slices"] == [
         {
             "task_ref": "T-018",
@@ -983,14 +1063,21 @@ def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
             "task_ref": "T-043",
             "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-043.yaml",
             "phase": "v0.2.0-p4",
-            "status": "active",
-            "role": "primary",
+            "status": "complete",
+            "role": "historical",
+        },
+        {
+            "task_ref": "T-046",
+            "spec_ref": ".azoth/roadmap-specs/v0.2.0/T-046.yaml",
+            "phase": "v0.2.0-p4",
+            "status": "complete",
+            "role": "historical",
         },
     ]
     assert initiative["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
     assert initiative["design_bank_refs"] == [".azoth/design-banks/planning-banks-layer.yaml"]
     assert initiative["research_refs"] == [".azoth/research/ini-evi-002-research-bank.yaml"]
-    assert initiative["candidate_slice_ref"] == "slice-evi-002-e"
+    assert initiative["candidate_slice_ref"] == "slice-evi-002-f"
     assert initiative["readiness_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml#readiness"
     assert "proposal_refs" not in initiative
     seeded_candidate = next(
@@ -1006,9 +1093,12 @@ def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
     ]
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
-    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == ["T-043"]
-    assert initiative["discovery_status"] == "closeout_history_policy_hydrated"
-    assert "T-043 is hydrated" in initiative["next_discovery_action"]
+    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == [
+        "T-043",
+        "T-046",
+    ]
+    assert initiative["discovery_status"] == "task_capsule_derivation_hydrated"
+    assert "T-046 is hydrated" in initiative["next_discovery_action"]
     assert "/next and /auto" in initiative["next_discovery_action"]
 
     roadmap_task_ids = {
@@ -1025,6 +1115,9 @@ def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
     assert "T-043" in roadmap_task_ids
     assert "T-043" in backlog_ids
     assert "T-043" in spec_ids
+    assert "T-046" in roadmap_task_ids
+    assert "T-046" in backlog_ids
+    assert "T-046" in spec_ids
     assert "T-018" in roadmap_task_ids
     assert "T-018" in backlog_ids
     assert "T-018" in spec_ids

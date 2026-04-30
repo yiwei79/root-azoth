@@ -581,9 +581,9 @@ initiatives:
     - knowledge-richness
     - proposal-evaluation
     - project-management-quality
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-043
+  task_ref: null
   slices:
   - task_ref: T-018
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-018.yaml
@@ -608,28 +608,32 @@ initiatives:
   - task_ref: T-043
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-043.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
+  - task_ref: T-046
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-046.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
   design_bank_refs:
   - .azoth/design-banks/planning-banks-layer.yaml
   research_refs:
   - .azoth/research/ini-evi-002-research-bank.yaml
-  discovery_status: closeout_history_policy_hydrated
-  candidate_slice_ref: slice-evi-002-e
+  discovery_status: task_capsule_derivation_hydrated
+  candidate_slice_ref: slice-evi-002-f
   readiness_ref: .azoth/initiative-banks/INI-EVI-002.yaml#readiness
-  next_discovery_action: T-043 is hydrated as the distinct planning-bank closeout
-    history merge-policy slice; route implementation through /next and /auto before
-    changing closeout behavior.
+  next_discovery_action: T-046 is hydrated as the task research capsule derivation
+    slice; route implementation through /next and /auto before creating helpers or
+    emitting standalone research capsules.
   summary: 'Turn the ad-hoc proposal knowledge-richness evaluator into a robust, Azoth-integrated
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
     hydration plans, task research capsules, and future planning surfaces for evidence
-    breadth, source quality, traceability, alternatives, operational specificity,
-    validation readiness, and freshness handling. This initiative should preserve
-    existing structural validators while adding advisory richness scoring, threshold
-    policies, dashboards, and integration points for `/arch-proposal`, `/roadmap`,
-    `/next`, and closeout.
+    breadth, source quality, traceability, alternatives, operational specificity, validation
+    readiness, and freshness handling. This initiative should preserve existing structural
+    validators while adding advisory richness scoring, threshold policies, dashboards,
+    and integration points for `/arch-proposal`, `/roadmap`, `/next`, and closeout.
 
     '
   decision_ref:
@@ -641,7 +645,7 @@ initiatives:
   - D49
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-043.yaml
+  spec_ref: null
 - id: INI-PKB-001
   title: Personal-control-plane distributed knowledge system
   category: personal-control-plane
@@ -2111,7 +2115,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 8
+  current_patch: 9
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2294,3 +2298,4 @@ versions:
     - D48
     - D50
     - D52
+  - {id: T-046, title: "Task research capsule derivation from initiative-bank evidence", completed_date: "2026-04-30", decision_ref: []}

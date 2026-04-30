@@ -3653,11 +3653,27 @@ items:
   - D48
   - D50
   - D52
-  description: 'Add a narrow root-side recall pilot and retrieval eval harness for
+  description: Add a narrow root-side recall pilot and retrieval eval harness for
     the five operator-approved Batch 0 personal knowledge cards deployed by T-044.
     Keep the slice metadata-filtered, source-preserving, and evaluation-first; do
     not add vector/graph infrastructure, broad import, raw memory or inbox indexing,
-    source onboarding, public release, or personal-root mutation without a fresh
-    scope.'
+    source onboarding, public release, or personal-root mutation without a fresh scope.
   roadmap_ref: T-045
   initiative_ref: INI-PKB-001
+- id: T-046
+  title: Task research capsule derivation from initiative-bank evidence
+  source: roadmap-scaffold-2026-04-30
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-04-30'
+  completed_date: '2026-04-30'
+  description: Define the helper boundary for deriving task-specific research capsules
+    from initiative-bank evidence. Preserve rq-evi-002-010's field contract, freshness
+    narrowing rule, and refusal matrix; do not implement the helper, emit standalone
+    .azoth/research/*.json capsules, mutate personal-root state, or touch kernel/M1/governance
+    surfaces without fresh approval.
+  roadmap_ref: T-046
+  initiative_ref: INI-EVI-002

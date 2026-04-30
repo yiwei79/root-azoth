@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-29T20:35:24Z"
+updated_at: "2026-04-30T20:53:18Z"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -124,17 +124,25 @@ routing_candidates:
       T-022. The plan-only helper handoff route is therefore complete; any
       future hydration must name a distinct follow-on.
   - route: candidate_hydration_review
-    status: ready_to_hydrate
+    status: complete
     target: INI-EVI-002#slice-evi-002-e
     rationale: >
       The distinct follow-on is planning-bank closeout history merge policy,
       which resolves db-planning-004 without reopening the completed T-022
       helper identity or touching personal-root knowledge deployment.
+  - route: continuation_refresh
+    status: hydrated
+    target: INI-EVI-002#slice-evi-002-f
+    rationale: >
+      After T-043 closed the planning-bank closeout-history merge policy,
+      the next distinct INI-EVI-002 seed became task research capsule derivation
+      from initiative-bank evidence. It is now hydrated as T-046; implementation
+      and standalone research-capsule emission remain separate future work.
 readiness:
-  evaluated_at: "2026-04-30T00:00:00Z"
-  readiness_status: ready_to_route
-  freshness_status: current_as_of_2026_04_30_distinct_follow_on_selected
-  target_route: INI-EVI-002#slice-evi-002-e
+  evaluated_at: "2026-04-30T20:53:18Z"
+  readiness_status: continue_refinement
+  freshness_status: current_as_of_2026_04_30_slice_f_hydrated_to_t046
+  target_route: T-046
   blocking_questions: []
   contradiction_disposition: none_blocking_recorded
   source_refs:
@@ -143,7 +151,7 @@ readiness:
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
     - .azoth/roadmap-specs/v0.2.0/T-021.yaml
     - commands/next/body.md
-  recommended_next_artifact: .azoth/initiative-banks/INI-EVI-002.yaml#slice-evi-002-e
+  recommended_next_artifact: .azoth/roadmap-specs/v0.2.0/T-046.yaml
   human_decision: approved
 closeout_history_policy:
   policy_id: planning_bank_closeout_history_merge_policy_v1
@@ -225,3 +233,21 @@ history:
     summary: Answered db-planning-004 by routing the next distinct stabilization
       slice to INI-EVI-002 slice-evi-002-e for planning-bank closeout history
       merge policy.
+  - timestamp: "2026-04-30T20:21:17Z"
+    event: selected_task_capsule_derivation_seed
+    summary: Marked T-043's closeout-history follow-on complete and routed the
+      next planning-only continuation to INI-EVI-002 slice-evi-002-f for task
+      research capsule derivation from initiative-bank evidence.
+  - timestamp: "2026-04-30T20:39:24Z"
+    event: refined_task_capsule_derivation_boundary
+    summary: >
+      Refined the slice-evi-002-f planning boundary with staged dynamic-full-auto
+      context and architect evidence. The route remains planning-only: future hydration
+      must explicitly preserve the derived-capsule field contract, freshness narrowing
+      rule, and refusal matrix before any roadmap/backlog/spec write.
+  - timestamp: "2026-04-30T20:53:18Z"
+    event: hydrated_task_capsule_derivation_slice
+    summary: >
+      Hydrated INI-EVI-002 slice-evi-002-f as T-046 using the approved dynamic-full-auto
+      scaffold command. This creates roadmap/backlog/spec task state only; implementation
+      and standalone research-capsule emission remain separate future work.
