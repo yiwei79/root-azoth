@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "status": "synced",
-  "updated_at": "2026-04-30T22:20:08Z",
+  "updated_at": "2026-04-30T23:43:14Z",
   "source": "session-closeout",
-  "session_id": "2026-04-30-ini-pkb-001-recall-hydration",
-  "goal": "Evaluator replay correction for T-045 hydration closeout evidence",
-  "latest_episode_id": "ep-472",
-  "latest_episode_summary": "Appended evaluator replay evidence correcting ep-471 artifact coverage; T-045 hydration payload passed and no builder or planner replay was required.",
-  "next_action": "Run `/next` to select the T-045 implementation scope.",
+  "session_id": "2026-05-01-t-048-hydration",
+  "goal": "Hydrate INI-PKB-001 slice-pkb-001-e into T-048",
+  "latest_episode_id": "ep-483",
+  "latest_episode_summary": "Closed the approved T-048 hydration session after creating the governed personal-root RC update rehearsal scaffold.",
+  "next_action": "Run `/next` to select the next scoped task.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "synced_at": "2026-04-30T22:20:08Z"
+  "synced_at": "2026-04-30T23:43:14Z"
 }
