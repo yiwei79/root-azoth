@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.4 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 4
+0.1.4.5 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 5
 
 ## Last Session
-- **Session**: 2026-04-30-t-043
-- **Goal**: T-043: Planning-bank closeout history merge policy
+- **Session**: 2026-04-30-t-044
+- **Goal**: T-044: Approved personal knowledge card deployment receipt
 - **Session mode**: delivery
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-469 (success)
+- **Episode**: ep-470 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
