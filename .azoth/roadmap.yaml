@@ -655,9 +655,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: null
+  phase: v0.2.0-p4
   priority: high
-  task_ref: T-044
+  task_ref: T-045
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -669,17 +669,21 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-045
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+    phase: v0.2.0-p4
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: slice_pkb_001_b_complete_next_candidate_seed_only
+  discovery_status: slice_pkb_001_c_hydrated
   candidate_slice_ref: slice-pkb-001-c
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-044 is complete. The next candidate is slice-pkb-001-c
-    for a personal knowledge recall pilot and retrieval eval harness; treat it as
-    a seed-only candidate until a fresh explicit approval authorizes hydration.
-    Do not route ahead to recall or mutate personal-root from this completed T-044
-    delivery scope.
+  next_discovery_action: T-045 is hydrated as the personal knowledge recall pilot
+    and retrieval eval harness. Do not repeat hydration; route implementation through
+    a fresh `/next` scope card and `/auto` delivery child before adding recall behavior,
+    retrieval indexing, source onboarding, public release, or personal-root mutation.
   summary: 'Plan the post-v0.2.0 personal knowledge continuation in small governed
     increments: Batch 0 candidate review first, approved card deployment later, recall
     only after the card contract proves useful, and source registry onboarding as
@@ -699,7 +703,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2107,7 +2111,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 6
+  current_patch: 7
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2141,7 +2145,10 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-045
+    title: Personal knowledge recall pilot and retrieval eval harness
+    initiative_ref: INI-PKB-001
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate

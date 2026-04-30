@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "status": "synced",
-  "updated_at": "2026-04-30T01:04:38Z",
+  "updated_at": "2026-04-30T18:17:14Z",
   "source": "session-closeout",
-  "session_id": "2026-04-30-ini-evi-002-duplicate-helper-replay",
-  "goal": "Targeted eval replay for INI-EVI-002 duplicate helper candidate",
-  "latest_episode_id": "ep-468",
-  "latest_episode_summary": "Retired the duplicate T-043 helper route by reconciling slice-evi-002-d to completed T-022 and preserving the no-hydration boundary for any future distinct follow-on.",
-  "next_action": "Rerun `$azoth-eval-swarm` and stop on the strict 0.90 gate result.",
+  "session_id": "2026-04-30-ini-pkb-001-recall-hydration",
+  "goal": "Evaluator replay correction for T-045 hydration closeout evidence",
+  "latest_episode_id": "ep-472",
+  "latest_episode_summary": "Appended evaluator replay evidence correcting ep-471 artifact coverage; T-045 hydration payload passed and no builder or planner replay was required.",
+  "next_action": "Run `/next` to select the T-045 implementation scope.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "synced_at": "2026-04-30T01:04:38Z"
+  "synced_at": "2026-04-30T18:17:14Z"
 }

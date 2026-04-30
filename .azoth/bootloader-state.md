@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.5 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 5
+0.1.4.7 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 7
 
 ## Last Session
-- **Session**: 2026-04-30-t-044
-- **Goal**: T-044: Approved personal knowledge card deployment receipt
+- **Session**: 2026-04-30-ini-pkb-001-recall-hydration
+- **Goal**: AD-HOC: hydrate INI-PKB-001 slice-pkb-001-c into a concrete personal knowledge recall pilot task boundary
 - **Session mode**: delivery
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-470 (success)
+- **Episode**: ep-472 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
