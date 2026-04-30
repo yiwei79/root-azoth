@@ -3722,10 +3722,11 @@ items:
   source: INI-PKB-001-cloud-native-deployment-continuation
   target_layer: planning
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-04-30'
+  completed_date: '2026-04-30'
   description: 'Define the cloud-native/GitOps-style procedure for finishing personal
     control-plane deployment: desired-state manifests, reconciliation preflight, provenance
     receipts, rollback, private storage policy, and staged approval boundaries before

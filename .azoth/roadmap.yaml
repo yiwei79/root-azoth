@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-047
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -682,24 +682,27 @@ initiatives:
   - task_ref: T-047
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: post_t045_context_recovery
-  candidate_slice_ref: slice-pkb-001-c
+  discovery_status: t047_procedure_complete
+  candidate_slice_ref: slice-pkb-001-e
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: All tracked INI-PKB-001 candidate slices through T-045 are
-    hydrated and closed. Before new hydration, delivery, public release, source onboarding,
-    or personal-root mutation, recover the strategic context from the personal knowledge
-    architecture, personal-root deployment model, three-plane control-panel UX anchor,
-    and p4 research digest, then open a fresh scoped continuation.
+  next_discovery_action: T-047 is delivered and the next route is the T-048
+    personal-root RC update rehearsal candidate. Hydrate T-048 through the
+    initiative bank only after explicit operator approval naming the release or
+    RC revision, personal-root target path, storage policy, validation commands,
+    and rollback point. Do not mutate personal-root state, onboard sources or
+    projects, expand retrieval, or publish public azoth from this initiative
+    state.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
-    project panels. The completed Batch 0 and recall pilot arc proved the pointer/card
-    contract; the next slice must explicitly recover strategic context before adding
-    source registry onboarding, broader recall, public release, or personal-root mutation.
+    project panels. The completed Batch 0, recall pilot, and T-047 procedure arc
+    proved the pointer/card and desired-state route; the next candidate is a
+    separately approved T-048 personal-root rehearsal before source registry
+    onboarding, broader recall, public release, or project mutation.
 
     '
   decision_ref:
@@ -713,7 +716,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2121,7 +2124,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 12
+  current_patch: 13
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2155,10 +2158,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-047
-    title: Personal control-plane cloud-native deployment procedure
-    initiative_ref: INI-PKB-001
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2311,3 +2311,4 @@ versions:
     title: Task research capsule derivation from initiative-bank evidence
     completed_date: '2026-04-30'
     decision_ref: []
+  - {id: T-047, title: "Personal control-plane cloud-native deployment procedure", completed_date: "2026-04-30", decision_ref: []}
