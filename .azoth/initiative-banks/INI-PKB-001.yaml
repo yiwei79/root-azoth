@@ -226,8 +226,8 @@ candidate_slices:
   - No recall or retrieval index.
   - No public release.
   open_questions:
-  - None for slice-pkb-001-b; operator approved all five Batch 0 candidates on
-    2026-04-30 and the packaging replay is recorded in .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml.
+  - None for slice-pkb-001-b; operator approved all five Batch 0 candidates on 2026-04-30
+    and the packaging replay is recorded in .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml.
   recommended_phase: post-v0.2.0-stabilization
   hydration_plan:
     proposed_title: Approved personal knowledge card deployment receipt
@@ -241,10 +241,10 @@ candidate_slices:
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
     hydrated_at: '2026-04-30T00:16:45Z'
 - candidate_id: slice-pkb-001-c
-  proposed_task_id: T-PKB-C
+  proposed_task_id: T-045
   title: Personal knowledge recall pilot and retrieval eval harness
   initiative_ref: INI-PKB-001
-  status: candidate
+  status: hydrated
   target_layer: infrastructure
   delivery_pipeline: standard
   summary: 'After cards prove useful, add a root-side recall pilot with metadata filters,
@@ -265,9 +265,23 @@ candidate_slices:
   - No raw inbox or memory indexing.
   - No GraphRAG production layer.
   - No autonomous source mutation from retrieved cards.
-  open_questions:
-  - Which card set is sufficient to evaluate recall usefulness?
-  - What latency/cost ceiling should apply to recall?
+  open_questions: []
+  resolved_questions:
+  - question: Which card set is sufficient to evaluate recall usefulness?
+    decision: Use the five operator-approved Batch 0 cards deployed by T-044 as the
+      initial recall pilot corpus. Do not broaden into raw inbox, raw memory, or source
+      registry onboarding during this slice.
+    evidence_refs:
+    - .azoth/roadmap-specs/v0.2.0/T-044.yaml
+    - .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml
+    - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  - question: What latency/cost ceiling should apply to recall?
+    decision: Keep the first pilot root-side and bounded to exact identifiers, metadata
+      filters, and source-preserving eval cases. Do not add vector, graph, external
+      network, or production retrieval infrastructure in this hydration slice.
+    evidence_refs:
+    - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+    - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
   recommended_phase: post-v0.2.0-stabilization
   hydration_plan:
     proposed_title: Personal knowledge recall pilot and retrieval eval harness
@@ -276,26 +290,30 @@ candidate_slices:
       infrastructure --delivery-pipeline standard
 
       '
+    mode: executed
+    hydrated_task_ref: T-045
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+    hydrated_at: '2026-04-30T17:33:25Z'
 readiness:
-  readiness_status: active_refinement
-  human_decision: pending
+  readiness_status: ready_to_hydrate
+  human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-c
-  freshness_status: current_as_of_2026_04_30_t_044_complete
-  approval_scope: no_hydration_approval_for_slice_pkb_001_c
-  approval_basis: 'T-044 completed the approved-card deployment receipt scope on
-    2026-04-30. The next candidate, slice-pkb-001-c, remains seed-only until the
-    operator explicitly approves hydration for recall-pilot work. No approval exists
-    here for recall integration, retrieval indexing, source onboarding, public release,
-    governance changes, or further personal-root mutation.
+  freshness_status: current_as_of_2026_04_30_hydrated_to_t_045
+  approval_scope: hydration_specific_slice_pkb_001_c
+  approval_basis: 'Operator approved the best native next step on 2026-04-30 and invoked
+    $azoth-auto. Approval is scoped to hydrating INI-PKB-001 slice-pkb-001-c into
+    a concrete roadmap/backlog/spec boundary for a personal knowledge recall pilot
+    and retrieval eval harness. It does not authorize implementation, recall integration,
+    retrieval indexing, source onboarding, public release, governance/kernel/M1 changes,
+    broad import, or further personal-root mutation.
 
     '
   acceptance_criteria_status: present_for_slice_pkb_001_c
   non_goals_status: bounded_for_slice_pkb_001_c
-  hydration_recommendation: slice-pkb-001-c is the next candidate seed. Do not hydrate,
-    deploy, or add recall behavior until fresh explicit approval authorizes a concrete
-    roadmap/backlog/spec boundary.
+  hydration_recommendation: slice-pkb-001-c has been hydrated as T-045. Do not repeat
+    hydration; route implementation through a separate delivery child.
   allowed_outputs:
   - initiative_bank_seed
   - intake_summary
@@ -312,6 +330,7 @@ readiness:
   - batch_zero_card_creation
   - source_registry_onboarding
   - recall_integration
+  - retrieval_indexing
   - public_azoth_release
   - governance_change
   - implementation_work
@@ -319,15 +338,13 @@ readiness:
   - network_expansion
   - protected_expansion
   - ship_task
-  - hydrate_task
   blocked_actions:
-  - hydrate_task
   - implementation_work
   - ship_task
   - public_release
   - personal_root_mutation
   delivery_authorized: false
-  hydrate_authorized: false
+  hydrate_authorized: true
   ship_authorized: false
   next_readiness_gate: scope_card_approval_before_implementation
 hydration_history:
@@ -371,6 +388,30 @@ hydration_history:
     infrastructure --delivery-pipeline standard
   result: Created roadmap/backlog/spec artifacts for T-044; implementation and personal-root
     deployment remain separate.
+- hydrated_at: '2026-04-30T17:33:25Z'
+  session_id: 2026-04-30-ini-pkb-001-recall-hydration
+  candidate_slice_ref: slice-pkb-001-c
+  task_ref: T-045
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+  backlog_ref: T-045
+  roadmap_ref: T-045
+  approval_scope: hydration_specific_slice_pkb_001_c
+  approval_basis: 'Operator approved the best native next step on 2026-04-30 and invoked
+    $azoth-auto. Approval is scoped to hydrating INI-PKB-001 slice-pkb-001-c into
+    a concrete roadmap/backlog/spec boundary for a personal knowledge recall pilot
+    and retrieval eval harness. It does not authorize implementation, recall integration,
+    retrieval indexing, source onboarding, public release, governance/kernel/M1 changes,
+    broad import, or further personal-root mutation.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-c:T-045:2026-04-30T17:33:25Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal knowledge
+    recall pilot and retrieval eval harness" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-045; implementation and shipping
+    remain separate.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment
