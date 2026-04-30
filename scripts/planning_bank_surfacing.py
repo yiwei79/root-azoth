@@ -75,23 +75,107 @@ def _candidate_by_id(candidates: Any, candidate_id: str | None) -> dict[str, Any
     return {}
 
 
+_OPEN_CANDIDATE_STATUSES = {"candidate", "parked", "ready_to_hydrate"}
+_CLOSED_CANDIDATE_STATUSES = {"hydrated", "complete", "completed"}
+_BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
+_APPROVAL_BOUNDARY = (
+    "Requires explicit approval before hydration, deployment, or personal-root mutation."
+)
+
+
+def _hydrated_task_ref(candidate: dict[str, Any]) -> str:
+    hydration_plan = candidate.get("hydration_plan")
+    if isinstance(hydration_plan, dict):
+        task_ref = str(hydration_plan.get("hydrated_task_ref") or "").strip()
+        if task_ref:
+            return task_ref
+    return str(candidate.get("proposed_task_id") or "").strip()
+
+
+def _backlog_status_for_task(repo_root: Path, task_ref: str) -> str:
+    if not task_ref:
+        return ""
+    backlog = _load_yaml_mapping(repo_root / ".azoth" / "backlog.yaml")
+    items = backlog.get("items")
+    if not isinstance(items, list):
+        return ""
+    for item in items:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == task_ref:
+            return str(item.get("status") or "").strip()
+    return ""
+
+
+def _hydrated_task_is_still_open(repo_root: Path, candidate: dict[str, Any]) -> bool:
+    task_status = _backlog_status_for_task(repo_root, _hydrated_task_ref(candidate))
+    return bool(task_status) and task_status.casefold() not in _BACKLOG_DONE_STATUSES
+
+
+def _next_open_candidate(candidates: Any) -> dict[str, Any]:
+    """Return the next not-yet-hydrated candidate slice, preserving bank order."""
+    if not isinstance(candidates, list):
+        return {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        status = str(candidate.get("status") or "").casefold()
+        if status in _OPEN_CANDIDATE_STATUSES:
+            return candidate
+    return {}
+
+
+def _candidate_route_hint(
+    *,
+    readiness: dict[str, Any],
+    readiness_candidate: dict[str, Any],
+    display_candidate: dict[str, Any],
+) -> str:
+    hydration_recommendation = str(readiness.get("hydration_recommendation") or "").strip()
+    readiness_status = str(readiness_candidate.get("status") or "").casefold()
+    display_id = str(display_candidate.get("candidate_id") or "").strip()
+    readiness_id = str(readiness_candidate.get("candidate_id") or "").strip()
+    if (
+        display_candidate
+        and display_id
+        and display_id != readiness_id
+        and readiness_status in _CLOSED_CANDIDATE_STATUSES
+    ):
+        task_ref = str(display_candidate.get("proposed_task_id") or "missing").strip()
+        title = str(display_candidate.get("title") or "").strip()
+        suffix = f": {title}" if title else ""
+        return (
+            f"next open candidate {display_id} -> {task_ref}{suffix}; {_APPROVAL_BOUNDARY}"
+        )
+    if hydration_recommendation:
+        if _APPROVAL_BOUNDARY in hydration_recommendation:
+            return hydration_recommendation
+        return f"{hydration_recommendation} {_APPROVAL_BOUNDARY}"
+    return f"refine initiative bank; {_APPROVAL_BOUNDARY}"
+
+
 def _summarize_initiative_bank(
     path: Path, doc: dict[str, Any], repo_root: Path
 ) -> dict[str, Any]:
     readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
     candidates = doc.get("candidate_slices")
-    candidate = _candidate_by_id(candidates, readiness.get("candidate_first_slice"))
+    readiness_candidate = _candidate_by_id(candidates, readiness.get("candidate_first_slice"))
+    candidate = readiness_candidate
+    if (
+        str(readiness_candidate.get("status") or "").casefold() in _CLOSED_CANDIDATE_STATUSES
+        and not _hydrated_task_is_still_open(repo_root, readiness_candidate)
+    ):
+        candidate = _next_open_candidate(candidates) or readiness_candidate
     open_candidates = [
         item
         for item in (candidates if isinstance(candidates, list) else [])
         if isinstance(item, dict)
-        and str(item.get("status") or "").casefold() in {"candidate", "parked", "rejected"}
+        and str(item.get("status") or "").casefold() in _OPEN_CANDIDATE_STATUSES
     ]
+    readiness_candidate_status = str(readiness_candidate.get("status") or "missing")
     status = str(candidate.get("status") or "missing")
     ready_to_hydrate = (
         readiness.get("readiness_status") == "ready_to_hydrate"
         and readiness.get("human_decision") == "approved"
-        and status not in {"hydrated", "complete"}
+        and readiness_candidate_status.casefold() not in _CLOSED_CANDIDATE_STATUSES
     )
     return {
         "kind": "initiative",
@@ -101,14 +185,17 @@ def _summarize_initiative_bank(
         "path": _repo_rel(path, repo_root),
         "readiness_status": str(readiness.get("readiness_status") or "missing"),
         "human_decision": str(readiness.get("human_decision") or "missing"),
+        "readiness_candidate_id": str(readiness_candidate.get("candidate_id") or "missing"),
+        "readiness_candidate_status": readiness_candidate_status,
         "candidate_id": str(candidate.get("candidate_id") or "missing"),
         "candidate_task_ref": str(candidate.get("proposed_task_id") or "missing"),
         "candidate_status": status,
         "ready_to_hydrate": ready_to_hydrate,
         "open_candidate_count": len(open_candidates),
-        "route_hint": str(
-            readiness.get("hydration_recommendation")
-            or "refine initiative bank; hydrate only after explicit approval"
+        "route_hint": _candidate_route_hint(
+            readiness=readiness,
+            readiness_candidate=readiness_candidate,
+            display_candidate=candidate,
         ),
         "proposal_refs": _string_list(doc.get("source_proposal_refs")),
     }

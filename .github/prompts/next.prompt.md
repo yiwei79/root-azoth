@@ -45,6 +45,11 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
    - Summarize up to three active planning seeds, preferring banks with
      `readiness.human_decision`, `readiness.candidate_first_slice`,
      `readiness.hydration_recommendation`, `routing_candidates`, or open questions.
+   - If a bank's `readiness.candidate_first_slice` is already `hydrated`, `complete`,
+     or `completed`, do not let that completed slice hide the live continuation.
+     Surface the next ordered candidate slice whose status is `candidate`, `parked`,
+     or `ready_to_hydrate`, and state that it still needs explicit approval before
+     hydration, deployment, or personal-root mutation.
    - Treat these as **read-only discovery seeds**, not scope authority. Do not write
      `scope-gate.json`, claim a run, or mutate backlog/roadmap/spec state from a
      bank seed alone.
@@ -168,12 +173,13 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 **Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
 **Excluded:** {N} item(s) skipped — claimed by another session ({id}, …)    ← omit if excluded-ids set is empty (Step 0b)
 **Planning-bank seeds:** {bank_id or initiative_id}: {readiness/human decision/candidate/readiness gate}    ← only when Step 3 has no candidate tasks and Step 3b finds tracked banks
+**Planning-bank-only route:** no scope-gate approval is available from seeds alone; use `/plan`, research/refinement, proposal refinement, or explicit hydration/scaffold approval first    ← only when Step 3 has no candidate tasks
 
 **Architecture proposal (read-only, informational only):** `{backlog_id}` — {title} — status {status}    ← only if step 8b matches exactly one file
 
 ---
-Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.
-Type `skip` to skip primary and show next candidate.
+Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.    ← only when Primary names a concrete backlog item
+Type `skip` to skip primary and show next candidate.    ← only when Primary names a concrete backlog item
 ```
 
 ## Rules
