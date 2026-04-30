@@ -80,6 +80,22 @@ research_questions:
   evidence_refs:
   - .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
   - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+- question_id: rq-pkb-001-004
+  question: What cloud-native procedure should govern the final personal-control-plane
+    deployment stage?
+  status: active
+  opened_at: '2026-05-01T00:05:33+01:00'
+  needed_for: slice-pkb-001-d
+  answer: >
+    Treat the personal root as a declarative deployment target: write desired
+    state first, reconcile root/product/personal-root truth before applying,
+    emit provenance-rich receipts, preserve rollback references, and separate
+    release approval, personal-root deployment approval, and project-write
+    approval.
+  evidence_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#control-plane-rules
 research_refs:
 - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
 local_findings:
@@ -294,29 +310,147 @@ candidate_slices:
     hydrated_task_ref: T-045
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
     hydrated_at: '2026-04-30T17:33:25Z'
+- candidate_id: slice-pkb-001-d
+  proposed_task_id: T-047
+  title: Personal control-plane cloud-native deployment procedure
+  initiative_ref: INI-PKB-001
+  status: hydrated
+  target_layer: planning
+  delivery_pipeline: standard
+  summary: >
+    Define the cloud-native/GitOps-style procedure for finishing personal
+    control-plane deployment before any new personal-root mutation: desired-state
+    manifest, reconciliation preflight, receipt/provenance contract, rollback,
+    private storage policy, approval boundaries, and staged follow-on tasks.
+  acceptance_criteria:
+  - The procedure names desired state, reconciliation, apply, verify, receipt,
+    rollback, and closeout stages.
+  - Release approval, personal-root deployment approval, and project-write
+    approval are separate gates.
+  - Follow-on roadmap candidates are staged after the procedure rather than
+    bundled into one deployment session.
+  - No personal-root files, credentials, source registries, project repos, or
+    retrieval indexes are mutated.
+  research_evidence_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#rollout-phases
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
+  known_non_goals:
+  - No personal-root mutation.
+  - No credential access or cloud account provisioning.
+  - No source registry onboarding.
+  - No project repo mutation.
+  - No retrieval or graph expansion.
+  - No public azoth release.
+  open_questions: []
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Personal control-plane cloud-native deployment procedure
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Personal control-plane
+      cloud-native deployment procedure" --initiative-ref INI-PKB-001 --target-layer
+      planning --delivery-pipeline standard --priority 1 --source INI-PKB-001-cloud-native-deployment-continuation
+      --blocked-by T-045 BL-077
+
+      '
+    mode: executed
+    hydrated_task_ref: T-047
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+    hydrated_at: '2026-04-30T23:05:33Z'
+- candidate_id: slice-pkb-001-e
+  proposed_task_id: T-048
+  title: Personal-root RC update rehearsal from desired state
+  initiative_ref: INI-PKB-001
+  status: candidate
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: >
+    After T-047 defines the procedure, rehearse applying an approved azoth
+    release candidate or release into the personal root from declarative desired
+    state, then validate and record a receipt. This is the first future slice
+    that may mutate personal-root state, and only after exact operator approval.
+  acceptance_criteria:
+  - Operator approves target path, product revision, desired-state manifest, and
+    rollback point before any write.
+  - Personal-root validator passes before and after rehearsal.
+  - Receipt records source revision, product revision, target paths, validation
+    command/result, rollback reference, and residual risk.
+  - Root and personal-root git states are clean or explicitly packaged.
+  research_evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0/T-047.yaml
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#stop-conditions
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
+  known_non_goals:
+  - No source registry onboarding.
+  - No project repo mutation.
+  - No retrieval expansion.
+  - No public release.
+  open_questions:
+  - Which exact azoth release or RC revision should seed the rehearsal?
+  - Should the personal root remain local-only for the rehearsal or use a private
+    remote/encrypted backup?
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Personal-root RC update rehearsal from desired state
+    mode: future_after_t047
+- candidate_id: slice-pkb-001-f
+  proposed_task_id: T-049
+  title: Project onboarding pilot through personal control plane
+  initiative_ref: INI-PKB-001
+  status: candidate
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: >
+    After the personal-root RC update rehearsal passes, onboard one or two
+    operator-approved project consumers through pointer-only project profiles,
+    handoff conventions, and receipt evidence. This tests the control plane as a
+    coordinator without turning it into a project-write daemon.
+  acceptance_criteria:
+  - Operator names one or two pilot project repos and allowed metadata fields.
+  - Project profiles are pointer-only unless a project-specific write scope is
+    opened.
+  - Each project handoff records source, target, approval, validation, and
+    rollback information.
+  - The personal root does not bypass project-local gates.
+  research_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#panel-routing
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#project-onboarding-pilot
+  known_non_goals:
+  - No automatic project scanning.
+  - No project code mutation without project-local scope.
+  - No bulk source import.
+  - No background daemon behavior.
+  open_questions:
+  - Which first two projects should be pilot consumers?
+  - What minimum project-state convention should personal root surface at session
+    start?
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Project onboarding pilot through personal control plane
+    mode: future_after_personal_root_rehearsal
 readiness:
-  readiness_status: complete
+  readiness_status: continue_research
   human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-c
-  freshness_status: current_as_of_2026_04_30_t_045_closed
-  approval_scope: post_t045_continuation_requires_fresh_scope
-  approval_basis: 'Operator approved the best native next step on 2026-04-30 and invoked
-    $azoth-auto. Approval is scoped to hydrating INI-PKB-001 slice-pkb-001-c into
-    a concrete roadmap/backlog/spec boundary for a personal knowledge recall pilot
-    and retrieval eval harness. It does not authorize implementation, recall integration,
-    retrieval indexing, source onboarding, public release, governance/kernel/M1 changes,
-    broad import, or further personal-root mutation.
+  candidate_first_slice: slice-pkb-001-d
+  next_candidate_ref: slice-pkb-001-d
+  freshness_status: current_as_of_2026_05_01_t_047_scaffolded
+  approval_scope: roadmap_and_planning_procedure_updates_only
+  approval_basis: 'Operator asked on 2026-05-01 to focus on the last stage for personal
+    control-plane deployment and update the roadmap system with a cloud-native
+    procedure path. Approval covers roadmap/backlog/spec and initiative-bank
+    procedure updates only; it does not authorize personal-root mutation, source
+    registry onboarding, project repo mutation, retrieval expansion, public release,
+    credentials, governance, kernel, or M1 changes.
 
     '
-  acceptance_criteria_status: present_for_slice_pkb_001_c
-  non_goals_status: bounded_for_slice_pkb_001_c
-  hydration_recommendation: All tracked INI-PKB-001 candidate slices through T-045
-    are hydrated and closed. Do not repeat hydration or route stale implementation;
-    first recover the strategic context for the personal-control-plane distributed
-    knowledge system, then open a fresh scoped continuation before source onboarding,
-    broader recall, public release, or personal-root mutation.
+  acceptance_criteria_status: present_for_slice_pkb_001_d
+  non_goals_status: bounded_for_slice_pkb_001_d
+  hydration_recommendation: T-047 is scaffolded as the next concrete personal-control-plane
+    route. Execute T-047 through /next and /auto to write the cloud-native deployment
+    procedure before hydrating T-048, rehearsing personal-root updates, onboarding
+    sources/projects, expanding retrieval, or mutating personal-root state.
   allowed_outputs:
   - initiative_bank_seed
   - intake_summary
@@ -349,7 +483,7 @@ readiness:
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: context_recovery_before_new_candidate_or_deployment
+  next_readiness_gate: execute_t047_procedure_slice_before_deployment
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card
@@ -415,6 +549,31 @@ hydration_history:
     infrastructure --delivery-pipeline standard
   result: Created roadmap/backlog/spec artifacts for T-045; implementation and shipping
     remain separate.
+- hydrated_at: '2026-04-30T23:05:33Z'
+  session_id: 2026-05-01-pkb-cloud-native-roadmap
+  candidate_slice_ref: slice-pkb-001-d
+  task_ref: T-047
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+  backlog_ref: T-047
+  roadmap_ref: T-047
+  approval_scope: roadmap_and_planning_procedure_updates_only
+  approval_basis: 'Operator asked on 2026-05-01 to focus on the last stage for personal
+    control-plane deployment and update the roadmap system with a cloud-native
+    procedure path. Approval covers roadmap/backlog/spec and initiative-bank
+    procedure updates only; it does not authorize personal-root mutation, source
+    registry onboarding, project repo mutation, retrieval expansion, public release,
+    credentials, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-d:T-047:2026-04-30T23:05:33Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal control-plane
+    cloud-native deployment procedure" --initiative-ref INI-PKB-001 --target-layer
+    planning --delivery-pipeline standard --priority 1 --source INI-PKB-001-cloud-native-deployment-continuation
+    --blocked-by T-045 BL-077
+  result: Created roadmap/backlog/spec artifacts for T-047; procedure delivery and
+    any personal-root mutation remain separate.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment

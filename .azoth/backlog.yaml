@@ -3717,3 +3717,21 @@ items:
     pipeline command, matching hydration-specific approval scope, matching source
     initiative or bank, and no forbidden hydration outputs. Preserve T-043 as a
     historically bypassed hydration rather than retroactively marking it compliant.
+- id: T-047
+  title: Personal control-plane cloud-native deployment procedure
+  source: INI-PKB-001-cloud-native-deployment-continuation
+  target_layer: planning
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-30'
+  description: 'Define the cloud-native/GitOps-style procedure for finishing personal
+    control-plane deployment: desired-state manifests, reconciliation preflight, provenance
+    receipts, rollback, private storage policy, and staged approval boundaries before
+    any personal-root mutation.'
+  roadmap_ref: T-047
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-045
+  - BL-077

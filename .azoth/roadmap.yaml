@@ -630,10 +630,11 @@ initiatives:
     quality lane for project-management artifacts. The long-term goal is one shared
     rubric that can score architecture proposals, initiative research banks, roadmap
     hydration plans, task research capsules, and future planning surfaces for evidence
-    breadth, source quality, traceability, alternatives, operational specificity, validation
-    readiness, and freshness handling. This initiative should preserve existing structural
-    validators while adding advisory richness scoring, threshold policies, dashboards,
-    and integration points for `/arch-proposal`, `/roadmap`, `/next`, and closeout.
+    breadth, source quality, traceability, alternatives, operational specificity,
+    validation readiness, and freshness handling. This initiative should preserve
+    existing structural validators while adding advisory richness scoring, threshold
+    policies, dashboards, and integration points for `/arch-proposal`, `/roadmap`,
+    `/next`, and closeout.
 
     '
   decision_ref:
@@ -659,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: null
+  phase: v0.2.0-p4
   priority: high
-  task_ref: null
+  task_ref: T-047
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -678,6 +679,11 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-047
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+    phase: v0.2.0-p4
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
@@ -707,7 +713,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: null
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2149,7 +2155,10 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-047
+    title: Personal control-plane cloud-native deployment procedure
+    initiative_ref: INI-PKB-001
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2298,4 +2307,7 @@ versions:
     - D48
     - D50
     - D52
-  - {id: T-046, title: "Task research capsule derivation from initiative-bank evidence", completed_date: "2026-04-30", decision_ref: []}
+  - id: T-046
+    title: Task research capsule derivation from initiative-bank evidence
+    completed_date: '2026-04-30'
+    decision_ref: []
