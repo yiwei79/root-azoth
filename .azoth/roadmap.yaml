@@ -2111,7 +2111,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 7
+  current_patch: 8
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2145,10 +2145,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-045
-    title: Personal knowledge recall pilot and retrieval eval harness
-    initiative_ref: INI-PKB-001
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2283,3 +2280,4 @@ versions:
     - D48
     - D50
     - D52
+    - {id: T-045, title: "Personal knowledge recall pilot and retrieval eval harness", completed_date: "2026-04-30", decision_ref: [D11, D30, D34, D35, D37, D38, D42, D48, D50, D52]}

@@ -3637,10 +3637,11 @@ items:
   source: roadmap-scaffold-2026-04-30
   target_layer: infrastructure
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 3
   created_date: '2026-04-30'
+  completed_date: '2026-04-30'
   decision_ref:
   - D11
   - D30
