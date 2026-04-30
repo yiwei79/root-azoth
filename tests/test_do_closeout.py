@@ -1339,6 +1339,71 @@ def test_governed_closeout_completes_real_roadmap_ref_task(
     assert completed["completed_date"]
 
 
+def test_governed_closeout_appends_completed_task_as_sibling_after_nested_decision_refs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, backlog_id="T-045")
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _update_backlog_item(
+        repo_root,
+        "T-045",
+        roadmap_ref="T-045",
+        target_version="v0.2.0-p4",
+        decision_ref=["D11", "D52"],
+    )
+    (repo_root / ".azoth" / "roadmap.yaml").write_text(
+        "\n".join(
+            [
+                "active_version: v0.2.0-p4",
+                "versions:",
+                "- id: v0.2.0-p4",
+                "  status: active",
+                "  current_patch: 8",
+                "  tasks:",
+                "  - id: T-045",
+                '    title: "Personal knowledge recall pilot and retrieval eval harness"',
+                "    decision_ref:",
+                "    - D11",
+                "    - D52",
+                "  completed_tasks:",
+                "  - id: T-044",
+                '    title: "Approved personal knowledge card deployment receipt"',
+                "    completed_date: '2026-04-30'",
+                "    decision_ref:",
+                "    - D11",
+                "    - D52",
+                "initiatives: []",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    monkeypatch.setattr(do_closeout.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    roadmap = yaml.safe_load((repo_root / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8"))
+    version = next(item for item in roadmap["versions"] if item["id"] == "v0.2.0-p4")
+    assert all(task["id"] != "T-045" for task in version["tasks"])
+    t044 = next(item for item in version["completed_tasks"] if item["id"] == "T-044")
+    assert t044["decision_ref"] == ["D11", "D52"]
+    completed = next(item for item in version["completed_tasks"] if item["id"] == "T-045")
+    assert completed["decision_ref"] == ["D11", "D52"]
+    assert completed["completed_date"]
+
+
 def test_governed_closeout_removes_stale_open_copies_from_older_versions(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

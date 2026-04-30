@@ -58,7 +58,7 @@ projection:
   codex:
     kind: skill_wrapper
     output_path: .agents/skills/azoth-next/SKILL.md
-    metadata_path: .agents/skills/azoth-next/openai.yaml
+    metadata_path: .agents/skills/azoth-next/agents/openai.yaml
 
 migration:
   phase: canonical_body_batch_1

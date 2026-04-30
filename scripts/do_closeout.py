@@ -771,6 +771,15 @@ def _version_field_indent(block: str) -> str:
     return "  "
 
 
+def _section_sequence_indent(section_block: str, key_indent: str) -> str:
+    """Return the indent used by direct sequence items in a YAML section."""
+    for line in section_block.splitlines():
+        match = re.match(r"^(\s*)-\s+", line)
+        if match:
+            return match.group(1)
+    return key_indent + "  "
+
+
 def _remove_multiline_task_entry(block: str, task_id: str) -> tuple[str, bool]:
     lines = block.splitlines(keepends=True)
     start_idx: int | None = None
@@ -922,10 +931,27 @@ def _mark_roadmap_task_complete(
     if removed_deferred:
         changed = True
 
-    completed_pattern = rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
-    completed_entry = re.search(completed_pattern, block, flags=re.MULTILINE)
     decision_text = f"[{', '.join(decision_ref)}]" if decision_ref else "[]"
     title_text = title.replace("\\", "\\\\").replace('"', '\\"')
+    completed_bounds = _find_section_bounds(block, "completed_tasks")
+    completed_entry: re.Match[str] | None = None
+    completed_entry_offset = 0
+    if completed_bounds is not None:
+        completed_start, completed_end = completed_bounds
+        completed_block = block[completed_start:completed_end]
+        header_match = re.search(
+            r"^(\s*)completed_tasks:\s*(?:null|\[\])?\s*$",
+            completed_block,
+            flags=re.MULTILINE,
+        )
+        assert header_match is not None
+        key_indent = header_match.group(1)
+        item_indent = _section_sequence_indent(completed_block, key_indent)
+        completed_pattern = (
+            rf'^{re.escape(item_indent)}-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
+        )
+        completed_entry = re.search(completed_pattern, completed_block, flags=re.MULTILINE)
+        completed_entry_offset = completed_start
     if completed_entry:
         new_line = re.sub(
             r'completed_date: "[^"]*"',
@@ -934,10 +960,11 @@ def _mark_roadmap_task_complete(
             count=1,
         )
         if new_line != completed_entry.group(0):
-            block = block[: completed_entry.start()] + new_line + block[completed_entry.end() :]
+            start_index = completed_entry_offset + completed_entry.start()
+            end_index = completed_entry_offset + completed_entry.end()
+            block = block[:start_index] + new_line + block[end_index:]
             changed = True
     else:
-        completed_bounds = _find_section_bounds(block, "completed_tasks")
         if completed_bounds is None:
             key_indent = _version_field_indent(block)
             item_indent = key_indent + "  "
@@ -957,7 +984,7 @@ def _mark_roadmap_task_complete(
             )
             assert header_match is not None
             key_indent = header_match.group(1)
-            item_indent = key_indent + "  "
+            item_indent = _section_sequence_indent(completed_block, key_indent)
             completed_line = (
                 f'{item_indent}- {{id: {task_id}, title: "{title_text}", '
                 f'completed_date: "{completed_date}", decision_ref: {decision_text}}}\n'

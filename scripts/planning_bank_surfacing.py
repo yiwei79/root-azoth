@@ -81,6 +81,7 @@ _BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
 _APPROVAL_BOUNDARY = (
     "Requires explicit approval before hydration, deployment, or personal-root mutation."
 )
+_POST_CANDIDATE_READINESS = "needs_context_recovery"
 
 
 def _hydrated_task_ref(candidate: dict[str, Any]) -> str:
@@ -110,6 +111,24 @@ def _hydrated_task_is_still_open(repo_root: Path, candidate: dict[str, Any]) -> 
     return bool(task_status) and task_status.casefold() not in _BACKLOG_DONE_STATUSES
 
 
+def _strategic_context_refs(doc: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    for value in _string_list(doc.get("source_proposal_refs")) + _string_list(
+        doc.get("research_refs")
+    ):
+        if value not in refs:
+            refs.append(value)
+    contacts = doc.get("contacts")
+    if isinstance(contacts, list):
+        for contact in contacts:
+            if not isinstance(contact, dict):
+                continue
+            path = str(contact.get("path") or "").strip()
+            if path and path not in refs:
+                refs.append(path)
+    return refs
+
+
 def _next_open_candidate(candidates: Any) -> dict[str, Any]:
     """Return the next not-yet-hydrated candidate slice, preserving bank order."""
     if not isinstance(candidates, list):
@@ -128,11 +147,25 @@ def _candidate_route_hint(
     readiness: dict[str, Any],
     readiness_candidate: dict[str, Any],
     display_candidate: dict[str, Any],
+    initiative_title: str = "the initiative",
+    no_open_candidates_after_closed_slice: bool = False,
+    strategic_context_refs: list[str] | None = None,
 ) -> str:
     hydration_recommendation = str(readiness.get("hydration_recommendation") or "").strip()
     readiness_status = str(readiness_candidate.get("status") or "").casefold()
     display_id = str(display_candidate.get("candidate_id") or "").strip()
     readiness_id = str(readiness_candidate.get("candidate_id") or "").strip()
+    if no_open_candidates_after_closed_slice:
+        task_ref = str(display_candidate.get("proposed_task_id") or "missing").strip()
+        refs = [ref for ref in strategic_context_refs or [] if ref]
+        ref_text = "; ".join(refs[:3])
+        context_clause = f" Recover context from {ref_text}." if ref_text else ""
+        return (
+            f"all tracked candidate slices are closed after {display_id} -> {task_ref}; "
+            f"open a fresh scoped continuation for {initiative_title} before more "
+            f"hydration, delivery, release, or deployment."
+            f"{context_clause} {_APPROVAL_BOUNDARY}"
+        )
     if (
         display_candidate
         and display_id
@@ -172,10 +205,22 @@ def _summarize_initiative_bank(
     ]
     readiness_candidate_status = str(readiness_candidate.get("status") or "missing")
     status = str(candidate.get("status") or "missing")
+    no_open_candidates_after_closed_slice = (
+        bool(readiness_candidate)
+        and readiness_candidate_status.casefold() in _CLOSED_CANDIDATE_STATUSES
+        and not _hydrated_task_is_still_open(repo_root, readiness_candidate)
+        and not open_candidates
+    )
+    readiness_status = str(readiness.get("readiness_status") or "missing")
+    surface_readiness_status = (
+        _POST_CANDIDATE_READINESS if no_open_candidates_after_closed_slice else readiness_status
+    )
+    strategic_context_refs = _strategic_context_refs(doc)
     ready_to_hydrate = (
-        readiness.get("readiness_status") == "ready_to_hydrate"
+        readiness_status == "ready_to_hydrate"
         and readiness.get("human_decision") == "approved"
         and readiness_candidate_status.casefold() not in _CLOSED_CANDIDATE_STATUSES
+        and not no_open_candidates_after_closed_slice
     )
     return {
         "kind": "initiative",
@@ -183,7 +228,8 @@ def _summarize_initiative_bank(
         "title": str(doc.get("title") or ""),
         "status": str(doc.get("status") or "unknown"),
         "path": _repo_rel(path, repo_root),
-        "readiness_status": str(readiness.get("readiness_status") or "missing"),
+        "readiness_status": readiness_status,
+        "surface_readiness_status": surface_readiness_status,
         "human_decision": str(readiness.get("human_decision") or "missing"),
         "readiness_candidate_id": str(readiness_candidate.get("candidate_id") or "missing"),
         "readiness_candidate_status": readiness_candidate_status,
@@ -192,10 +238,14 @@ def _summarize_initiative_bank(
         "candidate_status": status,
         "ready_to_hydrate": ready_to_hydrate,
         "open_candidate_count": len(open_candidates),
+        "strategic_context_refs": strategic_context_refs,
         "route_hint": _candidate_route_hint(
             readiness=readiness,
             readiness_candidate=readiness_candidate,
             display_candidate=candidate,
+            initiative_title=str(doc.get("title") or "the initiative"),
+            no_open_candidates_after_closed_slice=no_open_candidates_after_closed_slice,
+            strategic_context_refs=strategic_context_refs,
         ),
         "proposal_refs": _string_list(doc.get("source_proposal_refs")),
     }
@@ -227,7 +277,7 @@ def _plain_bank_line(bank: dict[str, Any]) -> list[str]:
     bank_id = str(bank.get("id") or "?")
     title = str(bank.get("title") or "")
     status = str(bank.get("status") or "?")
-    readiness = str(bank.get("readiness_status") or "?")
+    readiness = str(bank.get("surface_readiness_status") or bank.get("readiness_status") or "?")
     human_decision = str(bank.get("human_decision") or "?")
     route = str(bank.get("route_hint") or "refine planning bank")
     lines = [
@@ -280,7 +330,9 @@ def format_planning_bank_rich(
         bank_id = escape(str(bank.get("id") or "?"))
         title = escape(str(bank.get("title") or ""))
         status = escape(str(bank.get("status") or "?"))
-        readiness = escape(str(bank.get("readiness_status") or "?"))
+        readiness = escape(
+            str(bank.get("surface_readiness_status") or bank.get("readiness_status") or "?")
+        )
         human_decision = escape(str(bank.get("human_decision") or "?"))
         route = escape(str(bank.get("route_hint") or "refine planning bank"))
         lines.append(

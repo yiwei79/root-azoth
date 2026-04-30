@@ -106,3 +106,66 @@ def test_initiative_summary_keeps_hydrated_slice_when_backlog_task_is_pending(
         "Requires explicit approval before hydration, deployment, or personal-root mutation."
     )
     assert approval_boundary in bank["route_hint"]
+
+
+def test_initiative_summary_surfaces_context_recovery_when_all_candidates_closed(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    bank_dir = azoth_dir / "initiative-banks"
+    bank_dir.mkdir(parents=True)
+    (azoth_dir / "backlog.yaml").write_text(
+        "schema_version: 1\n"
+        "items:\n"
+        "  - id: T-045\n"
+        "    status: complete\n",
+        encoding="utf-8",
+    )
+    (bank_dir / "INI-PKB-001.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: initiative\n"
+        "initiative_id: INI-PKB-001\n"
+        "title: Personal-control-plane distributed knowledge system\n"
+        "status: planning_discovery_seed\n"
+        "contacts:\n"
+        "  - id: personal-knowledge-architecture\n"
+        "    path: docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml\n"
+        "research_refs:\n"
+        "  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml\n"
+        "readiness:\n"
+        "  readiness_status: ready_to_hydrate\n"
+        "  human_decision: approved\n"
+        "  candidate_first_slice: slice-pkb-001-c\n"
+        "  hydration_recommendation: slice-pkb-001-c has been hydrated as T-045. Do not repeat hydration.\n"
+        "candidate_slices:\n"
+        "  - candidate_id: slice-pkb-001-a\n"
+        "    proposed_task_id: T-042\n"
+        "    status: hydrated\n"
+        "  - candidate_id: slice-pkb-001-b\n"
+        "    proposed_task_id: T-044\n"
+        "    status: complete\n"
+        "  - candidate_id: slice-pkb-001-c\n"
+        "    proposed_task_id: T-045\n"
+        "    status: hydrated\n"
+        "    hydration_plan:\n"
+        "      hydrated_task_ref: T-045\n",
+        encoding="utf-8",
+    )
+
+    summaries = load_planning_bank_summaries(tmp_path)
+    bank = summaries["initiative_banks"][0]
+
+    assert bank["candidate_id"] == "slice-pkb-001-c"
+    assert bank["candidate_task_ref"] == "T-045"
+    assert bank["surface_readiness_status"] == "needs_context_recovery"
+    assert bank["ready_to_hydrate"] is False
+    assert bank["open_candidate_count"] == 0
+    assert "all tracked candidate slices are closed" in bank["route_hint"]
+    assert "Personal-control-plane distributed knowledge system" in bank["route_hint"]
+    assert "PERSONAL-KNOWLEDGE-ARCHITECTURE.md" in bank["route_hint"]
+
+    plain = "\n".join(format_planning_bank_plain(summaries))
+    assert "readiness: needs_context_recovery" in plain
+    assert "ready_to_hydrate" not in plain
