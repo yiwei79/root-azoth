@@ -3602,3 +3602,33 @@ items:
   - D48
   - D50
   - D52
+- id: T-044
+  title: Approved personal knowledge card deployment receipt
+  source: roadmap-scaffold-2026-04-30
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-04-30'
+  completed_date: '2026-04-30'
+  description: 'Hydrate the next INI-PKB-001 personal control-plane continuation slice:
+    deploy only operator-approved Batch 0 cards to the personal root with a receipt,
+    pointer index update, validation evidence, and clean-git proof. Stop before broad
+    import, recall/retrieval indexing, public release, or unapproved personal-root
+    mutation.'
+  roadmap_ref: T-044
+  initiative_ref: INI-PKB-001
+  decision_ref:
+  - D11
+  - D30
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+  blocked_by:
+  - T-042

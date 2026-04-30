@@ -16,8 +16,19 @@ source_refs:
     path: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
     commit: "1728723"
 operator_review:
-  approved: false
-  status: pending_operator_review
+  approved: true
+  status: approved_for_deploy
+  approved_by: operator
+  approved_at: "2026-04-30T00:58:13Z"
+  approved_candidate_ids:
+    - candidate-green-campaign-completion-not-release-readiness
+    - candidate-memory-needs-read-back-action-selection
+    - candidate-no-silent-inbox-draining
+    - candidate-route-first-over-stale-chat-memory
+    - candidate-docs-first-architecture-slices
+  rejected_candidate_ids: []
+  deferred_candidate_ids: []
+  target_personal_root: /Users/yiwei/GithubRepos/personal-azoth-root
   approval_required_before_deploy: true
   requested_decisions:
     - approve
@@ -26,15 +37,17 @@ operator_review:
 validation_evidence:
   command: python3 scripts/personal_knowledge_validate.py --batch .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml
   status: passed
-  validated_at: "2026-04-29T20:02:34Z"
+  validated_at: "2026-04-30T00:58:13Z"
   result: personal knowledge validation OK
+  deployment_receipt_ref: .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml
+  packaging_status: explicit_dirty_state_proof_recorded
 candidates:
   - candidate_id: candidate-green-campaign-completion-not-release-readiness
-    decision: defer
+    decision: approved
     rationale: >
       Preserves the recurring release-readiness boundary as a candidate card, but
-      keeps it out of the personal root until the operator approves the exact
-      wording and use limits.
+      deploys it only after the operator approved the exact wording, use limits,
+      and personal-root target path.
     safety_classification: approved_source_candidate
     authority_home: root-azoth
     privacy: private
@@ -45,6 +58,7 @@ candidates:
       - repo: root-azoth
         path: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md
         commit: "1728723"
+    card_path: .azoth/knowledge/cards/root-azoth/kb-root-azoth-001.yaml
     proposed_card:
       schema_version: 1
       id: kb-root-azoth-001
@@ -77,11 +91,11 @@ candidates:
         have also been reviewed.
 
   - candidate_id: candidate-memory-needs-read-back-action-selection
-    decision: defer
+    decision: approved
     rationale: >
       Captures an operator-facing memory-use lesson from approved root-side
-      patterns without bulk-importing raw episodes or making memory text
-      mechanically binding.
+      patterns after explicit approval, without bulk-importing raw episodes or
+      making memory text mechanically binding.
     safety_classification: approved_source_candidate
     authority_home: root-azoth
     privacy: private
@@ -92,6 +106,7 @@ candidates:
       - repo: root-azoth
         path: .azoth/memory/patterns.yaml
         commit: "1728723"
+    card_path: .azoth/knowledge/cards/root-azoth/kb-root-azoth-002.yaml
     proposed_card:
       schema_version: 1
       id: kb-root-azoth-002
@@ -125,10 +140,11 @@ candidates:
         memory as passive background context.
 
   - candidate_id: candidate-no-silent-inbox-draining
-    decision: defer
+    decision: approved
     rationale: >
       Makes the inbox and intake boundary reviewable as personal knowledge while
-      preserving the explicit stop rule against silent import decisions.
+      preserving the explicit stop rule against silent import decisions after the
+      operator approved this bounded card destination.
     safety_classification: approved_source_candidate
     authority_home: root-azoth
     privacy: private
@@ -139,6 +155,7 @@ candidates:
       - repo: root-azoth
         path: .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
         commit: "1728723"
+    card_path: .azoth/knowledge/cards/root-azoth/kb-root-azoth-003.yaml
     proposed_card:
       schema_version: 1
       id: kb-root-azoth-003
@@ -172,11 +189,10 @@ candidates:
         source state is written.
 
   - candidate_id: candidate-route-first-over-stale-chat-memory
-    decision: defer
+    decision: approved
     rationale: >
       Captures a workflow preference for repo-native route state before
-      continuation, while leaving the card inactive until wording and retrieval
-      scope are explicitly reviewed.
+      continuation after the operator reviewed the wording and retrieval scope.
     safety_classification: approved_source_candidate
     authority_home: root-azoth
     privacy: private
@@ -187,6 +203,7 @@ candidates:
       - repo: root-azoth
         path: .azoth/memory/patterns.yaml
         commit: "1728723"
+    card_path: .azoth/knowledge/cards/root-azoth/kb-root-azoth-004.yaml
     proposed_card:
       schema_version: 1
       id: kb-root-azoth-004
@@ -220,10 +237,10 @@ candidates:
         governance evidence.
 
   - candidate_id: candidate-docs-first-architecture-slices
-    decision: defer
+    decision: approved
     rationale: >
-      Keeps the architecture-first lesson available for review without expanding
-      this slice into implementation, recall, or source onboarding work.
+      Deploys the architecture-first lesson after review without expanding this
+      slice into implementation, recall, or source onboarding work.
     safety_classification: approved_source_candidate
     authority_home: root-azoth
     privacy: private
@@ -234,6 +251,7 @@ candidates:
       - repo: root-azoth
         path: .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
         commit: "1728723"
+    card_path: .azoth/knowledge/cards/root-azoth/kb-root-azoth-005.yaml
     proposed_card:
       schema_version: 1
       id: kb-root-azoth-005

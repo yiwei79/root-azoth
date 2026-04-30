@@ -1,0 +1,124 @@
+stage_summary_version: 1
+pipeline: auto
+stage_id: auto_wave_d_packaging_replay
+agent: orchestrator
+stage_kind: audit
+status: complete
+entropy: YELLOW
+session_id: 2026-04-30-t-044
+gate_outcome: "Packaging replay records exact root and personal-root delivery state for the approved Batch 0 personal knowledge deployment; no new recall, source onboarding, public release, or broad import work is authorized."
+done:
+  - "Recorded operator-approved candidate deployment evidence for T-044 after strict eval found the original receipt insufficiently reconstructable from source_revision alone."
+  - "Captured root-azoth and personal-root HEAD revisions, dirty-state status, delivery buckets, and content hashes for the root approval artifacts, deployed personal cards, indexes, batch copy, and personal-root ledger."
+  - "Confirmed the residual root dirty tree includes unrelated planning/next-routing surfaces that are intentionally not absorbed into this replay."
+decisions:
+  - "Treat this replay as packaging/provenance evidence only; it does not authorize slice-pkb-001-c hydration or any additional personal-root mutation."
+  - "Use explicit dirty-state proof as the T-044 receipt evidence because root-azoth had pre-existing unrelated dirty state before this replay."
+  - "Keep the personal-root deployed payload bounded to the five operator-approved Batch 0 candidates."
+open:
+  - "If the operator wants commit-level packaging instead of dirty-state proof, commit root T-044 artifacts and the personal-root payload as a separate packaging step before starting slice-pkb-001-c."
+artifact_refs:
+  - .azoth/roadmap-specs/v0.2.0/T-044.yaml
+  - .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml
+  - .azoth/initiative-banks/INI-PKB-001.yaml
+  - .azoth/roadmap.yaml
+  - .azoth/backlog.yaml
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/knowledge/imports/ledger.yaml
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/knowledge/imports/batches/batch-000-root-azoth.yaml
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/knowledge/cards/root-azoth/
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/knowledge/indexes/authority-index.yaml
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/knowledge/indexes/topic-index.yaml
+packaging_proof:
+  proof_recorded_at: "2026-04-30T01:22:00Z"
+  root_repo:
+    path: /Users/yiwei/GithubRepos/root-azoth
+    head: ec46c3303cde16881ef2aed6349a19aab8fd01bb
+    branch_status: "codex/autonomous-roadmap-self-development...origin/codex/autonomous-roadmap-self-development [ahead 3]"
+    status_short:
+      - "M .agents/workflows/next.md"
+      - "M .azoth/backlog.yaml"
+      - "M .azoth/bootloader-state.md"
+      - "M .azoth/claude-memory-sync-pending.json"
+      - "M .azoth/initiative-banks/INI-PKB-001.yaml"
+      - "M .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml"
+      - "M .azoth/memory/episodes.jsonl"
+      - "M .azoth/roadmap.yaml"
+      - "M .claude/commands/next.md"
+      - "M .claude/settings.json"
+      - "M .gemini/commands/next.toml"
+      - "M .github/prompts/next.prompt.md"
+      - "M .opencode/commands/next.md"
+      - "M azoth.yaml"
+      - "M commands/next/body.md"
+      - "M scripts/planning_bank_surfacing.py"
+      - "?? .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml"
+      - "?? .azoth/inbox/session-reflection-2026-04-30-next-routing-personal-control-plane.jsonl"
+      - "?? .azoth/roadmap-specs/v0.2.0/T-044.yaml"
+      - "?? tests/test_planning_bank_surfacing.py"
+    scoped_delivery_status:
+      - "M .azoth/backlog.yaml"
+      - "M .azoth/initiative-banks/INI-PKB-001.yaml"
+      - "M .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml"
+      - "M .azoth/roadmap.yaml"
+      - "?? .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml"
+      - "?? .azoth/roadmap-specs/v0.2.0/T-044.yaml"
+    closeout_state_status:
+      - "M .azoth/bootloader-state.md"
+      - "M .azoth/claude-memory-sync-pending.json"
+      - "M .azoth/memory/episodes.jsonl"
+      - "M .claude/settings.json"
+      - "M azoth.yaml"
+    unrelated_residual_status:
+      - "M .agents/workflows/next.md"
+      - "M .claude/commands/next.md"
+      - "M .gemini/commands/next.toml"
+      - "M .github/prompts/next.prompt.md"
+      - "M .opencode/commands/next.md"
+      - "M commands/next/body.md"
+      - "M scripts/planning_bank_surfacing.py"
+      - "?? .azoth/inbox/session-reflection-2026-04-30-next-routing-personal-control-plane.jsonl"
+      - "?? tests/test_planning_bank_surfacing.py"
+    scoped_delivery_hashes:
+      .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml: 92d01b7338ced890a1c880ae648ab62d421c49f1
+      .azoth/roadmap-specs/v0.2.0/T-044.yaml: 580432c104e48067d3dc2750c037f8d32436af95
+      .azoth/initiative-banks/INI-PKB-001.yaml: 167156fe337d880f81514459bea17b81401a59ed
+      .azoth/roadmap.yaml: 2a670e45dcfcd042121c0a13563f048cff8c0a6b
+      .azoth/backlog.yaml: 4a0a95ba69288e730e5372674baf329e90bc3e80
+    receipt_self_reference:
+      path: .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml
+      status: untracked_t044_packaging_replay_artifact
+      hash_policy: self_hash_omitted_because_embedding_a_files_own_hash_changes_that_hash
+    unrelated_residuals:
+      - "Generated /next projection surfaces and planning-bank surfacing code/tests are tracked separately from the T-044 delivery payload."
+      - "Closeout state files are session bookkeeping for ep-470/v0.1.4.6, not personal-root card payload."
+      - "The inbox reflection captures the stale /next personal-control-plane routing issue and is not deployed personal-root knowledge."
+  personal_root:
+    path: /Users/yiwei/GithubRepos/personal-azoth-root
+    pre_packaging_head: f25c806311d5e0d6f14e6aad6444a819a224a5e8
+    packaged_head: 1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e
+    branch_status: main
+    status_short_after_packaging: []
+    packaging_commit:
+      sha: 1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e
+      message: Deploy approved root knowledge cards
+    scoped_delivery_hashes:
+      .azoth/knowledge/imports/ledger.yaml: d83b1b30e3f41c00207e5863cbd0b8eb9b9955e2
+      .azoth/knowledge/imports/batches/batch-000-root-azoth.yaml: 61ca002aec8231e19c00365314f4c50c6b6b6abe
+      .azoth/knowledge/indexes/authority-index.yaml: 7794a5ac1553aaa209fcf1444dd76cd837c1e7c0
+      .azoth/knowledge/indexes/topic-index.yaml: 34762197c4b3a86fc37f49560cbf42f8a17a8f50
+      .azoth/knowledge/cards/root-azoth/kb-root-azoth-001.yaml: 739cc04c732632a5a98b4bfd350c75a5f321129b
+      .azoth/knowledge/cards/root-azoth/kb-root-azoth-002.yaml: 9cc4e8b05c5bc13602b111c526c925160807b3fa
+      .azoth/knowledge/cards/root-azoth/kb-root-azoth-003.yaml: db5cc274d6fc6f0a636a0353a55477baf16108fa
+      .azoth/knowledge/cards/root-azoth/kb-root-azoth-004.yaml: 5af67ac99d4507604934e8497a62593eb5f2aca9
+      .azoth/knowledge/cards/root-azoth/kb-root-azoth-005.yaml: 75430ff417bc3cd277708cd13461ebc17420a920
+validation:
+  - command: python3 scripts/personal_knowledge_validate.py --batch .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml
+    status: passed
+    result: personal knowledge validation OK
+  - command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+    status: passed
+    result: personal knowledge validation OK
+  - command: python3 -m pytest tests/test_personal_knowledge_validate.py -q
+    status: passed
+    result: 23 passed
+next: "Rerun strict eval with evaluator plus architect/product-management lensing; if the gate passes, do not hydrate slice-pkb-001-c without fresh explicit approval."

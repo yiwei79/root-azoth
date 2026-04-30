@@ -657,22 +657,29 @@ initiatives:
     - deployment-finalization
   phase: null
   priority: high
-  task_ref: T-042
+  task_ref: T-044
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-044
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: slice_pkb_001_a_complete_waiting_operator_candidate_decisions
-  candidate_slice_ref: slice-pkb-001-a
+  discovery_status: slice_pkb_001_b_complete_next_candidate_seed_only
+  candidate_slice_ref: slice-pkb-001-c
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: Review the deferred Batch 0 candidates in .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml;
-    only after operator candidate decisions should a later session consider slice-pkb-001-b
-    card deployment readiness.
+  next_discovery_action: T-044 is complete. The next candidate is slice-pkb-001-c
+    for a personal knowledge recall pilot and retrieval eval harness; treat it as
+    a seed-only candidate until a fresh explicit approval authorizes hydration.
+    Do not route ahead to recall or mutate personal-root from this completed T-044
+    delivery scope.
   summary: 'Plan the post-v0.2.0 personal knowledge continuation in small governed
     increments: Batch 0 candidate review first, approved card deployment later, recall
     only after the card contract proves useful, and source registry onboarding as
@@ -692,7 +699,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2100,7 +2107,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 5
+  current_patch: 6
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2252,6 +2259,20 @@ versions:
     decision_ref:
     - D11
     - D23
+    - D48
+    - D50
+    - D52
+  - id: T-044
+    title: Approved personal knowledge card deployment receipt
+    completed_date: '2026-04-30'
+    decision_ref:
+    - D11
+    - D30
+    - D34
+    - D35
+    - D37
+    - D38
+    - D42
     - D48
     - D50
     - D52
