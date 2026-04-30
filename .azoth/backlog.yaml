@@ -3691,13 +3691,14 @@ items:
   - D21
   - D23
   - D50
-  description: >
-    Add a fail-closed Codex dynamic-full-auto stage gate so nontrivial planning,
-    editing, validation, or review work cannot be marked complete unless the run
-    ledger contains paired stage spawn/summary evidence for the declared stages,
-    or an explicit bounded inline-exception capsule recorded before the inline
-    work. Cover planning-bank edit scenarios with regression tests and update the
-    Codex wrapper/runtime prompt so this is a hard stop rather than advisory prose.
+  description: 'Add a fail-closed Codex dynamic-full-auto stage gate so nontrivial
+    planning, editing, validation, or review work cannot be marked complete unless
+    the run ledger contains paired stage spawn/summary evidence for the declared stages,
+    or an explicit bounded inline-exception capsule recorded before the inline work.
+    Cover planning-bank edit scenarios with regression tests and update the Codex
+    wrapper/runtime prompt so this is a hard stop rather than advisory prose.
+
+    '
 - id: BL-077
   title: Guard planning-bank hydration behind live approved scope
   source: SRF-2026-04-30-HYDRATION-PIPELINE-BYPASS-001
@@ -3710,13 +3711,14 @@ items:
   completed_date: '2026-04-30'
   decision_ref:
   - D50
-  description: >
-    Treat planning-bank hydration as a mutating pipeline action. Before
-    `planning_bank_validate.py --hydrate-approved` can delegate to
-    `roadmap_scaffold.py`, require a live unexpired approved scope gate with a
-    pipeline command, matching hydration-specific approval scope, matching source
-    initiative or bank, and no forbidden hydration outputs. Preserve T-043 as a
-    historically bypassed hydration rather than retroactively marking it compliant.
+  description: 'Treat planning-bank hydration as a mutating pipeline action. Before
+    `planning_bank_validate.py --hydrate-approved` can delegate to `roadmap_scaffold.py`,
+    require a live unexpired approved scope gate with a pipeline command, matching
+    hydration-specific approval scope, matching source initiative or bank, and no
+    forbidden hydration outputs. Preserve T-043 as a historically bypassed hydration
+    rather than retroactively marking it compliant.
+
+    '
 - id: T-047
   title: Personal control-plane cloud-native deployment procedure
   source: INI-PKB-001-cloud-native-deployment-continuation
@@ -3736,3 +3738,22 @@ items:
   blocked_by:
   - T-045
   - BL-077
+- id: T-048
+  title: Personal-root RC update rehearsal from desired state
+  source: INI-PKB-001-personal-root-rc-rehearsal
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-04-30'
+  description: Rehearse applying an explicitly approved Azoth release candidate
+    or release into the personal root from declarative desired state, then validate
+    and record receipt evidence. This pending governed infrastructure task does
+    not authorize personal-root mutation until a fresh delivery gate names the
+    exact product revision, target path, storage policy, validation commands, and
+    rollback point.
+  roadmap_ref: T-048
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-047

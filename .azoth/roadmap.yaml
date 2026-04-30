@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: null
+  phase: v0.2.0-p4
   priority: high
-  task_ref: null
+  task_ref: T-048
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -684,25 +684,29 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-048
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
+    phase: v0.2.0-p4
+    status: active
+    role: primary
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t047_procedure_complete
+  discovery_status: t048_hydrated_governed_delivery_pending
   candidate_slice_ref: slice-pkb-001-e
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-047 is delivered and the next route is the T-048
-    personal-root RC update rehearsal candidate. Hydrate T-048 through the
-    initiative bank only after explicit operator approval naming the release or
-    RC revision, personal-root target path, storage policy, validation commands,
-    and rollback point. Do not mutate personal-root state, onboard sources or
-    projects, expand retrieval, or publish public azoth from this initiative
-    state.
+  next_discovery_action: T-048 is hydrated as a governed infrastructure task for
+    the personal-root RC update rehearsal. The next delivery route must open a
+    fresh governed gate naming the release or RC revision, personal-root target
+    path, desired-state manifest, storage policy, validation commands, and rollback
+    point before any personal-root write. Do not onboard sources or projects,
+    expand retrieval, or publish public azoth from this hydration state.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
-    project panels. The completed Batch 0, recall pilot, and T-047 procedure arc
-    proved the pointer/card and desired-state route; the next candidate is a
-    separately approved T-048 personal-root rehearsal before source registry
-    onboarding, broader recall, public release, or project mutation.
+    project panels. The completed Batch 0, recall pilot, and T-047 procedure arc proved
+    the pointer/card and desired-state route; the current hydrated route is the
+    governed T-048 personal-root rehearsal before source registry onboarding,
+    broader recall, public release, or project mutation.
 
     '
   decision_ref:
@@ -716,7 +720,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: null
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2124,7 +2128,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 13
+  current_patch: 14
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2158,7 +2162,10 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-048
+    title: Personal-root RC update rehearsal from desired state
+    initiative_ref: INI-PKB-001
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2311,4 +2318,7 @@ versions:
     title: Task research capsule derivation from initiative-bank evidence
     completed_date: '2026-04-30'
     decision_ref: []
-  - {id: T-047, title: "Personal control-plane cloud-native deployment procedure", completed_date: "2026-04-30", decision_ref: []}
+  - id: T-047
+    title: Personal control-plane cloud-native deployment procedure
+    completed_date: '2026-04-30'
+    decision_ref: []
