@@ -17,6 +17,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 import planning_bank_validate  # noqa: E402
 from planning_bank_validate import (  # noqa: E402
     PlanningBankValidationError,
+    build_derived_task_capsule_report,
     build_initiative_readiness_report,
     hydrate_approved_initiative_candidate,
     validate_design_bank,
@@ -122,6 +123,54 @@ def _write_ready_hydration_candidate(
         'python3 scripts/roadmap_scaffold.py --title "Temp approved planning-bank slice" '
         "--initiative-ref INI-TEST --target-layer infrastructure --delivery-pipeline standard"
     )
+    bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
+    return bank_path
+
+
+def _write_ready_derived_capsule_candidate(
+    repo: Path,
+    *,
+    source_status: str = "answered",
+    source_fresh_until: str | None = "2099-01-01T00:00:00Z",
+    candidate_status: str = "candidate",
+    human_decision: str = "approved",
+    freshness_status: str = "fresh",
+    target_layer: str = "infrastructure",
+) -> Path:
+    bank_path, bank = _write_temp_initiative_bank(repo)
+    readiness = bank["readiness"]
+    readiness["readiness_status"] = "ready_to_hydrate"
+    readiness["human_decision"] = human_decision
+    readiness["freshness_status"] = freshness_status
+    readiness["approval_scope"] = "hydration_specific_slice_evi_002_f"
+    readiness["approval_basis"] = "Temp approval for derived task-capsule preview."
+    readiness["candidate_first_slice"] = "slice-evi-002-f"
+    readiness["acceptance_criteria_status"] = "stable"
+    readiness["non_goals_status"] = "stable"
+    source_question = next(
+        question
+        for question in bank["research_questions"]
+        if question["question_id"] == "rq-evi-002-010"
+    )
+    source_question["status"] = source_status
+    source_question["answered_at"] = "2026-04-30T20:39:24Z"
+    if source_fresh_until is None:
+        source_question.pop("fresh_until", None)
+    else:
+        source_question["fresh_until"] = source_fresh_until
+    candidate = next(
+        candidate
+        for candidate in bank["candidate_slices"]
+        if candidate["candidate_id"] == "slice-evi-002-f"
+    )
+    candidate["status"] = candidate_status
+    candidate["proposed_task_id"] = "T-999"
+    candidate["target_layer"] = target_layer
+    candidate["open_questions"] = []
+    candidate["research_evidence_refs"] = [
+        ".azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001"
+    ]
+    candidate["hydration_plan"]["proposed_title"] = "Temp derived task capsule"
     bank_path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
     return bank_path
 
@@ -394,6 +443,121 @@ def test_t046_spec_preserves_task_capsule_derivation_plan_only_boundary() -> Non
         "unapproved": "refuse: explicit approval is required before derivation output",
         "insufficient": "refuse: research_sufficiency.py must report sufficient",
     }
+
+
+def test_derived_task_capsule_report_builds_sufficient_preview_for_temp_candidate(
+    tmp_path: Path,
+) -> None:
+    bank_path = _write_ready_derived_capsule_candidate(tmp_path)
+
+    report = build_derived_task_capsule_report(
+        bank_path,
+        repo_root=tmp_path,
+        candidate_id="slice-evi-002-f",
+        session_id="session-test",
+        timestamp="2026-05-01T00:00:00Z",
+    )
+
+    assert report["report_type"] == "derived_task_capsule_preview"
+    assert report["ready_to_emit"] is True
+    assert report["refusal_reasons"] == []
+    assert report["sufficiency"]["outcome"] == "research_sufficient"
+    preview = report["preview_capsule"]
+    assert preview["source_session_id"] == "session-test"
+    assert preview["source_initiative_ref"] == "INI-TEST"
+    assert preview["source_bank_ref"] == ".azoth/initiative-banks/INI-TEST.yaml"
+    assert preview["candidate_slice_ref"] == "slice-evi-002-f"
+    assert preview["source_evidence_refs"] == [
+        ".azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001"
+    ]
+    assert preview["freshness_window"] == {
+        "fresh_until": "2099-01-01T00:00:00Z",
+        "source_question_id": "rq-evi-002-010",
+    }
+    assert preview["excluded_stale_evidence"] == []
+    assert preview["decision_context"]["approval_scope"] == "hydration_specific_slice_evi_002_f"
+    question_ids = {question["question_id"] for question in preview["questions"]}
+    assert "phase-1-reuse" in question_ids
+    assert "phase-1-slice-t-999-temp-derived-task-capsule" in question_ids
+
+
+def test_derived_task_capsule_report_refuses_live_hydrated_candidate() -> None:
+    report = build_derived_task_capsule_report(
+        INITIATIVE_BANK_PATH,
+        candidate_id="slice-evi-002-f",
+        session_id="session-test",
+        timestamp="2026-05-01T00:00:00Z",
+    )
+
+    assert report["ready_to_emit"] is False
+    assert "refuse: task already exists; define delivery boundary only" in report[
+        "refusal_reasons"
+    ]
+    assert report["preview_capsule"]["candidate_slice_ref"] == "slice-evi-002-f"
+
+
+@pytest.mark.parametrize(
+    ("fixture_updates", "expected_reason"),
+    [
+        ({"source_fresh_until": "2026-04-30T00:00:00Z"}, "refuse: refresh source evidence before derivation"),
+        ({"source_status": "conflicting"}, "refuse: resolve or carry conflict through research_sufficiency.py"),
+        ({"source_fresh_until": None}, "refuse: required candidate or evidence fields are absent"),
+        ({"human_decision": "pending"}, "refuse: explicit approval is required before derivation output"),
+        ({"candidate_status": "parked"}, "refuse: candidate status must be candidate"),
+        ({"target_layer": "governance"}, "refuse: protected/kernel/governance outputs require human gate"),
+    ],
+)
+def test_derived_task_capsule_report_refuses_stale_conflicting_missing_unapproved_and_protected_inputs(
+    tmp_path: Path,
+    fixture_updates: dict,
+    expected_reason: str,
+) -> None:
+    bank_path = _write_ready_derived_capsule_candidate(tmp_path, **fixture_updates)
+
+    report = build_derived_task_capsule_report(
+        bank_path,
+        repo_root=tmp_path,
+        candidate_id="slice-evi-002-f",
+        session_id="session-test",
+        timestamp="2026-05-01T00:00:00Z",
+    )
+
+    assert report["ready_to_emit"] is False
+    assert expected_reason in report["refusal_reasons"]
+
+
+def test_validator_cli_prints_derived_task_capsule_report_without_research_output(
+    tmp_path: Path,
+) -> None:
+    _write_ready_derived_capsule_candidate(tmp_path)
+    research_dir = tmp_path / ".azoth" / "research"
+    before = sorted(research_dir.glob("*.json")) if research_dir.exists() else []
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "planning_bank_validate.py"),
+            "--derive-task-capsule",
+            ".azoth/initiative-banks/INI-TEST.yaml",
+            "--candidate-id",
+            "slice-evi-002-f",
+            "--session-id",
+            "session-test",
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    output = yaml.safe_load(result.stdout)
+    assert set(output) == {"derived_task_capsule_reports"}
+    report = output["derived_task_capsule_reports"][0]
+    assert report["ready_to_emit"] is True
+    assert report["preview_capsule"]["source_bank_ref"] == ".azoth/initiative-banks/INI-TEST.yaml"
+    after = sorted(research_dir.glob("*.json")) if research_dir.exists() else []
+    assert after == before == []
 
 
 def test_terminal_initiative_readiness_validates_without_selected_candidate(

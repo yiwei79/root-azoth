@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+import research_sufficiency
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -114,6 +115,16 @@ INITIATIVE_SLICE_LIST_FIELDS = {
     "research_evidence_refs",
     "known_non_goals",
     "open_questions",
+}
+
+PROTECTED_DERIVED_CAPSULE_LAYERS = {
+    "kernel",
+    "governance",
+    "m1",
+    "release",
+    "deployment",
+    "personal-root",
+    "personal_root",
 }
 
 
@@ -533,6 +544,207 @@ def build_initiative_readiness_report(
     return report
 
 
+def _find_research_question(doc: dict[str, Any], question_id: str) -> dict[str, Any] | None:
+    for question in _list_or_empty(doc.get("research_questions")):
+        if isinstance(question, dict) and question.get("question_id") == question_id:
+            return question
+    return None
+
+
+def _derive_task_capsule_questions(
+    *,
+    source_question: dict[str, Any] | None,
+    goal: str,
+    backlog_id: str,
+) -> list[dict[str, Any]]:
+    if not isinstance(source_question, dict):
+        return []
+
+    answered_at = source_question.get("answered_at")
+    fresh_until = source_question.get("fresh_until")
+    if not _non_empty_string(answered_at) or not _non_empty_string(fresh_until):
+        return []
+
+    status = _non_empty_string(source_question.get("status")) or ""
+    question_text = _non_empty_string(source_question.get("question")) or (
+        "Can initiative-bank evidence derive a task-specific research capsule?"
+    )
+    answer = _non_empty_string(source_question.get("answer")) or question_text
+    questions: list[dict[str, Any]] = []
+    for question_id in research_sufficiency.derive_required_questions(
+        goal=goal,
+        backlog_id=backlog_id,
+    ):
+        questions.append(
+            {
+                "question_id": question_id,
+                "question": question_text,
+                "status": status,
+                "answered_at": answered_at,
+                "fresh_until": fresh_until,
+                "derived_from_question_id": source_question.get("question_id"),
+                "answer": answer,
+            }
+        )
+    return questions
+
+
+def build_derived_task_capsule_report(
+    path: Path,
+    *,
+    repo_root: Path = ROOT,
+    candidate_id: str | None = None,
+    source_question_id: str = "rq-evi-002-010",
+    goal: str | None = None,
+    backlog_id: str | None = None,
+    session_id: str = "",
+    timestamp: str | None = None,
+) -> dict[str, Any]:
+    """Build a read-only preview report for a derived task research capsule."""
+    rel = _repo_rel(path, repo_root=repo_root)
+    if not rel.is_relative_to(INITIATIVE_BANK_DIR):
+        raise PlanningBankValidationError(
+            f"{rel}: derived task capsule reports require a bank under {INITIATIVE_BANK_DIR}"
+        )
+
+    doc = _load_yaml(path)
+    _require_fields(doc, INITIATIVE_REQUIRED_FIELDS, label=str(rel))
+    if doc.get("schema_version") != 1 or doc.get("bank_type") != "initiative":
+        raise PlanningBankValidationError(f"{rel}: bank must be a schema_version 1 initiative bank")
+    initiative_id = _require_string(doc, "initiative_id", label=str(rel))
+    if initiative_id != rel.stem:
+        raise PlanningBankValidationError(f"{rel}: initiative_id must match filename stem")
+    readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
+    candidates = doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    selected_candidate_id = candidate_id or readiness.get("candidate_first_slice")
+    candidate = next(
+        (
+            item
+            for item in candidates
+            if isinstance(item, dict) and item.get("candidate_id") == selected_candidate_id
+        ),
+        None,
+    )
+    candidate_doc = candidate if isinstance(candidate, dict) else {}
+    hydration_plan = (
+        candidate_doc.get("hydration_plan")
+        if isinstance(candidate_doc.get("hydration_plan"), dict)
+        else {}
+    )
+    source_question = _find_research_question(doc, source_question_id)
+
+    candidate_title = (
+        _non_empty_string(hydration_plan.get("proposed_title"))
+        or _non_empty_string(candidate_doc.get("title"))
+        or "Derived task capsule"
+    )
+    capsule_goal = goal or candidate_title
+    capsule_backlog_id = backlog_id or _non_empty_string(candidate_doc.get("proposed_task_id"))
+    captured_at = timestamp or _utc_now()
+    source_status = _non_empty_string(source_question.get("status")) if source_question else None
+    source_fresh_until = (
+        _non_empty_string(source_question.get("fresh_until")) if source_question else None
+    )
+    parsed_fresh_until = (
+        research_sufficiency.parse_iso(source_fresh_until) if source_fresh_until else None
+    )
+    now = research_sufficiency.parse_iso(captured_at) or datetime.now(timezone.utc)
+    source_evidence_refs = [
+        str(item)
+        for item in _list_or_empty(candidate_doc.get("research_evidence_refs"))
+        if str(item).strip()
+    ]
+    excluded_stale_evidence: list[str] = []
+    refusal_reasons: list[str] = []
+
+    candidate_status = _non_empty_string(candidate_doc.get("status"))
+    if candidate is None:
+        refusal_reasons.append("refuse: required candidate or evidence fields are absent")
+    elif candidate_status == "complete":
+        refusal_reasons.append("refuse: no repeat derivation or hydration action remains")
+    elif candidate_status == "hydrated":
+        refusal_reasons.append("refuse: task already exists; define delivery boundary only")
+    elif candidate_status == "rejected":
+        refusal_reasons.append("refuse: candidate is not eligible evidence")
+    elif candidate_status != "candidate":
+        refusal_reasons.append("refuse: candidate status must be candidate")
+
+    if readiness.get("human_decision") != "approved":
+        refusal_reasons.append("refuse: explicit approval is required before derivation output")
+
+    target_layer = str(candidate_doc.get("target_layer") or "").strip().lower()
+    if target_layer in PROTECTED_DERIVED_CAPSULE_LAYERS:
+        refusal_reasons.append("refuse: protected/kernel/governance outputs require human gate")
+
+    freshness_blocker = _freshness_blocking_reason(readiness.get("freshness_status"))
+    if freshness_blocker is not None:
+        refusal_reasons.append("refuse: refresh source evidence before derivation")
+
+    if not isinstance(source_question, dict) or not source_evidence_refs:
+        refusal_reasons.append("refuse: required candidate or evidence fields are absent")
+    if source_status == "conflicting":
+        refusal_reasons.append("refuse: resolve or carry conflict through research_sufficiency.py")
+        excluded_stale_evidence = source_evidence_refs
+    if source_fresh_until is None or parsed_fresh_until is None:
+        refusal_reasons.append("refuse: required candidate or evidence fields are absent")
+    elif parsed_fresh_until <= now:
+        refusal_reasons.append("refuse: refresh source evidence before derivation")
+        excluded_stale_evidence = source_evidence_refs
+
+    included_evidence_refs = [] if excluded_stale_evidence else source_evidence_refs
+    preview_capsule: dict[str, Any] = {
+        "schema_version": 1,
+        "source_session_id": session_id or "preview-session",
+        "goal": capsule_goal,
+        "captured_at": captured_at,
+        "volatility": "bounded",
+        "limitations": [
+            "Preview only; this helper does not emit standalone .azoth/research/*.json capsules."
+        ],
+        "questions": _derive_task_capsule_questions(
+            source_question=source_question,
+            goal=capsule_goal,
+            backlog_id=capsule_backlog_id or "",
+        ),
+        "source_initiative_ref": doc.get("initiative_id"),
+        "source_bank_ref": rel.as_posix(),
+        "candidate_slice_ref": candidate_doc.get("candidate_id") or selected_candidate_id,
+        "source_evidence_refs": included_evidence_refs,
+        "freshness_window": {
+            "fresh_until": source_fresh_until,
+            "source_question_id": source_question_id,
+        },
+        "excluded_stale_evidence": excluded_stale_evidence,
+        "decision_context": {
+            "approval_scope": readiness.get("approval_scope"),
+            "approval_basis": readiness.get("approval_basis"),
+            "human_decision": readiness.get("human_decision") or "missing",
+            "candidate_status": candidate_status or "missing",
+            "source_question_status": source_status or "missing",
+        },
+    }
+    sufficiency = research_sufficiency.evaluate_research_capsule(
+        preview_capsule,
+        goal=capsule_goal,
+        backlog_id=capsule_backlog_id,
+        now=now,
+    )
+    if sufficiency.get("outcome") != "research_sufficient":
+        refusal_reasons.append("refuse: research_sufficiency.py must report sufficient")
+
+    return {
+        "report_type": "derived_task_capsule_preview",
+        "initiative_id": doc.get("initiative_id"),
+        "source_bank_ref": rel.as_posix(),
+        "candidate_id": candidate_doc.get("candidate_id") or selected_candidate_id or "missing",
+        "source_question_id": source_question_id,
+        "ready_to_emit": not refusal_reasons,
+        "refusal_reasons": list(dict.fromkeys(refusal_reasons)),
+        "sufficiency": sufficiency,
+        "preview_capsule": preview_capsule,
+    }
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -912,7 +1124,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--candidate-id",
-        help="Select a specific candidate_slices[].candidate_id for --readiness-report.",
+        help=(
+            "Select a specific candidate_slices[].candidate_id for --readiness-report, "
+            "--hydrate-approved, or --derive-task-capsule."
+        ),
+    )
+    parser.add_argument(
+        "--derive-task-capsule",
+        type=Path,
+        metavar="PATH",
+        help="Print a read-only derived task research capsule preview report as YAML.",
+    )
+    parser.add_argument(
+        "--source-question-id",
+        default="rq-evi-002-010",
+        help="Select the initiative research question for --derive-task-capsule.",
     )
     parser.add_argument(
         "--check-roadmap-refs",
@@ -942,21 +1168,36 @@ def main(argv: list[str] | None = None) -> int:
         help="Session id to record in hydration_history for --hydrate-approved.",
     )
     args = parser.parse_args(argv)
+    cli_repo_root = Path.cwd().resolve()
 
     try:
         for path in args.paths:
-            validate_planning_bank(path)
+            validate_planning_bank(path, repo_root=cli_repo_root)
         if args.check_roadmap_refs:
-            validate_roadmap_refs()
+            validate_roadmap_refs(repo_root=cli_repo_root)
         if args.readiness_report is not None:
             report = build_initiative_readiness_report(
                 args.readiness_report,
+                repo_root=cli_repo_root,
                 candidate_id=args.candidate_id,
             )
             print(yaml.safe_dump({"readiness_reports": [report]}, sort_keys=False), end="")
             return 0
+        if args.derive_task_capsule is not None:
+            report = build_derived_task_capsule_report(
+                args.derive_task_capsule,
+                repo_root=cli_repo_root,
+                candidate_id=args.candidate_id,
+                source_question_id=args.source_question_id,
+                session_id=args.session_id,
+            )
+            print(
+                yaml.safe_dump({"derived_task_capsule_reports": [report]}, sort_keys=False),
+                end="",
+            )
+            return 0
         if args.coverage_report:
-            report = build_planning_bank_coverage_report()
+            report = build_planning_bank_coverage_report(cli_repo_root)
             print(yaml.safe_dump({"planning_bank_coverage": report}, sort_keys=False), end="")
             return 0
         if args.intake_contract is not None:
@@ -968,6 +1209,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.hydrate_approved is not None:
             result = hydrate_approved_initiative_candidate(
                 args.hydrate_approved,
+                repo_root=cli_repo_root,
                 candidate_id=args.candidate_id,
                 session_id=args.session_id,
             )
