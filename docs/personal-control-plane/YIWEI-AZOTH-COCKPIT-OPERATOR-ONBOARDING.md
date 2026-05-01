@@ -82,6 +82,21 @@ minimum readiness model is:
 This T-053 delivery does not create storage, remotes, archives, or secrets. It
 defines what those later operations must prove.
 
+## Periodic Backup Verification
+
+After the private git remote is configured, verify the backup by restoring from
+the remote into a temporary checkout:
+
+```bash
+python3 scripts/cockpit_backup_verify.py
+```
+
+The check clones the private cockpit remote into a temporary path, recreates
+required empty skeleton directories for that restored checkout, runs the personal
+knowledge validator, runs the cockpit restore verifier, and renders the
+`ras-or-ray` pointer handoff. It must not write to the live cockpit, project
+repos, source registries, retrieval indexes, or release surfaces.
+
 ## Recovery Drill Shape
 
 A future recovery implementation gate should verify the restore path without

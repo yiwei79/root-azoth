@@ -1,0 +1,85 @@
+schema_version: 1
+task_ref: T-059
+session_id: 2026-05-02-t-059-cockpit-backup-verification-cadence
+delivery_mode: private_remote_backup_verification_cadence
+observed_at: '2026-05-02T00:57:33+02:00'
+source_gap_ref: .azoth/handoffs/2026-05-02-t-058-private-remote-backup-complete.yaml
+approval_scope: periodic_private_remote_restore_verification_only
+mutation_authority:
+  root_tooling: true
+  root_tests: true
+  root_docs: true
+  root_handoff: true
+  temp_restore_copy: true
+  live_cockpit_mutation: false
+  project_repo_write: false
+  credential_access: false
+  remote_creation: false
+  backup_archive_creation: false
+  source_registry_onboarding: false
+  retrieval_indexing: false
+  release_publication: false
+changes:
+- path: scripts/cockpit_backup_verify.py
+  summary: >
+    Added a root-side private remote restore verifier that resolves the remote
+    branch head, clones the cockpit repository into a temporary restore path,
+    compares restored HEAD to remote HEAD, recreates required skeleton dirs, and
+    reruns the repaired restore checks plus the ras-or-ray pointer handoff.
+- path: tests/test_cockpit_backup_verify.py
+  summary: >
+    Covered successful verification from a local git-backed cockpit fixture and
+    explicit failure when the requested branch is absent.
+- path: docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+  summary: Documented the operator command and non-mutation boundary for periodic backup verification.
+validation_results:
+- command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_cockpit_backup_verify.py tests/test_cockpit_bootstrap_verify.py tests/test_personal_knowledge_validate.py -q
+  status: passed
+  result: 36 passed
+- command: python3 scripts/cockpit_backup_verify.py
+  status: passed
+  result: >
+    Private remote restore verification passed for
+    https://github.com/Yeeway69/yiwei-azoth-cockpit.git main at
+    2be86cf90c6db56a57dff88b9e737334cfee5638; remote clone, restored HEAD,
+    personal knowledge validation, restore-drill bootstrap verification, cockpit
+    menu check, and ras-or-ray pointer handoff all passed.
+- command: python3 scripts/check_gates.py --session-id 2026-05-02-t-059-cockpit-backup-verification-cadence --require-pipeline-gate
+  status: passed
+  result: gate check passed
+acceptance_results:
+  periodic_operator_command_added: passed
+  remote_head_resolved_before_clone: passed
+  restored_head_matches_remote_head: passed
+  temp_restore_path_used: passed
+  restored_personal_knowledge_validation: passed
+  restored_bootstrap_verification: passed
+  restored_menu_check: passed
+  restored_project_handoff: passed
+  live_cockpit_unchanged: passed
+  project_repo_write_avoided: passed
+forbidden_outputs_confirmed:
+- credential_access
+- remote_creation
+- project_repo_write
+- live_cockpit_mutation
+- source_registry_onboarding
+- retrieval_indexing
+- graph_or_vector_indexing
+- public_product_mutation
+- release_publication
+- encrypted_backup_archive_creation
+- governance_change
+- kernel_change
+- m1_change
+decision:
+  private_remote_backup_verification_cadence: passed
+  recommendation: >
+    Use `python3 scripts/cockpit_backup_verify.py` after meaningful cockpit
+    changes and before treating the private remote as restorable. A later
+    automation lane can schedule this command, but scheduling was intentionally
+    not opened in this scope.
+next_safe_action: >
+  Commit this cadence slice, then choose either encrypted backup design or a
+  narrow source-onboarding/readiness lane. Do not create archives, schedulers, or
+  additional remotes without a fresh gate.
