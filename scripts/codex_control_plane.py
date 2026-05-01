@@ -16,6 +16,7 @@ from session_gate import (
     matching_exploratory_session,
 )
 from session_continuity import resolve_transition
+from azoth_lite import AzothLiteRequest, classify_request
 
 PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
@@ -24,6 +25,11 @@ NONLEADING_COMMAND_MENTION_RE = re.compile(r"(?<!\S)/([a-z][a-z0-9-]*)\b")
 PIPELINE_OVERRIDE_RE = re.compile(
     r"^\s*pipeline_command=(autonomous-auto|dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
     re.DOTALL,
+)
+PATH_HINT_RE = re.compile(
+    r"(?P<path>(?:\.azoth|\.claude|\.codex|\.cursor|\.gemini|\.github|\.opencode|"
+    r"agents|commands|docs|kernel|meta_session_research|pipelines|scaffold|scripts|skills|tests|"
+    r"AGENTS\.md|CLAUDE\.md|GEMINI\.md)[A-Za-z0-9_./-]*)"
 )
 
 _ACTIONABLE_PREFIXES = (
@@ -61,6 +67,53 @@ _ACTIONABLE_PREFIXES = (
 )
 _CONTINUE_PREFIXES = ("continue", "resume", "keep going", "let's continue", "lets continue")
 _NEW_GOAL_PREFIXES = ("start a new goal", "start new goal", "new goal", "start ")
+_PROFILE_READ_ONLY_TERMS = (
+    "explain",
+    "inspect",
+    "read",
+    "search",
+    "status",
+    "summarize",
+)
+_PROFILE_FOCUSED_VERIFICATION_TERMS = (
+    "focused test",
+    "focused verification",
+    "narrow test",
+    "run test",
+    "test target",
+    "verify",
+    "verification",
+)
+_PROFILE_LOCAL_EDIT_TERMS = (
+    "add",
+    "change",
+    "create",
+    "edit",
+    "fix",
+    "implement",
+    "migrate",
+    "patch",
+    "refactor",
+    "update",
+    "wire",
+    "write",
+)
+_PROFILE_EXTERNAL_TERMS = (
+    "close out",
+    "closeout",
+    "commit",
+    "delete",
+    "deploy",
+    "final delivery",
+    "finalize",
+    "merge",
+    "package",
+    "publish",
+    "release",
+    "reset",
+)
+_PROFILE_GOVERNED_COMMANDS = {"remember", "promote", "intake"}
+_PROFILE_GOVERNED_PIPELINES = {"autonomous-auto", "deliver", "deliver-full", "dynamic-full-auto"}
 
 
 @dataclass(frozen=True)
@@ -334,6 +387,78 @@ def _governed_write_reminder() -> str:
     )
 
 
+def _profile_action_hints(parsed: ParsedPrompt, goal: str) -> tuple[str, ...]:
+    lowered = f"{parsed.source_command} {parsed.effective_pipeline_command} {goal}".lower()
+    actions: list[str] = []
+
+    if parsed.effective_route_name == "session-closeout":
+        actions.append("closeout")
+    if parsed.source_command in _PROFILE_GOVERNED_COMMANDS:
+        actions.append("edit")
+    if parsed.effective_pipeline_command in _PROFILE_GOVERNED_PIPELINES:
+        actions.append("final_delivery")
+    if any(term in lowered for term in _PROFILE_EXTERNAL_TERMS):
+        for term in _PROFILE_EXTERNAL_TERMS:
+            if term in lowered:
+                actions.append(term.replace(" ", "_"))
+                break
+    if any(term in lowered for term in _PROFILE_FOCUSED_VERIFICATION_TERMS):
+        actions.append("focused_verification")
+    if any(_starts_with_action(lowered, term) for term in _PROFILE_LOCAL_EDIT_TERMS):
+        actions.append(_first_matching_action(lowered, _PROFILE_LOCAL_EDIT_TERMS))
+    if not actions and any(term in lowered for term in _PROFILE_READ_ONLY_TERMS):
+        actions.append("status" if "status" in lowered else "read")
+    if not actions and parsed.canonical_input == "$azoth-start next":
+        actions.append("status")
+
+    return tuple(dict.fromkeys(action for action in actions if action))
+
+
+def _profile_path_hints(goal: str) -> tuple[str, ...]:
+    paths: list[str] = []
+    for match in PATH_HINT_RE.finditer(goal):
+        path = match.group("path").strip("`'\".,;:()[]{}")
+        if path:
+            paths.append(path)
+    return tuple(dict.fromkeys(paths))
+
+
+def _profile_advisory(parsed: ParsedPrompt, *, goal: str | None = None) -> str:
+    advisory_goal = (goal or parsed.prompt_goal or parsed.raw_arguments or parsed.raw_prompt).strip()
+    if not advisory_goal:
+        advisory_goal = parsed.canonical_input or parsed.source_command or "Codex route"
+
+    decision = classify_request(
+        AzothLiteRequest(
+            goal=advisory_goal,
+            requested_actions=_profile_action_hints(parsed, advisory_goal),
+            planned_paths=_profile_path_hints(advisory_goal),
+            trace_required=False,
+            dirty_worktree=False,
+        )
+    )
+
+    parts = [
+        "Profile advisory (Phase 3 advisory-only; do not change the routed command):",
+        f"profile_suggestion: {decision.selected_profile};",
+        f"side_effect_class: {decision.side_effect_class};",
+        f"stop_state: {decision.stop_state}.",
+    ]
+    if decision.escalation_reasons:
+        parts.append(f"escalation_reasons: {', '.join(decision.escalation_reasons)}.")
+    if decision.handoff_packet:
+        parts.append("handoff_note: stop before mutation; recommended_route: azoth-full.")
+    return " ".join(parts)
+
+
+def _starts_with_action(text: str, action: str) -> bool:
+    return text.startswith(f"{action} ") or text.startswith(f"{action}:")
+
+
+def _first_matching_action(text: str, actions: tuple[str, ...]) -> str:
+    return next((action for action in actions if _starts_with_action(text, action)), "")
+
+
 def staged_delegation_available(root: Path) -> bool:
     agents_dir = root / ".codex" / "agents"
     required = ("orchestrator.toml", "builder.toml", "reviewer.toml")
@@ -462,10 +587,12 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
         transition = _transition_guidance(root, parsed)
         if decision.action in {"replace", "conflict", "extend"}:
             guidance = [transition, _governed_write_reminder()] if transition else []
+            guidance.append(_profile_advisory(parsed, goal=prompt_goal))
             return PromptDirective(additional_context=" ".join(guidance))
         if command_name == "resume":
             guidance = [transition] if transition else []
             if guidance:
+                guidance.append(_profile_advisory(parsed, goal=prompt_goal))
                 return PromptDirective(additional_context=" ".join(guidance))
             return None
 
@@ -482,6 +609,7 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
                 "Treat this as a real no-scope session: memory capture and light closeout are allowed, "
                 "but ordinary repo edits must stop and escalate into `/auto` first.",
                 "Normalize this request through `$azoth-start` so the Codex control plane stays start-centered.",
+                _profile_advisory(parsed, goal=goal),
             ]
             if transition:
                 guidance.append(transition)
@@ -493,6 +621,7 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
         guidance = [
             f"Delivery intent detected for `{goal}`.",
             "Normalize this request through `$azoth-start pipeline_command=auto ...` so the default delivery path remains explicit.",
+            _profile_advisory(parsed, goal=goal),
         ]
         exploratory_gate = matching_exploratory_session(root, goal)
         session_id = ""
@@ -527,6 +656,7 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
     if transition:
         guidance.append(transition)
         guidance.append(_governed_write_reminder())
+    guidance.append(_profile_advisory(parsed))
 
     return PromptDirective(
         additional_context=" ".join(guidance),

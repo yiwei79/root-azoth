@@ -130,6 +130,108 @@ def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(
     assert scope_gate == {}
 
 
+def test_profile_advisory_surfaces_read_only_without_changing_start_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, "explain current repo status", cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == "$azoth-start explain current repo status"
+    assert (
+        "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
+    )
+    assert "side_effect_class: read_only" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_advisory_surfaces_focused_verification_without_changing_start_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "diagnose by running focused verification for tests/test_azoth_lite_classifier.py"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start {prompt}"
+    assert "profile_suggestion: azoth-lite" in ctx
+    assert "side_effect_class: read_only" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_advisory_surfaces_local_edit_without_changing_d23_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "fix typo in scripts/example_helper.py"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Delivery intent detected" in ctx
+    assert "profile_suggestion: azoth-lite" in ctx
+    assert "side_effect_class: local_edit" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_advisory_escalates_governed_state_without_changing_d23_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "update .azoth/roadmap.yaml task state"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: governed_state" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "escalation_reasons: governed_state_change" in ctx
+    assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
+
+
+def test_profile_advisory_escalates_finality_without_changing_routed_command(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "update final delivery package status"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: external_or_destructive" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "finality_or_packaging_requested" in ctx
+    assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected_input"),
+    [
+        ("/auto investigate drift", "$azoth-start pipeline_command=auto investigate drift"),
+        ("/start next", "$azoth-start next"),
+        ("/session-closeout", "$azoth-session-closeout"),
+    ],
+)
+def test_profile_advisory_keeps_existing_command_routes_unchanged(
+    tmp_path: Path,
+    prompt: str,
+    expected_input: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+
+    assert hook["updatedInput"] == expected_input
+    assert "profile_suggestion:" in hook["additionalContext"]
+
+
 def test_delivery_route_carries_matching_exploratory_session_id_in_routed_input(
     tmp_path: Path,
 ) -> None:

@@ -330,18 +330,16 @@ def _copy_router_fixture(tmp_path: Path) -> Path:
         (REPO / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    (tmp_path / "scripts" / "codex_control_plane.py").write_text(
-        (REPO / "scripts" / "codex_control_plane.py").read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
-    (tmp_path / "scripts" / "session_continuity.py").write_text(
-        (REPO / "scripts" / "session_continuity.py").read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
-    (tmp_path / "scripts" / "session_gate.py").write_text(
-        (REPO / "scripts" / "session_gate.py").read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
+    for script_name in (
+        "azoth_lite.py",
+        "codex_control_plane.py",
+        "session_continuity.py",
+        "session_gate.py",
+    ):
+        (tmp_path / "scripts" / script_name).write_text(
+            (REPO / "scripts" / script_name).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
     return tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py"
 
 

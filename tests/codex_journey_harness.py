@@ -60,7 +60,12 @@ def copy_codex_router_fixture(tmp_path: Path, *, with_agents: bool = False) -> P
         (REPO / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    for script_name in ("codex_control_plane.py", "session_continuity.py", "session_gate.py"):
+    for script_name in (
+        "azoth_lite.py",
+        "codex_control_plane.py",
+        "session_continuity.py",
+        "session_gate.py",
+    ):
         (tmp_path / "scripts" / script_name).write_text(
             (REPO / "scripts" / script_name).read_text(encoding="utf-8"),
             encoding="utf-8",
