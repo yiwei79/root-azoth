@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.16 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 16
+0.1.4.17 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 17
 
 ## Last Session
-- **Session**: 2026-05-01-t-049-hydration
-- **Goal**: Hydrate INI-PKB-001 slice-pkb-001-f as T-049 roadmap/backlog/spec only
+- **Session**: 2026-05-01-t-049-delivery
+- **Goal**: Deliver T-049 pointer-only project onboarding pilot through personal control plane
 - **Session mode**: delivery
-- **Pipeline**: dynamic-full-auto
+- **Pipeline**: deliver-full
 - **Outcome**: closed
-- **Episode**: ep-487 (success)
+- **Episode**: ep-488 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

@@ -3762,10 +3762,11 @@ items:
   source: INI-PKB-001-project-onboarding-pilot
   target_layer: infrastructure
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-01'
+  completed_date: '2026-05-01'
   description: Create the first governed project onboarding pilot through the personal
     control plane with pointer-only project profile and receipt evidence for the
     approved pilot repo. This task does not authorize project repo mutation, source

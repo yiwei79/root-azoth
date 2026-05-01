@@ -1,0 +1,106 @@
+schema_version: 1
+task_ref: T-049
+session_id: 2026-05-01-t-049-delivery
+delivery_mode: governed_pointer_only_project_onboarding
+observed_at: '2026-05-01T01:04:00Z'
+preflight:
+  scope_gate:
+    command: python3 scripts/check_gates.py --session-id 2026-05-01-t-049-delivery --require-pipeline-gate
+    status: passed
+    stdout:
+    - 'Scope gate valid: session 2026-05-01-t-049-delivery'
+    - 'Pipeline gate valid: deliver-full'
+  root_azoth:
+    source_revision: 4db5fa1eeee5a9ce26cf116387ed2f71a47b7adf
+    branch: codex/autonomous-roadmap-self-development
+  personal_root_before:
+    repo: /Users/yiwei/GithubRepos/personal-azoth-root
+    head: 074748a950eefa9c5a69d63f4631a332fd899b9d
+    status:
+    - '## main'
+  pilot_project_before:
+    repo: /Users/yiwei/GithubRepos/ras or ray
+    head: 82770daadf6db5056efdb1ace38d9535ee082a46
+    status:
+    - '## main...origin/main'
+apply:
+  target_panel: personal-root
+  project_panel: ras-or-ray
+  profile_mode: pointer_only
+  profile_fields_written:
+  - project_id
+  - title
+  - repo_path
+  - default_branch
+  - tracking_ref
+  - privacy_class
+  - profile_mode
+  - handoff_receipt_ref
+  - validation_commands
+  allowed_metadata_fields:
+  - project_id
+  - title
+  - repo_path
+  - default_branch
+  - tracking_ref
+  - privacy_class
+  - profile_mode
+  - handoff_receipt_ref
+  - validation_commands
+  changed_target_paths:
+  - .azoth/projects/index.yaml
+  - .azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml
+  excluded_fields:
+  - source_files
+  - code_summaries
+  - secrets
+  - dependency_inventory
+  - retrieval_index
+receipt:
+  receipt_id: t-049-project-onboarding-ras-or-ray-2026-05-01
+  receipt_ref: /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml
+  personal_root_commit: aeac2fac1628623dc54bb2bb0e050f6135255280
+  personal_root_initial_receipt_commit: 42fcec548ac0197549bae49f0f1627e3f7bc770b
+  project_profile_ref: /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/projects/index.yaml
+  rollback_ref: 074748a950eefa9c5a69d63f4631a332fd899b9d
+  approval_basis: Operator instructed Codex to proceed to the next proper step on
+    2026-05-01 after T-049 hydration; governed T-049 delivery gate approved
+    pointer-only personal-root project profile and receipt evidence only.
+  replay_fixes:
+  - fix_id: t049-eval-replay-profile-contract-2026-05-01
+    result: Moved guard and provenance metadata out of the pointer profile so the
+      profile contains only allowed project metadata fields.
+post_validation:
+  personal_root_validator_after:
+    command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+    status: passed
+    stdout: personal knowledge validation OK
+  personal_root_status_after:
+    command: git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short --branch
+    status:
+    - '## main'
+  pilot_project_status_after:
+    command: git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+    status:
+    - '## main...origin/main'
+  focused_tests:
+    command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_t049_project_onboarding_receipt.py tests/test_t049_intake.py tests/test_personal_control_plane_procedure.py -q
+    status: passed
+    stdout: 11 passed
+non_goals_confirmed:
+- no pilot project repo mutation
+- no project source scan
+- no source registry onboarding
+- no retrieval expansion or indexing
+- no public azoth release
+- no credential access
+- no cloud account provisioning
+- no governance, kernel, or M1 change
+residual_risks:
+- The project profile is pointer-only and can become stale if the pilot repo moves;
+  refresh requires a later approved project-profile update.
+- No project summary or retrieval index exists because source scanning and retrieval
+  expansion were intentionally excluded from T-049.
+next_safe_action: Hydrate or open T-050 stable personal-control-plane deployment
+  closeout only after explicit operator approval; use a separate project-specific
+  gate for any future project repo write.

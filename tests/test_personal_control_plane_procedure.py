@@ -139,7 +139,7 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
     assert route_positions == sorted(route_positions)
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-f"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-f"
-    assert readiness["readiness_status"] == "ready_to_hydrate"
-    assert readiness["human_decision"] == "approved"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-g"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-g"
+    assert readiness["readiness_status"] == "continue_research"
+    assert readiness["human_decision"] == "pending"

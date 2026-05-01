@@ -418,7 +418,7 @@ candidate_slices:
   proposed_task_id: T-049
   title: Project onboarding pilot through personal control plane
   initiative_ref: INI-PKB-001
-  status: hydrated
+  status: complete
   target_layer: infrastructure
   delivery_pipeline: governed
   summary: 'After the personal-root RC update rehearsal passes, onboard one or two
@@ -438,6 +438,11 @@ candidate_slices:
   - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#project-onboarding-pilot
   intake_evidence_refs:
   - .azoth/handoffs/2026-05-01-t-049-intake.yaml
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-049-validation-report.yaml
+  personal_root_receipt_ref: /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml
+  personal_root_commit: aeac2fac1628623dc54bb2bb0e050f6135255280
+  delivered_at: '2026-05-01T01:04:00Z'
   pilot_project_refs:
   - project_id: ras-or-ray
     path: /Users/yiwei/GithubRepos/ras or ray
@@ -523,26 +528,25 @@ candidate_slices:
     proposed_title: Stable personal-control-plane deployment closeout
     mode: future_after_project_onboarding_pilot
 readiness:
-  readiness_status: ready_to_hydrate
-  human_decision: approved
+  readiness_status: continue_research
+  human_decision: pending
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-f
-  next_candidate_ref: slice-pkb-001-f
-  freshness_status: current_as_of_2026_05_01_hydrated_to_t_049
-  approval_scope: hydration_specific_slice_pkb_001_f
-  approval_basis: 'Operator explicitly requested hydration of INI-PKB-001 slice-pkb-001-f
-    into T-049 via $azoth-dynamic-full-auto on 2026-05-01. Approval covers roadmap,
-    backlog, task-spec, and initiative-bank hydration-history writes only; it does
-    not authorize personal-root writes, project repo writes, source registry onboarding,
-    retrieval expansion, public release, credentials, cloud account provisioning,
-    governance, kernel, or M1 changes.
+  candidate_first_slice: slice-pkb-001-g
+  next_candidate_ref: slice-pkb-001-g
+  freshness_status: current_as_of_2026_05_01_t049_delivered
+  approval_scope: t050_closeout_not_yet_approved
+  approval_basis: 'T-049 delivery is complete as a pointer-only personal-root project
+    profile and receipt. The next candidate is slice-pkb-001-g / T-050 stable closeout,
+    but no T-050 hydration or delivery has been approved yet.
 
     '
-  acceptance_criteria_status: present_for_slice_pkb_001_f
-  non_goals_status: bounded_for_slice_pkb_001_f
-  hydration_recommendation: slice-pkb-001-f has been hydrated as T-049. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  acceptance_criteria_status: present_for_slice_pkb_001_g
+  non_goals_status: bounded_for_slice_pkb_001_g
+  hydration_recommendation: T-049 project onboarding evidence is packaged. Hydrate
+    or open T-050 stable personal-control-plane deployment closeout only after explicit
+    operator approval; keep future project writes behind a separate project-specific
+    gate.
   allowed_outputs:
   - roadmap_task
   - backlog_row
@@ -568,9 +572,9 @@ readiness:
   - public_release
   - personal_root_mutation
   delivery_authorized: false
-  hydrate_authorized: true
+  hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: hydrate_t048_scaffold_then_route_governed_delivery_separately
+  next_readiness_gate: t050_closeout_requires_explicit_operator_approval
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card

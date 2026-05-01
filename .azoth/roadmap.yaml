@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-049
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -692,26 +692,24 @@ initiatives:
   - task_ref: T-049
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-049.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t049_intake_ready_to_hydrate
-  candidate_slice_ref: slice-pkb-001-f
+  discovery_status: t049_project_onboarding_complete
+  candidate_slice_ref: slice-pkb-001-g
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-049 intake is complete for personal root /Users/yiwei/GithubRepos/personal-azoth-root
-    and pilot project repo /Users/yiwei/GithubRepos/ras or ray. The next native route
-    may hydrate slice-pkb-001-f as T-049 with roadmap/backlog/spec artifacts only;
-    project profile writes, receipts, source onboarding, retrieval expansion, public
-    release, credentials, cloud provisioning, governance, kernel, and M1 work still
-    require a later fresh governed delivery gate.
+  next_discovery_action: T-049 project onboarding evidence is packaged. Hydrate or
+    open T-050 stable personal-control-plane deployment closeout only after explicit
+    operator approval; future project writes require a separate project-specific
+    gate.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
-    project panels. The completed Batch 0, recall pilot, T-047 procedure arc, and
-    T-048 personal-root rehearsal proved the pointer/card and desired-state route;
-    the remaining route is a separately approved project onboarding pilot before source
-    registry onboarding, broader recall, public release, or project mutation.
+    project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
+    personal-root rehearsal, and T-049 pointer-only project onboarding pilot proved
+    the pointer/card, desired-state, and project-profile route before source registry
+    onboarding, broader recall, public release, or project mutation.
 
     '
   decision_ref:
@@ -725,7 +723,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-049.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2133,7 +2131,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 17
+  current_patch: 18
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2167,10 +2165,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-049
-    title: Project onboarding pilot through personal control plane
-    initiative_ref: INI-PKB-001
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2331,3 +2326,4 @@ versions:
     title: Personal-root RC update rehearsal from desired state
     completed_date: '2026-05-01'
     decision_ref: []
+  - {id: T-049, title: "Project onboarding pilot through personal control plane", completed_date: "2026-05-01", decision_ref: []}

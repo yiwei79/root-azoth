@@ -68,9 +68,7 @@ def test_ini_pkb_t049_readiness_is_hydration_only() -> None:
         }
     ]
 
-    readiness = bank["readiness"]
-    assert readiness["readiness_status"] == "ready_to_hydrate"
-    assert readiness["human_decision"] == "approved"
-    assert readiness["approval_scope"] == "hydration_specific_slice_pkb_001_f"
-    assert "hydrated as T-049" in readiness["hydration_recommendation"]
-    assert "Do not repeat hydration" in readiness["hydration_recommendation"]
+    assert t049["status"] == "complete"
+    assert t049["delivery_evidence_refs"] == [
+        ".azoth/handoffs/2026-05-01-t-049-validation-report.yaml"
+    ]

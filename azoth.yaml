@@ -2,7 +2,7 @@
 # This file tracks the toolkit's state and installed components.
 
 name: root-azoth
-version: 0.1.4.17
+version: 0.1.4.18
 description: The Universal Agentic Toolkit
 
 # Root scaffold identity (D34-D38)
@@ -36,7 +36,7 @@ layers:
 
 # Memory system
 memory:
-  episodes: 487
+  episodes: 488
   patterns: 26
   last_sync: null
 
