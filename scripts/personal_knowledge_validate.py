@@ -404,11 +404,26 @@ def _rel_label(path: Path, root: Path) -> str:
         return str(path)
 
 
-def validate_root(root: Path, *, empty_skeleton: bool = False) -> None:
+def ensure_required_skeleton_dirs(root: Path) -> None:
+    """Create only required empty skeleton directories for a restored checkout."""
+    root = root.resolve()
+    for rel_dir in REQUIRED_SKELETON_DIRS:
+        (root / rel_dir).mkdir(parents=True, exist_ok=True)
+
+
+def validate_root(
+    root: Path,
+    *,
+    empty_skeleton: bool = False,
+    init_skeleton_dirs: bool = False,
+) -> None:
     """Validate a personal-root `.azoth/knowledge` skeleton and known artifacts."""
     errors: list[str] = []
     root = root.resolve()
     knowledge = root / KNOWLEDGE_DIR
+
+    if init_skeleton_dirs:
+        ensure_required_skeleton_dirs(root)
 
     for rel_dir in REQUIRED_SKELETON_DIRS:
         path = root / rel_dir
@@ -465,7 +480,12 @@ def _collect_validation_errors(args: argparse.Namespace) -> list[str]:
             errors.extend(exc.errors)
 
     if args.root is not None:
-        run_validation(validate_root, args.root, empty_skeleton=args.empty_skeleton)
+        run_validation(
+            validate_root,
+            args.root,
+            empty_skeleton=args.empty_skeleton,
+            init_skeleton_dirs=args.init_skeleton_dirs,
+        )
     for card in args.card:
         run_validation(validate_card, card)
     for batch in args.batch:
@@ -490,6 +510,14 @@ def main(argv: list[str] | None = None) -> int:
         "--empty-skeleton",
         action="store_true",
         help="Require the root knowledge skeleton to contain no cards or import batches.",
+    )
+    parser.add_argument(
+        "--init-skeleton-dirs",
+        action="store_true",
+        help=(
+            "Create missing required skeleton directories before validation. Intended "
+            "for temporary restore drill checkouts where git cannot preserve empty dirs."
+        ),
     )
     args = parser.parse_args(argv)
 

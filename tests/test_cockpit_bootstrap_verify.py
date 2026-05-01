@@ -181,6 +181,49 @@ def test_bootstrap_verify_accepts_minimum_cockpit_fixture(tmp_path: Path) -> Non
     assert "cockpit bootstrap verify OK" in format_report(root, errors)
 
 
+def test_bootstrap_verify_accepts_relocated_restore_drill(tmp_path: Path) -> None:
+    live_root = tmp_path / "live" / "yiwei-azoth-cockpit"
+    restore_root = tmp_path / "restore" / "restore-copy"
+    _write_cockpit_bootstrap_fixture(live_root)
+    _write_cockpit_bootstrap_fixture(restore_root)
+    releases_path = restore_root / ".azoth" / "releases" / "applied.yaml"
+    releases_doc = yaml.safe_load(releases_path.read_text(encoding="utf-8"))
+    releases_doc["personal_deployments"][0]["target_repo"] = str(live_root)
+    _write_yaml(releases_path, releases_doc)
+
+    strict_errors = verify_cockpit_bootstrap(
+        restore_root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+    )
+    restore_errors = verify_cockpit_bootstrap(
+        restore_root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+        allow_relocated_restore=True,
+    )
+
+    assert any("missing T-052 cockpit deployment receipt" in error for error in strict_errors)
+    assert restore_errors == []
+
+
+def test_restore_drill_still_requires_t052_identity(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "restore-copy")
+    releases_path = root / ".azoth" / "releases" / "applied.yaml"
+    releases_doc = yaml.safe_load(releases_path.read_text(encoding="utf-8"))
+    releases_doc["personal_deployments"][0]["deployment_id"] = "t-999-other"
+    _write_yaml(releases_path, releases_doc)
+
+    errors = verify_cockpit_bootstrap(
+        root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+        allow_relocated_restore=True,
+    )
+
+    assert any("missing T-052 cockpit deployment receipt" in error for error in errors)
+
+
 def test_bootstrap_verify_rejects_stale_startup_identity(tmp_path: Path) -> None:
     root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
     _write_text(

@@ -16,6 +16,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from personal_knowledge_validate import (  # noqa: E402
     PersonalKnowledgeValidationError,
+    ensure_required_skeleton_dirs,
     validate_card,
     validate_import_batch,
     validate_root,
@@ -393,6 +394,21 @@ def test_empty_skeleton_root_validation_passes_and_rejects_card_files(tmp_path: 
 
     with pytest.raises(PersonalKnowledgeValidationError, match="empty skeleton"):
         validate_root(tmp_path, empty_skeleton=True)
+
+
+def test_restore_init_recreates_required_empty_skeleton_dirs(tmp_path: Path) -> None:
+    knowledge = _write_empty_skeleton(tmp_path)
+    (knowledge / "cards" / "projects").rmdir()
+    (knowledge / "cards" / "personal").rmdir()
+
+    with pytest.raises(PersonalKnowledgeValidationError, match="required directory"):
+        validate_root(tmp_path)
+
+    ensure_required_skeleton_dirs(tmp_path)
+
+    validate_root(tmp_path)
+    assert (knowledge / "cards" / "projects").is_dir()
+    assert (knowledge / "cards" / "personal").is_dir()
 
 
 def test_empty_skeleton_root_validation_rejects_import_batch_files(tmp_path: Path) -> None:

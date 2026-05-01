@@ -173,7 +173,12 @@ def _check_handbook(root: Path, errors: list[str]) -> None:
             errors.append(f"docs/ONBOARDING.md: missing handbook command text {snippet!r}")
 
 
-def _check_deployment_receipt(root: Path, errors: list[str]) -> None:
+def _check_deployment_receipt(
+    root: Path,
+    errors: list[str],
+    *,
+    allow_relocated_restore: bool = False,
+) -> None:
     releases = _load_yaml_mapping(root / ".azoth" / "releases" / "applied.yaml")
     deployments = releases.get("personal_deployments")
     if not isinstance(deployments, list):
@@ -187,7 +192,8 @@ def _check_deployment_receipt(root: Path, errors: list[str]) -> None:
         deployment_id = str(item.get("deployment_id") or "")
         if not deployment_id.startswith("t-052-personal-cockpit-deployment"):
             continue
-        if str(Path(str(item.get("target_repo") or "")).resolve()) != root_text:
+        target_repo = str(Path(str(item.get("target_repo") or "")).resolve())
+        if target_repo != root_text and not allow_relocated_restore:
             continue
         if item.get("target_panel") != "yiwei-azoth-cockpit":
             continue
@@ -283,6 +289,7 @@ def verify_cockpit_bootstrap(
     *,
     include_git_status: bool = True,
     run_deployed_menu_check: bool = True,
+    allow_relocated_restore: bool = False,
 ) -> list[str]:
     """Return fail-closed bootstrap errors for a deployed cockpit root."""
     cockpit_root = root.resolve()
@@ -294,7 +301,11 @@ def verify_cockpit_bootstrap(
     _check_required_files(cockpit_root, errors)
     _check_startup_files(cockpit_root, errors)
     _check_handbook(cockpit_root, errors)
-    _check_deployment_receipt(cockpit_root, errors)
+    _check_deployment_receipt(
+        cockpit_root,
+        errors,
+        allow_relocated_restore=allow_relocated_restore,
+    )
     _check_first_use_receipt(cockpit_root, errors)
     errors.extend(check_cockpit_command_surface(cockpit_root))
     _check_codex_hook_policy(cockpit_root, errors)
@@ -345,12 +356,21 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Do not execute the deployed cockpit menu --check command.",
     )
+    parser.add_argument(
+        "--restore-drill",
+        action="store_true",
+        help=(
+            "Allow relocated temporary restore roots while preserving T-052 receipt "
+            "identity and target-panel checks."
+        ),
+    )
     args = parser.parse_args(argv)
 
     errors = verify_cockpit_bootstrap(
         args.root,
         include_git_status=not args.skip_git_status,
         run_deployed_menu_check=not args.skip_deployed_menu_check,
+        allow_relocated_restore=args.restore_drill,
     )
     if args.json:
         print(
