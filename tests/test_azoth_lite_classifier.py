@@ -103,3 +103,14 @@ def test_context_view_is_compact_and_advisory_for_local_edit() -> None:
         "stop_rule": "complete the local task, then stop",
         "trace_required": True,
     }
+
+
+@pytest.mark.parametrize("goal", ("finalize release notes", "publish release artifacts"))
+def test_direct_finality_verbs_escalate_without_extra_mutation_terms(goal: str) -> None:
+    decision = classify_request(AzothLiteRequest(goal=goal))
+
+    assert decision.side_effect_class == "external_or_destructive"
+    assert decision.selected_profile == "azoth-full"
+    assert decision.stop_state == "escalate"
+    assert decision.escalate is True
+    assert "finality_or_packaging_requested" in decision.escalation_reasons

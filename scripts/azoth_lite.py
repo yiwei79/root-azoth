@@ -248,7 +248,11 @@ def _classify_side_effect(request: AzothLiteRequest) -> tuple[str, tuple[str, ..
     mutation_requested = _mutation_requested(request)
     reasons: list[str] = []
 
-    if actions & EXTERNAL_OR_DESTRUCTIVE_ACTIONS or _contains_any(goal, FINALITY_GOAL_TERMS):
+    if (
+        actions & EXTERNAL_OR_DESTRUCTIVE_ACTIONS
+        or _starts_with_any(goal, FINALITY_GOAL_TERMS)
+        or (mutation_requested and _contains_any(goal, FINALITY_GOAL_TERMS))
+    ):
         reasons.append("external_or_destructive_action")
         if _finality_requested(request):
             reasons.append("finality_or_packaging_requested")
@@ -384,6 +388,11 @@ def _matches_prefix(path: str, prefixes: Sequence[str]) -> bool:
 
 def _contains_any(text: str, terms: Sequence[str]) -> bool:
     return any(term in text for term in terms)
+
+
+def _starts_with_any(text: str, terms: Sequence[str]) -> bool:
+    stripped = text.strip()
+    return any(stripped.startswith(f"{term} ") or stripped.startswith(f"{term}:") for term in terms)
 
 
 def _append_once(values: list[str], value: str) -> None:

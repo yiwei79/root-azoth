@@ -24,7 +24,8 @@ def _read(rel: str) -> str:
 def test_start_resume_requires_pipeline_or_auto(rel: str) -> None:
     text = _read(rel)
     assert "/resume" in text, f"{rel}: missing /resume guidance"
-    assert "/auto" in text, f"{rel}: missing /auto default guidance"
+    assert "azoth-lite" in text, f"{rel}: missing lite default guidance"
+    assert "explicit `/auto`" in text, f"{rel}: missing explicit /auto guidance"
     assert "Stage 0" in text, f"{rel}: missing Stage 0 guidance"
     assert (
         "without a second scope-approval wall" in text
@@ -45,7 +46,8 @@ def test_next_scope_approval_requires_pipeline_selection(rel: str) -> None:
     for needle in (
         "Pipeline selection after scope approval (all scopes)",
         "does **not** authorize direct implementation",
-        "/auto` is the default (D23)",
+        "azoth-lite is the default posture for ordinary work",
+        "explicit `/auto`",
         "Stage 0 goal clarification",
         "For standard scopes, Stage 0 / pipeline selection still applies",
     ):

@@ -161,7 +161,7 @@ def test_profile_advisory_surfaces_focused_verification_without_changing_start_r
     assert "stop_state: done" in ctx
 
 
-def test_profile_advisory_surfaces_local_edit_without_changing_d23_route(
+def test_profile_default_routes_local_edit_to_lite_without_auto_pipeline(
     tmp_path: Path,
 ) -> None:
     router = copy_codex_router_fixture(tmp_path, with_agents=True)
@@ -170,14 +170,15 @@ def test_profile_advisory_surfaces_local_edit_without_changing_d23_route(
     hook = payload["hookSpecificOutput"]
     ctx = hook["additionalContext"]
 
-    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
-    assert "Delivery intent detected" in ctx
+    assert hook["updatedInput"] == f"$azoth-start {prompt}"
+    assert "Azoth-lite default posture detected" in ctx
+    assert "pipeline_command=auto" not in hook["updatedInput"]
     assert "profile_suggestion: azoth-lite" in ctx
     assert "side_effect_class: local_edit" in ctx
     assert "stop_state: done" in ctx
 
 
-def test_profile_advisory_escalates_governed_state_without_changing_d23_route(
+def test_profile_default_escalates_governed_state_to_auto_delivery_route(
     tmp_path: Path,
 ) -> None:
     router = copy_codex_router_fixture(tmp_path, with_agents=True)
@@ -187,6 +188,7 @@ def test_profile_advisory_escalates_governed_state_without_changing_d23_route(
     ctx = hook["additionalContext"]
 
     assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
     assert "profile_suggestion: azoth-full" in ctx
     assert "side_effect_class: governed_state" in ctx
     assert "stop_state: escalate" in ctx
@@ -204,11 +206,36 @@ def test_profile_advisory_escalates_finality_without_changing_routed_command(
     ctx = hook["additionalContext"]
 
     assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
     assert "profile_suggestion: azoth-full" in ctx
     assert "side_effect_class: external_or_destructive" in ctx
     assert "stop_state: escalate" in ctx
     assert "finality_or_packaging_requested" in ctx
     assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "finalize release notes",
+        "publish release artifacts",
+    ),
+)
+def test_profile_default_escalates_direct_finality_verbs_to_auto_delivery_route(
+    tmp_path: Path,
+    prompt: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: external_or_destructive" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "finality_or_packaging_requested" in ctx
 
 
 @pytest.mark.parametrize(

@@ -16,7 +16,7 @@ from session_gate import (
     matching_exploratory_session,
 )
 from session_continuity import resolve_transition
-from azoth_lite import AzothLiteRequest, classify_request
+from azoth_lite import AzothLiteDecision, AzothLiteRequest, classify_request
 
 PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
@@ -60,6 +60,15 @@ _ACTIONABLE_PREFIXES = (
     "explain",
     "diagnose",
     "compare",
+    "commit",
+    "delete",
+    "deploy",
+    "finalize",
+    "merge",
+    "package",
+    "publish",
+    "release",
+    "reset",
     "think through",
     "let's think through",
     "lets think through",
@@ -397,9 +406,9 @@ def _profile_action_hints(parsed: ParsedPrompt, goal: str) -> tuple[str, ...]:
         actions.append("edit")
     if parsed.effective_pipeline_command in _PROFILE_GOVERNED_PIPELINES:
         actions.append("final_delivery")
-    if any(term in lowered for term in _PROFILE_EXTERNAL_TERMS):
+    if any(_starts_with_action(lowered, term) for term in _PROFILE_EXTERNAL_TERMS):
         for term in _PROFILE_EXTERNAL_TERMS:
-            if term in lowered:
+            if _starts_with_action(lowered, term):
                 actions.append(term.replace(" ", "_"))
                 break
     if any(term in lowered for term in _PROFILE_FOCUSED_VERIFICATION_TERMS):
@@ -423,12 +432,12 @@ def _profile_path_hints(goal: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(paths))
 
 
-def _profile_advisory(parsed: ParsedPrompt, *, goal: str | None = None) -> str:
+def _profile_decision(parsed: ParsedPrompt, *, goal: str | None = None) -> AzothLiteDecision:
     advisory_goal = (goal or parsed.prompt_goal or parsed.raw_arguments or parsed.raw_prompt).strip()
     if not advisory_goal:
         advisory_goal = parsed.canonical_input or parsed.source_command or "Codex route"
 
-    decision = classify_request(
+    return classify_request(
         AzothLiteRequest(
             goal=advisory_goal,
             requested_actions=_profile_action_hints(parsed, advisory_goal),
@@ -438,8 +447,17 @@ def _profile_advisory(parsed: ParsedPrompt, *, goal: str | None = None) -> str:
         )
     )
 
+
+def _profile_advisory(
+    parsed: ParsedPrompt,
+    *,
+    goal: str | None = None,
+    decision: AzothLiteDecision | None = None,
+) -> str:
+    decision = decision or _profile_decision(parsed, goal=goal)
+
     parts = [
-        "Profile advisory (Phase 3 advisory-only; do not change the routed command):",
+        "Profile selection (Phase 4 default posture):",
         f"profile_suggestion: {decision.selected_profile};",
         f"side_effect_class: {decision.side_effect_class};",
         f"stop_state: {decision.stop_state}.",
@@ -452,7 +470,8 @@ def _profile_advisory(parsed: ParsedPrompt, *, goal: str | None = None) -> str:
 
 
 def _starts_with_action(text: str, action: str) -> bool:
-    return text.startswith(f"{action} ") or text.startswith(f"{action}:")
+    stripped = text.strip()
+    return stripped.startswith(f"{action} ") or stripped.startswith(f"{action}:")
 
 
 def _first_matching_action(text: str, actions: tuple[str, ...]) -> str:
@@ -601,15 +620,47 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
             return None
 
         intent = classify_goal_intent(goal)
+        profile_decision = _profile_decision(parsed, goal=goal)
+        profile_advisory = _profile_advisory(
+            parsed,
+            goal=goal,
+            decision=profile_decision,
+        )
+        if profile_decision.escalate:
+            guidance = [
+                f"Governed delivery escalation detected for `{goal}`.",
+                "Normalize this request through `$azoth-start pipeline_command=auto ...` so azoth-full delivery is explicit.",
+                profile_advisory,
+            ]
+            exploratory_gate = matching_exploratory_session(root, goal)
+            session_id = ""
+            if exploratory_gate:
+                session_id = str(exploratory_gate.get("session_id") or "").strip()
+                guidance.append(
+                    "A matching exploratory session is already active. Carry its `session_id` forward "
+                    "in the routed input and write `.azoth/scope-gate.json` with that same session."
+                )
+            if transition:
+                guidance.append(transition)
+                guidance.append(_governed_write_reminder())
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(
+                    pipeline_command="auto",
+                    goal=goal,
+                    session_id=session_id,
+                ),
+            )
+
         if intent == "exploratory":
             gate = ensure_exploratory_session(root, goal=goal)
             guidance = [
                 f"Exploratory intent detected for `{goal}`.",
                 f"Opened `.azoth/session-gate.json` for session `{gate['session_id']}`.",
                 "Treat this as a real no-scope session: memory capture and light closeout are allowed, "
-                "but ordinary repo edits must stop and escalate into `/auto` first.",
+                "but governed, finality, external, or destructive work must stop and escalate into explicit `/auto` first.",
                 "Normalize this request through `$azoth-start` so the Codex control plane stays start-centered.",
-                _profile_advisory(parsed, goal=goal),
+                profile_advisory,
             ]
             if transition:
                 guidance.append(transition)
@@ -618,30 +669,20 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
                 updated_input=_canonical_start_input(goal=goal),
             )
 
-        guidance = [
-            f"Delivery intent detected for `{goal}`.",
-            "Normalize this request through `$azoth-start pipeline_command=auto ...` so the default delivery path remains explicit.",
-            _profile_advisory(parsed, goal=goal),
-        ]
-        exploratory_gate = matching_exploratory_session(root, goal)
-        session_id = ""
-        if exploratory_gate:
-            session_id = str(exploratory_gate.get("session_id") or "").strip()
-            guidance.append(
-                "A matching exploratory session is already active. Carry its `session_id` forward "
-                "in the routed input and write `.azoth/scope-gate.json` with that same session."
+        if not profile_decision.escalate:
+            guidance = [
+                f"Azoth-lite default posture detected for `{goal}`.",
+                "Normalize this request through `$azoth-start ...`; do not add `pipeline_command=auto` unless the human explicitly invokes `/auto` or the profile escalates.",
+                "Ordinary local edits may proceed in azoth-lite within current Codex/tool permissions; preserve governed escalation triggers before `.azoth`, kernel/governance, finality, closeout, or external/destructive work.",
+                profile_advisory,
+            ]
+            if transition:
+                guidance.append(transition)
+                guidance.append(_governed_write_reminder())
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(goal=goal),
             )
-        if transition:
-            guidance.append(transition)
-            guidance.append(_governed_write_reminder())
-        return PromptDirective(
-            additional_context=" ".join(guidance),
-            updated_input=_canonical_start_input(
-                pipeline_command="auto",
-                goal=goal,
-                session_id=session_id,
-            ),
-        )
 
     if parsed.effective_route_name == "session-closeout":
         guidance = _closeout_guidance(root, parsed)

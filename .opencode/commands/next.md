@@ -126,9 +126,9 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     ```
 
     **Pipeline selection after scope approval (all scopes):** Writing `.azoth/scope-gate.json`
-    declares intent; it does **not** authorize direct implementation. After scope approval,
+    declares intent; it does **not** authorize direct implementation. azoth-lite is the default posture for ordinary work, but an approved scope card is a delivery handoff. After scope approval,
     the next step is delivery pipeline selection. If the human did **not** explicitly choose a
-    pipeline, `/auto` is the default (D23) and must run **Stage 0 goal clarification**
+    pipeline, route through explicit `/auto` as the default governed delivery route (D23) and run **Stage 0 goal clarification**
     before implementation begins.
 
     **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
@@ -137,7 +137,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     For standard scopes, Stage 0 / pipeline selection still applies even though
     `pipeline-gate.json` is not required.
 
-    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. If none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
+    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. azoth-lite remains the ordinary-work default, but scoped delivery needs an explicit pipeline; if none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
 
 10c. **Mark backlog item as active**: After the write claim is successfully acquired,
     update `.azoth/backlog.yaml`: find the item whose `id` matches `backlog_id` from
