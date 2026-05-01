@@ -84,8 +84,8 @@ def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> Non
     )
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-i"
     assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False
@@ -94,4 +94,4 @@ def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> Non
         readiness["next_readiness_gate"]
         == "operator_selected_follow_on_gate"
     )
-    assert "selected stop/defer" in readiness["hydration_recommendation"]
+    assert "T-052 deployed" in readiness["hydration_recommendation"]

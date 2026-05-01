@@ -79,7 +79,7 @@ def test_procedure_keeps_forbidden_boundaries_explicit() -> None:
     text = PROCEDURE_PATH.read_text(encoding="utf-8")
 
     forbidden_boundaries = [
-        "/Users/yiwei/GithubRepos/personal-azoth-root",
+        "/Users/yiwei/GithubRepos/yiwei-azoth-cockpit",
         "credentials",
         "source registries",
         "project repos",
@@ -137,8 +137,8 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     assert route_positions == sorted(route_positions)
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-i"
     assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False

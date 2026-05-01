@@ -111,6 +111,7 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
     t050_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-050")
     t051_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-051")
+    t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
 
     assert initiative["task_ref"] is None
@@ -118,9 +119,13 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     assert t050_slice["role"] == "historical"
     assert t051_slice["status"] == "complete"
     assert t051_slice["role"] == "historical"
-    assert initiative["discovery_status"] == "t051_release_readiness_decision_complete"
-    assert initiative["candidate_slice_ref"] == "slice-pkb-001-h"
-    assert initiative["next_discovery_action"].startswith("T-051 selected stop/defer")
+    assert t052_slice["status"] == "complete"
+    assert t052_slice["role"] == "historical"
+    assert initiative["discovery_status"] == "t052_personal_cockpit_deployment_complete"
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-i"
+    assert initiative["next_discovery_action"].startswith("T-052 deployed")
+    assert not any(task["id"] == "T-052" for task in p4.get("tasks", []))
+    assert any(task["id"] == "T-052" for task in p4["completed_tasks"])
     assert not any(task["id"] == "T-051" for task in p4.get("tasks", []))
     assert any(task["id"] == "T-051" for task in p4["completed_tasks"])
     assert not any(task["id"] == "T-050" for task in p4.get("tasks", []))
@@ -136,6 +141,9 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     )
     assert t050_closeout["result"].startswith("Delivered root-only T-050")
     readiness = initiative_bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
     assert readiness["readiness_status"] == "complete"
-    assert readiness["freshness_status"] == "current_as_of_2026_05_01_t051_stop_defer_complete"
+    assert (
+        readiness["freshness_status"]
+        == "current_as_of_2026_05_01_t052_personal_cockpit_deployed"
+    )

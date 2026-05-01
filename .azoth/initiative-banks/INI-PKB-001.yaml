@@ -618,40 +618,96 @@ candidate_slices:
   - .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
   delivered_at: '2026-05-01T08:36:00Z'
   selected_lane: stop_defer
+- candidate_id: slice-pkb-001-i
+  proposed_task_id: T-052
+  title: Stable personal-cockpit deployment and rename
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Rename the operator personal control-plane repository from
+    `/Users/yiwei/GithubRepos/personal-azoth-root` to
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, update cockpit identity and
+    receipt evidence, and keep all project writes, retrieval/source onboarding,
+    backup provisioning, credentials, release work, governance, kernel, and M1
+    changes deferred.
+  acceptance_criteria:
+  - The local cockpit repo is renamed to `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+    only after clean-source and absent-target preflight passes.
+  - The cockpit repo records T-052 receipt evidence and validates with
+    `personal_knowledge_validate.py`.
+  - Root-side roadmap/backlog/spec/initiative-bank truth names T-052 as the cockpit
+    deployment lane and records the rollback ref.
+  - Existing project profile remains pointer-only and no project source or code is
+    mutated.
+  - Future backup, retrieval/source onboarding, public-product, personal-root, and
+    project-write work remain behind separate operator-selected gates.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  known_non_goals:
+  - No project source or code mutation.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector indexing.
+  - No credential access, cloud account provisioning, or storage backup provisioning.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: stable-personal-cockpit-deployment
+  hydration_plan:
+    proposed_title: Stable personal-cockpit deployment and rename
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-cockpit
+      deployment and rename" --initiative-ref INI-PKB-001 --target-layer infrastructure
+      --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-cockpit-deployment
+      --blocked-by T-051
+    hydrated_task_ref: T-052
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-052.yaml
+    hydrated_at: '2026-05-01T09:08:00Z'
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  personal_cockpit_receipt_ref: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-052-personal-cockpit-deployment-2026-05-01.yaml
+  previous_personal_root_path: /Users/yiwei/GithubRepos/personal-azoth-root
+  personal_cockpit_path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  rollback_ref: aeac2fac1628623dc54bb2bb0e050f6135255280
+  personal_cockpit_commit: 56dcb693cd24d4431a0ba89c37228264cf45285d
+  delivered_at: '2026-05-01T09:12:00Z'
 readiness:
-  evaluated_at: '2026-05-01T08:12:53Z'
+  evaluated_at: '2026-05-01T09:12:00Z'
   readiness_status: complete
   human_decision: approved
-  classification: planning_discovery_seed
+  classification: protected_personal_cockpit_deployment
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-h
-  next_candidate_ref: slice-pkb-001-h
-  freshness_status: current_as_of_2026_05_01_t051_stop_defer_complete
-  goal_clarity: post_t050_release_readiness_reconciliation_before_operations
-  evidence_coverage: t050_closeout_plus_rollout_and_personal_control_plane_sources
-  target_layer: planning
+  candidate_first_slice: slice-pkb-001-i
+  next_candidate_ref: slice-pkb-001-i
+  freshness_status: current_as_of_2026_05_01_t052_personal_cockpit_deployed
+  goal_clarity: personal_cockpit_local_rename_and_receipt_only
+  evidence_coverage: t051_decision_plus_t052_cockpit_receipt_and_validation
+  target_layer: infrastructure
   delivery_pipeline: governed
-  approval_scope: t051_root_only_release_readiness_decision
-  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed with T-051 after
-    hydrating the post-T-050 release-readiness continuation intake. Approval was
-    consumed by root-only T-051 decision delivery: read-only reconciliation across
-    root-azoth, public azoth, personal-root, and the pilot project; a root-side
-    continuation decision artifact; validation; and planning-truth updates. It did
-    not authorize release publication, public-product mutation, personal-root mutation,
-    project repo writes, storage backup provisioning, retrieval expansion, source
-    onboarding, credentials, cloud account provisioning, governance, kernel, or M1
-    changes.
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  approval_basis: 'Operator explicitly approved proceeding with T-052 personal-cockpit
+    deployment and requested renaming /Users/yiwei/GithubRepos/personal-azoth-root
+    to /Users/yiwei/GithubRepos/yiwei-azoth-cockpit through $azoth-dynamic-full-auto
+    on 2026-05-01. Approval was consumed by the local cockpit rename, cockpit identity
+    and receipt updates, validation, and root planning-truth closeout. It did not
+    authorize project source mutation, retrieval/source onboarding, credentials,
+    cloud/storage provisioning, public product mutation, release publication, governance,
+    kernel, or M1 changes.
 
     '
-  acceptance_criteria_status: stable_for_slice_pkb_001_h
-  non_goals_status: stable_for_slice_pkb_001_h
-  hydration_recommendation: T-051 selected stop/defer after read-only release-readiness
-    reconciliation. Do not repeat hydration or delivery; open a separate operator-selected
-    gate for any private backup, project-consumer expansion, retrieval/source-onboarding,
-    public-product update, or personal-root update work.
+  acceptance_criteria_status: stable_for_slice_pkb_001_i
+  non_goals_status: stable_for_slice_pkb_001_i
+  hydration_recommendation: T-052 deployed the local cockpit rename and receipt evidence.
+    Do not repeat hydration or delivery; open a separate operator-selected gate for
+    private backup/recovery, another project-consumer pilot, retrieval/source onboarding,
+    public-product update, or project-scoped writes.
   allowed_outputs:
-  - root_only_decision_report
+  - personal_cockpit_deployment_receipt
   - initiative_bank_readiness_update
+  - roadmap_delivery_state_update
   - validation_report
   forbidden_outputs:
   - credential_access
@@ -670,13 +726,12 @@ readiness:
   - kernel_change
   - m1_change
   blocked_actions:
-  - implementation_work
-  - ship_task
-  - public_release
-  - personal_root_mutation
+  - repeat_personal_cockpit_rename
   - public_product_mutation
   - project_repo_write
   - storage_backup_provisioning
+  - retrieval_indexing
+  - source_registry_onboarding
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
@@ -873,6 +928,31 @@ hydration_history:
     --blocked-by T-050
   result: Created roadmap/backlog/spec artifacts for T-051; implementation and shipping
     remain separate.
+- hydrated_at: '2026-05-01T09:08:00Z'
+  session_id: 2026-05-01-t-052-dynamic-cockpit-deployment
+  candidate_slice_ref: slice-pkb-001-i
+  task_ref: T-052
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-052.yaml
+  backlog_ref: T-052
+  roadmap_ref: T-052
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  approval_basis: 'Operator explicitly approved T-052 personal-cockpit deployment
+    and local rename through $azoth-dynamic-full-auto on 2026-05-01. Approval covers
+    root-side roadmap/backlog/spec hydration, the local personal cockpit rename,
+    cockpit receipt evidence, validation, and closeout; it does not authorize project
+    source mutation, retrieval/source onboarding, credentials, cloud/storage provisioning,
+    public product mutation, release publication, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-i:T-052:2026-05-01T09:08:00Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-cockpit
+    deployment and rename" --initiative-ref INI-PKB-001 --target-layer infrastructure
+    --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-cockpit-deployment
+    --blocked-by T-051
+  result: Created roadmap/backlog/spec artifacts for T-052 and continued into the
+    approved local cockpit rename/deployment delivery.
 closeout_history:
 - closed_at: '2026-05-01T07:37:05Z'
   session_id: 2026-05-01-t-050-delivery
@@ -894,6 +974,18 @@ closeout_history:
     stop/defer and kept future private backup, project-consumer expansion, retrieval/source-onboarding,
     public-product update, personal-root update, credential, cloud, governance, kernel,
     and M1 work behind separate operator-selected gates.
+- closed_at: '2026-05-01T09:12:00Z'
+  session_id: 2026-05-01-t-052-dynamic-cockpit-deployment
+  candidate_slice_ref: slice-pkb-001-i
+  task_ref: T-052
+  closeout_ref: .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  result: Delivered the local personal cockpit rename from
+    /Users/yiwei/GithubRepos/personal-azoth-root to
+    /Users/yiwei/GithubRepos/yiwei-azoth-cockpit, recorded cockpit receipt evidence,
+    validated the renamed cockpit, and kept backup, retrieval/source onboarding,
+    project writes, credentials, cloud/storage provisioning, public-product mutation,
+    release publication, governance, kernel, and M1 work behind separate gates.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment

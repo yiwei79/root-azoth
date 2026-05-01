@@ -704,16 +704,22 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-052
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-052.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t051_release_readiness_decision_complete
-  candidate_slice_ref: slice-pkb-001-h
+  discovery_status: t052_personal_cockpit_deployment_complete
+  candidate_slice_ref: slice-pkb-001-i
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-051 selected stop/defer after read-only release-readiness
-    reconciliation. Open a separate operator-selected gate for any private backup,
-    project-consumer expansion, retrieval/source-onboarding, public-product update,
-    or personal-root update work.
+  next_discovery_action: T-052 deployed the local personal cockpit rename to
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` and recorded receipt evidence.
+    Open a separate operator-selected gate for private backup/recovery, another
+    project-consumer pilot, retrieval/source onboarding, public-product update,
+    or project-scoped writes.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
@@ -721,7 +727,9 @@ initiatives:
     the pointer/card, desired-state, and project-profile route before source registry
     onboarding, broader recall, public release, or project mutation. T-050 packaged
     stable closeout evidence; T-051 reconciled the post-closeout state and selected
-    stop/defer so future protected operations remain separate operator-selected gates.
+    stop/defer; T-052 renamed the local personal cockpit to `yiwei-azoth-cockpit`
+    and recorded receipt evidence while keeping future backup, retrieval/source
+    onboarding, and project writes behind separate gates.
 
     '
   decision_ref:
@@ -2348,5 +2356,9 @@ versions:
     decision_ref: []
   - id: T-051
     title: Post-T-050 release-readiness continuation intake
+    completed_date: '2026-05-01'
+    decision_ref: []
+  - id: T-052
+    title: Stable personal-cockpit deployment and rename
     completed_date: '2026-05-01'
     decision_ref: []

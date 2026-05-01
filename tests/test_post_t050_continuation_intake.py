@@ -12,6 +12,10 @@ BACKLOG_PATH = ROOT / ".azoth" / "backlog.yaml"
 ROADMAP_PATH = ROOT / ".azoth" / "roadmap.yaml"
 SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-051.yaml"
 DECISION_PATH = ROOT / ".azoth" / "handoffs" / "2026-05-01-t-051-release-readiness-decision.yaml"
+T052_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-052.yaml"
+T052_HANDOFF_PATH = (
+    ROOT / ".azoth" / "handoffs" / "2026-05-01-t-052-personal-cockpit-deployment.yaml"
+)
 
 
 def _load_yaml(path: Path) -> dict:
@@ -71,14 +75,14 @@ def test_ini_pkb_marks_t051_stop_defer_decision_complete() -> None:
 
     readiness = bank["readiness"]
     assert readiness["readiness_status"] == "complete"
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
-    assert readiness["approval_scope"] == "t051_root_only_release_readiness_decision"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-i"
+    assert readiness["approval_scope"] == "t052_personal_cockpit_deployment_and_local_rename"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert readiness["ship_authorized"] is False
     assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
-    assert "selected stop/defer" in readiness["hydration_recommendation"]
+    assert "T-052 deployed" in readiness["hydration_recommendation"]
 
 
 def test_t051_delivery_closes_roadmap_backlog_and_preserves_spec() -> None:
@@ -122,3 +126,79 @@ def test_t051_decision_selects_stop_defer_without_mutation_authority() -> None:
     assert "personal_root_mutation" in decision["forbidden_outputs_confirmed"]
     assert "project_repo_write" in decision["forbidden_outputs_confirmed"]
     assert "retrieval_indexing" in decision["forbidden_outputs_confirmed"]
+
+
+def test_t052_spec_defines_cockpit_rename_without_project_expansion() -> None:
+    spec = _load_yaml(T052_SPEC_PATH)
+
+    assert spec["id"] == "T-052"
+    assert spec["delivery"]["target_layer"] == "infrastructure"
+    assert spec["delivery"]["delivery_pipeline"] == "governed"
+    assert "T-051" in spec["dependencies"]
+    assert any("yiwei-azoth-cockpit" in item for item in spec["scope"])
+    assert "No project source or project code mutation." in spec["non_goals"]
+    assert "No source registry onboarding." in spec["non_goals"]
+    assert any("old local path no longer exists" in item for item in spec["acceptance"])
+
+
+def test_t052_handoff_records_local_rename_and_forbidden_boundaries() -> None:
+    handoff = _load_yaml(T052_HANDOFF_PATH)
+
+    assert handoff["task_ref"] == "T-052"
+    assert handoff["delivery_mode"] == "governed_personal_cockpit_local_rename"
+    assert handoff["gate"]["approval_scope"] == (
+        "t052_personal_cockpit_deployment_and_local_rename"
+    )
+    assert handoff["applied"]["renamed_from"] == (
+        "/Users/yiwei/GithubRepos/personal-azoth-root"
+    )
+    assert handoff["applied"]["renamed_to"] == (
+        "/Users/yiwei/GithubRepos/yiwei-azoth-cockpit"
+    )
+    assert handoff["applied"]["cockpit_commit"] == (
+        "56dcb693cd24d4431a0ba89c37228264cf45285d"
+    )
+    assert handoff["applied"]["pointer_only_contract_preserved"] is True
+    assert "project_source_mutation" in handoff["forbidden_outputs_confirmed"]
+    assert "retrieval_indexing" in handoff["forbidden_outputs_confirmed"]
+    assert "storage_backup_provisioning" in handoff["forbidden_outputs_confirmed"]
+
+
+def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
+    backlog = _load_yaml(BACKLOG_PATH)
+    roadmap = _load_yaml(ROADMAP_PATH)
+    bank = _load_yaml(INI_PKB_PATH)
+
+    row = next(item for item in backlog["items"] if item.get("id") == "T-052")
+    assert row["status"] == "complete"
+    assert row["target_layer"] == "infrastructure"
+    assert row["blocked_by"] == ["T-051"]
+
+    initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
+    t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
+    p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
+    assert initiative["discovery_status"] == "t052_personal_cockpit_deployment_complete"
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-i"
+    assert t052_slice["status"] == "complete"
+    assert t052_slice["role"] == "historical"
+    assert not any(task.get("id") == "T-052" for task in p4.get("tasks", []))
+    assert any(task.get("id") == "T-052" for task in p4["completed_tasks"])
+
+    candidate = next(
+        item for item in bank["candidate_slices"] if item["candidate_id"] == "slice-pkb-001-i"
+    )
+    assert candidate["status"] == "complete"
+    assert candidate["personal_cockpit_path"] == (
+        "/Users/yiwei/GithubRepos/yiwei-azoth-cockpit"
+    )
+    assert candidate["previous_personal_root_path"] == (
+        "/Users/yiwei/GithubRepos/personal-azoth-root"
+    )
+    assert candidate["personal_cockpit_commit"] == (
+        "56dcb693cd24d4431a0ba89c37228264cf45285d"
+    )
+
+    readiness = bank["readiness"]
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
+    assert readiness["readiness_status"] == "complete"
+    assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"

@@ -3,7 +3,7 @@
 Status: canonical T-047 procedure
 Date: 2026-05-01
 Source plane: `root-azoth`
-Target plane: operator personal root
+Target plane: `yiwei-azoth-cockpit` operator personal cockpit
 
 This procedure defines the cloud-native operating path for moving an approved
 Azoth release or release candidate toward the operator personal control plane.
@@ -14,7 +14,7 @@ rollback references, and small staged applies. It does not perform deployment.
 
 T-047 is a planning and documentation slice only. It may update `root-azoth`
 planning truth and documentation. It must not mutate
-`/Users/yiwei/GithubRepos/personal-azoth-root`, credentials, source registries,
+`/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, credentials, source registries,
 project repos, retrieval indexes, public azoth release artifacts, kernel,
 governance, or M1 surfaces.
 
@@ -39,7 +39,7 @@ manifest_id: personal-root-update-YYYYMMDD
 release_ref: v0.2.0-rc.1
 product_revision: public-azoth-commit-or-tag
 source_revision: root-azoth-commit
-target_path: /Users/yiwei/GithubRepos/personal-azoth-root
+target_path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
 storage_policy: local_only
 enabled_surfaces:
   - installed_runtime
@@ -49,8 +49,8 @@ approved_card_ids:
 project_pilots: []
 source_registry_changes: []
 validation_commands:
-  - python3 scripts/personal_knowledge_validate.py /Users/yiwei/GithubRepos/personal-azoth-root
-  - git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short
+  - python3 scripts/personal_knowledge_validate.py /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  - git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short
 rollback_ref: personal-root-pre-update-commit-or-backup
 approval_basis: operator approval naming this manifest, target path, product_revision, and rollback_ref
 ```
@@ -134,7 +134,7 @@ candidate_ids:
 target_paths:
   - .azoth/releases/applied.yaml
 validation_commands:
-  - python3 scripts/personal_knowledge_validate.py /Users/yiwei/GithubRepos/personal-azoth-root
+  - python3 scripts/personal_knowledge_validate.py /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
 validation_result: passed
 applied_at: "YYYY-MM-DDTHH:MM:SSZ"
 rollback_ref: personal-root-pre-update-commit-or-backup
@@ -162,13 +162,17 @@ Closeout packages the procedure or apply evidence into the correct plane:
 - T-049 closes with pointer-only project profiles and project handoff receipts.
 - T-050 closes the stable deployment loop by packaging evidence, cadence,
   residual risks, and the storage decision.
+- T-052 closes the cockpit rename by recording
+  `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` as the current local operator
+  cockpit path while preserving older `personal-azoth-root` receipts as historical
+  evidence.
 
 ## Forbidden Boundaries
 
 This route must stop before:
 
-- mutating `/Users/yiwei/GithubRepos/personal-azoth-root` without a fresh T-048
-  approval,
+- mutating `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` without a fresh
+  personal-cockpit deployment approval,
 - reading or writing credentials,
 - onboarding source registries,
 - mutating project repos,
@@ -191,3 +195,6 @@ The staged route is:
    gates.
 4. T-050: stable deployment closeout. Package the evidence, cadence, storage
    policy decision, residual risks, and next safe action.
+5. T-052: personal cockpit rename/deployment. Rename the local personal-root
+   checkout to `yiwei-azoth-cockpit`, record receipt evidence, and stop before
+   backup, retrieval, source onboarding, or project mutation.

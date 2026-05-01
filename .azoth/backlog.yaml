@@ -3807,8 +3807,8 @@ items:
   completed_date: '2026-05-01'
   description: Run the root-only post-T-050 release-readiness continuation intake
     to reconcile root-azoth, public azoth, personal-root, and pilot project state,
-    then choose the next safe operation lane or stop/defer result. This planning
-    task does not authorize release publication, public-product mutation, personal-root
+    then choose the next safe operation lane or stop/defer result. This planning task
+    does not authorize release publication, public-product mutation, personal-root
     mutation, project repo writes, storage backup provisioning, retrieval expansion,
     source onboarding, credentials, cloud provisioning, governance, kernel, or M1
     changes.
@@ -3816,3 +3816,25 @@ items:
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-050
+- id: T-052
+  title: Stable personal-cockpit deployment and rename
+  source: INI-PKB-001-personal-cockpit-deployment
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  completed_date: '2026-05-01'
+  description: Rename the operator personal control-plane repository from
+    `/Users/yiwei/GithubRepos/personal-azoth-root` to
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, update the cockpit identity
+    and receipt surfaces, and close root-side roadmap evidence. This governed
+    infrastructure slice allows only the approved local cockpit rename plus
+    pointer-only receipt evidence; it does not authorize project source mutation,
+    retrieval/source onboarding, credentials, cloud/storage provisioning, public
+    product mutation, release publication, governance, kernel, or M1 changes.
+  roadmap_ref: T-052
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-051
