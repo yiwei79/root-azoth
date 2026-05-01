@@ -1,0 +1,85 @@
+schema_version: 1
+task_ref: T-058
+session_id: 2026-05-02-t-058-cockpit-private-remote-backup
+delivery_mode: private_remote_backup_restore_verification
+observed_at: '2026-05-02T00:42:06+02:00'
+approval_scope: cockpit_private_git_remote_backup_only
+target_cockpit:
+  path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  branch_status: '## main...origin/main'
+  head: 2be86cf90c6db56a57dff88b9e737334cfee5638
+  remote:
+    name: origin
+    url: https://github.com/Yeeway69/yiwei-azoth-cockpit.git
+intended_remote:
+  host: github.com
+  owner: Yeeway69
+  repository: yiwei-azoth-cockpit
+  visibility_evidence: unauthenticated_github_page_returns_404_authenticated_git_clone_succeeds
+remote_restore_target:
+  path: /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02
+  branch_status: '## main...origin/main'
+  head: 2be86cf90c6db56a57dff88b9e737334cfee5638
+validation_results:
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit ls-remote origin refs/heads/main
+  status: passed
+  result: 2be86cf90c6db56a57dff88b9e737334cfee5638 refs/heads/main
+- command: git clone https://github.com/Yeeway69/yiwei-azoth-cockpit.git /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02
+  status: passed
+  result: Remote clone created in temporary restore path.
+- command: python3 scripts/personal_knowledge_validate.py --root /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02 --init-skeleton-dirs
+  status: passed
+  result: personal knowledge validation OK
+- command: python3 scripts/cockpit_bootstrap_verify.py --root /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02 --restore-drill
+  status: passed
+  result: cockpit bootstrap verify OK
+- command: python3 /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02/scripts/cockpit_menu.py --check
+  status: passed
+  result: cockpit menu check OK
+- command: python3 /private/tmp/azoth-cockpit-private-remote-restore-2026-05-02/scripts/cockpit_menu.py --project ras-or-ray
+  status: passed
+  result: Restored cockpit rendered pointer-only ras-or-ray handoff without importing project context.
+- command: curl -I -L https://github.com/Yeeway69/yiwei-azoth-cockpit
+  status: passed
+  result: Unauthenticated request returned HTTP 404, consistent with a private or otherwise non-public repository.
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+  status: passed
+  result: '## main...origin/main'
+- command: git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+  status: passed
+  result: '## main...origin/main'
+acceptance_results:
+  remote_main_matches_live_cockpit_head: passed
+  remote_clone_from_github: passed
+  restored_head_matches_source: passed
+  restored_personal_knowledge_validation: passed
+  restored_bootstrap_verification: passed
+  restored_menu_check: passed
+  restored_project_handoff: passed
+  unauthenticated_public_visibility_check: http_404
+  project_repo_unchanged: passed
+forbidden_outputs_confirmed:
+- public_repo_creation_by_agent
+- source_registry_onboarding
+- retrieval_indexing
+- graph_or_vector_indexing
+- project_repo_write
+- project_code_mutation
+- public_product_mutation
+- release_publication
+- governance_change
+- kernel_change
+- m1_change
+- non_git_storage_write
+- encrypted_backup_archive_creation
+decision:
+  private_remote_backup: passed
+  privacy_note: >
+    GitHub CLI auth remained invalid, so visibility could not be confirmed through
+    the GitHub API. However, unauthenticated web access returned HTTP 404 while
+    git remote access and clone succeeded, which is consistent with a private or
+    otherwise non-public repository.
+next_safe_action: >
+  Private remote backup is now usable as the off-machine git backup baseline.
+  Future backup work should either add a periodic verification cadence or open a
+  separate encrypted-backup lane; neither is authorized by this handoff.

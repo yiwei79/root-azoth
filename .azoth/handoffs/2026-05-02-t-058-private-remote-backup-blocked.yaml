@@ -1,0 +1,53 @@
+schema_version: 1
+task_ref: T-058
+session_id: 2026-05-02-t-058-cockpit-private-remote-backup
+delivery_mode: private_remote_backup_preflight
+observed_at: '2026-05-02T00:37:06+02:00'
+approval_scope: cockpit_private_git_remote_backup_only
+target_cockpit:
+  path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  branch_status: '## main'
+  head: 2be86cf90c6db56a57dff88b9e737334cfee5638
+  configured_remotes: []
+intended_remote:
+  host: github.com
+  owner: yiwei79
+  repository: yiwei-azoth-cockpit
+  visibility: private
+preflight_results:
+- command: gh --version
+  status: passed
+  result: gh version 2.89.0
+- command: gh auth status
+  status: blocked
+  result: Active GitHub CLI account token is invalid and requires re-authentication.
+- command: git ls-remote https://github.com/yiwei79/yiwei-azoth-cockpit.git
+  status: not_found_or_not_visible
+  result: GitHub reported repository not found after network access was approved.
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit remote -v
+  status: passed
+  result: No configured remotes.
+blocked_reason: >
+  Private remote creation and push require valid GitHub credentials. The local
+  GitHub CLI token is invalid, and the GitHub connector available in this session
+  does not expose repository creation. The run stopped before remote creation,
+  credential prompts, push, or any project repo write.
+forbidden_outputs_confirmed:
+- public_repo_creation
+- source_registry_onboarding
+- retrieval_indexing
+- project_repo_write
+- public_product_mutation
+- release_publication
+- governance_change
+- kernel_change
+- m1_change
+- non_git_storage_write
+- encrypted_backup_archive_creation
+next_safe_action: >
+  Re-authenticate GitHub CLI for the intended account, then rerun the private
+  remote backup gate. The expected command path is to create a private
+  `yiwei79/yiwei-azoth-cockpit` repository, add it as the cockpit `origin`, push
+  `main`, then clone from the private remote into a temporary restore path and
+  verify with `personal_knowledge_validate.py --init-skeleton-dirs` plus
+  `cockpit_bootstrap_verify.py --restore-drill`.

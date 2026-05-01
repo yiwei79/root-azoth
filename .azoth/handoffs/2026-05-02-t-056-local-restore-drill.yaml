@@ -1,0 +1,104 @@
+schema_version: 1
+task_ref: T-056
+session_id: 2026-05-01-t-056-cockpit-backup-implementation-gate
+delivery_mode: local_only_restore_drill
+observed_at: '2026-05-02T00:04:37+02:00'
+source_cockpit:
+  path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  branch_status: '## main'
+  head: 2be86cf90c6db56a57dff88b9e737334cfee5638
+  validator: passed
+restore_target:
+  path: /private/tmp/azoth-cockpit-restore-drill-2026-05-02
+  branch_status: '## main...origin/main'
+  head: 2be86cf90c6db56a57dff88b9e737334cfee5638
+  source: local_git_clone
+approval_scope: cockpit_backup_options_and_restore_acceptance_only
+mutation_authority:
+  root_handoff: true
+  temp_restore_copy: true
+  live_cockpit_mutation: false
+  project_repo_write: false
+  credential_access: false
+  remote_creation: false
+  storage_write: false
+  backup_provisioning: false
+commands_run:
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+  status: passed
+  result: '## main'
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit rev-parse HEAD
+  status: passed
+  result: 2be86cf90c6db56a57dff88b9e737334cfee5638
+- command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  status: passed
+  result: personal knowledge validation OK
+- command: git clone /Users/yiwei/GithubRepos/yiwei-azoth-cockpit /private/tmp/azoth-cockpit-restore-drill-2026-05-02
+  status: passed
+  result: Local clone created without remote, credential, storage, or project mutation.
+- command: python3 scripts/personal_knowledge_validate.py --root /private/tmp/azoth-cockpit-restore-drill-2026-05-02
+  status: failed_initially_then_passed_after_temp_dir_recreation
+  result: Initial clone missed empty required card directories; after recreating temp-only .azoth/knowledge/cards/projects and .azoth/knowledge/cards/personal, validation passed.
+- command: python3 scripts/cockpit_bootstrap_verify.py --root /private/tmp/azoth-cockpit-restore-drill-2026-05-02
+  status: expected_path_bound_failure
+  result: Bootstrap verifier requires T-052 deployment receipt target_repo to match the approved live cockpit path, so relocated temp restores fail this live-bootstrap check.
+- command: python3 /private/tmp/azoth-cockpit-restore-drill-2026-05-02/scripts/cockpit_menu.py --check
+  status: passed
+  result: cockpit menu check OK
+- command: python3 /private/tmp/azoth-cockpit-restore-drill-2026-05-02/scripts/cockpit_menu.py --project ras-or-ray
+  status: passed
+  result: Restored cockpit rendered the pointer-only ras-or-ray handoff and did not import project context.
+- command: git -C /private/tmp/azoth-cockpit-restore-drill-2026-05-02 status --short --branch
+  status: passed
+  result: '## main...origin/main'
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+  status: passed
+  result: Live cockpit remained clean on main.
+- command: git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+  status: passed
+  result: Pilot project remained clean on main tracking origin/main.
+acceptance_results:
+  restored_head_matches_source: passed
+  personal_knowledge_validator_portable: passed_after_temp_empty_dir_recreation
+  project_pointer_index_matches_source: passed
+  t055_first_use_receipt_matches_source: passed
+  cockpit_menu_check_portable: passed
+  ras_or_ray_handoff_renders: passed
+  live_cockpit_unchanged: passed
+  pilot_project_unchanged: passed
+  live_bootstrap_verifier_portable_to_temp_path: failed_expected
+gaps_found:
+- >
+  Required empty directories `.azoth/knowledge/cards/projects` and
+  `.azoth/knowledge/cards/personal` are present in the live checkout but are not
+  represented in a plain git clone. Add tracked placeholders or teach restore
+  tooling to recreate required skeleton directories.
+- >
+  `scripts/cockpit_bootstrap_verify.py` is intentionally live-path-bound because
+  it checks deployment receipt `target_repo` against the approved cockpit path.
+  A future restore verifier should distinguish relocated restore drills from
+  live bootstrap verification.
+forbidden_outputs_confirmed:
+- credential_access
+- remote_creation
+- storage_write
+- backup_provisioning
+- cloud_account_provisioning
+- live_cockpit_mutation
+- project_repo_write
+- source_registry_onboarding
+- retrieval_indexing
+- public_product_mutation
+- release_publication
+decision:
+  local_only_restore_drill: conditionally_passed
+  recommendation: >
+    Before approving private remote or encrypted backup, close the two local-only
+    restore gaps with a tiny follow-on repair: track required empty skeleton
+    directories or add restore initialization, and add a restore-mode verifier that
+    accepts relocated temporary paths while preserving the stricter live bootstrap
+    check.
+next_safe_action: >
+  Open a narrow repair/implementation slice for portable local restore readiness,
+  still without credentials, remotes, storage writes, or cockpit/project mutation
+  beyond explicitly approved root-side tooling and optional tracked placeholders.
