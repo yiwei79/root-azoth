@@ -139,10 +139,10 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     readiness = bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
     assert readiness["next_candidate_ref"] == "slice-pkb-001-j"
-    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "t053_delivery_scope_private_backup_recovery_onboarding"
+        == "operator_selected_follow_on_gate"
     )

@@ -3842,10 +3842,11 @@ items:
   source: INI-PKB-001-private-backup-recovery-readiness
   target_layer: planning
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-01'
+  completed_date: '2026-05-01'
   description: Hydrate the private backup/recovery readiness lane for
     `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` so the deployed personal cockpit
     has an auditable restore/rollback model and a future operator onboarding guide

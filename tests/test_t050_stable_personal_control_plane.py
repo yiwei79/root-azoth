@@ -114,17 +114,20 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
 
-    assert initiative["task_ref"] == "T-053"
+    assert initiative["task_ref"] is None
     assert t050_slice["status"] == "complete"
     assert t050_slice["role"] == "historical"
     assert t051_slice["status"] == "complete"
     assert t051_slice["role"] == "historical"
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
-    assert initiative["discovery_status"] == "t053_private_backup_recovery_hydrated"
+    assert initiative["discovery_status"] == (
+        "t053_private_backup_recovery_readiness_complete"
+    )
     assert initiative["candidate_slice_ref"] == "slice-pkb-001-j"
-    assert initiative["next_discovery_action"].startswith("T-053 is hydrated")
-    assert any(task["id"] == "T-053" for task in p4.get("tasks", []))
+    assert initiative["next_discovery_action"].startswith("T-053 delivered")
+    assert not any(task["id"] == "T-053" for task in p4.get("tasks", []))
+    assert any(task["id"] == "T-053" for task in p4["completed_tasks"])
     assert not any(task["id"] == "T-052" for task in p4.get("tasks", []))
     assert any(task["id"] == "T-052" for task in p4["completed_tasks"])
     assert not any(task["id"] == "T-051" for task in p4.get("tasks", []))
@@ -143,8 +146,8 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     assert t050_closeout["result"].startswith("Delivered root-only T-050")
     readiness = initiative_bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
-    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["readiness_status"] == "complete"
     assert (
         readiness["freshness_status"]
-        == "current_as_of_2026_05_01_hydrated_to_t_053"
+        == "current_as_of_2026_05_01_t053_backup_recovery_readiness_delivered"
     )

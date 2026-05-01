@@ -30,9 +30,9 @@ scope:
 - Define the delivery boundary for a root-side private backup/recovery readiness
   package for `yiwei-azoth-cockpit`, including backup choices, restore-test
   expectations, rollback evidence, and residual risks.
-- Require the future T-053 delivery to include a human-facing operator onboarding
-  guide that explains how to use the cockpit after deployment without expanding
-  into source onboarding or retrieval indexing.
+- Deliver a human-facing operator onboarding guide that explains how to use the
+  cockpit after deployment without expanding into source onboarding or retrieval
+  indexing.
 - Preserve the T-049 pointer-only project boundary and keep all project repos
   outside this task's mutation surface.
 - Record that actual backup provisioning, credential access, cloud/storage writes,
@@ -50,13 +50,13 @@ non_goals:
 acceptance:
 - Roadmap, backlog, and INI-PKB-001 agree that T-053 is the active hydrated
   private backup/recovery readiness task.
-- The task spec names the operator onboarding deliverable as part of the eventual
-  T-053 delivery, while keeping onboarding documentation separate from project
-  source onboarding or retrieval expansion.
+- The operator onboarding guide exists at
+  `docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md` and
+  keeps daily use separate from project source onboarding or retrieval expansion.
 - Hydration history records slice-pkb-001-j -> T-053 with the fresh
   `hydration_specific_slice_pkb_001_j` approval scope.
-- The next safe delivery gate is explicit and limited to root-side readiness and
-  onboarding documentation, not storage/credential/cockpit/project mutation.
+- The delivery handoff records that root-side readiness and onboarding documentation
+  closed, while storage/credential/cockpit/project mutation remains forbidden.
 - Focused planning-bank, roadmap, and personal-control-plane tests pass.
 dependencies:
 - T-052
@@ -73,7 +73,8 @@ validation:
 - PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_control_plane_procedure.py
   tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py
   tests/test_t049_project_onboarding_receipt.py -q
-elasticity: After hydration, route delivery through a fresh T-053 documentation/readiness
-  gate. Do not treat this hydration as permission to provision backups, read credentials,
-  mutate the cockpit, mutate project repos, onboard sources, expand retrieval, or
-  publish a release.
+elasticity: After this documentation closeout, open a separate operator-selected
+  gate for backup implementation, another project consumer, retrieval/source onboarding,
+  public-product update, or stop/defer. Do not treat T-053 delivery as permission
+  to provision backups, read credentials, mutate the cockpit, mutate project repos,
+  onboard sources, expand retrieval, or publish a release.

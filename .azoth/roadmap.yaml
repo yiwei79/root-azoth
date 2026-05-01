@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-053
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -712,20 +712,20 @@ initiatives:
   - task_ref: T-053
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-053.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t053_private_backup_recovery_hydrated
+  discovery_status: t053_private_backup_recovery_readiness_complete
   candidate_slice_ref: slice-pkb-001-j
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-053 is hydrated as the private backup/recovery readiness
-    lane for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`. Next, open a fresh
-    T-053 delivery gate for root-side backup/recovery readiness documentation and
-    operator onboarding only; backup provisioning, credentials, cloud/storage writes,
-    cockpit mutation, project writes, retrieval/source onboarding, and release work
-    remain separate gates.
+  next_discovery_action: T-053 delivered root-side private backup/recovery readiness
+    and operator onboarding documentation for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`.
+    Next, open a separate operator-selected gate for backup implementation, another
+    pointer-only project consumer, retrieval/source onboarding, public-product update,
+    or stop/defer; credentials, cloud/storage writes, cockpit mutation, project writes,
+    release work, governance, kernel, and M1 remain separate approvals.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
@@ -734,9 +734,9 @@ initiatives:
     onboarding, broader recall, public release, or project mutation. T-050 packaged
     stable closeout evidence; T-051 reconciled the post-closeout state and selected
     stop/defer; T-052 renamed the local personal cockpit to `yiwei-azoth-cockpit`
-    and recorded receipt evidence. T-053 is now hydrated as the backup/recovery
-    readiness lane, keeping actual backup provisioning, retrieval/source onboarding,
-    and project writes behind separate gates.
+    and recorded receipt evidence. T-053 delivered backup/recovery readiness and
+    operator onboarding documentation, keeping actual backup provisioning, retrieval/source
+    onboarding, and project writes behind separate gates.
 
     '
   decision_ref:
@@ -2192,11 +2192,12 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
+  tasks: []
+  completed_tasks:
   - id: T-053
     title: Private backup and recovery readiness for yiwei-azoth-cockpit
+    completed_date: '2026-05-01'
     initiative_ref: INI-PKB-001
-  completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
     completed_date: '2026-04-28'
