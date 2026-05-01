@@ -68,6 +68,7 @@ STALE_STARTUP_PATTERNS = (
     "Name**: personal-azoth-root",
     "Name: personal-azoth-root",
 )
+FORBIDDEN_HOOK_MODULES = ("codex_control_plane",)
 
 
 def _load_yaml_mapping(path: Path) -> dict[str, Any]:
@@ -85,6 +86,38 @@ def _run_command(args: list[str], *, cwd: Path) -> subprocess.CompletedProcess[s
         capture_output=True,
         check=False,
     )
+
+
+def _codex_hooks_enabled(path: Path) -> bool | None:
+    if not path.is_file():
+        return None
+    in_features = False
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            in_features = line == "[features]"
+            continue
+        if not in_features or "=" not in line:
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        if key == "codex_hooks":
+            return value.lower() == "true"
+    return None
+
+
+def _hooks_json_has_active_hooks(path: Path) -> bool | None:
+    if not path.is_file():
+        return None
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return True
+    hooks = loaded.get("hooks") if isinstance(loaded, dict) else None
+    if not isinstance(hooks, dict):
+        return False
+    return any(bool(entries) for entries in hooks.values())
 
 
 def _git_status_lines(path: Path) -> list[str]:
@@ -219,6 +252,32 @@ def _check_deployed_menu(root: Path, errors: list[str]) -> None:
         errors.append(f"deployed cockpit menu --check failed: {detail}")
 
 
+def _check_codex_hook_policy(root: Path, errors: list[str]) -> None:
+    if _codex_hooks_enabled(root / ".codex" / "config.toml") is True:
+        errors.append(
+            ".codex/config.toml: cockpit v1 must keep codex_hooks disabled; "
+            "use safe-open cockpit commands instead"
+        )
+    if _hooks_json_has_active_hooks(root / ".codex" / "hooks.json") is True:
+        errors.append(
+            ".codex/hooks.json: cockpit v1 must not register prompt hooks; "
+            "use safe-open cockpit commands instead"
+        )
+
+    scripts_dir = root / "scripts"
+    hook_dir = root / ".codex" / "hooks"
+    if not hook_dir.is_dir():
+        return
+    for path in sorted(hook_dir.glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for module_name in FORBIDDEN_HOOK_MODULES:
+            if module_name in text and not (scripts_dir / f"{module_name}.py").is_file():
+                errors.append(
+                    f"{path.relative_to(root)}: references missing root-only module "
+                    f"{module_name}.py"
+                )
+
+
 def verify_cockpit_bootstrap(
     root: Path,
     *,
@@ -238,6 +297,7 @@ def verify_cockpit_bootstrap(
     _check_deployment_receipt(cockpit_root, errors)
     _check_first_use_receipt(cockpit_root, errors)
     errors.extend(check_cockpit_command_surface(cockpit_root))
+    _check_codex_hook_policy(cockpit_root, errors)
 
     state = load_cockpit(cockpit_root, include_status=False)
     errors.extend(check_cockpit(state))

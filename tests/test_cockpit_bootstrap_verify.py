@@ -66,6 +66,8 @@ def _write_cockpit_bootstrap_fixture(root: Path) -> Path:
     _write_text(root / "README.md", "# Yiwei Azoth Cockpit\n\n## Start Here\n")
     _write_text(root / "AGENTS.md", _startup_text("AGENTS.md"))
     _write_text(root / "CLAUDE.md", _startup_text("CLAUDE.md"))
+    _write_text(root / ".codex" / "config.toml", "[features]\ncodex_hooks = false\n")
+    _write_text(root / ".codex" / "hooks.json", '{"hooks": {}}\n')
     _write_text(root / "scripts" / "cockpit_menu.py", "# deployed menu\n")
     _write_text(
         root / "docs" / "ONBOARDING.md",
@@ -221,6 +223,51 @@ def test_bootstrap_verify_requires_cockpit_command_wrappers(tmp_path: Path) -> N
     )
 
     assert any("azoth-cockpit/SKILL.md: missing" in error for error in errors)
+
+
+def test_bootstrap_verify_rejects_enabled_codex_hooks(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    _write_text(root / ".codex" / "config.toml", "[features]\ncodex_hooks = true\n")
+
+    errors = verify_cockpit_bootstrap(
+        root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+    )
+
+    assert any("must keep codex_hooks disabled" in error for error in errors)
+
+
+def test_bootstrap_verify_rejects_registered_prompt_hooks(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    _write_text(
+        root / ".codex" / "hooks.json",
+        '{"hooks": {"UserPromptSubmit": [{"hooks": [{"type": "command", "command": "true"}]}]}}\n',
+    )
+
+    errors = verify_cockpit_bootstrap(
+        root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+    )
+
+    assert any("must not register prompt hooks" in error for error in errors)
+
+
+def test_bootstrap_verify_rejects_missing_root_only_hook_module(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    _write_text(
+        root / ".codex" / "hooks" / "user_prompt_submit_router.py",
+        "from codex_control_plane import main\n",
+    )
+
+    errors = verify_cockpit_bootstrap(
+        root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+    )
+
+    assert any("references missing root-only module codex_control_plane.py" in error for error in errors)
 
 
 def test_bootstrap_verify_reuses_pointer_firewall_checks(tmp_path: Path) -> None:
