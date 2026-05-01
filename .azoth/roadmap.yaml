@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-051
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -702,26 +702,26 @@ initiatives:
   - task_ref: T-051
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t051_release_readiness_continuation_hydrated
+  discovery_status: t051_release_readiness_decision_complete
   candidate_slice_ref: slice-pkb-001-h
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-051 is hydrated as the root-only release-readiness continuation
-    intake. Deliver T-051 through a governed planning gate before choosing any public
-    release, public-product update, personal-root update, storage backup, project-consumer
-    expansion, retrieval/source-onboarding, or stop/defer lane.
+  next_discovery_action: T-051 selected stop/defer after read-only release-readiness
+    reconciliation. Open a separate operator-selected gate for any private backup,
+    project-consumer expansion, retrieval/source-onboarding, public-product update,
+    or personal-root update work.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
     personal-root rehearsal, and T-049 pointer-only project onboarding pilot proved
     the pointer/card, desired-state, and project-profile route before source registry
     onboarding, broader recall, public release, or project mutation. T-050 packaged
-    stable closeout evidence; T-051 is the hydrated root-only continuation intake
-    that chooses the next release/deployment operation lane without performing it.
+    stable closeout evidence; T-051 reconciled the post-closeout state and selected
+    stop/defer so future protected operations remain separate operator-selected gates.
 
     '
   decision_ref:
@@ -735,7 +735,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2177,10 +2177,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-051
-    title: Post-T-050 release-readiness continuation intake
-    initiative_ref: INI-PKB-001
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2347,5 +2344,9 @@ versions:
     decision_ref: []
   - id: T-050
     title: Stable personal-control-plane deployment closeout
+    completed_date: '2026-05-01'
+    decision_ref: []
+  - id: T-051
+    title: Post-T-050 release-readiness continuation intake
     completed_date: '2026-05-01'
     decision_ref: []

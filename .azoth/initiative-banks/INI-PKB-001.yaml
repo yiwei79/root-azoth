@@ -561,7 +561,7 @@ candidate_slices:
   proposed_task_id: T-051
   title: Post-T-050 release-readiness continuation intake
   initiative_ref: INI-PKB-001
-  status: hydrated
+  status: complete
   target_layer: planning
   delivery_pipeline: governed
   summary: 'After T-050 stable closeout, run a root-only release-readiness continuation
@@ -614,37 +614,43 @@ candidate_slices:
     hydrated_task_ref: T-051
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
     hydrated_at: '2026-05-01T08:25:09Z'
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  delivered_at: '2026-05-01T08:36:00Z'
+  selected_lane: stop_defer
 readiness:
   evaluated_at: '2026-05-01T08:12:53Z'
-  readiness_status: ready_to_hydrate
+  readiness_status: complete
   human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-h
   next_candidate_ref: slice-pkb-001-h
-  freshness_status: current_as_of_2026_05_01_hydrated_to_t_051
+  freshness_status: current_as_of_2026_05_01_t051_stop_defer_complete
   goal_clarity: post_t050_release_readiness_reconciliation_before_operations
   evidence_coverage: t050_closeout_plus_rollout_and_personal_control_plane_sources
   target_layer: planning
   delivery_pipeline: governed
-  approval_scope: hydration_specific_slice_pkb_001_h
-  approval_basis: 'Operator asked Codex on 2026-05-01 to continue to a fresh continuation/intake
-    for release-readiness or post-T-050 deployment operations. Approval covers the
-    root-only continuation intake and readiness update for slice-pkb-001-h / T-051;
-    a future hydration write still requires a live matching scope gate and must remain
-    roadmap/backlog/spec-only. This does not authorize delivery, release publication,
-    public-product mutation, personal-root mutation, project repo writes, storage
-    backup provisioning, retrieval expansion, source onboarding, credentials, cloud
-    account provisioning, governance, kernel, or M1 changes.
+  approval_scope: t051_root_only_release_readiness_decision
+  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed with T-051 after
+    hydrating the post-T-050 release-readiness continuation intake. Approval was
+    consumed by root-only T-051 decision delivery: read-only reconciliation across
+    root-azoth, public azoth, personal-root, and the pilot project; a root-side
+    continuation decision artifact; validation; and planning-truth updates. It did
+    not authorize release publication, public-product mutation, personal-root mutation,
+    project repo writes, storage backup provisioning, retrieval expansion, source
+    onboarding, credentials, cloud account provisioning, governance, kernel, or M1
+    changes.
 
     '
   acceptance_criteria_status: stable_for_slice_pkb_001_h
   non_goals_status: stable_for_slice_pkb_001_h
-  hydration_recommendation: slice-pkb-001-h has been hydrated as T-051. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  hydration_recommendation: T-051 selected stop/defer after read-only release-readiness
+    reconciliation. Do not repeat hydration or delivery; open a separate operator-selected
+    gate for any private backup, project-consumer expansion, retrieval/source-onboarding,
+    public-product update, or personal-root update work.
   allowed_outputs:
-  - continuation_intake_report
-  - initiative_bank_candidate_update
+  - root_only_decision_report
   - initiative_bank_readiness_update
   - validation_report
   forbidden_outputs:
@@ -674,7 +680,7 @@ readiness:
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: hydrate_post_t050_release_readiness_planning_scaffold
+  next_readiness_gate: operator_selected_follow_on_gate
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card
@@ -878,6 +884,16 @@ closeout_history:
     complete and future personal-root, project, storage, retrieval, source-onboarding,
     public-release, credential, cloud, governance, kernel, and M1 work remains deferred
     to separate approvals.
+- closed_at: '2026-05-01T08:36:00Z'
+  session_id: 2026-05-01-t-051-delivery
+  candidate_slice_ref: slice-pkb-001-h
+  task_ref: T-051
+  closeout_ref: .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  approval_scope: t051_root_only_release_readiness_decision
+  result: Delivered root-only T-051 release-readiness continuation decision; selected
+    stop/defer and kept future private backup, project-consumer expansion, retrieval/source-onboarding,
+    public-product update, personal-root update, credential, cloud, governance, kernel,
+    and M1 work behind separate operator-selected gates.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment

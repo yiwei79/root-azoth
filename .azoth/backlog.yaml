@@ -3800,10 +3800,11 @@ items:
   source: INI-PKB-001-post-t050-release-readiness-continuation
   target_layer: planning
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-01'
+  completed_date: '2026-05-01'
   description: Run the root-only post-T-050 release-readiness continuation intake
     to reconcile root-azoth, public azoth, personal-root, and pilot project state,
     then choose the next safe operation lane or stop/defer result. This planning

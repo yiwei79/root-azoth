@@ -11,6 +11,7 @@ INI_PKB_PATH = ROOT / ".azoth" / "initiative-banks" / "INI-PKB-001.yaml"
 BACKLOG_PATH = ROOT / ".azoth" / "backlog.yaml"
 ROADMAP_PATH = ROOT / ".azoth" / "roadmap.yaml"
 SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-051.yaml"
+DECISION_PATH = ROOT / ".azoth" / "handoffs" / "2026-05-01-t-051-release-readiness-decision.yaml"
 
 
 def _load_yaml(path: Path) -> dict:
@@ -37,7 +38,7 @@ def test_t051_intake_records_root_only_post_t050_boundary() -> None:
     assert "retrieval_indexing" in intake["forbidden_outputs"]
 
 
-def test_ini_pkb_routes_t051_as_hydrated_planning_scaffold_without_delivery() -> None:
+def test_ini_pkb_marks_t051_stop_defer_decision_complete() -> None:
     bank = _load_yaml(INI_PKB_PATH)
     candidates = {
         candidate["candidate_id"]: candidate for candidate in bank["candidate_slices"]
@@ -45,7 +46,7 @@ def test_ini_pkb_routes_t051_as_hydrated_planning_scaffold_without_delivery() ->
     candidate = candidates["slice-pkb-001-h"]
 
     assert candidate["proposed_task_id"] == "T-051"
-    assert candidate["status"] == "hydrated"
+    assert candidate["status"] == "complete"
     assert candidate["target_layer"] == "planning"
     assert candidate["delivery_pipeline"] == "governed"
     assert ".azoth/handoffs/2026-05-01-t-051-continuation-intake.yaml" in candidate[
@@ -63,33 +64,37 @@ def test_ini_pkb_routes_t051_as_hydrated_planning_scaffold_without_delivery() ->
     assert candidate["hydration_plan"]["hydrated_spec_ref"] == (
         ".azoth/roadmap-specs/v0.2.0/T-051.yaml"
     )
+    assert candidate["delivery_evidence_refs"] == [
+        ".azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml"
+    ]
+    assert candidate["selected_lane"] == "stop_defer"
 
     readiness = bank["readiness"]
-    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["readiness_status"] == "complete"
     assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
     assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
-    assert readiness["approval_scope"] == "hydration_specific_slice_pkb_001_h"
+    assert readiness["approval_scope"] == "t051_root_only_release_readiness_decision"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert readiness["ship_authorized"] is False
-    assert readiness["next_readiness_gate"] == "hydrate_post_t050_release_readiness_planning_scaffold"
-    assert "has been hydrated as T-051" in readiness["hydration_recommendation"]
+    assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
+    assert "selected stop/defer" in readiness["hydration_recommendation"]
 
 
-def test_t051_hydration_creates_only_planning_scaffold() -> None:
+def test_t051_delivery_closes_roadmap_backlog_and_preserves_spec() -> None:
     backlog = _load_yaml(BACKLOG_PATH)
     roadmap = _load_yaml(ROADMAP_PATH)
     spec = _load_yaml(SPEC_PATH)
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
 
     row = next(item for item in backlog["items"] if item.get("id") == "T-051")
-    assert row["status"] == "pending"
+    assert row["status"] == "complete"
     assert row["target_layer"] == "planning"
     assert row["delivery_pipeline"] == "governed"
     assert "does not authorize release publication" in row["description"]
 
-    assert any(task.get("id") == "T-051" for task in p4.get("tasks", []))
-    assert not any(task.get("id") == "T-051" for task in p4.get("completed_tasks", []))
+    assert not any(task.get("id") == "T-051" for task in p4.get("tasks", []))
+    assert any(task.get("id") == "T-051" for task in p4.get("completed_tasks", []))
     assert spec["id"] == "T-051"
     assert ".azoth/handoffs/2026-05-01-t-051-continuation-intake.yaml" in spec[
         "context_refs"
@@ -98,3 +103,22 @@ def test_t051_hydration_creates_only_planning_scaffold() -> None:
     assert spec["delivery"]["delivery_pipeline"] == "governed"
     assert "Do not publish or tag public azoth." in spec["non_goals"]
     assert any("chooses exactly one next operation lane" in item for item in spec["acceptance"])
+
+
+def test_t051_decision_selects_stop_defer_without_mutation_authority() -> None:
+    decision = _load_yaml(DECISION_PATH)
+
+    assert decision["task_ref"] == "T-051"
+    assert decision["delivery_mode"] == "root_only_release_readiness_continuation_decision"
+    assert decision["gate"]["approval_scope"] == "t051_root_only_release_readiness_decision"
+    assert decision["gate"]["mutation_authority"]["public_product"] is False
+    assert decision["gate"]["mutation_authority"]["personal_root"] is False
+    assert decision["gate"]["mutation_authority"]["pilot_project"] is False
+    assert decision["decision"]["selected_lane"] == "stop_defer"
+    assert decision["selected_next_gate"]["gate_required"] == "operator_selected_follow_on"
+    assert "public_product_update" in {
+        item["lane"] for item in decision["decision"]["rejected_lanes"]
+    }
+    assert "personal_root_mutation" in decision["forbidden_outputs_confirmed"]
+    assert "project_repo_write" in decision["forbidden_outputs_confirmed"]
+    assert "retrieval_indexing" in decision["forbidden_outputs_confirmed"]
