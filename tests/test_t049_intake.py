@@ -51,7 +51,12 @@ def test_ini_pkb_t049_readiness_is_hydration_only() -> None:
     }
     t049 = candidates["slice-pkb-001-f"]
 
-    assert t049["hydration_plan"]["mode"] == "ready_after_t049_intake"
+    assert t049["hydration_plan"]["mode"] == "executed"
+    assert t049["hydration_plan"]["hydrated_task_ref"] == "T-049"
+    assert (
+        t049["hydration_plan"]["hydrated_spec_ref"]
+        == ".azoth/roadmap-specs/v0.2.0/T-049.yaml"
+    )
     assert t049["open_questions"] == []
     assert t049["project_state_convention"]["convention_id"] == "minimal_pointer_profile_v1"
     assert t049["pilot_project_refs"] == [
@@ -66,5 +71,6 @@ def test_ini_pkb_t049_readiness_is_hydration_only() -> None:
     readiness = bank["readiness"]
     assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["human_decision"] == "approved"
-    assert readiness["approval_scope"] == "t049_pointer_only_project_pilot_intake"
-    assert "project profile writes and receipts require" in readiness["hydration_recommendation"]
+    assert readiness["approval_scope"] == "hydration_specific_slice_pkb_001_f"
+    assert "hydrated as T-049" in readiness["hydration_recommendation"]
+    assert "Do not repeat hydration" in readiness["hydration_recommendation"]

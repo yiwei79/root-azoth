@@ -125,10 +125,8 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
 
     assert candidates["T-047"]["hydration_plan"]["mode"] == "executed"
     assert candidates["T-048"]["hydration_plan"]["mode"] == "executed"
-    assert (
-        candidates["T-049"]["hydration_plan"]["mode"]
-        == "ready_after_t049_intake"
-    )
+    assert candidates["T-049"]["hydration_plan"]["mode"] == "executed"
+    assert candidates["T-049"]["hydration_plan"]["hydrated_task_ref"] == "T-049"
     assert (
         candidates["T-050"]["hydration_plan"]["mode"]
         == "future_after_project_onboarding_pilot"

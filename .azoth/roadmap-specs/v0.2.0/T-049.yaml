@@ -1,0 +1,80 @@
+id: T-049
+roadmap_version: v0.2.0
+title: Project onboarding pilot through personal control plane
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Define and deliver the first governed project onboarding pilot through the
+  personal control plane by creating pointer-only project profile and receipt
+  evidence for an operator-approved pilot repo. The pilot proves that the
+  personal root can coordinate project consumers without scanning source,
+  mutating project code, expanding retrieval, or bypassing project-local gates.
+problem: >
+  T-048 rehearsed personal-root update mechanics, but the deployment is not
+  operationally complete until one project consumer can be represented safely.
+  The unsafe path would be to treat project onboarding as permission to inspect
+  source, index code, write into a project repo, or silently extend the personal
+  root beyond the operator-approved pointer profile.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/handoffs/2026-05-01-t-049-intake.yaml
+- .azoth/roadmap-specs/v0.2.0/T-048.yaml
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+scope:
+- Open a fresh governed T-049 delivery gate before any personal-root write or
+  project-profile receipt is created.
+- Use the approved personal root `/Users/yiwei/GithubRepos/personal-azoth-root`
+  and pilot project repo `/Users/yiwei/GithubRepos/ras or ray`.
+- Create only pointer-level project profile state unless a separate
+  project-specific write scope is approved.
+- Preserve the minimal pointer profile convention: project id, title, repo path,
+  default branch, profile mode, and handoff receipt reference.
+- Record receipt evidence for source, target, approval basis, validation result,
+  rollback reference, and residual risk.
+- Verify root-azoth, personal-root, and pilot project git states before and after
+  delivery, and package any intentional personal-root change explicitly.
+non_goals:
+- Do not mutate the pilot project repo.
+- Do not scan, summarize, import, or index project source files.
+- Do not onboard source registries or expand recall, graph, vector, or retrieval
+  surfaces.
+- Do not run background daemons, watchers, or automatic project updates.
+- Do not access credentials, configure cloud accounts, provision cloud
+  infrastructure, or publish a public Azoth release.
+- Do not change governance, kernel, M1, or protected instruction surfaces.
+acceptance:
+- The delivery gate names the personal root, pilot project repo, allowed metadata
+  fields, validation commands, storage policy, and rollback reference before any
+  personal-root write.
+- The project profile is pointer-only and excludes source files, code summaries,
+  secrets, dependency inventories, and retrieval indexes.
+- The handoff receipt records source revision, target path, approval basis,
+  validation command/result, rollback reference, and residual risks.
+- The pilot project repo remains clean and unmodified; any personal-root change
+  is explicit, validated, and packaged.
+- Final handoff identifies whether T-050 closeout can proceed or whether a
+  separate follow-up is needed for storage policy, project write scope, or
+  deployment evidence.
+dependencies:
+- T-048
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = open a governed T-049 delivery scope and restate the approved
+  pointer-only boundary. Phase 2 = create and validate the profile and receipt
+  evidence without mutating the pilot project repo. Phase 3 = route to T-050
+  closeout only if receipt evidence is sufficient. Stop immediately if the work
+  requires project writes, source onboarding, retrieval expansion, credentials,
+  cloud provisioning, public release, governance, kernel, or M1 approval.

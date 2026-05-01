@@ -3748,13 +3748,30 @@ items:
   priority: 1
   created_date: '2026-04-30'
   completed_date: '2026-05-01'
-  description: Rehearse applying an explicitly approved Azoth release candidate
-    or release into the personal root from declarative desired state, then validate
-    and record receipt evidence. This pending governed infrastructure task does
-    not authorize personal-root mutation until a fresh delivery gate names the
-    exact product revision, target path, storage policy, validation commands, and
-    rollback point.
+  description: Rehearse applying an explicitly approved Azoth release candidate or
+    release into the personal root from declarative desired state, then validate and
+    record receipt evidence. This pending governed infrastructure task does not authorize
+    personal-root mutation until a fresh delivery gate names the exact product revision,
+    target path, storage policy, validation commands, and rollback point.
   roadmap_ref: T-048
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-047
+- id: T-049
+  title: Project onboarding pilot through personal control plane
+  source: INI-PKB-001-project-onboarding-pilot
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  description: Create the first governed project onboarding pilot through the personal
+    control plane with pointer-only project profile and receipt evidence for the
+    approved pilot repo. This task does not authorize project repo mutation, source
+    onboarding, retrieval expansion, public release, credentials, cloud provisioning,
+    governance, kernel, or M1 changes.
+  roadmap_ref: T-049
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-048
