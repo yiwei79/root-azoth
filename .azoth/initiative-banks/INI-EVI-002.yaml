@@ -4,7 +4,7 @@ initiative_id: INI-EVI-002
 title: Knowledge richness evaluation for project-management artifacts
 status: active_refinement
 created_at: '2026-04-24T00:00:00+00:00'
-updated_at: '2026-04-30T20:53:18Z'
+updated_at: '2026-05-01T20:55:00Z'
 owner: codex
 source_sessions:
 - session_id: 2026-04-24-initiative-discovery-bridge-proposal
@@ -66,6 +66,11 @@ source_sessions:
   note: Converted slice-evi-002-f from planning-only to hydration-specific approval
     using the operator-approved scaffold command while preserving rq-evi-002-010 freshness
     and refusal boundaries.
+- session_id: 2026-05-01-planning-bank-route-truth-repair
+  kind: dynamic-full-auto-route-truth-reconciliation
+  artifact: .azoth/initiative-banks/INI-EVI-002.yaml
+  note: Marked the T-046 derived task-capsule lane fulfilled/stopped after the helper
+    implementation shipped, with no fresh distinct seed currently evidenced.
 contacts:
 - id: operator
   role: human decision owner
@@ -326,12 +331,11 @@ local_findings:
   - .azoth/research/ini-evi-002-research-bank.yaml#pack-evi-002-c-policy-selection-001
   - scripts/research_sufficiency.py
 - finding_id: lf-evi-002-010
-  status: active
-  summary: Slice-evi-002-f is now better specified but still not hydration-ready;
-    the correct future implementation shape is a plan-only derivation helper that
-    emits or previews a standard .azoth/research/*.json capsule, delegates sufficiency
-    judgment to scripts/research_sufficiency.py, and refuses stale, conflicting, complete,
-    unapproved, protected, or insufficiently evidenced candidates.
+  status: fulfilled
+  summary: Slice-evi-002-f was hydrated as T-046 and followed by the derived task-capsule
+    helper implementation. The lane now stops unless a future session records a fresh
+    distinct seed with explicit approval and refreshed evidence for any standalone
+    capsule emission.
   evidence_refs:
   - scripts/research_sufficiency.py
   - tests/test_research_sufficiency.py
@@ -487,6 +491,17 @@ challenge_log:
     and no scaffold command has been approved. A future hydration session must explicitly
     name slice-evi-002-f, preserve the derived-capsule refusal matrix, and forbid
     stale-evidence copying before writing roadmap, backlog, or spec state.
+
+    '
+- challenge_id: ch-evi-002-013
+  challenged_at: '2026-05-01T20:55:00Z'
+  prompt: After T-046 and the derived task-capsule helper implementation, should INI-EVI-002
+    keep routing to the same lane or stop?
+  disposition: stop_until_fresh_distinct_seed
+  result: 'Stop this lane. Slice-evi-002-f/T-046 and the derived task-capsule helper
+    implementation are fulfilled, and no fresh distinct seed is currently evidenced.
+    Future hydration, helper delivery, or standalone capsule emission requires a new
+    explicit approval boundary and refreshed evidence.
 
     '
 candidate_slices:
@@ -729,7 +744,7 @@ candidate_slices:
   proposed_task_id: T-046
   title: Task research capsule derivation from initiative-bank evidence
   initiative_ref: INI-EVI-002
-  status: hydrated
+  status: complete
   target_layer: infrastructure
   delivery_pipeline: standard
   summary: Define the planning-only boundary for deriving task-specific research capsules
@@ -789,23 +804,24 @@ candidate_slices:
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-046.yaml
     hydrated_at: '2026-04-30T20:53:18Z'
 readiness:
-  evaluated_at: '2026-04-30T20:53:18Z'
+  evaluated_at: '2026-05-01T20:55:00Z'
   source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
-  readiness_status: ready_to_hydrate
-  goal_clarity: task_research_capsule_derivation_seed_after_t043
-  evidence_coverage: task_capsule_derivation_boundary_refined_and_hydration_approved
-  freshness_status: current_as_of_2026_04_30_hydrated_to_t_046
+  readiness_status: complete
+  goal_clarity: t046_derived_task_capsule_lane_fulfilled
+  evidence_coverage: t046_hydrated_and_helper_implementation_shipped
+  freshness_status: current_as_of_2026_05_01_t046_lane_fulfilled
   assumption_audit: active_assumptions_recorded
   contradiction_disposition: none_blocking_recorded
   candidate_first_slice: slice-evi-002-f
-  target_layer: infrastructure
-  delivery_pipeline: standard
-  acceptance_criteria_status: stable_for_planning
-  non_goals_status: stable_for_planning
-  next_readiness_gate: hydrate_task_capsule_derivation_slice
-  next_candidate_ref: slice-evi-002-f
-  hydration_recommendation: slice-evi-002-f has been hydrated as T-046. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  target_layer: planning
+  delivery_pipeline: dynamic-full-auto
+  acceptance_criteria_status: fulfilled_for_t046_lane
+  non_goals_status: preserved_for_future_distinct_seed
+  next_readiness_gate: fresh_distinct_seed_required
+  next_candidate_ref: ''
+  hydration_recommendation: slice-evi-002-f/T-046 and the derived task-capsule helper
+    lane are fulfilled; stop unless a fresh distinct seed is explicitly evidenced.
+    Do not repeat hydration or helper implementation.
   non_laundering_note: T-043 remains historically bypassed because the hydration ran
     before a live approved pipeline scope was opened; this bank records the task for
     planning truth but does not mark that action retroactively pipeline-compliant.
@@ -837,7 +853,8 @@ next_seed_assessment:
   seeded_at: '2026-04-30T20:21:17Z'
   refined_at: '2026-04-30T20:39:24Z'
   hydrated_at: '2026-04-30T20:53:18Z'
-  status: hydrated_as_t_046
+  fulfilled_at: '2026-05-01T20:55:00Z'
+  status: fulfilled_stopped_after_t046_helper_delivery
   source_refs:
   - .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
   - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
@@ -847,8 +864,9 @@ next_seed_assessment:
   note: T-043 closed the planning-bank closeout-history merge-policy prerequisite.
     The next distinct seed, task research capsule derivation from initiative-bank
     evidence, was refined with provenance, freshness, and research_sufficiency boundary
-    answers and hydrated as T-046. Implementation and standalone task-capsule emission
-    remain separate future work.
+    answers, hydrated as T-046, and followed by helper implementation. No repeat
+    hydration, helper implementation, or standalone capsule-emission action remains
+    without a fresh distinct seed and explicit approval.
 hydration_history:
 - hydrated_at: '2026-04-29T22:40:33Z'
   session_id: 2026-04-30-planning-bank-stabilization-seed-hydration

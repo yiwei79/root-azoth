@@ -305,12 +305,13 @@ def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() ->
 
     assert bank["status"] == "active_refinement"
     assert isinstance(readiness, dict)
-    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["approval_scope"] == "hydration_specific_slice_evi_002_f"
     assert readiness["candidate_first_slice"] == "slice-evi-002-f"
-    assert readiness["next_readiness_gate"] == "hydrate_task_capsule_derivation_slice"
-    assert readiness["next_candidate_ref"] == "slice-evi-002-f"
+    assert readiness["next_readiness_gate"] == "fresh_distinct_seed_required"
+    assert readiness["next_candidate_ref"] == ""
+    assert "fresh distinct seed" in readiness["hydration_recommendation"]
     assert bank["hydration_history"]
     latest_hydration = bank["hydration_history"][0]
     assert latest_hydration["task_ref"] == "T-043"
@@ -329,45 +330,42 @@ def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() ->
     assert distinct_follow_on["status"] == "hydrated"
     assert distinct_follow_on["proposed_task_id"] == "T-043"
     assert distinct_follow_on["open_questions"] == []
-    assert continuation_seed["status"] == "hydrated"
+    assert continuation_seed["status"] == "complete"
     assert continuation_seed["proposed_task_id"] == "T-046"
     assert continuation_seed["open_questions"] == []
 
 
-def test_ini_evi_002_readiness_report_exposes_hydrated_task_capsule_slice() -> None:
+def test_ini_evi_002_readiness_report_marks_t046_lane_terminal() -> None:
     bank = _load_yaml(INITIATIVE_BANK_PATH)
-    candidate = next(
-        candidate
-        for candidate in bank["candidate_slices"]
-        if candidate["candidate_id"] == "slice-evi-002-f"
-    )
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
     assert report["initiative_id"] == "INI-EVI-002"
     assert report["initiative_ref"] == "INI-EVI-002"
     assert report["source_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
-    assert report["readiness_status"] == "ready_to_hydrate"
+    assert report["readiness_status"] == "complete"
     assert report["human_decision"] == "approved"
     assert report["approval_scope"] == "hydration_specific_slice_evi_002_f"
     assert report["candidate_first_slice"] == "slice-evi-002-f"
     assert report["candidate_id"] == "slice-evi-002-f"
     assert report["candidate_slice_ref"] == "slice-evi-002-f"
     assert report["candidate_task_ref"] == "T-046"
-    assert report["candidate_status"] == "hydrated"
+    assert report["candidate_status"] == "complete"
     assert (
         report["proposed_title"] == "Task research capsule derivation from initiative-bank evidence"
     )
     assert report["target_layer"] == "infrastructure"
     assert report["delivery_pipeline"] == "standard"
-    assert report["acceptance"] == candidate["acceptance_criteria"]
-    assert report["acceptance_criteria_status"] == "stable_for_planning"
-    assert report["non_goals"] == candidate["known_non_goals"]
-    assert report["non_goals_status"] == "stable_for_planning"
-    assert report["freshness_status"] == "current_as_of_2026_04_30_hydrated_to_t_046"
+    assert report["acceptance"]
+    assert report["acceptance_criteria_status"] == "fulfilled_for_t046_lane"
+    assert report["non_goals"]
+    assert report["non_goals_status"] == "preserved_for_future_distinct_seed"
+    assert report["freshness_status"] == "current_as_of_2026_05_01_t046_lane_fulfilled"
     assert "historically bypassed" in report["non_laundering_note"]
-    assert "hydrated as T-046" in report["hydration_recommendation"]
+    assert "fresh distinct seed" in report["hydration_recommendation"]
     assert report["blocking_reasons"] == [
-        "candidate.status is hydrated; no hydration action remains",
+        "readiness.readiness_status is complete; no hydration action remains",
+        "candidate.status is complete; no hydration action remains",
+        "readiness.readiness_status must be ready_to_hydrate",
     ]
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
@@ -490,7 +488,7 @@ def test_derived_task_capsule_report_refuses_live_hydrated_candidate() -> None:
     )
 
     assert report["ready_to_emit"] is False
-    assert "refuse: task already exists; define delivery boundary only" in report[
+    assert "refuse: no repeat derivation or hydration action remains" in report[
         "refusal_reasons"
     ]
     assert report["preview_capsule"]["candidate_slice_ref"] == "slice-evi-002-f"
@@ -1242,13 +1240,11 @@ def test_ini_evi_002_has_hydrated_closeout_history_policy_follow_on() -> None:
         "T-019",
         "T-021",
         "T-022",
+        "T-046",
     ]
     assert seeded_candidate["proposed_task_id"] == "T-021"
     assert seeded_candidate["status"] == "complete"
-    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == [
-        "T-043",
-        "T-046",
-    ]
+    assert [candidate["proposed_task_id"] for candidate in hydrated_candidates] == ["T-043"]
     assert initiative["discovery_status"] == "task_capsule_derivation_hydrated"
     assert "T-046 is hydrated" in initiative["next_discovery_action"]
     assert "/next and /auto" in initiative["next_discovery_action"]

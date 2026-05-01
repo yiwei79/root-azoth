@@ -4,7 +4,7 @@ id: planning-banks-layer
 title: Planning banks layer
 status: active_refinement
 created_at: "2026-04-24T17:43:19+00:00"
-updated_at: "2026-04-30T20:53:18Z"
+updated_at: "2026-05-01T20:55:00Z"
 source_proposal_refs:
   - .azoth/proposals/planning-banks-layer.yaml
 related_initiative_refs:
@@ -131,18 +131,20 @@ routing_candidates:
       which resolves db-planning-004 without reopening the completed T-022
       helper identity or touching personal-root knowledge deployment.
   - route: continuation_refresh
-    status: hydrated
+    status: complete
     target: INI-EVI-002#slice-evi-002-f
     rationale: >
       After T-043 closed the planning-bank closeout-history merge policy,
       the next distinct INI-EVI-002 seed became task research capsule derivation
-      from initiative-bank evidence. It is now hydrated as T-046; implementation
-      and standalone research-capsule emission remain separate future work.
+      from initiative-bank evidence. It was hydrated as T-046 and the derived
+      task-capsule helper implementation has now shipped; no repeat hydration,
+      helper implementation, or standalone capsule-emission action remains in
+      this lane.
 readiness:
-  evaluated_at: "2026-04-30T20:53:18Z"
-  readiness_status: continue_refinement
-  freshness_status: current_as_of_2026_04_30_slice_f_hydrated_to_t046
-  target_route: T-046
+  evaluated_at: "2026-05-01T20:55:00Z"
+  readiness_status: defer
+  freshness_status: current_as_of_2026_05_01_t046_lane_fulfilled
+  target_route: none_currently_fresh_distinct_seed_required
   blocking_questions: []
   contradiction_disposition: none_blocking_recorded
   source_refs:
@@ -151,7 +153,7 @@ readiness:
     - .azoth/roadmap-specs/v0.2.0/T-020.yaml
     - .azoth/roadmap-specs/v0.2.0/T-021.yaml
     - commands/next/body.md
-  recommended_next_artifact: .azoth/roadmap-specs/v0.2.0/T-046.yaml
+  recommended_next_artifact: none_currently
   human_decision: approved
 closeout_history_policy:
   policy_id: planning_bank_closeout_history_merge_policy_v1
@@ -251,3 +253,9 @@ history:
       Hydrated INI-EVI-002 slice-evi-002-f as T-046 using the approved dynamic-full-auto
       scaffold command. This creates roadmap/backlog/spec task state only; implementation
       and standalone research-capsule emission remain separate future work.
+  - timestamp: "2026-05-01T20:55:00Z"
+    event: stopped_t046_route_after_helper_delivery
+    summary: >
+      Reconciled the planning-bank route after T-046 and the derived task-capsule
+      helper implementation completed. The T-046 lane is fulfilled/stopped unless
+      a future session records a fresh distinct seed with explicit approval.
