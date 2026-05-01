@@ -17,7 +17,7 @@
     ]
   },
   "env": {
-"AZOTH_VERSION": "0.1.4.19",
+"AZOTH_VERSION": "0.1.4.20",
 "AZOTH_PHASE": "4",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto"
   },
