@@ -116,7 +116,7 @@ def test_planning_truth_links_t047_procedure_artifact() -> None:
     assert PROCEDURE_PATH.relative_to(ROOT).as_posix() in rollout_text
 
 
-def test_follow_on_route_is_staged_t047_to_t050() -> None:
+def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> None:
     bank = _load_yaml(INI_PKB_PATH)
     rollout_text = P4_ROLLOUT_PATH.read_text(encoding="utf-8")
     candidates = {
@@ -137,12 +137,12 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
     assert route_positions == sorted(route_positions)
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-g"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-g"
-    assert readiness["readiness_status"] == "complete"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "release_readiness_requires_evaluator_orchestrator_gate"
+        == "hydrate_post_t050_release_readiness_planning_scaffold"
     )

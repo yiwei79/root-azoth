@@ -125,7 +125,9 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
         item for item in initiative_bank["candidate_slices"] if item["candidate_id"] == "slice-pkb-001-g"
     )
     assert candidate["status"] == "complete"
-    assert initiative_bank["readiness"]["readiness_status"] == "complete"
-    assert initiative_bank["readiness"]["freshness_status"] == "current_as_of_2026_05_01_t050_closeout_complete"
     assert initiative_bank["closeout_history"][-1]["task_ref"] == "T-050"
     assert initiative_bank["closeout_history"][-1]["result"].startswith("Delivered root-only T-050")
+    readiness = initiative_bank["readiness"]
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["freshness_status"] == "current_as_of_2026_05_01_post_t050_continuation_intake"

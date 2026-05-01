@@ -54,7 +54,7 @@ def test_t049_report_keeps_project_onboarding_boundaries_explicit() -> None:
     assert "separate project-specific gate" in report["next_safe_action"]
 
 
-def test_ini_pkb_marks_t049_delivered_and_t050_closeout_complete() -> None:
+def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> None:
     bank = _load_yaml(INI_PKB_PATH)
     candidates = {
         candidate["proposed_task_id"]: candidate for candidate in bank["candidate_slices"]
@@ -82,14 +82,14 @@ def test_ini_pkb_marks_t049_delivered_and_t050_closeout_complete() -> None:
     )
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-g"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-g"
-    assert readiness["readiness_status"] == "complete"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-h"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "release_readiness_requires_evaluator_orchestrator_gate"
+        == "hydrate_post_t050_release_readiness_planning_scaffold"
     )
-    assert "Do not repeat hydration or delivery" in readiness["hydration_recommendation"]
+    assert "Hydrate slice-pkb-001-h as T-051" in readiness["hydration_recommendation"]

@@ -5,7 +5,7 @@ title: Personal-control-plane distributed knowledge system
 status: planning_discovery_seed
 classification: planning_discovery_seed
 created_at: '2026-04-29T17:20:00+00:00'
-updated_at: '2026-04-30T23:40:00+00:00'
+updated_at: '2026-05-01T08:12:53Z'
 owner: codex
 delivery_authorized: false
 source_sessions:
@@ -96,6 +96,22 @@ research_questions:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
   - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
   - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#control-plane-rules
+- question_id: rq-pkb-001-005
+  question: What is the first safe continuation after T-050 stable closeout?
+  status: active
+  opened_at: '2026-05-01T08:12:53Z'
+  needed_for: slice-pkb-001-h
+  answer: 'Start with a root-only release-readiness reconciliation/intake. It should
+    compare root, public product, personal-root, and project-consumer state; choose
+    the next operation lane; and stop before release publication, personal-root
+    mutation, project writes, storage backup, source onboarding, or retrieval expansion.
+
+    '
+  evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
 research_refs:
 - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
 local_findings:
@@ -119,6 +135,14 @@ local_findings:
     inbox or memory surfaces.
   evidence_refs:
   - scripts/personal_knowledge_inventory.py
+- finding_id: lf-pkb-001-004
+  status: active
+  summary: T-050 is complete and packaged; all follow-on release/deployment work now
+    requires a fresh continuation instead of reusing T-050 approval.
+  evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - .azoth/roadmap.yaml
 external_findings:
 - finding_id: ef-pkb-001-001
   status: active
@@ -533,43 +557,105 @@ candidate_slices:
     hydrated_task_ref: T-050
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
     hydrated_at: '2026-05-01T07:19:00Z'
+- candidate_id: slice-pkb-001-h
+  proposed_task_id: T-051
+  title: Post-T-050 release-readiness continuation intake
+  initiative_ref: INI-PKB-001
+  status: candidate
+  target_layer: planning
+  delivery_pipeline: governed
+  summary: 'After T-050 stable closeout, run a root-only release-readiness continuation
+    intake that reconciles root, public product, personal-root, and project-consumer
+    state before choosing the next operation lane. The slice decides what to do next;
+    it does not publish, deploy, mutate, back up, index, or onboard sources.
+
+    '
+  acceptance_criteria:
+  - T-050 closeout evidence is treated as source evidence, not continuing authority.
+  - Root, public-product, personal-root, and pilot project states are checked read-only.
+  - The output names the next safe lane as release-readiness, public-product update,
+    personal-root update, private backup, project-consumer expansion, retrieval/source
+    onboarding, or stop/defer.
+  - Every protected follow-on action is mapped to a separate explicit approval gate.
+  - No roadmap/backlog/spec hydration, release publication, personal-root mutation,
+    project write, storage backup, source onboarding, or retrieval/indexing action
+    occurs during the intake itself.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-continuation-intake.yaml
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  known_non_goals:
+  - No public azoth release or tag.
+  - No public product mutation.
+  - No personal-root mutation.
+  - No project repo write or source scanning.
+  - No storage backup provisioning.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector index expansion.
+  - No credentials, cloud provisioning, governance, kernel, or M1 changes.
+  open_questions: []
+  recommended_phase: post-t050-release-readiness
+  hydration_plan:
+    proposed_title: Post-T-050 release-readiness continuation intake
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Post-T-050 release-readiness
+      continuation intake" --initiative-ref INI-PKB-001 --target-layer planning
+      --delivery-pipeline governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
+      --blocked-by T-050
+    pre_hydration_requirements:
+    - A fresh approved scope-gate must name hydration_specific_slice_pkb_001_h.
+    - The scope must include INI-PKB-001 and the T-051 intake artifact as source artifacts.
+    - Hydration must create only roadmap/backlog/spec scaffolding for T-051.
+    - Hydration approval must not authorize delivery, release publication, personal-root
+      mutation, project writes, backup provisioning, source onboarding, retrieval
+      expansion, credentials, cloud provisioning, governance, kernel, or M1 changes.
 readiness:
-  readiness_status: complete
+  evaluated_at: '2026-05-01T08:12:53Z'
+  readiness_status: ready_to_hydrate
   human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-g
-  next_candidate_ref: slice-pkb-001-g
-  freshness_status: current_as_of_2026_05_01_t050_closeout_complete
-  approval_scope: t050_root_only_closeout_delivered
-  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed to T-050 stable personal-control-plane
-    deployment closeout and approved the root-only delivery gate. That approval has
-    now been consumed to deliver the T-050 closeout artifact and planning-truth updates.
-    It does not authorize personal-root mutation, project repo writes, storage backup
-    provisioning, retrieval expansion, public release, credentials, cloud account
-    provisioning, governance, kernel, or M1 changes.
+  candidate_first_slice: slice-pkb-001-h
+  next_candidate_ref: slice-pkb-001-h
+  freshness_status: current_as_of_2026_05_01_post_t050_continuation_intake
+  goal_clarity: post_t050_release_readiness_reconciliation_before_operations
+  evidence_coverage: t050_closeout_plus_rollout_and_personal_control_plane_sources
+  target_layer: planning
+  delivery_pipeline: governed
+  approval_scope: hydration_specific_slice_pkb_001_h
+  approval_basis: 'Operator asked Codex on 2026-05-01 to continue to a fresh continuation/intake
+    for release-readiness or post-T-050 deployment operations. Approval covers the
+    root-only continuation intake and readiness update for slice-pkb-001-h / T-051;
+    a future hydration write still requires a live matching scope gate and must remain
+    roadmap/backlog/spec-only. This does not authorize delivery, release publication,
+    public-product mutation, personal-root mutation, project repo writes, storage
+    backup provisioning, retrieval expansion, source onboarding, credentials, cloud
+    account provisioning, governance, kernel, or M1 changes.
 
     '
-  acceptance_criteria_status: present_for_slice_pkb_001_g
-  non_goals_status: bounded_for_slice_pkb_001_g
-  hydration_recommendation: slice-pkb-001-g has been delivered as root-only T-050
-    closeout. Do not repeat hydration or delivery; route release readiness forward
-    and keep personal-root, project, storage, retrieval, source-onboarding, and public-release
-    work behind separate approvals.
+  acceptance_criteria_status: stable_for_slice_pkb_001_h
+  non_goals_status: stable_for_slice_pkb_001_h
+  hydration_recommendation: Hydrate slice-pkb-001-h as T-051 only after a fresh
+    approved scope gate. Keep T-051 root-only and planning-only; use it to choose
+    the next release/deployment operation lane without performing that operation.
   allowed_outputs:
-  - root_only_closeout_report
-  - roadmap_delivery_state_update
-  - backlog_delivery_state_update
+  - continuation_intake_report
+  - initiative_bank_candidate_update
   - initiative_bank_readiness_update
-  - focused_validation
+  - validation_report
   forbidden_outputs:
   - credential_access
   - personal_root_mutation
   - cloud_account_provisioning
   - source_registry_onboarding
-  - project_write_onboarding
+  - project_repo_write
+  - project_code_mutation
+  - storage_backup_provisioning
   - retrieval_indexing
+  - graph_or_vector_indexing
   - public_azoth_release
+  - public_product_mutation
   - governance_change
   - implementation_work
   - kernel_change
@@ -579,10 +665,13 @@ readiness:
   - ship_task
   - public_release
   - personal_root_mutation
+  - public_product_mutation
+  - project_repo_write
+  - storage_backup_provisioning
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: release_readiness_requires_evaluator_orchestrator_gate
+  next_readiness_gate: hydrate_post_t050_release_readiness_planning_scaffold
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card
