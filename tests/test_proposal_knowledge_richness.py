@@ -43,8 +43,9 @@ def test_minimal_proposal_scores_thin() -> None:
 
 def test_initiative_discovery_proposal_scores_rich() -> None:
     proposal = yaml.safe_load(
-        (ROOT / ".azoth" / "proposals" / "initiative-discovery-to-roadmap-hydration.yaml")
-        .read_text(encoding="utf-8")
+        (
+            ROOT / ".azoth" / "proposals" / "initiative-discovery-to-roadmap-hydration.yaml"
+        ).read_text(encoding="utf-8")
     )
 
     result = _load_module().evaluate_proposal_knowledge_richness(proposal)

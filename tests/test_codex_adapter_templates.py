@@ -29,9 +29,7 @@ DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage
 DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
     "Declaration, gate write, or status card does not count as Stage 2 execution"
 )
-AUTO_INLINE_JUSTIFICATION = (
-    "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
-)
+AUTO_INLINE_JUSTIFICATION = "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
 LEDGER_EVIDENCE_GUIDANCE = (
     "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`"
 )
@@ -312,7 +310,9 @@ def test_codex_router_guides_auto_to_ledger_backed_stage_evidence() -> None:
 def test_codex_router_guides_dynamic_full_auto_to_ledger_backed_stage_evidence() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
     assert router.is_file(), "missing deployed Codex user prompt router"
-    payload = json.loads(_run_router(router, "/dynamic-full-auto harden staged delegation", cwd=REPO))
+    payload = json.loads(
+        _run_router(router, "/dynamic-full-auto harden staged delegation", cwd=REPO)
+    )
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert LEDGER_EVIDENCE_GUIDANCE in ctx
     assert "require-stage-evidence" in ctx
@@ -423,9 +423,9 @@ def test_codex_config_templates_and_orchestrator_projection_lock_deliver_full_st
         text = path.read_text(encoding="utf-8")
         assert DELIVER_FULL_STAGE2_RULE in text, f"{path.name} missing Stage 2 rule"
         assert DELIVER_FULL_STAGE2_NEGATIVE in text, f"{path.name} missing negative proof"
-        assert (
-            DELIVER_FULL_STAGE2_DECLARATION_ONLY in text
-        ), f"{path.name} missing declaration-only proof"
+        assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in text, (
+            f"{path.name} missing declaration-only proof"
+        )
 
 
 def test_codex_orchestrator_and_auto_wrapper_include_stage0_assumption_checkpoint() -> None:
@@ -435,9 +435,7 @@ def test_codex_orchestrator_and_auto_wrapper_include_stage0_assumption_checkpoin
             f".codex/agents/orchestrator.toml missing Stage 0 checkpoint marker: {marker!r}"
         )
 
-    wrapper = (REPO / ".agents" / "skills" / "azoth-auto" / "SKILL.md").read_text(
-        encoding="utf-8"
-    )
+    wrapper = (REPO / ".agents" / "skills" / "azoth-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert ".claude/commands/auto.md" in wrapper
     assert "Read the body source referenced by that contract" in wrapper
 

@@ -387,8 +387,10 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
         return ScopeGateResult(allowed=True, skip_entropy=True)
 
     exploratory_session = active_session_gate(root)
-    if exploratory_session and targets and all(
-        is_exploratory_write_target(root, target) for target in targets
+    if (
+        exploratory_session
+        and targets
+        and all(is_exploratory_write_target(root, target) for target in targets)
     ):
         return ScopeGateResult(allowed=True, scope_data=exploratory_session, skip_entropy=True)
 
@@ -420,7 +422,10 @@ def evaluate_scope_gate(payload: dict, *, repo_root: Path | None = None) -> Scop
     session_id = str(data.get("session_id") or "").strip()
     if not session_id:
         return ScopeGateResult(allowed=False, deny_reason="scope-gate.json missing session_id")
-    if exploratory_session and str(exploratory_session.get("session_id") or "").strip() != session_id:
+    if (
+        exploratory_session
+        and str(exploratory_session.get("session_id") or "").strip() != session_id
+    ):
         return ScopeGateResult(allowed=False, deny_reason=_ACTIVE_SESSION_MISMATCH_REMINDER)
 
     if targets and all(_is_post_scope_exempt_target(target) for target in targets):

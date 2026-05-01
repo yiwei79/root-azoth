@@ -435,7 +435,9 @@ def build_initiative_readiness_report(
     terminal_readiness = readiness_status == "complete"
 
     if terminal_readiness:
-        blocking_reasons.append("readiness.readiness_status is complete; no hydration action remains")
+        blocking_reasons.append(
+            "readiness.readiness_status is complete; no hydration action remains"
+        )
     if isinstance(candidate, dict) and candidate_status is None:
         blocking_reasons.append("candidate.status must be present")
     elif candidate_status in {"hydrated", "complete"}:
@@ -479,7 +481,11 @@ def build_initiative_readiness_report(
         blocking_reasons.append(
             "candidate.hydration_plan.proposed_title must be a non-empty string"
         )
-    if not terminal_readiness and isinstance(candidate, dict) and scaffold_command_candidate is None:
+    if (
+        not terminal_readiness
+        and isinstance(candidate, dict)
+        and scaffold_command_candidate is None
+    ):
         blocking_reasons.append(
             "candidate.hydration_plan.scaffold_command must be a non-empty string"
         )
@@ -596,9 +602,7 @@ def _require_hydration_pipeline_authority(
         )
     gate_session_id = _non_empty_string(gate.get("session_id"))
     if gate_session_id != session_id:
-        raise PlanningBankValidationError(
-            "hydration session_id must match the approved scope gate"
-        )
+        raise PlanningBankValidationError("hydration session_id must match the approved scope gate")
     if not _non_empty_string(gate.get("pipeline_command")):
         raise PlanningBankValidationError(
             "hydration requires an approved pipeline_command on scope-gate.json"
@@ -613,24 +617,17 @@ def _require_hydration_pipeline_authority(
     forbidden_overlap = sorted(forbidden_outputs & blocked_outputs)
     if forbidden_overlap:
         raise PlanningBankValidationError(
-            "scope gate explicitly forbids hydration output(s): "
-            + ", ".join(forbidden_overlap)
+            "scope gate explicitly forbids hydration output(s): " + ", ".join(forbidden_overlap)
         )
 
     approval_scope = _non_empty_string(report.get("approval_scope"))
     if not approval_scope:
-        raise PlanningBankValidationError(
-            "hydration requires a hydration-specific approval_scope"
-        )
+        raise PlanningBankValidationError("hydration requires a hydration-specific approval_scope")
     if not approval_scope.startswith("hydration_specific_"):
-        raise PlanningBankValidationError(
-            "hydration approval_scope must be hydration-specific"
-        )
+        raise PlanningBankValidationError("hydration approval_scope must be hydration-specific")
     gate_approval_scope = _non_empty_string(gate.get("approval_scope"))
     if not gate_approval_scope:
-        raise PlanningBankValidationError(
-            "scope gate approval_scope must be present for hydration"
-        )
+        raise PlanningBankValidationError("scope gate approval_scope must be present for hydration")
     if gate_approval_scope != approval_scope:
         raise PlanningBankValidationError(
             "scope gate approval_scope must match the hydration-specific approval scope"
@@ -643,9 +640,7 @@ def _require_hydration_pipeline_authority(
         raise PlanningBankValidationError("hydration report must name initiative_id")
     gate_initiative_ref = _non_empty_string(gate.get("source_initiative_ref"))
     if not gate_initiative_ref:
-        raise PlanningBankValidationError(
-            "scope gate source_initiative_ref must be present"
-        )
+        raise PlanningBankValidationError("scope gate source_initiative_ref must be present")
     if gate_initiative_ref != initiative_id:
         raise PlanningBankValidationError(
             "scope gate source_initiative_ref must match the hydrated initiative"

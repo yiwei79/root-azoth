@@ -7,16 +7,11 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCEDURE_PATH = (
-    ROOT
-    / "docs"
-    / "personal-control-plane"
-    / "PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md"
+    ROOT / "docs" / "personal-control-plane" / "PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md"
 )
 T047_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-047.yaml"
 INI_PKB_PATH = ROOT / ".azoth" / "initiative-banks" / "INI-PKB-001.yaml"
-P4_ROLLOUT_PATH = (
-    ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "V0.2.0-P4-ROLLOUT-PLAN.md"
-)
+P4_ROLLOUT_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "V0.2.0-P4-ROLLOUT-PLAN.md"
 
 
 def _load_yaml(path: Path) -> dict:
@@ -78,10 +73,7 @@ def test_procedure_names_manifest_and_receipt_contract_fields() -> None:
 def test_procedure_names_cockpit_bootstrap_deploy_verify_minimum() -> None:
     text = PROCEDURE_PATH.read_text(encoding="utf-8")
     onboarding_text = (
-        ROOT
-        / "docs"
-        / "personal-control-plane"
-        / "YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md"
+        ROOT / "docs" / "personal-control-plane" / "YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md"
     ).read_text(encoding="utf-8")
 
     required = [
@@ -136,10 +128,7 @@ def test_planning_truth_links_t047_procedure_artifact() -> None:
         for candidate in bank["candidate_slices"]
         if candidate["proposed_task_id"] == "T-047"
     )
-    assert (
-        PROCEDURE_PATH.relative_to(ROOT).as_posix()
-        in t047_candidate["research_evidence_refs"]
-    )
+    assert PROCEDURE_PATH.relative_to(ROOT).as_posix() in t047_candidate["research_evidence_refs"]
     assert PROCEDURE_PATH.relative_to(ROOT).as_posix() in rollout_text
 
 
@@ -158,8 +147,7 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     assert candidates["T-050"]["hydration_plan"]["hydrated_task_ref"] == "T-050"
 
     route_positions = [
-        rollout_text.index(task_ref)
-        for task_ref in ["T-047", "T-048", "T-049", "T-050"]
+        rollout_text.index(task_ref) for task_ref in ["T-047", "T-048", "T-049", "T-050"]
     ]
     assert route_positions == sorted(route_positions)
 
@@ -169,7 +157,4 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False
-    assert (
-        readiness["next_readiness_gate"]
-        == "operator_selected_follow_on_gate"
-    )
+    assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"

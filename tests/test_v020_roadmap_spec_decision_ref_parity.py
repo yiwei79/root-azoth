@@ -109,7 +109,9 @@ def test_codex_model_selection_shipped_continuity() -> None:
     backlog_t017 = _find_backlog_item(backlog, "T-017")
     backlog_t025 = _find_backlog_item(backlog, "T-025")
     assert backlog_t015 is not None, "T-015 must exist in backlog.yaml as the restored seed row."
-    assert backlog_t017 is not None, "T-017 must exist in backlog.yaml as the shipped selector-policy row."
+    assert backlog_t017 is not None, (
+        "T-017 must exist in backlog.yaml as the shipped selector-policy row."
+    )
     assert backlog_t025 is not None, "T-025 must exist in backlog.yaml as the runtime resolver row."
     assert backlog_t015.get("status") == "complete"
     assert backlog_t015.get("roadmap_ref") == "T-015"
@@ -125,10 +127,14 @@ def test_codex_model_selection_shipped_continuity() -> None:
     assert plt006.get("task_ref") is None, (
         "INI-PLT-006 should not point at completed T-017 as if it were still live work."
     )
-    t017_slice = next(item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-017")
+    t017_slice = next(
+        item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-017"
+    )
     assert t017_slice.get("status") == "complete"
     assert t017_slice.get("role") == "historical"
-    t025_slice = next(item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-025")
+    t025_slice = next(
+        item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-025"
+    )
     assert t025_slice.get("status") == "complete"
     assert t025_slice.get("role") == "historical"
 

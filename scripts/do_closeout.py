@@ -260,7 +260,9 @@ def enforce_not_already_closed_session(
         session_id=session_id,
     )
     session_registry_closed = session_registry_status == "closed"
-    if not session_registry_closed and not (session_state_closed and _scope_gate_indicates_closed(scope, session_id=session_id)):
+    if not session_registry_closed and not (
+        session_state_closed and _scope_gate_indicates_closed(scope, session_id=session_id)
+    ):
         return
 
     scope_closed = _scope_gate_indicates_closed(scope, session_id=session_id)
@@ -364,7 +366,9 @@ def validate_reinforcement_targets(
             "Closeout blocked: unknown reinforce episode id(s): "
             f"{quoted_ids}. Confirm exact existing episode ids before running closeout."
         )
-    ambiguous_ids = sorted({episode_id for episode_id in reinforce_episode_ids if id_counts.get(episode_id, 0) > 1})
+    ambiguous_ids = sorted(
+        {episode_id for episode_id in reinforce_episode_ids if id_counts.get(episode_id, 0) > 1}
+    )
     if ambiguous_ids:
         quoted_ids = ", ".join(repr(episode_id) for episode_id in ambiguous_ids)
         raise ReinforcementValidationError(
@@ -687,7 +691,11 @@ def _sync_initiative_alias_after_task_completion(
                 f"W2c: initiative {initiative['id']} retargeted to next slice "
                 f"{initiative['task_ref']}"
             )
-    elif initiative.get("phase") is not None or current_alias or initiative.get("spec_ref") is not None:
+    elif (
+        initiative.get("phase") is not None
+        or current_alias
+        or initiative.get("spec_ref") is not None
+    ):
         initiative["phase"] = None
         initiative["task_ref"] = None
         if "spec_ref" in initiative:
@@ -1682,9 +1690,8 @@ def run_closeout(
     if live_scope:
         session_context = dict(live_scope)
         session_context.setdefault("session_mode", "delivery")
-        if (
-            session_gate
-            and str(session_gate.get("session_id") or "") == str(live_scope.get("session_id") or "")
+        if session_gate and str(session_gate.get("session_id") or "") == str(
+            live_scope.get("session_id") or ""
         ):
             session_context["session_mode"] = normalized_session_mode(session_gate)
         full_closeout = True

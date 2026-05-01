@@ -341,7 +341,9 @@ def test_cli_resolve_outputs_spawn_fields_and_trace(tmp_path: Path) -> None:
     assert trace["stage_id"] == "auto_s2_builder"
 
 
-def test_main_no_trace_mode_prints_json_without_trace(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_no_trace_mode_prints_json_without_trace(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     trace_file = tmp_path / "selector.jsonl"
 
     assert (

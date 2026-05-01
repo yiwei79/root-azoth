@@ -26,14 +26,15 @@ def test_t050_spec_packages_stable_closeout_without_mutation_authority() -> None
     assert spec["id"] == "T-050"
     assert spec["delivery"]["delivery_pipeline"] == "governed"
     assert ".azoth/handoffs/2026-05-01-t-050-intake.yaml" in spec["context_refs"]
-    assert ".azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml" in spec[
-        "context_refs"
-    ]
+    assert (
+        ".azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml" in spec["context_refs"]
+    )
     assert "T-049" in spec["dependencies"]
     assert any("root-only stable deployment closeout" in item for item in spec["scope"])
-    assert "Do not mutate personal-root, project repos, public azoth, or external storage." in spec[
-        "non_goals"
-    ]
+    assert (
+        "Do not mutate personal-root, project repos, public azoth, or external storage."
+        in spec["non_goals"]
+    )
     assert any("local-only storage" in item for item in spec["acceptance"])
     assert "personal-root mutation" in spec["elasticity"]
 
@@ -98,11 +99,21 @@ def test_t050_closeout_artifact_records_stable_root_only_delivery() -> None:
     assert "project_repo_write" in closeout["deferred_boundaries"]
     assert closeout["next_safe_action"].startswith("Route v0.2.0 release readiness")
 
-    validation_commands = {item["command"]: item["status"] for item in closeout["validation_results"]}
-    assert validation_commands[
-        "PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_t050_stable_personal_control_plane.py -q"
-    ] == "passed"
-    assert validation_commands["python3 scripts/check_gates.py --session-id 2026-05-01-t-050-delivery --require-pipeline-gate"] == "passed"
+    validation_commands = {
+        item["command"]: item["status"] for item in closeout["validation_results"]
+    }
+    assert (
+        validation_commands[
+            "PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_t050_stable_personal_control_plane.py -q"
+        ]
+        == "passed"
+    )
+    assert (
+        validation_commands[
+            "python3 scripts/check_gates.py --session-id 2026-05-01-t-050-delivery --require-pipeline-gate"
+        ]
+        == "passed"
+    )
     assert validation_commands["python3 scripts/azoth-deploy.py --check"] == "passed"
 
 
@@ -121,9 +132,7 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     assert t051_slice["role"] == "historical"
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
-    assert initiative["discovery_status"] == (
-        "t055_cockpit_first_use_command_surface_complete"
-    )
+    assert initiative["discovery_status"] == ("t055_cockpit_first_use_command_surface_complete")
     assert initiative["candidate_slice_ref"] == "slice-pkb-001-l"
     assert initiative["next_discovery_action"].startswith("T-055 completed")
     assert not any(task["id"] == "T-053" for task in p4.get("tasks", []))
@@ -137,7 +146,9 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
 
     initiative_bank = _load_yaml(INITIATIVE_PATH)
     candidate = next(
-        item for item in initiative_bank["candidate_slices"] if item["candidate_id"] == "slice-pkb-001-g"
+        item
+        for item in initiative_bank["candidate_slices"]
+        if item["candidate_id"] == "slice-pkb-001-g"
     )
     assert candidate["status"] == "complete"
     t050_closeout = next(
@@ -148,6 +159,5 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     assert readiness["candidate_first_slice"] == "slice-pkb-001-l"
     assert readiness["readiness_status"] == "complete"
     assert (
-        readiness["freshness_status"]
-        == "current_as_of_2026_05_01_t055_cockpit_first_use_delivered"
+        readiness["freshness_status"] == "current_as_of_2026_05_01_t055_cockpit_first_use_delivered"
     )

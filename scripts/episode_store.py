@@ -110,9 +110,15 @@ def _is_allowed_reinforcement_rewrite(
         existing_sessions = []
     if not isinstance(candidate_sessions, list):
         candidate_sessions = []
-    if any(not isinstance(session_id, str) or not session_id.strip() for session_id in existing_sessions):
+    if any(
+        not isinstance(session_id, str) or not session_id.strip()
+        for session_id in existing_sessions
+    ):
         return False
-    if any(not isinstance(session_id, str) or not session_id.strip() for session_id in candidate_sessions):
+    if any(
+        not isinstance(session_id, str) or not session_id.strip()
+        for session_id in candidate_sessions
+    ):
         return False
     if len(existing_sessions) != len(set(existing_sessions)):
         return False
@@ -331,7 +337,9 @@ def merge_episode_records(
                 seen_payloads.add(fingerprint)
                 merged.append(remapped)
                 target_ids.add(str(remapped["id"]))
-                target_session_ids_by_id.setdefault(str(remapped["id"]), set()).add(producer_session_id)
+                target_session_ids_by_id.setdefault(str(remapped["id"]), set()).add(
+                    producer_session_id
+                )
                 reconcilable_key = _reconcilable_episode_key(remapped)
                 if reconcilable_key is not None:
                     reconciled_indexes[reconcilable_key] = len(merged) - 1

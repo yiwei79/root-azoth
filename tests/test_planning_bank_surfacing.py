@@ -65,10 +65,7 @@ def test_initiative_summary_keeps_hydrated_slice_when_backlog_task_is_pending(
     bank_dir = azoth_dir / "initiative-banks"
     bank_dir.mkdir(parents=True)
     (azoth_dir / "backlog.yaml").write_text(
-        "schema_version: 1\n"
-        "items:\n"
-        "  - id: T-044\n"
-        "    status: pending\n",
+        "schema_version: 1\nitems:\n  - id: T-044\n    status: pending\n",
         encoding="utf-8",
     )
     (bank_dir / "INI-PKB-001.yaml").write_text(
@@ -115,10 +112,7 @@ def test_initiative_summary_surfaces_context_recovery_when_all_candidates_closed
     bank_dir = azoth_dir / "initiative-banks"
     bank_dir.mkdir(parents=True)
     (azoth_dir / "backlog.yaml").write_text(
-        "schema_version: 1\n"
-        "items:\n"
-        "  - id: T-045\n"
-        "    status: complete\n",
+        "schema_version: 1\nitems:\n  - id: T-045\n    status: complete\n",
         encoding="utf-8",
     )
     (bank_dir / "INI-PKB-001.yaml").write_text(

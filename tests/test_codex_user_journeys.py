@@ -109,7 +109,9 @@ def test_freeform_continue_without_live_session_stays_noop(tmp_path: Path) -> No
     assert not (tmp_path / ".azoth" / "session-gate.json").exists()
 
 
-def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(tmp_path: Path) -> None:
+def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(
+    tmp_path: Path,
+) -> None:
     router = copy_codex_router_fixture(tmp_path, with_agents=True)
     payload = run_router(router, "explore the closeout UX architecture", cwd=tmp_path)
     hook = payload["hookSpecificOutput"]
@@ -117,7 +119,9 @@ def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(t
     assert hook["updatedInput"] == "$azoth-start explore the closeout UX architecture"
     assert "Exploratory intent detected" in hook["additionalContext"]
 
-    session_gate = json.loads((tmp_path / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    session_gate = json.loads(
+        (tmp_path / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
     assert session_gate["status"] == "active"
     assert session_gate["session_mode"] == "exploratory"
     assert session_gate["goal"] == "explore the closeout UX architecture"
@@ -126,7 +130,9 @@ def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(t
     assert scope_gate == {}
 
 
-def test_delivery_route_carries_matching_exploratory_session_id_in_routed_input(tmp_path: Path) -> None:
+def test_delivery_route_carries_matching_exploratory_session_id_in_routed_input(
+    tmp_path: Path,
+) -> None:
     seed_azoth_repo(
         tmp_path,
         session_gate={

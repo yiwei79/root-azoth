@@ -241,19 +241,27 @@ def _vision_from_mapping(value: Any, provenance: str) -> dict[str, Any]:
         _safe_mapping(scorecard).get("score") if isinstance(scorecard, dict) else None,
         _safe_mapping(scorecard).get("total") if isinstance(scorecard, dict) else None,
     )
-    target_band = str(
-        _first_present(vision.get("target_band"), latest.get("target_band"))
-        or DEFAULT_VISION_TARGET_BAND
-    ).strip().lower()
-    band = str(
-        _first_present(
-            vision.get("current_band"),
-            vision.get("band"),
-            latest.get("current_band"),
-            latest.get("band"),
+    target_band = (
+        str(
+            _first_present(vision.get("target_band"), latest.get("target_band"))
+            or DEFAULT_VISION_TARGET_BAND
         )
-        or "unevaluated"
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
+    band = (
+        str(
+            _first_present(
+                vision.get("current_band"),
+                vision.get("band"),
+                latest.get("current_band"),
+                latest.get("band"),
+            )
+            or "unevaluated"
+        )
+        .strip()
+        .lower()
+    )
     target_rank = VISION_BANDS.get(target_band, VISION_BANDS[DEFAULT_VISION_TARGET_BAND])
     current_rank = VISION_BANDS.get(band)
     realized = vision.get("realized")
@@ -276,9 +284,7 @@ def _vision_from_mapping(value: Any, provenance: str) -> dict[str, Any]:
     )
     return {
         "band": band,
-        "target_band": target_band
-        if target_band in VISION_BANDS
-        else DEFAULT_VISION_TARGET_BAND,
+        "target_band": target_band if target_band in VISION_BANDS else DEFAULT_VISION_TARGET_BAND,
         "score": score,
         "scorecard": scorecard if isinstance(scorecard, dict) else {},
         "realized": realized,
@@ -315,8 +321,7 @@ def _closeout_episode_child_scopes(
         selected = _safe_mapping(architect_judgment.get("selected"))
         session_id = str(payload.get("session_id") or record.get("session_id") or "").strip()
         run_id = str(
-            _safe_mapping(delegation_plan.get("run_ledger_evidence")).get("run_id")
-            or session_id
+            _safe_mapping(delegation_plan.get("run_ledger_evidence")).get("run_id") or session_id
         ).strip()
         candidate_id = str(
             loop_decision.get("candidate_id")
@@ -395,9 +400,7 @@ def _child_run_ids(child_scopes: list[dict[str, Any]]) -> list[str]:
     return list(dict.fromkeys(value for value in ids if value))
 
 
-def _campaign_detail_from_children(
-    child_scopes: list[dict[str, Any]], field: str
-) -> Any:
+def _campaign_detail_from_children(child_scopes: list[dict[str, Any]], field: str) -> Any:
     for scope in reversed(child_scopes):
         value = scope.get(field)
         if value not in (None, "", [], {}):
@@ -575,9 +578,7 @@ def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
             "summary_provenance": summary_provenance,
             "spawned_at": str((spawn or {}).get("spawned_at") or ""),
             "summary_recorded_at": str((summary or {}).get("summary_recorded_at") or ""),
-            "subagent_type": str(
-                (summary or spawn or {}).get("subagent_type") or ""
-            ),
+            "subagent_type": str((summary or spawn or {}).get("subagent_type") or ""),
             "summary_status": str((summary or {}).get("summary_status") or ""),
             "summary_disposition": str((summary or {}).get("summary_disposition") or ""),
             "structured_scores": _structured_scores(summary or {}),
@@ -612,8 +613,7 @@ def _stage_evidence_for_runs(
         evidence, run_residuals = _stage_evidence(run)
         run_id = str(run.get("run_id") or run.get("session_id") or "")
         residuals.extend(
-            risk.replace("for campaign", f"for child scope {run_id}")
-            for risk in run_residuals
+            risk.replace("for campaign", f"for child scope {run_id}") for risk in run_residuals
         )
         stages = evidence.get("stages")
         if not isinstance(stages, dict):
@@ -671,11 +671,7 @@ def _evaluator_evidence(
         )
     ]
     if not evaluator_stage_ids:
-        provenance = (
-            PROVENANCE_REPO_NATIVE
-            if any(child_quality.values())
-            else PROVENANCE_MISSING
-        )
+        provenance = PROVENANCE_REPO_NATIVE if any(child_quality.values()) else PROVENANCE_MISSING
         return {
             "provenance": provenance,
             "stages": [],
@@ -707,9 +703,7 @@ def _evaluator_evidence(
         "structured_scores": structured_scores + child_quality["structured_scores"],
         "ux_scorecards": ux_scorecards + child_quality["ux_scorecards"],
         "verification_commands": list(
-            dict.fromkeys(
-                verification_commands + child_quality["verification_commands"]
-            )
+            dict.fromkeys(verification_commands + child_quality["verification_commands"])
         ),
     }
 
@@ -725,7 +719,9 @@ def _record_matches_campaign(record: dict[str, Any], loop_id: str) -> bool:
 
 def _mapping_text(value: Any) -> str:
     if isinstance(value, dict):
-        return " ".join([str(key) for key in value.keys()] + [_mapping_text(item) for item in value.values()])
+        return " ".join(
+            [str(key) for key in value.keys()] + [_mapping_text(item) for item in value.values()]
+        )
     if isinstance(value, list):
         return " ".join(_mapping_text(item) for item in value)
     return str(value or "")
@@ -790,7 +786,9 @@ def _learning_rows(
     return rows, errors
 
 
-def _proposal_learning_rows(root: Path, loop_id: str, proposals_dir: Path) -> tuple[list[dict[str, Any]], list[str]]:
+def _proposal_learning_rows(
+    root: Path, loop_id: str, proposals_dir: Path
+) -> tuple[list[dict[str, Any]], list[str]]:
     rows: list[dict[str, Any]] = []
     errors: list[str] = []
     if not proposals_dir.is_dir():
@@ -879,11 +877,7 @@ def _truthful_inline_absence(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "provenance": PROVENANCE_REPO_NATIVE if accepted_rows else PROVENANCE_MISSING,
         "row_count": len(accepted_rows),
         "sources": sorted(
-            {
-                str(row.get("source") or "")
-                for row in accepted_rows
-                if str(row.get("source") or "")
-            }
+            {str(row.get("source") or "") for row in accepted_rows if str(row.get("source") or "")}
         ),
         "basis": (
             "Implemented or verified learning closure records that absent delegated stage "
@@ -957,7 +951,9 @@ def learning_harvester_decision(
     """Classify one learning signal without granting write authority."""
     text = _signal_text(signal)
     learning_state = str(signal.get("learning_state") or signal.get("state") or "").strip()
-    signal_id = str(signal.get("id") or signal.get("signal_id") or signal.get("summary") or "learning-signal")
+    signal_id = str(
+        signal.get("id") or signal.get("signal_id") or signal.get("summary") or "learning-signal"
+    )
     source = str(signal.get("source") or signal.get("path") or "").strip()
     protected = bool(signal.get("protected_gate_required") or signal.get("requires_human_gate"))
     protected = protected or _contains_marker(text, PROTECTED_SIGNAL_MARKERS)
@@ -969,7 +965,9 @@ def learning_harvester_decision(
     residual_signal = bool(signal.get("residual_signal"))
     internal = _contains_marker(text, INTERNAL_SELF_HEAL_MARKERS)
     severity = _signal_severity(signal, text)
-    shared_or_medium = severity in {"medium", "high", "critical"} or "shared surface" in text.casefold()
+    shared_or_medium = (
+        severity in {"medium", "high", "critical"} or "shared surface" in text.casefold()
+    )
 
     if protected:
         route = "human_gate_required"
@@ -1011,7 +1009,11 @@ def learning_harvester_decision(
         "source_refs": source_refs,
         "dedupe_key": str(signal.get("summary") or signal_id).casefold(),
         "severity": severity,
-        "blast_radius": "protected" if protected else "cross_system" if cross_system else "internal",
+        "blast_radius": "protected"
+        if protected
+        else "cross_system"
+        if cross_system
+        else "internal",
         "route": route,
         "protected_gate_required": protected,
         "selected_action": action,
@@ -1056,9 +1058,15 @@ def build_learning_harvester_report(
         key = str(decision.get("dedupe_key") or decision.get("signal_id") or "")
         current = decisions_by_key.get(key)
         if current is not None:
-            source_refs = list(dict.fromkeys(current.get("source_refs", []) + decision.get("source_refs", [])))
+            source_refs = list(
+                dict.fromkeys(current.get("source_refs", []) + decision.get("source_refs", []))
+            )
             current["source_refs"] = source_refs
-        if current is None or HARVESTER_ROUTE_PRIORITY[decision["route"]] > HARVESTER_ROUTE_PRIORITY[current["route"]]:
+        if (
+            current is None
+            or HARVESTER_ROUTE_PRIORITY[decision["route"]]
+            > HARVESTER_ROUTE_PRIORITY[current["route"]]
+        ):
             if current is not None:
                 decision["source_refs"] = list(
                     dict.fromkeys(current.get("source_refs", []) + decision.get("source_refs", []))
@@ -1110,9 +1118,7 @@ def _recommend_next_route(
             "route": "repair_evidence",
             "reason": "Stage evidence is incomplete or contradictory.",
             "confidence": 0.8,
-            "confidence_basis": [
-                f"stage_evidence provenance is {stage_evidence['provenance']}"
-            ],
+            "confidence_basis": [f"stage_evidence provenance is {stage_evidence['provenance']}"],
         }
     if (
         evaluator_evidence["provenance"] in {PROVENANCE_CONFLICT, PROVENANCE_MISSING}
@@ -1281,9 +1287,7 @@ def build_campaign_audit(
             for key, artifact in source_artifacts.items()
             if key != "proposals" or artifact["exists"] or artifact["errors"]
         ),
-        "child_scopes": _aggregate_provenance(
-            scope["provenance"] for scope in child_scopes
-        ),
+        "child_scopes": _aggregate_provenance(scope["provenance"] for scope in child_scopes),
         "stage_evidence": _effective_evidence_provenance(stage_evidence),
         "evaluator_evidence": _effective_evidence_provenance(evaluator_evidence),
         "learning_closure": _learning_score(
@@ -1307,7 +1311,11 @@ def build_campaign_audit(
     )
     state_matches_loop = bool(state and str(state.get("loop_id") or "") == loop_id)
     approval_basis = str(
-        (_safe_mapping(state.get("autonomy_budget")).get("approval_basis") if state_matches_loop else "")
+        (
+            _safe_mapping(state.get("autonomy_budget")).get("approval_basis")
+            if state_matches_loop
+            else ""
+        )
         or _campaign_detail_from_children(child_scopes, "approval_basis")
         or ""
     )
@@ -1359,10 +1367,10 @@ def build_campaign_audit(
                 or ""
             ),
             "completion_reason": completion_reason,
-            "iteration": state.get("iteration") if state_matches_loop else len(child_scopes) or None,
-            "max_iterations": budget.get("max_iterations")
-            if isinstance(budget, dict)
-            else None,
+            "iteration": state.get("iteration")
+            if state_matches_loop
+            else len(child_scopes) or None,
+            "max_iterations": budget.get("max_iterations") if isinstance(budget, dict) else None,
             "vision": vision,
             "vision_band": vision["band"],
             "vision_score": vision["score"],
@@ -1370,16 +1378,13 @@ def build_campaign_audit(
             "approval_basis": approval_basis,
             "budget": budget,
             "stop_conditions": stop_conditions,
-            "selected_seed": (
-                state.get("selected_seed") if state_matches_loop else None
-            )
+            "selected_seed": (state.get("selected_seed") if state_matches_loop else None)
             or _campaign_detail_from_children(child_scopes, "selected_seed"),
             "selected_candidate": selected_candidate,
             "route_rationale": str(
                 _campaign_detail_from_children(child_scopes, "route_rationale") or ""
             ),
-            "stage_plan": _campaign_detail_from_children(child_scopes, "stage_plan")
-            or [],
+            "stage_plan": _campaign_detail_from_children(child_scopes, "stage_plan") or [],
             "loop_decision": loop_decision,
             "closeout_episode_ids": [
                 scope["closeout_episode_id"]

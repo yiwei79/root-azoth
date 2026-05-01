@@ -744,8 +744,10 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("  roadmap  → /roadmap — versioned roadmap dashboard (D48)")
     lines.append("  plan     → /plan — structured autonomy / planning")
     lines.append("  remember → /remember — quick M3 capture (no full closeout)")
-    if session_gate and normalized_session_mode(session_gate) == "exploratory" and not is_scope_active(
-        scope, complete_ids
+    if (
+        session_gate
+        and normalized_session_mode(session_gate) == "exploratory"
+        and not is_scope_active(scope, complete_ids)
     ):
         lines.append("  closeout → /session-closeout — light closeout for exploratory session")
     else:

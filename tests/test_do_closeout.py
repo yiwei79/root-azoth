@@ -291,9 +291,7 @@ def test_governed_closeout_requires_approval_evidence_before_mutation(
         ]
         is True
     )
-    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(
-        encoding="utf-8"
-    )
+    assert "status: active" in (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
     assert "write_claim:" in (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(
         encoding="utf-8"
     )
@@ -637,7 +635,11 @@ def test_governed_closeout_blocks_unresolved_stage_spawn_before_mutation(
     )
     _set_ledger_runs(
         repo_root,
-        [_unresolved_stage_run(run_id="run-unresolved-stage", session_id="sess-123", backlog_id="BL-123")],
+        [
+            _unresolved_stage_run(
+                run_id="run-unresolved-stage", session_id="sess-123", backlog_id="BL-123"
+            )
+        ],
     )
     version_bump_calls: list[tuple[list[str], Path, bool]] = []
     monkeypatch.setattr(
@@ -770,11 +772,14 @@ def test_governed_closeout_accepts_declared_completed_stage_inline_exception(
         (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
     )
     assert ledger["runs"][0]["status"] == "complete"
-    assert len(
-        (repo_root / ".azoth" / "memory" / "episodes.jsonl")
-        .read_text(encoding="utf-8")
-        .splitlines()
-    ) == 1
+    assert (
+        len(
+            (repo_root / ".azoth" / "memory" / "episodes.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        )
+        == 1
+    )
 
 
 def test_governed_closeout_rejects_malformed_run_ledger_before_mutation(
@@ -1060,7 +1065,11 @@ def test_governed_closeout_ignores_unrelated_unresolved_stage_evidence(
     )
     _set_ledger_runs(
         repo_root,
-        [_unresolved_stage_run(run_id="run-other-session", session_id="other-session", backlog_id="BL-999")],
+        [
+            _unresolved_stage_run(
+                run_id="run-other-session", session_id="other-session", backlog_id="BL-999"
+            )
+        ],
     )
     version_bump_calls: list[tuple[list[str], Path, bool]] = []
     monkeypatch.setattr(
@@ -1075,9 +1084,7 @@ def test_governed_closeout_ignores_unrelated_unresolved_stage_evidence(
     assert version_bump_calls == [
         ([sys.executable, "scripts/version-bump.py", "--patch"], repo_root, True)
     ]
-    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(
-        encoding="utf-8"
-    ).strip()
+    assert (repo_root / ".azoth" / "memory" / "episodes.jsonl").read_text(encoding="utf-8").strip()
 
 
 def test_governed_closeout_ignores_same_session_terminal_historical_runs(
@@ -1216,9 +1223,13 @@ def test_exploratory_light_closeout_closes_session_without_version_bump(
     episode = episodes[-1]
     assert episode["context"]["verbatim_source"] == "session-gate.json"
     assert episode["context"]["verbatim_payload"] == expected_verbatim_payload
-    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    session_gate = json.loads(
+        (repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
     assert session_gate["status"] == "closed"
-    session_state = yaml.safe_load((repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8"))
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
     assert session_state["session_mode"] == "exploratory"
     assert session_state["approved_scope"] == "Exploratory session (no write scope)"
     assert version_bump_calls == []
@@ -1264,9 +1275,13 @@ def test_exploratory_light_closeout_wins_over_stale_approved_scope(
 
     do_closeout.run_closeout(repo_root)
 
-    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    session_gate = json.loads(
+        (repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
     assert session_gate["status"] == "closed"
-    session_state = yaml.safe_load((repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8"))
+    session_state = yaml.safe_load(
+        (repo_root / ".azoth" / "session-state.md").read_text(encoding="utf-8")
+    )
     assert session_state["session_mode"] == "exploratory"
     assert version_bump_calls == []
 
@@ -1826,8 +1841,22 @@ def test_governed_closeout_rejects_ambiguous_reinforcement_id_before_mutation(
     episodes_path.write_text(
         "\n".join(
             [
-                json.dumps({"id": "ep-010", "session_id": "older-a", "reinforcement_count": 0, "context": {}}),
-                json.dumps({"id": "ep-010", "session_id": "older-b", "reinforcement_count": 1, "context": {}}),
+                json.dumps(
+                    {
+                        "id": "ep-010",
+                        "session_id": "older-a",
+                        "reinforcement_count": 0,
+                        "context": {},
+                    }
+                ),
+                json.dumps(
+                    {
+                        "id": "ep-010",
+                        "session_id": "older-b",
+                        "reinforcement_count": 1,
+                        "context": {},
+                    }
+                ),
                 "",
             ]
         ),
@@ -2132,7 +2161,9 @@ def test_governed_administrative_finalize_prefers_closed_delivery_scope_over_sta
     assert episodes[-1]["context"]["verbatim_source"] == "scope-gate.json"
     assert episodes[-1]["session_id"] == "sess-123"
 
-    session_gate = json.loads((repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8"))
+    session_gate = json.loads(
+        (repo_root / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
     assert session_gate["session_id"] == "stale-exploratory"
     assert session_gate["status"] == "active"
 

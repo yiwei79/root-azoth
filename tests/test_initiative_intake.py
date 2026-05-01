@@ -120,9 +120,7 @@ def test_executable_allowed_output_is_rejected() -> None:
 
 def test_missing_forbidden_executable_output_is_rejected() -> None:
     intake = _valid_intake()
-    intake["forbidden_outputs"] = [
-        output for output in EXECUTABLE_OUTPUTS if output != "ship_task"
-    ]
+    intake["forbidden_outputs"] = [output for output in EXECUTABLE_OUTPUTS if output != "ship_task"]
 
     with pytest.raises(InitiativeIntakeValidationError, match="forbidden_outputs"):
         validate_raw_intake(intake)

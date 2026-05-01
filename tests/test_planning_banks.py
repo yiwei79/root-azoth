@@ -39,7 +39,9 @@ def _load_yaml(path: Path) -> dict:
     return loaded
 
 
-def _write_temp_initiative_bank(repo: Path, *, initiative_id: str = "INI-TEST") -> tuple[Path, dict]:
+def _write_temp_initiative_bank(
+    repo: Path, *, initiative_id: str = "INI-TEST"
+) -> tuple[Path, dict]:
     bank_path = repo / ".azoth" / "initiative-banks" / f"{initiative_id}.yaml"
     bank_path.parent.mkdir(parents=True)
     bank = _load_yaml(INITIATIVE_BANK_PATH)
@@ -303,17 +305,16 @@ def test_ini_evi_002_readiness_report_exposes_hydrated_task_capsule_slice() -> N
     assert report["candidate_slice_ref"] == "slice-evi-002-f"
     assert report["candidate_task_ref"] == "T-046"
     assert report["candidate_status"] == "hydrated"
-    assert report["proposed_title"] == "Task research capsule derivation from initiative-bank evidence"
+    assert (
+        report["proposed_title"] == "Task research capsule derivation from initiative-bank evidence"
+    )
     assert report["target_layer"] == "infrastructure"
     assert report["delivery_pipeline"] == "standard"
     assert report["acceptance"] == candidate["acceptance_criteria"]
     assert report["acceptance_criteria_status"] == "stable_for_planning"
     assert report["non_goals"] == candidate["known_non_goals"]
     assert report["non_goals_status"] == "stable_for_planning"
-    assert (
-        report["freshness_status"]
-        == "current_as_of_2026_04_30_hydrated_to_t_046"
-    )
+    assert report["freshness_status"] == "current_as_of_2026_04_30_hydrated_to_t_046"
     assert "historically bypassed" in report["non_laundering_note"]
     assert "hydrated as T-046" in report["hydration_recommendation"]
     assert report["blocking_reasons"] == [
@@ -583,9 +584,7 @@ def test_hydrate_approved_candidate_delegates_to_roadmap_scaffold_and_records_hi
         "planning_bank_closeout_history_merge_policy_v1"
     )
     assert appended_history["append_mode"] == "explicit_hydration_append"
-    assert appended_history["merge_key"] == (
-        "slice-evi-002-c:T-999:2026-04-26T13:31:45Z"
-    )
+    assert appended_history["merge_key"] == ("slice-evi-002-c:T-999:2026-04-26T13:31:45Z")
     assert loaded["readiness"]["hydration_recommendation"].startswith(
         "slice-evi-002-c has been hydrated as T-999"
     )
@@ -930,10 +929,7 @@ def test_readiness_report_fails_closed_when_hydration_approval_basis_is_missing(
     assert report["approval_basis"] is None
     assert report["ready_to_hydrate"] is False
     assert report["scaffold_command"] is None
-    assert (
-        "readiness.approval_basis must be present before hydration"
-        in report["blocking_reasons"]
-    )
+    assert "readiness.approval_basis must be present before hydration" in report["blocking_reasons"]
 
 
 def test_readiness_report_fails_closed_for_seed_only_approval_scope(tmp_path: Path) -> None:
@@ -1151,14 +1147,14 @@ def test_initiative_bank_filename_must_match_initiative_id(tmp_path: Path) -> No
 
 def test_planning_bank_coverage_report_only_requires_declared_bank_refs() -> None:
     report = planning_bank_validate.build_planning_bank_coverage_report(ROOT)
-    initiatives = {
-        item["initiative_id"]: item
-        for item in report["initiatives"]
-    }
+    initiatives = {item["initiative_id"]: item for item in report["initiatives"]}
 
     assert initiatives["INI-EVI-002"]["coverage_required"] is True
     assert initiatives["INI-EVI-002"]["covered"] is True
-    assert initiatives["INI-EVI-002"]["initiative_bank_ref"] == ".azoth/initiative-banks/INI-EVI-002.yaml"
+    assert (
+        initiatives["INI-EVI-002"]["initiative_bank_ref"]
+        == ".azoth/initiative-banks/INI-EVI-002.yaml"
+    )
     assert initiatives["INI-MEM-002"]["coverage_required"] is False
     assert initiatives["INI-MEM-002"]["covered"] is False
     assert report["summary"]["missing_required"] == 0

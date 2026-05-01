@@ -132,7 +132,9 @@ def path_is_excluded(rel_posix: str, exclude_paths: list[str]) -> bool:
         return True
     if rel_posix.endswith(ALWAYS_EXCLUDE_FILE_SUFFIXES):
         return True
-    if any(rel_posix == raw.rstrip("/") or rel_posix.startswith(raw) for raw in ALWAYS_EXCLUDE_PREFIXES):
+    if any(
+        rel_posix == raw.rstrip("/") or rel_posix.startswith(raw) for raw in ALWAYS_EXCLUDE_PREFIXES
+    ):
         return True
     for raw in exclude_paths:
         pat = raw.replace("\\", "/").rstrip("/")

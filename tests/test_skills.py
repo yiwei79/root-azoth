@@ -217,9 +217,7 @@ class TestSkillContent:
         )
 
     def test_structured_autonomy_plan_derives_success_criteria_before_tasks(self) -> None:
-        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
 
         goal_idx = content.index("### 1. Goal Restatement")
         criteria_idx = content.index("### 2. Success Criteria")
@@ -233,9 +231,7 @@ class TestSkillContent:
         assert "falsifiable" in content[criteria_idx:decomposition_idx].lower()
 
     def test_structured_autonomy_plan_maps_each_success_criterion_to_validation(self) -> None:
-        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
 
         mapping_needles = (
             "Each success criterion MUST map to exactly one validation disposition:",
@@ -251,9 +247,7 @@ class TestSkillContent:
             assert needle in content, f"structured-autonomy-plan missing {needle!r}"
 
     def test_structured_autonomy_plan_requires_non_goals_before_builder_handoff(self) -> None:
-        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
 
         checkpoint_idx = content.index("#### Non-Goals and Deferrals Checkpoint")
         decomposition_idx = content.index("### 3. Task Decomposition")
@@ -270,9 +264,7 @@ class TestSkillContent:
             assert needle in content, f"structured-autonomy-plan missing {needle!r}"
 
     def test_structured_autonomy_plan_template_places_non_goals_before_tasks(self) -> None:
-        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
         template = content[content.index("## Plan Template") :]
 
         success_criteria_idx = template.index("### Success Criteria")
@@ -284,9 +276,7 @@ class TestSkillContent:
         )
 
     def test_structured_autonomy_plan_declares_krp_and_replay_boundaries(self) -> None:
-        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
 
         for needle in (
             "T-KRP-A root behavior",

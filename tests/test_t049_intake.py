@@ -46,17 +46,12 @@ def test_t049_intake_forbids_project_mutation_and_expansion() -> None:
 
 def test_ini_pkb_t049_readiness_is_hydration_only() -> None:
     bank = _load_yaml(INI_PKB_PATH)
-    candidates = {
-        candidate["candidate_id"]: candidate for candidate in bank["candidate_slices"]
-    }
+    candidates = {candidate["candidate_id"]: candidate for candidate in bank["candidate_slices"]}
     t049 = candidates["slice-pkb-001-f"]
 
     assert t049["hydration_plan"]["mode"] == "executed"
     assert t049["hydration_plan"]["hydrated_task_ref"] == "T-049"
-    assert (
-        t049["hydration_plan"]["hydrated_spec_ref"]
-        == ".azoth/roadmap-specs/v0.2.0/T-049.yaml"
-    )
+    assert t049["hydration_plan"]["hydrated_spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-049.yaml"
     assert t049["open_questions"] == []
     assert t049["project_state_convention"]["convention_id"] == "minimal_pointer_profile_v1"
     assert t049["pilot_project_refs"] == [

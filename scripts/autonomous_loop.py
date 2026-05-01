@@ -1020,7 +1020,9 @@ def _strategy_preflight_for_decision(
         candidate.get("route_decision") if isinstance(candidate.get("route_decision"), dict) else {}
     )
     route_selected = str(route_decision.get("selected_route") or action)
-    route_state = str(route_decision.get("route_state") or _strategy_route_state_for_action(action, candidate))
+    route_state = str(
+        route_decision.get("route_state") or _strategy_route_state_for_action(action, candidate)
+    )
     route_conflict = bool(route_decision and route_selected and route_selected != action)
     protected = _is_protected(candidate)
     completion_reason = _completion_reason(state)
@@ -1117,12 +1119,12 @@ def _strategy_preflight_for_decision(
             }
         )
     if route_conflict:
-        mismatch_reason = (
-            f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
-        )
+        mismatch_reason = f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
         blocked.append({"action": action, "reason": mismatch_reason})
 
-    verdict = "allow_open" if not blocked else "stop_route_conflict" if route_conflict else "stop_blocked"
+    verdict = (
+        "allow_open" if not blocked else "stop_route_conflict" if route_conflict else "stop_blocked"
+    )
     candidate_id = _candidate_identity(candidate)
     readiness = (
         route_decision.get("readiness_evidence")
@@ -1146,8 +1148,12 @@ def _strategy_preflight_for_decision(
         ),
         "selected_route": route_selected,
         "route_state": route_state,
-        "route_authority": f"{route_selected}:{route_state}" if route_selected and route_state else action,
-        "approval_scope": str(readiness.get("approval_scope") or route_decision.get("approval_scope") or ""),
+        "route_authority": f"{route_selected}:{route_state}"
+        if route_selected and route_state
+        else action,
+        "approval_scope": str(
+            readiness.get("approval_scope") or route_decision.get("approval_scope") or ""
+        ),
         "approval_basis_present": approval_basis_present,
         "freshness_status": str(
             readiness.get("freshness_status") or "current_route_gate_and_claim_state"
@@ -1238,15 +1244,15 @@ def _validate_strategy_preflight_evidence(
         else {}
     )
     if not actual_preflight:
-        raise SystemExit(
-            "refusing to open decision with missing strategy-preflight evidence"
-        )
+        raise SystemExit("refusing to open decision with missing strategy-preflight evidence")
     if actual_preflight.get("packet_type") != "autonomous_auto_strategy_preflight":
         raise SystemExit("refusing to open decision with invalid strategy-preflight packet")
     if actual_preflight.get("may_open_scope") is not True:
         raise SystemExit("refusing to open decision because strategy-preflight blocks opening")
     if str(actual_preflight.get("verdict") or "") != "allow_open":
-        raise SystemExit("refusing to open decision because strategy-preflight did not allow opening")
+        raise SystemExit(
+            "refusing to open decision because strategy-preflight did not allow opening"
+        )
     if _strategy_preflight_signature(actual_preflight) != _strategy_preflight_signature(
         expected_preflight
     ):
@@ -1976,9 +1982,7 @@ def _proposal_matches_seed(path: Path, proposal: dict[str, Any], seed: str) -> b
 
 def _declared_proposal_candidate(root: Path, state: dict[str, Any]) -> dict[str, Any] | None:
     vision = state.get("vision") if isinstance(state.get("vision"), dict) else {}
-    declaration = (
-        vision.get("declaration") if isinstance(vision.get("declaration"), dict) else {}
-    )
+    declaration = vision.get("declaration") if isinstance(vision.get("declaration"), dict) else {}
     if str(declaration.get("selected_seed_type") or "").strip() != "proposal":
         return None
     seed = str(declaration.get("selected_seed") or "").strip()
@@ -2091,7 +2095,9 @@ def _queued_proposal_hydration_decision(
     }
     stale_route = candidate.get("stale_initiative_route_decision")
     if isinstance(stale_route, dict):
-        source_artifacts["stale_initiative_route"] = stale_route.get("route_decision") or stale_route
+        source_artifacts["stale_initiative_route"] = (
+            stale_route.get("route_decision") or stale_route
+        )
     if match.get("complete"):
         return _stop_decision(
             state,
@@ -2161,11 +2167,11 @@ def _queued_proposal_hydration_decision(
     return _stop_decision(
         state,
         "proposal_hydration_existing_task_requires_ship_approval",
-            detail=(
-                "Proposal-backed hydration candidate "
-                f"{proposal_ref} maps to existing task {task_id}; "
-                "ship_task approval and hydrated artifacts are required before delivery."
-            ),
+        detail=(
+            "Proposal-backed hydration candidate "
+            f"{proposal_ref} maps to existing task {task_id}; "
+            "ship_task approval and hydrated artifacts are required before delivery."
+        ),
         candidate={
             **candidate,
             "id": task_id,
@@ -2495,9 +2501,7 @@ def decide_next(root: Path, state_path: Path) -> dict[str, Any]:
 
     proposal_candidate = _first_proposal_candidate(root)
     if proposal_candidate:
-        proposal_decision = _proposal_discovery_decision(
-            root, state, proposal_candidate, allowed
-        )
+        proposal_decision = _proposal_discovery_decision(root, state, proposal_candidate, allowed)
         if proposal_decision:
             return proposal_decision
     if proposal_candidate and "refine_proposal" in allowed:
@@ -2569,31 +2573,23 @@ def _route_signature(route: dict[str, Any]) -> tuple[str, str, str, str, str]:
     )
 
 
-def _validate_lifecycle_route_evidence(
-    decision: dict[str, Any], expected: dict[str, Any]
-) -> None:
+def _validate_lifecycle_route_evidence(decision: dict[str, Any], expected: dict[str, Any]) -> None:
     if str(expected.get("source") or "") != "initiative-bank":
         return
     expected_route = (
-        expected.get("route_decision")
-        if isinstance(expected.get("route_decision"), dict)
-        else {}
+        expected.get("route_decision") if isinstance(expected.get("route_decision"), dict) else {}
     )
     if not expected_route:
         return
     actual_route = (
-        decision.get("route_decision")
-        if isinstance(decision.get("route_decision"), dict)
-        else {}
+        decision.get("route_decision") if isinstance(decision.get("route_decision"), dict) else {}
     )
     if not actual_route:
         raise SystemExit(
             "refusing to open initiative decision with missing lifecycle-route evidence"
         )
     if _route_signature(actual_route) != _route_signature(expected_route):
-        raise SystemExit(
-            "refusing to open initiative decision with lifecycle-route conflict"
-        )
+        raise SystemExit("refusing to open initiative decision with lifecycle-route conflict")
 
 
 def _selected_self_capture_item(state: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
@@ -5002,7 +4998,9 @@ def _route_authority_read(decision: dict[str, Any]) -> str:
     source = str(decision.get("source") or "")
     if source == "initiative-bank":
         route_decision = (
-            decision.get("route_decision") if isinstance(decision.get("route_decision"), dict) else {}
+            decision.get("route_decision")
+            if isinstance(decision.get("route_decision"), dict)
+            else {}
         )
         selected_route = str(route_decision.get("selected_route") or "")
         route_state = str(route_decision.get("route_state") or "")
@@ -5329,9 +5327,7 @@ def _format_campaign_audit(payload: dict[str, Any]) -> str:
         else {}
     )
     residuals = (
-        payload.get("residual_risks")
-        if isinstance(payload.get("residual_risks"), list)
-        else []
+        payload.get("residual_risks") if isinstance(payload.get("residual_risks"), list) else []
     )
     harvester = (
         payload.get("learning_harvester")

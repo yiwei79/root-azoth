@@ -89,23 +89,15 @@ def load_policy(path: Path | str = DEFAULT_POLICY_PATH) -> dict[str, Any]:
             raise ModelSelectionError(f"Tier {tier_name} must define preferred_aliases")
         default_effort = tier_policy.get("default_reasoning_effort")
         if default_effort not in supported_efforts:
-            raise ModelSelectionError(
-                f"Tier {tier_name} default_reasoning_effort is unsupported"
-            )
+            raise ModelSelectionError(f"Tier {tier_name} default_reasoning_effort is unsupported")
         for alias in preferred_aliases:
             if alias not in aliases:
-                raise ModelSelectionError(
-                    f"Tier {tier_name} references unknown alias {alias}"
-                )
+                raise ModelSelectionError(f"Tier {tier_name} references unknown alias {alias}")
             alias_policy = aliases[alias]
             if alias_policy.get("availability_state") != "current":
-                raise ModelSelectionError(
-                    f"Tier {tier_name} prefers non-current alias {alias}"
-                )
+                raise ModelSelectionError(f"Tier {tier_name} prefers non-current alias {alias}")
             if alias_policy.get("deprecated") is True:
-                raise ModelSelectionError(
-                    f"Tier {tier_name} prefers deprecated alias {alias}"
-                )
+                raise ModelSelectionError(f"Tier {tier_name} prefers deprecated alias {alias}")
 
     return policy
 
@@ -119,9 +111,7 @@ def resolve_codex_spawn(
     """Resolve a subagent spawn request to explicit Codex model fields."""
     active_policy = dict(policy) if policy is not None else load_policy(policy_path)
     supported_efforts = active_policy["supported_reasoning_efforts"]
-    tier_name = str(
-        spawn_request.get("model_tier") or active_policy["default_model_tier"]
-    )
+    tier_name = str(spawn_request.get("model_tier") or active_policy["default_model_tier"])
     tiers = active_policy["tiers"]
     aliases = active_policy["aliases"]
 
@@ -143,13 +133,9 @@ def resolve_codex_spawn(
         )
     requested_effort = str(requested_effort)
     if requested_effort not in supported_efforts:
-        raise ModelSelectionError(
-            "reasoning_effort must be one of low, medium, high, or xhigh"
-        )
+        raise ModelSelectionError("reasoning_effort must be one of low, medium, high, or xhigh")
 
-    explicit_alias = _optional_str(
-        spawn_request.get("model_alias") or spawn_request.get("alias")
-    )
+    explicit_alias = _optional_str(spawn_request.get("model_alias") or spawn_request.get("alias"))
     candidates = [explicit_alias] if explicit_alias else list(tier_policy["preferred_aliases"])
     mandatory_tools = tuple(_string_list(spawn_request.get("mandatory_tools", [])))
     override_ref = _optional_str(spawn_request.get("override_ref"))

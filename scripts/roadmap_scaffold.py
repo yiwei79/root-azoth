@@ -391,9 +391,7 @@ def _hydrate_existing_task(
         task.get("blocked_by")
     )
     target_layer = args.target_layer or str(task.get("target_layer") or "infrastructure")
-    delivery_pipeline = args.delivery_pipeline or str(
-        task.get("delivery_pipeline") or "standard"
-    )
+    delivery_pipeline = args.delivery_pipeline or str(task.get("delivery_pipeline") or "standard")
     target_version = args.target_version or active_version
     priority = args.priority if args.priority is not None else 3
     source = args.source or _default_source(f"roadmap-hydrate-{task_id.lower()}", created_date)

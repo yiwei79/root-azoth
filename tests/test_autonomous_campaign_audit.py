@@ -495,11 +495,14 @@ def test_build_campaign_audit_includes_learning_harvester_routes(
     assert harvester["route_counts"]["human_gate_required"] == 1
     assert harvester["route_counts"]["defer_to_intake"] == 1
     assert harvester["route_counts"]["stale_or_rejected"] == 1
-    assert sum(
-        1
-        for decision in decisions
-        if decision["signal_id"] == "low autonomous-auto lifecycle-route readiness defect"
-    ) == 1
+    assert (
+        sum(
+            1
+            for decision in decisions
+            if decision["signal_id"] == "low autonomous-auto lifecycle-route readiness defect"
+        )
+        == 1
+    )
     assert any(
         decision["protected_gate_required"] and decision["route"] == "human_gate_required"
         for decision in decisions
@@ -743,14 +746,13 @@ def test_build_campaign_audit_joins_state_history_child_run(
 
     report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
 
-    assert [scope["session_id"] for scope in report["child_scopes"]] == [
-        child_session_id
-    ]
+    assert [scope["session_id"] for scope in report["child_scopes"]] == [child_session_id]
     assert report["child_scopes"][0]["action"] == "ship_task"
     assert report["stage_evidence"]["provenance"] == "repo_native"
-    assert report["stage_evidence"]["stages"]["autonomous_auto_s4_evaluator"][
-        "run_id"
-    ] == child_session_id
+    assert (
+        report["stage_evidence"]["stages"]["autonomous_auto_s4_evaluator"]["run_id"]
+        == child_session_id
+    )
     assert report["evaluator_evidence"]["structured_scores"] == [0.88]
     assert report["verification_commands"] == [
         "python3 -m pytest tests/test_autonomous_campaign_audit.py"
@@ -907,13 +909,12 @@ def test_build_campaign_audit_joins_parent_closeout_episode_to_child_run(
     assert report["child_scopes"][0]["session_id"] == CHILD_SESSION_ID
     assert report["child_scopes"][0]["run_id"] == CHILD_SESSION_ID
     assert report["child_scopes"][0]["closeout_episode_id"] == "ep-parent-closeout"
-    assert report["child_scopes"][0]["changed_files"] == [
-        "scripts/autonomous_campaign_audit.py"
-    ]
+    assert report["child_scopes"][0]["changed_files"] == ["scripts/autonomous_campaign_audit.py"]
     assert report["stage_evidence"]["provenance"] == "repo_native"
-    assert report["stage_evidence"]["stages"]["autonomous_auto_s2_evaluator"][
-        "run_id"
-    ] == CHILD_SESSION_ID
+    assert (
+        report["stage_evidence"]["stages"]["autonomous_auto_s2_evaluator"]["run_id"]
+        == CHILD_SESSION_ID
+    )
     assert report["evaluator_evidence"]["provenance"] == "repo_native"
     assert report["evaluator_evidence"]["structured_scores"] == [0.84]
     assert report["evaluator_evidence"]["ux_scorecards"] == [
@@ -925,9 +926,7 @@ def test_build_campaign_audit_joins_parent_closeout_episode_to_child_run(
     assert "missing run ledger entry for campaign" not in report["residual_risks"]
 
 
-def test_campaign_audit_cli_json_and_plain_are_read_only(
-    tmp_path: Path, capsys
-) -> None:
+def test_campaign_audit_cli_json_and_plain_are_read_only(tmp_path: Path, capsys) -> None:
     paths = _write_complete_campaign(tmp_path)
     before = _snapshot_files(tmp_path)
 

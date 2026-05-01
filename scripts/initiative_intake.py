@@ -124,9 +124,7 @@ def _normalize_raw_intake(value: Any, *, label: str = "raw initiative intake") -
     forbidden_outputs = _require_string_list(doc, "forbidden_outputs", label=label)
 
     if approval_scope != APPROVAL_SCOPE:
-        raise InitiativeIntakeValidationError(
-            f"{label}: approval_scope must be {APPROVAL_SCOPE!r}"
-        )
+        raise InitiativeIntakeValidationError(f"{label}: approval_scope must be {APPROVAL_SCOPE!r}")
 
     allowed_tokens = {_normalize_token(item) for item in allowed_outputs}
     forbidden_tokens = {_normalize_token(item) for item in forbidden_outputs}

@@ -121,8 +121,7 @@ def render_skill(command: CockpitCommand) -> str:
         "",
         "Execution contract:",
         *[f"- {step}" for step in command.execution_steps],
-        "- Treat the rest of the user's prompt after "
-        f"`${command.skill_name}` as `$ARGUMENTS`.",
+        f"- Treat the rest of the user's prompt after `${command.skill_name}` as `$ARGUMENTS`.",
         "- Preserve the cockpit context firewall: the cockpit routes; project repos own project context.",
         "- If the user typed the literal slash command in prompt text, apply the same workflow contract.",
         "",
@@ -132,11 +131,7 @@ def render_skill(command: CockpitCommand) -> str:
         f"- Description: {command.description}",
     ]
     return (
-        "---\n"
-        + yaml.safe_dump(frontmatter, sort_keys=False)
-        + "---\n\n"
-        + "\n".join(body)
-        + "\n"
+        "---\n" + yaml.safe_dump(frontmatter, sort_keys=False) + "---\n\n" + "\n".join(body) + "\n"
     )
 
 

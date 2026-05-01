@@ -175,9 +175,7 @@ def _candidate_route_hint(
         task_ref = str(display_candidate.get("proposed_task_id") or "missing").strip()
         title = str(display_candidate.get("title") or "").strip()
         suffix = f": {title}" if title else ""
-        return (
-            f"next open candidate {display_id} -> {task_ref}{suffix}; {_APPROVAL_BOUNDARY}"
-        )
+        return f"next open candidate {display_id} -> {task_ref}{suffix}; {_APPROVAL_BOUNDARY}"
     if hydration_recommendation:
         if _APPROVAL_BOUNDARY in hydration_recommendation:
             return hydration_recommendation
@@ -185,16 +183,15 @@ def _candidate_route_hint(
     return f"refine initiative bank; {_APPROVAL_BOUNDARY}"
 
 
-def _summarize_initiative_bank(
-    path: Path, doc: dict[str, Any], repo_root: Path
-) -> dict[str, Any]:
+def _summarize_initiative_bank(path: Path, doc: dict[str, Any], repo_root: Path) -> dict[str, Any]:
     readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
     candidates = doc.get("candidate_slices")
     readiness_candidate = _candidate_by_id(candidates, readiness.get("candidate_first_slice"))
     candidate = readiness_candidate
-    if (
-        str(readiness_candidate.get("status") or "").casefold() in _CLOSED_CANDIDATE_STATUSES
-        and not _hydrated_task_is_still_open(repo_root, readiness_candidate)
+    if str(
+        readiness_candidate.get("status") or ""
+    ).casefold() in _CLOSED_CANDIDATE_STATUSES and not _hydrated_task_is_still_open(
+        repo_root, readiness_candidate
     ):
         candidate = _next_open_candidate(candidates) or readiness_candidate
     open_candidates = [
@@ -280,9 +277,7 @@ def _plain_bank_line(bank: dict[str, Any]) -> list[str]:
     readiness = str(bank.get("surface_readiness_status") or bank.get("readiness_status") or "?")
     human_decision = str(bank.get("human_decision") or "?")
     route = str(bank.get("route_hint") or "refine planning bank")
-    lines = [
-        f"  {bank_id}  [{kind}; {status}; readiness: {readiness}; human: {human_decision}]"
-    ]
+    lines = [f"  {bank_id}  [{kind}; {status}; readiness: {readiness}; human: {human_decision}]"]
     if title:
         lines.append(f"    {title}")
     if kind == "initiative":
@@ -313,9 +308,7 @@ def format_planning_bank_plain(
     return lines
 
 
-def format_planning_bank_rich(
-    summaries: dict[str, list[dict[str, Any]]], *, limit: int = 4
-) -> str:
+def format_planning_bank_rich(summaries: dict[str, list[dict[str, Any]]], *, limit: int = 4) -> str:
     """Return Rich-markup text for tracked planning-bank summaries."""
     banks = (summaries.get("design_banks") or []) + (summaries.get("initiative_banks") or [])
     if not banks:
@@ -345,7 +338,9 @@ def format_planning_bank_rich(
             candidate_id = escape(str(bank.get("candidate_id") or "?"))
             task_ref = escape(str(bank.get("candidate_task_ref") or "?"))
             candidate_status = escape(str(bank.get("candidate_status") or "?"))
-            lines.append(f"  [dim]candidate {candidate_id} -> {task_ref} ({candidate_status})[/dim]")
+            lines.append(
+                f"  [dim]candidate {candidate_id} -> {task_ref} ({candidate_status})[/dim]"
+            )
         lines.append(f"  [dim]route:[/] {route}")
         lines.append("")
     return "\n".join(lines).rstrip()

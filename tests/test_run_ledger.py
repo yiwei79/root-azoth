@@ -1120,8 +1120,7 @@ def test_validate_rejects_extra_stage_evidence_keys() -> None:
     errors = validate_ledger(data)
     assert any("stage_spawns[0]: unexpected field 'extra_spawn_field'" in error for error in errors)
     assert any(
-        "stage_summaries[0]: unexpected field 'extra_summary_field'" in error
-        for error in errors
+        "stage_summaries[0]: unexpected field 'extra_summary_field'" in error for error in errors
     )
 
 
@@ -1574,11 +1573,7 @@ def test_require_stage_evidence_rejects_paired_malformed_stage_evidence(
     run = _stage_evidence_run()
     run["stage_spawns"] = [_spawn_evidence()]
     run["stage_summaries"] = [
-        {
-            key: value
-            for key, value in _summary_evidence().items()
-            if key != "summary_disposition"
-        }
+        {key: value for key, value in _summary_evidence().items() if key != "summary_disposition"}
     ]
     ledger.write_text(
         yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
@@ -1631,12 +1626,8 @@ def test_require_stage_evidence_rejects_paired_malformed_dependency_refs(
 ) -> None:
     ledger = tmp_path / "ledger.yaml"
     run = _stage_evidence_run()
-    run["stage_spawns"] = [
-        _spawn_evidence(dependency_summary_refs=dependency_summary_refs)
-    ]
-    run["stage_summaries"] = [
-        _summary_evidence(dependency_summary_refs=dependency_summary_refs)
-    ]
+    run["stage_spawns"] = [_spawn_evidence(dependency_summary_refs=dependency_summary_refs)]
+    run["stage_summaries"] = [_summary_evidence(dependency_summary_refs=dependency_summary_refs)]
     ledger.write_text(
         yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
         encoding="utf-8",
@@ -1682,11 +1673,7 @@ def test_assert_no_unresolved_governed_run_evidence_rejects_paired_malformed_sta
     run["status"] = "paused"
     run["stage_spawns"] = [_spawn_evidence()]
     run["stage_summaries"] = [
-        {
-            key: value
-            for key, value in _summary_evidence().items()
-            if key != "summary_disposition"
-        }
+        {key: value for key, value in _summary_evidence().items() if key != "summary_disposition"}
     ]
     ledger.write_text(
         yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
@@ -1745,12 +1732,8 @@ def test_assert_no_unresolved_governed_run_evidence_rejects_paired_malformed_dep
     ledger.parent.mkdir()
     run = _stage_evidence_run()
     run["status"] = "paused"
-    run["stage_spawns"] = [
-        _spawn_evidence(dependency_summary_refs=dependency_summary_refs)
-    ]
-    run["stage_summaries"] = [
-        _summary_evidence(dependency_summary_refs=dependency_summary_refs)
-    ]
+    run["stage_spawns"] = [_spawn_evidence(dependency_summary_refs=dependency_summary_refs)]
+    run["stage_summaries"] = [_summary_evidence(dependency_summary_refs=dependency_summary_refs)]
     ledger.write_text(
         yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
         encoding="utf-8",

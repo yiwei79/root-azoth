@@ -58,7 +58,9 @@ def _merge_commit_count(repo: Path, rev: str = "HEAD") -> int:
 
 
 def _branch_exists(repo: Path, branch: str) -> bool:
-    return _run_git(repo, "show-ref", "--verify", f"refs/heads/{branch}", check=False).returncode == 0
+    return (
+        _run_git(repo, "show-ref", "--verify", f"refs/heads/{branch}", check=False).returncode == 0
+    )
 
 
 def _branch_tip(repo: Path, branch: str) -> str | None:
@@ -1691,4 +1693,7 @@ def test_worktree_sync_docs_describe_governed_reconcile_substep() -> None:
     assert "remote branch cleanup remains out of scope" in command_text
     assert "allowlist-gated" in playbook_text
     assert "Detached producer worktrees auto-materialize a local branch first" in playbook_text
-    assert "automatic cleanup after a successful integrate run also covers safe local producer branch pruning" in playbook_text
+    assert (
+        "automatic cleanup after a successful integrate run also covers safe local producer branch pruning"
+        in playbook_text
+    )

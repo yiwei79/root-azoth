@@ -148,7 +148,9 @@ def _score_source_quality(doc: dict[str, Any]) -> dict[str, Any]:
     score = 0
     urls = [str(item.get("url") or "") for item in sources if isinstance(item, dict)]
     titled = [item for item in sources if isinstance(item, dict) and _has_text(item.get("title"))]
-    findings = [item for item in sources if isinstance(item, dict) and _has_text(item.get("finding"))]
+    findings = [
+        item for item in sources if isinstance(item, dict) and _has_text(item.get("finding"))
+    ]
     http_urls = [url for url in urls if url.startswith(("https://", "http://"))]
     officialish = [
         url
@@ -301,11 +303,7 @@ def evaluate_proposal_knowledge_richness(doc: dict[str, Any]) -> dict[str, Any]:
     else:
         rating = "thin"
 
-    gaps = [
-        name
-        for name, row in dimensions.items()
-        if row["score"] < int(row["max"] * 0.65)
-    ]
+    gaps = [name for name, row in dimensions.items() if row["score"] < int(row["max"] * 0.65)]
     return {
         "score": total,
         "max": maximum,
@@ -530,11 +528,7 @@ def evaluate_initiative_bank_knowledge_richness(
     else:
         rating = "thin"
 
-    gaps = [
-        name
-        for name, row in dimensions.items()
-        if row["score"] < int(row["max"] * 0.65)
-    ]
+    gaps = [name for name, row in dimensions.items() if row["score"] < int(row["max"] * 0.65)]
     if not candidate:
         gaps.append("candidate_metadata")
     if doc.get("bank_type") != "initiative":
@@ -566,7 +560,9 @@ def evaluate_artifact_knowledge_richness(
     adapter = ARTIFACT_RICHNESS_ADAPTERS.get(normalized_type)
     if adapter is None:
         supported = ", ".join(sorted(ARTIFACT_RICHNESS_ADAPTERS))
-        raise ValueError(f"unsupported artifact_type {artifact_type!r}; expected one of: {supported}")
+        raise ValueError(
+            f"unsupported artifact_type {artifact_type!r}; expected one of: {supported}"
+        )
     return adapter.evaluate(doc, candidate_id)
 
 

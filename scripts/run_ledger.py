@@ -1060,7 +1060,9 @@ def upsert_run(
     return created, entry
 
 
-def _require_run_entry(root: Path, run_id: str, *, ledger_path: Path | None) -> tuple[Path, dict, dict]:
+def _require_run_entry(
+    root: Path, run_id: str, *, ledger_path: Path | None
+) -> tuple[Path, dict, dict]:
     resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
     data = (
         _load_ledger(resolved_ledger_path)
@@ -1409,8 +1411,7 @@ def _assert_inline_exception_pre_completion(run: dict, exception: dict, *, stage
     exception_dt = _parse_ledger_timestamp(exception.get("exception_recorded_at"))
     if exception_dt is None:
         raise ValueError(
-            f"malformed inline exception timestamp for run {run.get('run_id')!r} "
-            f"stage {stage_id!r}"
+            f"malformed inline exception timestamp for run {run.get('run_id')!r} stage {stage_id!r}"
         )
 
     created_dt = _parse_ledger_timestamp(run.get("created_at"))
@@ -2229,9 +2230,7 @@ def main() -> None:
     rsu = subs.add_parser("record-summary", help="Append typed stage-summary evidence.")
     rsu.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
     rsu.add_argument("--stage-id", required=True, metavar="STAGE_ID", help="Completed stage id.")
-    rsu.add_argument(
-        "--subagent-type", required=True, metavar="TYPE", help="Stage subagent type."
-    )
+    rsu.add_argument("--subagent-type", required=True, metavar="TYPE", help="Stage subagent type.")
     rsu.add_argument("--trigger", required=True, metavar="TRIGGER", help="Isolation trigger.")
     rsu.add_argument("--role-hint", required=True, metavar="TEXT", help="Canonical role hint.")
     rsu.add_argument(

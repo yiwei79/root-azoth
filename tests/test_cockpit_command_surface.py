@@ -23,8 +23,7 @@ from cockpit_command_surface import (  # noqa: E402
 
 def _write_minimal_docs(root: Path) -> None:
     command_lines = "\n".join(
-        f"- `{command.display_name}` / `${command.skill_name}`"
-        for command in COCKPIT_COMMANDS
+        f"- `{command.display_name}` / `${command.skill_name}`" for command in COCKPIT_COMMANDS
     )
     text = f"""# Yiwei Azoth Cockpit
 

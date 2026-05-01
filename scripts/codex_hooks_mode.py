@@ -135,9 +135,9 @@ def config_in_sync(root: Path, profile: str) -> bool:
     destination = config_path(root)
     if not destination.is_file():
         return False
-    return destination.read_text(encoding="utf-8") == config_template_path(
-        root, profile
-    ).read_text(encoding="utf-8")
+    return destination.read_text(encoding="utf-8") == config_template_path(root, profile).read_text(
+        encoding="utf-8"
+    )
 
 
 def rules_in_sync(root: Path) -> bool:
@@ -162,7 +162,9 @@ def _deploy_selected_files(root: Path, *, permission_profile: str, hook_mode: st
 
     rules_destination = rules_path(root)
     rules_destination.parent.mkdir(parents=True, exist_ok=True)
-    rules_destination.write_text((root / RULES_TEMPLATE).read_text(encoding="utf-8"), encoding="utf-8")
+    rules_destination.write_text(
+        (root / RULES_TEMPLATE).read_text(encoding="utf-8"), encoding="utf-8"
+    )
 
 
 def set_mode(root: Path, mode: str) -> int:
@@ -198,7 +200,9 @@ def set_mode(root: Path, mode: str) -> int:
     elif hook_marker.exists():
         hook_marker.unlink()
 
-    print(f"Codex permission profile: {'azoth-seamless' if permission_profile == SEAMLESS else CALM}")
+    print(
+        f"Codex permission profile: {'azoth-seamless' if permission_profile == SEAMLESS else CALM}"
+    )
     print(f"Codex hooks mode: {hook_mode}")
     print(f"Config template: {config_template_path(root, permission_profile).relative_to(root)}")
     print(f"Hooks template: {hook_template_path(root, hook_mode).relative_to(root)}")
@@ -229,7 +233,9 @@ def show_status(root: Path) -> int:
     print(
         f"Codex permission profile: {'azoth-seamless' if permission_profile == SEAMLESS else CALM}"
     )
-    print(f"Selected config template: {config_template_path(root, permission_profile).relative_to(root)}")
+    print(
+        f"Selected config template: {config_template_path(root, permission_profile).relative_to(root)}"
+    )
     print(f"Config file: {config_path(root).relative_to(root)}")
     print(f"Config in sync: {'yes' if config_sync else 'no'}")
     print(f"Tracked seamless companion: {SEAMLESS_CONFIG_DEST}")

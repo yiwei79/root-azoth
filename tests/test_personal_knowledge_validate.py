@@ -296,8 +296,14 @@ def test_batch_candidate_invalid_safety_classification_fails_closed(tmp_path: Pa
         ({"authority_home": ""}, "authority_home"),
         ({"freshness": {"review_after": "2026-05-29"}}, "freshness.reviewed_at"),
         ({"freshness": {"reviewed_at": "2026-04-29"}}, "freshness.review_after"),
-        ({"freshness": {"reviewed_at": "soon", "review_after": "2026-05-29"}}, "freshness.reviewed_at"),
-        ({"freshness": {"reviewed_at": "2026-04-29", "review_after": "later"}}, "freshness.review_after"),
+        (
+            {"freshness": {"reviewed_at": "soon", "review_after": "2026-05-29"}},
+            "freshness.reviewed_at",
+        ),
+        (
+            {"freshness": {"reviewed_at": "2026-04-29", "review_after": "later"}},
+            "freshness.review_after",
+        ),
     ],
 )
 def test_batch_candidate_review_metadata_fails_closed(

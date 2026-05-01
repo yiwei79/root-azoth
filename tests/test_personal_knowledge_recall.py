@@ -200,12 +200,7 @@ def test_semantic_metadata_lookup_uses_metadata_and_allowed_use_filter(tmp_path:
 def test_semantic_metadata_lookup_does_not_match_body_only_text(tmp_path: Path) -> None:
     personal_root = _write_personal_root(tmp_path)
     card_path = (
-        personal_root
-        / ".azoth"
-        / "knowledge"
-        / "cards"
-        / "root-azoth"
-        / "kb-root-azoth-001.yaml"
+        personal_root / ".azoth" / "knowledge" / "cards" / "root-azoth" / "kb-root-azoth-001.yaml"
     )
     _write_yaml(
         card_path,
@@ -226,12 +221,7 @@ def test_semantic_metadata_lookup_does_not_match_body_only_text(tmp_path: Path) 
 def test_freshness_status_reports_due_cards(tmp_path: Path) -> None:
     personal_root = _write_personal_root(tmp_path)
     stale_path = (
-        personal_root
-        / ".azoth"
-        / "knowledge"
-        / "cards"
-        / "root-azoth"
-        / "kb-root-azoth-004.yaml"
+        personal_root / ".azoth" / "knowledge" / "cards" / "root-azoth" / "kb-root-azoth-004.yaml"
     )
     _write_yaml(
         stale_path,
@@ -252,12 +242,7 @@ def test_freshness_status_reports_due_cards(tmp_path: Path) -> None:
 def test_recall_fails_closed_when_card_directory_contains_unapproved_yaml(tmp_path: Path) -> None:
     personal_root = _write_personal_root(tmp_path)
     _write_yaml(
-        personal_root
-        / ".azoth"
-        / "knowledge"
-        / "cards"
-        / "root-azoth"
-        / "kb-root-azoth-999.yaml",
+        personal_root / ".azoth" / "knowledge" / "cards" / "root-azoth" / "kb-root-azoth-999.yaml",
         _card("kb-root-azoth-001", id="kb-root-azoth-999"),
     )
 
@@ -270,12 +255,7 @@ def test_recall_fails_closed_when_card_directory_contains_unapproved_yaml(tmp_pa
 def test_recall_fails_closed_when_card_filename_and_id_disagree(tmp_path: Path) -> None:
     personal_root = _write_personal_root(tmp_path)
     card_path = (
-        personal_root
-        / ".azoth"
-        / "knowledge"
-        / "cards"
-        / "root-azoth"
-        / "kb-root-azoth-005.yaml"
+        personal_root / ".azoth" / "knowledge" / "cards" / "root-azoth" / "kb-root-azoth-005.yaml"
     )
     _write_yaml(card_path, _card("kb-root-azoth-005", id="kb-root-azoth-999"))
 

@@ -553,12 +553,11 @@ def _merge_versioned_roadmap_lists(
     unauthorized = sorted(
         row_id
         for row_id in union_ids
-        if row_id not in allowed_ids and baseline_locations.get(row_id) != producer_locations.get(row_id)
+        if row_id not in allowed_ids
+        and baseline_locations.get(row_id) != producer_locations.get(row_id)
     )
     if unauthorized:
-        raise ValueError(
-            "non-allowlisted roadmap task refs changed: " + ", ".join(unauthorized)
-        )
+        raise ValueError("non-allowlisted roadmap task refs changed: " + ", ".join(unauthorized))
 
     merged_tasks: list[dict[str, Any]] = []
     merged_completed: list[dict[str, Any]] = []
@@ -614,7 +613,9 @@ def _reconcile_versioned_roadmap(
     if baseline_meta != producer_meta:
         raise ValueError("roadmap selectors changed outside explicit task-level governance")
 
-    producer_versions_by_id = _roadmap_rows_by_id(producer_versions, label="producer roadmap versions")
+    producer_versions_by_id = _roadmap_rows_by_id(
+        producer_versions, label="producer roadmap versions"
+    )
     merged_versions: list[dict[str, Any]] = []
     seen_versions: set[str] = set()
 
@@ -1083,9 +1084,7 @@ def _persist_reconciled_state(sandbox_dir: Path) -> None:
         commit_result = _run_git(sandbox_dir, "commit", "--amend", "--no-edit", check=False)
     if commit_result.returncode != 0:
         raise RuntimeError(
-            commit_result.stderr.strip()
-            or commit_result.stdout.strip()
-            or "git commit failed"
+            commit_result.stderr.strip() or commit_result.stdout.strip() or "git commit failed"
         )
 
 
@@ -1365,8 +1364,7 @@ def resolve_producer_branch(repo: Path) -> tuple[str, str | None]:
                 or "git switch -c failed"
             )
             raise RuntimeError(
-                "worktree-sync: could not attach detached producer HEAD to "
-                f"'{candidate}': {detail}"
+                f"worktree-sync: could not attach detached producer HEAD to '{candidate}': {detail}"
             )
 
         if existing_tip != head_sha:
@@ -1386,8 +1384,7 @@ def resolve_producer_branch(repo: Path) -> tuple[str, str | None]:
             suffix += 1
             continue
         raise RuntimeError(
-            "worktree-sync: could not reuse detached producer branch "
-            f"'{candidate}': {detail}"
+            f"worktree-sync: could not reuse detached producer branch '{candidate}': {detail}"
         )
 
 
@@ -1581,7 +1578,9 @@ def _normalize_cleanup_candidates(ready: dict[str, object]) -> list[dict[str, st
 def _git_worktree_entries(repo: Path) -> list[dict[str, object]]:
     result = _run_git(repo, "worktree", "list", "--porcelain", check=False)
     if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "git worktree list failed")
+        raise RuntimeError(
+            result.stderr.strip() or result.stdout.strip() or "git worktree list failed"
+        )
 
     entries: list[dict[str, object]] = []
     current: dict[str, object] | None = None
@@ -1685,7 +1684,9 @@ def cleanup_integrated_branches(
         try:
             merged = _commit_is_reachable_from(repo, current_tip, target_branch)
         except RuntimeError as exc:
-            _cleanup_skip(summary, branch=branch, reason="reachability-check-failed", detail=str(exc))
+            _cleanup_skip(
+                summary, branch=branch, reason="reachability-check-failed", detail=str(exc)
+            )
             continue
         if not merged:
             _cleanup_skip(summary, branch=branch, reason="not-merged-into-target")
@@ -1923,7 +1924,9 @@ def integrate_ready_handoff(
                     file=sys.stderr,
                 )
                 return 1
-            if not unmerged_paths or any(path not in set(RECONCILED_PATHS) for path in unmerged_paths):
+            if not unmerged_paths or any(
+                path not in set(RECONCILED_PATHS) for path in unmerged_paths
+            ):
                 detail = (
                     merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge failed"
                 )
@@ -1938,7 +1941,9 @@ def integrate_ready_handoff(
             # known shared-state files such as episodes.jsonl and azoth.yaml.
         if merge_result.returncode != 0:
             detail = (
-                merge_result.stderr.strip() or merge_result.stdout.strip() or "git merge conflicted only in reconciled paths"
+                merge_result.stderr.strip()
+                or merge_result.stdout.strip()
+                or "git merge conflicted only in reconciled paths"
             )
 
         try:
@@ -2162,9 +2167,7 @@ def main(argv: list[str] | None = None) -> int:
         branch = raw_branch
 
     if (
-        args.next_ready_handoff
-        or args.integrate_ready_handoff
-        or args.mark_integrated is not None
+        args.next_ready_handoff or args.integrate_ready_handoff or args.mark_integrated is not None
     ) and not is_integrator:
         print(
             "worktree-sync: integrate actions require the active integration branch to be checked out.",

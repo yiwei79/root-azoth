@@ -58,9 +58,7 @@ def increment_reinforcement_count(
 
     episodes_path = repo_root / EPISODES_PATH
     episodes = load_episodes(episodes_path)
-    matches = [
-        episode for episode in episodes if str(episode.get("id") or "") == episode_id
-    ]
+    matches = [episode for episode in episodes if str(episode.get("id") or "") == episode_id]
     if len(matches) > 1:
         raise ReinforcementError(
             f"episode id is ambiguous: {episode_id} matches multiple stored episodes"

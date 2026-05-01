@@ -166,7 +166,9 @@ def test_welcome_plain_surfaces_active_exploratory_session_without_scope(
         ),
         encoding="utf-8",
     )
-    (azoth_dir / "run-ledger.local.yaml").write_text("schema_version: 1\nruns: []\n", encoding="utf-8")
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\nruns: []\n", encoding="utf-8"
+    )
 
     buf = io.StringIO()
     monkeypatch.setattr(welcome, "ROOT", tmp_path)
@@ -1279,8 +1281,10 @@ def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirro
     assert "sid-match" in out
 
 
-def test_session_lifecycle_doc_marks_closed_and_administratively_finalized_sessions_non_resumable() -> None:
-    doc = (Path(__file__).resolve().parent.parent / "docs" / "playbook" / "03-session-lifecycle.md")
+def test_session_lifecycle_doc_marks_closed_and_administratively_finalized_sessions_non_resumable() -> (
+    None
+):
+    doc = Path(__file__).resolve().parent.parent / "docs" / "playbook" / "03-session-lifecycle.md"
     text = doc.read_text(encoding="utf-8")
     resume_section = _section_between(text, "### Stage-aware resume", "### Entropy Tracking")
     closeout_section = _section_between(text, "## Phase 3: Close", "### Why closeout matters")
@@ -1292,7 +1296,7 @@ def test_session_lifecycle_doc_marks_closed_and_administratively_finalized_sessi
 
 
 def test_parallel_sessions_doc_separates_queued_handoff_from_cleanup_responsibilities() -> None:
-    doc = (Path(__file__).resolve().parent.parent / "docs" / "playbook" / "05-parallel-sessions.md")
+    doc = Path(__file__).resolve().parent.parent / "docs" / "playbook" / "05-parallel-sessions.md"
     text = doc.read_text(encoding="utf-8")
     workflow_section = _section_between(text, "## Safe Workflow", "## Recommended Boundaries")
     checklist_section = _section_between(

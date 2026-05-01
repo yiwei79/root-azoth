@@ -21,6 +21,7 @@ except ModuleNotFoundError:  # pragma: no cover - defensive fallback for direct 
     def safe_load_yaml_path(path: Path) -> Any:
         return yaml.load(path.read_text(encoding="utf-8"), Loader=YAML_SAFE_LOADER)
 
+
 from personal_knowledge_validate import validate_card
 
 
@@ -189,7 +190,8 @@ def recall_cards(
         cards = [
             card
             for card in cards
-            if allowed_use in [item for item in card.get("allowed_use", []) if isinstance(item, str)]
+            if allowed_use
+            in [item for item in card.get("allowed_use", []) if isinstance(item, str)]
         ]
 
     exact_id = [card for card in cards if card.get("id") == card_id_text]
@@ -198,7 +200,9 @@ def recall_cards(
 
     source_matches = [card for card in cards if source_path_text in _source_paths(card)]
     if source_matches:
-        return [_as_result(card, match_reason="source_path", as_of=as_of) for card in source_matches]
+        return [
+            _as_result(card, match_reason="source_path", as_of=as_of) for card in source_matches
+        ]
 
     if not query_text:
         return []
@@ -213,10 +217,7 @@ def recall_cards(
     if scored:
         best_score = scored[0][0]
         scored = [item for item in scored if item[0] == best_score]
-    return [
-        _as_result(card, match_reason="metadata_tokens", as_of=as_of)
-        for _, _, card in scored
-    ]
+    return [_as_result(card, match_reason="metadata_tokens", as_of=as_of) for _, _, card in scored]
 
 
 def main(argv: list[str] | None = None) -> int:

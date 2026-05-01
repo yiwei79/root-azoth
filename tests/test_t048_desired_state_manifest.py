@@ -22,14 +22,8 @@ def test_t048_manifest_records_approved_apply_boundary() -> None:
     assert manifest["schema_version"] == 1
     assert manifest["manifest_id"] == "personal-root-update-20260501-t048"
     assert manifest["release_ref"] == "v0.2.0"
-    assert (
-        manifest["product_revision"]
-        == "0e93832ea5a9caff499128a84e4b046b8d44ac34"
-    )
-    assert (
-        manifest["source_revision"]
-        == "546191b5735d3137717f06bc7cafb5bc5be83b4a"
-    )
+    assert manifest["product_revision"] == "0e93832ea5a9caff499128a84e4b046b8d44ac34"
+    assert manifest["source_revision"] == "546191b5735d3137717f06bc7cafb5bc5be83b4a"
     assert manifest["target_path"] == "/Users/yiwei/GithubRepos/personal-azoth-root"
     assert manifest["storage_policy"] == "local_only"
     assert manifest["reconciliation_mode"] == "no_op_product_already_applied"
@@ -37,10 +31,7 @@ def test_t048_manifest_records_approved_apply_boundary() -> None:
     assert manifest["approved_card_ids"] == []
     assert manifest["project_pilots"] == []
     assert manifest["source_registry_changes"] == []
-    assert (
-        manifest["rollback_ref"]
-        == "1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e"
-    )
+    assert manifest["rollback_ref"] == "1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e"
 
 
 def test_t048_manifest_keeps_forbidden_expansions_empty() -> None:

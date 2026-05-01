@@ -110,15 +110,24 @@ def test_inventory_lists_approved_sources_deterministically_without_writes(tmp_p
         "risk_reason": "Approved M2 pattern source; review and excerpt before card drafting.",
         "later_use_notes": "May inform a future reviewed personal knowledge candidate batch.",
     }
-    assert by_path[
-        ".azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md"
-    ]["recommended_card_type"] == "decision_context"
-    assert by_path[
-        ".azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md"
-    ]["recommended_card_type"] == "source_note"
-    assert by_path[
-        ".azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md"
-    ]["recommended_card_type"] == "source_note"
+    assert (
+        by_path[".azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md"][
+            "recommended_card_type"
+        ]
+        == "decision_context"
+    )
+    assert (
+        by_path[".azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md"][
+            "recommended_card_type"
+        ]
+        == "source_note"
+    )
+    assert (
+        by_path[".azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md"][
+            "recommended_card_type"
+        ]
+        == "source_note"
+    )
 
 
 def test_inventory_marks_raw_memory_and_inbox_sources_as_non_importable(tmp_path: Path) -> None:

@@ -607,7 +607,9 @@ def build_version_body(version: Any, roadmap: dict[str, Any] | None = None) -> s
     completed, cw = _normalize_task_entries(
         version.get("completed_tasks"), block_label="completed_tasks"
     )
-    deferred, dw = _normalize_task_entries(version.get("deferred_tasks"), block_label="deferred_tasks")
+    deferred, dw = _normalize_task_entries(
+        version.get("deferred_tasks"), block_label="deferred_tasks"
+    )
     pending, pw = _normalize_task_entries(version.get("tasks"), block_label="tasks")
     phase_initiatives = []
     if isinstance(roadmap, dict):
@@ -792,7 +794,11 @@ def render_dashboard(
 
     filtered_data = filter_roadmap_cross_section(data, theme=theme, track=track)
 
-    if (theme or track) and not filtered_data.get("initiatives") and not filtered_data.get("versions"):
+    if (
+        (theme or track)
+        and not filtered_data.get("initiatives")
+        and not filtered_data.get("versions")
+    ):
         filters: list[str] = []
         if theme:
             filters.append(f"theme={theme}")

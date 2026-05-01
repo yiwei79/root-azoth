@@ -88,10 +88,11 @@ Start cockpit.
 
 ## Cockpit Command Surface
 
-""" + "\n".join(
-            f"- `{command.display_name}` / `${command.skill_name}`"
-            for command in COCKPIT_COMMANDS
-        ) + """
+"""
+        + "\n".join(
+            f"- `{command.display_name}` / `${command.skill_name}`" for command in COCKPIT_COMMANDS
+        )
+        + """
 """,
     )
     _write_yaml(
@@ -155,14 +156,12 @@ Start cockpit.
         },
     )
     command_lines = "\n".join(
-        f"- `{command.display_name}` / `${command.skill_name}`"
-        for command in COCKPIT_COMMANDS
+        f"- `{command.display_name}` / `${command.skill_name}`" for command in COCKPIT_COMMANDS
     )
     for rel_path in ("AGENTS.md", "CLAUDE.md"):
         path = root / rel_path
         path.write_text(
-            path.read_text(encoding="utf-8")
-            + f"\n## Cockpit Command Surface\n\n{command_lines}\n",
+            path.read_text(encoding="utf-8") + f"\n## Cockpit Command Surface\n\n{command_lines}\n",
             encoding="utf-8",
         )
     deploy_cockpit_command_surface(root)
@@ -201,7 +200,9 @@ def test_bootstrap_verify_rejects_stale_startup_identity(tmp_path: Path) -> None
 
 def test_bootstrap_verify_requires_first_use_receipt(tmp_path: Path) -> None:
     root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
-    (root / ".azoth" / "projects" / "handoffs" / "t-055-first-use-ras-or-ray-2026-05-01.yaml").unlink()
+    (
+        root / ".azoth" / "projects" / "handoffs" / "t-055-first-use-ras-or-ray-2026-05-01.yaml"
+    ).unlink()
 
     errors = verify_cockpit_bootstrap(
         root,
@@ -267,7 +268,9 @@ def test_bootstrap_verify_rejects_missing_root_only_hook_module(tmp_path: Path) 
         run_deployed_menu_check=False,
     )
 
-    assert any("references missing root-only module codex_control_plane.py" in error for error in errors)
+    assert any(
+        "references missing root-only module codex_control_plane.py" in error for error in errors
+    )
 
 
 def test_bootstrap_verify_reuses_pointer_firewall_checks(tmp_path: Path) -> None:

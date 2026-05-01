@@ -202,9 +202,13 @@ def _validate_card_doc(doc: dict[str, Any], *, label: str) -> None:
     required = schema.get("required")
     enums = schema.get("enums")
     constraints = schema.get("constraints")
-    if not isinstance(required, list) or not isinstance(enums, dict) or not isinstance(
-        constraints,
-        dict,
+    if (
+        not isinstance(required, list)
+        or not isinstance(enums, dict)
+        or not isinstance(
+            constraints,
+            dict,
+        )
     ):
         raise PersonalKnowledgeValidationError(
             "schemas/personal-knowledge-card.schema.yaml: invalid schema contract"
@@ -269,10 +273,14 @@ def _validate_candidate(
     decisions = enums.get("candidate_decision")
     safety_classifications = enums.get("safety_classification")
     privacy_values = enums.get("privacy")
-    if not isinstance(decisions, list) or not isinstance(
-        safety_classifications,
-        list,
-    ) or not isinstance(privacy_values, list):
+    if (
+        not isinstance(decisions, list)
+        or not isinstance(
+            safety_classifications,
+            list,
+        )
+        or not isinstance(privacy_values, list)
+    ):
         raise PersonalKnowledgeValidationError(
             "schemas/personal-knowledge-import-batch.schema.yaml: missing candidate enum contract"
         )
@@ -313,7 +321,10 @@ def _validate_candidate(
 
     proposed_card = candidate_doc.get("proposed_card")
     if proposed_card is not None:
-        _validate_card_doc(_require_mapping(proposed_card, label=f"{label}: proposed_card"), label=f"{label}: proposed_card")
+        _validate_card_doc(
+            _require_mapping(proposed_card, label=f"{label}: proposed_card"),
+            label=f"{label}: proposed_card",
+        )
 
 
 def _validate_import_batch_doc(doc: dict[str, Any], *, label: str) -> None:
@@ -321,9 +332,13 @@ def _validate_import_batch_doc(doc: dict[str, Any], *, label: str) -> None:
     required = schema.get("required")
     candidate_required = schema.get("candidate_required")
     enums = schema.get("enums")
-    if not isinstance(required, list) or not isinstance(candidate_required, list) or not isinstance(
-        enums,
-        dict,
+    if (
+        not isinstance(required, list)
+        or not isinstance(candidate_required, list)
+        or not isinstance(
+            enums,
+            dict,
+        )
     ):
         raise PersonalKnowledgeValidationError(
             "schemas/personal-knowledge-import-batch.schema.yaml: invalid schema contract"
@@ -418,7 +433,9 @@ def validate_root(root: Path, *, empty_skeleton: bool = False) -> None:
     batch_files = _iter_files(root / IMPORT_BATCH_DIR)
     if empty_skeleton:
         for path in [*card_files, *batch_files]:
-            errors.append(f"{_rel_label(path, root)}: empty skeleton must not contain card or import batch files")
+            errors.append(
+                f"{_rel_label(path, root)}: empty skeleton must not contain card or import batch files"
+            )
     else:
         for path in _iter_yaml_files(root / CARD_DIR):
             try:

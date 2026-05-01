@@ -560,9 +560,12 @@ def test_next_campaign_recommendation_includes_initiative_strategy_preflight(
     assert packet["draft_campaign_declaration"]["lifecycle_route"]["route_state"] == (
         "campaign_strategy_preflight"
     )
-    assert packet["draft_campaign_declaration"]["lifecycle_route"]["readiness_evidence"][
-        "candidate_id"
-    ] == "slice-auto-001-h"
+    assert (
+        packet["draft_campaign_declaration"]["lifecycle_route"]["readiness_evidence"][
+            "candidate_id"
+        ]
+        == "slice-auto-001-h"
+    )
 
 
 def test_completed_green_stop_decision_includes_ranked_recommendations_without_mutation(
@@ -1035,7 +1038,13 @@ def test_discovered_proposal_hydration_routes_existing_pending_task_to_ship(
     )
     _write_yaml(
         tmp_path / ".azoth/backlog.yaml",
-        [{"id": "T-028", "source": "proposal-run-ledger-atomic-stage-evidence", "status": "blocked"}],
+        [
+            {
+                "id": "T-028",
+                "source": "proposal-run-ledger-atomic-stage-evidence",
+                "status": "blocked",
+            }
+        ],
     )
 
     decision = autonomous_loop.decide_next(tmp_path, state_path)
@@ -2096,9 +2105,7 @@ def test_strategy_preflight_generated_route_conflict_has_repair_action(
                 "approval_scope": "hydration_specific_slice_auto_001_h",
                 "freshness_status": "current_as_of_test",
             },
-            "source_artifacts": {
-                "initiative_bank": ".azoth/initiative-banks/INI-AUTO-001.yaml"
-            },
+            "source_artifacts": {"initiative_bank": ".azoth/initiative-banks/INI-AUTO-001.yaml"},
             "blocked_actions": [
                 {"action": "hydrate_task", "reason": "repeat hydration is blocked"}
             ],
@@ -3561,8 +3568,7 @@ def test_route_decision_capsule_completed_candidate_can_route_to_refresh_with_fr
             "candidate_first_slice": "slice-auto-001-g",
             "approval_scope": "research_to_readiness_slice_auto_001_g",
             "approval_basis": (
-                "Operator approved research-to-readiness for INI-AUTO-001 "
-                "slice-auto-001-g."
+                "Operator approved research-to-readiness for INI-AUTO-001 slice-auto-001-g."
             ),
         }
     )
@@ -3585,9 +3591,7 @@ def test_route_decision_capsule_completed_candidate_can_route_to_refresh_with_fr
         "hydrate_task",
         "ship_task",
     }
-    assert all(
-        item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"]
-    )
+    assert all(item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"])
     assert "fresh research-to-readiness approval" in capsule["ux_anchor_rationale"]["route_basis"]
 
 
@@ -3692,9 +3696,7 @@ def test_lifecycle_route_strategy_preflight_candidate_survives_completed_old_loo
         "ship_task",
         "open_next_without_strategy_preflight",
     }
-    assert all(
-        item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"]
-    )
+    assert all(item["action"] != "open_next_without_budget" for item in capsule["blocked_actions"])
 
 
 def test_decide_next_can_open_strategy_preflight_research_from_completed_old_loop(

@@ -174,7 +174,14 @@ def smoke_pwsh_install(product_root: Path, setup_level: str) -> tuple[str, Path 
         return "skipped: pwsh/powershell not found", None
     consumer = Path(tempfile.mkdtemp(prefix="azoth-consumer-smoke-pwsh-"))
     run(
-        [pwsh, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(product_root / "install.ps1")],
+        [
+            pwsh,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(product_root / "install.ps1"),
+        ],
         cwd=consumer,
         input_text=f"{setup_level}\n",
     )

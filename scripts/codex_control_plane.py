@@ -121,8 +121,10 @@ def _looks_like_actionable_freeform(prompt: str) -> bool:
 
 def _mentions_command_token_only(prompt: str) -> bool:
     stripped = prompt.strip()
-    return bool(stripped) and not stripped.startswith("/") and bool(
-        NONLEADING_COMMAND_MENTION_RE.search(stripped)
+    return (
+        bool(stripped)
+        and not stripped.startswith("/")
+        and bool(NONLEADING_COMMAND_MENTION_RE.search(stripped))
     )
 
 
@@ -394,12 +396,9 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
         "For write-enabled or governed stages, follow the gate procedure before editing."
     )
     exploratory_gate = matching_exploratory_session(root, parsed.prompt_goal)
-    if (
-        exploratory_gate
-        and (
-            not parsed.prompt_goal
-            or str(exploratory_gate.get("goal") or "").strip() == parsed.prompt_goal.strip()
-        )
+    if exploratory_gate and (
+        not parsed.prompt_goal
+        or str(exploratory_gate.get("goal") or "").strip() == parsed.prompt_goal.strip()
     ):
         guidance.append(
             "A matching exploratory session is already active. Reuse its `session_id` when "

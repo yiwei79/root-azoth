@@ -72,9 +72,7 @@ def _build_repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_sync_claude_memory_marks_pending_artifact_synced(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_sync_claude_memory_marks_pending_artifact_synced(tmp_path: Path, monkeypatch) -> None:
     repo_root = _build_repo(tmp_path)
     calls: list[tuple[Path, dict[str, object], str]] = []
 

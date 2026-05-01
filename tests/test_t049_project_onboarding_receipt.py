@@ -25,18 +25,12 @@ def test_t049_validation_report_records_pointer_only_personal_root_receipt() -> 
     assert set(report["apply"]["profile_fields_written"]) == set(
         report["apply"]["allowed_metadata_fields"]
     )
-    assert report["receipt"]["personal_root_commit"] == (
-        "aeac2fac1628623dc54bb2bb0e050f6135255280"
-    )
+    assert report["receipt"]["personal_root_commit"] == ("aeac2fac1628623dc54bb2bb0e050f6135255280")
     assert report["receipt"]["personal_root_initial_receipt_commit"] == (
         "42fcec548ac0197549bae49f0f1627e3f7bc770b"
     )
-    assert report["receipt"]["rollback_ref"] == (
-        "074748a950eefa9c5a69d63f4631a332fd899b9d"
-    )
-    assert report["post_validation"]["personal_root_status_after"]["status"] == [
-        "## main"
-    ]
+    assert report["receipt"]["rollback_ref"] == ("074748a950eefa9c5a69d63f4631a332fd899b9d")
+    assert report["post_validation"]["personal_root_status_after"]["status"] == ["## main"]
     assert report["post_validation"]["pilot_project_status_after"]["status"] == [
         "## main...origin/main"
     ]
@@ -74,12 +68,9 @@ def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> Non
     t050 = candidates["T-050"]
     assert t050["status"] == "complete"
     assert t050["hydration_plan"]["hydrated_task_ref"] == "T-050"
-    assert t050["hydration_plan"]["hydrated_spec_ref"] == (
-        ".azoth/roadmap-specs/v0.2.0/T-050.yaml"
-    )
+    assert t050["hydration_plan"]["hydrated_spec_ref"] == (".azoth/roadmap-specs/v0.2.0/T-050.yaml")
     assert any(
-        item["closeout_ref"]
-        == ".azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml"
+        item["closeout_ref"] == ".azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml"
         for item in bank["closeout_history"]
     )
 
