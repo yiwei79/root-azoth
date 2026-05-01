@@ -712,14 +712,15 @@ initiatives:
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t052_personal_cockpit_deployment_complete
-  candidate_slice_ref: slice-pkb-001-i
+  discovery_status: t053_private_backup_recovery_seed_ready
+  candidate_slice_ref: slice-pkb-001-j
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-052 deployed the local personal cockpit rename to
-    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` and recorded receipt evidence.
-    Open a separate operator-selected gate for private backup/recovery, another
-    project-consumer pilot, retrieval/source onboarding, public-product update,
-    or project-scoped writes.
+  next_discovery_action: T-053 is seeded as the private backup/recovery readiness
+    lane for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`. Next, request explicit
+    `hydration_specific_slice_pkb_001_j` approval to create roadmap/backlog/spec
+    artifacts only; backup provisioning, credentials, cloud/storage writes, cockpit
+    mutation, project writes, retrieval/source onboarding, and release work remain
+    separate gates.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
@@ -728,8 +729,9 @@ initiatives:
     onboarding, broader recall, public release, or project mutation. T-050 packaged
     stable closeout evidence; T-051 reconciled the post-closeout state and selected
     stop/defer; T-052 renamed the local personal cockpit to `yiwei-azoth-cockpit`
-    and recorded receipt evidence while keeping future backup, retrieval/source
-    onboarding, and project writes behind separate gates.
+    and recorded receipt evidence. T-053 is now seeded as the backup/recovery readiness
+    lane, keeping actual backup provisioning, retrieval/source onboarding, and project
+    writes behind separate gates.
 
     '
   decision_ref:

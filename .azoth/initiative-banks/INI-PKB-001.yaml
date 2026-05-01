@@ -674,40 +674,93 @@ candidate_slices:
   rollback_ref: aeac2fac1628623dc54bb2bb0e050f6135255280
   personal_cockpit_commit: 56dcb693cd24d4431a0ba89c37228264cf45285d
   delivered_at: '2026-05-01T09:12:00Z'
-readiness:
-  evaluated_at: '2026-05-01T09:12:00Z'
-  readiness_status: complete
-  human_decision: approved
-  classification: protected_personal_cockpit_deployment
-  source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-i
-  next_candidate_ref: slice-pkb-001-i
-  freshness_status: current_as_of_2026_05_01_t052_personal_cockpit_deployed
-  goal_clarity: personal_cockpit_local_rename_and_receipt_only
-  evidence_coverage: t051_decision_plus_t052_cockpit_receipt_and_validation
-  target_layer: infrastructure
+- candidate_id: slice-pkb-001-j
+  proposed_task_id: T-053
+  title: Private backup and recovery readiness for yiwei-azoth-cockpit
+  initiative_ref: INI-PKB-001
+  status: candidate
+  target_layer: planning
   delivery_pipeline: governed
-  approval_scope: t052_personal_cockpit_deployment_and_local_rename
-  approval_basis: 'Operator explicitly approved proceeding with T-052 personal-cockpit
-    deployment and requested renaming /Users/yiwei/GithubRepos/personal-azoth-root
-    to /Users/yiwei/GithubRepos/yiwei-azoth-cockpit through $azoth-dynamic-full-auto
-    on 2026-05-01. Approval was consumed by the local cockpit rename, cockpit identity
-    and receipt updates, validation, and root planning-truth closeout. It did not
-    authorize project source mutation, retrieval/source onboarding, credentials,
-    cloud/storage provisioning, public product mutation, release publication, governance,
-    kernel, or M1 changes.
+  summary: After T-052 established `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+    as the live personal cockpit, define the private backup and recovery lane before
+    adding more project consumers or broadening retrieval/source onboarding. This
+    seed captures desired backup/recovery procedures, recovery-test acceptance, and
+    approval boundaries without provisioning storage, reading credentials, or mutating
+    the cockpit.
+  acceptance_criteria:
+  - The lane defines local/private backup choices, restore verification, rollback
+    expectations, and recovery evidence for `yiwei-azoth-cockpit`.
+  - The task explicitly separates planning/readiness from backup provisioning,
+    credential access, cloud account setup, storage writes, and recovery execution.
+  - The output names what must be true before the cockpit can safely coordinate more
+    projects or retrieval/source onboarding.
+  - The lane preserves pointer-only project profile boundaries and does not mutate
+    any project repo.
+  - A future hydration must create only roadmap/backlog/spec artifacts until the operator
+    opens a separate backup implementation gate.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-052.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md#rollback
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#open-questions-and-deferred-work
+  known_non_goals:
+  - No backup provisioning or storage writes.
+  - No credential access or cloud account provisioning.
+  - No personal-cockpit mutation.
+  - No project repo write or source scanning.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector index expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-resilience-readiness
+  hydration_plan:
+    proposed_title: Private backup and recovery readiness for yiwei-azoth-cockpit
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Private backup
+      and recovery readiness for yiwei-azoth-cockpit" --initiative-ref INI-PKB-001
+      --target-layer planning --delivery-pipeline governed --priority 1 --source
+      INI-PKB-001-private-backup-recovery-readiness --blocked-by T-052
+    pre_hydration_requirements:
+    - A fresh approved hydration scope must name `hydration_specific_slice_pkb_001_j`.
+    - Hydration must create only roadmap/backlog/spec artifacts for T-053.
+    - Hydration must not provision storage, access credentials, mutate the cockpit,
+      mutate project repos, onboard sources, expand retrieval, publish a release, or
+      change governance/kernel/M1 surfaces.
+    mode: proposed
+readiness:
+  evaluated_at: '2026-05-01T09:45:17Z'
+  readiness_status: ready_to_hydrate
+  human_decision: approved
+  classification: cockpit_resilience_planning_seed
+  source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
+  candidate_first_slice: slice-pkb-001-j
+  next_candidate_ref: slice-pkb-001-j
+  freshness_status: current_as_of_2026_05_01_t053_backup_recovery_seed_ready
+  goal_clarity: private_backup_recovery_readiness_before_more_project_or_retrieval_expansion
+  evidence_coverage: t052_cockpit_receipt_plus_deployment_procedure_rollback_boundary
+  target_layer: planning
+  delivery_pipeline: governed
+  approval_scope: t053_private_backup_recovery_seed_only
+  approval_basis: 'Operator asked on 2026-05-01 to seed the next proper lane after
+    T-052. Approval covers root-only planning-bank seeding for the private backup/recovery
+    readiness lane: adding slice-pkb-001-j / T-053 as the next candidate, a seed
+    handoff, roadmap next-action, and validation. It does not authorize hydration,
+    backup provisioning, credential access, cloud account provisioning, storage writes,
+    personal-cockpit mutation, project repo writes, retrieval/source onboarding,
+    public product mutation, release publication, governance, kernel, or M1 changes.
 
     '
-  acceptance_criteria_status: stable_for_slice_pkb_001_i
-  non_goals_status: stable_for_slice_pkb_001_i
-  hydration_recommendation: T-052 deployed the local cockpit rename and receipt evidence.
-    Do not repeat hydration or delivery; open a separate operator-selected gate for
-    private backup/recovery, another project-consumer pilot, retrieval/source onboarding,
-    public-product update, or project-scoped writes.
+  acceptance_criteria_status: stable_for_slice_pkb_001_j
+  non_goals_status: stable_for_slice_pkb_001_j
+  hydration_recommendation: Hydrate slice-pkb-001-j as T-053 only after a fresh
+    `hydration_specific_slice_pkb_001_j` scope. Keep hydration roadmap/backlog/spec-only;
+    backup provisioning, credentials, cloud/storage writes, cockpit mutation, project
+    writes, retrieval/source onboarding, and release work require separate gates.
   allowed_outputs:
-  - personal_cockpit_deployment_receipt
+  - initiative_bank_candidate_seed
   - initiative_bank_readiness_update
-  - roadmap_delivery_state_update
+  - roadmap_next_action_update
+  - seed_handoff
   - validation_report
   forbidden_outputs:
   - credential_access
@@ -722,20 +775,26 @@ readiness:
   - public_azoth_release
   - public_product_mutation
   - governance_change
-  - implementation_work
+  - roadmap_backlog_spec_hydration
+  - backup_provisioning
+  - storage_write
   - kernel_change
   - m1_change
   blocked_actions:
-  - repeat_personal_cockpit_rename
-  - public_product_mutation
-  - project_repo_write
+  - roadmap_backlog_spec_hydration
+  - backup_provisioning
   - storage_backup_provisioning
+  - credential_access
+  - cloud_account_provisioning
+  - personal_cockpit_mutation
+  - project_repo_write
   - retrieval_indexing
   - source_registry_onboarding
+  - public_product_mutation
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: operator_selected_follow_on_gate
+  next_readiness_gate: hydration_specific_slice_pkb_001_j
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card

@@ -16,6 +16,9 @@ T052_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-052.yaml"
 T052_HANDOFF_PATH = (
     ROOT / ".azoth" / "handoffs" / "2026-05-01-t-052-personal-cockpit-deployment.yaml"
 )
+T053_SEED_PATH = (
+    ROOT / ".azoth" / "handoffs" / "2026-05-01-t-053-private-backup-recovery-seed.yaml"
+)
 
 
 def _load_yaml(path: Path) -> dict:
@@ -74,15 +77,15 @@ def test_ini_pkb_marks_t051_stop_defer_decision_complete() -> None:
     assert candidate["selected_lane"] == "stop_defer"
 
     readiness = bank["readiness"]
-    assert readiness["readiness_status"] == "complete"
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-i"
-    assert readiness["approval_scope"] == "t052_personal_cockpit_deployment_and_local_rename"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-j"
+    assert readiness["approval_scope"] == "t053_private_backup_recovery_seed_only"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert readiness["ship_authorized"] is False
-    assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
-    assert "T-052 deployed" in readiness["hydration_recommendation"]
+    assert readiness["next_readiness_gate"] == "hydration_specific_slice_pkb_001_j"
+    assert "Hydrate slice-pkb-001-j" in readiness["hydration_recommendation"]
 
 
 def test_t051_delivery_closes_roadmap_backlog_and_preserves_spec() -> None:
@@ -177,8 +180,8 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
     t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
-    assert initiative["discovery_status"] == "t052_personal_cockpit_deployment_complete"
-    assert initiative["candidate_slice_ref"] == "slice-pkb-001-i"
+    assert initiative["discovery_status"] == "t053_private_backup_recovery_seed_ready"
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-j"
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
     assert not any(task.get("id") == "T-052" for task in p4.get("tasks", []))
@@ -199,6 +202,36 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     )
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-i"
-    assert readiness["readiness_status"] == "complete"
-    assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
+    assert readiness["readiness_status"] == "ready_to_hydrate"
+    assert readiness["next_readiness_gate"] == "hydration_specific_slice_pkb_001_j"
+
+
+def test_t053_seed_selects_backup_recovery_without_provisioning() -> None:
+    seed = _load_yaml(T053_SEED_PATH)
+    bank = _load_yaml(INI_PKB_PATH)
+    candidates = {
+        candidate["candidate_id"]: candidate for candidate in bank["candidate_slices"]
+    }
+    candidate = candidates["slice-pkb-001-j"]
+
+    assert seed["selected_lane"] == "private_backup_recovery_readiness"
+    assert seed["gate"]["mutation_authority"]["backup_provisioning"] is False
+    assert seed["gate"]["mutation_authority"]["credential_access"] is False
+    assert seed["seeded_candidate"]["proposed_task_id"] == "T-053"
+    assert seed["seeded_candidate"]["next_readiness_gate"] == (
+        "hydration_specific_slice_pkb_001_j"
+    )
+
+    assert candidate["proposed_task_id"] == "T-053"
+    assert candidate["status"] == "candidate"
+    assert candidate["target_layer"] == "planning"
+    assert candidate["delivery_pipeline"] == "governed"
+    assert "No backup provisioning or storage writes." in candidate["known_non_goals"]
+    assert "No credential access or cloud account provisioning." in candidate[
+        "known_non_goals"
+    ]
+    assert candidate["hydration_plan"]["mode"] == "proposed"
+    assert "Private backup and recovery readiness" in candidate["hydration_plan"][
+        "scaffold_command"
+    ]
