@@ -694,22 +694,29 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-050
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t049_project_onboarding_complete
+  discovery_status: t050_stable_deployment_closeout_complete
   candidate_slice_ref: slice-pkb-001-g
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-049 project onboarding evidence is packaged. Hydrate or
-    open T-050 stable personal-control-plane deployment closeout only after explicit
-    operator approval; future project writes require a separate project-specific
-    gate.
+  next_discovery_action: T-050 closeout is complete. Route v0.2.0 release readiness
+    through evaluator/orchestrator closeout, and keep future personal-root, project,
+    storage, retrieval, source-onboarding, and public-release work behind separate
+    approvals.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
     personal-root rehearsal, and T-049 pointer-only project onboarding pilot proved
     the pointer/card, desired-state, and project-profile route before source registry
-    onboarding, broader recall, public release, or project mutation.
+    onboarding, broader recall, public release, or project mutation. T-050 is now
+    the root-only closeout task that packages evidence, cadence, storage policy,
+    residual risk, and next safe release action.
 
     '
   decision_ref:
@@ -2327,3 +2334,4 @@ versions:
     completed_date: '2026-05-01'
     decision_ref: []
   - {id: T-049, title: "Project onboarding pilot through personal control plane", completed_date: "2026-05-01", decision_ref: []}
+  - {id: T-050, title: "Stable personal-control-plane deployment closeout", completed_date: "2026-05-01", decision_ref: []}

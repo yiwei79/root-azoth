@@ -1,0 +1,97 @@
+id: T-050
+roadmap_version: v0.2.0
+title: Stable personal-control-plane deployment closeout
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D47
+- D48
+- D50
+- D52
+intent: >
+  Close the stable personal-control-plane deployment loop in root-azoth by
+  packaging the T-047 procedure, T-048 personal-root rehearsal, and T-049
+  pointer-only project onboarding evidence into one auditable closeout. The
+  closeout should make the v0.2.0 stabilization posture explicit before any
+  further personal-root mutation, project write, source onboarding, retrieval
+  expansion, private backup setup, or public release work.
+problem: >
+  The personal-control-plane deployment has passed through procedure design,
+  desired-state rehearsal, and a pointer-only project pilot, but the release is
+  not architecturally stable until the evidence chain, update cadence, storage
+  policy, residual risks, and next approval boundaries are recorded together.
+  Without this closeout, future sessions can easily confuse a hydrated closeout
+  task with permission to mutate personal-root, provision backup storage, scan
+  projects, or publish public Azoth.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/handoffs/2026-05-01-t-050-intake.yaml
+- .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+- .azoth/roadmap-specs/v0.2.0/T-047.yaml
+- .azoth/handoffs/2026-05-01-t-048-validation-report.yaml
+- .azoth/roadmap-specs/v0.2.0/T-049.yaml
+- .azoth/handoffs/2026-05-01-t-049-validation-report.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+- .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md
+scope:
+- Open a fresh governed T-050 delivery gate before writing the final closeout
+  report or changing any delivery state.
+- Produce a root-only stable deployment closeout artifact that links T-047,
+  T-048, and T-049 evidence, including personal-root receipt references and
+  commits where those receipts already exist.
+- Document the update cadence from root-azoth to public azoth to personal root
+  to project consumers without executing a public release or automatic update.
+- Record that local-only storage is accepted for this closeout, while
+  private remote or encrypted backup is deferred to a separately approved task.
+- Surface residual risks, deferred boundaries, and the next safe operator action
+  for the stabilization release and personal control-plane deployment.
+- Validate root-azoth, personal-root, and pilot project state read-only as
+  evidence; do not turn validation into mutation authority.
+non_goals:
+- Do not mutate personal-root, project repos, public azoth, or external storage.
+- Do not scan, summarize, import, or index project source files.
+- Do not onboard source registries or expand recall, graph, vector, or retrieval
+  surfaces.
+- Do not provision private remote storage, encrypted backup, cloud accounts, or
+  credentials.
+- Do not publish a public Azoth release or create a release tag.
+- Do not change governance, kernel, M1, or protected instruction surfaces.
+- Do not treat this closeout as approval for future automatic project updates.
+acceptance:
+- The T-050 delivery gate names the root-only closeout target, source evidence,
+  allowed outputs, forbidden outputs, validation commands, and rollback boundary
+  before delivery begins.
+- The closeout artifact links the T-047 procedure path, T-048 validation
+  evidence, T-049 validation evidence, and existing personal-root receipt refs.
+- The closeout documents update cadence across root-azoth, public azoth,
+  personal root, and project consumers without performing those updates.
+- The storage-policy section accepts local-only storage for the stable closeout
+  and moves private remote or encrypted backup to a separate explicit approval
+  path.
+- Residual risks and deferred boundaries are explicit, especially personal-root
+  mutation, project writes, retrieval expansion, source onboarding, private
+  backup setup, public release, credentials, governance, kernel, and M1.
+- Validation confirms planning-bank/roadmap alignment, gate truth, root tests for
+  the personal-control-plane lane, personal-root status, pilot project status,
+  deploy-check parity, and diff hygiene.
+dependencies:
+- T-049
+delivery:
+  target_layer: planning
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = open a governed T-050 delivery gate and restate the root-only
+  closeout boundary. Phase 2 = write the evidence/cadence/storage/risk closeout
+  artifact and run focused validation. Phase 3 = route the stabilization release
+  to the next safe action. Stop immediately if delivery requires personal-root
+  mutation, project writes, source onboarding, retrieval expansion, credentials,
+  cloud or backup provisioning, public release, governance, kernel, or M1
+  approval.

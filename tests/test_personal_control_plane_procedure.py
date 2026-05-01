@@ -127,10 +127,8 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
     assert candidates["T-048"]["hydration_plan"]["mode"] == "executed"
     assert candidates["T-049"]["hydration_plan"]["mode"] == "executed"
     assert candidates["T-049"]["hydration_plan"]["hydrated_task_ref"] == "T-049"
-    assert (
-        candidates["T-050"]["hydration_plan"]["mode"]
-        == "future_after_project_onboarding_pilot"
-    )
+    assert candidates["T-050"]["hydration_plan"]["mode"] == "executed"
+    assert candidates["T-050"]["hydration_plan"]["hydrated_task_ref"] == "T-050"
 
     route_positions = [
         rollout_text.index(task_ref)
@@ -141,5 +139,10 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
     readiness = bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-g"
     assert readiness["next_candidate_ref"] == "slice-pkb-001-g"
-    assert readiness["readiness_status"] == "continue_research"
-    assert readiness["human_decision"] == "pending"
+    assert readiness["readiness_status"] == "complete"
+    assert readiness["human_decision"] == "approved"
+    assert readiness["delivery_authorized"] is False
+    assert (
+        readiness["next_readiness_gate"]
+        == "release_readiness_requires_evaluator_orchestrator_gate"
+    )

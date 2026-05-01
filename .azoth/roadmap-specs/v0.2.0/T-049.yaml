@@ -37,7 +37,8 @@ scope:
   and pilot project repo `/Users/yiwei/GithubRepos/ras or ray`.
 - Create only pointer-level project profile state unless a separate
   project-specific write scope is approved.
-- Preserve the minimal pointer profile convention: project id, title, repo path,
+- >
+  Preserve the minimal pointer profile convention: project id, title, repo path,
   default branch, profile mode, and handoff receipt reference.
 - Record receipt evidence for source, target, approval basis, validation result,
   rollback reference, and residual risk.

@@ -3776,3 +3776,22 @@ items:
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-048
+- id: T-050
+  title: Stable personal-control-plane deployment closeout
+  source: INI-PKB-001-stable-personal-control-plane-deployment
+  target_layer: planning
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  description: Package the root-only stable personal-control-plane deployment closeout
+    by linking T-047/T-048/T-049 evidence, documenting release/update cadence, accepting
+    local-only storage for this closeout, and surfacing residual risks and deferred
+    approval boundaries. Delivery does not authorize personal-root mutation, project
+    writes, retrieval expansion, source onboarding, private backup provisioning, public
+    release, credentials, cloud provisioning, governance, kernel, or M1 changes.
+  roadmap_ref: T-050
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-049

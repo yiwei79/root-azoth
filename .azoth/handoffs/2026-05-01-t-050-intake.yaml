@@ -1,0 +1,74 @@
+schema_version: 1
+intake_id: t050-stable-personal-control-plane-closeout-20260501
+session_id: 2026-05-01-t-050-hydration
+candidate_ref: INI-PKB-001#slice-pkb-001-g
+proposed_task_id: T-050
+title: Stable personal-control-plane deployment closeout
+decision: ready_to_hydrate_planning_scaffold
+approved_at: '2026-05-01T07:16:00Z'
+approval_scope: hydration_specific_slice_pkb_001_g
+approval_basis: Operator asked Codex on 2026-05-01 to proceed to T-050 stable
+  personal-control-plane deployment and to think architecturally before moving on.
+  Approval covers only roadmap/backlog/spec hydration and initiative-bank readiness
+  updates for the closeout task.
+architectural_disposition:
+  route: root_only_closeout_packaging_before_any_further_deployment_mutation
+  evidence_chain:
+  - T-047 established the cloud-native personal-control-plane procedure path.
+  - T-048 rehearsed desired-state personal-root update mechanics and packaged receipt
+    evidence.
+  - T-049 proved pointer-only project onboarding with a personal-root profile and
+    receipt while leaving the pilot project repo untouched.
+  storage_policy: local_only_accepted_for_t050_closeout
+  storage_policy_follow_up: Private remote or encrypted backup remains a separate
+    task that needs its own approval, credential boundary, and rollback plan.
+  receipt_summary_policy: Summarize root-side receipt evidence and personal-root
+    receipt references in T-050; do not copy source data, credentials, project code,
+    or private content into root-azoth.
+  cadence_policy: Document the release/update cadence from root-azoth to public
+    azoth to personal root to project consumers, but do not execute a public release
+    or automatic update path in this hydration.
+source_evidence_refs:
+- .azoth/roadmap-specs/v0.2.0/T-047.yaml
+- .azoth/handoffs/2026-05-01-t-048-validation-report.yaml
+- .azoth/roadmap-specs/v0.2.0/T-049.yaml
+- .azoth/handoffs/2026-05-01-t-049-validation-report.yaml
+- /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+allowed_outputs:
+- hydrated_t050_roadmap_task
+- hydrated_t050_backlog_row
+- hydrated_t050_task_spec
+- initiative_bank_readiness_update
+- focused_validation
+forbidden_outputs:
+- t050_delivery
+- personal_root_mutation
+- project_repo_write
+- project_code_mutation
+- source_registry_onboarding
+- retrieval_indexing
+- storage_backup_provisioning
+- public_azoth_release
+- credential_access
+- cloud_account_provisioning
+- governance_change
+- kernel_change
+- m1_change
+hydration_boundary:
+  can_hydrate_task_scaffold: true
+  can_deliver_task: false
+  can_mutate_personal_root: false
+  can_mutate_project_repo: false
+  requires_fresh_delivery_gate_before:
+  - writing T-050 closeout evidence as delivered state
+  - mutating personal-root
+  - changing any project repo file
+  - provisioning private remote or encrypted backup storage
+  - onboarding source registries
+  - expanding retrieval or indexes
+  - publishing public azoth
+next_safe_action: Hydrate T-050 as roadmap/backlog/spec only. Delivery must open
+  a fresh governed T-050 gate and stay root-only unless the operator separately
+  approves personal-root mutation or storage backup work.

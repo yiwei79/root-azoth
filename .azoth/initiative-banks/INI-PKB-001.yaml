@@ -494,7 +494,7 @@ candidate_slices:
   proposed_task_id: T-050
   title: Stable personal-control-plane deployment closeout
   initiative_ref: INI-PKB-001
-  status: candidate
+  status: complete
   target_layer: planning
   delivery_pipeline: governed
   summary: 'After the project onboarding pilot, close the personal-control-plane deployment
@@ -511,6 +511,7 @@ candidate_slices:
   - Storage policy is either accepted as local-only or moved to a separately approved
     private remote/encrypted backup task.
   research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-intake.yaml
   - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md#follow-on-route
   - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
   - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-ux
@@ -520,40 +521,47 @@ candidate_slices:
   - No broad source import.
   - No retrieval or graph expansion.
   - No public release without a release-specific gate.
-  open_questions:
-  - Is local-only storage sufficient after the first project pilot?
-  - Which receipt evidence should be summarized back into root-azoth?
+  open_questions: []
   recommended_phase: final-personal-control-plane-deployment
   hydration_plan:
     proposed_title: Stable personal-control-plane deployment closeout
-    mode: future_after_project_onboarding_pilot
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-control-plane
+      deployment closeout" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+      governed --priority 1 --source INI-PKB-001-stable-personal-control-plane-deployment
+      --blocked-by T-049
+    hydrated_task_ref: T-050
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
+    hydrated_at: '2026-05-01T07:19:00Z'
 readiness:
-  readiness_status: continue_research
-  human_decision: pending
+  readiness_status: complete
+  human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-g
   next_candidate_ref: slice-pkb-001-g
-  freshness_status: current_as_of_2026_05_01_t049_delivered
-  approval_scope: t050_closeout_not_yet_approved
-  approval_basis: 'T-049 delivery is complete as a pointer-only personal-root project
-    profile and receipt. The next candidate is slice-pkb-001-g / T-050 stable closeout,
-    but no T-050 hydration or delivery has been approved yet.
+  freshness_status: current_as_of_2026_05_01_t050_closeout_complete
+  approval_scope: t050_root_only_closeout_delivered
+  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed to T-050 stable personal-control-plane
+    deployment closeout and approved the root-only delivery gate. That approval has
+    now been consumed to deliver the T-050 closeout artifact and planning-truth updates.
+    It does not authorize personal-root mutation, project repo writes, storage backup
+    provisioning, retrieval expansion, public release, credentials, cloud account
+    provisioning, governance, kernel, or M1 changes.
 
     '
   acceptance_criteria_status: present_for_slice_pkb_001_g
   non_goals_status: bounded_for_slice_pkb_001_g
-  hydration_recommendation: T-049 project onboarding evidence is packaged. Hydrate
-    or open T-050 stable personal-control-plane deployment closeout only after explicit
-    operator approval; keep future project writes behind a separate project-specific
-    gate.
+  hydration_recommendation: slice-pkb-001-g has been delivered as root-only T-050
+    closeout. Do not repeat hydration or delivery; route release readiness forward
+    and keep personal-root, project, storage, retrieval, source-onboarding, and public-release
+    work behind separate approvals.
   allowed_outputs:
-  - roadmap_task
-  - backlog_row
-  - task_spec
+  - root_only_closeout_report
+  - roadmap_delivery_state_update
+  - backlog_delivery_state_update
   - initiative_bank_readiness_update
-  - scope_card
-  - validation_report
+  - focused_validation
   forbidden_outputs:
   - credential_access
   - personal_root_mutation
@@ -574,7 +582,7 @@ readiness:
   delivery_authorized: false
   hydrate_authorized: false
   ship_authorized: false
-  next_readiness_gate: t050_closeout_requires_explicit_operator_approval
+  next_readiness_gate: release_readiness_requires_evaluator_orchestrator_gate
 hydration_history:
 - hydrated_at: '2026-04-29T19:45:53Z'
   session_id: 2026-04-29-pkb-a-scope-card
@@ -715,6 +723,42 @@ hydration_history:
     --blocked-by T-048
   result: Created roadmap/backlog/spec artifacts for T-049; implementation and shipping
     remain separate.
+- hydrated_at: '2026-05-01T07:19:00Z'
+  session_id: 2026-05-01-t-050-hydration
+  candidate_slice_ref: slice-pkb-001-g
+  task_ref: T-050
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  backlog_ref: T-050
+  roadmap_ref: T-050
+  approval_scope: hydration_specific_slice_pkb_001_g
+  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed to T-050 stable personal-control-plane
+    deployment and to think architecturally before moving on. Approval covers roadmap/backlog/spec
+    hydration and initiative-bank readiness updates only; it does not authorize T-050
+    delivery, personal-root mutation, project repo writes, storage backup provisioning,
+    retrieval expansion, public release, credentials, cloud account provisioning,
+    governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-g:T-050:2026-05-01T07:19:00Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-control-plane
+    deployment closeout" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+    governed --priority 1 --source INI-PKB-001-stable-personal-control-plane-deployment
+    --blocked-by T-049
+  result: Created roadmap/backlog/spec artifacts for T-050; implementation and shipping
+    remain separate.
+closeout_history:
+- closed_at: '2026-05-01T07:37:05Z'
+  session_id: 2026-05-01-t-050-delivery
+  candidate_slice_ref: slice-pkb-001-g
+  task_ref: T-050
+  closeout_ref: .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  approval_scope: t050_root_only_stable_deployment_closeout
+  result: Delivered root-only T-050 stable deployment closeout; planning truth is
+    complete and future personal-root, project, storage, retrieval, source-onboarding,
+    public-release, credential, cloud, governance, kernel, and M1 work remains deferred
+    to separate approvals.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment

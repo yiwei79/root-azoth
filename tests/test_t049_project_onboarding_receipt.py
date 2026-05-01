@@ -54,7 +54,7 @@ def test_t049_report_keeps_project_onboarding_boundaries_explicit() -> None:
     assert "separate project-specific gate" in report["next_safe_action"]
 
 
-def test_ini_pkb_marks_t049_delivered_and_routes_t050_as_separate_approval() -> None:
+def test_ini_pkb_marks_t049_delivered_and_t050_closeout_complete() -> None:
     bank = _load_yaml(INI_PKB_PATH)
     candidates = {
         candidate["proposed_task_id"]: candidate for candidate in bank["candidate_slices"]
@@ -71,13 +71,25 @@ def test_ini_pkb_marks_t049_delivered_and_routes_t050_as_separate_approval() -> 
     )
     assert t049["personal_root_commit"] == "aeac2fac1628623dc54bb2bb0e050f6135255280"
 
+    t050 = candidates["T-050"]
+    assert t050["status"] == "complete"
+    assert t050["hydration_plan"]["hydrated_task_ref"] == "T-050"
+    assert t050["hydration_plan"]["hydrated_spec_ref"] == (
+        ".azoth/roadmap-specs/v0.2.0/T-050.yaml"
+    )
+    assert bank["closeout_history"][-1]["closeout_ref"] == (
+        ".azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml"
+    )
+
     readiness = bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-g"
     assert readiness["next_candidate_ref"] == "slice-pkb-001-g"
-    assert readiness["human_decision"] == "pending"
+    assert readiness["readiness_status"] == "complete"
+    assert readiness["human_decision"] == "approved"
+    assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "t050_closeout_requires_explicit_operator_approval"
+        == "release_readiness_requires_evaluator_orchestrator_gate"
     )
-    assert "explicit operator approval" in readiness["hydration_recommendation"]
+    assert "Do not repeat hydration or delivery" in readiness["hydration_recommendation"]
