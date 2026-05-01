@@ -110,13 +110,18 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     roadmap = _load_yaml(ROADMAP_PATH)
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
     t050_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-050")
+    t051_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-051")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
 
-    assert initiative["task_ref"] is None
+    assert initiative["task_ref"] == "T-051"
     assert t050_slice["status"] == "complete"
     assert t050_slice["role"] == "historical"
-    assert initiative["discovery_status"] == "t050_stable_deployment_closeout_complete"
-    assert initiative["next_discovery_action"].startswith("T-050 closeout is complete")
+    assert t051_slice["status"] == "active"
+    assert t051_slice["role"] == "primary"
+    assert initiative["discovery_status"] == "t051_release_readiness_continuation_hydrated"
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-h"
+    assert initiative["next_discovery_action"].startswith("T-051 is hydrated")
+    assert any(task["id"] == "T-051" for task in p4.get("tasks", []))
     assert not any(task["id"] == "T-050" for task in p4.get("tasks", []))
     assert any(task["id"] == "T-050" for task in p4["completed_tasks"])
 
@@ -130,4 +135,4 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     readiness = initiative_bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-h"
     assert readiness["readiness_status"] == "ready_to_hydrate"
-    assert readiness["freshness_status"] == "current_as_of_2026_05_01_post_t050_continuation_intake"
+    assert readiness["freshness_status"] == "current_as_of_2026_05_01_hydrated_to_t_051"

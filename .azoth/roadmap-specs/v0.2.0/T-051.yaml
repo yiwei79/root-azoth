@@ -1,0 +1,83 @@
+id: T-051
+roadmap_version: v0.2.0
+title: Post-T-050 release-readiness continuation intake
+decision_ref:
+- D11
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Run a root-only release-readiness continuation after T-050 so Azoth can decide
+  the next operation lane from current evidence instead of reusing the completed
+  T-050 closeout as hidden authority. The task should reconcile root-azoth,
+  public azoth, personal-root, and pilot project state, then name the next safe
+  gate for release, deployment, backup, retrieval/source onboarding, project
+  expansion, or stop/defer.
+problem: >
+  T-050 closed the stable personal-control-plane deployment loop, but it did not
+  authorize further publication, public-product mutation, personal-root mutation,
+  project writes, storage backup, retrieval expansion, or source onboarding.
+  Without a dedicated continuation slice, a later session could confuse "stable
+  closeout is complete" with permission to act across protected planes.
+context_refs:
+- .azoth/handoffs/2026-05-01-t-051-continuation-intake.yaml
+- .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+- .azoth/roadmap-specs/v0.2.0/T-050.yaml
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md
+scope:
+- Open a fresh governed T-051 delivery gate before writing a release-readiness
+  decision artifact or changing delivery state.
+- Reconcile root-azoth state read-only with generated parity, dashboard truth,
+  run-ledger/write-claim state, and the T-050 evidence chain.
+- Reconcile public azoth state read-only, including whether a public product
+  update, tag, or release is already present or still requires a separate gate.
+- Reconcile personal-root and pilot project state read-only, preserving the
+  pointer-only project profile and receipt boundaries proven by T-048/T-049.
+- Produce a root-side continuation decision artifact that selects the next safe
+  operation lane or records an explicit stop/defer result.
+- Map any selected protected operation to a separate approval gate with source
+  evidence, allowed outputs, forbidden outputs, validation commands, and rollback
+  boundary.
+non_goals:
+- Do not publish or tag public azoth.
+- Do not mutate the public product checkout.
+- Do not mutate personal-root.
+- Do not mutate, scan, summarize, import, or index pilot project source files.
+- Do not provision private remote or encrypted backup storage.
+- Do not onboard source registries or expand retrieval, graph, vector, or recall
+  infrastructure.
+- Do not access credentials, provision cloud accounts, or change governance,
+  kernel, or M1 surfaces.
+acceptance:
+- The T-051 delivery gate names the root-only decision target, source evidence,
+  allowed outputs, forbidden outputs, validation commands, and rollback boundary.
+- The continuation decision artifact records read-only status for root-azoth,
+  public azoth, personal-root, and the pilot project repo.
+- The artifact chooses exactly one next operation lane, or records stop/defer,
+  without performing that operation.
+- The selected lane's protected follow-on work is mapped to a separate explicit
+  approval gate.
+- Validation confirms planning-bank/roadmap alignment, dashboard truth, generated
+  parity, root tests for the T-051 planning lane, and no active run/write claim
+  remains after closeout.
+dependencies:
+- T-050
+delivery:
+  target_layer: planning
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = open a governed T-051 delivery gate and gather read-only state across
+  the four planes. Phase 2 = write the continuation decision artifact. Phase 3 =
+  validate and route to the next approved lane. Stop immediately if the work
+  would perform release publication, product mutation, personal-root mutation,
+  project writes, backup provisioning, retrieval/source onboarding, credentials,
+  cloud provisioning, governance, kernel, or M1 changes.

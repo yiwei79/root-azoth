@@ -103,8 +103,8 @@ research_questions:
   needed_for: slice-pkb-001-h
   answer: 'Start with a root-only release-readiness reconciliation/intake. It should
     compare root, public product, personal-root, and project-consumer state; choose
-    the next operation lane; and stop before release publication, personal-root
-    mutation, project writes, storage backup, source onboarding, or retrieval expansion.
+    the next operation lane; and stop before release publication, personal-root mutation,
+    project writes, storage backup, source onboarding, or retrieval expansion.
 
     '
   evidence_refs:
@@ -561,7 +561,7 @@ candidate_slices:
   proposed_task_id: T-051
   title: Post-T-050 release-readiness continuation intake
   initiative_ref: INI-PKB-001
-  status: candidate
+  status: hydrated
   target_layer: planning
   delivery_pipeline: governed
   summary: 'After T-050 stable closeout, run a root-only release-readiness continuation
@@ -600,8 +600,8 @@ candidate_slices:
   hydration_plan:
     proposed_title: Post-T-050 release-readiness continuation intake
     scaffold_command: python3 scripts/roadmap_scaffold.py --title "Post-T-050 release-readiness
-      continuation intake" --initiative-ref INI-PKB-001 --target-layer planning
-      --delivery-pipeline governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
+      continuation intake" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+      governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
       --blocked-by T-050
     pre_hydration_requirements:
     - A fresh approved scope-gate must name hydration_specific_slice_pkb_001_h.
@@ -610,6 +610,10 @@ candidate_slices:
     - Hydration approval must not authorize delivery, release publication, personal-root
       mutation, project writes, backup provisioning, source onboarding, retrieval
       expansion, credentials, cloud provisioning, governance, kernel, or M1 changes.
+    mode: executed
+    hydrated_task_ref: T-051
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
+    hydrated_at: '2026-05-01T08:25:09Z'
 readiness:
   evaluated_at: '2026-05-01T08:12:53Z'
   readiness_status: ready_to_hydrate
@@ -618,7 +622,7 @@ readiness:
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-h
   next_candidate_ref: slice-pkb-001-h
-  freshness_status: current_as_of_2026_05_01_post_t050_continuation_intake
+  freshness_status: current_as_of_2026_05_01_hydrated_to_t_051
   goal_clarity: post_t050_release_readiness_reconciliation_before_operations
   evidence_coverage: t050_closeout_plus_rollout_and_personal_control_plane_sources
   target_layer: planning
@@ -636,9 +640,8 @@ readiness:
     '
   acceptance_criteria_status: stable_for_slice_pkb_001_h
   non_goals_status: stable_for_slice_pkb_001_h
-  hydration_recommendation: Hydrate slice-pkb-001-h as T-051 only after a fresh
-    approved scope gate. Keep T-051 root-only and planning-only; use it to choose
-    the next release/deployment operation lane without performing that operation.
+  hydration_recommendation: slice-pkb-001-h has been hydrated as T-051. Do not repeat
+    hydration; route implementation through a separate delivery child.
   allowed_outputs:
   - continuation_intake_report
   - initiative_bank_candidate_update
@@ -836,6 +839,33 @@ hydration_history:
     governed --priority 1 --source INI-PKB-001-stable-personal-control-plane-deployment
     --blocked-by T-049
   result: Created roadmap/backlog/spec artifacts for T-050; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-01T08:25:09Z'
+  session_id: 2026-05-01-t-051-hydration
+  candidate_slice_ref: slice-pkb-001-h
+  task_ref: T-051
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
+  backlog_ref: T-051
+  roadmap_ref: T-051
+  approval_scope: hydration_specific_slice_pkb_001_h
+  approval_basis: 'Operator asked Codex on 2026-05-01 to continue to a fresh continuation/intake
+    for release-readiness or post-T-050 deployment operations. Approval covers the
+    root-only continuation intake and readiness update for slice-pkb-001-h / T-051;
+    a future hydration write still requires a live matching scope gate and must remain
+    roadmap/backlog/spec-only. This does not authorize delivery, release publication,
+    public-product mutation, personal-root mutation, project repo writes, storage
+    backup provisioning, retrieval expansion, source onboarding, credentials, cloud
+    account provisioning, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-h:T-051:2026-05-01T08:25:09Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Post-T-050 release-readiness
+    continuation intake" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+    governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
+    --blocked-by T-050
+  result: Created roadmap/backlog/spec artifacts for T-051; implementation and shipping
     remain separate.
 closeout_history:
 - closed_at: '2026-05-01T07:37:05Z'

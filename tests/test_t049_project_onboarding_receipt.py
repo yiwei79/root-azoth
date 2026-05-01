@@ -92,4 +92,4 @@ def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> Non
         readiness["next_readiness_gate"]
         == "hydrate_post_t050_release_readiness_planning_scaffold"
     )
-    assert "Hydrate slice-pkb-001-h as T-051" in readiness["hydration_recommendation"]
+    assert "has been hydrated as T-051" in readiness["hydration_recommendation"]

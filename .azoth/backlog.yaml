@@ -3768,10 +3768,10 @@ items:
   created_date: '2026-05-01'
   completed_date: '2026-05-01'
   description: Create the first governed project onboarding pilot through the personal
-    control plane with pointer-only project profile and receipt evidence for the
-    approved pilot repo. This task does not authorize project repo mutation, source
-    onboarding, retrieval expansion, public release, credentials, cloud provisioning,
-    governance, kernel, or M1 changes.
+    control plane with pointer-only project profile and receipt evidence for the approved
+    pilot repo. This task does not authorize project repo mutation, source onboarding,
+    retrieval expansion, public release, credentials, cloud provisioning, governance,
+    kernel, or M1 changes.
   roadmap_ref: T-049
   initiative_ref: INI-PKB-001
   blocked_by:
@@ -3795,3 +3795,23 @@ items:
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-049
+- id: T-051
+  title: Post-T-050 release-readiness continuation intake
+  source: INI-PKB-001-post-t050-release-readiness-continuation
+  target_layer: planning
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  description: Run the root-only post-T-050 release-readiness continuation intake
+    to reconcile root-azoth, public azoth, personal-root, and pilot project state,
+    then choose the next safe operation lane or stop/defer result. This planning
+    task does not authorize release publication, public-product mutation, personal-root
+    mutation, project repo writes, storage backup provisioning, retrieval expansion,
+    source onboarding, credentials, cloud provisioning, governance, kernel, or M1
+    changes.
+  roadmap_ref: T-051
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-050
