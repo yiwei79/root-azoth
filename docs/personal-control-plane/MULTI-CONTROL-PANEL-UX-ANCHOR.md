@@ -102,6 +102,61 @@ in the personal root, the session should not look like a product-release
 session. If the operator is in a project repo, it should not look like the
 personal root can mutate global preferences without a separate approval.
 
+## Cockpit Main Menu And Context Firewall
+
+The first cockpit UX surface is a terminal-first, cockpit-local main menu. It
+should be available from `yiwei-azoth-cockpit` without requiring the operator
+to remember hidden command contracts before they can orient.
+
+The menu mental model is safe-open:
+
+- read cockpit identity, repo status, release ledger, project pointer metadata,
+  and handoff receipts,
+- show the latest approved public/installable `azoth` release as the sync
+  authority,
+- show the cockpit manifest version and whether the cockpit appears synced to
+  that public release,
+- list registered projects such as `ras-or-ray` from pointer-only metadata,
+- print safe next actions and copy-paste project-session prompts,
+- write no files and start no hidden work.
+
+"Synced with azoth" means synced with the latest approved public/installable
+`azoth` release. It does not mean synced with every `root-azoth` workshop patch.
+Root workshop drift can be shown as advisory context, but it must not become
+the cockpit's release authority unless that change is published through the
+approved public release path.
+
+The context firewall is part of the UX, not an implementation detail.
+
+| State Class | Owner | Cockpit Main Menu Behavior |
+| --- | --- | --- |
+| Project pointers | Cockpit | May read and display pointer metadata. |
+| Global preferences and personal memory | Cockpit | May summarize cockpit-owned status only. |
+| Release ledger and receipts | Cockpit | May read and validate sync/receipt shape. |
+| Project code and dependencies | Project repo | Must not import, summarize, or index. |
+| Project memory and instructions | Project repo | Must remain project-local until a project session loads them. |
+| Project gates and write approvals | Project repo | Must be opened in the project repo or fresh project-scoped gate. |
+
+Project switching is handoff execution:
+
+1. The cockpit prints the selected project path and current safe status.
+2. The cockpit prints a fresh project-session prompt.
+3. The operator starts or switches into that project repo/session.
+4. Only then does project-local context load.
+
+The cockpit must not import project source files, source summaries, dependency
+inventories, secrets, retrieval indexes, or project instructions into its own
+context as part of a switch. A project summary may be recorded later only
+through an explicit receipt-backed lane that says what is being copied and why.
+
+Future writes remain possible, but only through explicit lanes:
+
+- cockpit-owned write lane: add project pointer, update cockpit memory, record
+  receipt, or update release ledger,
+- project-owned write lane: switch into the project repo/session or open a
+  fresh project-scoped gate,
+- source/retrieval lane: onboard or index sources only after separate approval.
+
 ## Target Operator Prompts
 
 The system should make these prompts natural and safe:
@@ -244,4 +299,3 @@ target is modest:
 - It can receive a reviewed Batch 0.
 - It can surface a few cited cards later without pretending they are project
   truth.
-
