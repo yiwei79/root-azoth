@@ -735,39 +735,142 @@ candidate_slices:
   operator_onboarding_ref: docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
   deployment_procedure_ref: docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
   delivered_at: '2026-05-01T10:02:44Z'
+- candidate_id: slice-pkb-001-k
+  proposed_task_id: T-054
+  title: Cockpit main menu and context-firewall UX
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Completed the safe-open cockpit main menu and context-firewall UX for
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, including release sync visibility,
+    pointer-only `ras-or-ray` handoff, and a project-switching model that prints a
+    project-session prompt without importing project-owned context into the cockpit.
+  acceptance_criteria:
+  - The cockpit UX anchor describes the main menu, context firewall, cockpit-owned
+    state, project-owned state, handoff execution, and explicit future write lanes.
+  - The cockpit-local menu reads identity, repo status, release ledger, project pointer
+    metadata, and receipts without writing files or starting hidden work.
+  - Project ras-or-ray appears as pointer-only, and the handoff prompt says project-local
+    context is authoritative.
+  - Menu output excludes project source files, code summaries, dependency inventory,
+    secrets, retrieval indexes, and project instructions.
+  - Roadmap, backlog, task spec, and initiative-bank truth represent T-054 as completed
+    retrospective cockpit UX work.
+  research_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  - docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+  - scripts/cockpit_menu.py
+  - tests/test_cockpit_menu.py
+  known_non_goals:
+  - No cockpit writes from the menu.
+  - No current-project marker.
+  - No project repo mutation.
+  - No project source import or project instruction import.
+  - No source onboarding or retrieval expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-safe-open-ux
+  hydration_plan:
+    mode: retrospective_record
+    hydrated_task_ref: T-054
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-054.yaml
+    hydrated_at: '2026-05-01T14:12:23Z'
+  delivery_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/scripts/cockpit_menu.py
+  - scripts/cockpit_bootstrap_verify.py
+  delivered_at: '2026-05-01T14:12:23Z'
+- candidate_id: slice-pkb-001-l
+  proposed_task_id: T-055
+  title: Cockpit first-use command surface and no-write UX simulation
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Completed the minimal cockpit command surface and no-write UX simulation
+    so the operator can start `yiwei-azoth-cockpit` from Codex without memorizing
+    complex prompts. The command surface remains safe-open and does not deploy the
+    full Azoth development command suite into the cockpit.
+  acceptance_criteria:
+  - Minimal cockpit wrappers exist for `/cockpit`, `/cockpit-check`,
+    `/cockpit-project`, `/cockpit-help`, and `/cockpit-ux-simulate`.
+  - The cockpit bootstrap verifier requires the command wrappers, display metadata,
+    startup docs, release ledger, pointer-only project shape, deployment receipt,
+    and T-055 first-use receipt.
+  - The no-write UX simulation covers orientation, cockpit menu, cockpit check,
+    `ras-or-ray` project handoff, help, and simulation output.
+  - Simulation output shows release sync and pointer-only `ras-or-ray` handoff while
+    excluding source files, code summaries, dependency inventories, secrets, retrieval
+    indexes, and project instructions.
+  - Roadmap, backlog, task spec, and initiative-bank truth represent T-055 as completed
+    retrospective first-use cockpit work.
+  research_evidence_refs:
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - scripts/cockpit_command_surface.py
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+  - tests/test_cockpit_command_surface.py
+  - tests/test_cockpit_ux_simulate.py
+  known_non_goals:
+  - No full Azoth development command suite in the cockpit.
+  - No cockpit writes from safe-open commands.
+  - No project repo writes.
+  - No project source import or project instruction import.
+  - No source onboarding or retrieval expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-first-use-command-surface
+  hydration_plan:
+    mode: retrospective_record
+    hydrated_task_ref: T-055
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-055.yaml
+    hydrated_at: '2026-05-01T14:12:23Z'
+  delivery_evidence_refs:
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/docs/ONBOARDING.md
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-055-first-use-ras-or-ray-2026-05-01.yaml
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+  delivered_at: '2026-05-01T14:12:23Z'
 readiness:
-  evaluated_at: '2026-05-01T10:02:44Z'
+  evaluated_at: '2026-05-01T14:12:23Z'
   readiness_status: complete
   human_decision: approved
-  classification: cockpit_resilience_planning_seed
+  classification: cockpit_first_use_command_surface_complete
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-j
-  next_candidate_ref: slice-pkb-001-j
-  freshness_status: current_as_of_2026_05_01_t053_backup_recovery_readiness_delivered
-  goal_clarity: private_backup_recovery_readiness_and_operator_onboarding_delivered_before_more_project_or_retrieval_expansion
-  evidence_coverage: t052_cockpit_receipt_plus_t053_operator_onboarding_and_backup_recovery_readiness
-  target_layer: planning
+  candidate_first_slice: slice-pkb-001-l
+  next_candidate_ref: slice-pkb-001-l
+  freshness_status: current_as_of_2026_05_01_t055_cockpit_first_use_delivered
+  goal_clarity: safe_open_cockpit_menu_command_surface_and_no_write_ux_simulation_delivered
+  evidence_coverage: t052_cockpit_receipt_plus_t053_readiness_plus_t054_menu_plus_t055_first_use_simulation
+  target_layer: infrastructure
   delivery_pipeline: governed
-  approval_scope: t053_delivery_scope_private_backup_recovery_onboarding
-  approval_basis: 'Operator asked on 2026-05-01 to aim at proper deployment for the
-    personal cockpit, provide onboarding when everything is done, and proceed with
-    the proper steps. After T-053 hydration, approval covers root-side backup/recovery
-    readiness documentation, operator onboarding documentation, delivery handoff,
-    planning truth updates, and focused validation only; it does not authorize backup
-    provisioning, credential access, cloud account provisioning, storage writes,
-    personal-cockpit mutation, project repo writes, retrieval/source onboarding,
-    public product mutation, release publication, governance, kernel, or M1 changes.
+  approval_scope: t055_cockpit_command_surface_ux_simulation
+  approval_basis: 'Operator requested and approved a minimal cockpit command surface
+    and no-write UX simulation for the deployed personal cockpit on 2026-05-01. The
+    completed T-054/T-055 retrospective truth covers cockpit menu, context firewall,
+    safe-open command wrappers, handbook references, verifier coverage, and UX
+    simulation evidence only; it does not authorize backup provisioning, credential
+    access, cloud account provisioning, storage writes, personal-cockpit mutation
+    beyond the already delivered cockpit artifacts, project repo writes, retrieval/source
+    onboarding, public product mutation, release publication, governance, kernel,
+    or M1 changes.
 
     '
-  acceptance_criteria_status: stable_for_slice_pkb_001_j
-  non_goals_status: stable_for_slice_pkb_001_j
-  hydration_recommendation: T-053 delivered root-side private backup/recovery readiness
-    and operator onboarding documentation. Do not repeat hydration or delivery; open
-    a separate operator-selected gate for backup implementation, another project
-    consumer, retrieval/source onboarding, public-product update, or stop/defer.
+  acceptance_criteria_status: stable_for_slice_pkb_001_l
+  non_goals_status: stable_for_slice_pkb_001_l
+  hydration_recommendation: T-055 delivered the safe-open cockpit command surface
+    and no-write UX simulation. Do not repeat cockpit bootstrap work; open a separate
+    operator-selected gate for backup implementation, another project consumer,
+    retrieval/source onboarding, public-product update, post-stable repair, or
+    stop/defer.
   allowed_outputs:
   - root_side_backup_recovery_readiness_documentation
   - operator_onboarding_guide
+  - cockpit_safe_open_command_surface
+  - cockpit_no_write_ux_simulation
   - delivery_handoff
   - planning_truth_closeout
   - focused_validation
@@ -786,6 +889,8 @@ readiness:
   - governance_change
   - backup_provisioning
   - storage_write
+  - hidden_background_work
+  - project_source_import
   - kernel_change
   - m1_change
   blocked_actions:
@@ -1091,6 +1196,28 @@ closeout_history:
     provisioning, storage writes, credential access, cockpit mutation, project writes,
     retrieval/source onboarding, public release, governance, kernel, and M1 work remain
     behind separate operator-selected gates.
+- closed_at: '2026-05-01T14:12:23Z'
+  session_id: 2026-05-01-t-054-retrospective-cockpit-menu
+  candidate_slice_ref: slice-pkb-001-k
+  task_ref: T-054
+  closeout_ref: docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  approval_scope: t054_retrospective_cockpit_menu_context_firewall
+  result: Retrospectively represented the completed safe-open cockpit main menu
+    and context-firewall UX in roadmap, backlog, task spec, and initiative-bank
+    truth; no new cockpit write, project write, source onboarding, retrieval
+    expansion, public release, governance, kernel, or M1 change is authorized by
+    this record.
+- closed_at: '2026-05-01T14:12:23Z'
+  session_id: 2026-05-01-t-055-retrospective-cockpit-command-surface
+  candidate_slice_ref: slice-pkb-001-l
+  task_ref: T-055
+  closeout_ref: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-055-first-use-ras-or-ray-2026-05-01.yaml
+  approval_scope: t055_cockpit_command_surface_ux_simulation
+  result: Retrospectively represented the completed minimal cockpit command surface,
+    bootstrap verifier contract, handbook updates, and no-write UX simulation in
+    roadmap, backlog, task spec, and initiative-bank truth; project source import,
+    project writes, retrieval expansion, full Azoth command-suite deployment, public
+    release, governance, kernel, and M1 remain outside this slice.
 raw_intake:
   initiative_id: INI-PKB-001
   operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment

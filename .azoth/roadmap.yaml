@@ -714,18 +714,29 @@ initiatives:
     phase: v0.2.0-p4
     status: complete
     role: historical
+  - task_ref: T-054
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-054.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
+  - task_ref: T-055
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-055.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t053_private_backup_recovery_readiness_complete
-  candidate_slice_ref: slice-pkb-001-j
+  discovery_status: t055_cockpit_first_use_command_surface_complete
+  candidate_slice_ref: slice-pkb-001-l
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-053 delivered root-side private backup/recovery readiness
-    and operator onboarding documentation for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`.
-    Next, open a separate operator-selected gate for backup implementation, another
-    pointer-only project consumer, retrieval/source onboarding, public-product update,
-    or stop/defer; credentials, cloud/storage writes, cockpit mutation, project writes,
-    release work, governance, kernel, and M1 remain separate approvals.
+  next_discovery_action: T-055 completed the safe-open cockpit command surface
+    and no-write UX simulation for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`.
+    p4 remains active only as a post-stable repair window; next work should be a
+    separately approved repair or operator-selected gate for backup implementation,
+    another pointer-only project consumer, retrieval/source onboarding, public-product
+    update, or stop/defer. Credentials, cloud/storage writes, cockpit mutation,
+    project writes, release work, governance, kernel, and M1 remain separate approvals.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
@@ -735,8 +746,10 @@ initiatives:
     stable closeout evidence; T-051 reconciled the post-closeout state and selected
     stop/defer; T-052 renamed the local personal cockpit to `yiwei-azoth-cockpit`
     and recorded receipt evidence. T-053 delivered backup/recovery readiness and
-    operator onboarding documentation, keeping actual backup provisioning, retrieval/source
-    onboarding, and project writes behind separate gates.
+    operator onboarding documentation; T-054/T-055 added the safe-open cockpit main
+    menu, context firewall, Codex-visible command wrappers, bootstrap verifier coverage,
+    and no-write UX simulation. Actual backup provisioning, retrieval/source onboarding,
+    cockpit mutation, and project writes remain behind separate gates.
 
     '
   decision_ref:
@@ -750,7 +763,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-053.yaml
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-055.yaml
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2159,11 +2172,10 @@ versions:
 - id: v0.2.0-p4
   status: active
   current_patch: 18
-  goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
-    truth, prove product extraction, publish a clean azoth product surface, and define
-    the personal root control-plane deployment model. The first stable release must
-    also prove included features end-to-end, including the campaign-bounded autonomous
-    learning/self-heal contract.'
+  goal: 'Post-stable stabilization repair window: keep new initiative expansion
+    frozen while reconciling release truth, cockpit deployability, planning truth,
+    formatting gates, and public-product freshness policy after the v0.2.0 stable
+    release and personal-cockpit deployment evidence.'
   phase_scope:
   - 4
   themes:
@@ -2177,23 +2189,31 @@ versions:
     - learning_system_stabilization
     - product_extraction_and_publish
     - personal_control_plane_deployment_model
+    - post_stable_repair_reconciliation
     - documentation_and_ci_rollout
     - verification_and_release_candidate_closeout
     deferred_work_rule: All new feature, autonomy, memory, planning-bank, and platform
       ideas remain unscheduled proposal or initiative-bank evidence until this phase
       closes.
-  note: This phase is a stabilization freeze, not a feature-growth phase. It exists
-    to make Azoth safe to use for real projects by separating root-azoth as the private
-    development workshop, azoth as the clean published product, and the operator personal
-    root as an installed Azoth control-plane deployment. Stable release closeout requires
-    a green full root test suite and evidence that autonomous-auto learning/self-heal
-    is supervised, campaign-bounded, and still blocked by fresh approval and protected-boundary
-    gates. Inbox reflections remain governed evidence unless a route is explicitly
-    safe, campaign-bounded, and applied through strategy-preflight; the first stable
-    release must not imply silent inbox draining or background self-modification.
+  note: >-
+    This phase remains active only as a post-stable repair window, not as
+    pre-release rollout or feature-growth scope. The product flow remains
+    root-azoth -> public azoth -> installed consumer/cockpit updates; the operating
+    model is now four planes: root-azoth development workshop, public azoth product,
+    yiwei-azoth-cockpit personal control plane, and controlled project repos with
+    project-local context and write authority. New repairs must be named, gated,
+    and evidence-backed.
   pending_task_refs: []
   tasks: []
   completed_tasks:
+  - id: T-055
+    title: Cockpit first-use command surface and no-write UX simulation
+    completed_date: '2026-05-01'
+    initiative_ref: INI-PKB-001
+  - id: T-054
+    title: Cockpit main menu and context-firewall UX
+    completed_date: '2026-05-01'
+    initiative_ref: INI-PKB-001
   - id: T-053
     title: Private backup and recovery readiness for yiwei-azoth-cockpit
     completed_date: '2026-05-01'

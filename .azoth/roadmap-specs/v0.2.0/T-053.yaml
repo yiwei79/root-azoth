@@ -48,8 +48,9 @@ non_goals:
 - No public product mutation or release publication.
 - No governance, kernel, or M1 change.
 acceptance:
-- Roadmap, backlog, and INI-PKB-001 agree that T-053 is the active hydrated
-  private backup/recovery readiness task.
+- Roadmap, backlog, and INI-PKB-001 agree that T-053 is the completed
+  historical private backup/recovery readiness task, not an active delivery
+  lane.
 - The operator onboarding guide exists at
   `docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md` and
   keeps daily use separate from project source onboarding or retrieval expansion.

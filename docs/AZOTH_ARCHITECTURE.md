@@ -982,7 +982,7 @@ azoth/
 | Audience | The alchemist (you) | Any developer |
 | Mode | `scaffold` | `project` (Phase 4) |
 
-### 3-Tier Model
+### 3-Tier Product Flow
 
 ```
 Tier 1: Source Framework (SupplyGrowth Agentic Framework)
@@ -1000,6 +1000,22 @@ Consumer Projects
 - **Tier 1 → Tier 2**: `azoth-sync.py` extracts proven patterns, sanitizes org content
 - **Tier 2 → Tier 3**: Product extraction profiles strip scaffold-only artifacts
 - **Tier 3 → Consumer**: `install.sh` deploys kernel + skills + agents
+
+### 4-Plane Operating Model
+
+The 3-tier product flow is the release/update supply chain. Daily authority now
+uses a 4-plane operating model:
+
+| Plane | Authority | Owns | Must not own |
+| --- | --- | --- | --- |
+| `root-azoth` development workshop | Toolkit source, roadmap, validation, extraction | Source scripts, tests, governance, release evidence, generated adapters | Personal cockpit state or project-local write authority |
+| Public `azoth` product | Installable release authority | Clean extracted runtime, installers, public docs, tags, public CI | Private root history, cockpit memory, project secrets |
+| `yiwei-azoth-cockpit` personal control plane | Operator routing, global pointers, release ledger, personal memory | Project pointers, cockpit receipts, personal/global context, safe-open command surface | Project source, project instructions, project-local gates |
+| Controlled project repos | Project-local context and write authority | Code, project memory, project instructions, project gates, project receipts | Cockpit-global memory or public product release authority |
+
+Project switching from the cockpit is handoff execution: the cockpit may print
+the project path and a fresh project-session prompt, but project context becomes
+authoritative only inside the project repo/session.
 
 ### Insight Inbox Protocol (D29–D33)
 

@@ -11,7 +11,9 @@ built, tested, and evolved. It is NOT a consumer project — it IS the source.
 
 The public deployable product **azoth** (lowercase) will be mechanically
 extracted from this scaffold via `sync-config.yaml` product extraction profiles.
-See `docs/AZOTH_ARCHITECTURE.md` Section 18 for the 3-tier model.
+See `docs/AZOTH_ARCHITECTURE.md` Section 18 for the 3-tier product flow and
+the 4-plane operating model used by the personal cockpit and controlled
+project repos.
 
 **As a toolkit**: A personal "drop-and-start" agentic toolkit for AI-assisted
 development. You clone it, run the installer, and any project gets: disciplined

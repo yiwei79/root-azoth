@@ -14,8 +14,9 @@ onboarding, retrieval indexing, or project mutation.
 
 The cockpit is deployed locally at `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`.
 It has receipt evidence from T-052 and a pointer-only pilot project profile from
-T-049. Root planning truth now treats T-053 as the backup/recovery readiness lane
-that must close before the cockpit becomes a broader operational hub.
+T-049. Root planning truth treats T-053 as completed backup/recovery readiness,
+with T-054/T-055 covering the safe-open menu, context firewall, first-use command
+surface, and no-write UX simulation.
 
 This guide does not mutate the cockpit. It is the root-side operating manual for
 the next safe human workflow.

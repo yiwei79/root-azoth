@@ -164,8 +164,8 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     assert route_positions == sorted(route_positions)
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-j"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-l"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-l"
     assert readiness["readiness_status"] == "complete"
     assert readiness["human_decision"] == "approved"
     assert readiness["delivery_authorized"] is False

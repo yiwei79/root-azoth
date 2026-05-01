@@ -27,6 +27,8 @@ T053_DELIVERY_PATH = (
     / "2026-05-01-t-053-private-backup-recovery-readiness.yaml"
 )
 T053_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-053.yaml"
+T054_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-054.yaml"
+T055_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-055.yaml"
 
 
 def _load_yaml(path: Path) -> dict:
@@ -86,17 +88,14 @@ def test_ini_pkb_marks_t051_stop_defer_decision_complete() -> None:
 
     readiness = bank["readiness"]
     assert readiness["readiness_status"] == "complete"
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
-    assert readiness["next_candidate_ref"] == "slice-pkb-001-j"
-    assert (
-        readiness["approval_scope"]
-        == "t053_delivery_scope_private_backup_recovery_onboarding"
-    )
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-l"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-l"
+    assert readiness["approval_scope"] == "t055_cockpit_command_surface_ux_simulation"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert readiness["ship_authorized"] is False
     assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
-    assert "T-053 delivered" in readiness["hydration_recommendation"]
+    assert "T-055 delivered" in readiness["hydration_recommendation"]
 
 
 def test_t051_delivery_closes_roadmap_backlog_and_preserves_spec() -> None:
@@ -192,9 +191,9 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
     assert initiative["discovery_status"] == (
-        "t053_private_backup_recovery_readiness_complete"
+        "t055_cockpit_first_use_command_surface_complete"
     )
-    assert initiative["candidate_slice_ref"] == "slice-pkb-001-j"
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-l"
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
     assert not any(task.get("id") == "T-052" for task in p4.get("tasks", []))
@@ -217,7 +216,7 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     )
 
     readiness = bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-l"
     assert readiness["readiness_status"] == "complete"
     assert readiness["next_readiness_gate"] == "operator_selected_follow_on_gate"
 
@@ -272,7 +271,7 @@ def test_t053_hydration_sets_delivery_boundary_for_onboarding() -> None:
     assert row["delivery_pipeline"] == "governed"
     assert "operator onboarding guide" in row["description"]
     assert initiative["task_ref"] is None
-    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-053.yaml"
+    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-055.yaml"
     assert not any(task.get("id") == "T-053" for task in p4.get("tasks", []))
     assert any(task.get("id") == "T-053" for task in p4.get("completed_tasks", []))
 
@@ -300,3 +299,47 @@ def test_t053_hydration_sets_delivery_boundary_for_onboarding() -> None:
     )
     assert delivery["readiness_result"]["operator_onboarding"] == "delivered"
     assert delivery["gate"]["mutation_authority"]["personal_cockpit_mutation"] is False
+
+
+def test_t054_t055_retrospective_cockpit_truth_is_complete() -> None:
+    backlog = _load_yaml(BACKLOG_PATH)
+    roadmap = _load_yaml(ROADMAP_PATH)
+    bank = _load_yaml(INI_PKB_PATH)
+    t054 = _load_yaml(T054_SPEC_PATH)
+    t055 = _load_yaml(T055_SPEC_PATH)
+
+    p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
+    initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
+    slices = {item["task_ref"]: item for item in initiative["slices"]}
+    candidates = {item["candidate_id"]: item for item in bank["candidate_slices"]}
+
+    for task_id in ("T-054", "T-055"):
+        row = next(item for item in backlog["items"] if item.get("id") == task_id)
+        assert row["status"] == "complete"
+        assert row["initiative_ref"] == "INI-PKB-001"
+        assert row["target_version"] == "v0.2.0-p4"
+        assert not any(task.get("id") == task_id for task in p4.get("tasks", []))
+        assert any(task.get("id") == task_id for task in p4["completed_tasks"])
+        assert slices[task_id]["status"] == "complete"
+        assert slices[task_id]["role"] == "historical"
+
+    assert t054["id"] == "T-054"
+    assert t054["dependencies"] == ["T-053"]
+    assert "No project repo mutation." in t054["non_goals"]
+    assert any("context firewall" in item for item in t054["acceptance"])
+
+    assert t055["id"] == "T-055"
+    assert t055["dependencies"] == ["T-054"]
+    assert "No full Azoth development command suite deployed into the cockpit." in t055[
+        "non_goals"
+    ]
+    assert any("no-write UX simulation" in item for item in t055["acceptance"])
+
+    assert candidates["slice-pkb-001-k"]["proposed_task_id"] == "T-054"
+    assert candidates["slice-pkb-001-k"]["status"] == "complete"
+    assert candidates["slice-pkb-001-l"]["proposed_task_id"] == "T-055"
+    assert candidates["slice-pkb-001-l"]["status"] == "complete"
+    assert bank["readiness"]["candidate_first_slice"] == "slice-pkb-001-l"
+    assert bank["readiness"]["next_candidate_ref"] == "slice-pkb-001-l"
+    assert any(item["task_ref"] == "T-054" for item in bank["closeout_history"])
+    assert any(item["task_ref"] == "T-055" for item in bank["closeout_history"])

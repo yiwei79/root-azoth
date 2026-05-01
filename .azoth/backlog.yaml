@@ -3859,3 +3859,47 @@ items:
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-052
+- id: T-054
+  title: Cockpit main menu and context-firewall UX
+  source: INI-PKB-001-cockpit-main-menu-context-firewall
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  completed_date: '2026-05-01'
+  description: >-
+    Retrospectively record the completed cockpit-local safe-open main
+    menu and context-firewall UX slice for `yiwei-azoth-cockpit`. The menu reads
+    cockpit identity, release sync, pointer-only project metadata, and handoff
+    receipts, then prints safe next actions and project-session prompts without
+    writing files, starting hidden work, importing project source, onboarding
+    retrieval, mutating projects, publishing releases, or changing governance,
+    kernel, or M1 surfaces.
+  roadmap_ref: T-054
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-053
+- id: T-055
+  title: Cockpit first-use command surface and no-write UX simulation
+  source: INI-PKB-001-cockpit-command-surface-ux-simulation
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-01'
+  completed_date: '2026-05-01'
+  description: >-
+    Retrospectively record the completed cockpit first-use command surface
+    for `yiwei-azoth-cockpit`: minimal Codex-visible wrappers for cockpit menu,
+    check, project handoff, help, and UX simulation; handbook updates; bootstrap
+    verifier coverage; and no-write UX simulation for `ras-or-ray`. This slice
+    did not deploy the full Azoth command suite, mutate cockpit/project files during
+    command execution, import project source, expand retrieval, publish releases,
+    or change governance, kernel, or M1 surfaces.
+  roadmap_ref: T-055
+  initiative_ref: INI-PKB-001
+  blocked_by:
+  - T-054

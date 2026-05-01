@@ -12,7 +12,7 @@ description: |
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
 holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p4
-stabilization and rollout slice** (lifecycle Phase 8 in `azoth.yaml`), and the
+post-stable repair window** (lifecycle Phase 8 in `azoth.yaml`), and the
 **expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
@@ -92,18 +92,13 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 4) — stabilization · release · control plane 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 4) — post-stable repairs · release truth · cockpit control plane 🎯 CURRENT
 
 - **Canonical state:** `azoth.yaml` `version: 0.1.4.0`, `phase: 4`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p4`, `current_phase: 4`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; rollout plan **`.azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md`**.
-- **Phase policy:** v0.2.0-p4 is a stabilization freeze. Do not schedule new feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until release readiness closes.
-- **Execution queue:** p3 carry-forward and autonomous-auto feature work are complete through **T-033**. The live p4 queue is task-backed rather than initiative-backed:
-  - **T-034** — freeze milestone baseline and release-readiness gate.
-  - **T-035** — generated surface and planning-truth stabilization.
-  - **T-036** — product extraction release candidate and consumer smoke test.
-  - **T-037** — public azoth publishing pipeline and release automation.
-  - **T-038** — personal root control-plane deployment model.
-  - **T-039** — release candidate validation and rollout closeout.
-- **Operating model:** keep three planes separate: `root-azoth` as private development workshop, `azoth` as clean extracted public product, and the operator personal root as an installed Azoth deployment for project and knowledge control.
+- **Phase policy:** v0.2.0-p4 is no longer pre-stable rollout scope. It remains active only as a post-stable repair/reconciliation window. Do not schedule new feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until an operator-selected gate opens.
+- **Execution queue:** p3 carry-forward and autonomous-auto feature work are complete through **T-033**. p4 has completed T-034 through **T-055**, including stable public release evidence, personal cockpit deployment, safe-open cockpit menu, first-use command surface, and no-write UX simulation. Current work should be a named repair lane, not an implicit continuation of T-053.
+- **Product flow:** keep the 3-tier supply chain clear: `root-azoth` development workshop -> public/installable `azoth` release -> installed consumer/cockpit update.
+- **Operating model:** use the 4-plane authority model for daily work: `root-azoth` as private development workshop, public `azoth` as clean product, `yiwei-azoth-cockpit` as the operator personal control plane, and controlled project repos as project-local context/write-authority planes.
 
 ## Planning Sources
 

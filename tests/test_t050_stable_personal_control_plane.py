@@ -122,10 +122,10 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
     assert initiative["discovery_status"] == (
-        "t053_private_backup_recovery_readiness_complete"
+        "t055_cockpit_first_use_command_surface_complete"
     )
-    assert initiative["candidate_slice_ref"] == "slice-pkb-001-j"
-    assert initiative["next_discovery_action"].startswith("T-053 delivered")
+    assert initiative["candidate_slice_ref"] == "slice-pkb-001-l"
+    assert initiative["next_discovery_action"].startswith("T-055 completed")
     assert not any(task["id"] == "T-053" for task in p4.get("tasks", []))
     assert any(task["id"] == "T-053" for task in p4["completed_tasks"])
     assert not any(task["id"] == "T-052" for task in p4.get("tasks", []))
@@ -145,9 +145,9 @@ def test_t050_planning_truth_is_complete_across_roadmap_and_initiative_bank() ->
     )
     assert t050_closeout["result"].startswith("Delivered root-only T-050")
     readiness = initiative_bank["readiness"]
-    assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-l"
     assert readiness["readiness_status"] == "complete"
     assert (
         readiness["freshness_status"]
-        == "current_as_of_2026_05_01_t053_backup_recovery_readiness_delivered"
+        == "current_as_of_2026_05_01_t055_cockpit_first_use_delivered"
     )
