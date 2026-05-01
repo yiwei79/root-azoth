@@ -40,6 +40,7 @@ Run the status and validation checks from `root-azoth` first:
 git status --short --branch
 python3 scripts/run_ledger.py status
 python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+python3 scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
 git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
 ```
 

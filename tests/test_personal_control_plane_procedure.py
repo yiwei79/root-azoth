@@ -75,6 +75,33 @@ def test_procedure_names_manifest_and_receipt_contract_fields() -> None:
         assert field in text
 
 
+def test_procedure_names_cockpit_bootstrap_deploy_verify_minimum() -> None:
+    text = PROCEDURE_PATH.read_text(encoding="utf-8")
+    onboarding_text = (
+        ROOT
+        / "docs"
+        / "personal-control-plane"
+        / "YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md"
+    ).read_text(encoding="utf-8")
+
+    required = [
+        "## Cockpit Bootstrap Deploy/Verify Minimum",
+        "scripts/cockpit_bootstrap_verify.py",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/ONBOARDING.md",
+        "T-052 cockpit deployment receipt",
+        "T-055 first-use onboarding receipt",
+        "Start cockpit.",
+        "safe-open",
+        "pointer-only",
+    ]
+
+    for snippet in required:
+        assert snippet in text
+    assert "scripts/cockpit_bootstrap_verify.py" in onboarding_text
+
+
 def test_procedure_keeps_forbidden_boundaries_explicit() -> None:
     text = PROCEDURE_PATH.read_text(encoding="utf-8")
 

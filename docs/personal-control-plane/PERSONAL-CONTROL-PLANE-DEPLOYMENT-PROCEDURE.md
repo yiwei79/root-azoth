@@ -113,6 +113,44 @@ python3 -m pytest tests/test_personal_control_plane_procedure.py
 python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml --check-roadmap-refs
 ```
 
+## Cockpit Bootstrap Deploy/Verify Minimum
+
+After T-052/T-055, `root-azoth` owns a deterministic deploy/verify check for
+the live cockpit bootstrap. This is the minimum check before calling the
+cockpit ready for normal operator use:
+
+```bash
+python3 scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+```
+
+The verifier is read-only. It does not deploy files by itself, provision backup
+storage, import project context, or mutate project repos. If it fails, the next
+operation should be a named cockpit deployment/repair lane with explicit
+operator approval.
+
+The bootstrap minimum is:
+
+- `azoth.yaml` identifies `yiwei-azoth-cockpit` with `deployment_role:
+  personal-cockpit`.
+- The latest approved public/installable `azoth` release is present in the
+  release ledger.
+- The cockpit menu exists and `scripts/cockpit_menu.py --check` passes.
+- `AGENTS.md`, `CLAUDE.md`, and `docs/ONBOARDING.md` are cockpit-local startup
+  and handbook surfaces, not stale `personal-azoth-root` bootstrap text.
+- The handbook says the normal startup prompt can be `Start cockpit.` and lists
+  the safe-open command surface.
+- The project registry remains pointer-only and excludes project source files,
+  source summaries, dependency inventories, secrets, and retrieval indexes.
+- The release ledger contains the T-052 cockpit deployment receipt.
+- The project handoff evidence contains the T-055 first-use onboarding receipt.
+- The cockpit repo is clean when the verifier is run without
+  `--skip-git-status`.
+
+This check is intentionally smaller than a full release pipeline. It proves the
+core deterministic necessities for a usable cockpit: identity, local handbook,
+safe-open menu, release sync, pointer-only project routing, and receipt
+evidence.
+
 ## Deployment Receipt
 
 Every future apply writes a receipt in the target plane and may summarize it back
