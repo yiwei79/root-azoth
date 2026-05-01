@@ -660,9 +660,9 @@ initiatives:
     - personal-knowledge
     - batch-zero
     - deployment-finalization
-  phase: v0.2.0-p4
+  phase: null
   priority: high
-  task_ref: T-048
+  task_ref: null
   slices:
   - task_ref: T-042
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
@@ -687,26 +687,25 @@ initiatives:
   - task_ref: T-048
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
     phase: v0.2.0-p4
-    status: active
-    role: primary
+    status: complete
+    role: historical
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t048_hydrated_governed_delivery_pending
-  candidate_slice_ref: slice-pkb-001-e
+  discovery_status: t048_rehearsal_complete_project_pilot_pending_gate
+  candidate_slice_ref: slice-pkb-001-f
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-048 is hydrated as a governed infrastructure task for
-    the personal-root RC update rehearsal. The next delivery route must open a
-    fresh governed gate naming the release or RC revision, personal-root target
-    path, desired-state manifest, storage policy, validation commands, and rollback
-    point before any personal-root write. Do not onboard sources or projects,
-    expand retrieval, or publish public azoth from this hydration state.
+  next_discovery_action: T-048 personal-root rehearsal is complete. The next native
+    route is the project onboarding pilot candidate after the operator names the
+    exact project root or roots and approves a fresh governed gate; do not onboard
+    sources, expand retrieval, publish public azoth, or mutate project panels from
+    the T-048 scope.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
-    project panels. The completed Batch 0, recall pilot, and T-047 procedure arc proved
-    the pointer/card and desired-state route; the current hydrated route is the
-    governed T-048 personal-root rehearsal before source registry onboarding,
-    broader recall, public release, or project mutation.
+    project panels. The completed Batch 0, recall pilot, T-047 procedure arc, and
+    T-048 personal-root rehearsal proved the pointer/card and desired-state route;
+    the remaining route is a separately approved project onboarding pilot before
+    source registry onboarding, broader recall, public release, or project mutation.
 
     '
   decision_ref:
@@ -720,7 +719,7 @@ initiatives:
   - D48
   - D50
   - D52
-  spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
+  spec_ref: null
 - id: INI-MEM-001
   title: Verbatim-first M3 storage strategy
   category: memory
@@ -2128,7 +2127,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 14
+  current_patch: 15
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must
@@ -2162,10 +2161,7 @@ versions:
     safe, campaign-bounded, and applied through strategy-preflight; the first stable
     release must not imply silent inbox draining or background self-modification.
   pending_task_refs: []
-  tasks:
-  - id: T-048
-    title: Personal-root RC update rehearsal from desired state
-    initiative_ref: INI-PKB-001
+  tasks: []
   completed_tasks:
   - id: T-034
     title: Freeze milestone baseline and release-readiness gate
@@ -2322,3 +2318,4 @@ versions:
     title: Personal control-plane cloud-native deployment procedure
     completed_date: '2026-04-30'
     decision_ref: []
+  - {id: T-048, title: "Personal-root RC update rehearsal from desired state", completed_date: "2026-05-01", decision_ref: []}

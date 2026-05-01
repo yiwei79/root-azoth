@@ -124,7 +124,7 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
     }
 
     assert candidates["T-047"]["hydration_plan"]["mode"] == "executed"
-    assert candidates["T-048"]["hydration_plan"]["mode"] == "future_after_t047"
+    assert candidates["T-048"]["hydration_plan"]["mode"] == "executed"
     assert (
         candidates["T-049"]["hydration_plan"]["mode"]
         == "future_after_personal_root_rehearsal"
@@ -139,3 +139,9 @@ def test_follow_on_route_is_staged_t047_to_t050() -> None:
         for task_ref in ["T-047", "T-048", "T-049", "T-050"]
     ]
     assert route_positions == sorted(route_positions)
+
+    readiness = bank["readiness"]
+    assert readiness["candidate_first_slice"] == "slice-pkb-001-f"
+    assert readiness["next_candidate_ref"] == "slice-pkb-001-f"
+    assert readiness["readiness_status"] == "continue_research"
+    assert readiness["human_decision"] == "needs_operator_input"

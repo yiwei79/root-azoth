@@ -1,0 +1,91 @@
+schema_version: 1
+task_ref: T-048
+session_id: 2026-05-01-t-048
+manifest_ref: .azoth/handoffs/2026-05-01-t-048-desired-state-manifest.yaml
+reconciliation_mode: no_op_product_already_applied
+product_revision_already_applied: true
+observed_at: '2026-04-30T23:59:58Z'
+preflight:
+  scope_gate:
+    command: python3 scripts/check_gates.py --session-id 2026-05-01-t-048
+    status: passed
+    stdout:
+    - 'Scope gate valid: session 2026-05-01-t-048, TTL about 1h48m remaining'
+    - 'Pipeline gate valid: pipeline auto'
+  root_azoth:
+    command: git rev-parse HEAD && git status --short
+    head: 546191b5735d3137717f06bc7cafb5bc5be83b4a
+    status:
+    - 'M .azoth/backlog.yaml'
+    - '?? .azoth/run-ledger.local.yaml.lock'
+    - '?? tests/test_t048_desired_state_manifest.py'
+    note: Root dirty state is scoped to the active T-048 run bookkeeping and test
+      artifact before manifest/report writes.
+  public_azoth_product:
+    command: git -C /Users/yiwei/GithubRepos/azoth cat-file -e 0e93832ea5a9caff499128a84e4b046b8d44ac34^{commit}
+    status: passed
+    product_revision: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  personal_root_before:
+    command: git -C /Users/yiwei/GithubRepos/personal-azoth-root rev-parse HEAD
+      && git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short
+    head: 1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e
+    status: []
+  personal_root_validator_before:
+    command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+    status: passed
+    stdout: personal knowledge validation OK
+apply:
+  decision: no runtime overwrite
+  reason: personal-root already records release_ref v0.2.0 at the approved product_revision.
+  changed_target_paths:
+  - .azoth/releases/applied.yaml
+receipt:
+  deployment_id: t-048-personal-root-update-rehearsal-2026-05-01
+  task_ref: T-048
+  source_panel: root-azoth
+  target_panel: personal-root
+  source_commit: 546191b5735d3137717f06bc7cafb5bc5be83b4a
+  product_revision: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  release_ref: v0.2.0
+  manifest_ref: .azoth/handoffs/2026-05-01-t-048-desired-state-manifest.yaml
+  reconciliation_mode: no_op_product_already_applied
+  target_paths:
+  - .azoth/releases/applied.yaml
+  validation_commands:
+  - python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+  - git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short
+  rollback_ref: 1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e
+  approval_basis: Operator approved the T-048 manifest values on 2026-05-01 and
+    requested continuation through $azoth-auto.
+  non_goals_confirmed:
+  - no runtime overwrite
+  - no source registry onboarding
+  - no project repo mutation
+  - no retrieval expansion
+  - no public azoth release
+  - no credential access
+  - no governance, kernel, or M1 change
+post_validation:
+  personal_root_validator_after:
+    command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+    status: passed
+    stdout: personal knowledge validation OK
+  personal_root_status_after:
+    command: git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short
+    status: []
+  personal_root_receipt_packaging:
+    command: 'git -C /Users/yiwei/GithubRepos/personal-azoth-root commit -m "chore: record T-048 personal-root rehearsal receipt"'
+    status: passed
+    commit: 074748a950eefa9c5a69d63f4631a332fd899b9d
+  focused_tests:
+    command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_t048_desired_state_manifest.py
+      -q
+    status: passed
+    stdout: 3 passed
+residual_risks:
+- This was a no-op product reconciliation because the approved product revision
+  was already applied before T-048.
+- The target-plane evidence is packaged in personal-root commit
+  074748a950eefa9c5a69d63f4631a332fd899b9d.
+next_safe_action: Run T-049 only after the operator selects one or two pilot project
+  repos and approves a separate governed project-onboarding gate.

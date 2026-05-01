@@ -3743,10 +3743,11 @@ items:
   source: INI-PKB-001-personal-root-rc-rehearsal
   target_layer: infrastructure
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-04-30'
+  completed_date: '2026-05-01'
   description: Rehearse applying an explicitly approved Azoth release candidate
     or release into the personal root from declarative desired state, then validate
     and record receipt evidence. This pending governed infrastructure task does

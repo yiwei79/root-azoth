@@ -363,7 +363,7 @@ candidate_slices:
   proposed_task_id: T-048
   title: Personal-root RC update rehearsal from desired state
   initiative_ref: INI-PKB-001
-  status: hydrated
+  status: complete
   target_layer: infrastructure
   delivery_pipeline: governed
   summary: 'After T-047 defines the procedure, rehearse applying an approved azoth
@@ -383,6 +383,10 @@ candidate_slices:
   - .azoth/roadmap-specs/v0.2.0/T-047.yaml
   - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#stop-conditions
   - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-048-desired-state-manifest.yaml
+  - .azoth/handoffs/2026-05-01-t-048-validation-report.yaml
+  delivered_at: '2026-05-01T00:10:04Z'
   known_non_goals:
   - No source registry onboarding.
   - No project repo mutation.
@@ -483,26 +487,27 @@ candidate_slices:
     proposed_title: Stable personal-control-plane deployment closeout
     mode: future_after_project_onboarding_pilot
 readiness:
-  readiness_status: ready_to_hydrate
-  human_decision: approved
+  readiness_status: continue_research
+  human_decision: needs_operator_input
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
-  candidate_first_slice: slice-pkb-001-e
-  next_candidate_ref: slice-pkb-001-e
-  freshness_status: current_as_of_2026_04_30_hydrated_to_t_048
-  approval_scope: hydration_specific_slice_pkb_001_e
-  approval_basis: 'Operator explicitly approved hydration/scaffold for INI-PKB-001
-    slice-pkb-001-e into T-048 via $azoth-dynamic-full-auto on 2026-05-01. Approval
-    covers only roadmap/backlog/spec hydration and initiative-bank readiness updates;
-    it does not authorize T-048 implementation, personal-root mutation, source registry
-    onboarding, project repo mutation, retrieval expansion, public release, credentials,
-    cloud account provisioning, governance, kernel, or M1 changes.
+  candidate_first_slice: slice-pkb-001-f
+  next_candidate_ref: slice-pkb-001-f
+  freshness_status: current_as_of_2026_05_01_t048_complete_project_pilot_pending
+  approval_scope: t049_project_pilot_intake_needed
+  approval_basis: 'T-048 delivery is complete and its receipt evidence is recorded.
+    No operator approval has yet named the pilot project root or roots for T-049;
+    the next slice therefore requires operator input and a fresh governed gate before
+    hydration, project-write onboarding, source registry changes, retrieval expansion,
+    public release, credentials, cloud account provisioning, governance, kernel, or
+    M1 changes.
 
     '
-  acceptance_criteria_status: present_for_slice_pkb_001_e
-  non_goals_status: bounded_for_slice_pkb_001_e
-  hydration_recommendation: slice-pkb-001-e has been hydrated as T-048. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  acceptance_criteria_status: present_for_slice_pkb_001_f
+  non_goals_status: bounded_for_slice_pkb_001_f
+  hydration_recommendation: slice-pkb-001-f is the next candidate, but it needs operator
+    selection of one or two pilot project repos and a fresh governed approval before
+    hydration or project-panel mutation.
   allowed_outputs:
   - roadmap_task
   - backlog_row
