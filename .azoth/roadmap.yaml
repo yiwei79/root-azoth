@@ -692,14 +692,15 @@ initiatives:
   initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   source_proposal_refs:
   - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
-  discovery_status: t048_rehearsal_complete_project_pilot_pending_gate
+  discovery_status: t049_intake_ready_to_hydrate
   candidate_slice_ref: slice-pkb-001-f
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-048 personal-root rehearsal is complete. The next native
-    route is the project onboarding pilot candidate after the operator names the
-    exact project root or roots and approves a fresh governed gate; do not onboard
-    sources, expand retrieval, publish public azoth, or mutate project panels from
-    the T-048 scope.
+  next_discovery_action: T-049 intake is complete for personal root /Users/yiwei/GithubRepos/personal-azoth-root
+    and pilot project repo /Users/yiwei/GithubRepos/ras or ray. The next native route
+    may hydrate slice-pkb-001-f as T-049 with roadmap/backlog/spec artifacts only;
+    project profile writes, receipts, source onboarding, retrieval expansion, public
+    release, credentials, cloud provisioning, governance, kernel, and M1 work still
+    require a later fresh governed delivery gate.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, and
@@ -2127,7 +2128,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 15
+  current_patch: 16
   goal: 'Stabilization and rollout: freeze new initiative expansion, repair release
     truth, prove product extraction, publish a clean azoth product surface, and define
     the personal root control-plane deployment model. The first stable release must

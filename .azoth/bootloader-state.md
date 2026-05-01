@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.14 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 14
+0.1.4.15 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 15
 
 ## Last Session
-- **Session**: 2026-05-01-t-048
-- **Goal**: T-048: Personal-root RC update rehearsal from desired state
+- **Session**: 2026-05-01-t-049-intake
+- **Goal**: T-049 intake: project onboarding pilot through personal control plane
 - **Session mode**: delivery
-- **Pipeline**: auto
+- **Pipeline**: standard
 - **Outcome**: closed
-- **Episode**: ep-484 (success)
+- **Episode**: ep-486 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

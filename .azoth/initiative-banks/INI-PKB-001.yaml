@@ -436,19 +436,52 @@ candidate_slices:
   research_evidence_refs:
   - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#panel-routing
   - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#project-onboarding-pilot
+  intake_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-049-intake.yaml
+  pilot_project_refs:
+  - project_id: ras-or-ray
+    path: /Users/yiwei/GithubRepos/ras or ray
+    profile_mode: pointer_only
+    head: 82770daadf6db5056efdb1ace38d9535ee082a46
+  project_state_convention:
+    convention_id: minimal_pointer_profile_v1
+    surfaced_at_session_start:
+    - project_id
+    - title
+    - repo_path
+    - default_branch
+    - profile_mode
+    - handoff_receipt_ref
+    excluded_fields:
+    - source_files
+    - code_summaries
+    - secrets
+    - dependency_inventory
+    - retrieval_index
   known_non_goals:
   - No automatic project scanning.
   - No project code mutation without project-local scope.
   - No bulk source import.
   - No background daemon behavior.
-  open_questions:
-  - Which first two projects should be pilot consumers?
-  - What minimum project-state convention should personal root surface at session
-    start?
+  open_questions: []
   recommended_phase: final-personal-control-plane-deployment
   hydration_plan:
     proposed_title: Project onboarding pilot through personal control plane
-    mode: future_after_personal_root_rehearsal
+    mode: ready_after_t049_intake
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Project onboarding
+      pilot through personal control plane" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline governed --priority 1 --source INI-PKB-001-project-onboarding-pilot
+      --blocked-by T-048
+
+      '
+    pre_hydration_requirements:
+    - readiness.readiness_status must be ready_to_hydrate.
+    - readiness.human_decision must be approved for the T-049 planning scaffold.
+    - The hydrated task must preserve pointer-only project profile and receipt evidence
+      boundaries.
+    - Hydration approval does not authorize personal-root writes, project repo writes,
+      source onboarding, retrieval expansion, public release, credentials, cloud provisioning,
+      governance, kernel, or M1 changes.
 - candidate_id: slice-pkb-001-g
   proposed_task_id: T-050
   title: Stable personal-control-plane deployment closeout
@@ -487,27 +520,28 @@ candidate_slices:
     proposed_title: Stable personal-control-plane deployment closeout
     mode: future_after_project_onboarding_pilot
 readiness:
-  readiness_status: continue_research
-  human_decision: needs_operator_input
+  readiness_status: ready_to_hydrate
+  human_decision: approved
   classification: planning_discovery_seed
   source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
   candidate_first_slice: slice-pkb-001-f
   next_candidate_ref: slice-pkb-001-f
-  freshness_status: current_as_of_2026_05_01_t048_complete_project_pilot_pending
-  approval_scope: t049_project_pilot_intake_needed
-  approval_basis: 'T-048 delivery is complete and its receipt evidence is recorded.
-    No operator approval has yet named the pilot project root or roots for T-049;
-    the next slice therefore requires operator input and a fresh governed gate before
-    hydration, project-write onboarding, source registry changes, retrieval expansion,
-    public release, credentials, cloud account provisioning, governance, kernel, or
-    M1 changes.
+  freshness_status: current_as_of_2026_05_01_t049_intake_ready_to_hydrate
+  approval_scope: t049_pointer_only_project_pilot_intake
+  approval_basis: 'Operator requested T-049 intake on 2026-05-01 with personal root
+    /Users/yiwei/GithubRepos/personal-azoth-root and pilot project repo /Users/yiwei/GithubRepos/ras
+    or ray. Approval covers readiness and roadmap/backlog/spec hydration for a pointer-only
+    project profile and receipt-evidence pilot; it does not authorize personal-root
+    writes, project repo writes, source registry onboarding, retrieval expansion, public
+    release, credentials, cloud account provisioning, governance, kernel, or M1 changes.
 
     '
   acceptance_criteria_status: present_for_slice_pkb_001_f
   non_goals_status: bounded_for_slice_pkb_001_f
-  hydration_recommendation: slice-pkb-001-f is the next candidate, but it needs operator
-    selection of one or two pilot project repos and a fresh governed approval before
-    hydration or project-panel mutation.
+  hydration_recommendation: Hydrate slice-pkb-001-f as T-049 with personal root /Users/yiwei/GithubRepos/personal-azoth-root
+    and pilot project repo /Users/yiwei/GithubRepos/ras or ray. Hydration may create
+    roadmap/backlog/spec artifacts only; project profile writes and receipts require
+    a later fresh governed delivery gate.
   allowed_outputs:
   - roadmap_task
   - backlog_row
