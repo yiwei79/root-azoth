@@ -87,7 +87,7 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     assert "cd " in text
     assert "ras or ray" in text
     assert "Project-local context is authoritative" in text
-    assert "Do not paste cockpit memory as project instructions" in text
+    assert "Do not paste cockpit memory into project-local guidance" in text
 
     forbidden_context_imports = [
         "source_files",
@@ -95,6 +95,7 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
         "dependency_inventory",
         "secrets",
         "retrieval_index",
+        "project instructions",
     ]
     for forbidden in forbidden_context_imports:
         assert forbidden not in text

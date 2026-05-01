@@ -16,6 +16,7 @@ from cockpit_bootstrap_verify import (  # noqa: E402
     format_report,
     verify_cockpit_bootstrap,
 )
+from cockpit_command_surface import COCKPIT_COMMANDS, deploy_cockpit_command_surface  # noqa: E402
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
@@ -82,6 +83,13 @@ Start cockpit.
 | Render `ras-or-ray` handoff | `python3 scripts/cockpit_menu.py --project ras-or-ray` | No |
 | Render any project handoff | `python3 scripts/cockpit_menu.py --project <project_id>` | No |
 | Validate cockpit knowledge layout | `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit` | No |
+
+## Cockpit Command Surface
+
+""" + "\n".join(
+            f"- `{command.display_name}` / `${command.skill_name}`"
+            for command in COCKPIT_COMMANDS
+        ) + """
 """,
     )
     _write_yaml(
@@ -144,6 +152,18 @@ Start cockpit.
             ],
         },
     )
+    command_lines = "\n".join(
+        f"- `{command.display_name}` / `${command.skill_name}`"
+        for command in COCKPIT_COMMANDS
+    )
+    for rel_path in ("AGENTS.md", "CLAUDE.md"):
+        path = root / rel_path
+        path.write_text(
+            path.read_text(encoding="utf-8")
+            + f"\n## Cockpit Command Surface\n\n{command_lines}\n",
+            encoding="utf-8",
+        )
+    deploy_cockpit_command_surface(root)
     return root
 
 
@@ -188,6 +208,19 @@ def test_bootstrap_verify_requires_first_use_receipt(tmp_path: Path) -> None:
     )
 
     assert any("missing T-055 first-use onboarding receipt" in error for error in errors)
+
+
+def test_bootstrap_verify_requires_cockpit_command_wrappers(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    (root / ".agents" / "skills" / "azoth-cockpit" / "SKILL.md").unlink()
+
+    errors = verify_cockpit_bootstrap(
+        root,
+        include_git_status=False,
+        run_deployed_menu_check=False,
+    )
+
+    assert any("azoth-cockpit/SKILL.md: missing" in error for error in errors)
 
 
 def test_bootstrap_verify_reuses_pointer_firewall_checks(tmp_path: Path) -> None:

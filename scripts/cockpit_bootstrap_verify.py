@@ -19,6 +19,12 @@ except ModuleNotFoundError:  # pragma: no cover - defensive direct execution pat
     from cockpit_menu import check_cockpit, load_cockpit, render_menu
 
 try:
+    from cockpit_command_surface import check_cockpit_command_surface
+except ModuleNotFoundError:  # pragma: no cover - defensive direct execution path.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from cockpit_command_surface import check_cockpit_command_surface
+
+try:
     from yaml_helpers import safe_load_yaml_path
 except ModuleNotFoundError:  # pragma: no cover - defensive fallback.
     YAML_SAFE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
@@ -231,6 +237,7 @@ def verify_cockpit_bootstrap(
     _check_handbook(cockpit_root, errors)
     _check_deployment_receipt(cockpit_root, errors)
     _check_first_use_receipt(cockpit_root, errors)
+    errors.extend(check_cockpit_command_surface(cockpit_root))
 
     state = load_cockpit(cockpit_root, include_status=False)
     errors.extend(check_cockpit(state))

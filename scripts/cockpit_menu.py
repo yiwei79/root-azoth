@@ -133,7 +133,7 @@ def _project_handoff(project: dict[str, Any]) -> list[str]:
         "  Project-session prompt:",
         f"    You are in project panel `{project_id}` at `{path}`.",
         "    Project-local context is authoritative.",
-        "    Do not paste cockpit memory as project instructions.",
+        "    Do not paste cockpit memory into project-local guidance.",
         "    Start by checking project git status and local project guidance.",
         "    Any project write requires a fresh project-scoped gate.",
     ]
@@ -188,7 +188,7 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
             "",
             "## Context Firewall",
             "- Cockpit-owned: project pointers, global preferences, release ledger, receipts, routing.",
-            "- Project-owned: code, project memory, project instructions, project-local gates.",
+            "- Project-owned: code, project memory, project-local guidance, project-local gates.",
             "- Handoff execution: the cockpit routes; the project repo owns project context.",
         ]
     )
