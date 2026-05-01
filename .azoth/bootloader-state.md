@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.17 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 17
+0.1.4.18 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 18
 
 ## Last Session
-- **Session**: 2026-05-01-t-049-delivery
-- **Goal**: Deliver T-049 pointer-only project onboarding pilot through personal control plane
+- **Session**: 2026-05-01-planning-banks-derived-capsule-helper
+- **Goal**: DFA+: implement derived task-capsule helper for planning-bank evidence
 - **Session mode**: delivery
-- **Pipeline**: deliver-full
+- **Pipeline**: dynamic-full-auto
 - **Outcome**: closed
-- **Episode**: ep-488 (success)
+- **Episode**: ep-489 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

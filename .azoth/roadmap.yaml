@@ -2171,7 +2171,7 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 18
+  current_patch: 19
   goal: 'Post-stable stabilization repair window: keep new initiative expansion
     frozen while reconciling release truth, cockpit deployability, planning truth,
     formatting gates, and public-product freshness policy after the v0.2.0 stable
