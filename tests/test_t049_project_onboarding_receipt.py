@@ -92,6 +92,6 @@ def test_ini_pkb_marks_t049_delivered_and_routes_post_t050_continuation() -> Non
     assert readiness["hydrate_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "hydration_specific_slice_pkb_001_j"
+        == "t053_delivery_scope_private_backup_recovery_onboarding"
     )
-    assert "Hydrate slice-pkb-001-j" in readiness["hydration_recommendation"]
+    assert "has been hydrated as T-053" in readiness["hydration_recommendation"]

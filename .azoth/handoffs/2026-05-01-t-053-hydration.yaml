@@ -1,0 +1,63 @@
+schema_version: 1
+task_ref: T-053
+candidate_ref: INI-PKB-001#slice-pkb-001-j
+session_id: 2026-05-01-t-053-hydration-cockpit-readiness
+hydrated_at: '2026-05-01T09:54:33Z'
+hydration_mode: roadmap_backlog_spec_only
+operator_goal: >
+  Aim at proper deployment for the personal cockpit and provide onboarding when the
+  work is done, while following the repo-native route before implementation.
+approval_scope: hydration_specific_slice_pkb_001_j
+source_seed_ref: .azoth/handoffs/2026-05-01-t-053-private-backup-recovery-seed.yaml
+hydrated_artifacts:
+  roadmap_ref: .azoth/roadmap.yaml#T-053
+  backlog_ref: .azoth/backlog.yaml#T-053
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-053.yaml
+  initiative_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml#slice-pkb-001-j
+delivery_boundary:
+  next_gate: t053_delivery_scope_private_backup_recovery_onboarding
+  allowed_next_outputs:
+  - root_side_backup_recovery_readiness_documentation
+  - operator_onboarding_guide
+  - delivery_handoff
+  - focused_validation
+  forbidden_next_outputs:
+  - backup_provisioning
+  - storage_write
+  - credential_access
+  - cloud_account_provisioning
+  - personal_cockpit_mutation
+  - project_repo_write
+  - source_registry_onboarding
+  - retrieval_indexing
+  - public_release_publication
+validation_results:
+- command: python3 scripts/check_gates.py --session-id 2026-05-01-t-053-hydration-cockpit-readiness --require-pipeline-gate
+  status: passed
+  result: Scope gate and pipeline gate valid for hydration_specific_slice_pkb_001_j.
+- command: python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml --check-roadmap-refs
+  status: passed
+  result: Initiative bank schema and roadmap refs valid after T-053 hydration.
+- command: python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-PKB-001.yaml
+  status: passed
+  result: Readiness report shows slice-pkb-001-j -> T-053 is hydrated, ready_to_hydrate=false, and repeat hydration is blocked.
+- command: python3 -m ruff check tests/test_personal_control_plane_procedure.py tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py tests/test_t049_project_onboarding_receipt.py
+  status: passed
+  result: Focused lint checks passed.
+- command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_control_plane_procedure.py tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py tests/test_t049_project_onboarding_receipt.py -q
+  status: passed
+  result: 22 passed.
+- command: python3 scripts/roadmap_dashboard.py --theme E
+  status: passed
+  result: Dashboard shows INI-PKB-001 candidate slice-pkb-001-j -> T-053 as hydrated and T-053 upcoming.
+- command: python3 scripts/azoth-deploy.py --check
+  status: passed
+  result: All 277 deployed files in sync.
+- command: git diff --check
+  status: passed
+  result: No whitespace errors.
+next_safe_action: >
+  Open a fresh T-053 delivery gate for root-side backup/recovery readiness and
+  operator onboarding documentation. Do not provision backups, access credentials,
+  write storage, mutate the cockpit, mutate project repos, onboard sources, expand
+  retrieval, or publish a release under this hydration approval.

@@ -144,5 +144,5 @@ def test_follow_on_route_is_staged_t047_to_t050_then_fresh_continuation() -> Non
     assert readiness["delivery_authorized"] is False
     assert (
         readiness["next_readiness_gate"]
-        == "hydration_specific_slice_pkb_001_j"
+        == "t053_delivery_scope_private_backup_recovery_onboarding"
     )

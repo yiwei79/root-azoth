@@ -19,6 +19,8 @@ T052_HANDOFF_PATH = (
 T053_SEED_PATH = (
     ROOT / ".azoth" / "handoffs" / "2026-05-01-t-053-private-backup-recovery-seed.yaml"
 )
+T053_HYDRATION_PATH = ROOT / ".azoth" / "handoffs" / "2026-05-01-t-053-hydration.yaml"
+T053_SPEC_PATH = ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-053.yaml"
 
 
 def _load_yaml(path: Path) -> dict:
@@ -80,12 +82,15 @@ def test_ini_pkb_marks_t051_stop_defer_decision_complete() -> None:
     assert readiness["readiness_status"] == "ready_to_hydrate"
     assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
     assert readiness["next_candidate_ref"] == "slice-pkb-001-j"
-    assert readiness["approval_scope"] == "t053_private_backup_recovery_seed_only"
+    assert readiness["approval_scope"] == "hydration_specific_slice_pkb_001_j"
     assert readiness["delivery_authorized"] is False
     assert readiness["hydrate_authorized"] is False
     assert readiness["ship_authorized"] is False
-    assert readiness["next_readiness_gate"] == "hydration_specific_slice_pkb_001_j"
-    assert "Hydrate slice-pkb-001-j" in readiness["hydration_recommendation"]
+    assert (
+        readiness["next_readiness_gate"]
+        == "t053_delivery_scope_private_backup_recovery_onboarding"
+    )
+    assert "has been hydrated as T-053" in readiness["hydration_recommendation"]
 
 
 def test_t051_delivery_closes_roadmap_backlog_and_preserves_spec() -> None:
@@ -180,7 +185,7 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
     t052_slice = next(item for item in initiative["slices"] if item["task_ref"] == "T-052")
     p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
-    assert initiative["discovery_status"] == "t053_private_backup_recovery_seed_ready"
+    assert initiative["discovery_status"] == "t053_private_backup_recovery_hydrated"
     assert initiative["candidate_slice_ref"] == "slice-pkb-001-j"
     assert t052_slice["status"] == "complete"
     assert t052_slice["role"] == "historical"
@@ -204,7 +209,10 @@ def test_t052_planning_truth_is_terminal_and_points_to_next_gate() -> None:
     readiness = bank["readiness"]
     assert readiness["candidate_first_slice"] == "slice-pkb-001-j"
     assert readiness["readiness_status"] == "ready_to_hydrate"
-    assert readiness["next_readiness_gate"] == "hydration_specific_slice_pkb_001_j"
+    assert (
+        readiness["next_readiness_gate"]
+        == "t053_delivery_scope_private_backup_recovery_onboarding"
+    )
 
 
 def test_t053_seed_selects_backup_recovery_without_provisioning() -> None:
@@ -224,14 +232,53 @@ def test_t053_seed_selects_backup_recovery_without_provisioning() -> None:
     )
 
     assert candidate["proposed_task_id"] == "T-053"
-    assert candidate["status"] == "candidate"
+    assert candidate["status"] == "hydrated"
     assert candidate["target_layer"] == "planning"
     assert candidate["delivery_pipeline"] == "governed"
     assert "No backup provisioning or storage writes." in candidate["known_non_goals"]
     assert "No credential access or cloud account provisioning." in candidate[
         "known_non_goals"
     ]
-    assert candidate["hydration_plan"]["mode"] == "proposed"
+    assert candidate["hydration_plan"]["mode"] == "executed"
+    assert candidate["hydration_plan"]["hydrated_task_ref"] == "T-053"
+    assert candidate["hydration_plan"]["hydrated_spec_ref"] == (
+        ".azoth/roadmap-specs/v0.2.0/T-053.yaml"
+    )
     assert "Private backup and recovery readiness" in candidate["hydration_plan"][
         "scaffold_command"
     ]
+
+
+def test_t053_hydration_sets_delivery_boundary_for_onboarding() -> None:
+    spec = _load_yaml(T053_SPEC_PATH)
+    handoff = _load_yaml(T053_HYDRATION_PATH)
+    backlog = _load_yaml(BACKLOG_PATH)
+    roadmap = _load_yaml(ROADMAP_PATH)
+
+    row = next(item for item in backlog["items"] if item.get("id") == "T-053")
+    initiative = next(item for item in roadmap["initiatives"] if item["id"] == "INI-PKB-001")
+    p4 = next(version for version in roadmap["versions"] if version["id"] == "v0.2.0-p4")
+
+    assert row["status"] == "pending"
+    assert row["target_layer"] == "planning"
+    assert row["delivery_pipeline"] == "governed"
+    assert "operator onboarding guide" in row["description"]
+    assert initiative["task_ref"] == "T-053"
+    assert initiative["spec_ref"] == ".azoth/roadmap-specs/v0.2.0/T-053.yaml"
+    assert any(task.get("id") == "T-053" for task in p4.get("tasks", []))
+
+    assert spec["id"] == "T-053"
+    assert "T-052" in spec["dependencies"]
+    assert spec["delivery"]["delivery_pipeline"] == "governed"
+    assert any("operator onboarding guide" in item for item in spec["scope"])
+    assert "No backup provisioning or storage writes." in spec["non_goals"]
+    assert "No personal-cockpit mutation." in spec["non_goals"]
+
+    assert handoff["approval_scope"] == "hydration_specific_slice_pkb_001_j"
+    assert handoff["delivery_boundary"]["next_gate"] == (
+        "t053_delivery_scope_private_backup_recovery_onboarding"
+    )
+    assert "operator_onboarding_guide" in handoff["delivery_boundary"][
+        "allowed_next_outputs"
+    ]
+    assert "credential_access" in handoff["delivery_boundary"]["forbidden_next_outputs"]
