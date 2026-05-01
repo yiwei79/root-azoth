@@ -186,7 +186,7 @@ Stop before the affected edge when:
 
 ## Relation to Other Modes
 
-`/auto` is the default composed delivery path. `dynamic-full-auto` is the high-autonomy
+`/auto` is the explicit composed delivery path. `dynamic-full-auto` is the high-autonomy
 one-session adaptive delivery pipeline with discovery/research insertion. `autonomous-auto`
 is the branch-local self-development mode with async alignment, explicit `approval_basis`
 persistence, and an optional loop governor for continuing from one proposal, initiative,

@@ -289,7 +289,7 @@ orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/
 | `/bootstrap` | Lifecycle | Day 0 guided kernel creation |
 | `/session-closeout` | Lifecycle | Unified eval + close + sync |
 | `/remember` | Lifecycle | Capture cross-session learning |
-| `/auto` | Pipeline | Auto-compose and execute pipeline (default) |
+| `/auto` | Pipeline | Auto-compose and execute an explicit governed delivery pipeline |
 | `/dynamic-full-auto` | Pipeline | DYNAMIC-FULL-AUTO+ discovery swarms, digest, Γ, then delivery handoff |
 | `/deliver` | Pipeline | Lean pipeline (pre-approved work) |
 | `/deliver-full` | Pipeline | Full pipeline with governance gates |
@@ -426,13 +426,15 @@ goal_clarification:
 
 ### Auto-Pipeline (D23)
 
-Default behavior when user doesn't specify a pipeline. The Orchestrator classifies the
-goal, reads the latest local context, and composes a pipeline from a shared stage-family
-vocabulary. Presets remain conservative reference compositions, not rigid output targets.
+Default governed delivery behavior when the user explicitly invokes `/auto` or a lite/default
+route escalates into azoth-full. Ordinary work starts in azoth-lite first. Once delivery is
+explicit, the Orchestrator classifies the goal, reads the latest local context, and composes
+a pipeline from a shared stage-family vocabulary. Presets remain conservative reference
+compositions, not rigid output targets.
 
 ```yaml
 auto_pipeline:
-  trigger: Any goal without explicit pipeline selection
+  trigger: Explicit /auto, $azoth-auto, or escalation from azoth-lite into azoth-full governed delivery
 
   classification:
     scope: kernel | skills | agents | pipelines | docs | mixed
@@ -505,7 +507,7 @@ continue end-to-end, but it is not a discovery wrapper or a forced handoff mode.
 | `research` | Architect(+research-swarm)→ArchReview | Investigation/analysis |
 | `review` | Architect→Governance→ArchReview | Code/governance review only |
 | `refactor` | Architect(+explore)→Planner→TestBuilder→SWE→ArchReview | Structural changes, TDD |
-| `auto` | *Composed dynamically via D23* | **Default — always** |
+| `auto` | *Composed dynamically via D23* | Explicit governed delivery default after `/auto`, `$azoth-auto`, scope approval, or lite escalation |
 
 ### Gate Typing (D24)
 
@@ -911,7 +913,7 @@ azoth/
 | D20 | No multi-platform layers in kernel | Kernel stays agnostic |
 | D21 | Full pipeline: 7 stages with typed gates | Research-validated canonical pattern |
 | D22 | Goal Clarification Protocol (Stage 0) | Adaptive questioning, no hard cap |
-| D23 | Auto-pipeline: LLM-as-router composition | Default behavior, 8 presets |
+| D23 | Auto-pipeline: LLM-as-router composition | Explicit governed delivery behavior, 8 presets |
 | D24 | Gate typing: human vs agent | Kernel/governance gates must be human |
 | D25 | Seed slash commands: documented minimum set + scaffold extensions | Essential lifecycle + pipeline + quality; see § Seed Commands (D25) |
 | D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |

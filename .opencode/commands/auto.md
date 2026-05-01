@@ -5,7 +5,7 @@ agent: orchestrator
 
 # /auto $ARGUMENTS
 
-The default pipeline. Classify the goal and compose the optimal pipeline.
+The explicit governed delivery pipeline. Classify the goal and compose the optimal pipeline.
 
 ## Preconditions
 

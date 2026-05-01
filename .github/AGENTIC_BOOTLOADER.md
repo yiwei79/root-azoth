@@ -46,7 +46,7 @@ for AI agents that is mutatable to do anything, with governance, memory, and tru
 | Command | Purpose |
 |---------|---------|
 | `/bootstrap` | Day 0 guided kernel creation |
-| `/auto` | Auto-compose and execute pipeline (default) |
+| `/auto` | Auto-compose and execute explicit governed delivery |
 | `/deliver` | Lean pipeline for pre-approved work |
 | `/deliver-full` | Full pipeline with governance gates |
 | `/plan` | Structured planning without execution |

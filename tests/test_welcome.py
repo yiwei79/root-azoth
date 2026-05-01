@@ -910,6 +910,8 @@ def test_plain_dashboard_includes_all_sections(
     assert "── Top Backlog" in out
     assert "── Last Session" in out
     assert "── START" in out
+    assert "azoth-lite default" in out
+    assert "explicit /auto" in out
     assert "AZOTH" in out
     assert "AZOTH_SESSION_ORIENTATION_BEGIN" in out
     assert "AZOTH_SESSION_ORIENTATION_END" in out
