@@ -426,7 +426,7 @@ def _profile_action_hints(parsed: ParsedPrompt, goal: str) -> tuple[str, ...]:
 def _profile_path_hints(goal: str) -> tuple[str, ...]:
     paths: list[str] = []
     for match in PATH_HINT_RE.finditer(goal):
-        path = match.group("path").strip("`'\".,;:()[]{}")
+        path = match.group("path").strip("`'\",;:()[]{}")
         if path:
             paths.append(path)
     return tuple(dict.fromkeys(paths))

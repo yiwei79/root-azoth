@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Advisory azoth-lite profile classifier.
 
-This helper is intentionally opt-in. It is not imported by hooks, routers,
-command contracts, adapters, closeout, or release tooling.
+This helper is used by the Codex control-plane router as a default-posture
+advisory classifier. It does not mutate runtime state on its own.
 """
 
 from __future__ import annotations
@@ -36,12 +36,16 @@ FOCUSED_VERIFICATION_ACTIONS = {
     "verify",
 }
 LOCAL_EDIT_ACTIONS = {
+    "add",
     "create",
     "edit",
     "fix",
     "implement",
+    "migrate",
+    "patch",
     "refactor",
     "update",
+    "wire",
     "write",
 }
 EXTERNAL_OR_DESTRUCTIVE_ACTIONS = {
@@ -67,10 +71,25 @@ EXTERNAL_OR_DESTRUCTIVE_ACTIONS = {
 
 GOVERNED_PATH_PREFIXES = (
     ".azoth/",
+    ".agents/rules/",
+    ".agents/skills/",
+    ".agents/workflows/",
+    ".claude/agents/",
     ".claude/commands/",
+    ".claude/skills/",
+    ".codex/agents/",
     ".gemini/commands/",
+    ".gemini/agents/",
+    ".github/agents/",
     ".github/prompts/",
+    ".github/skills/",
+    ".opencode/agents/",
     ".opencode/commands/",
+    ".opencode/skills/",
+    "agents/",
+    "commands/",
+    "pipelines/",
+    "skills/",
 )
 KERNEL_OR_GOVERNANCE_PATH_PREFIXES = (
     ".claude/hooks/",

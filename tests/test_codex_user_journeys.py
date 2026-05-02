@@ -194,6 +194,34 @@ def test_profile_default_escalates_governed_state_to_auto_delivery_route(
     assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
 
 
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "update commands/start/body.md routing text",
+        "update .azoth/roadmap.yaml task state",
+        "edit agents/tier1-core/builder.agent.md contract",
+        "patch skills/context-recall/SKILL.md guidance",
+        "update .claude/skills/context-recall/SKILL.md skill guidance",
+        "change pipelines/auto.pipeline.yaml routing row",
+    ),
+)
+def test_profile_default_escalates_contract_surface_edits_to_auto_delivery_route(
+    tmp_path: Path,
+    prompt: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: governed_state" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "escalation_reasons: governed_state_change" in ctx
+
+
 def test_profile_advisory_escalates_finality_without_changing_routed_command(
     tmp_path: Path,
 ) -> None:

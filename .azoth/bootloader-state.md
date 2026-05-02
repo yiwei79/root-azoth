@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.20 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 20
+0.1.4.21 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 21
 
 ## Last Session
-- **Session**: 2026-05-02-trusted-source-alias-intake
-- **Goal**: Add human-approved internal source aliases to .azoth/trusted-sources.yaml, then rerun native intake on the remaining queued internal-alias JSONL files. Process only current .azoth/inbox/*.jsonl files whose sources match the newly approved aliases. No code changes, no roadmap/spec hydration, no public release, no project repo writes, and no non-intake backlog expansion beyond architect-selected grouped follow-up items.
+- **Session**: 2026-05-02-bl-078
+- **Goal**: BL-078: Azoth-lite governed path escalation for command and agent contract surfaces
 - **Session mode**: delivery
-- **Pipeline**: dynamic-full-auto
+- **Pipeline**: governed
 - **Outcome**: closed
-- **Episode**: ep-524 (success)
+- **Episode**: ep-525 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

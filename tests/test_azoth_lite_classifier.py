@@ -75,6 +75,38 @@ def test_escalation_decision_includes_advisory_handoff_packet() -> None:
     assert "governed_state_change" in decision.escalation_reasons
 
 
+@pytest.mark.parametrize(
+    "planned_path",
+    (
+        "commands/start/body.md",
+        "agents/tier1-core/builder.agent.md",
+        "skills/context-recall/SKILL.md",
+        "pipelines/auto.pipeline.yaml",
+        ".claude/skills/context-recall/SKILL.md",
+        ".agents/skills/azoth-start/SKILL.md",
+        ".agents/workflows/next.md",
+        ".codex/agents/builder.toml",
+        ".github/agents/builder.agent.md",
+    ),
+)
+def test_contract_and_generated_surfaces_escalate_to_governed_delivery(
+    planned_path: str,
+) -> None:
+    decision = classify_request(
+        AzothLiteRequest(
+            goal=f"update {planned_path}",
+            requested_actions=("update",),
+            planned_paths=(planned_path,),
+        )
+    )
+
+    assert decision.side_effect_class == "governed_state"
+    assert decision.selected_profile == "azoth-full"
+    assert decision.stop_state == "escalate"
+    assert decision.escalate is True
+    assert "governed_state_change" in decision.escalation_reasons
+
+
 def test_context_view_is_compact_and_advisory_for_local_edit() -> None:
     case = next(
         item

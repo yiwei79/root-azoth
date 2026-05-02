@@ -3908,10 +3908,11 @@ items:
   source: CPR-PR15-001
   target_layer: infrastructure
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-02'
+  completed_date: '2026-05-02'
   description: >
     Repair azoth-lite classification so edits targeting command-contract and
     generated agent/skill/pipeline surfaces escalate to governed delivery instead
