@@ -1,0 +1,60 @@
+schema_version: 1
+task_ref: T-060
+session_id: 2026-05-02-t-060-p1-format-gate-repair
+delivery_mode: p1_pre_pr_fast_fail_repair
+observed_at: '2026-05-02T02:06:20+02:00'
+approval_scope: p1_pre_pr_fast_fail_repair_only
+source_signal:
+  command: python3 scripts/pre_pr_fast_fail.py
+  initial_status: failed
+  initial_findings:
+  - 6 files required ruff formatting.
+  - tests/test_planning_banks.py contained one unused local variable after formatting.
+changes:
+- path: scripts/codex_control_plane.py
+  summary: Applied ruff formatting only.
+- path: scripts/planning_bank_validate.py
+  summary: Applied ruff formatting only.
+- path: scripts/welcome.py
+  summary: Applied ruff formatting only.
+- path: tests/test_azoth_lite_classifier.py
+  summary: Applied ruff formatting only.
+- path: tests/test_codex_user_journeys.py
+  summary: Applied ruff formatting only.
+- path: tests/test_planning_banks.py
+  summary: Applied ruff formatting and removed the unused `bank` assignment reported by ruff F841.
+validation_results:
+- command: python3 scripts/check_gates.py --session-id 2026-05-02-t-060-p1-format-gate-repair --require-pipeline-gate
+  status: passed
+  result: Scope and pipeline gates valid for dynamic-full-auto.
+- command: python3 scripts/pre_pr_fast_fail.py
+  status: passed
+  result: >
+    azoth-deploy --check passed, ruff format --check passed, ruff check passed,
+    and 10 focused tests passed.
+acceptance_results:
+  pre_pr_fast_fail_green: passed
+  generated_surface_parity: passed
+  format_gate: passed
+  lint_gate: passed
+  focused_pytest_gate: passed
+forbidden_outputs_confirmed:
+- governance_change
+- kernel_change
+- m1_change
+- public_product_mutation
+- release_publication
+- unrelated_refactor
+- project_repo_write
+- credential_access
+- remote_write
+- storage_write
+decision:
+  p1_pre_pr_fast_fail_repair: passed
+  recommendation: >
+    Treat the P1 pre-PR readiness blocker as cleared for this branch snapshot.
+    The next system-derived lane is the PR15 azoth-lite review intake/fix, unless
+    the operator first wants to push the current local commit stack.
+next_safe_action: >
+  Commit this repair separately, then either push the local branch or open a
+  narrow PR15 azoth-lite routing repair gate.

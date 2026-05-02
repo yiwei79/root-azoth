@@ -433,7 +433,9 @@ def _profile_path_hints(goal: str) -> tuple[str, ...]:
 
 
 def _profile_decision(parsed: ParsedPrompt, *, goal: str | None = None) -> AzothLiteDecision:
-    advisory_goal = (goal or parsed.prompt_goal or parsed.raw_arguments or parsed.raw_prompt).strip()
+    advisory_goal = (
+        goal or parsed.prompt_goal or parsed.raw_arguments or parsed.raw_prompt
+    ).strip()
     if not advisory_goal:
         advisory_goal = parsed.canonical_input or parsed.source_command or "Codex route"
 

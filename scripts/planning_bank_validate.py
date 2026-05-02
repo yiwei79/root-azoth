@@ -615,7 +615,9 @@ def build_derived_task_capsule_report(
     if initiative_id != rel.stem:
         raise PlanningBankValidationError(f"{rel}: initiative_id must match filename stem")
     readiness = doc.get("readiness") if isinstance(doc.get("readiness"), dict) else {}
-    candidates = doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    candidates = (
+        doc.get("candidate_slices") if isinstance(doc.get("candidate_slices"), list) else []
+    )
     selected_candidate_id = candidate_id or readiness.get("candidate_first_slice")
     candidate = next(
         (

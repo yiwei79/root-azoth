@@ -752,9 +752,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         lines.append("  closeout → /session-closeout — light closeout for exploratory session")
     else:
         lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
-    lines.append(
-        "  <goal>   → azoth-lite default; explicit /auto for governed delivery"
-    )
+    lines.append("  <goal>   → azoth-lite default; explicit /auto for governed delivery")
     lines.append(
         "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto / $azoth-autonomous-auto; app slash list for enabled azoth-* skills; raw slash tokens remain compatibility fallback"
     )

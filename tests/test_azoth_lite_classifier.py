@@ -45,7 +45,9 @@ def test_fixture_set_represents_all_side_effect_classes() -> None:
     assert {decision.side_effect_class for decision in decisions} == set(SIDE_EFFECT_CLASSES)
 
 
-@pytest.mark.parametrize("case", _load_fixture_group("side_effect_cases"), ids=lambda case: case["id"])
+@pytest.mark.parametrize(
+    "case", _load_fixture_group("side_effect_cases"), ids=lambda case: case["id"]
+)
 def test_side_effect_fixtures_classify_to_expected_profile(case: dict[str, object]) -> None:
     decision = classify_request(AzothLiteRequest.from_mapping(case))
 

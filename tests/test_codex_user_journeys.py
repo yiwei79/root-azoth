@@ -139,9 +139,7 @@ def test_profile_advisory_surfaces_read_only_without_changing_start_route(
     ctx = hook["additionalContext"]
 
     assert hook["updatedInput"] == "$azoth-start explain current repo status"
-    assert (
-        "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
-    )
+    assert "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
     assert "side_effect_class: read_only" in ctx
     assert "stop_state: done" in ctx
 

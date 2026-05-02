@@ -336,7 +336,6 @@ def test_ini_evi_002_bank_reconciles_helper_and_hydrates_distinct_follow_on() ->
 
 
 def test_ini_evi_002_readiness_report_marks_t046_lane_terminal() -> None:
-    bank = _load_yaml(INITIATIVE_BANK_PATH)
     report = build_initiative_readiness_report(INITIATIVE_BANK_PATH)
 
     assert report["initiative_id"] == "INI-EVI-002"
@@ -488,21 +487,31 @@ def test_derived_task_capsule_report_refuses_live_hydrated_candidate() -> None:
     )
 
     assert report["ready_to_emit"] is False
-    assert "refuse: no repeat derivation or hydration action remains" in report[
-        "refusal_reasons"
-    ]
+    assert "refuse: no repeat derivation or hydration action remains" in report["refusal_reasons"]
     assert report["preview_capsule"]["candidate_slice_ref"] == "slice-evi-002-f"
 
 
 @pytest.mark.parametrize(
     ("fixture_updates", "expected_reason"),
     [
-        ({"source_fresh_until": "2026-04-30T00:00:00Z"}, "refuse: refresh source evidence before derivation"),
-        ({"source_status": "conflicting"}, "refuse: resolve or carry conflict through research_sufficiency.py"),
+        (
+            {"source_fresh_until": "2026-04-30T00:00:00Z"},
+            "refuse: refresh source evidence before derivation",
+        ),
+        (
+            {"source_status": "conflicting"},
+            "refuse: resolve or carry conflict through research_sufficiency.py",
+        ),
         ({"source_fresh_until": None}, "refuse: required candidate or evidence fields are absent"),
-        ({"human_decision": "pending"}, "refuse: explicit approval is required before derivation output"),
+        (
+            {"human_decision": "pending"},
+            "refuse: explicit approval is required before derivation output",
+        ),
         ({"candidate_status": "parked"}, "refuse: candidate status must be candidate"),
-        ({"target_layer": "governance"}, "refuse: protected/kernel/governance outputs require human gate"),
+        (
+            {"target_layer": "governance"},
+            "refuse: protected/kernel/governance outputs require human gate",
+        ),
     ],
 )
 def test_derived_task_capsule_report_refuses_stale_conflicting_missing_unapproved_and_protected_inputs(
