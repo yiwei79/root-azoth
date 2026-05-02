@@ -3903,3 +3903,60 @@ items:
   initiative_ref: INI-PKB-001
   blocked_by:
   - T-054
+- id: BL-078
+  title: Azoth-lite governed path escalation for command and agent contract surfaces
+  source: CPR-PR15-001
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-02'
+  description: >
+    Repair azoth-lite classification so edits targeting command-contract and
+    generated agent/skill/pipeline surfaces escalate to governed delivery instead
+    of falling through to local_edit. Include coverage for `commands/` and the
+    adjacent contract roots named in the PR15 review, then verify Codex routing
+    behavior with focused classifier/control-plane tests.
+- id: BL-079
+  title: Autonomous-auto operator reporting and UX evidence contract
+  source: trusted-source-alias-intake-2026-05-02
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-02'
+  description: >
+    Distill the queued operator-feedback, dynamic-full-auto-retrospective, and
+    architect-retrospective insights into a governed autonomous-auto reporting
+    repair: executive read, campaign implications, UX Anchor Fit/Scorecard,
+    evaluator evidence normalization, and operator-readable packet parity.
+- id: BL-080
+  title: Autonomous-auto route authority and strategy preflight hardening
+  source: trusted-source-alias-intake-2026-05-02
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-02'
+  description: >
+    Harden autonomous-auto route selection so lifecycle-route authority,
+    proposal-backed hydration preflight, completed-candidate detection,
+    threshold rationale, external freshness materiality, and planning-bank
+    continuation language are checked before opening new campaign or child scope.
+- id: BL-081
+  title: Autonomous-auto closeout packaging and stage-evidence reliability
+  source: trusted-source-alias-intake-2026-05-02
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-02'
+  description: >
+    Repair autonomous-auto lifecycle reliability around hydration-only closeout,
+    green-but-dirty packaging, child run identity, stage-summary disposition
+    vocabulary, delegated execution-mode evidence, campaign-audit completion
+    evidence, and self-capture materialization.

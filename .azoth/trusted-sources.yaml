@@ -63,3 +63,59 @@ sources:
     require_approval: human
     added_date: "2026-04-17"
     added_by: human
+
+  - id: operator-feedback
+    name: "Operator Feedback — session-captured human feedback"
+    description: "Human/operator feedback captured into inbox as governed session reflection material"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: autonomous-auto-loop
+    name: "Autonomous Auto Loop — internal loop self-observation"
+    description: "Internal autonomous-auto loop observations routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: autonomous-auto-closeout
+    name: "Autonomous Auto Closeout — internal closeout packet"
+    description: "Autonomous-auto closeout observations routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: autonomous-auto-route-stop
+    name: "Autonomous Auto Route Stop — internal route-stop packet"
+    description: "Autonomous-auto route-stop observations routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: dynamic-full-auto-retrospective
+    name: "Dynamic Full Auto Retrospective — internal retrospective"
+    description: "Dynamic-full-auto retrospective findings routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: architect-retrospective
+    name: "Architect Retrospective — internal architect review"
+    description: "Architect retrospective findings routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
+
+  - id: codex-session
+    name: "Codex Session — internal Codex session reflection"
+    description: "Codex session observations routed through inbox for governed intake"
+    trust_level: verified
+    require_approval: human
+    added_date: "2026-05-02"
+    added_by: human
