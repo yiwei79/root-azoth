@@ -184,6 +184,13 @@ Stop before the affected edge when:
 - scope/pipeline gates or write claims are invalid or still live from a previous child scope,
 - external freshness is material and cannot be verified.
 
+Machine-readable route/preflight packets should encode material freshness as
+`freshness_materiality: material` (or `external_freshness_materiality: material`) and
+must pair it with verified/current evidence before `decide-next` or `open-next` may
+continue. If freshness is material but unverifiable, stop with
+`verify_external_freshness_before_open_next`; do not infer route authority from stale
+local evidence alone.
+
 ## Relation to Other Modes
 
 `/auto` is the explicit composed delivery path. `dynamic-full-auto` is the high-autonomy

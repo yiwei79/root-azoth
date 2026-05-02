@@ -3939,10 +3939,11 @@ items:
   source: trusted-source-alias-intake-2026-05-02
   target_layer: infrastructure
   delivery_pipeline: governed
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-02'
+  completed_date: '2026-05-02'
   description: >
     Harden autonomous-auto route selection so lifecycle-route authority,
     proposal-backed hydration preflight, completed-candidate detection,

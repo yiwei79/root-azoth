@@ -1008,6 +1008,152 @@ def test_discovered_proposal_hydration_stops_when_matching_task_is_complete(
     assert decision["route_decision"]["selected_route"] == "stop"
 
 
+def test_next_campaign_recommendation_blocks_duplicate_proposal_hydration_with_route_authority(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {
+                "id": "T-028",
+                "title": "Run-ledger serialized stage evidence writes",
+                "source": "proposal-run-ledger-atomic-stage-evidence",
+                "status": "complete",
+                "completed_date": "2026-04-25",
+            }
+        ],
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    status = autonomous_loop.operator_read(tmp_path, state_path)
+
+    recommendation = autonomous_loop._next_campaign_recommendation(tmp_path, state, status)
+
+    assert recommendation["available"] is False
+    assert recommendation["reason"] == "no_non_protected_candidate"
+    assert (
+        recommendation["blocked_recommendations"][0]["route_preflight"]["route_state"]
+        == "proposal_hydration_already_completed"
+    )
+    assert (
+        recommendation["blocked_recommendations"][0]["route_preflight"]["selected_route"] == "stop"
+    )
+
+
+def test_next_campaign_recommendation_includes_threshold_rationale_for_selected_route(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        {
+            "items": [
+                {
+                    "id": "BL-900",
+                    "title": "Known ready backlog delivery",
+                    "status": "pending",
+                    "priority": 1,
+                    "target_layer": "infrastructure",
+                    "delivery_pipeline": "standard",
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/fresh-hydration.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Fresh hydration",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Fresh hydration",
+                    "route": "hydrate_task",
+                    "placement": {"target_layer": "infrastructure"},
+                }
+            },
+        },
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    status = autonomous_loop.operator_read(tmp_path, state_path)
+
+    recommendation = autonomous_loop._next_campaign_recommendation(tmp_path, state, status)
+
+    rationale = recommendation["threshold_rationale"]
+    assert recommendation["available"] is True
+    assert rationale["selected"]["candidate_id"] == "BL-900"
+    assert rationale["runner_up"]["candidate_id"] == "fresh-hydration"
+    assert rationale["score_delta"] > 0
+    assert rationale["decisive_dimensions"]
+    assert recommendation["draft_campaign_declaration"]["threshold_rationale"] == rationale
+
+
+def test_next_campaign_recommendation_rewrites_hydrated_proposal_to_ship_route(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="completed",
+        completion_reason="vision_realized",
+        vision={"current_band": "green", "target_band": "green", "realized": True},
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/run-ledger-atomic-stage-evidence.yaml",
+        {
+            "proposal_schema_version": 1,
+            "title": "Run-ledger serialized stage evidence writes",
+            "status": "draft",
+            "details": {
+                "recommended_next_slice": {
+                    "exact_title": "Run-ledger serialized stage evidence writes",
+                    "route": "hydrate_task",
+                    "proposed_task_id": "T-028",
+                    "placement": {"source": "proposal-run-ledger-atomic-stage-evidence"},
+                }
+            },
+        },
+    )
+    _write_hydrated_task_artifacts(tmp_path, "T-028")
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    status = autonomous_loop.operator_read(tmp_path, state_path)
+
+    recommendation = autonomous_loop._next_campaign_recommendation(tmp_path, state, status)
+
+    selected = recommendation["ranked_recommendations"][0]
+    assert selected["candidate_id"] == "run-ledger-atomic-stage-evidence"
+    assert selected["action"] == "ship_task"
+    assert selected["route_preflight"]["selected_route"] == "ship_task"
+    assert recommendation["draft_campaign_declaration"]["allowed_action_classes"] == [
+        "ship_task",
+        "capture_self_improvement",
+    ]
+
+
 def test_discovered_proposal_hydration_routes_existing_pending_task_to_ship(
     tmp_path: Path,
 ) -> None:
@@ -2245,6 +2391,34 @@ def test_strategy_preflight_requires_active_approved_campaign_for_auto_self_heal
     assert preflight["may_open_scope"] is False
     assert any(
         "current loop authority completed requires fresh campaign approval" == item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
+def test_strategy_preflight_blocks_material_unverifiable_external_freshness(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path)
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+    candidate = {
+        "candidate_id": "external-freshness-needed",
+        "title": "External standard dependent route",
+        "freshness_materiality": "material",
+        "freshness_verification": "unverifiable",
+    }
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="ship_task",
+        candidate=candidate,
+        source="queue",
+    )
+
+    assert preflight["may_open_scope"] is False
+    assert preflight["next_safe_action"] == "verify_external_freshness_before_open_next"
+    assert any(
+        item["reason"] == "external freshness is material and cannot be verified"
         for item in preflight["blocked_alternatives"]
     )
 
@@ -4074,6 +4248,31 @@ def test_route_decision_capsule_raw_missing_readiness_fails_closed(
         "hydrate_task",
         "ship_task",
     }
+
+
+def test_route_decision_capsule_blocks_material_unverifiable_external_freshness(
+    tmp_path: Path,
+) -> None:
+    _state(tmp_path)
+    initiative_path = _write_lifecycle_initiative_bank(tmp_path)
+    doc = yaml.safe_load(initiative_path.read_text(encoding="utf-8"))
+    doc["readiness"].update(
+        {
+            "freshness_materiality": "material",
+            "freshness_verification": "unverifiable",
+        }
+    )
+    _write_yaml(initiative_path, doc)
+
+    capsule = autonomous_loop.build_initiative_route_decision_capsule(tmp_path, initiative_path)
+
+    assert capsule["selected_route"] == "stop"
+    assert capsule["route_state"] == "external_freshness_unverifiable"
+    assert capsule["approval_needed"] == "verify_external_freshness_before_open_next"
+    assert any(
+        item["reason"] == "external freshness is material and cannot be verified"
+        for item in capsule["blocked_actions"]
+    )
 
 
 def test_route_decision_capsule_stale_campaign_requires_fresh_budget(

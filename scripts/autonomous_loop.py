@@ -599,6 +599,52 @@ def _recommendation_action_for_candidate(candidate: dict[str, Any], source: str)
     return str(candidate.get("action") or "stop")
 
 
+def _selection_threshold_rationale(ranked: list[dict[str, Any]]) -> dict[str, Any]:
+    if not ranked:
+        return {}
+    selected = ranked[0]
+    runner_up = ranked[1] if len(ranked) > 1 else {}
+    selected_scorecard = (
+        selected.get("scorecard") if isinstance(selected.get("scorecard"), dict) else {}
+    )
+    runner_scorecard = (
+        runner_up.get("scorecard") if isinstance(runner_up.get("scorecard"), dict) else {}
+    )
+    selected_total = int(selected_scorecard.get("total") or 0)
+    runner_total = int(runner_scorecard.get("total") or 0) if runner_up else None
+    decisive_dimensions: list[str] = []
+    if runner_up:
+        for key, value in selected_scorecard.items():
+            if key == "total":
+                continue
+            try:
+                selected_value = int(value)
+                runner_value = int(runner_scorecard.get(key) or 0)
+            except (TypeError, ValueError):
+                continue
+            if selected_value > runner_value:
+                decisive_dimensions.append(key)
+    return {
+        "selected": {
+            "candidate_id": selected.get("candidate_id"),
+            "action": selected.get("action"),
+            "total": selected_total,
+        },
+        "runner_up": {
+            "candidate_id": runner_up.get("candidate_id"),
+            "action": runner_up.get("action"),
+            "total": runner_total,
+        }
+        if runner_up
+        else None,
+        "score_delta": selected_total - runner_total
+        if runner_total is not None
+        else selected_total,
+        "decisive_dimensions": decisive_dimensions,
+        "policy": "highest_scorecard_total_after_route_authority_blocks",
+    }
+
+
 def _next_campaign_recommendation(
     root: Path, state: dict[str, Any], status: dict[str, Any]
 ) -> dict[str, Any]:
@@ -649,6 +695,29 @@ def _next_campaign_recommendation(
                 }
             )
             continue
+        route_preflight = (
+            snapshot.get("route_preflight")
+            if isinstance(snapshot.get("route_preflight"), dict)
+            else {}
+        )
+        preflight_route = str(route_preflight.get("selected_route") or "")
+        if route_preflight.get("selected_route") == "stop":
+            blocked.append(
+                {
+                    "action": action,
+                    "candidate_id": snapshot.get("candidate_id"),
+                    "reason": str(
+                        route_preflight.get("route_state")
+                        or route_preflight.get("approval_needed")
+                        or "route authority blocked candidate"
+                    ),
+                    "route_preflight": route_preflight,
+                }
+            )
+            continue
+        if preflight_route and preflight_route != action:
+            snapshot["action"] = preflight_route
+            action = preflight_route
         ranked.append(snapshot)
     ranked.sort(key=lambda item: int(item.get("scorecard", {}).get("total") or 0), reverse=True)
     selected = ranked[0] if ranked else None
@@ -700,6 +769,9 @@ def _next_campaign_recommendation(
                 "lifecycle_route": lifecycle_route,
             }
         )
+    threshold_rationale = _selection_threshold_rationale(ranked)
+    if threshold_rationale:
+        draft_declaration["threshold_rationale"] = threshold_rationale
     return {
         "available": True,
         "reason": "completed_green_campaign_ready_for_fresh_budget",
@@ -724,6 +796,7 @@ def _next_campaign_recommendation(
         ],
         "ranked_recommendations": ranked[:3],
         "blocked_recommendations": blocked,
+        "threshold_rationale": threshold_rationale,
         "draft_campaign_declaration": draft_declaration,
     }
 
@@ -947,9 +1020,66 @@ def _candidate_snapshot(
     preflight = (
         _initiative_candidate_route_preflight(root, candidate, source) if root is not None else {}
     )
+    if not preflight and root is not None and source == "proposal":
+        preflight = _proposal_candidate_route_preflight(root, candidate)
     if preflight:
         snapshot["route_preflight"] = preflight
     return snapshot
+
+
+def _proposal_candidate_route_preflight(root: Path, candidate: dict[str, Any]) -> dict[str, Any]:
+    proposal_path = _proposal_path_for_candidate(root, candidate)
+    if proposal_path is None:
+        return {}
+    match = _proposal_task_match(root, proposal_path, candidate)
+    if not match:
+        return {}
+    proposal_ref = str(proposal_path.relative_to(root))
+    if match.get("complete"):
+        selected_route = "stop"
+        route_state = "proposal_hydration_already_completed"
+        approval_needed = "refresh route state before opening duplicate hydration"
+        blocked_actions = [
+            {
+                "action": "hydrate_task",
+                "reason": f"proposal-backed task {match['task_id']} is already complete",
+            }
+        ]
+    elif match.get("artifacts_exist"):
+        selected_route = "ship_task"
+        route_state = "delivery_ready"
+        approval_needed = "normal scoped delivery approval"
+        blocked_actions = [
+            {
+                "action": "hydrate_task",
+                "reason": f"proposal-backed task {match['task_id']} is already hydrated",
+            }
+        ]
+    else:
+        selected_route = "stop"
+        route_state = "proposal_hydration_existing_task_requires_ship_approval"
+        approval_needed = "ship_task approval and hydrated artifacts required before delivery"
+        blocked_actions = [
+            {
+                "action": "hydrate_task",
+                "reason": f"proposal-backed task {match['task_id']} already exists",
+            }
+        ]
+    return {
+        "verdict": "allow_open" if selected_route == "ship_task" else "stop_blocked",
+        "selected_route": selected_route,
+        "route_state": route_state,
+        "approval_scope": "",
+        "approval_needed": approval_needed,
+        "readiness_evidence": {},
+        "source_artifacts": {
+            "proposal_ref": proposal_ref,
+            "existing_task_id": match["task_id"],
+            "task_artifacts_exist": bool(match.get("artifacts_exist")),
+        },
+        "blocked_actions": blocked_actions,
+        "live_task_truth": match,
+    }
 
 
 def _strategy_route_state_for_action(action: str, candidate: dict[str, Any]) -> str:
@@ -1003,9 +1133,49 @@ def _strategy_next_safe_action(
         return "release_or_resolve_write_claim_before_open_next"
     if any("protected boundary" in item.get("reason", "") for item in blocked):
         return "request_protected_human_gate"
+    if any("external freshness" in item.get("reason", "") for item in blocked):
+        return "verify_external_freshness_before_open_next"
     if any("approval_basis" in item.get("reason", "") for item in blocked):
         return "record_fresh_approval_basis"
     return f"stop_before_{route_state or route_selected or 'unknown'}"
+
+
+def _external_freshness_block(data: dict[str, Any]) -> dict[str, str] | None:
+    materiality = (
+        str(
+            data.get("freshness_materiality")
+            or data.get("external_freshness_materiality")
+            or data.get("external_materiality")
+            or ""
+        )
+        .strip()
+        .lower()
+    )
+    if materiality not in {"material", "required", "external_required", "needs_external"}:
+        return None
+    verification = (
+        str(
+            data.get("freshness_verification")
+            or data.get("external_freshness_verification")
+            or data.get("external_research_status")
+            or data.get("freshness_status")
+            or ""
+        )
+        .strip()
+        .lower()
+    )
+    if verification in {
+        "verified",
+        "current",
+        "fresh",
+        "researched",
+        "not_material",
+    } or verification.startswith("current_as_of"):
+        return None
+    return {
+        "action": "open_next",
+        "reason": "external freshness is material and cannot be verified",
+    }
 
 
 def _strategy_preflight_for_decision(
@@ -1118,19 +1288,22 @@ def _strategy_preflight_for_decision(
                 ),
             }
         )
-    if route_conflict:
-        mismatch_reason = f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
-        blocked.append({"action": action, "reason": mismatch_reason})
-
-    verdict = (
-        "allow_open" if not blocked else "stop_route_conflict" if route_conflict else "stop_blocked"
-    )
-    candidate_id = _candidate_identity(candidate)
     readiness = (
         route_decision.get("readiness_evidence")
         if isinstance(route_decision.get("readiness_evidence"), dict)
         else {}
     )
+    if route_conflict:
+        mismatch_reason = f"selected action {action} does not match lifecycle-route {route_selected}:{route_state}"
+        blocked.append({"action": action, "reason": mismatch_reason})
+    freshness_block = _external_freshness_block({**candidate, **readiness})
+    if freshness_block:
+        blocked.append({"action": action, "reason": freshness_block["reason"]})
+
+    verdict = (
+        "allow_open" if not blocked else "stop_route_conflict" if route_conflict else "stop_blocked"
+    )
+    candidate_id = _candidate_identity(candidate)
     return {
         "packet_schema_version": 1,
         "packet_type": "autonomous_auto_strategy_preflight",
@@ -3993,13 +4166,32 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
     blocked_actions = [
         dict(item) for item in report.get("blocked_actions") or [] if isinstance(item, dict)
     ]
+    freshness_block = _external_freshness_block(readiness)
     protected_stops: list[str] = []
     selected_route = "stop"
     route_state = "raw_initiative"
     approval_needed = "discovery or proposal-refinement approval"
     ux_basis = "Autonomous-auto should expose why an initiative is or is not safe to continue."
 
-    if protected_gate_required:
+    if freshness_block:
+        selected_route = "stop"
+        route_state = "external_freshness_unverifiable"
+        approval_needed = "verify_external_freshness_before_open_next"
+        blocked_actions.extend(
+            [
+                freshness_block,
+                {
+                    "action": "hydrate_task",
+                    "reason": "external freshness is material and cannot be verified",
+                },
+                {
+                    "action": "ship_task",
+                    "reason": "external freshness is material and cannot be verified",
+                },
+            ]
+        )
+        ux_basis = "Material external freshness blocks autonomous continuation until verified."
+    elif protected_gate_required:
         selected_route = "stop"
         route_state = "raw_initiative"
         approval_needed = "protected human gate required"
@@ -4255,6 +4447,11 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
             "refresh_candidate_id": refresh_target,
             "fresh_research_to_readiness_approval": fresh_research_to_readiness,
             "strategy_preflight_required": strategy_preflight_required,
+            "freshness_materiality": readiness.get("freshness_materiality")
+            or readiness.get("external_freshness_materiality"),
+            "freshness_verification": readiness.get("freshness_verification")
+            or readiness.get("external_freshness_verification")
+            or readiness.get("external_research_status"),
             "scaffold_command": readiness.get("scaffold_command"),
         },
         "ux_anchor_rationale": {
@@ -4309,6 +4506,13 @@ def build_initiative_lifecycle_report(
         "approval_basis": readiness.get("approval_basis") or "",
         "approval_scope": readiness.get("approval_scope") or "",
         "next_readiness_gate": readiness.get("next_readiness_gate") or "",
+        "freshness_materiality": readiness.get("freshness_materiality")
+        or readiness.get("external_freshness_materiality")
+        or "",
+        "freshness_verification": readiness.get("freshness_verification")
+        or readiness.get("external_freshness_verification")
+        or readiness.get("external_research_status")
+        or "",
         "candidate_task_complete": candidate_task_complete,
     }
     campaign = campaign_report(
