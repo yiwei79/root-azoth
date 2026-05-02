@@ -220,6 +220,24 @@ def _write_complete_campaign(root: Path) -> dict[str, Path]:
     return paths
 
 
+def _remove_evaluator_stage_evidence(ledger: dict) -> dict:
+    run = ledger["runs"][0]
+    run["stages_completed"] = [
+        stage for stage in run.get("stages_completed", []) if "evaluator" not in stage
+    ]
+    run["stage_spawns"] = [
+        row
+        for row in run.get("stage_spawns", [])
+        if row.get("stage_id") != "autonomous_auto_s4_evaluator"
+    ]
+    run["stage_summaries"] = [
+        row
+        for row in run.get("stage_summaries", [])
+        if row.get("stage_id") != "autonomous_auto_s4_evaluator"
+    ]
+    return ledger
+
+
 def test_build_campaign_audit_complete_campaign_is_read_only(tmp_path: Path) -> None:
     paths = _write_complete_campaign(tmp_path)
     before = _snapshot_files(tmp_path)
@@ -259,8 +277,181 @@ def test_build_campaign_audit_complete_campaign_is_read_only(tmp_path: Path) -> 
     assert report["verification_commands"] == [
         "python3 -m pytest tests/test_autonomous_campaign_audit.py"
     ]
+    assert report["executive_read"] == {
+        "change_summary": "Campaign vision_realized with green UX vision evidence.",
+        "quality_assessment": "Evaluator scores: 0.91; UX Anchor Scorecard present.",
+        "residual_risk": "none",
+        "next_route": "stop",
+        "operator_implication": "Campaign evidence is complete enough to stop without repair.",
+        "evidence_contract": [
+            "campaign declaration and budget",
+            "delegated stage evidence",
+            "evaluator scores and UX Anchor Scorecard",
+            "verification commands",
+            "learning closure",
+        ],
+    }
+    assert report["campaign_implications"] == [
+        "Campaign can stop cleanly; no repair route is recommended.",
+        "Operator-facing evidence is repo-native and complete enough for audit without raw ledger spelunking.",
+    ]
+    assert report["ux_anchor_fit"]["band"] == "green"
+    assert "UX Anchor Scorecard present" in report["ux_anchor_fit"]["evidence"]
+    assert report["operator_packet_parity"]["next_likely_move"] == "stop"
+    assert report["operator_packet_parity"]["residual_risk"] == "none"
     assert report["residual_risks"] == []
     assert report["validation"]["read_only"] is True
+
+
+def test_build_campaign_audit_normalizes_retrospective_evaluator_evidence(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    _write_yaml(paths["ledger_path"], _remove_evaluator_stage_evidence(ledger))
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-retrospective-eval.jsonl",
+        [
+            {
+                "id": "retro-eval-001",
+                "session_id": LOOP_ID,
+                "learning_state": "verified",
+                "summary": "Retrospective evaluator judged campaign report quality.",
+                "tags": ["autonomous-auto", "learning-closure", "evaluator", "ux-scorecard"],
+                "score": 0.88,
+                "ux_anchor_scorecard": {
+                    "operator_read": "yellow",
+                    "learning_closure": "green",
+                },
+                "verification_commands": [
+                    "python3 -m pytest tests/test_autonomous_campaign_audit.py"
+                ],
+            }
+        ],
+    )
+    before = _snapshot_files(tmp_path)
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert _snapshot_files(tmp_path) == before
+    assert report["evaluator_evidence"]["provenance"] == "repo_native"
+    assert report["evaluator_evidence"]["retrospective_evidence_count"] == 1
+    assert report["evaluator_evidence"]["structured_scores"] == [0.88]
+    assert report["evaluator_evidence"]["ux_scorecards"] == [
+        {"operator_read": "yellow", "learning_closure": "green"}
+    ]
+    assert report["executive_read"]["quality_assessment"] == (
+        "Evaluator scores: 0.88; UX Anchor Scorecard present."
+    )
+
+
+def test_build_campaign_audit_ignores_unrelated_retrospective_evaluator_evidence(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    _write_yaml(paths["ledger_path"], _remove_evaluator_stage_evidence(ledger))
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-unrelated-retrospective-eval.jsonl",
+        [
+            {
+                "id": "retro-eval-unrelated",
+                "session_id": "other-loop",
+                "learning_state": "verified",
+                "summary": "Unrelated evaluator evidence must not satisfy this campaign.",
+                "tags": ["autonomous-auto", "learning-closure", "evaluator"],
+                "score": 0.99,
+                "ux_anchor_scorecard": {"operator_read": "green"},
+                "verification_commands": ["python3 -m pytest unrelated.py"],
+            }
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["evaluator_evidence"]["provenance"] == "missing"
+    assert report["evaluator_evidence"].get("retrospective_evidence_count", 0) == 0
+    assert report["evaluator_evidence"]["structured_scores"] == []
+
+
+def test_build_campaign_audit_normalizes_retrospective_evaluator_aliases(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    ledger["runs"][0]["stage_summaries"] = [
+        row
+        for row in ledger["runs"][0]["stage_summaries"]
+        if row["stage_id"] != "autonomous_auto_s4_evaluator"
+    ]
+    _write_yaml(paths["ledger_path"], ledger)
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-retrospective-aliases.jsonl",
+        [
+            {
+                "id": "retro-eval-aliases",
+                "session_id": LOOP_ID,
+                "learning_state": "verified",
+                "summary": "Retrospective evaluator evidence with alias fields.",
+                "tags": ["autonomous-auto", "learning-closure", "evaluator"],
+                "evaluator_scores": [0.87],
+                "scorecard": {
+                    "overall": 0.87,
+                    "ux_operator_read": "yellow",
+                },
+                "verification": {
+                    "commands": ["python3 -m pytest tests/test_autonomous_campaign_audit.py"]
+                },
+            }
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["evaluator_evidence"]["structured_scores"] == [0.87, 0.87]
+    assert report["evaluator_evidence"]["ux_scorecards"] == [
+        {"overall": 0.87, "ux_operator_read": "yellow"}
+    ]
+    assert report["evaluator_evidence"]["verification_commands"] == [
+        "python3 -m pytest tests/test_autonomous_campaign_audit.py"
+    ]
+
+
+def test_build_campaign_audit_retrospective_evidence_preserves_base_conflict(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    ledger["runs"][0]["stage_summaries"] = [
+        row
+        for row in ledger["runs"][0]["stage_summaries"]
+        if row["stage_id"] != "autonomous_auto_s4_evaluator"
+    ]
+    _write_yaml(paths["ledger_path"], ledger)
+    _write_jsonl(
+        paths["inbox_dir"] / "session-reflection-2026-04-26-conflict-retro-eval.jsonl",
+        [
+            {
+                "id": "retro-eval-conflict",
+                "session_id": LOOP_ID,
+                "learning_state": "verified",
+                "summary": "Matching retrospective evidence must not hide ledger conflict.",
+                "tags": ["autonomous-auto", "learning-closure", "evaluator"],
+                "score": 0.92,
+                "ux_anchor_scorecard": {"operator_read": "green"},
+                "verification_commands": [
+                    "python3 -m pytest tests/test_autonomous_campaign_audit.py"
+                ],
+            }
+        ],
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["evaluator_evidence"]["provenance"] == "conflict"
+    assert report["evaluator_evidence"]["retrospective_evidence_count"] == 1
+    assert report["evaluator_evidence"]["structured_scores"] == [0.92]
+    assert report["next_route_recommendation"]["route"] == "repair_evidence"
 
 
 def test_build_campaign_audit_missing_stage_summary_reports_residual_risk(
@@ -978,4 +1169,8 @@ def test_campaign_audit_cli_json_and_plain_are_read_only(tmp_path: Path, capsys)
     out = capsys.readouterr().out
     assert f"Campaign audit: {LOOP_ID}" in out
     assert "Next route: stop" in out
+    assert "Executive read: Campaign vision_realized with green UX vision evidence." in out
+    assert "Quality: Evaluator scores: 0.91; UX Anchor Scorecard present." in out
+    assert "UX Anchor Fit: green" in out
+    assert "Operator next move: stop" in out
     assert _snapshot_files(tmp_path) == before

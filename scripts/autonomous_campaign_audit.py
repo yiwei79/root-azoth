@@ -708,6 +708,75 @@ def _evaluator_evidence(
     }
 
 
+def _retrospective_evaluator_evidence(learning_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    scores: list[Any] = []
+    ux_scorecards: list[dict[str, Any]] = []
+    verification_commands: list[str] = []
+    evidence_count = 0
+    for row in learning_rows:
+        if not row.get("strict_campaign_match"):
+            continue
+        has_evidence = False
+        row_scores = _safe_scalar_list(row.get("structured_scores"))
+        if row_scores:
+            scores.extend(row_scores)
+            has_evidence = True
+        row_scorecards = [
+            item for item in _safe_list(row.get("ux_scorecards")) if isinstance(item, dict)
+        ]
+        if row_scorecards:
+            ux_scorecards.extend(row_scorecards)
+            has_evidence = True
+        for command in _safe_list(row.get("verification_commands")):
+            text = str(command or "").strip()
+            if text:
+                verification_commands.append(text)
+                has_evidence = True
+        if has_evidence:
+            evidence_count += 1
+    return {
+        "provenance": PROVENANCE_REPO_NATIVE if evidence_count else PROVENANCE_MISSING,
+        "retrospective_evidence_count": evidence_count,
+        "structured_scores": scores,
+        "ux_scorecards": ux_scorecards,
+        "verification_commands": list(dict.fromkeys(verification_commands)),
+    }
+
+
+def _merge_retrospective_evaluator_evidence(
+    evaluator_evidence: dict[str, Any], retrospective: dict[str, Any]
+) -> dict[str, Any]:
+    if not retrospective.get("retrospective_evidence_count"):
+        return evaluator_evidence
+    merged = dict(evaluator_evidence)
+    merged["structured_scores"] = _safe_scalar_list(
+        merged.get("structured_scores")
+    ) + _safe_scalar_list(retrospective.get("structured_scores"))
+    merged["ux_scorecards"] = [
+        item for item in _safe_list(merged.get("ux_scorecards")) if isinstance(item, dict)
+    ] + [item for item in _safe_list(retrospective.get("ux_scorecards")) if isinstance(item, dict)]
+    merged["verification_commands"] = list(
+        dict.fromkeys(
+            [
+                str(command)
+                for command in (
+                    _safe_list(merged.get("verification_commands"))
+                    + _safe_list(retrospective.get("verification_commands"))
+                )
+                if str(command or "").strip()
+            ]
+        )
+    )
+    merged["retrospective_evidence_count"] = retrospective["retrospective_evidence_count"]
+    if merged["structured_scores"] or merged["ux_scorecards"] or merged["verification_commands"]:
+        merged["provenance"] = (
+            PROVENANCE_CONFLICT
+            if evaluator_evidence.get("provenance") == PROVENANCE_CONFLICT
+            else PROVENANCE_REPO_NATIVE
+        )
+    return merged
+
+
 def _record_matches_campaign(record: dict[str, Any], loop_id: str) -> bool:
     if str(record.get("session_id") or record.get("loop_id") or "") == loop_id:
         return True
@@ -742,6 +811,33 @@ def _learning_summary(record: dict[str, Any]) -> str:
     )
 
 
+def _learning_row_from_record(
+    root: Path,
+    source: Path,
+    record: dict[str, Any],
+    *,
+    loop_id: str,
+) -> dict[str, Any]:
+    row = {
+        "learning_state": _learning_state(record),
+        "provenance": PROVENANCE_REPO_NATIVE,
+        "source": _rel(root, source),
+        "summary": _learning_summary(record),
+        "strict_campaign_match": str(record.get("session_id") or record.get("loop_id") or "")
+        == loop_id,
+    }
+    scores = _structured_scores(record)
+    if scores:
+        row["structured_scores"] = scores
+    scorecards = _ux_scorecards(record)
+    if scorecards:
+        row["ux_scorecards"] = scorecards
+    commands = _verification_commands(record)
+    if commands:
+        row["verification_commands"] = commands
+    return row
+
+
 def _learning_rows(
     root: Path,
     loop_id: str,
@@ -760,28 +856,14 @@ def _learning_rows(
     errors.extend(loaded_episode_errors)
     for record in loaded_episodes:
         if _record_matches_campaign(record, loop_id):
-            rows.append(
-                {
-                    "learning_state": _learning_state(record),
-                    "provenance": PROVENANCE_REPO_NATIVE,
-                    "source": _rel(root, episodes_path),
-                    "summary": _learning_summary(record),
-                }
-            )
+            rows.append(_learning_row_from_record(root, episodes_path, record, loop_id=loop_id))
     if inbox_dir.is_dir():
         for path in sorted(inbox_dir.glob("*.jsonl")):
             inbox_rows, inbox_errors = _load_jsonl(path)
             errors.extend(inbox_errors)
             for record in inbox_rows:
                 if _record_matches_campaign(record, loop_id):
-                    rows.append(
-                        {
-                            "learning_state": _learning_state(record),
-                            "provenance": PROVENANCE_REPO_NATIVE,
-                            "source": _rel(root, path),
-                            "summary": _learning_summary(record),
-                        }
-                    )
+                    rows.append(_learning_row_from_record(root, path, record, loop_id=loop_id))
     rows.sort(key=lambda row: (row["source"], row["learning_state"], row["summary"]))
     return rows, errors
 
@@ -1095,6 +1177,119 @@ def build_learning_harvester_report(
     }
 
 
+def _evaluator_quality_text(evaluator_evidence: dict[str, Any]) -> str:
+    scores = _safe_scalar_list(evaluator_evidence.get("structured_scores"))
+    score_text = ", ".join(str(score) for score in scores) if scores else "not recorded"
+    ux_present = bool(evaluator_evidence.get("ux_scorecards"))
+    return (
+        f"Evaluator scores: {score_text}; "
+        f"UX Anchor Scorecard {'present' if ux_present else 'not recorded'}."
+    )
+
+
+def _campaign_audit_executive_read(
+    *,
+    campaign: dict[str, Any],
+    evaluator_evidence: dict[str, Any],
+    residuals: list[str],
+    route: dict[str, Any],
+) -> dict[str, Any]:
+    completion_reason = str(campaign.get("completion_reason") or "unknown")
+    vision_band = str(campaign.get("vision_band") or "unknown")
+    residual = "; ".join(residuals) if residuals else "none"
+    next_route = str(route.get("route") or "unknown")
+    implication = (
+        "Campaign evidence is complete enough to stop without repair."
+        if not residuals and next_route == "stop"
+        else "Campaign evidence needs follow-up before the operator can treat it as complete."
+    )
+    return {
+        "change_summary": f"Campaign {completion_reason} with {vision_band} UX vision evidence.",
+        "quality_assessment": _evaluator_quality_text(evaluator_evidence),
+        "residual_risk": residual,
+        "next_route": next_route,
+        "operator_implication": implication,
+        "evidence_contract": [
+            "campaign declaration and budget",
+            "delegated stage evidence",
+            "evaluator scores and UX Anchor Scorecard",
+            "verification commands",
+            "learning closure",
+        ],
+    }
+
+
+def _campaign_implications(executive_read: dict[str, Any]) -> list[str]:
+    if executive_read.get("residual_risk") == "none" and executive_read.get("next_route") == "stop":
+        return [
+            "Campaign can stop cleanly; no repair route is recommended.",
+            "Operator-facing evidence is repo-native and complete enough for audit without raw ledger spelunking.",
+        ]
+    return [
+        "Campaign needs a follow-up route before it should be treated as fully complete.",
+        "Operator-facing evidence should name the residual risk and recommended repair route.",
+    ]
+
+
+def _ux_anchor_fit(
+    *,
+    campaign: dict[str, Any],
+    evaluator_evidence: dict[str, Any],
+    residuals: list[str],
+    scorecard: dict[str, Any],
+) -> dict[str, Any]:
+    ux_present = bool(evaluator_evidence.get("ux_scorecards"))
+    vision_band = str(campaign.get("vision_band") or "unknown")
+    provenance = str(scorecard.get("overall_provenance") or "unknown")
+    if (
+        not residuals
+        and ux_present
+        and vision_band == "green"
+        and provenance == PROVENANCE_REPO_NATIVE
+    ):
+        band = "green"
+    elif residuals:
+        band = "yellow"
+    else:
+        band = "red"
+    gaps: list[str] = []
+    if not ux_present:
+        gaps.append("missing UX Anchor Scorecard")
+    if residuals:
+        gaps.extend(residuals)
+    return {
+        "band": band,
+        "evidence": [
+            f"vision_band={vision_band}",
+            f"traceability={provenance}",
+            "UX Anchor Scorecard present" if ux_present else "UX Anchor Scorecard missing",
+        ],
+        "gaps": gaps,
+    }
+
+
+def _operator_packet_parity(
+    *,
+    campaign: dict[str, Any],
+    executive_read: dict[str, Any],
+    route: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "objective": campaign.get("objective") or "",
+        "approval_basis": campaign.get("approval_basis") or "",
+        "next_likely_move": route.get("route") or "unknown",
+        "stop_conditions": campaign.get("stop_conditions") or [],
+        "residual_risk": executive_read.get("residual_risk") or "unknown",
+    }
+
+
+def _public_learning_rows(learning_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {key: value for key, value in row.items() if key != "strict_campaign_match"}
+        for row in learning_rows
+    ]
+
+
 def _recommend_next_route(
     *,
     residuals: list[str],
@@ -1255,7 +1450,10 @@ def build_campaign_audit(
         runs,
         expected_child_run_ids=child_run_ids,
     )
-    evaluator_evidence = _evaluator_evidence(stage_evidence, child_scopes)
+    evaluator_evidence = _merge_retrospective_evaluator_evidence(
+        _evaluator_evidence(stage_evidence, child_scopes),
+        _retrospective_evaluator_evidence(learning_rows),
+    )
     truthful_absence = _truthful_inline_absence(learning_rows)
     if truthful_absence.get("accepted"):
         stage_evidence["truthful_absence"] = truthful_absence
@@ -1349,56 +1547,74 @@ def build_campaign_audit(
         if state_matches_loop
         else str(_campaign_detail_from_children(child_scopes, "completion_reason") or "")
     )
+    campaign = {
+        "loop_id": loop_id,
+        "objective": str(
+            (state.get("objective") if state_matches_loop else "")
+            or _campaign_detail_from_children(child_scopes, "goal")
+            or run.get("goal")
+            or ""
+        ),
+        "status": str(
+            (state.get("status") if state_matches_loop else "")
+            or ("observed_from_closeout" if child_scopes else "")
+            or run.get("status")
+            or ""
+        ),
+        "completion_reason": completion_reason,
+        "iteration": state.get("iteration") if state_matches_loop else len(child_scopes) or None,
+        "max_iterations": budget.get("max_iterations") if isinstance(budget, dict) else None,
+        "vision": vision,
+        "vision_band": vision["band"],
+        "vision_score": vision["score"],
+        "vision_provenance": vision["provenance"],
+        "approval_basis": approval_basis,
+        "budget": budget,
+        "stop_conditions": stop_conditions,
+        "selected_seed": (state.get("selected_seed") if state_matches_loop else None)
+        or _campaign_detail_from_children(child_scopes, "selected_seed"),
+        "selected_candidate": selected_candidate,
+        "route_rationale": str(
+            _campaign_detail_from_children(child_scopes, "route_rationale") or ""
+        ),
+        "stage_plan": _campaign_detail_from_children(child_scopes, "stage_plan") or [],
+        "loop_decision": loop_decision,
+        "closeout_episode_ids": [
+            scope["closeout_episode_id"]
+            for scope in child_scopes
+            if scope.get("closeout_episode_id")
+        ],
+        "provenance": campaign_provenance,
+    }
+    executive_read = _campaign_audit_executive_read(
+        campaign=campaign,
+        evaluator_evidence=evaluator_evidence,
+        residuals=residuals,
+        route=route,
+    )
     return {
         "schema_version": 1,
         "generated_at": _utc_now_iso(),
-        "campaign": {
-            "loop_id": loop_id,
-            "objective": str(
-                (state.get("objective") if state_matches_loop else "")
-                or _campaign_detail_from_children(child_scopes, "goal")
-                or run.get("goal")
-                or ""
-            ),
-            "status": str(
-                (state.get("status") if state_matches_loop else "")
-                or ("observed_from_closeout" if child_scopes else "")
-                or run.get("status")
-                or ""
-            ),
-            "completion_reason": completion_reason,
-            "iteration": state.get("iteration")
-            if state_matches_loop
-            else len(child_scopes) or None,
-            "max_iterations": budget.get("max_iterations") if isinstance(budget, dict) else None,
-            "vision": vision,
-            "vision_band": vision["band"],
-            "vision_score": vision["score"],
-            "vision_provenance": vision["provenance"],
-            "approval_basis": approval_basis,
-            "budget": budget,
-            "stop_conditions": stop_conditions,
-            "selected_seed": (state.get("selected_seed") if state_matches_loop else None)
-            or _campaign_detail_from_children(child_scopes, "selected_seed"),
-            "selected_candidate": selected_candidate,
-            "route_rationale": str(
-                _campaign_detail_from_children(child_scopes, "route_rationale") or ""
-            ),
-            "stage_plan": _campaign_detail_from_children(child_scopes, "stage_plan") or [],
-            "loop_decision": loop_decision,
-            "closeout_episode_ids": [
-                scope["closeout_episode_id"]
-                for scope in child_scopes
-                if scope.get("closeout_episode_id")
-            ],
-            "provenance": campaign_provenance,
-        },
+        "campaign": campaign,
+        "executive_read": executive_read,
+        "campaign_implications": _campaign_implications(executive_read),
+        "ux_anchor_fit": _ux_anchor_fit(
+            campaign=campaign,
+            evaluator_evidence=evaluator_evidence,
+            residuals=residuals,
+            scorecard=scorecard,
+        ),
+        "operator_packet_parity": _operator_packet_parity(
+            campaign=campaign,
+            executive_read=executive_read,
+            route=route,
+        ),
         "source_artifacts": source_artifacts,
         "child_scopes": child_scopes,
         "stage_evidence": stage_evidence,
         "evaluator_evidence": evaluator_evidence,
         "verification_commands": evaluator_evidence["verification_commands"],
-        "learning_closure_rows": learning_rows,
+        "learning_closure_rows": _public_learning_rows(learning_rows),
         "learning_harvester": learning_harvester,
         "accepted_absence_residuals": accepted_absence_residuals,
         "traceability_scorecard": scorecard,

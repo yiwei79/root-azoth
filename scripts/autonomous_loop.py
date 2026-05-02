@@ -5334,12 +5334,25 @@ def _format_campaign_audit(payload: dict[str, Any]) -> str:
         if isinstance(payload.get("learning_harvester"), dict)
         else {}
     )
+    executive = (
+        payload.get("executive_read") if isinstance(payload.get("executive_read"), dict) else {}
+    )
+    ux_fit = payload.get("ux_anchor_fit") if isinstance(payload.get("ux_anchor_fit"), dict) else {}
+    parity = (
+        payload.get("operator_packet_parity")
+        if isinstance(payload.get("operator_packet_parity"), dict)
+        else {}
+    )
     return "\n".join(
         [
             f"Campaign audit: {campaign.get('loop_id') or 'unknown'}",
             f"Campaign status: {campaign.get('status') or 'unknown'}",
             f"Overall provenance: {scorecard.get('overall_provenance') or 'unknown'}",
             f"Next route: {route.get('route') or 'unknown'}",
+            f"Executive read: {executive.get('change_summary') or 'not recorded'}",
+            f"Quality: {executive.get('quality_assessment') or 'not recorded'}",
+            f"UX Anchor Fit: {ux_fit.get('band') or 'unknown'}",
+            f"Operator next move: {parity.get('next_likely_move') or 'unknown'}",
             f"Learning route: {harvester.get('selected_learning_route') or 'unknown'}",
             f"Learning rejected alternatives: {', '.join(harvester.get('rejected_alternatives') or []) or 'none'}",
             f"Residual risks: {len(residuals)}",
