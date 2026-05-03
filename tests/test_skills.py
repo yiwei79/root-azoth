@@ -467,6 +467,17 @@ class TestP1007RecallGovernance:
             "P1-007 requires an explicit archive-vs-supersede policy for recalled episodes"
         )
 
+    def test_context_recall_exposes_advisory_quality_scorer(self) -> None:
+        content = self._read_skill("context-recall")
+        assert "advisory quality check" in content
+        assert "scripts/context_recall_quality.py" in content
+        assert "--fixtures tests/fixtures/context_recall_quality.yaml --json" in content
+        assert "--query" in content and "--tags" in content
+        assert "--top-k" in content and "--as-of" in content
+        assert "advisory_context_not_governing_instruction" in content
+        assert "does not" in content and "replace the manual scoring flow" in content
+        assert "never writes to m3 or m2" in content
+
     def test_remember_documents_when_not_to_add_a_pattern(self) -> None:
         content = self._read_skill("remember")
         assert "when not to add a pattern" in content, (
