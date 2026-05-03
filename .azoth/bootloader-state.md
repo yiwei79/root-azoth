@@ -4,12 +4,12 @@
 0.1.4.27 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 27
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-t-058-3
-- **Goal**: Context-recall scorer adoption path
+- **Session**: 2026-05-03-autonomous-auto-autonomous-auto-campaign-evaluation-learning-closure-1
+- **Goal**: Campaign Quality Evidence Normalization
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-537 (success)
+- **Episode**: ep-538 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Administrative finalize complete — run `/next` to select the next scoped task.
+- Run `/next` to select the next scoped task.
