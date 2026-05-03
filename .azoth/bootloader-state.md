@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.22 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 22
+0.1.4.23 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 23
 
 ## Last Session
-- **Session**: 2026-05-02-bl-081
-- **Goal**: BL-081: Autonomous-auto closeout packaging and stage-evidence reliability
+- **Session**: 2026-05-03-autonomous-auto-automation-audit-insight-harvest-refinement-1
+- **Goal**: Nightly automation architect audit and approval-to-handoff workflow
 - **Session mode**: delivery
-- **Pipeline**: auto
+- **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-527 (success)
+- **Episode**: ep-528 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.
