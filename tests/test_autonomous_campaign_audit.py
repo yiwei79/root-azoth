@@ -669,9 +669,7 @@ def test_build_campaign_audit_surfaces_evaluator_residual_risks(
     evaluator_summary.pop("scores")
     evaluator_summary["evaluator_disposition"] = "conditional"
     evaluator_summary["score"] = 0.92
-    evaluator_summary["residual_risks"] = [
-        "advisory evaluator score must not override scope gates"
-    ]
+    evaluator_summary["residual_risks"] = ["advisory evaluator score must not override scope gates"]
     _write_yaml(paths["ledger_path"], ledger)
 
     report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
@@ -1308,8 +1306,7 @@ def test_campaign_audit_cli_json_and_plain_are_read_only(tmp_path: Path, capsys)
     assert "Next route: stop" in out
     assert "Executive read: Campaign vision_realized with green UX vision evidence." in out
     assert (
-        "Quality: Evaluator disposition: approved; scores: 0.91; "
-        "UX Anchor Scorecard present."
+        "Quality: Evaluator disposition: approved; scores: 0.91; UX Anchor Scorecard present."
     ) in out
     assert "UX Anchor Fit: green" in out
     assert "Operator next move: stop" in out

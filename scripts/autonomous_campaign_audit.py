@@ -724,9 +724,7 @@ def _child_quality_evidence(child_scopes: list[dict[str, Any]]) -> dict[str, Any
             if str(command or "").strip()
         )
         residual_risks.extend(
-            str(risk)
-            for risk in _safe_list(scope.get("residual_risks"))
-            if str(risk or "").strip()
+            str(risk) for risk in _safe_list(scope.get("residual_risks")) if str(risk or "").strip()
         )
     return {
         "structured_scores": structured_scores,
@@ -2039,9 +2037,7 @@ def build_campaign_audit(
     if not learning_rows:
         residuals.append("missing learning closure evidence")
     if evaluator_evidence["provenance"] != PROVENANCE_MISSING:
-        residuals.extend(
-            str(risk) for risk in _safe_list(evaluator_evidence.get("residual_risks"))
-        )
+        residuals.extend(str(risk) for risk in _safe_list(evaluator_evidence.get("residual_risks")))
         if not evaluator_evidence.get("structured_scores"):
             residuals.append("missing structured evaluator score fields")
         if not evaluator_evidence.get("ux_scorecards"):

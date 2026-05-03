@@ -302,9 +302,7 @@ def _score_m2_pattern(
     components["reinforcement_bonus"] = _round_score(
         reinforcement_count * REINFORCEMENT_WEIGHT if semantic_bridge else 0.0
     )
-    components["pattern_trigger_bonus"] = _round_score(
-        M2_TRIGGER_WEIGHT if trigger_match else 0.0
-    )
+    components["pattern_trigger_bonus"] = _round_score(M2_TRIGGER_WEIGHT if trigger_match else 0.0)
     components["total"] = _component_total(components)
 
     freshness = "current" if pattern.get("approved", True) else "archive_context_only"
@@ -526,7 +524,9 @@ def _evaluate_one_fixture(packet: dict[str, Any], fixture: dict[str, Any]) -> di
             top1_pass = bool(results) and _result_matches(results[0], expected_top1)
         elif fixture.get("expected_order_prefix"):
             expected_prefix = [str(item) for item in fixture["expected_order_prefix"]]
-            top1_pass = [result["id"] for result in results[: len(expected_prefix)]] == expected_prefix
+            top1_pass = [
+                result["id"] for result in results[: len(expected_prefix)]
+            ] == expected_prefix
         else:
             top1_pass = True
         if not top1_pass:
@@ -537,7 +537,9 @@ def _evaluate_one_fixture(packet: dict[str, Any], fixture: dict[str, Any]) -> di
             top3_pass = _ids_in_top(results, expected_top3, 3)
         elif fixture.get("expected_order_prefix"):
             expected_prefix = [str(item) for item in fixture["expected_order_prefix"]]
-            top3_pass = [result["id"] for result in results[: len(expected_prefix)]] == expected_prefix
+            top3_pass = [
+                result["id"] for result in results[: len(expected_prefix)]
+            ] == expected_prefix
         else:
             top3_pass = top1_pass
         if not top3_pass:

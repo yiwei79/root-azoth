@@ -55,6 +55,7 @@ SCORE_COMPONENT_KEYS = {
     "total",
 }
 
+
 def _episode(**overrides: Any) -> dict[str, Any]:
     record: dict[str, Any] = {
         "id": "ep-001",
@@ -71,6 +72,7 @@ def _episode(**overrides: Any) -> dict[str, Any]:
     record.update(overrides)
     return record
 
+
 def _write_episodes(path: Path, records: list[dict[str, Any]]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -79,10 +81,12 @@ def _write_episodes(path: Path, records: list[dict[str, Any]]) -> Path:
     )
     return path
 
+
 def _write_patterns(path: Path, patterns: list[dict[str, Any]]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"patterns": patterns}, sort_keys=True), encoding="utf-8")
     return path
+
 
 def _pattern(pattern_id: str, **overrides: Any) -> dict[str, Any]:
     record: dict[str, Any] = {
@@ -96,6 +100,7 @@ def _pattern(pattern_id: str, **overrides: Any) -> dict[str, Any]:
     }
     record.update(overrides)
     return record
+
 
 def test_query_contract_ranks_m3_and_m2_with_advisory_result_fields(tmp_path: Path) -> None:
     episodes_path = _write_episodes(
@@ -144,6 +149,7 @@ def test_query_contract_ranks_m3_and_m2_with_advisory_result_fields(tmp_path: Pa
     assert first["score_total"] == first["score_components"]["total"]
     assert "tag_overlap" in first["match_reasons"]
 
+
 def test_fixture_eval_passes_all_research_fixtures() -> None:
     packet = recall_quality.evaluate_fixture_file(FIXTURE_PATH)
     assert packet["packet_type"] == "context_recall_quality_fixture_eval"
@@ -164,6 +170,7 @@ def test_fixture_eval_passes_all_research_fixtures() -> None:
     ]
     assert by_id["no_match_empty_result"]["no_match"] is True
 
+
 def test_query_does_not_mutate_episode_or_pattern_files(tmp_path: Path) -> None:
     episodes_path = _write_episodes(tmp_path / "episodes.jsonl", [_episode()])
     patterns_path = _write_patterns(tmp_path / "patterns.yaml", [_pattern("memory-readback")])
@@ -180,6 +187,7 @@ def test_query_does_not_mutate_episode_or_pattern_files(tmp_path: Path) -> None:
     assert episodes_path.read_bytes() == before_episodes
     assert patterns_path.read_bytes() == before_patterns
 
+
 def test_no_match_returns_empty_results_without_forced_output(tmp_path: Path) -> None:
     episodes_path = _write_episodes(tmp_path / "episodes.jsonl", [_episode()])
     patterns_path = _write_patterns(tmp_path / "patterns.yaml", [_pattern("memory-readback")])
@@ -193,6 +201,7 @@ def test_no_match_returns_empty_results_without_forced_output(tmp_path: Path) ->
     )
     assert packet["results"] == []
     assert packet["no_match"] is True
+
 
 def test_missing_patterns_file_is_graceful_with_warning(tmp_path: Path) -> None:
     episodes_path = _write_episodes(tmp_path / "episodes.jsonl", [_episode()])
@@ -208,6 +217,7 @@ def test_missing_patterns_file_is_graceful_with_warning(tmp_path: Path) -> None:
     assert packet["corpus"]["m2_pattern_count"] == 0
     assert packet["warnings"] == [f"patterns file not found: {missing_patterns_path}"]
     assert [result["id"] for result in packet["results"]] == ["ep-001"]
+
 
 def test_malformed_m3_fails_closed_through_cli_nonzero(tmp_path: Path) -> None:
     episodes_path = tmp_path / "episodes.jsonl"
@@ -236,6 +246,7 @@ def test_malformed_m3_fails_closed_through_cli_nonzero(tmp_path: Path) -> None:
     assert "EpisodeStoreError" in result.stderr
     assert result.stdout == ""
 
+
 def test_cli_requires_json_flag(tmp_path: Path) -> None:
     episodes_path = _write_episodes(tmp_path / "episodes.jsonl", [_episode()])
     result = subprocess.run(
@@ -254,6 +265,7 @@ def test_cli_requires_json_flag(tmp_path: Path) -> None:
     )
     assert result.returncode != 0
     assert "--json is required" in result.stderr
+
 
 def test_script_uses_only_zero_dependency_recall_imports() -> None:
     tree = ast.parse(RECALL_SCRIPT.read_text(encoding="utf-8"))
