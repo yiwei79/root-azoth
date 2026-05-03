@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 34
+0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · final_patch: 34
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-p4-stabilization-closure-candidate-1
-- **Goal**: P4 Stabilization Closure Candidate
+- **Session**: 2026-05-03-autonomous-auto-p4-phase-close-1
+- **Goal**: Close v0.2.0-p4 repo-internal lifecycle truth
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-544 (success)
+- **Episode**: ep-545 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.
