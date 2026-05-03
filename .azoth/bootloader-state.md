@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.30 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 30
+0.1.4.31 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 31
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-p4-long-run-repair-governor-discovery-1
-- **Goal**: P4 repair candidate discovery and evidence-reliability board
+- **Session**: 2026-05-03-autonomous-auto-p4-cockpit-hook-evidence-reconciliation-2
+- **Goal**: P4 cockpit hook evidence reconciliation
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-541 (success)
+- **Episode**: ep-542 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
