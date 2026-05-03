@@ -1017,6 +1017,7 @@ def _proposal_learning_rows(
     errors: list[str] = []
     if not proposals_dir.is_dir():
         return rows, errors
+    completed_refs = _completed_task_refs(root)
     for path in sorted(proposals_dir.glob("*.yaml")):
         data, yaml_errors = _load_yaml_mapping(path)
         errors.extend(yaml_errors)
@@ -1029,12 +1030,21 @@ def _proposal_learning_rows(
             continue
         status = str(data.get("status") or data.get("proposal_status") or "captured")
         state = "planned" if status in {"accepted", "approved", "ready", "hydrated"} else "captured"
+        proposal_refs = _proposal_task_refs(data)
+        stale_refs = sorted(proposal_refs & completed_refs)
+        if stale_refs:
+            state = "stale_or_rejected"
         rows.append(
             {
                 "learning_state": state,
                 "provenance": PROVENANCE_REPO_NATIVE,
                 "source": _rel(root, path),
                 "summary": str(data.get("title") or data.get("summary") or path.stem),
+                "reason": (
+                    "proposal task refs already complete: " + ", ".join(stale_refs)
+                    if stale_refs
+                    else ""
+                ),
             }
         )
     return rows, errors
@@ -1068,6 +1078,63 @@ def _route_failure_rows(state: dict[str, Any], loop_id: str) -> list[dict[str, A
             }
         )
     return rows
+
+
+def _collect_completed_task_refs(value: Any) -> set[str]:
+    completed: set[str] = set()
+    if isinstance(value, dict):
+        raw_refs = value.get("completed_task_refs")
+        if isinstance(raw_refs, list):
+            completed.update(str(item).strip() for item in raw_refs if str(item or "").strip())
+        task_ref = str(value.get("task_ref") or value.get("id") or "").strip()
+        status = str(value.get("status") or "").strip().lower()
+        if task_ref and (status == "complete" or value.get("completed_date")):
+            completed.add(task_ref)
+        hydrated_ref = str(value.get("hydrated_task_ref") or "").strip()
+        if hydrated_ref and value.get("hydrated_at"):
+            completed.add(hydrated_ref)
+        for item in value.values():
+            completed.update(_collect_completed_task_refs(item))
+    elif isinstance(value, list):
+        for item in value:
+            completed.update(_collect_completed_task_refs(item))
+    return completed
+
+
+def _completed_task_refs(root: Path) -> set[str]:
+    completed: set[str] = set()
+    initiative_bank_paths = sorted((root / ".azoth/initiative-banks").glob("*.yaml"))
+    for path in [root / ".azoth/roadmap.yaml", *initiative_bank_paths]:
+        data, _errors = _load_yaml_mapping(path)
+        if data:
+            completed.update(_collect_completed_task_refs(data))
+    return completed
+
+
+def _proposal_task_refs(data: dict[str, Any]) -> set[str]:
+    refs: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key in {
+                    "proposed_task_ref",
+                    "proposed_task_id",
+                    "task_ref",
+                    "hydrated_task_ref",
+                    "expected_task_ref_at_review_time",
+                }:
+                    text = str(item or "").strip()
+                    if text:
+                        refs.add(text)
+                else:
+                    visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(data)
+    return refs
 
 
 def _aggregate_provenance(values: Any) -> str:

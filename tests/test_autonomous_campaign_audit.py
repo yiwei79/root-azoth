@@ -851,6 +851,65 @@ def test_learning_harvester_reads_proposals_route_failures_and_cross_source_dupl
     assert len(shared[0]["source_refs"]) == 2
 
 
+def test_learning_harvester_routes_completed_task_proposal_as_stale(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    state = yaml.safe_load(paths["state_path"].read_text(encoding="utf-8"))
+    state["autonomy_budget"] = {
+        "approval_basis": "Approved autonomous-auto internal self-heal campaign."
+    }
+    _write_yaml(paths["state_path"], state)
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "initiatives": [
+                {
+                    "id": "INI-AUTO-001",
+                    "slices": [{"task_ref": "T-033", "status": "complete"}],
+                    "completed_tasks": [
+                        {
+                            "id": "T-033",
+                            "title": "Autonomous-auto learning harvester",
+                            "completed_date": "2026-04-26",
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/proposals/autonomous-auto-learning-harvester.yaml",
+        {
+            "title": "Autonomous-auto learning harvester and self-heal router",
+            "summary": "Autonomous-auto learning proposal signal for T-033.",
+            "status": "draft",
+            "details": {
+                "recommended_first_slice": {
+                    "initiative_ref": "INI-AUTO-001",
+                    "candidate_slice_ref": "slice-auto-001-i",
+                    "proposed_task_ref": "T-033",
+                }
+            },
+        },
+    )
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+    harvester = report["learning_harvester"]
+    decision = next(
+        item
+        for item in harvester["decisions"]
+        if item["signal_id"] == "Autonomous-auto learning harvester and self-heal router"
+    )
+
+    assert decision["route"] == "stale_or_rejected"
+    assert decision["selected_action"] == "none"
+    assert decision["residual_risk"] == (
+        "Signal is stale, duplicate, superseded, or intentionally rejected."
+    )
+    assert harvester["route_counts"]["stale_or_rejected"] == 1
+
+
 def test_build_campaign_audit_orders_children_by_iteration_then_timestamp(
     tmp_path: Path,
 ) -> None:
