@@ -4,12 +4,12 @@
 0.1.4.23 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 23
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-automation-audit-insight-harvest-refinement-1
-- **Goal**: Nightly automation architect audit and approval-to-handoff workflow
+- **Session**: 2026-05-03-autonomous-auto-automation-audit-bundle-approval-contract-1
+- **Goal**: Nightly automation audit bundle and approval contract
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-528 (success)
+- **Episode**: ep-529 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
