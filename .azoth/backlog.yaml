@@ -3969,10 +3969,11 @@ items:
   source: proposal-automation-audit-insight-harvest-refinement
   target_layer: pipelines
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 3
   created_date: '2026-05-03'
+  completed_date: '2026-05-03'
   description: 'Hydrate the first implementation slice from the refined automation
     audit proposal: generate a read-only nightly audit bundle and approval contract
     with no apply routing, inbox write, producer worktree, worktree-sync, trusted-source
