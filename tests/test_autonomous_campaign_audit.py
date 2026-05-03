@@ -263,6 +263,7 @@ def test_build_campaign_audit_complete_campaign_is_read_only(tmp_path: Path) -> 
     )
     assert report["evaluator_evidence"]["provenance"] == "repo_native"
     assert report["evaluator_evidence"]["structured_scores"] == [0.91]
+    assert report["evaluator_evidence"]["dispositions"] == ["approved"]
     assert report["evaluator_evidence"]["ux_scorecards"] == [
         {"continuation": "green", "operator_read": "green"}
     ]
@@ -282,7 +283,9 @@ def test_build_campaign_audit_complete_campaign_is_read_only(tmp_path: Path) -> 
     ]
     assert report["executive_read"] == {
         "change_summary": "Campaign vision_realized with green UX vision evidence.",
-        "quality_assessment": "Evaluator scores: 0.91; UX Anchor Scorecard present.",
+        "quality_assessment": (
+            "Evaluator disposition: approved; scores: 0.91; UX Anchor Scorecard present."
+        ),
         "residual_risk": "none",
         "next_route": "stop",
         "operator_implication": "Campaign evidence is complete enough to stop without repair.",
@@ -344,7 +347,7 @@ def test_build_campaign_audit_normalizes_retrospective_evaluator_evidence(
         {"operator_read": "yellow", "learning_closure": "green"}
     ]
     assert report["executive_read"]["quality_assessment"] == (
-        "Evaluator scores: 0.88; UX Anchor Scorecard present."
+        "Evaluator disposition: not recorded; scores: 0.88; UX Anchor Scorecard present."
     )
 
 
@@ -654,6 +657,31 @@ def test_build_campaign_audit_reports_optional_quality_gaps_when_evaluator_exist
     assert "missing structured evaluator score fields" in report["residual_risks"]
     assert "missing UX Anchor Scorecard fields" in report["residual_risks"]
     assert "missing evaluator verification command fields" in report["residual_risks"]
+    assert report["next_route_recommendation"]["route"] == "review_residuals"
+
+
+def test_build_campaign_audit_surfaces_evaluator_residual_risks(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    evaluator_summary = ledger["runs"][0]["stage_summaries"][-1]
+    evaluator_summary.pop("scores")
+    evaluator_summary["evaluator_disposition"] = "conditional"
+    evaluator_summary["score"] = 0.92
+    evaluator_summary["residual_risks"] = [
+        "advisory evaluator score must not override scope gates"
+    ]
+    _write_yaml(paths["ledger_path"], ledger)
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert report["evaluator_evidence"]["dispositions"] == ["conditional"]
+    assert report["evaluator_evidence"]["structured_scores"] == [0.92]
+    assert report["evaluator_evidence"]["residual_risks"] == [
+        "advisory evaluator score must not override scope gates"
+    ]
+    assert "advisory evaluator score must not override scope gates" in report["residual_risks"]
     assert report["next_route_recommendation"]["route"] == "review_residuals"
 
 
@@ -1220,7 +1248,10 @@ def test_campaign_audit_cli_json_and_plain_are_read_only(tmp_path: Path, capsys)
     assert f"Campaign audit: {LOOP_ID}" in out
     assert "Next route: stop" in out
     assert "Executive read: Campaign vision_realized with green UX vision evidence." in out
-    assert "Quality: Evaluator scores: 0.91; UX Anchor Scorecard present." in out
+    assert (
+        "Quality: Evaluator disposition: approved; scores: 0.91; "
+        "UX Anchor Scorecard present."
+    ) in out
     assert "UX Anchor Fit: green" in out
     assert "Operator next move: stop" in out
     assert _snapshot_files(tmp_path) == before

@@ -363,6 +363,28 @@ $defs:
       summary_disposition:
         type: string
         minLength: 1
+      evaluator_disposition:
+        type: string
+        minLength: 1
+        description: "Optional advisory evaluator outcome label; not continuation authority."
+      score:
+        type: number
+        description: "Optional numeric quality/evaluator score for audit/report surfaces."
+      ux_anchor_scorecard:
+        type: object
+        description: "Optional UX Anchor Scorecard emitted by an evaluator stage."
+      verification_commands:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "Optional verification commands run or recommended by this stage."
+      residual_risks:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "Optional advisory residual risks; never override gates or stops."
 
   stage_inline_exception_entry:
     type: object

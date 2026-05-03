@@ -450,6 +450,16 @@ def validate_ledger(data: dict) -> list[str]:
                             "selector_trace_ref",
                         }
                     )
+                if field_name == "stage_summaries":
+                    allowed_fields.update(
+                        {
+                            "evaluator_disposition",
+                            "score",
+                            "ux_anchor_scorecard",
+                            "verification_commands",
+                            "residual_risks",
+                        }
+                    )
                 for evidence_field in evidence:
                     if evidence_field not in allowed_fields:
                         errors.append(f"{ep}: unexpected field '{evidence_field}'")
@@ -521,6 +531,32 @@ def validate_ledger(data: dict) -> list[str]:
                         f"{ep}: summary_status {summary_status!r} not in "
                         f"{sorted(_SUMMARY_STATUS_ENUM)}"
                     )
+
+                if field_name == "stage_summaries":
+                    evaluator_disposition = evidence.get("evaluator_disposition")
+                    if evaluator_disposition is not None and (
+                        not isinstance(evaluator_disposition, str)
+                        or not evaluator_disposition.strip()
+                    ):
+                        errors.append(f"{ep}: 'evaluator_disposition' must be a non-empty string")
+                    score = evidence.get("score")
+                    if score is not None and not isinstance(score, (int, float)):
+                        errors.append(f"{ep}: 'score' must be a number")
+                    ux_anchor_scorecard = evidence.get("ux_anchor_scorecard")
+                    if ux_anchor_scorecard is not None and not isinstance(
+                        ux_anchor_scorecard, dict
+                    ):
+                        errors.append(f"{ep}: 'ux_anchor_scorecard' must be a mapping")
+                    for list_field in ("verification_commands", "residual_risks"):
+                        list_value = evidence.get(list_field)
+                        if list_value is None:
+                            continue
+                        if not isinstance(list_value, list):
+                            errors.append(f"{ep}: '{list_field}' must be a list")
+                            continue
+                        for k, item in enumerate(list_value):
+                            if not isinstance(item, str) or not item.strip():
+                                errors.append(f"{ep}.{list_field}[{k}] must be a non-empty string")
 
         # waves
         waves = entry.get("waves")
@@ -1097,6 +1133,11 @@ def _stage_evidence_entry(
     model_tier: str | None = None,
     policy_ref: str | None = None,
     selector_trace_ref: str | None = None,
+    evaluator_disposition: str | None = None,
+    score: float | None = None,
+    ux_anchor_scorecard: dict | None = None,
+    verification_commands: list[str] | None = None,
+    residual_risks: list[str] | None = None,
 ) -> dict:
     entry = {
         "run_id": run_id,
@@ -1117,8 +1158,13 @@ def _stage_evidence_entry(
         ("model_tier", model_tier),
         ("policy_ref", policy_ref),
         ("selector_trace_ref", selector_trace_ref),
+        ("evaluator_disposition", evaluator_disposition),
+        ("score", score),
+        ("ux_anchor_scorecard", ux_anchor_scorecard),
+        ("verification_commands", verification_commands),
+        ("residual_risks", residual_risks),
     ):
-        if value is not None:
+        if value not in (None, [], {}):
             entry[key] = value
     return entry
 
@@ -1183,6 +1229,11 @@ def record_stage_summary(
     dependency_summary_refs: list[str] | None = None,
     summary_status: str,
     summary_disposition: str,
+    evaluator_disposition: str | None = None,
+    score: float | None = None,
+    ux_anchor_scorecard: dict | None = None,
+    verification_commands: list[str] | None = None,
+    residual_risks: list[str] | None = None,
     summary_recorded_at: str | None = None,
     ledger_path: Path | None = None,
 ) -> dict:
@@ -1205,6 +1256,11 @@ def record_stage_summary(
             timestamp=summary_recorded_at or utc_now_iso(),
             summary_status=summary_status,
             summary_disposition=summary_disposition,
+            evaluator_disposition=evaluator_disposition,
+            score=score,
+            ux_anchor_scorecard=ux_anchor_scorecard,
+            verification_commands=verification_commands,
+            residual_risks=residual_risks,
         )
         run.setdefault("stage_summaries", []).append(evidence)
         run["updated_at"] = utc_now_iso()
@@ -2024,6 +2080,14 @@ def cmd_record_spawn(args: argparse.Namespace) -> None:
 
 def cmd_record_summary(args: argparse.Namespace) -> None:
     root = _root_from_ledger_path(args.ledger)
+    ux_anchor_scorecard = None
+    if args.ux_anchor_scorecard_json:
+        try:
+            ux_anchor_scorecard = json.loads(args.ux_anchor_scorecard_json)
+        except json.JSONDecodeError as exc:
+            _die(f"--ux-anchor-scorecard-json is not valid JSON: {exc}")
+        if not isinstance(ux_anchor_scorecard, dict):
+            _die("--ux-anchor-scorecard-json must decode to an object")
     evidence = record_stage_summary(
         root,
         run_id=args.run_id,
@@ -2034,6 +2098,11 @@ def cmd_record_summary(args: argparse.Namespace) -> None:
         dependency_summary_refs=args.dependency_summary_refs,
         summary_status=args.summary_status,
         summary_disposition=args.summary_disposition,
+        evaluator_disposition=args.evaluator_disposition,
+        score=args.quality_score,
+        ux_anchor_scorecard=ux_anchor_scorecard,
+        verification_commands=args.verification_commands,
+        residual_risks=args.residual_risks,
         ledger_path=args.ledger,
     )
     print(f"stage summary recorded: {evidence['run_id']} {evidence['stage_id']}")
@@ -2252,6 +2321,38 @@ def main() -> None:
         required=True,
         metavar="DISPOSITION",
         help="Stage summary disposition, e.g. approved or request-changes.",
+    )
+    rsu.add_argument(
+        "--evaluator-disposition",
+        metavar="TEXT",
+        help="Optional evaluator outcome label, e.g. pass, conditional, fail, or advisory.",
+    )
+    rsu.add_argument(
+        "--quality-score",
+        type=float,
+        metavar="FLOAT",
+        help="Optional numeric quality/evaluator score for audit evidence.",
+    )
+    rsu.add_argument(
+        "--ux-anchor-scorecard-json",
+        metavar="JSON",
+        help="Optional JSON object with UX Anchor Scorecard fields.",
+    )
+    rsu.add_argument(
+        "--verification-command",
+        action="append",
+        dest="verification_commands",
+        default=[],
+        metavar="CMD",
+        help="Optional verification command recorded by the stage (repeatable).",
+    )
+    rsu.add_argument(
+        "--residual-risk",
+        action="append",
+        dest="residual_risks",
+        default=[],
+        metavar="TEXT",
+        help="Optional residual risk recorded by the stage (repeatable).",
     )
 
     rie = subs.add_parser(

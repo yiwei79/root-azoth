@@ -596,6 +596,16 @@ def _verification_commands(summary: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(commands))
 
 
+def _residual_risks(summary: dict[str, Any]) -> list[str]:
+    risks: list[str] = []
+    for field in ("residual_risks", "residual_risk", "risks"):
+        for risk in _safe_scalar_list(summary.get(field)):
+            text = str(risk).strip()
+            if text:
+                risks.append(text)
+    return list(dict.fromkeys(risks))
+
+
 def _stage_summary_is_complete(summary: dict[str, Any]) -> bool:
     status = str(summary.get("summary_status") or "").strip().lower()
     disposition = str(summary.get("summary_disposition") or "").strip().lower()
@@ -645,9 +655,15 @@ def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
             "subagent_type": str((summary or spawn or {}).get("subagent_type") or ""),
             "summary_status": str((summary or {}).get("summary_status") or ""),
             "summary_disposition": str((summary or {}).get("summary_disposition") or ""),
+            "evaluator_disposition": str(
+                (summary or {}).get("evaluator_disposition")
+                or (summary or {}).get("summary_disposition")
+                or ""
+            ),
             "structured_scores": _structured_scores(summary or {}),
             "ux_scorecards": _ux_scorecards(summary or {}),
             "verification_commands": _verification_commands(summary or {}),
+            "residual_risks": _residual_risks(summary or {}),
         }
     if not stages:
         residuals.append("missing stage evidence for campaign")
@@ -694,6 +710,7 @@ def _child_quality_evidence(child_scopes: list[dict[str, Any]]) -> dict[str, Any
     structured_scores: list[Any] = []
     ux_scorecards: list[dict[str, Any]] = []
     verification_commands: list[str] = []
+    residual_risks: list[str] = []
     for scope in child_scopes:
         structured_scores.extend(_safe_scalar_list(scope.get("structured_scores")))
         ux_scorecards.extend(
@@ -706,10 +723,16 @@ def _child_quality_evidence(child_scopes: list[dict[str, Any]]) -> dict[str, Any
             for command in _safe_list(scope.get("verification_commands"))
             if str(command or "").strip()
         )
+        residual_risks.extend(
+            str(risk)
+            for risk in _safe_list(scope.get("residual_risks"))
+            if str(risk or "").strip()
+        )
     return {
         "structured_scores": structured_scores,
         "ux_scorecards": ux_scorecards,
         "verification_commands": list(dict.fromkeys(verification_commands)),
+        "residual_risks": list(dict.fromkeys(residual_risks)),
     }
 
 
@@ -748,8 +771,13 @@ def _evaluator_evidence(
     structured_scores: list[Any] = []
     ux_scorecards: list[dict[str, Any]] = []
     verification_commands: list[str] = []
+    residual_risks: list[str] = []
+    dispositions: list[str] = []
     for stage_id in evaluator_stage_ids:
         evidence = stages[stage_id]
+        disposition = str(evidence.get("evaluator_disposition") or "").strip()
+        if disposition:
+            dispositions.append(disposition)
         structured_scores.extend(_safe_scalar_list(evidence.get("structured_scores")))
         ux_scorecards.extend(
             scorecard
@@ -761,14 +789,21 @@ def _evaluator_evidence(
             for command in _safe_list(evidence.get("verification_commands"))
             if str(command or "").strip()
         )
+        residual_risks.extend(
+            str(risk)
+            for risk in _safe_list(evidence.get("residual_risks"))
+            if str(risk or "").strip()
+        )
     return {
         "provenance": provenance,
         "stages": evaluator_stage_ids,
+        "dispositions": list(dict.fromkeys(dispositions)),
         "structured_scores": structured_scores + child_quality["structured_scores"],
         "ux_scorecards": ux_scorecards + child_quality["ux_scorecards"],
         "verification_commands": list(
             dict.fromkeys(verification_commands + child_quality["verification_commands"])
         ),
+        "residual_risks": list(dict.fromkeys(residual_risks + child_quality["residual_risks"])),
     }
 
 
@@ -776,6 +811,8 @@ def _retrospective_evaluator_evidence(learning_rows: list[dict[str, Any]]) -> di
     scores: list[Any] = []
     ux_scorecards: list[dict[str, Any]] = []
     verification_commands: list[str] = []
+    residual_risks: list[str] = []
+    dispositions: list[str] = []
     evidence_count = 0
     for row in learning_rows:
         if not row.get("strict_campaign_match"):
@@ -796,14 +833,25 @@ def _retrospective_evaluator_evidence(learning_rows: list[dict[str, Any]]) -> di
             if text:
                 verification_commands.append(text)
                 has_evidence = True
+        for risk in _safe_list(row.get("residual_risks")):
+            text = str(risk or "").strip()
+            if text:
+                residual_risks.append(text)
+                has_evidence = True
+        disposition = str(row.get("evaluator_disposition") or "").strip()
+        if disposition:
+            dispositions.append(disposition)
+            has_evidence = True
         if has_evidence:
             evidence_count += 1
     return {
         "provenance": PROVENANCE_REPO_NATIVE if evidence_count else PROVENANCE_MISSING,
         "retrospective_evidence_count": evidence_count,
+        "dispositions": list(dict.fromkeys(dispositions)),
         "structured_scores": scores,
         "ux_scorecards": ux_scorecards,
         "verification_commands": list(dict.fromkeys(verification_commands)),
+        "residual_risks": list(dict.fromkeys(residual_risks)),
     }
 
 
@@ -828,6 +876,30 @@ def _merge_retrospective_evaluator_evidence(
                     + _safe_list(retrospective.get("verification_commands"))
                 )
                 if str(command or "").strip()
+            ]
+        )
+    )
+    merged["residual_risks"] = list(
+        dict.fromkeys(
+            [
+                str(risk)
+                for risk in (
+                    _safe_list(merged.get("residual_risks"))
+                    + _safe_list(retrospective.get("residual_risks"))
+                )
+                if str(risk or "").strip()
+            ]
+        )
+    )
+    merged["dispositions"] = list(
+        dict.fromkeys(
+            [
+                str(disposition)
+                for disposition in (
+                    _safe_list(merged.get("dispositions"))
+                    + _safe_list(retrospective.get("dispositions"))
+                )
+                if str(disposition or "").strip()
             ]
         )
     )
@@ -899,6 +971,12 @@ def _learning_row_from_record(
     commands = _verification_commands(record)
     if commands:
         row["verification_commands"] = commands
+    risks = _residual_risks(record)
+    if risks:
+        row["residual_risks"] = risks
+    disposition = str(record.get("evaluator_disposition") or record.get("disposition") or "")
+    if disposition.strip():
+        row["evaluator_disposition"] = disposition.strip()
     return row
 
 
@@ -1599,9 +1677,16 @@ def build_nightly_automation_audit_bundle(
 def _evaluator_quality_text(evaluator_evidence: dict[str, Any]) -> str:
     scores = _safe_scalar_list(evaluator_evidence.get("structured_scores"))
     score_text = ", ".join(str(score) for score in scores) if scores else "not recorded"
+    dispositions = _safe_scalar_list(evaluator_evidence.get("dispositions"))
+    disposition_text = (
+        ", ".join(str(disposition) for disposition in dispositions)
+        if dispositions
+        else "not recorded"
+    )
     ux_present = bool(evaluator_evidence.get("ux_scorecards"))
     return (
-        f"Evaluator scores: {score_text}; "
+        f"Evaluator disposition: {disposition_text}; "
+        f"scores: {score_text}; "
         f"UX Anchor Scorecard {'present' if ux_present else 'not recorded'}."
     )
 
@@ -1887,6 +1972,9 @@ def build_campaign_audit(
     if not learning_rows:
         residuals.append("missing learning closure evidence")
     if evaluator_evidence["provenance"] != PROVENANCE_MISSING:
+        residuals.extend(
+            str(risk) for risk in _safe_list(evaluator_evidence.get("residual_risks"))
+        )
         if not evaluator_evidence.get("structured_scores"):
             residuals.append("missing structured evaluator score fields")
         if not evaluator_evidence.get("ux_scorecards"):

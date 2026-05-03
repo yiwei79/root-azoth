@@ -1142,6 +1142,11 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
         tmp_path,
         summary_status="complete",
         summary_disposition="approved",
+        evaluator_disposition="pass",
+        score=0.92,
+        ux_anchor_scorecard={"operator_read": "green", "traceability": "green"},
+        verification_commands=["python3 -m pytest tests/test_run_ledger.py -q"],
+        residual_risks=["advisory score does not override gates"],
         summary_recorded_at="2026-04-23T10:04:00+00:00",
         **kwargs,
     )
@@ -1156,8 +1161,14 @@ def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -
     assert spawn["reasoning_effort"] == "medium"
     assert spawn["policy_ref"] == "codex-model-selector-policy@2026-04-29"
     assert summary["summary_status"] == "complete"
+    assert summary["evaluator_disposition"] == "pass"
+    assert summary["score"] == 0.92
+    assert summary["ux_anchor_scorecard"] == {"operator_read": "green", "traceability": "green"}
+    assert summary["verification_commands"] == ["python3 -m pytest tests/test_run_ledger.py -q"]
+    assert summary["residual_risks"] == ["advisory score does not override gates"]
     assert evidence["spawn"]["spawned_at"] == "2026-04-23T10:01:00+00:00"
     assert evidence["summary"]["summary_disposition"] == "approved"
+    assert evidence["summary"]["score"] == 0.92
 
 
 def test_require_completion_evidence_accepts_completed_stage_with_valid_pair(
