@@ -19,6 +19,15 @@ PROVENANCE_REPO_NATIVE = "repo_native"
 PROVENANCE_CHAT_ONLY = "chat_only"
 PROVENANCE_MISSING = "missing"
 PROVENANCE_CONFLICT = "conflict"
+ACCEPTED_STAGE_SUMMARY_DISPOSITIONS = {
+    "accepted",
+    "approve",
+    "approved",
+    "complete",
+    "no-changes",
+    "pass",
+    "passed",
+}
 LEARNING_STATES = {
     "observed",
     "captured",
@@ -545,6 +554,12 @@ def _verification_commands(summary: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(commands))
 
 
+def _stage_summary_is_complete(summary: dict[str, Any]) -> bool:
+    status = str(summary.get("summary_status") or "").strip().lower()
+    disposition = str(summary.get("summary_disposition") or "").strip().lower()
+    return status == "complete" and disposition in ACCEPTED_STAGE_SUMMARY_DISPOSITIONS
+
+
 def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     if not run:
         return {"provenance": PROVENANCE_MISSING, "stages": {}}, [
@@ -557,11 +572,12 @@ def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     for stage_id in _expected_stage_ids(run):
         spawn = spawns.get(stage_id)
         summary = summaries.get(stage_id)
+        summary_accepted = bool(summary and _stage_summary_is_complete(summary))
         spawn_provenance = PROVENANCE_REPO_NATIVE if spawn else PROVENANCE_MISSING
         summary_provenance = PROVENANCE_REPO_NATIVE if summary else PROVENANCE_MISSING
         provenance = (
             PROVENANCE_REPO_NATIVE
-            if spawn and summary
+            if spawn and summary_accepted
             else PROVENANCE_CONFLICT
             if spawn or summary
             else PROVENANCE_MISSING
@@ -570,6 +586,12 @@ def _stage_evidence(run: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
             residuals.append(f"missing stage summary for {stage_id}")
         elif summary and not spawn:
             residuals.append(f"missing stage spawn for {stage_id}")
+        elif spawn and summary and not summary_accepted:
+            residuals.append(
+                "blocking stage summary for "
+                f"{stage_id}: status={str(summary.get('summary_status') or '')}, "
+                f"disposition={str(summary.get('summary_disposition') or '')}"
+            )
         stages[stage_id] = {
             "provenance": provenance,
             "run_id": str(run.get("run_id") or ""),

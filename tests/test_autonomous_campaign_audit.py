@@ -480,6 +480,42 @@ def test_build_campaign_audit_missing_stage_summary_reports_residual_risk(
     assert report["next_route_recommendation"]["confidence_basis"]
 
 
+def test_build_campaign_audit_routes_latest_blocking_stage_summary_to_repair_evidence(
+    tmp_path: Path,
+) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    ledger = yaml.safe_load(paths["ledger_path"].read_text(encoding="utf-8"))
+    ledger["runs"][0]["stage_summaries"].append(
+        {
+            "run_id": LOOP_ID,
+            "stage_id": "autonomous_auto_s1_architect",
+            "subagent_type": "architect",
+            "trigger": "campaign-plan",
+            "role_hint": "Approve read-only audit boundary.",
+            "dependency_summary_refs": [],
+            "summary_recorded_at": "2026-04-26T11:10:00+00:00",
+            "summary_status": "blocked",
+            "summary_disposition": "needs-input",
+        }
+    )
+    _write_yaml(paths["ledger_path"], ledger)
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    stage = report["stage_evidence"]["stages"]["autonomous_auto_s1_architect"]
+    assert stage["provenance"] == "conflict"
+    assert stage["spawn_provenance"] == "repo_native"
+    assert stage["summary_provenance"] == "repo_native"
+    assert stage["summary_status"] == "blocked"
+    assert stage["summary_disposition"] == "needs-input"
+    assert report["traceability_scorecard"]["stage_evidence"] == "conflict"
+    assert (
+        "blocking stage summary for autonomous_auto_s1_architect: "
+        "status=blocked, disposition=needs-input"
+    ) in report["residual_risks"]
+    assert report["next_route_recommendation"]["route"] == "repair_evidence"
+
+
 def test_build_campaign_audit_accepts_truthful_inline_stage_absence(
     tmp_path: Path,
 ) -> None:
@@ -524,6 +560,17 @@ def test_build_campaign_audit_accepts_truthful_inline_stage_absence(
     assert report["traceability_scorecard"]["overall_provenance"] == "repo_native"
     assert report["next_route_recommendation"]["route"] == "stop"
     assert report["residual_risks"] == []
+
+
+def test_build_campaign_audit_preserves_ledger_lock_file(tmp_path: Path) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    lock_path = paths["ledger_path"].with_name(f"{paths['ledger_path'].name}.lock")
+    lock_path.write_text("sentinel lock content\n", encoding="utf-8")
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+
+    assert lock_path.read_text(encoding="utf-8") == "sentinel lock content\n"
+    assert report["next_route_recommendation"]["route"] == "stop"
 
 
 def test_truthful_inline_absence_does_not_mask_partial_stage_conflict(
