@@ -730,13 +730,13 @@ initiatives:
   discovery_status: t055_cockpit_first_use_command_surface_complete
   candidate_slice_ref: slice-pkb-001-l
   readiness_ref: .azoth/initiative-banks/INI-PKB-001.yaml#readiness
-  next_discovery_action: T-055 completed the safe-open cockpit command surface
-    and no-write UX simulation for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`.
-    p4 remains active only as a post-stable repair window; next work should be a
-    separately approved repair or operator-selected gate for backup implementation,
-    another pointer-only project consumer, retrieval/source onboarding, public-product
-    update, or stop/defer. Credentials, cloud/storage writes, cockpit mutation,
-    project writes, release work, governance, kernel, and M1 remain separate approvals.
+  next_discovery_action: T-055 completed the safe-open cockpit command surface and
+    no-write UX simulation for `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`. p4
+    remains active only as a post-stable repair window; next work should be a separately
+    approved repair or operator-selected gate for backup implementation, another pointer-only
+    project consumer, retrieval/source onboarding, public-product update, or stop/defer.
+    Credentials, cloud/storage writes, cockpit mutation, project writes, release work,
+    governance, kernel, and M1 remain separate approvals.
   summary: 'Plan the post-v0.2.0 personal-control-plane distributed knowledge system
     in small governed increments across root-azoth, public azoth, personal-root, and
     project panels. The completed Batch 0, recall pilot, T-047 procedure arc, T-048
@@ -745,11 +745,11 @@ initiatives:
     onboarding, broader recall, public release, or project mutation. T-050 packaged
     stable closeout evidence; T-051 reconciled the post-closeout state and selected
     stop/defer; T-052 renamed the local personal cockpit to `yiwei-azoth-cockpit`
-    and recorded receipt evidence. T-053 delivered backup/recovery readiness and
-    operator onboarding documentation; T-054/T-055 added the safe-open cockpit main
-    menu, context firewall, Codex-visible command wrappers, bootstrap verifier coverage,
-    and no-write UX simulation. Actual backup provisioning, retrieval/source onboarding,
-    cockpit mutation, and project writes remain behind separate gates.
+    and recorded receipt evidence. T-053 delivered backup/recovery readiness and operator
+    onboarding documentation; T-054/T-055 added the safe-open cockpit main menu, context
+    firewall, Codex-visible command wrappers, bootstrap verifier coverage, and no-write
+    UX simulation. Actual backup provisioning, retrieval/source onboarding, cockpit
+    mutation, and project writes remain behind separate gates.
 
     '
   decision_ref:
@@ -823,33 +823,41 @@ initiatives:
   decision_ref:
   - D11
   - D42
-- id: INI-MEM-003
-  title: Vector retrieval layer for M3 context-recall
-  category: memory
-  theme: C
-  dimensions:
-    themes:
-    - C
-    categories:
-    - memory
-    tracks:
-    - vector-retrieval
-    - context-recall
-  phase: null
-  priority: medium
-  slices: []
-  summary: 'Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic
-    recall, complementing the current keyword/recency scan. Flat metadata tagging
-    (no Python class hierarchy) mirrors mempalace''s single "mempalace_drawers" ChromaDB
-    collection. Hybrid retrieval formula (`fused_dist = dist * (1.0 - weight * keyword_overlap)`)
-    should live in production code, not only benchmark scripts. The optional flag
-    keeps the JSONL path as the zero-dependency default.
+  - id: INI-MEM-003
+    title: Vector retrieval layer for M3 context-recall
+    category: memory
+    theme: C
+    dimensions:
+      themes:
+      - C
+      categories:
+      - memory
+      tracks:
+      - vector-retrieval
+      - context-recall
+    phase: null
+    priority: medium
+    slices:
+    - task_ref: T-057
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-057.yaml
+      phase: v0.2.0-p4
+      status: complete
+      role: historical
+    summary: 'Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic
+      recall, complementing the current keyword/recency scan. Flat metadata tagging
+      (no Python class hierarchy) mirrors mempalace''s single "mempalace_drawers" ChromaDB
+      collection. Hybrid retrieval formula (`fused_dist = dist * (1.0 - weight * keyword_overlap)`)
+      should live in production code, not only benchmark scripts. The optional flag
+      keeps the JSONL path as the zero-dependency default.
 
-    '
-  research_ref: RP-MEM-B
-  decision_ref:
-  - D11
-  - D45
+      '
+    initiative_bank_ref: .azoth/initiative-banks/INI-MEM-003.yaml
+    research_ref: RP-MEM-B
+    decision_ref:
+    - D11
+    - D45
+    task_ref: null
+    spec_ref: null
 - id: INI-MEM-004
   title: Memory loop hardening (reinforcement, closeout, session-state)
   category: memory
@@ -2171,11 +2179,11 @@ versions:
     - D52
 - id: v0.2.0-p4
   status: active
-  current_patch: 23
-  goal: 'Post-stable stabilization repair window: keep new initiative expansion
-    frozen while reconciling release truth, cockpit deployability, planning truth,
-    formatting gates, and public-product freshness policy after the v0.2.0 stable
-    release and personal-cockpit deployment evidence.'
+  current_patch: 27
+  goal: 'Post-stable stabilization repair window: keep new initiative expansion frozen
+    while reconciling release truth, cockpit deployability, planning truth, formatting
+    gates, and public-product freshness policy after the v0.2.0 stable release and
+    personal-cockpit deployment evidence.'
   phase_scope:
   - 4
   themes:
@@ -2195,14 +2203,12 @@ versions:
     deferred_work_rule: All new feature, autonomy, memory, planning-bank, and platform
       ideas remain unscheduled proposal or initiative-bank evidence until this phase
       closes.
-  note: >-
-    This phase remains active only as a post-stable repair window, not as
-    pre-release rollout or feature-growth scope. The product flow remains
-    root-azoth -> public azoth -> installed consumer/cockpit updates; the operating
-    model is now four planes: root-azoth development workshop, public azoth product,
-    yiwei-azoth-cockpit personal control plane, and controlled project repos with
-    project-local context and write authority. New repairs must be named, gated,
-    and evidence-backed.
+  note: 'This phase remains active only as a post-stable repair window, not as pre-release
+    rollout or feature-growth scope. The product flow remains root-azoth -> public
+    azoth -> installed consumer/cockpit updates; the operating model is now four planes:
+    root-azoth development workshop, public azoth product, yiwei-azoth-cockpit personal
+    control plane, and controlled project repos with project-local context and write
+    authority. New repairs must be named, gated, and evidence-backed.'
   pending_task_refs: []
   tasks: []
   completed_tasks:
@@ -2393,4 +2399,12 @@ versions:
     title: Stable personal-cockpit deployment and rename
     completed_date: '2026-05-01'
     decision_ref: []
-  - {id: T-056, title: "Nightly automation audit bundle and approval contract", completed_date: "2026-05-03", decision_ref: [D21, D23, D32, D50]}
+  - id: T-056
+    title: Nightly automation audit bundle and approval contract
+    completed_date: '2026-05-03'
+    decision_ref:
+    - D21
+    - D23
+    - D32
+    - D50
+  - {id: T-057, title: "M3 recall quality eval harness and deterministic default scorer", completed_date: "2026-05-03", decision_ref: [D11, D45]}
