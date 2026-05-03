@@ -1,9 +1,9 @@
 campaign_context_version: 1
 campaign_id: post-p4-roadmap-reanchor-next-campaign-board-20260503
 campaign_name: Post-P4 Roadmap Re-Anchor and Next-Campaign Board
-status: active
+status: checkpointed
 created_at: "2026-05-03T21:54:40Z"
-updated_at: "2026-05-03T22:05:00Z"
+updated_at: "2026-05-03T22:12:00Z"
 source_session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
 source_design_artifact: .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
 mode:
@@ -174,19 +174,27 @@ state_transitions:
     evidence_refs:
       - .azoth/scope-gate.json
       - .azoth/run-ledger.local.yaml
+  - at: "2026-05-03T22:12:00Z"
+    from: active
+    to: checkpointed
+    actor: administrative-closeout
+    evidence_refs:
+      - .azoth/memory/episodes.jsonl#ep-547
+      - .azoth/bootloader-state.md
 child_scopes:
   - session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
     iteration: 1
     action: research_initiative
     candidate_id: post-p4-campaign-context-state
     purpose: Suggest and persist the campaign context state system.
-    status: active
+    status: closed
+    closeout_episode_id: ep-547
     artifacts:
       - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
 latest_checkpoint:
-  status: active_design_context_created
+  status: design_context_created_and_child_closed
   next_action: >
-    Close this child after verification, then use the context as the parent
-    state object for the roadmap-anchor analysis child.
+    Use this context as the parent state object for the roadmap-anchor analysis
+    child if the operator continues the approved campaign.
   blocking_gates: []
   stale_context_flags: []
