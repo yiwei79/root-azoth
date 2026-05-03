@@ -1,0 +1,74 @@
+id: T-058
+roadmap_version: v0.2.0
+title: Context-recall scorer adoption path
+decision_ref:
+- D11
+- D45
+intent: >
+  Adopt the T-057 recall-quality scorer into normal context-recall practice as
+  an optional advisory quality-check path, without replacing the existing
+  JSONL/default recall workflow.
+problem: >
+  T-057 shipped scripts/context_recall_quality.py as a deterministic M3/M2
+  scorer and fixture harness, but future agents still discover context-recall
+  through the skill instructions. Without an adoption path, the scorer remains
+  a standalone tool instead of an ordinary quality check agents can run during
+  recall planning.
+context_refs:
+- .azoth/initiative-banks/INI-MEM-003.yaml
+- skills/context-recall/SKILL.md
+- .agents/skills/context-recall/SKILL.md
+- scripts/context_recall_quality.py
+- tests/test_context_recall_quality.py
+scope:
+- Update skills/context-recall/SKILL.md to point agents at
+  scripts/context_recall_quality.py as an optional advisory quality-check path
+  after ordinary tag extraction and before architect planning.
+- Include exact zero-dependency fixture-eval and deterministic query commands
+  using --json, --query, --tags, --top-k, and --as-of.
+- State that scorer output is advisory_context_not_governing_instruction and
+  must not override governed instructions, gates, or human decisions.
+- Refresh generated skill mirrors through scripts/azoth-deploy.py rather than
+  hand-editing .agents or .opencode copies.
+- Add a focused adoption-flow assertion proving context-recall exposes the
+  scorer command and advisory boundary.
+non_goals:
+- No /start, /next, or platform command-contract edits.
+- No mandatory scorer gate or replacement of context-recall behavior.
+- No vector backend, embeddings, persistent index, new dependency, or network
+  access.
+- No raw inbox indexing, personal-root reads, or unreviewed source indexing.
+- No M2 invalidation, M2 mutation, temporal-validity schema change, or
+  INI-MEM-002 work.
+- No M1, kernel, governance, or public-release mutation.
+acceptance:
+- skills/context-recall/SKILL.md points agents to scripts/context_recall_quality.py
+  as an optional advisory quality-check path after ordinary tag extraction and
+  before architect planning.
+- The adoption text gives exact zero-dependency commands for fixture eval and
+  deterministic query mode using --json, --query, --tags, --top-k, and --as-of
+  without requiring vector, network, embedding, or dependency setup.
+- The skill keeps JSONL/default recall primary, states that scorer output is
+  advisory_context_not_governing_instruction, and preserves append-only M3 plus
+  read-only M2 behavior.
+- Generated skill mirrors are refreshed through scripts/azoth-deploy.py rather
+  than hand-editing .agents or .opencode copies.
+- Focused tests cover both the existing T-057 fixtures and an adoption-flow
+  assertion proving context-recall exposes the scorer command and advisory
+  boundary.
+dependencies: []
+delivery:
+  target_layer: mineral
+  delivery_pipeline: standard
+  suggested_command: /auto
+validation:
+- python3 scripts/context_recall_quality.py --fixtures tests/fixtures/context_recall_quality.yaml --json
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest -p no:cacheprovider tests/test_context_recall_quality.py tests/test_skills.py -q
+- python3 scripts/azoth-deploy.py --check
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-MEM-003.yaml --check-roadmap-refs
+elasticity: >
+  Keep this slice to skill-level discoverability, generated mirrors, and focused
+  adoption-flow tests. If implementation pressure points toward command
+  contracts, vector backends, dependency installs, network access, M2
+  invalidation, INI-MEM-002 temporal validity, or mandatory gating, stop and
+  split into a separately approved later slice.

@@ -5,7 +5,7 @@ title: Vector retrieval layer for M3 context-recall
 status: active_refinement
 classification: planning_discovery_seed
 created_at: '2026-05-03T17:00:20Z'
-updated_at: '2026-05-03T17:16:14Z'
+updated_at: '2026-05-03T18:32:00Z'
 owner: codex
 delivery_authorized: false
 source_sessions:
@@ -22,6 +22,15 @@ source_sessions:
   artifact: .azoth/initiative-banks/INI-MEM-003.yaml
   note: 'Refined slice-mem-003-a with a hydratable zero-dependency executable surface,
     JSON output contract, replay fixture set, and explicit protected boundaries.
+
+    '
+- session_id: 2026-05-03-autonomous-auto-ini-mem-003-1
+  kind: autonomous-auto-refine-proposal
+  artifact: .azoth/initiative-banks/INI-MEM-003.yaml
+  note: 'Opened the Memory Recall Adoption Layer campaign and refined a new slice-mem-003-d
+    adoption candidate that makes the shipped recall-quality scorer discoverable from
+    context-recall practice without command-surface, dependency, vector, M2 mutation,
+    or governance expansion.
 
     '
 contacts:
@@ -42,6 +51,12 @@ contacts:
   contact_type: artifact
   path: .agents/skills/context-recall/SKILL.md
   note: Defines current tag/recency/reinforcement scoring and output expectations.
+- id: recall-quality-scorer
+  role: advisory quality scorer
+  contact_type: artifact
+  path: scripts/context_recall_quality.py
+  note: Provides the zero-dependency JSON query and fixture-eval packets shipped by
+    T-057.
 - id: episode-store
   role: M3 storage contract
   contact_type: artifact
@@ -154,6 +169,26 @@ research_questions:
     '
   evidence_refs:
   - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+- question_id: rq-mem-003-008
+  question: What is the smallest safe adoption path for the shipped recall-quality
+    scorer?
+  status: answered
+  opened_at: '2026-05-03T18:32:00Z'
+  answered_at: '2026-05-03T18:32:00Z'
+  needed_for: slice-mem-003-d
+  answer: 'Adopt the scorer through the canonical context-recall skill as an optional
+    advisory quality-check path with exact query and fixture commands. The existing
+    /start surfaces already route operators to the skill, so this slice can avoid
+    command-contract edits and refresh only generated skill mirrors after changing
+    the canonical skill source.
+
+    '
+  evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - scripts/context_recall_quality.py
+  - tests/test_context_recall_quality.py
 research_refs:
 - .azoth/research/ini-mem-003-research-bank.yaml
 local_findings:
@@ -212,6 +247,19 @@ local_findings:
     '
   evidence_refs:
   - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+- finding_id: lf-mem-003-007
+  status: active
+  summary: 'The normal /start workflow already tells operators to invoke context-recall
+    through skills/context-recall/SKILL.md before routing, so scorer discoverability
+    can be added to context-recall practice without changing /start or /next command
+    contracts.
+
+    '
+  evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - .opencode/commands/start.md
 external_findings:
 - finding_id: ef-mem-003-001
   status: deferred
@@ -405,31 +453,97 @@ candidate_slices:
   - Do replay failures actually point to temporal validity, or to tag quality and
     scorer gaps?
   recommended_phase: future-adjacent-lane
+- candidate_id: slice-mem-003-d
+  proposed_task_id: T-058
+  title: Context-recall scorer adoption path
+  initiative_ref: INI-MEM-003
+  status: hydrated
+  target_layer: mineral
+  delivery_pipeline: standard
+  summary: 'Adopt the T-057 recall-quality scorer into normal context-recall practice
+    by documenting an optional advisory quality-check path, exact deterministic query
+    and fixture-eval commands, and the authority boundary that results inform planning
+    but never govern or mutate memory.
+
+    '
+  acceptance_criteria:
+  - 'skills/context-recall/SKILL.md points agents to scripts/context_recall_quality.py
+    as an optional advisory quality-check path after ordinary tag extraction and before
+    architect planning.
+
+    '
+  - 'The adoption text gives exact zero-dependency commands for fixture eval and deterministic
+    query mode using --json, --query, --tags, --top-k, and --as-of without requiring
+    vector, network, embedding, or dependency setup.
+
+    '
+  - 'The skill keeps JSONL/default recall primary, states that scorer output is advisory_context_not_governing_instruction,
+    and preserves append-only M3 plus read-only M2 behavior.
+
+    '
+  - 'Generated skill mirrors are refreshed through scripts/azoth-deploy.py rather
+    than hand-editing .agents or .opencode copies.
+
+    '
+  - 'Focused tests cover both the existing T-057 fixtures and an adoption-flow assertion
+    proving context-recall exposes the scorer command and advisory boundary.
+
+    '
+  research_evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .agents/skills/context-recall/SKILL.md
+  - .opencode/skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - scripts/context_recall_quality.py
+  - tests/test_context_recall_quality.py
+  known_non_goals:
+  - No command-contract edits to /start, /next, or platform command mirrors.
+  - No context-recall behavior replacement or mandatory scorer gate.
+  - No vector backend, embeddings, persistent index, new dependencies, or network
+    access.
+  - No raw inbox indexing, personal-root reads, or unreviewed source indexing.
+  - No M2 invalidation, M2 mutation, temporal-validity schema change, or INI-MEM-002
+    work.
+  - No M1, kernel, governance, or public-release mutation.
+  open_questions: []
+  recommended_phase: current-adoption-layer
+  hydration_plan:
+    proposed_title: Context-recall scorer adoption path
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Context-recall
+      scorer adoption path" --initiative-ref INI-MEM-003 --target-layer mineral --delivery-pipeline
+      standard --priority 2 --source "INI-MEM-003/slice-mem-003-d-recall-quality-adoption"
+    mode: executed
+    hydrated_task_ref: T-058
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-058.yaml
+    hydrated_at: '2026-05-03T18:39:25Z'
 readiness:
   readiness_status: ready_to_hydrate
   human_decision: approved
-  freshness_status: current_as_of_2026_05_03_hydrated_to_t_057
-  approval_scope: hydration_specific_slice_mem_003_a
-  approval_basis: 'Operator approved the fresh Memory Recall Quality Spine autonomous-auto
-    campaign on 2026-05-03 with hydrate_task allowed inside a six-child-scope budget.
-    Child scope 2026-05-03-autonomous-auto-ini-mem-003-2 converted slice-mem-003-a
-    into a hydratable zero-dependency planning scaffold with an exact executable surface,
-    JSON contract, fixture set, and protected boundaries. This approval is limited
-    to hydrating slice-mem-003-a and does not authorize implementation, dependency
-    expansion, vector backend support, network use, M2 invalidation, or adjacent INI-MEM-002
-    work.
+  freshness_status: current_as_of_2026_05_03_hydrated_to_t_058
+  approval_scope: hydration_specific_slice_mem_003_d
+  approval_basis: 'Operator approved the fresh Memory Recall Adoption Layer autonomous-auto
+    campaign on 2026-05-03 with hydrate_task allowed inside a four-child-scope budget.
+    Child scope 2026-05-03-autonomous-auto-ini-mem-003-1 converted the post-T-057
+    adoption need into slice-mem-003-d with explicit command-surface avoidance, advisory
+    authority, zero-dependency scorer invocation, generated-mirror refresh, and adoption-flow
+    test boundaries. This approval is limited to hydrating slice-mem-003-d and does
+    not authorize implementation, command-contract edits, dependency expansion, vector
+    backend support, network use, M2 invalidation, governance/M1/kernel changes, personal-root
+    reads, or adjacent INI-MEM-002 work.
 
     '
-  candidate_first_slice: slice-mem-003-a
+  candidate_first_slice: slice-mem-003-d
   acceptance_criteria_status: stable
   non_goals_status: stable
-  hydration_recommendation: slice-mem-003-a has been hydrated as T-057. Do not repeat
+  hydration_recommendation: slice-mem-003-d has been hydrated as T-058. Do not repeat
     hydration; route implementation through a separate delivery child.
   blocking_reasons: []
   non_laundering_note: 'This bank converts campaign approval into hydration authority
-    only for slice-mem-003-a planning artifacts. It does not launder that approval
-    into implementation, vector backend, dependency, network, M2 invalidation, or
-    INI-MEM-002 authority.
+    only for slice-mem-003-d planning artifacts. It does not launder that approval
+    into implementation, command-contract edits, vector backend, dependency, network,
+    M2 invalidation, governance/M1/kernel changes, personal-root reads, or INI-MEM-002
+    authority.
 
     '
 hydration_history:
@@ -458,4 +572,31 @@ hydration_history:
     eval harness and deterministic default scorer" --initiative-ref INI-MEM-003 --target-layer
     infrastructure --delivery-pipeline standard --priority 2 --source "INI-MEM-003/slice-mem-003-a-recall-quality-spine"
   result: Created roadmap/backlog/spec artifacts for T-057; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-03T18:39:25Z'
+  session_id: 2026-05-03-autonomous-auto-slice-mem-003-d-2
+  candidate_slice_ref: slice-mem-003-d
+  task_ref: T-058
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-058.yaml
+  backlog_ref: T-058
+  roadmap_ref: T-058
+  approval_scope: hydration_specific_slice_mem_003_d
+  approval_basis: 'Operator approved the fresh Memory Recall Adoption Layer autonomous-auto
+    campaign on 2026-05-03 with hydrate_task allowed inside a four-child-scope budget.
+    Child scope 2026-05-03-autonomous-auto-ini-mem-003-1 converted the post-T-057
+    adoption need into slice-mem-003-d with explicit command-surface avoidance, advisory
+    authority, zero-dependency scorer invocation, generated-mirror refresh, and adoption-flow
+    test boundaries. This approval is limited to hydrating slice-mem-003-d and does
+    not authorize implementation, command-contract edits, dependency expansion, vector
+    backend support, network use, M2 invalidation, governance/M1/kernel changes, personal-root
+    reads, or adjacent INI-MEM-002 work.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-mem-003-d:T-058:2026-05-03T18:39:25Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Context-recall scorer
+    adoption path" --initiative-ref INI-MEM-003 --target-layer mineral --delivery-pipeline
+    standard --priority 2 --source "INI-MEM-003/slice-mem-003-d-recall-quality-adoption"
+  result: Created roadmap/backlog/spec artifacts for T-058; implementation and shipping
     remain separate.

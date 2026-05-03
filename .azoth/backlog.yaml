@@ -3995,12 +3995,34 @@ items:
   priority: 2
   created_date: '2026-05-03'
   completed_date: '2026-05-03'
-  description: >
-    Hydrated from INI-MEM-003 slice-mem-003-a to implement the first
-    zero-dependency recall-quality scorer and fixture harness for governed
-    M3/M2 context recall. This task excludes vector backends, new dependencies,
-    network access, M2 invalidation, and INI-MEM-002 temporal-validity work.
+  description: 'Hydrated from INI-MEM-003 slice-mem-003-a to implement the first zero-dependency
+    recall-quality scorer and fixture harness for governed M3/M2 context recall. This
+    task excludes vector backends, new dependencies, network access, M2 invalidation,
+    and INI-MEM-002 temporal-validity work.
+
+    '
   roadmap_ref: T-057
+  initiative_ref: INI-MEM-003
+  decision_ref:
+  - D11
+  - D45
+- id: T-058
+  title: Context-recall scorer adoption path
+  source: INI-MEM-003/slice-mem-003-d-recall-quality-adoption
+  target_layer: mineral
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 2
+  created_date: '2026-05-03'
+  completed_date: '2026-05-03'
+  description: >
+    Hydrated from INI-MEM-003 slice-mem-003-d to adopt the T-057
+    recall-quality scorer into normal context-recall practice as an optional
+    advisory quality-check path. This task excludes command-contract edits,
+    mandatory scorer gating, vector/dependency/network expansion, M2 mutation,
+    personal-root reads, and INI-MEM-002 temporal-validity work.
+  roadmap_ref: T-058
   initiative_ref: INI-MEM-003
   decision_ref:
   - D11

@@ -843,6 +843,11 @@ initiatives:
       phase: v0.2.0-p4
       status: complete
       role: historical
+    - task_ref: T-058
+      spec_ref: .azoth/roadmap-specs/v0.2.0/T-058.yaml
+      phase: v0.2.0-p4
+      status: complete
+      role: historical
     summary: 'Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic
       recall, complementing the current keyword/recency scan. Flat metadata tagging
       (no Python class hierarchy) mirrors mempalace''s single "mempalace_drawers" ChromaDB
@@ -2407,4 +2412,10 @@ versions:
     - D23
     - D32
     - D50
-  - {id: T-057, title: "M3 recall quality eval harness and deterministic default scorer", completed_date: "2026-05-03", decision_ref: [D11, D45]}
+  - id: T-057
+    title: M3 recall quality eval harness and deterministic default scorer
+    completed_date: '2026-05-03'
+    decision_ref:
+    - D11
+    - D45
+  - {id: T-058, title: "Context-recall scorer adoption path", completed_date: "2026-05-03", decision_ref: [D11, D45]}
