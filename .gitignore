@@ -11,6 +11,7 @@
 .azoth/session-state.md
 # Run ledger — local runtime only; tracked example is run-ledger.local.yaml.example
 .azoth/run-ledger.local.yaml
+.azoth/run-ledger.local.yaml.lock
 # Autonomous-auto loop state — local runtime only; tracked example documents shape.
 .azoth/autonomous-loop-state.local.yaml
 .azoth/next-decision.json
