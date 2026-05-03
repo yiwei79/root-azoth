@@ -6,25 +6,25 @@ release:
   tag: v0.2.0
   public_repo: /Users/yiwei/GithubRepos/azoth
   public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
-  root_evidence_commit: b83d8337767bba060d60e4a3a7ceeba316275b65
+  root_evidence_commit: 1e1f94f8516695b695c0b395cfacb14fbd134918
   release_evidence_ref: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
 freshness:
   status: intentionally_stale
-  checked_at: '2026-05-01'
+  checked_at: '2026-05-03'
   published_release_is_authority: true
   root_workshop_drift_is_advisory_only: true
   rationale: >-
     Public azoth v0.2.0 remains the latest approved/installable release. Root
-    now contains post-stable cockpit deployment repairs, planning reconciliation,
-    formatting repair, and freshness-policy work that has not been extracted or
-    published. That root workshop drift must be described as advisory only until
-    a fresh public release gate synchronizes it.
+    now contains post-stable cockpit deployment repairs, automation audit bundle
+    evidence, recall-quality evaluation and adoption work, and roadmap narrative
+    reconciliation that has not been extracted or published. That root workshop
+    drift must be described as advisory only until a fresh public release gate
+    synchronizes it.
   allowed_drift_since:
   - T-050 through T-055 personal cockpit deployment and UX evidence
-  - T-056 cockpit Codex hook repair
-  - T-057 planning truth reconciliation
-  - T-058 repository formatting-only repair
-  - T-059 public product freshness policy
+  - T-056 nightly automation audit bundle and approval contract
+  - T-057 M3 recall quality eval harness and deterministic default scorer
+  - T-058 context-recall scorer adoption path
   next_public_sync_gate: >-
     Before claiming public azoth is current with root, run a fresh extraction,
     product smoke, public checkout sync, public commit/tag/release approval, and
