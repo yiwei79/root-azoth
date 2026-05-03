@@ -2183,8 +2183,9 @@ versions:
     - D50
     - D52
 - id: v0.2.0-p4
-  status: active
-  current_patch: 34
+  status: complete
+  final_patch: 34
+  completed_date: '2026-05-03'
   goal: 'Post-stable stabilization repair window: keep new initiative expansion frozen
     while reconciling release truth, cockpit deployability, planning truth, formatting
     gates, and public-product freshness policy after the v0.2.0 stable release and
@@ -2208,28 +2209,16 @@ versions:
     deferred_work_rule: All new feature, autonomy, memory, planning-bank, and platform
       ideas remain unscheduled proposal or initiative-bank evidence until this phase
       closes.
-  continuation_policy:
-    status: named_lane_only
-    current_named_lane: p1-planning-truth-reconciliation
-    current_scope: 2026-05-03-autonomous-auto-p1-planning-truth-reconciliation-1
-    decision: Continue v0.2.0-p4 only as a gated repair window until named
-      lanes are closed or a separate closeout/public-sync gate is approved.
-    last_reconciled_through: T-058
-    auto_route_meaning: Empty pending_task_refs means no automatically claimable
-      p4 task exists; each further repair lane needs fresh operator approval,
-      route evidence, and a normal scope/write-claim preflight.
-    protected_boundaries:
-    - public_azoth_sync_or_release
-    - cockpit_repo_writes_or_hook_enablement
-    - project_repo_writes
-    - kernel_governance_m1
-    - credential_network_dependency_or_destructive_work
-  note: 'This phase remains active only as a post-stable repair window, not as pre-release
-    rollout or feature-growth scope. The product flow remains root-azoth -> public
-    azoth -> installed consumer/cockpit updates; the operating model is now four planes:
-    root-azoth development workshop, public azoth product, yiwei-azoth-cockpit personal
-    control plane, and controlled project repos with project-local context and write
-    authority. New repairs must be named, gated, and evidence-backed.'
+  note: 'Closed as the post-stable stabilization repair window on 2026-05-03 after
+    planning truth, cockpit deployment evidence, format-gate readiness, and closeout
+    candidate evidence were reconciled through T-058. The product flow remains
+    root-azoth -> public azoth -> installed consumer/cockpit updates; the operating
+    model is now four planes: root-azoth development workshop, public azoth product,
+    yiwei-azoth-cockpit personal control plane, and controlled project repos with
+    project-local context and write authority. Public azoth sync/release, cockpit
+    writes, project writes, backup/private remote work, kernel/governance/M1, and
+    dependency/network/credential/destructive actions remain separate protected
+    gates beyond this repo-internal phase close.'
   pending_task_refs: []
   tasks: []
   completed_tasks:
