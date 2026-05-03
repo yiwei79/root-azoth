@@ -283,6 +283,44 @@ details:
       - "How should repo-native architect/evaluator retrospective entries identify the campaign loop they evaluate?"
       - "Which fields should campaign-audit treat as learning-state evidence instead of defaulting to missing_evidence?"
       - "How should audit reports distinguish async-capable from async-tested, external freshness not-material from not-researched, and true staged delegation from inline exceptions?"
+  campaign_quality_evidence_normalization_20260503:
+    observed_at: "2026-05-03T19:55:00Z"
+    source_artifacts:
+      - path: "python3 scripts/autonomous_loop.py campaign-audit --loop-id memory-recall-adoption-layer-20260503 --json"
+        note: "Historical completed Green campaign sample still truthfully reports absent structured score, UX Anchor Scorecard, and evaluator verification command fields; no fake backfill is allowed."
+      - path: ".azoth/run-ledger.local.yaml"
+        note: "Stage summaries are the least-powerful durable writer for future evaluator quality evidence because they already sit behind scope gates, write claims, and completion checks."
+      - path: "tests/test_autonomous_campaign_audit.py"
+        note: "Fixture coverage proves both structured future evidence and missing-evidence samples remain read-only and auditable."
+    current_truth:
+      - "T-029 campaign-audit v1 already reads `score`, `scores`, `evaluator_scores`, `ux_anchor_scorecard`, and `verification_commands` when those fields exist."
+      - "The missing layer was the governed run-ledger summary contract: `record-summary` could not write quality score, UX scorecard, verification commands, or evaluator residual risks without failing ledger validation."
+      - "Historical Memory Recall Adoption Layer evidence remains unscored in repo-native artifacts; this campaign records the gap without manufacturing evidence."
+      - "Evaluator scores are advisory audit evidence only; they do not authorize continuation, override gates, or bypass protected stops."
+    selected_next_slice:
+      title: "Run-ledger evaluator quality evidence fields"
+      route: "ship_task"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      purpose: >
+        Add optional machine-readable evaluator quality fields to run-ledger
+        stage summaries, then surface evaluator disposition and residual risks
+        in campaign-audit operator packets while preserving read-only audit
+        semantics and advisory authority.
+      include:
+        - "Allow `record-summary` to persist `evaluator_disposition`, numeric `score`, `ux_anchor_scorecard`, `verification_commands`, and `residual_risks`."
+        - "Keep all new fields optional so historical ledgers remain valid and missing evidence remains explicit."
+        - "Teach campaign-audit to report evaluator disposition and evaluator residual risks in machine-readable output."
+        - "Verify one structured Green-style sample and one missing-evidence sample."
+      exclude:
+        - "No historical evaluator score backfill."
+        - "No command-contract rewrite."
+        - "No new continuation authority from audit evidence."
+        - "No kernel, governance, M1, dependency, credential, network, or destructive work."
+      evidence_contract:
+        writer: "python3 scripts/run_ledger.py record-summary"
+        reader: "python3 scripts/autonomous_loop.py campaign-audit --loop-id <id> --json"
+        advisory_authority: "Evaluator quality evidence informs audit, replay, and operator-read surfaces only; scope gates, human decisions, command contracts, and protected stops remain authoritative."
   post_t029_retrospective_refinement:
     observed_at: "2026-04-26T13:54:08Z"
     source_artifacts:
