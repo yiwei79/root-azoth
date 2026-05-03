@@ -156,8 +156,10 @@ def test_initiative_summary_surfaces_context_recovery_when_all_candidates_closed
     assert bank["surface_readiness_status"] == "needs_context_recovery"
     assert bank["ready_to_hydrate"] is False
     assert bank["open_candidate_count"] == 0
-    assert "all tracked candidate slices are closed" in bank["route_hint"]
-    assert "Personal-control-plane distributed knowledge system" in bank["route_hint"]
+    assert "slice-pkb-001-c has been hydrated as T-045" in bank["route_hint"]
+    assert "No hydration, delivery, release, or deployment without fresh approval" in bank[
+        "route_hint"
+    ]
     assert "PERSONAL-KNOWLEDGE-ARCHITECTURE.md" in bank["route_hint"]
 
     plain = "\n".join(format_planning_bank_plain(summaries))

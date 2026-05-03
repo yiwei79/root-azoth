@@ -81,6 +81,9 @@ _BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
 _APPROVAL_BOUNDARY = (
     "Requires explicit approval before hydration, deployment, or personal-root mutation."
 )
+_POST_CANDIDATE_APPROVAL_BOUNDARY = (
+    "No hydration, delivery, release, or deployment without fresh approval."
+)
 _POST_CANDIDATE_READINESS = "needs_context_recovery"
 
 
@@ -156,10 +159,17 @@ def _candidate_route_hint(
     display_id = str(display_candidate.get("candidate_id") or "").strip()
     readiness_id = str(readiness_candidate.get("candidate_id") or "").strip()
     if no_open_candidates_after_closed_slice:
-        task_ref = str(display_candidate.get("proposed_task_id") or "missing").strip()
         refs = [ref for ref in strategic_context_refs or [] if ref]
         ref_text = "; ".join(refs[:3])
         context_clause = f" Recover context from {ref_text}." if ref_text else ""
+        if hydration_recommendation:
+            route = f"{hydration_recommendation}{context_clause}"
+            if _POST_CANDIDATE_APPROVAL_BOUNDARY not in route:
+                route = f"{route} {_POST_CANDIDATE_APPROVAL_BOUNDARY}"
+            if _APPROVAL_BOUNDARY not in route:
+                route = f"{route} {_APPROVAL_BOUNDARY}"
+            return route
+        task_ref = str(display_candidate.get("proposed_task_id") or "missing").strip()
         return (
             f"all tracked candidate slices are closed after {display_id} -> {task_ref}; "
             f"open a fresh scoped continuation for {initiative_title} before more "
