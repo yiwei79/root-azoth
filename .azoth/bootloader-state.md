@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.28 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 28
+0.1.4.29 · Phase 4 · active_version: v0.2.0-p4 · current_patch: 29
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-learning-harvester-reinforcement-next-slice-discovery-1
-- **Goal**: Learning Harvester Reinforcement and Next-Slice Discovery
+- **Session**: 2026-05-03-p4-truth-reconciliation-refresh
+- **Goal**: P4 truth reconciliation refresh
 - **Session mode**: delivery
-- **Pipeline**: autonomous-auto
+- **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-539 (success)
+- **Episode**: ep-540 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
