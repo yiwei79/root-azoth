@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from hashlib import sha1
 from pathlib import Path
 from typing import Any
 
@@ -68,6 +69,24 @@ HARVESTER_ROUTE_PRIORITY = {
     "capture_only": 20,
     "stale_or_rejected": 10,
 }
+AUDIT_ITEM_CLASSES = {
+    "insight-only",
+    "proposal",
+    "code-salvage",
+    "cleanup-only",
+    "no-action",
+}
+AUDIT_DISPOSITIONS = {"approve", "skip", "defer", "cleanup", "blocked"}
+AUDIT_PROTECTED_BOUNDARIES = [
+    "no apply routing",
+    "no inbox writes",
+    "no producer worktrees",
+    "no worktree-sync",
+    "no trusted-source registry change",
+    "no land-now integration",
+    "no kernel/governance/M1 mutation",
+    "no credential or network expansion",
+]
 PROTECTED_SIGNAL_MARKERS = {
     "kernel",
     "governance",
@@ -81,6 +100,29 @@ PROTECTED_SIGNAL_MARKERS = {
     "human gate",
     "human-gate",
 }
+AUDIT_BOUNDARY_MARKERS = {
+    "apply_routing": {"apply routing", "apply step", "apply-stage", "apply_stage"},
+    "inbox_write": {"write inbox", "inbox write", "direct m3", "direct memory"},
+    "producer_worktree": {"producer worktree", "producer branch", "producer handoff"},
+    "worktree_sync": {"worktree-sync", "/worktree-sync"},
+    "land_now_integration": {"land-now", "direct integration", "auto-integrate"},
+    "protected_mutation": {"kernel", "governance", "m1", "credential", "network"},
+}
+STALE_AUDIT_MARKERS = {"stale", "detached", "outdated", "old main", "old base", "historical"}
+CODE_SALVAGE_MARKERS = {
+    "code",
+    "salvage",
+    "worktree",
+    "producer",
+    "handoff",
+    "branch",
+    "merge",
+    "integration",
+    "worktree-sync",
+}
+PROPOSAL_MARKERS = {"proposal", "hydrate"}
+CLEANUP_MARKERS = {"cleanup", "clean up", "prune", "remove stale", "close them"}
+INSIGHT_MARKERS = {"insight", "capture", "inbox", "intake", "learning", "memory"}
 CROSS_SYSTEM_SIGNAL_MARKERS = {
     "cross-system",
     "user-governed",
@@ -1199,6 +1241,361 @@ def build_learning_harvester_report(
     }
 
 
+def _audit_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return " ".join(_audit_text(item) for item in value.values())
+    if isinstance(value, list):
+        return " ".join(_audit_text(item) for item in value)
+    return str(value or "")
+
+
+def _decision_core_text(decision: dict[str, Any]) -> str:
+    return _audit_text(
+        {
+            "signal_id": decision.get("signal_id"),
+            "dedupe_key": decision.get("dedupe_key"),
+            "source_refs": decision.get("source_refs"),
+            "route": decision.get("route"),
+            "selected_action": decision.get("selected_action"),
+            "verification_requirement": decision.get("verification_requirement"),
+            "residual_risk": decision.get("residual_risk"),
+        }
+    )
+
+
+def _audit_slug(value: str, *, fallback: str) -> str:
+    slug = "".join(char.lower() if char.isalnum() else "-" for char in value).strip("-")
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    return slug or fallback
+
+
+def _audit_hash(value: Any) -> str:
+    text = json.dumps(value, sort_keys=True, default=str)
+    return sha1(text.encode("utf-8")).hexdigest()[:8]
+
+
+def _decision_item_class(decision: dict[str, Any]) -> str:
+    text = _decision_core_text(decision).casefold()
+    selected_action = str(decision.get("selected_action") or "").casefold()
+    route = str(decision.get("route") or "").casefold()
+    if _contains_marker(text, CLEANUP_MARKERS):
+        return "cleanup-only"
+    if _contains_marker(text, CODE_SALVAGE_MARKERS):
+        return "code-salvage"
+    if (
+        route == "proposal_needed"
+        or selected_action == "refine_proposal"
+        or _contains_marker(text, PROPOSAL_MARKERS)
+    ):
+        return "proposal"
+    if (
+        route in {"capture_only", "defer_to_intake", "auto_self_heal_now"}
+        or selected_action in {"capture_only", "defer_to_inbox_intake", "open_normal_child_scope"}
+        or _contains_marker(text, INSIGHT_MARKERS)
+    ):
+        return "insight-only"
+    return "no-action"
+
+
+def _decision_freshness(decision: dict[str, Any]) -> str:
+    text = _decision_core_text(decision).casefold()
+    route = str(decision.get("route") or "").casefold()
+    if route == "stale_or_rejected":
+        return "stale_or_rejected"
+    if _contains_marker(text, STALE_AUDIT_MARKERS):
+        return "stale_or_historical"
+    if "2026-04-21" in text:
+        return "historical_replay"
+    return "current"
+
+
+def _boundary_hits(decision: dict[str, Any]) -> list[str]:
+    text = _decision_core_text(decision).casefold()
+    hits: list[str] = []
+    for boundary, markers in AUDIT_BOUNDARY_MARKERS.items():
+        if _contains_marker(text, markers):
+            hits.append(boundary)
+    if decision.get("protected_gate_required") and "protected_gate" not in hits:
+        hits.append("protected_gate")
+    return sorted(dict.fromkeys(hits))
+
+
+def _blocked_alternatives(decision: dict[str, Any], boundary_hits: list[str]) -> list[str]:
+    alternatives = [str(item) for item in _safe_list(decision.get("rejected_alternatives")) if item]
+    text = _decision_core_text(decision).casefold()
+    if "direct integration" in text and "direct_integration" not in alternatives:
+        alternatives.append("direct_integration")
+    if "worktree-sync" in text and "worktree_sync_during_audit" not in alternatives:
+        alternatives.append("worktree_sync_during_audit")
+    if "apply" in text and "audit_stage_apply" not in alternatives:
+        alternatives.append("audit_stage_apply")
+    alternatives.extend(f"protected_boundary:{hit}" for hit in boundary_hits)
+    return sorted(dict.fromkeys(alternatives))
+
+
+def _recommended_disposition(
+    *,
+    decision: dict[str, Any],
+    item_class: str,
+    freshness_status: str,
+    boundary_hits: list[str],
+) -> str:
+    route = str(decision.get("route") or "").casefold()
+    if decision.get("protected_gate_required") or route == "human_gate_required":
+        return "blocked"
+    if item_class == "cleanup-only":
+        return "cleanup"
+    if route == "stale_or_rejected" or item_class == "no-action":
+        return "skip"
+    if item_class == "code-salvage" and freshness_status != "current":
+        return "defer"
+    if "land_now_integration" in boundary_hits and item_class == "code-salvage":
+        return "defer"
+    return "approve"
+
+
+def _least_powerful_action(item_class: str, freshness_status: str) -> str:
+    if item_class == "insight-only":
+        return "operator-reviewed inbox/intake candidate in a later apply slice"
+    if item_class == "proposal":
+        return "proposal or task candidate for a later scoped refinement/hydration slice"
+    if item_class == "code-salvage":
+        if freshness_status == "current":
+            return "fresh producer handoff request after explicit item approval"
+        return "fresh producer replay from the current target branch before any handoff"
+    if item_class == "cleanup-only":
+        return "named cleanup request after explicit item approval"
+    return "no action"
+
+
+def _apply_target(item_class: str) -> str:
+    return {
+        "insight-only": "future_inbox_intake_candidate",
+        "proposal": "future_proposal_or_task_candidate",
+        "code-salvage": "future_fresh_producer_handoff_request",
+        "cleanup-only": "future_named_cleanup_request",
+        "no-action": "none",
+    }[item_class]
+
+
+def _blocked_until(
+    *,
+    item_class: str,
+    disposition: str,
+    freshness_status: str,
+    boundary_hits: list[str],
+) -> str:
+    if disposition == "blocked":
+        return "fresh explicit approval for the protected boundary"
+    if item_class == "code-salvage" and freshness_status != "current":
+        return "fresh producer replay approval plus current-target-branch verification"
+    if item_class in {"insight-only", "proposal", "cleanup-only"}:
+        return "explicit item-disposition approval and a separate apply-capable slice"
+    if boundary_hits:
+        return "protected-boundary review"
+    return "not applicable"
+
+
+def _verification_hint(decision: dict[str, Any], item_class: str) -> str:
+    explicit = str(decision.get("verification_requirement") or "").strip()
+    if explicit:
+        return explicit
+    if item_class == "code-salvage":
+        return "verify replay from the current target branch before producer handoff"
+    if item_class == "insight-only":
+        return "verify source refs before governed intake capture"
+    return "verify source refs and protected boundaries before apply"
+
+
+def _audit_item_from_decision(decision: dict[str, Any]) -> dict[str, Any]:
+    item_class = _decision_item_class(decision)
+    freshness_status = _decision_freshness(decision)
+    boundary_hits = _boundary_hits(decision)
+    disposition = _recommended_disposition(
+        decision=decision,
+        item_class=item_class,
+        freshness_status=freshness_status,
+        boundary_hits=boundary_hits,
+    )
+    source_refs = [str(ref) for ref in _safe_list(decision.get("source_refs")) if str(ref or "")]
+    item_key = {
+        "signal_id": decision.get("signal_id"),
+        "source_refs": source_refs,
+        "dedupe_key": decision.get("dedupe_key"),
+    }
+    return {
+        "item_id": f"A-{_audit_hash(item_key)}",
+        "item_class": item_class,
+        "source_refs": source_refs,
+        "source_summary": str(decision.get("signal_id") or decision.get("dedupe_key") or ""),
+        "freshness_status": freshness_status,
+        "recommended_disposition": disposition,
+        "least_powerful_action": _least_powerful_action(item_class, freshness_status),
+        "risk_level": str(decision.get("severity") or "low"),
+        "protected_boundary": boundary_hits,
+        "apply_target": _apply_target(item_class),
+        "verification_hint": _verification_hint(decision, item_class),
+        "blocked_until": _blocked_until(
+            item_class=item_class,
+            disposition=disposition,
+            freshness_status=freshness_status,
+            boundary_hits=boundary_hits,
+        ),
+        "blocked_alternatives": _blocked_alternatives(decision, boundary_hits),
+        "residual_risk": str(decision.get("residual_risk") or ""),
+    }
+
+
+def _approval_reply(items: list[dict[str, Any]]) -> str:
+    approved = [
+        item for item in items if item["recommended_disposition"] in {"approve", "cleanup", "defer"}
+    ]
+    if not approved:
+        return (
+            "No applyable audit items are recommended. Reply with item ids and dispositions "
+            "if you want a later apply-capable slice; broad replies such as 'approve the audit' "
+            "remain invalid."
+        )
+    clauses = [
+        f"{item['recommended_disposition']} {item['item_id']} as {item['item_class']}"
+        for item in approved[:6]
+    ]
+    return (
+        "Reply with item ids and dispositions, for example: "
+        + "; ".join(clauses)
+        + ". This records approval intent only; it does not run apply, write inbox, "
+        "open producer worktrees, run worktree-sync, or integrate."
+    )
+
+
+def _source_summary(items: list[dict[str, Any]], report: dict[str, Any]) -> dict[str, Any]:
+    by_class = {item_class: 0 for item_class in sorted(AUDIT_ITEM_CLASSES)}
+    for item in items:
+        by_class[item["item_class"]] += 1
+    source_refs = sorted(
+        {ref for item in items for ref in _safe_list(item.get("source_refs")) if str(ref or "")}
+    )
+    scorecard = _safe_mapping(report.get("traceability_scorecard"))
+    return {
+        "item_count": len(items),
+        "by_class": by_class,
+        "source_refs": source_refs,
+        "overall_provenance": str(scorecard.get("overall_provenance") or "unknown"),
+        "source_report": "autonomous-auto campaign audit",
+    }
+
+
+def _approval_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "allowed_dispositions": sorted(AUDIT_DISPOSITIONS),
+        "requires_item_ids": True,
+        "requires_dispositions": True,
+        "valid_reply_template": _approval_reply(items),
+        "invalid_reply_examples": [
+            "approve the audit",
+            "do all recommended actions",
+            "land now",
+        ],
+        "ambiguous_approval_rule": (
+            "Broad approval does not authorize apply; approval must bind item ids to "
+            "explicit dispositions."
+        ),
+        "apply_authority": False,
+        "side_effects_authorized": [],
+        "protected_boundaries": AUDIT_PROTECTED_BOUNDARIES,
+        "fail_closed_rules": [
+            "No item id means no apply.",
+            "No disposition means no apply.",
+            "Producer worktrees, worktree-sync, inbox writes, apply routing, and integration "
+            "belong to later explicitly approved slices.",
+        ],
+    }
+
+
+def build_nightly_automation_audit_bundle(
+    report: dict[str, Any],
+    *,
+    audit_window: dict[str, Any] | None = None,
+    target_branch: str | None = None,
+    generated_at: str | None = None,
+) -> dict[str, Any]:
+    """Project a campaign audit into a read-only nightly approval bundle."""
+    campaign = _safe_mapping(report.get("campaign"))
+    harvester = _safe_mapping(report.get("learning_harvester"))
+    decisions = [
+        decision
+        for decision in _safe_list(harvester.get("decisions"))
+        if isinstance(decision, dict)
+    ]
+    items = sorted(
+        (_audit_item_from_decision(decision) for decision in decisions),
+        key=lambda item: item["item_id"],
+    )
+    blocked_items = [
+        item
+        for item in items
+        if item["recommended_disposition"] in {"blocked", "defer"} or item.get("protected_boundary")
+    ]
+    branch = str(
+        target_branch or campaign.get("target_branch") or campaign.get("branch") or "unknown"
+    )
+    window = audit_window or {
+        "basis": "campaign_audit_report",
+        "loop_id": str(campaign.get("loop_id") or ""),
+        "generated_at": str(report.get("generated_at") or ""),
+    }
+    bundle_id_basis = {
+        "loop_id": campaign.get("loop_id"),
+        "target_branch": branch,
+        "item_ids": [item["item_id"] for item in items],
+    }
+    protected_boundary_hits = sorted(
+        {hit for item in items for hit in _safe_list(item.get("protected_boundary"))}
+    )
+    return {
+        "schema_version": 1,
+        "bundle_id": (
+            f"nightly-automation-audit-"
+            f"{_audit_slug(str(campaign.get('loop_id') or ''), fallback=_audit_hash(bundle_id_basis))}"
+        ),
+        "audit_window": window,
+        "generated_at": generated_at or _utc_now_iso(),
+        "target_branch": branch,
+        "branch_freshness": {
+            "status": "current_local_state" if branch != "unknown" else "unknown",
+            "materiality": "material",
+            "note": "Audit bundle is advisory until source refs and target branch are verified.",
+        },
+        "source_summary": _source_summary(items, report),
+        "items": items,
+        "blocked_items": blocked_items,
+        "recommended_operator_reply": _approval_reply(items),
+        "approval_contract": _approval_contract(items),
+        "protected_boundary_hits": protected_boundary_hits,
+        "verification_notes": [
+            "Audit bundle generation is read-only and grants no apply authority.",
+            "Code-salvage items from stale or detached worktrees must be replayed from the current target branch.",
+            "Insight-only items stay as future inbox/intake candidates until a later apply-capable slice is explicitly approved.",
+            "Direct integration and land-now remain separate protected approvals.",
+        ],
+        "validation": {
+            "read_only": True,
+            "applies_actions": False,
+            "forbidden_side_effects": [
+                "producer_worktree_creation",
+                "inbox_write",
+                "worktree_sync",
+                "apply_routing",
+                "handoff_integration",
+                "trusted_source_registry_change",
+                "roadmap_or_backlog_mutation",
+            ],
+        },
+    }
+
+
 def _evaluator_quality_text(evaluator_evidence: dict[str, Any]) -> str:
     scores = _safe_scalar_list(evaluator_evidence.get("structured_scores"))
     score_text = ", ".join(str(score) for score in scores) if scores else "not recorded"
@@ -1593,6 +1990,7 @@ def build_campaign_audit(
         "approval_basis": approval_basis,
         "budget": budget,
         "stop_conditions": stop_conditions,
+        "branch": str((state.get("branch") if state_matches_loop else "") or ""),
         "selected_seed": (state.get("selected_seed") if state_matches_loop else None)
         or _campaign_detail_from_children(child_scopes, "selected_seed"),
         "selected_candidate": selected_candidate,
@@ -1614,7 +2012,7 @@ def build_campaign_audit(
         residuals=residuals,
         route=route,
     )
-    return {
+    payload = {
         "schema_version": 1,
         "generated_at": _utc_now_iso(),
         "campaign": campaign,
@@ -1649,3 +2047,7 @@ def build_campaign_audit(
             "allowed_learning_states": sorted(LEARNING_STATES),
         },
     }
+    bundle = build_nightly_automation_audit_bundle(payload)
+    payload["nightly_audit_bundle"] = bundle
+    payload["approval_contract"] = bundle["approval_contract"]
+    return payload

@@ -17,7 +17,11 @@ from typing import Any
 
 import yaml
 
-from autonomous_campaign_audit import build_campaign_audit, learning_harvester_decision
+from autonomous_campaign_audit import (
+    build_campaign_audit,
+    build_nightly_automation_audit_bundle,
+    learning_harvester_decision,
+)
 from planning_bank_validate import build_initiative_readiness_report
 from run_ledger import acquire_write_claim, load_write_claim, release_write_claim, upsert_run
 from session_gate import active_session_gate, normalized_session_mode
@@ -5581,6 +5585,47 @@ def cmd_campaign_audit(args: argparse.Namespace) -> None:
     )
 
 
+def _format_automation_audit_bundle(bundle: dict[str, Any]) -> str:
+    items = bundle.get("items") if isinstance(bundle.get("items"), list) else []
+    lines = [
+        f"Automation audit bundle: {bundle.get('bundle_id') or 'unknown'}",
+        f"Target branch: {bundle.get('target_branch') or 'unknown'}",
+        f"Items: {len(items)}",
+        f"Recommended reply: {bundle.get('recommended_operator_reply') or 'not recorded'}",
+        "Read-only: yes" if (bundle.get("validation") or {}).get("read_only") else "Read-only: no",
+    ]
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        lines.append(
+            f"- {item.get('item_id')}: {item.get('item_class')} / "
+            f"{item.get('recommended_disposition')} -> {item.get('least_powerful_action')}"
+        )
+    return "\n".join(lines)
+
+
+def cmd_automation_audit_bundle(args: argparse.Namespace) -> None:
+    root = Path(args.root).resolve()
+    report = build_campaign_audit(
+        root,
+        args.loop_id,
+        state_path=args.audit_state,
+        ledger_path=args.ledger,
+        episodes_path=args.episodes,
+        inbox_dir=args.inbox_dir,
+    )
+    bundle = (
+        report.get("nightly_audit_bundle")
+        if isinstance(report.get("nightly_audit_bundle"), dict)
+        else build_nightly_automation_audit_bundle(report)
+    )
+    print(
+        json.dumps(bundle, indent=2, sort_keys=False)
+        if args.json
+        else _format_automation_audit_bundle(bundle)
+    )
+
+
 def _resolve_optional_path(root: Path, value: str | None) -> Path | None:
     if not value:
         return None
@@ -5732,6 +5777,23 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--episodes", default=None, help="Memory episodes JSONL path.")
     audit.add_argument("--inbox-dir", default=None, help="Inbox directory path.")
     audit.set_defaults(func=cmd_campaign_audit)
+
+    audit_bundle = sub.add_parser(
+        "automation-audit-bundle",
+        help="Build the read-only nightly automation audit bundle and approval contract.",
+    )
+    audit_bundle.add_argument("--loop-id", required=True, help="Autonomous-auto loop/campaign id.")
+    audit_bundle.add_argument("--json", action="store_true")
+    audit_bundle.add_argument(
+        "--state",
+        dest="audit_state",
+        default=None,
+        help=f"Loop state path, default {STATE_REL}.",
+    )
+    audit_bundle.add_argument("--ledger", default=None, help="Run ledger path.")
+    audit_bundle.add_argument("--episodes", default=None, help="Memory episodes JSONL path.")
+    audit_bundle.add_argument("--inbox-dir", default=None, help="Inbox directory path.")
+    audit_bundle.set_defaults(func=cmd_automation_audit_bundle)
 
     wake = sub.add_parser(
         "wakeup",

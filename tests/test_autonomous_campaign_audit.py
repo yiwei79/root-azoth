@@ -10,7 +10,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import autonomous_loop  # noqa: E402
-from autonomous_campaign_audit import build_campaign_audit  # noqa: E402
+from autonomous_campaign_audit import (  # noqa: E402
+    build_campaign_audit,
+    build_nightly_automation_audit_bundle,
+)
 
 
 LOOP_ID = "2026-04-26-autonomous-auto-t-029-1"
@@ -1221,3 +1224,183 @@ def test_campaign_audit_cli_json_and_plain_are_read_only(tmp_path: Path, capsys)
     assert "UX Anchor Fit: green" in out
     assert "Operator next move: stop" in out
     assert _snapshot_files(tmp_path) == before
+
+
+def test_build_campaign_audit_includes_nightly_bundle_contract(tmp_path: Path) -> None:
+    paths = _write_complete_campaign(tmp_path)
+
+    report = build_campaign_audit(tmp_path, LOOP_ID, **paths)
+    bundle = report["nightly_audit_bundle"]
+    contract = bundle["approval_contract"]
+
+    assert bundle["schema_version"] == 1
+    assert bundle["bundle_id"].startswith("nightly-automation-audit-")
+    assert bundle["validation"]["read_only"] is True
+    assert bundle["validation"]["applies_actions"] is False
+    assert "worktree_sync" in bundle["validation"]["forbidden_side_effects"]
+    assert contract["apply_authority"] is False
+    assert contract["side_effects_authorized"] == []
+    assert "approve the audit" in contract["invalid_reply_examples"]
+    assert bundle["items"]
+    for item in bundle["items"]:
+        assert item["item_id"].startswith("A-")
+        assert item["item_class"] in {
+            "insight-only",
+            "proposal",
+            "code-salvage",
+            "cleanup-only",
+            "no-action",
+        }
+        assert item["recommended_disposition"] in {
+            "approve",
+            "skip",
+            "defer",
+            "cleanup",
+            "blocked",
+        }
+        assert item["source_refs"]
+        assert item["blocked_alternatives"]
+    assert "does not run apply" in bundle["recommended_operator_reply"]
+
+
+def test_automation_audit_bundle_cli_json_and_plain_are_read_only(tmp_path: Path, capsys) -> None:
+    paths = _write_complete_campaign(tmp_path)
+    before = _snapshot_files(tmp_path)
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "automation-audit-bundle",
+                "--loop-id",
+                LOOP_ID,
+                "--state",
+                str(paths["state_path"]),
+                "--ledger",
+                str(paths["ledger_path"]),
+                "--episodes",
+                str(paths["episodes_path"]),
+                "--inbox-dir",
+                str(paths["inbox_dir"]),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["validation"]["read_only"] is True
+    assert payload["approval_contract"]["apply_authority"] is False
+
+    assert (
+        autonomous_loop.main(
+            [
+                "--root",
+                str(tmp_path),
+                "automation-audit-bundle",
+                "--loop-id",
+                LOOP_ID,
+                "--state",
+                str(paths["state_path"]),
+                "--ledger",
+                str(paths["ledger_path"]),
+                "--episodes",
+                str(paths["episodes_path"]),
+                "--inbox-dir",
+                str(paths["inbox_dir"]),
+            ]
+        )
+        == 0
+    )
+    out = capsys.readouterr().out
+    assert "Automation audit bundle:" in out
+    assert "Recommended reply:" in out
+    assert "Read-only: yes" in out
+    assert _snapshot_files(tmp_path) == before
+
+
+def test_nightly_bundle_replays_2026_04_21_audit_without_direct_integration() -> None:
+    report = {
+        "generated_at": "2026-04-21T18:20:00Z",
+        "campaign": {
+            "loop_id": "automation-worktree-audit-20260421",
+            "branch": "phase/v0.2.0-p3",
+        },
+        "traceability_scorecard": {"overall_provenance": "repo_native"},
+        "learning_harvester": {
+            "decisions": [
+                {
+                    "signal_id": "worktree-1325-yaml-loader-salvage",
+                    "source_refs": [
+                        ".azoth/handoffs/2026-04-21-automation-worktree-audit-architect-note.md"
+                    ],
+                    "dedupe_key": "stale detached worktree 1325 direct integration rejection",
+                    "severity": "medium",
+                    "route": "capture_only",
+                    "selected_action": "capture_only",
+                    "rejected_alternatives": ["direct integration"],
+                    "verification_requirement": (
+                        "verify replay from the current target branch before producer handoff"
+                    ),
+                    "residual_risk": (
+                        "stale detached worktree cannot be integrated directly through worktree-sync"
+                    ),
+                },
+                {
+                    "signal_id": "nightly-ci-preflight-insight",
+                    "source_refs": [
+                        ".azoth/inbox/processed/session-reflection-automation-audit-2026-04-21.jsonl:1"
+                    ],
+                    "dedupe_key": "pre-ci fast-fail insight-harvest candidate",
+                    "severity": "medium",
+                    "route": "capture_only",
+                    "selected_action": "capture_only",
+                    "rejected_alternatives": ["direct_m3_write"],
+                    "verification_requirement": "verify source refs before governed intake capture",
+                },
+                {
+                    "signal_id": "skill-progression-seam-coverage-insight",
+                    "source_refs": [
+                        ".azoth/inbox/processed/session-reflection-automation-audit-2026-04-21.jsonl:2"
+                    ],
+                    "dedupe_key": "adapter parity and seam coverage insight-harvest candidate",
+                    "severity": "medium",
+                    "route": "capture_only",
+                    "selected_action": "capture_only",
+                    "rejected_alternatives": ["direct_backlog_write"],
+                    "verification_requirement": "verify source refs before governed intake capture",
+                },
+            ]
+        },
+    }
+
+    bundle = build_nightly_automation_audit_bundle(
+        report,
+        audit_window={
+            "start": "2026-04-21T18:00:00Z",
+            "end": "2026-04-21T18:20:00Z",
+        },
+        target_branch="phase/v0.2.0-p3",
+        generated_at="2026-04-21T18:20:00Z",
+    )
+
+    code_item = next(item for item in bundle["items"] if item["item_class"] == "code-salvage")
+    insight_items = [item for item in bundle["items"] if item["item_class"] == "insight-only"]
+    assert code_item["recommended_disposition"] == "defer"
+    assert code_item["apply_target"] == "future_fresh_producer_handoff_request"
+    assert "direct_integration" in code_item["blocked_alternatives"]
+    assert "worktree_sync_during_audit" in code_item["blocked_alternatives"]
+    assert "fresh producer replay" in code_item["least_powerful_action"]
+    assert len(insight_items) == 2
+    assert {item["recommended_disposition"] for item in insight_items} == {"approve"}
+    assert {item["apply_target"] for item in insight_items} == {"future_inbox_intake_candidate"}
+    assert bundle["approval_contract"]["apply_authority"] is False
+    assert bundle["validation"]["forbidden_side_effects"] == [
+        "producer_worktree_creation",
+        "inbox_write",
+        "worktree_sync",
+        "apply_routing",
+        "handoff_integration",
+        "trusted_source_registry_change",
+        "roadmap_or_backlog_mutation",
+    ]
