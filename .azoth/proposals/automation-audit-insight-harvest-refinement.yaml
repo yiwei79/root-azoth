@@ -571,8 +571,22 @@ details:
       branch.
     recommended_first_slice:
       title: "Nightly automation audit bundle and approval contract"
+      route: "hydrate_task"
+      proposed_task_id: "T-056"
+      hydrated_task_ref: "T-056"
+      hydration_status: "hydrated"
       target_layer: "pipelines"
       delivery_pipeline: "standard"
+      placement:
+        title: "Nightly automation audit bundle and approval contract"
+        source: "proposal-automation-audit-insight-harvest-refinement"
+        target_layer: "pipelines"
+        delivery_pipeline: "standard"
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Nightly automation audit
+        bundle and approval contract" --source
+        proposal-automation-audit-insight-harvest-refinement --target-layer
+        pipelines --delivery-pipeline standard --decision-ref D21 D23 D32 D50
       acceptance_criteria:
         - "Generate a compact audit bundle with stable item ids, item classes, evidence refs, and blocked alternatives."
         - "Emit a recommended operator approval reply without applying side effects."

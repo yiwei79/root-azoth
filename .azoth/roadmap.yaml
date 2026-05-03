@@ -2204,7 +2204,14 @@ versions:
     project-local context and write authority. New repairs must be named, gated,
     and evidence-backed.
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-056
+    title: Nightly automation audit bundle and approval contract
+    decision_ref:
+    - D21
+    - D23
+    - D32
+    - D50
   completed_tasks:
   - id: T-055
     title: Cockpit first-use command surface and no-write UX simulation

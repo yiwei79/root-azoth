@@ -3964,3 +3964,23 @@ items:
     green-but-dirty packaging, child run identity, stage-summary disposition
     vocabulary, delegated execution-mode evidence, campaign-audit completion
     evidence, and self-capture materialization.
+- id: T-056
+  title: Nightly automation audit bundle and approval contract
+  source: proposal-automation-audit-insight-harvest-refinement
+  target_layer: pipelines
+  delivery_pipeline: standard
+  status: pending
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-05-03'
+  description: 'Hydrate the first implementation slice from the refined automation
+    audit proposal: generate a read-only nightly audit bundle and approval contract
+    with no apply routing, inbox write, producer worktree, worktree-sync, trusted-source
+    registry, land-now integration, roadmap/backlog mutation beyond this task scaffold,
+    or integration side effects.'
+  roadmap_ref: T-056
+  decision_ref:
+  - D21
+  - D23
+  - D32
+  - D50
