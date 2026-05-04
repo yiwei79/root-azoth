@@ -58,9 +58,7 @@ RUNTIME_GITIGNORE_RULES: tuple[str, ...] = (
 LOCAL_ARTIFACT_NAMES = {".DS_Store", "__pycache__"}
 LOCAL_ARTIFACT_SUFFIXES = {".pyc", ".pyo"}
 TEXT_SUFFIXES = {".md", ".yaml", ".yml", ".json", ".py", ".txt", ".toml"}
-CLAUDE_COMMAND_REF_RE = re.compile(
-    r"(?<![\w./-])\.claude/commands/[A-Za-z0-9_-]+\.md"
-)
+CLAUDE_COMMAND_REF_RE = re.compile(r"(?<![\w./-])\.claude/commands/[A-Za-z0-9_-]+\.md")
 
 
 class ReleaseProfileError(RuntimeError):

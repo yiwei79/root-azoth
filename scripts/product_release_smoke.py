@@ -125,13 +125,9 @@ PRIVATE_RUNTIME_STATE_PATHS = (
     ".azoth/final-delivery-approvals.jsonl",
 )
 
-PRIVATE_RUNTIME_STATE_GLOBS = (
-    ".azoth/write-claim*.json",
-)
+PRIVATE_RUNTIME_STATE_GLOBS = (".azoth/write-claim*.json",)
 
-PRIVATE_RUNTIME_STATE_DIRS = (
-    ".azoth/telemetry",
-)
+PRIVATE_RUNTIME_STATE_DIRS = (".azoth/telemetry",)
 
 FULL_RUNTIME_GITIGNORE_RULES = (
     ".azoth/scope-gate.json",

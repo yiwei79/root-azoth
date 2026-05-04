@@ -136,9 +136,7 @@ def test_materialize_full_profile_generates_consumer_safe_runtime_state(
 
     roadmap = (target / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
     backlog = (target / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
-    command_body = (target / ".claude" / "commands" / "roadmap.md").read_text(
-        encoding="utf-8"
-    )
+    command_body = (target / ".claude" / "commands" / "roadmap.md").read_text(encoding="utf-8")
     assert "consumer-project" in roadmap
     assert "root-azoth-private" not in roadmap
     assert "private: root backlog" not in backlog
