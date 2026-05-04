@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-harness-rethink-deep-dive-4",
+  "candidate_id": "harness-rethink-deep-dive",
+  "readiness": {
+    "status": "strategic_constraint_not_implementation_lane",
+    "proposal_status": "draft",
+    "source_matrix_present": false,
+    "contract_present": false,
+    "benchmark_evidence_present": false,
+    "default_profile_switch_allowed": false,
+    "kernel_governance_allowed": false,
+    "hydration_allowed": false
+  },
+  "decision": {
+    "selected": "fold_into_initiative_discovery_next",
+    "rejected": [
+      "simplify_now",
+      "defer_entirely",
+      "hydrate_task",
+      "public_release_lane",
+      "memory_recall_as_main_lane"
+    ],
+    "reason": "Harness Rethink is the right strategic frame, but missing referenced evidence and explicit non-goals make Initiative Discovery the next practical PM refinement lane."
+  },
+  "next_child": {
+    "action": "refine_proposal",
+    "candidate_id": "initiative-discovery-pm-lane",
+    "title": "Initiative Discovery PM Lane",
+    "writes_allowed": [
+      ".azoth/campaigns/product-strategy-orchestrator-20260504/"
+    ]
+  }
+}

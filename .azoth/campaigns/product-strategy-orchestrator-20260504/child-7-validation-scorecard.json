@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-product-strategy-validation-and-replay-readiness-7",
+  "verdict": "green_after_closeout",
+  "bounded_replays": {
+    "budget": 3,
+    "used": 0,
+    "needed": 0
+  },
+  "checks": {
+    "artifacts_present": "pass",
+    "decision_capsule_present": "pass",
+    "json_parse": "pass",
+    "roadmap_backlog_diff": "empty",
+    "roadmap_dashboard": "pass",
+    "azoth_deploy_check": "pass",
+    "write_claim": "expected_active_until_closeout",
+    "packaging_truth": "dirty_uncommitted_visible"
+  },
+  "green_scorecard": {
+    "portfolio_inventory": "complete",
+    "scorecard": "complete",
+    "operating_model": "complete",
+    "decision_surface": "complete",
+    "harness_rethink_deep_dive": "complete",
+    "initiative_discovery_pm_lane": "complete",
+    "decision_capsule": "complete",
+    "validation_replay_readiness": "complete",
+    "bounded_replays_used": 0,
+    "hydration_or_delivery_authorized": false,
+    "packaging_authorized": false
+  },
+  "stop_after_green": {
+    "reason": "next_real_product_moves_require_human_gate",
+    "human_gate_options": [
+      "packaging_commit",
+      "hydration_specific_campaign",
+      "authoritative_delivery_campaign",
+      "public_release_strategy_campaign",
+      "defer_delivery"
+    ]
+  }
+}
