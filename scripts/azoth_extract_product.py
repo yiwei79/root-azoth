@@ -95,6 +95,66 @@ README_SUBSTITUTIONS: dict[str, str] = {
 }
 
 
+def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
+    """Split YAML frontmatter from body text."""
+    if not text.startswith("---"):
+        return {}, text
+    try:
+        end = text.index("\n---", 3)
+    except ValueError:
+        return {}, text
+    meta = yaml.safe_load(text[3:end]) or {}
+    body = text[end + 4 :].lstrip("\n")
+    return meta, body
+
+
+def render_frontmatter(data: dict[str, Any]) -> str:
+    return (
+        "---\n"
+        + yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        + "---\n\n"
+    )
+
+
+def _description(meta: dict[str, Any]) -> str:
+    return str(meta.get("description") or meta.get("role") or meta.get("name") or "")
+
+
+def transform_agent_copilot(agent_path: Path) -> tuple[str, str]:
+    meta, body = parse_frontmatter(agent_path.read_text(encoding="utf-8"))
+    name = str(meta.get("name") or agent_path.stem.removesuffix(".agent"))
+    frontmatter: dict[str, Any] = {"name": name, "description": _description(meta)}
+    if tools := meta.get("tools"):
+        frontmatter["tools"] = tools
+    if "model" in meta:
+        frontmatter["model"] = meta["model"]
+    return name, render_frontmatter(frontmatter) + body
+
+
+PUBLIC_COPILOT_ONBOARDING = """
+## Fresh GitHub Copilot project
+
+From an empty target repository, force the Copilot surface explicitly:
+
+```bash
+AZOTH_PLATFORMS=copilot bash /path/to/azoth/install.sh
+```
+
+Windows PowerShell:
+
+```powershell
+$env:AZOTH_PLATFORMS = "copilot"
+pwsh -File C:\\path\\to\\azoth\\install.ps1
+```
+
+The Copilot install creates `.github/copilot-instructions.md`, `.github/prompts/`,
+`.github/agents/`, `AGENTS.md`, `CLAUDE.md`, `azoth.yaml`, and `.azoth/kernel/`.
+If no `AZOTH_PLATFORMS` override is set, the installers include GitHub Copilot
+alongside detected tools; if no tools are detected, they default to Claude Code +
+GitHub Copilot.
+"""
+
+
 def _die(msg: str) -> None:
     print(msg, file=sys.stderr)
     sys.exit(1)
@@ -309,6 +369,9 @@ def emit_public_assets(source_root: Path, dest_root: Path, *, dry_run: bool) -> 
     if dry_run:
         print(f"  [dry-run] emit {ci_dest.relative_to(dest_root)}")
         print(f"  [dry-run] emit {readme_dest.relative_to(dest_root)}")
+        print("  [dry-run] emit .github/copilot-instructions.md")
+        print("  [dry-run] copy .github/prompts/ when present")
+        print("  [dry-run] emit .github/agents/ from canonical agents/**/*.agent.md")
         return
 
     ci_dest.parent.mkdir(parents=True, exist_ok=True)
@@ -319,7 +382,34 @@ def emit_public_assets(source_root: Path, dest_root: Path, *, dry_run: bool) -> 
         rtext = rtext.replace("{{" + k + "}}", v)
     if "{{" in rtext:
         raise RuntimeError("README template has unresolved placeholders")
+    if "AZOTH_PLATFORMS=copilot" not in rtext:
+        rtext = rtext.rstrip() + "\n\n" + PUBLIC_COPILOT_ONBOARDING.strip() + "\n"
     readme_dest.write_text(rtext, encoding="utf-8")
+
+    copilot_template = source_root / "kernel" / "templates" / "copilot-instructions.md.template"
+    if copilot_template.is_file():
+        ctext = copilot_template.read_text(encoding="utf-8").replace("{{PROJECT_NAME}}", "azoth")
+        (dest_root / ".github" / "copilot-instructions.md").write_text(
+            ctext,
+            encoding="utf-8",
+        )
+
+    prompts_src = source_root / ".github" / "prompts"
+    prompts_dst = dest_root / ".github" / "prompts"
+    if prompts_src.is_dir():
+        if prompts_dst.exists():
+            shutil.rmtree(prompts_dst)
+        shutil.copytree(prompts_src, prompts_dst)
+
+    agents_dst = dest_root / ".github" / "agents"
+    agents_src = sorted((source_root / "agents").glob("**/*.agent.md"))
+    if agents_src:
+        if agents_dst.exists():
+            shutil.rmtree(agents_dst)
+        agents_dst.mkdir(parents=True, exist_ok=True)
+        for agent in agents_src:
+            name, content = transform_agent_copilot(agent)
+            (agents_dst / f"{name}.agent.md").write_text(content, encoding="utf-8")
 
 
 def validate_only(source: Path, config_path: Path) -> int:

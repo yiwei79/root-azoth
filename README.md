@@ -27,7 +27,7 @@ Full design: `[docs/AZOTH_ARCHITECTURE.md](docs/AZOTH_ARCHITECTURE.md)` (decisio
 | Audience | You, maintainers, contributors                             | Anyone who clones the released artifact             |
 
 
-Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture **§18** three-tier model). Until you publish, treat **this** clone as the source of truth.
+Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture **§18** three-tier model). The latest approved/installable public release is **azoth v0.2.0**; current root-azoth HEAD may include workshop repairs that are advisory until the next public sync gate publishes them.
 
 ---
 
@@ -54,7 +54,24 @@ Core contributor context lives in `**[CLAUDE.md](CLAUDE.md)`** — read it first
 
 You install **from** a checkout of this repo **into** a target project (not into the Azoth repo itself).
 
-**Interactive entry (recommended):** from the repo root, run `python3 scripts/azoth_init.py` — choose **project** to install into your current directory, or **scaffold** for workshop-only next steps. Non-interactive: `python3 scripts/azoth_init.py --project -y` or `--scaffold -y`.
+**Interactive entry (recommended):** from the repo root, run `python3 scripts/azoth_init.py` — choose **project** to install into your current directory, or **scaffold** for workshop-only next steps. `python3 scripts/azoth_init.py --project -y` skips the init mode prompt, then hands off to the installer setup-level prompt; `--scaffold -y` is fully non-interactive.
+
+**Fresh GitHub Copilot project:** start in an empty target repo and force the Copilot surface explicitly:
+
+```bash
+cd /path/to/your-new-app
+AZOTH_PLATFORMS=copilot bash /path/to/root-azoth/install.sh
+```
+
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\your-new-app
+$env:AZOTH_PLATFORMS = "copilot"
+pwsh -File C:\path\to\root-azoth\install.ps1
+```
+
+The installer prompts for Minimal, Standard, or Full setup, then creates `.github/copilot-instructions.md`, `.github/prompts/`, `.github/agents/`, `AGENTS.md`, `CLAUDE.md`, `azoth.yaml`, `.azoth/kernel/`, and the selected Azoth skills/agents. If no platform is detected and no `AZOTH_PLATFORMS` override is set, the direct installers now default to **Claude Code + GitHub Copilot** so a blank repo still receives Copilot onboarding.
 
 **Direct installers** (same behavior as project mode):
 

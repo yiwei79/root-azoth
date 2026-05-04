@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -49,6 +50,9 @@ ABSENT_PREFIXES = (
 REQUIRED_PRODUCT_PATHS = (
     "README.md",
     ".github/workflows/ci.yml",
+    ".github/copilot-instructions.md",
+    ".github/prompts/auto.prompt.md",
+    ".github/agents/orchestrator.agent.md",
     "install.sh",
     "install.ps1",
     "kernel/templates/CLAUDE.md.template",
@@ -61,7 +65,11 @@ REQUIRED_PRODUCT_PATHS = (
 
 REQUIRED_CONSUMER_PATHS = (
     "CLAUDE.md",
+    "AGENTS.md",
     "azoth.yaml",
+    ".github/copilot-instructions.md",
+    ".github/prompts/auto.prompt.md",
+    ".github/agents/orchestrator.agent.md",
     ".azoth/kernel/BOOTLOADER.md",
     ".azoth/kernel/GOVERNANCE.md",
     ".azoth/kernel/PROMOTION_RUBRIC.md",
@@ -84,6 +92,7 @@ def run(
     cwd: Path,
     input_text: str | None = None,
     optional: bool = False,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         cmd,
@@ -91,6 +100,7 @@ def run(
         input=input_text,
         text=True,
         capture_output=True,
+        env=env,
     )
     if result.returncode and not optional:
         joined = " ".join(cmd)
@@ -159,11 +169,19 @@ def assert_consumer_install(consumer: Path) -> None:
         raise SmokeError(f"consumer manifest platforms must be a non-empty list: {platforms!r}")
     if not all(isinstance(platform, str) and " " not in platform for platform in platforms):
         raise SmokeError(f"consumer manifest platforms must be separate strings: {platforms!r}")
+    if "copilot" not in platforms:
+        raise SmokeError(f"consumer manifest must include copilot: {platforms!r}")
 
 
 def smoke_bash_install(product_root: Path, setup_level: str) -> Path:
     consumer = Path(tempfile.mkdtemp(prefix="azoth-consumer-smoke-"))
-    run(["bash", str(product_root / "install.sh")], cwd=consumer, input_text=f"{setup_level}\n")
+    env = {**os.environ, "AZOTH_PLATFORMS": "copilot"}
+    run(
+        ["bash", str(product_root / "install.sh")],
+        cwd=consumer,
+        input_text=f"{setup_level}\n",
+        env=env,
+    )
     assert_consumer_install(consumer)
     return consumer
 
@@ -173,6 +191,7 @@ def smoke_pwsh_install(product_root: Path, setup_level: str) -> tuple[str, Path 
     if not pwsh:
         return "skipped: pwsh/powershell not found", None
     consumer = Path(tempfile.mkdtemp(prefix="azoth-consumer-smoke-pwsh-"))
+    env = {**os.environ, "AZOTH_PLATFORMS": "copilot"}
     run(
         [
             pwsh,
@@ -184,6 +203,7 @@ def smoke_pwsh_install(product_root: Path, setup_level: str) -> tuple[str, Path 
         ],
         cwd=consumer,
         input_text=f"{setup_level}\n",
+        env=env,
     )
     assert_consumer_install(consumer)
     return "passed", consumer

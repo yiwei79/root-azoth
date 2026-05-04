@@ -64,29 +64,54 @@ echo ""
 # ── Detect platforms ────────────────────────────────────────────
 PLATFORMS=""
 
-if [ -d ".claude" ] || command -v claude &>/dev/null; then
-    PLATFORMS="${PLATFORMS}claude "
+add_platform() {
+    case " $PLATFORMS " in
+        *" $1 "*) ;;
+        *) PLATFORMS="${PLATFORMS}$1 " ;;
+    esac
+}
+
+if [ -n "${AZOTH_PLATFORMS:-}" ]; then
+    for platform in ${AZOTH_PLATFORMS//,/ }; do
+        case "$platform" in
+            claude|opencode|codex|copilot|gemini|cursor)
+                add_platform "$platform"
+                info "Selected: $platform (AZOTH_PLATFORMS)"
+                ;;
+            all)
+                add_platform "claude"
+                add_platform "opencode"
+                add_platform "codex"
+                add_platform "copilot"
+                ;;
+            none) ;;
+            *) warn "Ignoring unknown AZOTH_PLATFORMS entry: $platform" ;;
+        esac
+    done
+elif [ -d ".claude" ] || command -v claude &>/dev/null; then
+    add_platform "claude"
     info "Detected: Claude Code"
 fi
 
-if [ -f "opencode.jsonc" ] || [ -d ".opencode" ] || command -v opencode &>/dev/null; then
-    PLATFORMS="${PLATFORMS}opencode "
+if [ -z "${AZOTH_PLATFORMS:-}" ] && { [ -f "opencode.jsonc" ] || [ -d ".opencode" ] || command -v opencode &>/dev/null; }; then
+    add_platform "opencode"
     info "Detected: OpenCode"
 fi
 
-if [ -d ".codex" ] || command -v codex &>/dev/null; then
-    PLATFORMS="${PLATFORMS}codex "
+if [ -z "${AZOTH_PLATFORMS:-}" ] && { [ -d ".codex" ] || command -v codex &>/dev/null; }; then
+    add_platform "codex"
     info "Detected: Codex"
 fi
 
-if [ -d ".github" ] || [ -f ".github/copilot-instructions.md" ]; then
-    PLATFORMS="${PLATFORMS}copilot "
+if [ -z "${AZOTH_PLATFORMS:-}" ] && { [ -d ".github" ] || [ -f ".github/copilot-instructions.md" ]; }; then
+    add_platform "copilot"
     info "Detected: GitHub Copilot"
 fi
 
-if [ -z "$PLATFORMS" ]; then
-    info "No specific platform detected. Defaulting to Claude Code."
-    PLATFORMS="claude"
+if [ -z "$PLATFORMS" ] && [ -z "${AZOTH_PLATFORMS:-}" ]; then
+    info "No specific platform detected. Defaulting to Claude Code + GitHub Copilot."
+    add_platform "claude"
+    add_platform "copilot"
 fi
 
 # ── Detect project ──────────────────────────────────────────────
@@ -251,6 +276,26 @@ if [ "$INSTALL_AGENTS" != false ] && [ -d "$SCRIPT_DIR/agents" ]; then
     ok "Agents installed"
 elif [ "$INSTALL_AGENTS" != false ]; then
     warn "Agents directory not found in Azoth source (Phase 3 not yet built)"
+fi
+
+# ── Step 5.5: Copilot generated surfaces ─────────────────────────
+if [[ " $PLATFORMS " == *" copilot "* ]]; then
+    info "Installing GitHub Copilot prompts and agents..."
+    mkdir -p ".github/prompts" ".github/agents"
+    if [ -d "$SCRIPT_DIR/.github/prompts" ]; then
+        cp -r "$SCRIPT_DIR/.github/prompts/"* ".github/prompts/" 2>/dev/null || warn "No Copilot prompts found to install"
+    else
+        warn "Copilot prompt surface not found in Azoth source (.github/prompts)"
+    fi
+    if [ -d "$SCRIPT_DIR/.github/agents" ]; then
+        cp -r "$SCRIPT_DIR/.github/agents/"* ".github/agents/" 2>/dev/null || warn "No Copilot agents found to install"
+    else
+        warn "Copilot agent surface not found in Azoth source (.github/agents)"
+    fi
+    if [ -f "$SCRIPT_DIR/AGENTS.md" ]; then
+        cp "$SCRIPT_DIR/AGENTS.md" "AGENTS.md"
+    fi
+    ok "Copilot prompts/agents installed"
 fi
 
 # ── Step 6: Initialize memory ──────────────────────────────────

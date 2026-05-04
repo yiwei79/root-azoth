@@ -55,29 +55,53 @@ Write-Host ""
 # ── Detect platforms ────────────────────────────────────────────
 $PLATFORMS = @()
 
-if ((Test-Path ".claude") -or (Get-Command claude -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "claude"
+function Add-Platform($platform) {
+    if ($PLATFORMS -notcontains $platform) {
+        $script:PLATFORMS += $platform
+    }
+}
+
+if ($env:AZOTH_PLATFORMS) {
+    $env:AZOTH_PLATFORMS -split '[,\s]+' | Where-Object { $_ } | ForEach-Object {
+        switch ($_) {
+            { $_ -in @("claude", "opencode", "codex", "copilot", "gemini", "cursor") } {
+                Add-Platform $_
+                Info "Selected: $_ (AZOTH_PLATFORMS)"
+            }
+            "all" {
+                Add-Platform "claude"
+                Add-Platform "opencode"
+                Add-Platform "codex"
+                Add-Platform "copilot"
+            }
+            "none" {}
+            default { Warn "Ignoring unknown AZOTH_PLATFORMS entry: $_" }
+        }
+    }
+} elseif ((Test-Path ".claude") -or (Get-Command claude -ErrorAction SilentlyContinue)) {
+    Add-Platform "claude"
     Info "Detected: Claude Code"
 }
 
-if ((Test-Path "opencode.jsonc") -or (Test-Path ".opencode") -or (Get-Command opencode -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "opencode"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path "opencode.jsonc") -or (Test-Path ".opencode") -or (Get-Command opencode -ErrorAction SilentlyContinue))) {
+    Add-Platform "opencode"
     Info "Detected: OpenCode"
 }
 
-if ((Test-Path ".codex") -or (Get-Command codex -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "codex"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path ".codex") -or (Get-Command codex -ErrorAction SilentlyContinue))) {
+    Add-Platform "codex"
     Info "Detected: Codex"
 }
 
-if ((Test-Path ".github") -or (Test-Path ".github\copilot-instructions.md")) {
-    $PLATFORMS += "copilot"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path ".github") -or (Test-Path ".github\copilot-instructions.md"))) {
+    Add-Platform "copilot"
     Info "Detected: GitHub Copilot"
 }
 
-if ($PLATFORMS.Count -eq 0) {
-    Info "No specific platform detected. Defaulting to Claude Code."
-    $PLATFORMS = @("claude")
+if ($PLATFORMS.Count -eq 0 -and -not $env:AZOTH_PLATFORMS) {
+    Info "No specific platform detected. Defaulting to Claude Code + GitHub Copilot."
+    Add-Platform "claude"
+    Add-Platform "copilot"
 }
 
 # ── Detect project ──────────────────────────────────────────────
@@ -240,6 +264,27 @@ if ($INSTALL_AGENTS -ne $false -and (Test-Path "$SCRIPT_DIR\agents")) {
     Ok "Agents installed"
 } elseif ($INSTALL_AGENTS -ne $false) {
     Warn "Agents directory not found in Azoth source (Phase 3 not yet built)"
+}
+
+# ── Step 5.5: Copilot generated surfaces ─────────────────────────
+if ($PLATFORMS -contains "copilot") {
+    Info "Installing GitHub Copilot prompts and agents..."
+    New-Item -ItemType Directory -Force -Path ".github\prompts" | Out-Null
+    New-Item -ItemType Directory -Force -Path ".github\agents" | Out-Null
+    if (Test-Path "$SCRIPT_DIR\.github\prompts") {
+        Copy-Item "$SCRIPT_DIR\.github\prompts\*" ".github\prompts\" -Recurse -ErrorAction SilentlyContinue
+    } else {
+        Warn "Copilot prompt surface not found in Azoth source (.github\prompts)"
+    }
+    if (Test-Path "$SCRIPT_DIR\.github\agents") {
+        Copy-Item "$SCRIPT_DIR\.github\agents\*" ".github\agents\" -Recurse -ErrorAction SilentlyContinue
+    } else {
+        Warn "Copilot agent surface not found in Azoth source (.github\agents)"
+    }
+    if (Test-Path "$SCRIPT_DIR\AGENTS.md") {
+        Copy-Item "$SCRIPT_DIR\AGENTS.md" "AGENTS.md" -Force
+    }
+    Ok "Copilot prompts/agents installed"
 }
 
 # ── Step 6: Initialize memory ──────────────────────────────────
