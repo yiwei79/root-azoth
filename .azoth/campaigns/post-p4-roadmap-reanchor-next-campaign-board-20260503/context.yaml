@@ -3,7 +3,7 @@ campaign_id: post-p4-roadmap-reanchor-next-campaign-board-20260503
 campaign_name: Post-P4 Roadmap Re-Anchor and Next-Campaign Board
 status: checkpointed
 created_at: "2026-05-03T21:54:40Z"
-updated_at: "2026-05-03T22:12:00Z"
+updated_at: "2026-05-03T22:31:00Z"
 source_session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
 source_design_artifact: .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
 mode:
@@ -181,6 +181,22 @@ state_transitions:
     evidence_refs:
       - .azoth/memory/episodes.jsonl#ep-547
       - .azoth/bootloader-state.md
+  - at: "2026-05-03T22:26:48Z"
+    from: checkpointed
+    to: active
+    actor: autonomous-auto-loop
+    evidence_refs:
+      - .azoth/scope-gate.json
+      - .azoth/run-ledger.local.yaml
+      - .azoth/autonomous-loop-state.local.yaml
+  - at: "2026-05-03T22:30:12Z"
+    from: active
+    to: checkpointed
+    actor: administrative-closeout
+    evidence_refs:
+      - .azoth/memory/episodes.jsonl#ep-548
+      - .azoth/bootloader-state.md
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
 child_scopes:
   - session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
     iteration: 1
@@ -191,10 +207,66 @@ child_scopes:
     closeout_episode_id: ep-547
     artifacts:
       - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+  - session_id: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
+    iteration: 2
+    action: research_initiative
+    candidate_id: post-p4-roadmap-anchor-analysis
+    purpose: Decide whether the post-p4 planning anchor should be a new version shell,
+      a phase-null planning board, or a patch/maintenance lane.
+    status: closed
+    closeout_episode_id: ep-548
+    artifacts:
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+roadmap_anchor_analysis:
+  analyzed_at: "2026-05-03T22:28:27Z"
+  session_id: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
+  executive_read: >
+    Treat v0.2.0-p4 as the last closed historical roadmap anchor, not as an
+    automatically claimable planning lane. Do not mint a new version shell or
+    reopen p4 during the analysis child. The live post-p4 planning anchor for
+    the next decision is this campaign context ledger plus the phase-null
+    candidate board to be synthesized in the next child.
+  selected_anchor_model: phase_null_campaign_board_over_last_closed_p4
+  rejected_anchor_models:
+    - model: new_version_shell_now
+      reason: >
+        No next campaign has been selected yet, and minting a new version shell
+        would imply scheduled work before the candidate board has ranked the
+        eligible lanes.
+    - model: p4_patch_or_maintenance_lane
+      reason: >
+        v0.2.0-p4 is complete with empty pending_task_refs; further p4 repairs
+        require fresh named-lane route evidence and must not reopen the closed
+        repair window by default.
+  evidence_refs:
+    - .azoth/roadmap.yaml#active_version=v0.2.0-p4
+    - .azoth/roadmap.yaml#versions.v0.2.0-p4.status=complete
+    - .azoth/roadmap.yaml#versions.v0.2.0-p4.pending_task_refs=[]
+    - .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
+    - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md
+    - scripts/roadmap_dashboard.py
+  implications:
+    - v0.2.0-p4 remains complete and is not reopened.
+    - Candidate-board synthesis should rank phase-null and parked candidates
+      before any roadmap/backlog/spec hydration.
+    - If child 3 performs minimal anchor repair, the least-powerful repair is a
+      repo-internal planning pointer or campaign selection artifact, not task
+      hydration or implementation.
+    - Public azoth sync/release, cockpit/project writes, backup/private remote,
+      kernel/governance/M1, and dependency/network/credential/destructive gates
+      remain stop lines.
+  next_child_recommendation:
+    action: research_initiative
+    candidate_id: post-p4-candidate-board-synthesis
+    purpose: Rank the visible post-p4 candidates from live repo-native state and
+      select one recommended next campaign without hydrating tasks.
 latest_checkpoint:
-  status: design_context_created_and_child_closed
+  status: roadmap_anchor_analysis_closed
   next_action: >
-    Use this context as the parent state object for the roadmap-anchor analysis
-    child if the operator continues the approved campaign.
-  blocking_gates: []
+    Candidate-board synthesis is queued, but open-next is currently blocked by
+    strategy preflight. Reconcile or explicitly approve the protected-boundary
+    learning-harvester signal before opening another child scope.
+  blocking_gates:
+    - strategy_preflight_blocks_candidate_board_open
+    - learning_harvester_selected_human_gate_required
   stale_context_flags: []
