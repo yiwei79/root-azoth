@@ -118,7 +118,7 @@ def _load_full_profile_template(source_root: Path) -> dict[str, str]:
                 f"release profile template must be a mapping: {template_path}"
             )
         if data.get("profile") != "full":
-            raise ReleaseProfileError(f"release profile template must declare profile: full")
+            raise ReleaseProfileError("release profile template must declare profile: full")
         seeds = data.get("seeds")
         if not isinstance(seeds, Mapping):
             raise ReleaseProfileError("release profile template must contain seeds mapping")
