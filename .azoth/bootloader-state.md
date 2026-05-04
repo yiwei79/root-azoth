@@ -1,15 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · final_patch: 34
+0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
 
 ## Last Session
-- **Session**: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
-- **Goal**: Decide the post-p4 roadmap anchor from live repo-native roadmap, backlog, roadmap-spec, and campaign-context state without task hydration or implementation.
+- **Session**: 2026-05-04-public-release-root-feature-parity
+- **Goal**: Persist, deliver, and publish the public release parity direction: published Azoth releases must include root feature capability, with private/workshop state transformed into consumer-safe project seeds and first-run UX rather than omitted.
 - **Session mode**: delivery
-- **Pipeline**: autonomous-auto
+- **Pipeline**: deliver-full
 - **Outcome**: closed
-- **Episode**: ep-548 (success)
+- **Episode**: ep-549 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

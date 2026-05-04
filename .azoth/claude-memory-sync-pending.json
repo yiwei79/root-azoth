@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "status": "synced",
-  "updated_at": "2026-05-03T22:29:56Z",
+  "status": "pending",
+  "updated_at": "2026-05-04T18:33:35Z",
   "source": "session-closeout",
-  "session_id": "2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2",
-  "goal": "Decide the post-p4 roadmap anchor from live repo-native roadmap, backlog, roadmap-spec, and campaign-context state without task hydration or implementation.",
-  "latest_episode_id": "ep-548",
+  "session_id": "2026-05-04-public-release-root-feature-parity",
+  "goal": "Persist, deliver, and publish the public release parity direction: published Azoth releases must include root feature capability, with private/workshop state transformed into consumer-safe project seeds and first-run UX rather than omitted.",
+  "latest_episode_id": "ep-549",
   "latest_episode_summary": "Completed session closeout via scripts/do_closeout.py (W1-W4).",
   "next_action": "Administrative finalize complete \u2014 run `/next` to select the next scoped task.",
   "target_dir": "/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory",
-  "synced_at": "2026-05-03T22:29:56Z"
+  "reason": "[Errno 1] Operation not permitted: '/Users/yiwei/.claude/projects/-Users-yiwei-GithubRepos-root-azoth/memory/project_status.md'"
 }

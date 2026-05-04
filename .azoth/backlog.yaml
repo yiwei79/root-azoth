@@ -4032,10 +4032,11 @@ items:
   source: session-2026-05-04-public-release-root-feature-parity
   target_layer: M1
   delivery_pipeline: governed
-  status: active
+  status: complete
   target_version: v0.2.0-p4
   priority: 1
   created_date: '2026-05-04'
+  completed_date: '2026-05-04'
   description: >
     Persist and deliver the public release parity direction: published Azoth
     releases should include the root feature capability surface rather than a
