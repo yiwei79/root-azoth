@@ -13,6 +13,32 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 
+FULL_INSTALL_REQUIRED_PATHS = (
+    "commands/start/command.yaml",
+    "commands/roadmap/command.yaml",
+    "pipelines/full.pipeline.yaml",
+    "scripts/codex_control_plane.py",
+    "scripts/roadmap_dashboard.py",
+    "scripts/autonomous_loop.py",
+    ".agents/skills/azoth-start/SKILL.md",
+    ".agents/skills/azoth-roadmap/SKILL.md",
+    ".agents/skills/azoth-autonomous-auto/SKILL.md",
+    ".azoth/roadmap.yaml",
+    ".azoth/backlog.yaml",
+    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/initiative-banks/.gitkeep",
+    ".azoth/design-banks/.gitkeep",
+    ".azoth/autonomous-loop-state.local.yaml.example",
+)
+
+PRIVATE_RUNTIME_STATE = (
+    ".azoth/scope-gate.json",
+    ".azoth/pipeline-gate.json",
+    ".azoth/run-ledger.local.yaml",
+    ".azoth/autonomous-loop-state.local.yaml",
+    ".azoth/final-delivery-approvals.jsonl",
+)
+
 
 def _manifest_version(path: Path = REPO / "azoth.yaml") -> str:
     data = cast(dict[str, Any], yaml.safe_load(path.read_text(encoding="utf-8")))
@@ -66,3 +92,36 @@ def test_install_sh_generates_manifest_with_source_version(tmp_path: Path) -> No
     assert "tools:" in (tmp_path / ".github" / "agents" / "builder.agent.md").read_text(
         encoding="utf-8"
     )
+
+
+def test_install_sh_full_setup_materializes_runtime_bundle_and_consumer_safe_seeds(
+    tmp_path: Path,
+) -> None:
+    if not shutil.which("bash"):
+        pytest.skip("bash not available on this platform")
+
+    subprocess.run(
+        ["bash", str(REPO / "install.sh")],
+        env={**os.environ, "AZOTH_PLATFORMS": "codex copilot"},
+        input="3\n",
+        text=True,
+        cwd=tmp_path,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    for required_path in FULL_INSTALL_REQUIRED_PATHS:
+        assert (tmp_path / required_path).exists(), required_path
+
+    for private_path in PRIVATE_RUNTIME_STATE:
+        assert not (tmp_path / private_path).exists(), private_path
+
+    gitignore_lines = {
+        line.strip()
+        for line in (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    for private_path in PRIVATE_RUNTIME_STATE:
+        assert private_path in gitignore_lines
+    assert "!.azoth/autonomous-loop-state.local.yaml.example" in gitignore_lines

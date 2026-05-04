@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,8 +56,10 @@ REQUIRED_PRODUCT_PATHS = (
     ".github/agents/orchestrator.agent.md",
     "install.sh",
     "install.ps1",
+    "scripts/azoth_release_profile.py",
     "kernel/templates/CLAUDE.md.template",
     "kernel/templates/bootloader-state.md.template",
+    "kernel/templates/release-profiles/full-consumer.yaml",
     "kernel/BOOTLOADER.md",
     "kernel/GOVERNANCE.md",
     "kernel/PROMOTION_RUBRIC.md",
@@ -79,6 +82,104 @@ REQUIRED_CONSUMER_PATHS = (
     ".azoth/memory/patterns.yaml",
     "skills",
     "agents",
+)
+
+FULL_RELEASE_REFERENCE_PATHS = (
+    "scripts/azoth_release_profile.py",
+    "kernel/templates/release-profiles/full-consumer.yaml",
+    "commands/start/command.yaml",
+    "commands/roadmap/command.yaml",
+    "pipelines/full.pipeline.yaml",
+    "scripts/codex_control_plane.py",
+    "scripts/roadmap_dashboard.py",
+    "scripts/autonomous_loop.py",
+    ".agents/skills/azoth-start/SKILL.md",
+    ".agents/skills/azoth-roadmap/SKILL.md",
+    ".agents/skills/azoth-autonomous-auto/SKILL.md",
+)
+
+FULL_CONSUMER_RUNTIME_PATHS = (
+    "commands/start/command.yaml",
+    "commands/roadmap/command.yaml",
+    "pipelines/full.pipeline.yaml",
+    "scripts/codex_control_plane.py",
+    "scripts/roadmap_dashboard.py",
+    "scripts/autonomous_loop.py",
+    ".agents/skills/azoth-start/SKILL.md",
+    ".agents/skills/azoth-roadmap/SKILL.md",
+    ".agents/skills/azoth-autonomous-auto/SKILL.md",
+    ".azoth/roadmap.yaml",
+    ".azoth/backlog.yaml",
+    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/initiative-banks/.gitkeep",
+    ".azoth/design-banks/.gitkeep",
+    ".azoth/autonomous-loop-state.local.yaml.example",
+)
+
+PRIVATE_RUNTIME_STATE_PATHS = (
+    ".azoth/scope-gate.json",
+    ".azoth/pipeline-gate.json",
+    ".azoth/run-ledger.local.yaml",
+    ".azoth/run-ledger.local.yaml.lock",
+    ".azoth/autonomous-loop-state.local.yaml",
+    ".azoth/final-delivery-approvals.jsonl",
+)
+
+PRIVATE_RUNTIME_STATE_GLOBS = (
+    ".azoth/write-claim*.json",
+)
+
+PRIVATE_RUNTIME_STATE_DIRS = (
+    ".azoth/telemetry",
+)
+
+FULL_RUNTIME_GITIGNORE_RULES = (
+    ".azoth/scope-gate.json",
+    "!.azoth/scope-gate.json.example",
+    ".azoth/pipeline-gate.json",
+    "!.azoth/pipeline-gate.json.example",
+    ".azoth/run-ledger.local.yaml",
+    "!.azoth/run-ledger.local.yaml.example",
+    ".azoth/run-ledger.local.yaml.lock",
+    ".azoth/autonomous-loop-state.local.yaml",
+    "!.azoth/autonomous-loop-state.local.yaml.example",
+    ".azoth/final-delivery-approvals.jsonl",
+    ".azoth/write-claim*.json",
+    ".azoth/telemetry/",
+)
+
+INSTALLED_REFERENCE_PATTERNS = (
+    re.compile(r"(?<![\w./-])\.claude/commands/[A-Za-z0-9_-]+\.md"),
+    re.compile(
+        r"(?<![\w./-])commands/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*"
+        r"\.(?:md|yaml|yml|json|toml)"
+    ),
+    re.compile(
+        r"(?<![\w./-])pipelines/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*"
+        r"\.(?:md|yaml|yml|json|toml)"
+    ),
+    re.compile(r"(?<![\w./-])scripts/[A-Za-z0-9_.-]+\.py"),
+    re.compile(r"(?<![\w./-])\.agents/skills/azoth-[A-Za-z0-9_-]+(?:/[A-Za-z0-9_.-]+)*"),
+)
+
+INSTALLED_REFERENCE_SCAN_PREFIXES = (
+    ".agents/skills/azoth-",
+    ".claude/commands/",
+    ".github/agents/",
+    ".github/prompts/",
+    "commands/",
+)
+
+INSTALLED_REFERENCE_SCAN_FILES = {
+    "AGENTS.md",
+    "CLAUDE.md",
+}
+
+AZOTH_WRAPPER_MARKERS = (
+    "Execution contract:",
+    "Source path:",
+    "Contract path:",
+    "Script path:",
 )
 
 
@@ -125,6 +226,67 @@ def assert_required_paths(root: Path, paths: tuple[str, ...]) -> None:
         raise SmokeError(f"missing required paths in {root}: {missing}")
 
 
+def assert_full_release_references(product_root: Path) -> None:
+    assert_required_paths(product_root, FULL_RELEASE_REFERENCE_PATHS)
+
+
+def assert_private_runtime_state_absent(root: Path) -> None:
+    leaked = [path for path in PRIVATE_RUNTIME_STATE_PATHS if (root / path).exists()]
+    for pattern in PRIVATE_RUNTIME_STATE_GLOBS:
+        leaked.extend(path.relative_to(root).as_posix() for path in root.glob(pattern))
+    for rel_dir in PRIVATE_RUNTIME_STATE_DIRS:
+        runtime_dir = root / rel_dir
+        if runtime_dir.is_dir():
+            leaked.extend(path.relative_to(root).as_posix() for path in runtime_dir.rglob("*"))
+        elif runtime_dir.exists():
+            leaked.append(rel_dir)
+    if leaked:
+        sample = ", ".join(sorted(leaked)[:20])
+        raise SmokeError(f"private runtime state leaked into consumer install: {sample}")
+
+
+def assert_full_runtime_gitignore(consumer: Path) -> None:
+    gitignore = consumer / ".gitignore"
+    if not gitignore.is_file():
+        raise SmokeError(f"consumer install missing .gitignore: {consumer}")
+    lines = {
+        line.strip()
+        for line in gitignore.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    missing = [rule for rule in FULL_RUNTIME_GITIGNORE_RULES if rule not in lines]
+    if missing:
+        raise SmokeError(f"consumer .gitignore missing Full runtime rules: {missing}")
+
+
+def assert_installed_runtime_references(consumer: Path) -> None:
+    missing: list[str] = []
+    for path in sorted(consumer.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        source = path.relative_to(consumer).as_posix()
+        if source not in INSTALLED_REFERENCE_SCAN_FILES and not source.startswith(
+            INSTALLED_REFERENCE_SCAN_PREFIXES
+        ):
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if source.startswith(".agents/skills/azoth-") and not any(
+            marker in text for marker in AZOTH_WRAPPER_MARKERS
+        ):
+            continue
+        for pattern in INSTALLED_REFERENCE_PATTERNS:
+            for match in pattern.finditer(text):
+                rel_path = match.group(0)
+                if "*" in rel_path:
+                    continue
+                if not (consumer / rel_path).exists():
+                    missing.append(f"{source} -> {rel_path}")
+
+    if missing:
+        sample = ", ".join(sorted(set(missing))[:20])
+        raise SmokeError(f"consumer install references missing runtime paths: {sample}")
+
+
 def assert_absent_prefixes(root: Path) -> None:
     files = rel_files(root)
     leaked: list[str] = []
@@ -161,7 +323,7 @@ def assert_sanitized(root: Path, strip_patterns: list[str]) -> None:
         raise SmokeError(f"product extract contains unsanitized source patterns: {sample}")
 
 
-def assert_consumer_install(consumer: Path) -> None:
+def assert_consumer_install(consumer: Path, *, setup_level: str | None = None) -> None:
     assert_required_paths(consumer, REQUIRED_CONSUMER_PATHS)
     manifest = yaml.safe_load((consumer / "azoth.yaml").read_text(encoding="utf-8"))
     platforms = manifest.get("platforms")
@@ -171,6 +333,11 @@ def assert_consumer_install(consumer: Path) -> None:
         raise SmokeError(f"consumer manifest platforms must be separate strings: {platforms!r}")
     if "copilot" not in platforms:
         raise SmokeError(f"consumer manifest must include copilot: {platforms!r}")
+    assert_private_runtime_state_absent(consumer)
+    if setup_level == "3":
+        assert_required_paths(consumer, FULL_CONSUMER_RUNTIME_PATHS)
+        assert_full_runtime_gitignore(consumer)
+        assert_installed_runtime_references(consumer)
 
 
 def smoke_bash_install(product_root: Path, setup_level: str) -> Path:
@@ -182,7 +349,7 @@ def smoke_bash_install(product_root: Path, setup_level: str) -> Path:
         input_text=f"{setup_level}\n",
         env=env,
     )
-    assert_consumer_install(consumer)
+    assert_consumer_install(consumer, setup_level=setup_level)
     return consumer
 
 
@@ -205,7 +372,7 @@ def smoke_pwsh_install(product_root: Path, setup_level: str) -> tuple[str, Path 
         input_text=f"{setup_level}\n",
         env=env,
     )
-    assert_consumer_install(consumer)
+    assert_consumer_install(consumer, setup_level=setup_level)
     return "passed", consumer
 
 
@@ -234,6 +401,8 @@ def main() -> int:
     assert_required_paths(out, REQUIRED_PRODUCT_PATHS)
     assert_absent_prefixes(out)
     assert_sanitized(out, strip_patterns)
+    if args.setup_level == "3":
+        assert_full_release_references(out)
 
     run([sys.executable, "scripts/azoth_extract_product.py", "--validate-only"], cwd=out)
     run([sys.executable, "-c", "import yaml; yaml.safe_load(open('sync-config.yaml'))"], cwd=out)

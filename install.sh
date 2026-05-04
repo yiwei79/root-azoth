@@ -37,6 +37,16 @@ ok()    { echo -e "${GREEN}[azoth]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[azoth]${NC} $1"; }
 err()   { echo -e "${RED}[azoth]${NC} $1" >&2; }
 
+find_azoth_python() {
+    if command -v python3 &>/dev/null; then
+        command -v python3
+    elif command -v python &>/dev/null; then
+        command -v python
+    else
+        return 1
+    fi
+}
+
 # ── Pre-flight checks ──────────────────────────────────────────
 if [ "$SCRIPT_DIR" = "$TARGET_DIR" ]; then
     err "Cannot install Azoth into its own repository."
@@ -389,6 +399,24 @@ $PLATFORMS_YAML
 MANIFEST
 
 ok "Manifest generated (azoth.yaml)"
+
+# ── Step 10: Full release runtime profile ──────────────────────
+if [ "$INSTALL_AGENTS" = "all" ]; then
+    info "Materializing Full release profile..."
+    if [ ! -f "$SCRIPT_DIR/scripts/azoth_release_profile.py" ]; then
+        err "Full release profile helper not found at $SCRIPT_DIR/scripts/azoth_release_profile.py"
+        exit 1
+    fi
+    AZOTH_PYTHON="$(find_azoth_python)" || {
+        err "Python 3 or Python is required to materialize the Full release profile."
+        exit 1
+    }
+    "$AZOTH_PYTHON" "$SCRIPT_DIR/scripts/azoth_release_profile.py" \
+        --profile full \
+        --source "$SCRIPT_DIR" \
+        --target "$TARGET_DIR"
+    ok "Full release profile materialized"
+fi
 
 # ── Summary ─────────────────────────────────────────────────────
 echo ""

@@ -4027,3 +4027,25 @@ items:
   decision_ref:
   - D11
   - D45
+- id: BL-082
+  title: Public release root feature parity and consumer-safe Full install
+  source: session-2026-05-04-public-release-root-feature-parity
+  target_layer: M1
+  delivery_pipeline: governed
+  status: active
+  target_version: v0.2.0-p4
+  priority: 1
+  created_date: '2026-05-04'
+  description: >
+    Persist and deliver the public release parity direction: published Azoth
+    releases should include the root feature capability surface rather than a
+    narrow installer subset. Private or workshop-local state must be sanitized
+    or transformed into consumer-safe project seeds, while root-level capability
+    classes such as roadmap, planning banks, command wrappers, runtime scripts,
+    pipelines, and autonomous-auto control surfaces are represented truthfully
+    in the release profile and first-use experience.
+  decision_ref:
+  - D38
+  - D46
+  - D48
+  - D50

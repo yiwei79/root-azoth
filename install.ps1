@@ -28,6 +28,33 @@ function Ok($msg)    { Write-Host "[azoth] $msg" -ForegroundColor Green }
 function Warn($msg)  { Write-Host "[azoth] $msg" -ForegroundColor Yellow }
 function Err($msg)   { Write-Host "[azoth] $msg" -ForegroundColor Red }
 
+function Invoke-FullReleaseProfileMaterializer {
+    $helper = Join-Path $SCRIPT_DIR "scripts\azoth_release_profile.py"
+    if (-not (Test-Path $helper)) {
+        Err "Full release profile helper not found at $helper"
+        exit 1
+    }
+
+    $python3 = Get-Command python3 -ErrorAction SilentlyContinue
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    $py = Get-Command py -ErrorAction SilentlyContinue
+
+    if ($python3) {
+        & $python3.Source $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } elseif ($python) {
+        & $python.Source $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } elseif ($py) {
+        & $py.Source -3 $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } else {
+        Err "python3, python, or py -3 is required to materialize the Full release profile."
+        exit 1
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Full release profile materializer failed with exit code $LASTEXITCODE"
+    }
+}
+
 # ── Pre-flight checks ──────────────────────────────────────────
 if ($SCRIPT_DIR -eq $TARGET_DIR) {
     Err "Cannot install Azoth into its own repository."
@@ -354,6 +381,13 @@ platforms: [$($PLATFORMS -join ', ')]
 "@ | Set-Content "azoth.yaml"
 
 Ok "Manifest generated (azoth.yaml)"
+
+# ── Step 10: Full release runtime profile ──────────────────────
+if ($INSTALL_AGENTS -eq "all") {
+    Info "Materializing Full release profile..."
+    Invoke-FullReleaseProfileMaterializer
+    Ok "Full release profile materialized"
+}
 
 # ── Summary ─────────────────────────────────────────────────────
 Write-Host ""
