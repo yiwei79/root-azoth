@@ -217,6 +217,15 @@ child_scopes:
     closeout_episode_id: ep-548
     artifacts:
       - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+  - session_id: 2026-05-04-autonomous-auto-post-p4-candidate-board-synthesis-3
+    iteration: 3
+    action: research_initiative
+    candidate_id: post-p4-candidate-board-synthesis
+    purpose: Rank live post-p4 next-campaign candidates from repo-native state without
+      hydration or implementation.
+    status: active_with_evaluator_block
+    artifacts:
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
 roadmap_anchor_analysis:
   analyzed_at: "2026-05-03T22:28:27Z"
   session_id: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
@@ -261,12 +270,127 @@ roadmap_anchor_analysis:
     purpose: Rank the visible post-p4 candidates from live repo-native state and
       select one recommended next campaign without hydrating tasks.
 latest_checkpoint:
-  status: roadmap_anchor_analysis_closed
+  status: candidate_board_synthesis_recorded_with_replay_needed
   next_action: >
-    Candidate-board synthesis is queued, but open-next is currently blocked by
-    strategy preflight. Reconcile or explicitly approve the protected-boundary
-    learning-harvester signal before opening another child scope.
+    Close or replay the active candidate-board child so the control-plane
+    preflight-clearing implementation edits are packaged separately from the
+    research-only board. After that cleanup, the first recommended next campaign
+    is the format-gate repair lane.
   blocking_gates:
-    - strategy_preflight_blocks_candidate_board_open
-    - learning_harvester_selected_human_gate_required
+    - evaluator_blocked_research_child_due_preexisting_control_plane_code_edits
+    - active_write_claim_until_child_closeout
   stale_context_flags: []
+candidate_board_synthesis:
+  synthesized_at: "2026-05-04T18:59:25Z"
+  session_id: 2026-05-04-autonomous-auto-post-p4-candidate-board-synthesis-3
+  scope_boundary: research_only_no_hydration_no_implementation
+  board_status: conditional_needs_scope_cleanup
+  executive_read: >
+    v0.2.0-p4 stays closed. The post-p4 planning anchor is the phase-null
+    candidate board over the last closed p4 state. Before opening a new campaign,
+    finish the current control-plane/preflight cleanup and release the active
+    write claim. The first real next campaign after that cleanup should be the
+    narrow format-gate repair lane, because it is repo-local, currently red, and
+    prerequisite to PR/publish confidence.
+  immediate_prerequisite:
+    candidate_id: current-scope-cleanup
+    title: Close candidate-board child and package control-plane preflight repair separately
+    disposition: required_before_next_campaign
+    reason: >
+      The preflight clearing repair opened the research child successfully, but
+      evaluator review found those implementation/test edits should not be
+      laundered into the research-only candidate-board scope.
+  ranked_candidates:
+    - rank: 1
+      candidate_id: format-gate-repair
+      title: P1 format-gate repair lane
+      recommended_action: refine_proposal_or_ship_task_after_scope_approval
+      disposition: recommended_first_campaign
+      rationale: >
+        Live research reports formatting drift remains a pre-PR confidence
+        blocker, and the lane can stay repo-local, narrow, and non-protected.
+      evidence_refs:
+        - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md#pre-pr-readiness
+        - .azoth/handoffs/2026-05-02-t-060-p1-pre-pr-fast-fail-repair.yaml
+    - rank: 2
+      candidate_id: public-freshness-policy-reconciliation
+      title: Public freshness and release-policy reconciliation
+      recommended_action: research_initiative
+      disposition: viable_later_research
+      rationale: >
+        Public v0.2.0 patch evidence exists, but freshness policy can remain
+        intentionally stale after root drift. Reconcile policy truth before any
+        public sync or release gate.
+      evidence_refs:
+        - .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+        - .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-FRESHNESS-POLICY.yaml
+    - rank: 3
+      candidate_id: INI-UX-001
+      title: Phone-friendly output
+      recommended_action: research_initiative
+      disposition: viable_later_product_ux_campaign
+      rationale: >
+        High operator value and low dependency risk, especially for narrow
+        terminals and daily dashboard use, but less urgent than repo hygiene.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-UX-001
+    - rank: 4
+      candidate_id: INI-RST-006
+      title: Historical phase boards / continuity snapshots
+      recommended_action: research_initiative
+      disposition: viable_later_planning_campaign
+      rationale: >
+        Low-risk continuity support for completed phases, useful after p4 but not
+        a pre-PR blocker.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-RST-006
+    - rank: 5
+      candidate_id: INI-PLT-005
+      title: Antigravity deploy target and install path
+      recommended_action: research_initiative
+      disposition: viable_later_with_freshness_gate
+      rationale: >
+        Valuable platform work, but install/deploy/runtime freshness and global
+        path boundaries make it less suitable as the first post-p4 campaign.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-PLT-005
+        - .azoth/roadmap-specs/v0.2.0/P1-014.yaml
+    - rank: 6
+      candidate_id: INI-MEM-002
+      title: Temporal validity windows for M2 patterns
+      recommended_action: research_initiative
+      disposition: parked_until_recall_miss_evidence
+      rationale: >
+        Keep adjacent-only until recall-quality evidence shows stale M2 temporal
+        validity is the real blocker; no M2 mutation in this route.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-MEM-002
+        - .azoth/initiative-banks/INI-MEM-003.yaml
+    - rank: 7
+      candidate_id: INI-MEM-003
+      title: Optional vector backend spike
+      recommended_action: stop_until_dependency_approval
+      disposition: parked_dependency_gate
+      rationale: >
+        T-057/T-058 completed the zero-dependency baseline and adoption path.
+        Vector work needs explicit backend, dependency, storage, privacy, and
+        measured-quality approval.
+      evidence_refs:
+        - .azoth/initiative-banks/INI-MEM-003.yaml
+  excluded_or_deferred:
+    - candidate_id: INI-EVI-002
+      reason: T-046 and derived task-capsule helper lane are fulfilled; needs a fresh distinct seed.
+      evidence_refs:
+        - .azoth/initiative-banks/INI-EVI-002.yaml
+    - candidate_id: public-azoth-sync-or-release
+      reason: Protected public release/sync gate; not authorized in this campaign.
+    - candidate_id: cockpit-or-project-writes
+      reason: Protected cockpit/project mutation gate; keep pointer-only and project-local authority boundaries.
+    - candidate_id: backup-private-remote-or-credential-work
+      reason: Protected backup/private remote/credential gate; open only by explicit operator-selected lane.
+    - candidate_id: kernel-governance-m1
+      reason: Protected kernel/governance/M1 gate; excluded from this post-p4 research board.
+  stage_evidence:
+    architect: architect subagent approved board structure and stop lines.
+    researcher: researcher subagent recommended format-gate repair first after scope cleanup.
+    evaluator: evaluator subagent returned FAIL until implementation edits are separated from this research-only child.

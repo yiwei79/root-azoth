@@ -4,12 +4,12 @@
 0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
 
 ## Last Session
-- **Session**: 2026-05-04-public-release-root-feature-parity
-- **Goal**: Persist, deliver, and publish the public release parity direction: published Azoth releases must include root feature capability, with private/workshop state transformed into consumer-safe project seeds and first-run UX rather than omitted.
+- **Session**: 2026-05-04-autonomous-auto-post-p4-candidate-board-synthesis-3
+- **Goal**: Rank the live post-p4 next-campaign candidates from repo-native roadmap, planning-bank, initiative, proposal, handoff, and gate state without hydrating tasks or implementing.
 - **Session mode**: delivery
-- **Pipeline**: deliver-full
+- **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-549 (success)
+- **Episode**: ep-550 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

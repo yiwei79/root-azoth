@@ -2341,6 +2341,121 @@ def test_strategy_preflight_blocks_user_governed_learning_to_intake(
     )
 
 
+def test_strategy_preflight_allows_research_only_after_protected_corpus_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved candidate-board synthesis as research-only. "
+                "Hydration, implementation, and protected mutations remain blocked. "
+                "The protected-boundary residual is acknowledged but not authorized "
+                "for mutation."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative"],
+            "stop_conditions": ["protected_gate_required"],
+        },
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+
+    def fake_campaign_audit(*args: object, **kwargs: object) -> dict:
+        return {
+            "learning_harvester": {
+                "selected_learning_route": "human_gate_required",
+                "decisions": [
+                    {
+                        "signal_id": "residual-8",
+                        "blast_radius": "protected",
+                        "route": "human_gate_required",
+                        "protected_gate_required": True,
+                    }
+                ],
+            }
+        }
+
+    monkeypatch.setattr(autonomous_loop, "build_campaign_audit", fake_campaign_audit)
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="research_initiative",
+        candidate={
+            "candidate_id": "post-p4-candidate-board-synthesis",
+            "title": "Post-P4 candidate board synthesis",
+        },
+        source="campaign-context-ledger",
+    )
+
+    assert preflight["verdict"] == "allow_open"
+    assert preflight["may_open_scope"] is True
+    assert preflight["human_gate_acknowledgement"]["accepted"] is True
+    assert not any(
+        "learning harvester corpus recommendation" in item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
+def test_strategy_preflight_keeps_delivery_blocked_after_protected_corpus_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state_path = _state(
+        tmp_path,
+        autonomy_budget={
+            "approval_basis": (
+                "Operator approved candidate-board synthesis as research-only. "
+                "Hydration, implementation, and protected mutations remain blocked. "
+                "The protected-boundary residual is acknowledged but not authorized "
+                "for mutation."
+            ),
+            "max_iterations": 3,
+            "allowed_actions": ["research_initiative"],
+            "stop_conditions": ["protected_gate_required"],
+        },
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+
+    def fake_campaign_audit(*args: object, **kwargs: object) -> dict:
+        return {
+            "learning_harvester": {
+                "selected_learning_route": "human_gate_required",
+                "decisions": [
+                    {
+                        "signal_id": "residual-8",
+                        "blast_radius": "protected",
+                        "route": "human_gate_required",
+                        "protected_gate_required": True,
+                    }
+                ],
+            }
+        }
+
+    monkeypatch.setattr(autonomous_loop, "build_campaign_audit", fake_campaign_audit)
+
+    preflight = autonomous_loop._strategy_preflight_for_decision(
+        tmp_path,
+        state,
+        action="ship_task",
+        candidate={
+            "candidate_id": "T-999",
+            "title": "Delivery remains blocked",
+        },
+        source="queue",
+    )
+
+    assert preflight["verdict"] == "stop_blocked"
+    assert preflight["may_open_scope"] is False
+    assert preflight["human_gate_acknowledgement"]["accepted"] is False
+    assert preflight["human_gate_acknowledgement"]["reason"] == (
+        "corpus_human_gate_only_research_initiative_can_clear"
+    )
+    assert any(
+        "learning harvester corpus recommendation" in item["reason"]
+        for item in preflight["blocked_alternatives"]
+    )
+
+
 def test_strategy_preflight_requires_active_approved_campaign_for_auto_self_heal(
     tmp_path: Path,
 ) -> None:

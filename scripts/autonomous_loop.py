@@ -1182,6 +1182,54 @@ def _external_freshness_block(data: dict[str, Any]) -> dict[str, str] | None:
     }
 
 
+def _approval_acknowledges_research_only_human_gate(approval_basis: str) -> bool:
+    text = str(approval_basis or "").casefold().replace("-", " ")
+    return (
+        "research only" in text
+        and "hydration" in text
+        and "implementation" in text
+        and "blocked" in text
+        and "protected" in text
+        and "residual" in text
+        and "acknowledg" in text
+        and "not authorized for mutation" in text
+    )
+
+
+def _human_gate_acknowledgement_for_preflight(
+    *,
+    action: str,
+    candidate: dict[str, Any],
+    approval_basis: str,
+    corpus_route: str,
+) -> dict[str, Any]:
+    if corpus_route != "human_gate_required":
+        return {"required": False, "accepted": False, "reason": ""}
+    if action != "research_initiative":
+        return {
+            "required": True,
+            "accepted": False,
+            "reason": "corpus_human_gate_only_research_initiative_can_clear",
+        }
+    if _is_protected(candidate):
+        return {
+            "required": True,
+            "accepted": False,
+            "reason": "candidate_itself_is_protected",
+        }
+    if not _approval_acknowledges_research_only_human_gate(approval_basis):
+        return {
+            "required": True,
+            "accepted": False,
+            "reason": "missing_research_only_no_mutation_acknowledgement",
+        }
+    return {
+        "required": True,
+        "accepted": True,
+        "reason": "research_only_protected_residual_acknowledged_no_mutation",
+    }
+
+
 def _strategy_preflight_for_decision(
     root: Path | None,
     state: dict[str, Any],
@@ -1233,6 +1281,13 @@ def _strategy_preflight_for_decision(
             ).get("learning_harvester", {})
         except Exception:
             corpus_harvester = {}
+    corpus_route = str(corpus_harvester.get("selected_learning_route") or "")
+    human_gate_acknowledgement = _human_gate_acknowledgement_for_preflight(
+        action=action,
+        candidate=candidate,
+        approval_basis=approval_basis,
+        corpus_route=corpus_route,
+    )
     write_claim = _write_claim_status(root) if root is not None else {"held": False}
     active_scope = _active_scope(root) if root is not None else {}
     approval_basis_present = approval_basis_is_present
@@ -1281,17 +1336,17 @@ def _strategy_preflight_for_decision(
                 ),
             }
         )
-    corpus_route = str(corpus_harvester.get("selected_learning_route") or "")
     if corpus_route in {"human_gate_required", "defer_to_intake"}:
-        blocked.append(
-            {
-                "action": action,
-                "reason": (
-                    "learning harvester corpus recommendation is "
-                    f"{corpus_route}; route through inbox/intake or human gate first"
-                ),
-            }
-        )
+        if not human_gate_acknowledgement.get("accepted"):
+            blocked.append(
+                {
+                    "action": action,
+                    "reason": (
+                        "learning harvester corpus recommendation is "
+                        f"{corpus_route}; route through inbox/intake or human gate first"
+                    ),
+                }
+            )
     readiness = (
         route_decision.get("readiness_evidence")
         if isinstance(route_decision.get("readiness_evidence"), dict)
@@ -1344,6 +1399,7 @@ def _strategy_preflight_for_decision(
             "campaign_recommendation": corpus_harvester,
             "write_authority": "advisory_only_scope_gates_still_required",
         },
+        "human_gate_acknowledgement": human_gate_acknowledgement,
         "gate_status": {
             "active_scope": bool(active_scope),
             "active_scope_id": str(active_scope.get("session_id") or ""),
