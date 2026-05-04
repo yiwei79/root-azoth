@@ -1,0 +1,178 @@
+schema_version: 1
+campaign_id: ini-rst-006-continuity-snapshots-20260504
+title: Historical phase boards / continuity snapshots
+initiative_ref: INI-RST-006
+status: prepared_pending_start_approval
+prepared_at: "2026-05-04T20:18:00Z"
+prepared_by: codex
+mode: autonomous-auto
+purpose: >
+  Prepare a bounded campaign for INI-RST-006 so Azoth can create lightweight
+  repo-local historical phase boards and continuity snapshots without turning
+  them into a second planning source of truth.
+operator_intent: >
+  Design and prepare the system to do a campaign for Historical phase boards /
+  continuity snapshots (INI-RST-006).
+current_repo_state:
+  branch: codex/autonomous-roadmap-self-development
+  active_version: v0.2.0-p4
+  phase_policy: >
+    v0.2.0-p4 is a post-stable named-lane repair/reconciliation window. This
+    campaign must not schedule broad new feature work or mutate canonical
+    roadmap/backlog truth unless a later explicit hydration/delivery gate opens.
+  live_scope: none
+  live_write_claim: none
+canonical_initiative:
+  id: INI-RST-006
+  title: Historical phase boards / continuity snapshots
+  category: run-state
+  priority: low
+  roadmap_summary: >
+    Maintain lightweight repo-local history boards for completed phases or
+    milestone slices when a human-readable retrospective snapshot is useful for
+    continuity. These boards live under `.azoth/` and summarize canonical
+    roadmap/backlog state without becoming a second automation source of truth.
+existing_evidence:
+  exemplar_board:
+    path: .azoth/roadmap-specs/v0.2.0/PHASE-02-HISTORY.md
+    useful_contract_points:
+      - names canonical roadmap/backlog as authority
+      - records completed items and carry-forward items
+      - includes a human historical read
+      - explicitly says the board does not drive automation
+  related_surfaces:
+    - .azoth/roadmap.yaml#INI-RST-006
+    - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md
+    - .agents/skills/orientation/SKILL.md
+    - scripts/roadmap_dashboard.py
+    - scripts/welcome.py
+  memory_caution: >
+    Retrospective and continuity surfaces must separate campaign completion,
+    repo readiness, and public/product readiness. A board may summarize, but it
+    must never certify readiness beyond the commands and canonical evidence it
+    cites.
+campaign_design:
+  success_anchor: >
+    Operators have a compact, human-readable continuity board set for selected
+    completed phase/milestone slices, with explicit source-of-truth boundaries,
+    carry-forward notes, and validation that the boards are parseable/non-driving.
+  recommended_first_slice:
+    candidate_id: slice-rst-006-a
+    proposed_title: Historical board contract and first continuity snapshot set
+    action_sequence:
+      - research_initiative
+      - ship_task
+    rationale: >
+      Start from the existing PHASE-02-HISTORY.md exemplar and produce the
+      narrowest useful continuation: a board contract plus one or two missing
+      high-value snapshots, likely v0.2.0-p3 and v0.2.0-p4. Avoid trying to
+      rewrite all historical phases in one campaign.
+  deliverables:
+    - path: .azoth/campaigns/ini-rst-006-continuity-snapshots-20260504/context.yaml
+      role: campaign declaration and preparation record
+      status: prepared
+    - path: .azoth/roadmap-specs/v0.2.0/PHASE-HISTORY-BOARD-CONTRACT.md
+      role: proposed contract for non-authoritative history boards
+      status: planned_for_campaign
+    - path: .azoth/roadmap-specs/v0.2.0/PHASE-03-HISTORY.md
+      role: candidate first missing historical board
+      status: planned_for_campaign
+    - path: .azoth/roadmap-specs/v0.2.0/PHASE-04-HISTORY.md
+      role: candidate post-stable continuity board
+      status: planned_for_campaign_optional_if_budget_allows
+  acceptance_criteria:
+    - Boards state that `.azoth/roadmap.yaml` and `.azoth/backlog.yaml` remain canonical.
+    - Boards are human-readable continuity aids and do not drive automation.
+    - Each board cites the roadmap/backlog/spec/postmortem evidence it summarizes.
+    - Completed-task lists are derived from canonical state, not hand-invented from chat memory.
+    - Carry-forward or residual sections are clearly marked as historical read, not open scope.
+    - Validation includes YAML/Markdown existence checks and at least one roadmap/dashboard sanity command.
+  known_non_goals:
+    - No roadmap/backlog source-of-truth mutation in the preparation step.
+    - No kernel, governance, M1, release, public sync, cockpit/project, backup, credential, or dependency work.
+    - No claim that a historical board makes the repo, public product, or cockpit ready.
+    - No broad rewrite of all legacy phases in the first campaign.
+    - No generated platform mirror updates unless a future implementation slice edits source command/skill surfaces.
+budget_recommendation:
+  max_child_scopes: 3
+  replay_threshold: 1
+  budget_rationale: >
+    Use one research/design child to lock the board contract and exact source
+    inventory, one ship_task child to create the first board set, and keep one
+    bounded replay child for drift or validation fixes. If the research child
+    finds canonical ambiguity, stop before writing boards.
+  child_scopes:
+    - child: 1
+      action: research_initiative
+      title: Board contract and source inventory
+      writes_allowed:
+        - campaign report updates
+        - optional draft board-contract artifact
+      exit_gate: >
+        Exact board names, canonical source refs, and non-authoritative contract
+        are clear enough to implement without guessing.
+    - child: 2
+      action: ship_task
+      title: First continuity snapshot set
+      writes_allowed:
+        - .azoth/roadmap-specs/v0.2.0/PHASE-HISTORY-BOARD-CONTRACT.md
+        - .azoth/roadmap-specs/v0.2.0/PHASE-03-HISTORY.md
+        - .azoth/roadmap-specs/v0.2.0/PHASE-04-HISTORY.md
+      exit_gate: >
+        Boards are committed separately from closeout, validation passes, and
+        no canonical planning state is mutated.
+    - child: 3
+      action: ship_task
+      title: Bounded replay only if validation fails
+      writes_allowed:
+        - files touched by child 2
+      exit_gate: >
+        Only fix concrete review/validation issues; otherwise leave unused.
+protected_boundaries:
+  blocked:
+    - public sync or release
+    - public checkout mutation
+    - cockpit or project writes
+    - backup/private remote or credential work
+    - kernel/governance/M1 mutation
+    - dependency or network expansion
+    - destructive actions
+    - broad roadmap/backlog rephasing
+preflight_commands_for_start:
+  - python3 scripts/autonomous_loop.py status --json
+  - python3 scripts/run_ledger.py status
+  - git status --short
+  - python3 scripts/roadmap_dashboard.py
+  - python3 scripts/azoth-deploy.py --check
+suggested_loop_init:
+  loop_id: ini-rst-006-continuity-snapshots-20260504
+  allowed_actions:
+    - research_initiative
+    - ship_task
+  queue_candidate:
+    action: research_initiative
+    candidate_id: ini-rst-006-board-contract-and-first-snapshot-set
+    title: Historical board contract and first continuity snapshot set
+    source: INI-RST-006
+    target_classification: research-first-delivery
+    protected: false
+  approval_basis_template: >
+    Operator approves the INI-RST-006 Historical phase boards / continuity
+    snapshots campaign as a repo-local continuity campaign. Budget is up to 3
+    child scopes with 1 bounded replay. Allowed actions are research_initiative
+    and ship_task limited to non-authoritative history-board artifacts under
+    `.azoth/roadmap-specs/v0.2.0/` and campaign reports. Public sync/release,
+    public checkout mutation, cockpit/project writes, backup/private remote,
+    kernel/governance/M1, dependency/network/credential/destructive actions, and
+    broad roadmap/backlog rephasing remain blocked.
+start_readiness:
+  verdict: ready_for_operator_start_approval
+  reason: >
+    The repo is clean, no active run/write claim is present, INI-RST-006 is a
+    low-risk phase-null initiative, and an exemplar board already exists. The
+    future campaign should still begin with a research/design child so the board
+    contract is locked before writing new snapshots.
+  next_operator_prompt: >
+    Approve the INI-RST-006 continuity snapshots campaign using the prepared
+    3-child budget and protected boundaries; start with the board contract and
+    source inventory child.
