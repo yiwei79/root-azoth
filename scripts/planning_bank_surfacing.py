@@ -75,7 +75,7 @@ def _candidate_by_id(candidates: Any, candidate_id: str | None) -> dict[str, Any
     return {}
 
 
-_OPEN_CANDIDATE_STATUSES = {"candidate", "parked", "ready_to_hydrate"}
+_OPEN_CANDIDATE_STATUSES = {"candidate", "ready_to_hydrate"}
 _CLOSED_CANDIDATE_STATUSES = {"hydrated", "complete", "completed"}
 _BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
 _APPROVAL_BOUNDARY = (

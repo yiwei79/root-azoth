@@ -166,3 +166,51 @@ def test_initiative_summary_surfaces_context_recovery_when_all_candidates_closed
     plain = "\n".join(format_planning_bank_plain(summaries))
     assert "readiness: needs_context_recovery" in plain
     assert "ready_to_hydrate" not in plain
+
+
+def test_initiative_summary_does_not_surface_parked_candidate_after_completed_slice(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    bank_dir = azoth_dir / "initiative-banks"
+    bank_dir.mkdir(parents=True)
+    (azoth_dir / "backlog.yaml").write_text(
+        "schema_version: 1\nitems:\n  - id: T-058\n    status: complete\n",
+        encoding="utf-8",
+    )
+    (bank_dir / "INI-MEM-003.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: initiative\n"
+        "initiative_id: INI-MEM-003\n"
+        "title: Vector retrieval layer for M3 context-recall\n"
+        "status: active_refinement\n"
+        "readiness:\n"
+        "  readiness_status: ready_to_hydrate\n"
+        "  human_decision: approved\n"
+        "  candidate_first_slice: slice-mem-003-d\n"
+        "  hydration_recommendation: slice-mem-003-d has been hydrated as T-058. Do not repeat hydration.\n"
+        "candidate_slices:\n"
+        "  - candidate_id: slice-mem-003-d\n"
+        "    proposed_task_id: T-058\n"
+        "    status: hydrated\n"
+        "    hydration_plan:\n"
+        "      hydrated_task_ref: T-058\n"
+        "  - candidate_id: slice-mem-003-b\n"
+        "    proposed_task_id: TBD-MEM-003-B\n"
+        "    title: Optional vector backend spike behind explicit dependency gate\n"
+        "    status: parked\n",
+        encoding="utf-8",
+    )
+
+    summaries = load_planning_bank_summaries(tmp_path)
+    bank = summaries["initiative_banks"][0]
+
+    assert bank["candidate_id"] == "slice-mem-003-d"
+    assert bank["candidate_task_ref"] == "T-058"
+    assert bank["surface_readiness_status"] == "needs_context_recovery"
+    assert bank["open_candidate_count"] == 0
+    assert "TBD-MEM-003-B" not in bank["route_hint"]
+
+    plain = "\n".join(format_planning_bank_plain(summaries))
+    assert "candidate slice-mem-003-d -> T-058 (hydrated)" in plain
+    assert "TBD-MEM-003-B" not in plain

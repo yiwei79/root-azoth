@@ -113,6 +113,25 @@ def test_hydrated_candidate_refuses_repeat_hydration(tmp_path: Path) -> None:
     assert capsule["allowed_write_set_after_gate"] == []
 
 
+def test_hydrated_candidate_with_completed_backlog_is_fulfilled(tmp_path: Path) -> None:
+    bank = _base_bank("INI-TEMP-004", "slice-temp-004-a")
+    bank["candidate_slices"][0]["status"] = "hydrated"
+    bank["candidate_slices"][0]["proposed_task_id"] = "T-777"
+    bank_path = _write_bank(tmp_path, bank)
+    backlog_path = tmp_path / ".azoth" / "backlog.yaml"
+    backlog_path.write_text(
+        "schema_version: 1\nitems:\n  - id: T-777\n    status: complete\n",
+        encoding="utf-8",
+    )
+
+    capsule = build_mobility_capsule([bank_path], repo_root=tmp_path)
+
+    evaluation = capsule["candidate_evaluations"][0]
+    assert evaluation["route_state"] == "fulfilled_or_stale"
+    assert evaluation["selected_route"] == "stop_or_research_fresh_seed"
+    assert capsule["human_gate_required"] is False
+
+
 def test_complete_candidate_refuses_fulfilled_lane(tmp_path: Path) -> None:
     bank = _base_bank("INI-TEMP-003", "slice-temp-003-a")
     bank["readiness"]["readiness_status"] = "complete"

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from planning_bank_validate import build_initiative_readiness_report
+from yaml_helpers import safe_load_yaml_path
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +39,7 @@ NON_GOALS = [
     "No kernel/governance/M1 mutation",
     "No commit or push",
 ]
+_BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
 
 
 def _utc_now() -> str:
@@ -51,11 +53,32 @@ def discover_initiative_banks(repo_root: Path) -> list[Path]:
     return sorted(path for path in bank_dir.glob("*.yaml") if path.is_file())
 
 
-def _route_report(report: dict[str, Any]) -> tuple[str, str]:
+def _backlog_status_for_task(repo_root: Path, task_ref: str) -> str:
+    if not task_ref:
+        return ""
+    backlog_path = repo_root / ".azoth" / "backlog.yaml"
+    if not backlog_path.exists():
+        return ""
+    backlog = safe_load_yaml_path(backlog_path) or {}
+    items = backlog.get("items") if isinstance(backlog, dict) else None
+    if not isinstance(items, list):
+        return ""
+    for item in items:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == task_ref:
+            return str(item.get("status") or "").strip()
+    return ""
+
+
+def _route_report(report: dict[str, Any], *, repo_root: Path = ROOT) -> tuple[str, str]:
     candidate_status = str(report.get("candidate_status") or "")
     readiness_status = str(report.get("readiness_status") or "")
+    task_status = _backlog_status_for_task(
+        repo_root, str(report.get("candidate_task_ref") or "")
+    ).casefold()
     if report.get("ready_to_hydrate"):
         return "candidate_ready_for_review", "stop_for_human_gate"
+    if task_status in _BACKLOG_DONE_STATUSES:
+        return "fulfilled_or_stale", "stop_or_research_fresh_seed"
     if candidate_status == "hydrated":
         return "hydrated_not_delivered", "stop_or_delivery_gate"
     if candidate_status == "complete" or readiness_status == "complete":
@@ -96,8 +119,10 @@ def _approval_prompt(report: dict[str, Any]) -> str:
     )
 
 
-def _candidate_evaluation(report: dict[str, Any]) -> dict[str, Any]:
-    route_state, selected_route = _route_report(report)
+def _candidate_evaluation(
+    report: dict[str, Any], *, repo_root: Path = ROOT
+) -> dict[str, Any]:
+    route_state, selected_route = _route_report(report, repo_root=repo_root)
     evaluation = {
         "initiative_id": report.get("initiative_id"),
         "source_bank_ref": report.get("source_bank_ref"),
@@ -129,7 +154,7 @@ def build_mobility_capsule(
         build_initiative_readiness_report(path, repo_root=repo_root)
         for path in bank_paths
     ]
-    evaluations = [_candidate_evaluation(report) for report in reports]
+    evaluations = [_candidate_evaluation(report, repo_root=repo_root) for report in reports]
     ready_candidates = [
         item for item in evaluations if item.get("ready_to_hydrate") is True
     ]
