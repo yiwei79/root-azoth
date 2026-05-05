@@ -4,12 +4,12 @@
 0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
 
 ## Last Session
-- **Session**: 2026-05-05-autonomous-auto-post-green-route-truth-audit-1
-- **Goal**: Route-truth audit across live candidate surfaces
+- **Session**: 2026-05-05-autonomous-auto-ini-mem-003-dashboard-route-readback-repair-1
+- **Goal**: Align route/readback/dashboard surfaces so INI-MEM-003 reports slice-mem-003-d -> T-058 as hydrated and blocks repeat hydration messaging.
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-568 (success)
+- **Episode**: ep-570 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
@@ -20,4 +20,4 @@
 - None.
 
 ## Next Action
-- Run `/next` to select the next scoped task.
+- Administrative finalize complete — run `/next` to select the next scoped task.

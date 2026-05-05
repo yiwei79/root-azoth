@@ -10,6 +10,9 @@ from planning_bank_surfacing import format_planning_bank_plain  # noqa: E402
 from planning_bank_surfacing import load_planning_bank_summaries  # noqa: E402
 
 
+ROOT = Path(__file__).resolve().parent.parent
+
+
 def test_initiative_summary_surfaces_next_open_candidate_after_hydrated_slice(
     tmp_path: Path,
 ) -> None:
@@ -214,3 +217,19 @@ def test_initiative_summary_does_not_surface_parked_candidate_after_completed_sl
     plain = "\n".join(format_planning_bank_plain(summaries))
     assert "candidate slice-mem-003-d -> T-058 (hydrated)" in plain
     assert "TBD-MEM-003-B" not in plain
+
+
+def test_ini_mem_003_live_surfacing_reports_hydrated_t058_truth() -> None:
+    summaries = load_planning_bank_summaries(ROOT)
+    initiatives = {
+        str(bank.get("id")): bank for bank in summaries.get("initiative_banks", [])
+    }
+    bank = initiatives["INI-MEM-003"]
+
+    assert bank["readiness_candidate_id"] == "slice-mem-003-d"
+    assert bank["candidate_id"] == "slice-mem-003-d"
+    assert bank["candidate_task_ref"] == "T-058"
+    assert bank["candidate_status"] == "hydrated"
+    assert bank["ready_to_hydrate"] is False
+    assert "Do not repeat hydration" in bank["route_hint"]
+    assert "route implementation through a separate delivery child" in bank["route_hint"]

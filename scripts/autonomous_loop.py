@@ -198,6 +198,8 @@ def _active_scope(root: Path) -> dict[str, Any]:
         return {}
     if not isinstance(data, dict) or data.get("approved") is not True:
         return {}
+    if str(data.get("closed_at") or "").strip():
+        return {}
     if str(data.get("scope_status") or "active").strip() not in {"", "active"}:
         return {}
     expires = _parse_iso(str(data.get("expires_at") or ""))

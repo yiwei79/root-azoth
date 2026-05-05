@@ -384,6 +384,38 @@ def test_completed_loop_read_ignores_unrelated_active_scope(tmp_path: Path) -> N
     assert read["next_likely_move"] == "complete: vision_realized"
 
 
+def test_closed_scope_gate_does_not_block_next_iteration(tmp_path: Path) -> None:
+    state_path = _state(
+        tmp_path,
+        queue=[
+            {
+                "action": "ship_task",
+                "candidate_id": "readback-repair",
+                "title": "Readback repair",
+                "target_layer": "infrastructure",
+                "delivery_pipeline": "standard",
+            }
+        ],
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "session_id": "already-closed-scope",
+            "closed_at": "2026-05-05T18:00:00Z",
+        },
+    )
+
+    status = autonomous_loop.loop_status(tmp_path, state_path)
+    decision = autonomous_loop.decide_next(tmp_path, state_path)
+
+    assert status["active_scope_id"] == ""
+    assert status["can_continue"] is True
+    assert decision["action"] == "ship_task"
+    assert decision["candidate_id"] == "readback-repair"
+
+
 def test_completed_green_campaign_report_exposes_advisory_next_campaign_packet(
     tmp_path: Path,
 ) -> None:
