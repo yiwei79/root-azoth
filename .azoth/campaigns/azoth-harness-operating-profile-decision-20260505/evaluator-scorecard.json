@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "packet_type": "azoth_harness_operating_profile_decision_scorecard",
+  "campaign_id": "azoth-harness-operating-profile-decision-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-azoth-harness-operating-profile-decision-1",
+  "threshold": 0.9,
+  "score": 0.92,
+  "verdict": "pass",
+  "selected_decision": "profile_split_with_azoth_full_governed_boundary",
+  "recommended_next_internal_campaign": "azoth-lite-profile-evidence-reconciliation-and-shadow-trial-plan",
+  "dimensions": {
+    "repo_native_discovery": {
+      "score": 0.94,
+      "evidence": "Read command contract, autonomous-auto skill, proposal, product-strategy artifacts, profile-split research pack, classifier, tests, fixtures, and architecture docs."
+    },
+    "boundary_safety": {
+      "score": 0.96,
+      "evidence": "Hydration, implementation, commits, pushes, public release/sync/freshness, public/cockpit/project mutation, dependencies, credentials, kernel/governance/M1, and destructive actions remain blocked."
+    },
+    "operating_profile_clarity": {
+      "score": 0.93,
+      "evidence": "Decision separates stock-lite, azoth-lite, azoth-full, and meta-harness-experimental, with explicit full-governed surfaces."
+    },
+    "readiness_truth": {
+      "score": 0.88,
+      "evidence": "Acknowledges implemented classifier/docs/tests while preserving missing source matrix, contract artifact, benchmark evidence, and harness validator as proof gaps."
+    },
+    "operator_alignment": {
+      "score": 0.94,
+      "evidence": "Incorporates operator correction that public release is on-demand only and must not be automatically selected."
+    },
+    "pipeline_visibility": {
+      "score": 0.87,
+      "evidence": "Child scope and run ledger exist, but the pipeline visibility correction happened after the operator asked whether a pipeline was being used."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.86,
+      "finding": "Initial execution opened the autonomous-auto child scope but started evidence synthesis before making stage evidence visible enough to the operator.",
+      "disposition": "Recorded inline exception and stage summary for s1_architect, then continued with explicit reviewer/evaluator evidence."
+    },
+    {
+      "iteration": 2,
+      "score": 0.92,
+      "finding": "Decision is scoped, boundary-safe, and grounded in current repo evidence; remaining weakness is missing harness-specific source/contract proof.",
+      "disposition": "Pass with next internal campaign focused on evidence reconciliation rather than implementation."
+    }
+  ],
+  "rejected_alternatives": [
+    {
+      "candidate": "direct-harness-simplification-now",
+      "reason": "Rejected because source matrix, structured contract, benchmark evidence, and harness-specific validator are absent."
+    },
+    {
+      "candidate": "defer-harness-rethink-entirely",
+      "reason": "Rejected because profile split already has accepted direction and implemented advisory classifier/test evidence."
+    },
+    {
+      "candidate": "public-release-readiness-or-freshness-campaign",
+      "reason": "Rejected because the operator clarified public release work is on-demand only and never an automatic autonomous candidate."
+    },
+    {
+      "candidate": "hydrate-roadmap-task",
+      "reason": "Rejected because the campaign blocks hydration and PM mobility reports zero safe hydration candidates."
+    },
+    {
+      "candidate": "implementation-or-default-switch",
+      "reason": "Rejected because the approved campaign blocks implementation and readiness evidence is incomplete."
+    }
+  ],
+  "residual_risks": [
+    "The profile split may already be partially implemented ahead of the missing contract artifact.",
+    "Future governed-path additions must update azoth-lite escalation fixtures or under-gating risk increases.",
+    "The next internal campaign should avoid becoming a hidden implementation lane.",
+    "Public release/sync/freshness lanes must remain blocked unless explicitly requested on demand."
+  ]
+}

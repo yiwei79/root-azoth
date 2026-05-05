@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "packet_type": "autonomous_auto_child_evaluator_scorecard",
+  "campaign_id": "multi-operating-profile-feature-completion-rerun-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-contract-validation-rerun-2",
+  "route": "refine_proposal",
+  "threshold": 0.9,
+  "score": 0.93,
+  "verdict": "pass",
+  "dimensions": {
+    "real_spawned_stage_evidence": {
+      "score": 0.94,
+      "evidence": "Architect and reviewer stages have real spawn plus summary evidence verified by require-stage-evidence; evaluator stage is spawned and must be summarized before closeout."
+    },
+    "contract_validation": {
+      "score": 0.95,
+      "evidence": "Spawned architect and reviewer both adopted profile-contract.md as the internal rerun contract without requiring rewrite."
+    },
+    "implementation_specificity": {
+      "score": 0.93,
+      "evidence": "Child 3 is bounded to scripts/azoth_lite.py and focused classifier fixtures/tests."
+    },
+    "boundary_safety": {
+      "score": 0.96,
+      "evidence": "Hydration, public release/sync/freshness, commits/pushes, dependencies, credentials, destructive actions, cockpit/project writes, generated-surface churn, and kernel/governance/M1 remain blocked."
+    },
+    "residual_risk_clarity": {
+      "score": 0.9,
+      "evidence": "Residual risks are carried into child 3: autonomous-continuation fixture, helper too-light classification, and handoff schema alignment."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.93,
+      "disposition": "pass",
+      "finding": "Contract validation is complete enough to proceed to the bounded helper proof slice; no replay required."
+    }
+  ],
+  "bounded_replay_count": 0,
+  "rejected_alternatives": [
+    {
+      "candidate": "contract_rewrite",
+      "reason": "Rejected because spawned architect/reviewer found the contract sufficient."
+    },
+    {
+      "candidate": "broad_default_switch",
+      "reason": "Rejected because helper proof and shadow/eval scoring are still required."
+    },
+    {
+      "candidate": "public_release_or_freshness",
+      "reason": "Rejected because it is explicitly on-demand only."
+    },
+    {
+      "candidate": "hydrate_task",
+      "reason": "Rejected because campaign boundaries block roadmap/backlog/spec hydration."
+    }
+  ],
+  "residual_risks": [
+    "Child 3 must stay within helper/test surfaces and avoid generated-surface churn.",
+    "Autonomous continuation remains unimplemented in the helper until child 3.",
+    "Helper handoff_packet schema alignment remains undecided until child 3."
+  ],
+  "selected_next_child": {
+    "route": "ship_task",
+    "candidate_id": "multi-operating-profile-helper-proof-slice",
+    "goal": "Implement the smallest internal helper/test proof slice for autonomous continuation escalation and helper handoff schema alignment."
+  },
+  "final_disposition": "pass"
+}

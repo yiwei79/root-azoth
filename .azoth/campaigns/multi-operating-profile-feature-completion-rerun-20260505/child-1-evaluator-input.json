@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "campaign_id": "multi-operating-profile-feature-completion-rerun-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-reconciliation-rerun-1",
+  "route": "research_initiative",
+  "spawned_stages": [
+    {
+      "stage_id": "autonomous_auto_s1_architect",
+      "agent_id": "019df9f5-a6c3-7db1-a8f2-2e24378b28ed",
+      "subagent_type": "architect",
+      "stage_evidence": "paired_spawn_and_summary_verified"
+    },
+    {
+      "stage_id": "autonomous_auto_s2_researcher",
+      "agent_id": "019df9fa-9f2c-77d3-9ceb-0560325914fe",
+      "subagent_type": "researcher",
+      "stage_evidence": "paired_spawn_and_summary_verified"
+    }
+  ],
+  "confirmed_gaps": [
+    "autonomous_continuation_fixture_missing",
+    "helper_plain_autonomous_continuation_phrase_can_classify_too_light",
+    "helper_handoff_packet_is_contract_subset",
+    "shadow_eval_autonomous_continuation_not_yet_scored"
+  ],
+  "recommended_next_child": {
+    "route": "refine_proposal",
+    "candidate_id": "multi-operating-profile-contract-validation-rerun",
+    "goal": "Validate/adopt the internal profile contract under corrected spawned-stage orchestration and name the smallest ship_task proof slice."
+  },
+  "blocked_alternatives": [
+    "public_release_sync_or_freshness",
+    "roadmap_backlog_spec_hydration",
+    "commit_push_packaging",
+    "network_or_dependencies",
+    "credentials_or_backups",
+    "destructive_actions",
+    "cockpit_or_project_writes",
+    "kernel_governance_m1_mutation"
+  ]
+}

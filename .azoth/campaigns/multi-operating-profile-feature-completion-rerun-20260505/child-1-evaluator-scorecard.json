@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "packet_type": "autonomous_auto_child_evaluator_scorecard",
+  "campaign_id": "multi-operating-profile-feature-completion-rerun-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-reconciliation-rerun-1",
+  "route": "research_initiative",
+  "threshold": 0.9,
+  "score": 0.92,
+  "verdict": "pass_after_bounded_replay",
+  "dimensions": {
+    "real_spawned_stage_evidence": {
+      "score": 0.94,
+      "evidence": "Architect and researcher stages have real spawn plus summary evidence verified by require-stage-evidence; evaluator was spawned and replayed after the first failed scorecard finding."
+    },
+    "repo_native_evidence_completeness": {
+      "score": 0.91,
+      "evidence": "Rerun context, scope gate, run ledger policy, reconciliation artifact, evaluator input JSON, and focused tests are present."
+    },
+    "boundary_safety": {
+      "score": 0.95,
+      "evidence": "Public release/sync/freshness, hydration, commits/pushes, network/dependencies, credentials/backups, destructive actions, cockpit/project writes, and kernel/governance/M1 remain blocked."
+    },
+    "next_child_specificity": {
+      "score": 0.92,
+      "evidence": "Next child is specifically refine_proposal: validate/adopt the internal profile contract under corrected spawned-stage orchestration and name the smallest ship_task proof slice."
+    },
+    "evaluator_iterative_improvement_completeness": {
+      "score": 0.91,
+      "evidence": "Iteration history records the initial spawned-evaluator fail at 0.76 and the narrow bounded replay to materialize the formal packet."
+    },
+    "residual_risk_clarity": {
+      "score": 0.9,
+      "evidence": "Residual risks are tied to the next child and child 3: autonomous-continuation fixture coverage, direct helper classification, handoff schema alignment, and shadow/eval scoring."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.76,
+      "disposition": "fail_replay_required",
+      "finding": "Spawned evaluator found that the evaluator packet and s3 summary did not yet exist; child 2 must not open before a narrow replay."
+    },
+    {
+      "iteration": 2,
+      "score": 0.92,
+      "disposition": "pass_after_bounded_replay",
+      "finding": "Formal scorecard materialized with required fields and replay accounting; stage summary can be recorded after replay evaluator validation."
+    }
+  ],
+  "bounded_replay_count": 1,
+  "rejected_alternatives": [
+    {
+      "candidate": "open_child_2_before_evaluator_packet",
+      "reason": "Rejected by spawned evaluator because child 1 lacked a formal evaluator packet and s3 summary."
+    },
+    {
+      "candidate": "treat_s1_s2_only_as_complete",
+      "reason": "Rejected because rerun context requires architect, researcher, and evaluator stages."
+    },
+    {
+      "candidate": "rely_on_inline_exception_or_narrative_green",
+      "reason": "Rejected because inline exceptions are audit-only and narrative green claims are incomplete instrumentation."
+    },
+    {
+      "candidate": "hydrate_or_ship_immediately",
+      "reason": "Rejected because campaign boundaries and child 1 findings require refine_proposal first."
+    }
+  ],
+  "residual_risks": [
+    "Autonomous continuation is contractually azoth-full but still lacks a named classifier fixture.",
+    "Direct helper classification of plain autonomous-continuation language can classify too light without action/path hints.",
+    "Helper handoff_packet remains a smaller advisory subset than the full contract schema.",
+    "Shadow/eval proof still needs to score autonomous continuation under the corrected spawned-stage campaign."
+  ],
+  "selected_next_child": {
+    "route": "refine_proposal",
+    "candidate_id": "multi-operating-profile-contract-validation-rerun",
+    "goal": "Validate/adopt the internal profile contract under corrected spawned-stage orchestration and name the smallest ship_task proof slice."
+  },
+  "final_disposition": "pass_after_bounded_replay"
+}

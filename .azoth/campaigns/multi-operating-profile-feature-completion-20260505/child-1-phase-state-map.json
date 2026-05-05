@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "campaign_id": "multi-operating-profile-feature-completion-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-reconciliation-1",
+  "route": "research_initiative",
+  "phase_state": {
+    "phase_0_proposal_review": {
+      "status": "accepted",
+      "evidence": [
+        "meta_session_research/architecture-update-proposal/migration-phases.md"
+      ],
+      "decision": "Use as strategy anchor."
+    },
+    "phase_1_manual_shadow_azoth_lite": {
+      "status": "complete_narrow",
+      "evidence": [
+        "meta_session_research/manual-trials/azoth-lite-phase-1-shadow-pack/run-log.md"
+      ],
+      "decision": "Real shadow proof, but not enough for broad defaults."
+    },
+    "phase_2_minimal_helper_and_fixtures": {
+      "status": "implemented_advisory",
+      "evidence": [
+        "scripts/azoth_lite.py",
+        "tests/test_azoth_lite_classifier.py",
+        "tests/fixtures/azoth_lite_phase2_cases.json"
+      ],
+      "decision": "Treat as opt-in classifier machinery."
+    },
+    "phase_3_advisory_routing_integration": {
+      "status": "partially_implemented",
+      "evidence": [
+        "scripts/codex_control_plane.py",
+        "commands/start/body.md",
+        "commands/next/body.md",
+        ".agents/workflows/start.md",
+        ".agents/workflows/next.md",
+        "docs/AZOTH_ARCHITECTURE.md"
+      ],
+      "decision": "Reconcile with a canonical contract before further hardening."
+    },
+    "phase_4_default_posture_switch": {
+      "status": "not_complete",
+      "evidence": [
+        "meta_session_research/architecture-update-proposal/migration-phases.md",
+        "docs/AZOTH_ARCHITECTURE.md"
+      ],
+      "decision": "Do not broaden in this child."
+    },
+    "phase_5_meta_harness_experimental": {
+      "status": "research_only",
+      "evidence": [
+        ".azoth/campaigns/azoth-harness-operating-profile-decision-20260505/operating-profile-decision.md"
+      ],
+      "decision": "Keep separate from current production defaults."
+    }
+  },
+  "selected_next_child": {
+    "route": "refine_proposal",
+    "name": "multi-operating-profile-contract",
+    "purpose": "Lock canonical profile contract, trace and handoff semantics, implementation source map, and proof plan."
+  },
+  "blocked_candidates": [
+    "public_release_sync_or_freshness",
+    "roadmap_backlog_spec_hydration",
+    "broad_default_switch",
+    "meta_harness_productionization",
+    "commit_push_or_packaging"
+  ]
+}

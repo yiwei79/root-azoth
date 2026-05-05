@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "campaign_id": "azoth-harness-operating-profile-decision-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-azoth-harness-operating-profile-decision-1",
+  "action": "refine_proposal",
+  "status": "decision_ready",
+  "selected_operating_profile_decision": {
+    "stock_lite": "simple read-only/status baseline",
+    "azoth_lite": "ordinary repo work, focused verification, local non-governed edits, and pre-action judgment",
+    "azoth_full": "governed state, autonomous continuation, finality, closeout, packaging, kernel/governance, high-audit delivery, and protected boundaries",
+    "meta_harness_experimental": "long-term research track only"
+  },
+  "selected_next_internal_campaign": {
+    "name": "Azoth-Lite Profile Evidence Reconciliation And Shadow Trial Plan",
+    "route": "refine_proposal",
+    "goal": "Reconcile accepted profile-split research with implemented azoth-lite classifier, docs, fixtures, and Codex routing, then produce the next proof plan without changing runtime defaults."
+  },
+  "blocked_by_operator_or_budget": [
+    "public release/sync/freshness work unless explicitly requested on demand",
+    "public azoth mutation",
+    "cockpit/project repo writes",
+    "hydrate_task",
+    "ship_task",
+    "implementation",
+    "commits",
+    "pushes",
+    "network/dependencies",
+    "credentials/backups",
+    "kernel/governance/M1 mutation",
+    "destructive actions"
+  ],
+  "evaluator": {
+    "score": 0.92,
+    "threshold": 0.9,
+    "verdict": "pass",
+    "bounded_replay_used": 1,
+    "bounded_replay_reason": "Pipeline visibility correction after operator challenge."
+  },
+  "residual_risks": [
+    "Missing source matrix and structured contract should be reconciled before any further default change.",
+    "Existing azoth-lite advisory implementation must remain escalation-safe for governed surfaces.",
+    "Public release work must stay on-demand only."
+  ]
+}

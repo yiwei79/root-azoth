@@ -1,0 +1,53 @@
+schema_version: 1
+campaign_id: multi-operating-profile-feature-completion-rerun-20260505
+name: Multi-Operating Profile Feature Completion Rerun
+mode: autonomous-auto
+branch: phase/v0.2.0-p4
+created_at: "2026-05-05"
+status: active_rerun
+approval_basis: >-
+  Operator instructed: fix the gap where the system is not using pipeline
+  patterns properly, then rerun the campaign with the correct orchestration
+  pattern.
+rerun_reason: >-
+  The prior campaign attempt used inline exceptions and summaries rather than
+  real spawned subagent stage evidence. That path is invalidated.
+design_intent: >-
+  Rerun the internal multi-operating-profile feature campaign end-to-end with
+  real spawned subagent stages, per-stage spawn_required evidence policy,
+  evaluator iterative-improvement packets, and child-session closeout before
+  later children.
+budget:
+  max_child_scopes: 6
+  bounded_replays_per_child: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+  - capture_self_improvement
+blocked_without_fresh_gate:
+  - hydrate_task
+  - roadmap_backlog_or_spec_hydration
+  - public_azoth_mutation
+  - public_release_sync_or_freshness_work
+  - cockpit_or_project_repo_writes
+  - network_or_dependency_expansion
+  - credential_or_backup_work
+  - kernel_governance_or_m1_mutation
+  - destructive_actions
+  - commits_or_pushes
+orchestration_requirement:
+  each_child_is_own_session: true
+  real_spawned_subagents_required: true
+  inline_exceptions_are_audit_only: true
+  completion_gate: scripts/run_ledger.py require-completion-evidence
+  required_policy: spawn_required
+initial_queue:
+  - action: research_initiative
+    candidate_id: multi-operating-profile-reconciliation-rerun
+    title: Multi-operating profile reconciliation rerun
+    source: locked-campaign-declaration-rerun
+    goal: >-
+      Rerun child 1 with real spawned architect, researcher, and evaluator
+      stages: reconcile accepted profile-split research with implemented
+      classifier/routing/docs/tests and select the next bounded child.
