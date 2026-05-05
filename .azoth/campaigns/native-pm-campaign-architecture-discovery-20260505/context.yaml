@@ -1,0 +1,67 @@
+schema_version: 1
+campaign_id: native-pm-campaign-architecture-discovery-20260505
+title: Native PM Campaign Architecture Discovery
+status: active_child_1_research_complete
+prepared_at: "2026-05-05T19:40:00Z"
+prepared_by: codex
+mode: autonomous-auto
+operator_approval:
+  approved_at: "2026-05-05T19:39:00Z"
+  approval_basis: >
+    Operator approved autonomous-auto campaign on 2026-05-05: Native PM
+    Campaign Architecture Discovery. Goal: inspect live repo-native route truth
+    and product-strategy surfaces, compare the best next Azoth lanes, and
+    produce one approval-ready autonomous-auto campaign declaration. Budget up
+    to 3 child scopes with 1 bounded replay. Allowed actions:
+    research_initiative, refine_proposal, capture_self_improvement. Blocked:
+    hydrate_task, ship_task, public sync/release, public/cockpit/project repo
+    mutation, private-root backup or credentials, kernel/governance/M1 mutation,
+    dependency/network expansion, destructive actions, commits, pushes.
+    Stop with evaluator score history, rejected alternatives, residual risks,
+    and the selected next campaign declaration for approval.
+objective: >
+  Inspect live repo-native route truth and product-strategy surfaces, compare
+  the best next Azoth lanes, and produce one approval-ready autonomous-auto
+  campaign declaration.
+success_anchor: >
+  The operator receives one selected next autonomous-auto campaign declaration
+  with route evidence, rejected alternatives, evaluator score history, residual
+  risks, and protected-boundary stops.
+budget:
+  max_child_scopes: 3
+  replay_threshold: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - capture_self_improvement
+blocked_actions:
+  - hydrate_task
+  - ship_task
+  - public_sync_or_release
+  - public_checkout_mutation
+  - cockpit_or_project_repo_mutation
+  - private_root_backup_or_credentials
+  - kernel_governance_or_m1_mutation
+  - dependency_or_network_expansion
+  - destructive_actions
+  - commits
+  - pushes
+current_state_snapshot:
+  branch: codex/autonomous-roadmap-self-development
+  active_version: v0.2.0-p4
+  live_scope: 2026-05-05-autonomous-auto-native-pm-campaign-architecture-discovery-1
+  live_write_claim: held_by_current_child
+  previous_loop: p1-format-gate-repair-lane-20260505
+  previous_loop_status: completed_green
+  previous_completion_reason: vision_realized
+  hydration_candidates: none_safe
+selected_next_campaign:
+  candidate_id: public-product-update-policy-and-four-plane-release-boundary
+  title: Public Product Update Policy and Four-Plane Release Boundary Strategy
+  action: research_initiative
+  mode: autonomous-auto
+  status: approval_ready
+artifacts:
+  - .azoth/campaigns/native-pm-campaign-architecture-discovery-20260505/child-1-route-truth-and-option-board.md
+  - .azoth/campaigns/native-pm-campaign-architecture-discovery-20260505/selected-next-campaign-declaration.md
+  - .azoth/campaigns/native-pm-campaign-architecture-discovery-20260505/evaluator-scorecard.json
