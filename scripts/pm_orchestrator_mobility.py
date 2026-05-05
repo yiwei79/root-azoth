@@ -91,7 +91,9 @@ def _route_report(report: dict[str, Any], *, repo_root: Path = ROOT) -> tuple[st
 
 
 def _score_report(report: dict[str, Any], route_state: str) -> dict[str, int]:
-    blockers = report.get("blocking_reasons") if isinstance(report.get("blocking_reasons"), list) else []
+    blockers = (
+        report.get("blocking_reasons") if isinstance(report.get("blocking_reasons"), list) else []
+    )
     ready = bool(report.get("ready_to_hydrate"))
     duplicate_block = route_state in {"fulfilled_or_stale", "hydrated_not_delivered"}
     return {
@@ -119,9 +121,7 @@ def _approval_prompt(report: dict[str, Any]) -> str:
     )
 
 
-def _candidate_evaluation(
-    report: dict[str, Any], *, repo_root: Path = ROOT
-) -> dict[str, Any]:
+def _candidate_evaluation(report: dict[str, Any], *, repo_root: Path = ROOT) -> dict[str, Any]:
     route_state, selected_route = _route_report(report, repo_root=repo_root)
     evaluation = {
         "initiative_id": report.get("initiative_id"),
@@ -150,14 +150,9 @@ def build_mobility_capsule(
     campaign_id: str = DEFAULT_CAMPAIGN_ID,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
-    reports = [
-        build_initiative_readiness_report(path, repo_root=repo_root)
-        for path in bank_paths
-    ]
+    reports = [build_initiative_readiness_report(path, repo_root=repo_root) for path in bank_paths]
     evaluations = [_candidate_evaluation(report, repo_root=repo_root) for report in reports]
-    ready_candidates = [
-        item for item in evaluations if item.get("ready_to_hydrate") is True
-    ]
+    ready_candidates = [item for item in evaluations if item.get("ready_to_hydrate") is True]
     selected = ready_candidates[0] if ready_candidates else None
     human_gate_required = selected is not None
     refusal_reasons = []
@@ -173,9 +168,7 @@ def build_mobility_capsule(
         "generated_at": generated_at or _utc_now(),
         "campaign_id": campaign_id,
         "selected_route": "stop_for_human_gate" if human_gate_required else "stop",
-        "route_state": (
-            selected.get("route_state") if selected else "no_safe_hydration_candidate"
-        ),
+        "route_state": (selected.get("route_state") if selected else "no_safe_hydration_candidate"),
         "selected_candidate": selected,
         "source_bank_ref": selected.get("source_bank_ref") if selected else None,
         "readiness_report": {
@@ -201,9 +194,7 @@ def build_mobility_capsule(
             else "Do not hydrate now. Research a fresh distinct seed or ship/refine pre-hydration helper work."
         ),
         "human_gate_required": human_gate_required,
-        "required_human_approval": (
-            selected.get("required_human_approval") if selected else None
-        ),
+        "required_human_approval": (selected.get("required_human_approval") if selected else None),
         "allowed_write_set_after_gate": CANONICAL_WRITE_SET if human_gate_required else [],
         "scaffold_command_after_gate": selected.get("scaffold_command") if selected else None,
         "validation_set_after_gate": VALIDATION_SET,
@@ -237,8 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv or sys.argv[1:])
     repo_root = args.repo_root.resolve()
     bank_paths = [
-        path if path.is_absolute() else repo_root / path
-        for path in args.bank
+        path if path.is_absolute() else repo_root / path for path in args.bank
     ] or discover_initiative_banks(repo_root)
     capsule = build_mobility_capsule(
         bank_paths,

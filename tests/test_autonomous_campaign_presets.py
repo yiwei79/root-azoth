@@ -20,9 +20,7 @@ from autonomous_campaign_presets import (  # noqa: E402
 
 
 def test_native_pm_preset_compiles_to_autonomous_auto_init_inputs() -> None:
-    preset = load_campaign_preset(
-        ROOT, "native-pm-campaign-architecture-discovery"
-    )
+    preset = load_campaign_preset(ROOT, "native-pm-campaign-architecture-discovery")
 
     packet = compile_autonomous_auto_init_packet(
         preset,
@@ -65,9 +63,7 @@ def test_native_pm_preset_compiles_to_autonomous_auto_init_inputs() -> None:
 
 
 def test_preset_compiler_does_not_emit_route_authority() -> None:
-    preset = load_campaign_preset(
-        ROOT, "native-pm-campaign-architecture-discovery"
-    )
+    preset = load_campaign_preset(ROOT, "native-pm-campaign-architecture-discovery")
 
     packet = compile_autonomous_auto_init_packet(
         preset,
@@ -103,9 +99,7 @@ def test_green_campaign_without_formal_eval_packets_is_incomplete() -> None:
 
 
 def test_formal_eval_packet_passes_mechanical_acceptance() -> None:
-    preset = load_campaign_preset(
-        ROOT, "native-pm-campaign-architecture-discovery"
-    )
+    preset = load_campaign_preset(ROOT, "native-pm-campaign-architecture-discovery")
     result = validate_agentic_eval_packets(
         [
             {
@@ -120,9 +114,7 @@ def test_formal_eval_packet_passes_mechanical_acceptance() -> None:
                     "bounded_implementation": 0.88,
                     "operator_ux": 0.94,
                 },
-                "residual_risks": [
-                    "Preset compiler must not become route authority."
-                ],
+                "residual_risks": ["Preset compiler must not become route authority."],
                 "iteration_history": [
                     {
                         "iteration": 1,

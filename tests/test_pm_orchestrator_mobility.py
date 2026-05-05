@@ -87,9 +87,7 @@ def test_ready_candidate_emits_plan_only_gate_packet(tmp_path: Path) -> None:
     assert capsule["human_gate_required"] is True
     assert capsule["selected_route"] == "stop_for_human_gate"
     assert capsule["selected_candidate"]["candidate_id"] == "slice-temp-001-a"
-    assert capsule["scaffold_command_after_gate"].startswith(
-        "python3 scripts/roadmap_scaffold.py"
-    )
+    assert capsule["scaffold_command_after_gate"].startswith("python3 scripts/roadmap_scaffold.py")
     assert ".azoth/roadmap.yaml" in capsule["allowed_write_set_after_gate"]
     assert "Approve hydrate_task for slice-temp-001-a" in capsule["required_human_approval"]
     assert capsule["canonical_boundary"]["status"] == "unchanged_by_this_helper"
@@ -145,6 +143,4 @@ def test_complete_candidate_refuses_fulfilled_lane(tmp_path: Path) -> None:
     evaluation = capsule["candidate_evaluations"][0]
     assert evaluation["route_state"] == "fulfilled_or_stale"
     assert evaluation["selected_route"] == "stop_or_research_fresh_seed"
-    assert "readiness.readiness_status is complete" in "; ".join(
-        evaluation["refusal_reasons"]
-    )
+    assert "readiness.readiness_status is complete" in "; ".join(evaluation["refusal_reasons"])

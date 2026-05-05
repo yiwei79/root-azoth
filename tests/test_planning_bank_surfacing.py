@@ -221,9 +221,7 @@ def test_initiative_summary_does_not_surface_parked_candidate_after_completed_sl
 
 def test_ini_mem_003_live_surfacing_reports_hydrated_t058_truth() -> None:
     summaries = load_planning_bank_summaries(ROOT)
-    initiatives = {
-        str(bank.get("id")): bank for bank in summaries.get("initiative_banks", [])
-    }
+    initiatives = {str(bank.get("id")): bank for bank in summaries.get("initiative_banks", [])}
     bank = initiatives["INI-MEM-003"]
 
     assert bank["readiness_candidate_id"] == "slice-mem-003-d"
