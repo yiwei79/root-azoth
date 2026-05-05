@@ -75,6 +75,44 @@ def test_escalation_decision_includes_advisory_handoff_packet() -> None:
     assert "governed_state_change" in decision.escalation_reasons
 
 
+def test_autonomous_continuation_escalates_with_contract_handoff_packet() -> None:
+    case = next(
+        item
+        for item in _load_fixture_group("side_effect_cases")
+        if item["id"] == "S6-autonomous-continuation-exact-phrase"
+    )
+
+    decision = classify_request(AzothLiteRequest.from_mapping(case))
+
+    assert decision.side_effect_class == "governed_state"
+    assert decision.selected_profile == "azoth-full"
+    assert decision.stop_state == "escalate"
+    assert decision.escalate is True
+    assert decision.escalation_reasons == (
+        case["expected"]["escalation_reason"],
+    )
+    assert decision.handoff_packet == {
+        "profile_handoff_id": "azoth-lite-to-azoth-full-autonomous-continuation-requested",
+        "date": "",
+        "from_profile": "azoth-lite",
+        "to_profile": "azoth-full",
+        "goal": "autonomous continuation",
+        "success_criteria": [],
+        "side_effect_class": "governed_state",
+        "escalation_reason": "autonomous_continuation_requested",
+        "dirty_worktree_summary": "",
+        "files_read": [],
+        "files_changed": [],
+        "verification_already_run": [],
+        "recommended_route": "azoth-full",
+        "required_human_decision": "open autonomous-auto continuation under azoth-full",
+        "stop_state": "escalate",
+        "escalation_reasons": ["autonomous_continuation_requested"],
+        "planned_paths": [],
+        "stop_rule": "stop before mutation",
+    }
+
+
 @pytest.mark.parametrize(
     "planned_path",
     (

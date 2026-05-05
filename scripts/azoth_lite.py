@@ -146,6 +146,27 @@ MUTATION_GOAL_TERMS = (
     "update",
     "write",
 )
+AUTONOMOUS_CONTINUATION_GOAL_TERMS = (
+    "autonomous continuation",
+    "continue autonomous campaign",
+    "continue the autonomous campaign",
+    "continue autonomous-auto",
+    "continue the autonomous-auto campaign",
+    "continue autonomous auto",
+    "continue autonomous loop",
+    "continue campaign loop",
+    "continue the campaign loop",
+    "campaign loop execution",
+    "execute campaign loop",
+    "run autonomous loop",
+    "run campaign loop",
+    "resume autonomous campaign",
+    "resume the autonomous campaign",
+    "resume autonomous-auto",
+    "resume autonomous auto",
+    "resume autonomous loop",
+    "open next autonomous",
+)
 
 
 @dataclass(frozen=True)
@@ -265,6 +286,7 @@ def _classify_side_effect(request: AzothLiteRequest) -> tuple[str, tuple[str, ..
     paths = tuple(_normalize_path(path) for path in request.planned_paths)
     goal = request.goal.lower()
     mutation_requested = _mutation_requested(request)
+    autonomous_continuation_requested = _autonomous_continuation_requested(request)
     reasons: list[str] = []
 
     if (
@@ -275,7 +297,12 @@ def _classify_side_effect(request: AzothLiteRequest) -> tuple[str, tuple[str, ..
         reasons.append("external_or_destructive_action")
         if _finality_requested(request):
             reasons.append("finality_or_packaging_requested")
+        if autonomous_continuation_requested:
+            reasons.append("autonomous_continuation_requested")
         return "external_or_destructive", tuple(reasons)
+
+    if autonomous_continuation_requested:
+        return "governed_state", ("autonomous_continuation_requested",)
 
     if mutation_requested and (
         any(_matches_prefix(path, KERNEL_OR_GOVERNANCE_PATH_PREFIXES) for path in paths)
@@ -330,21 +357,48 @@ def _mutation_requested(request: AzothLiteRequest) -> bool:
     )
 
 
+def _autonomous_continuation_requested(request: AzothLiteRequest) -> bool:
+    goal = request.goal.lower()
+    return _contains_any(goal, AUTONOMOUS_CONTINUATION_GOAL_TERMS)
+
+
 def _handoff_packet(
     request: AzothLiteRequest,
     side_effect_class: str,
     reasons: tuple[str, ...],
 ) -> dict[str, Any]:
+    escalation_reason = reasons[0] if reasons else ""
     return {
+        "profile_handoff_id": _profile_handoff_id(side_effect_class, escalation_reason),
+        "date": "",
+        "from_profile": "azoth-lite",
+        "to_profile": "azoth-full",
         "goal": request.goal,
+        "success_criteria": list(request.success_criteria),
         "side_effect_class": side_effect_class,
-        "escalation_reasons": list(reasons),
+        "escalation_reason": escalation_reason,
         "dirty_worktree_summary": request.dirty_worktree_summary,
-        "planned_paths": list(request.planned_paths),
+        "files_read": [],
+        "files_changed": [],
         "verification_already_run": [],
         "recommended_route": "azoth-full",
+        "required_human_decision": _required_human_decision(reasons),
+        "stop_state": "escalate",
+        "escalation_reasons": list(reasons),
+        "planned_paths": list(request.planned_paths),
         "stop_rule": "stop before mutation",
     }
+
+
+def _profile_handoff_id(side_effect_class: str, escalation_reason: str) -> str:
+    basis = escalation_reason or side_effect_class
+    return f"azoth-lite-to-azoth-full-{_slugify(basis)}"
+
+
+def _required_human_decision(reasons: tuple[str, ...]) -> str:
+    if "autonomous_continuation_requested" in reasons:
+        return "open autonomous-auto continuation under azoth-full"
+    return "approve azoth-full route before mutation"
 
 
 def _allowed_actions(side_effect_class: str) -> list[str]:
@@ -412,6 +466,10 @@ def _contains_any(text: str, terms: Sequence[str]) -> bool:
 def _starts_with_any(text: str, terms: Sequence[str]) -> bool:
     stripped = text.strip()
     return any(stripped.startswith(f"{term} ") or stripped.startswith(f"{term}:") for term in terms)
+
+
+def _slugify(value: str) -> str:
+    return _normalize_token(value).replace("_", "-")
 
 
 def _append_once(values: list[str], value: str) -> None:

@@ -145,6 +145,21 @@
         "stop_state": "escalate",
         "escalate": true
       }
+    },
+    {
+      "id": "S6-autonomous-continuation-exact-phrase",
+      "goal": "autonomous continuation",
+      "requested_actions": [],
+      "planned_paths": [],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "governed_state",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true,
+        "escalation_reason": "autonomous_continuation_requested"
+      }
     }
   ]
 }
