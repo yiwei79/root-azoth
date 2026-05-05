@@ -1743,6 +1743,16 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
         "builder",
         "evaluator",
     ]
+    assert all(
+        stage["evidence_policy"] == "spawn_required"
+        for stage in scope["delegation_plan"]["stages"]
+    )
+    assert scope["delegation_plan"]["stage_evidence_policy"] == {
+        "autonomous_auto_s1_architect": "spawn_required",
+        "autonomous_auto_s2_planner": "spawn_required",
+        "autonomous_auto_s3_builder": "spawn_required",
+        "autonomous_auto_s4_evaluator": "spawn_required",
+    }
     assert scope["loop_decision"]["action"] == "ship_task"
     assert scope["loop_decision"]["strategy_preflight"]["packet_type"] == (
         "autonomous_auto_strategy_preflight"
@@ -1761,6 +1771,7 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
         "autonomous_auto_s3_builder",
         "autonomous_auto_s4_evaluator",
     ]
+    assert run["stage_evidence_policy"] == scope["delegation_plan"]["stage_evidence_policy"]
     assert state["iteration"] == 1
     assert state["last_session_id"] == result["session_id"]
     assert state["queue"] == []

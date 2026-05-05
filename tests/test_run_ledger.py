@@ -1233,6 +1233,68 @@ def test_record_inline_exception_satisfies_completion_but_not_pair_only_stage_ev
     )
 
 
+def test_autonomous_auto_completion_requires_real_stage_spawn(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["mode"] = "autonomous-auto"
+    data["runs"][0]["stages_completed"] = ["autonomous_auto_s1_architect"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    record_stage_inline_exception(
+        tmp_path,
+        stage_id="autonomous_auto_s1_architect",
+        subagent_type="architect",
+        trigger="context-isolation",
+        role_hint="Agent(subagent_type=architect): Architect - trigger: context-isolation",
+        dependency_summary_refs=[],
+        exception_recorded_at="2026-04-23T10:00:30+00:00",
+        exception_reason="Host policy fallback was recorded before work.",
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    with pytest.raises(ValueError, match="inline exception is audit-only"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
+
+
+def test_inline_allowed_policy_can_satisfy_autonomous_auto_completion(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["mode"] = "autonomous-auto"
+    data["runs"][0]["stages_completed"] = ["autonomous_auto_s1_architect"]
+    data["runs"][0]["stage_evidence_policy"] = {
+        "autonomous_auto_s1_architect": "inline_allowed"
+    }
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    record_stage_inline_exception(
+        tmp_path,
+        stage_id="autonomous_auto_s1_architect",
+        subagent_type="architect",
+        trigger="context-isolation",
+        role_hint="Agent(subagent_type=architect): Architect - trigger: context-isolation",
+        dependency_summary_refs=[],
+        exception_recorded_at="2026-04-23T10:00:30+00:00",
+        exception_reason="Explicit inline eligibility was approved before work.",
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    assert "inline_exception" in completion["autonomous_auto_s1_architect"]
+
+
 def test_record_inline_exception_cli_and_require_completion_cli(tmp_path: Path) -> None:
     ledger = _stage_evidence_ledger(tmp_path)
     data = yaml.safe_load(ledger.read_text(encoding="utf-8"))

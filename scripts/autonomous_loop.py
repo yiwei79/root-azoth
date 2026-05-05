@@ -1495,13 +1495,18 @@ def _validate_strategy_preflight_evidence(
 
 
 def _delegation_stage(
-    stage_id: str, subagent_type: str, trigger: str, purpose: str
+    stage_id: str,
+    subagent_type: str,
+    trigger: str,
+    purpose: str,
+    evidence_policy: str = "spawn_required",
 ) -> dict[str, str]:
     return {
         "stage_id": stage_id,
         "subagent_type": subagent_type,
         "trigger": trigger,
         "purpose": purpose,
+        "evidence_policy": evidence_policy,
     }
 
 
@@ -1612,6 +1617,10 @@ def _delegation_plan_for_decision(decision: dict[str, Any], *, session_id: str) 
         ],
     }
     stages = stage_map.get(action, [])
+    stage_evidence_policy = {
+        str(stage["stage_id"]): str(stage.get("evidence_policy") or "spawn_required")
+        for stage in stages
+    }
     return {
         "plan_schema_version": 1,
         "plan_id": f"{session_id}-delegation",
@@ -1630,7 +1639,9 @@ def _delegation_plan_for_decision(decision: dict[str, Any], *, session_id: str) 
             "record_spawn": "python3 scripts/run_ledger.py record-spawn",
             "record_summary": "python3 scripts/run_ledger.py record-summary",
             "require_evidence": "python3 scripts/run_ledger.py require-stage-evidence",
+            "require_completion": "python3 scripts/run_ledger.py require-completion-evidence",
         },
+        "stage_evidence_policy": stage_evidence_policy,
         "stages": stages,
     }
 
@@ -5143,6 +5154,7 @@ def open_next(
             ide="codex",
             active_stage_id=stage_ids[0] if stage_ids else None,
             pending_stage_ids=stage_ids or None,
+            stage_evidence_policy=delegation_plan.get("stage_evidence_policy") or None,
         )
     except Exception:
         release_write_claim(root, session_id)

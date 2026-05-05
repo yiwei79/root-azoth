@@ -117,8 +117,12 @@ adapt the stage list to the actual scope:
   orchestrator still uses architect judgment, but may not silently replace required
   context-isolation, review-independence, context-budget, or protected gates with inline work.
 - Each child scope starts with an active `.azoth/run-ledger.local.yaml` run entry. Delegated
-  stages must record `stage_spawns` and `stage_summaries`; inline exceptions must be explicit
-  and justified against the `delegation_plan.inline_policy`.
+  stages must record `stage_spawns` and `stage_summaries`. Inline exceptions are audit-only
+  evidence for a blocked or invalidated stage; they do not satisfy autonomous-auto child
+  completion for `autonomous_auto_*` stages. If real subagent spawning is unavailable after
+  the operator requires orchestration, stop or reroute instead of completing the child.
+  `delegation_plan.inline_policy` describes when an inline exception may be recorded, but
+  it does not override spawn-required completion evidence.
 - Insert `/eval-swarm` when `.claude/commands/eval.md` E1–E6 triggers fire.
 - Use bounded replay for failed review/eval findings; stop at the threshold.
 - For PM-orchestrated presets with agentic-eval requirements, evaluator stages

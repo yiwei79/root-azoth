@@ -59,6 +59,7 @@ _SESSION_MODE_ENUM = {"exploratory", "delivery"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
 _PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
+_STAGE_EVIDENCE_POLICY_ENUM = {"spawn_required", "inline_allowed"}
 _SUMMARY_STATUS_ENUM = {"complete", "blocked", "needs-input"}
 _NONBLOCKING_SUMMARY_DISPOSITIONS = {
     "approved",
@@ -386,6 +387,25 @@ def validate_ledger(data: dict) -> list[str]:
                     elif not _STAGE_ID_RE.match(stage_id):
                         errors.append(
                             f"{prefix}.pending_stage_ids[{j}] must match stage id pattern, got {stage_id!r}"
+                        )
+
+        stage_evidence_policy = entry.get("stage_evidence_policy")
+        if stage_evidence_policy is not None:
+            if not isinstance(stage_evidence_policy, dict):
+                errors.append(f"{prefix}: stage_evidence_policy must be a mapping")
+            else:
+                for policy_stage_id, policy in stage_evidence_policy.items():
+                    if not isinstance(policy_stage_id, str) or not _STAGE_ID_RE.match(
+                        policy_stage_id
+                    ):
+                        errors.append(
+                            f"{prefix}.stage_evidence_policy key must match stage id pattern, "
+                            f"got {policy_stage_id!r}"
+                        )
+                    if policy not in _STAGE_EVIDENCE_POLICY_ENUM:
+                        errors.append(
+                            f"{prefix}.stage_evidence_policy[{policy_stage_id!r}] "
+                            f"must be one of {sorted(_STAGE_EVIDENCE_POLICY_ENUM)}, got {policy!r}"
                         )
 
         pause_reason = entry.get("pause_reason")
@@ -1005,6 +1025,7 @@ def upsert_run(
     active_stage_id: str | None | object = _UNSET,
     pending_stage_ids: list[str] | object = _UNSET,
     pause_reason: str | None | object = _UNSET,
+    stage_evidence_policy: dict[str, str] | object = _UNSET,
     wave_entry: dict | object = _UNSET,
     ledger_path: Path | None = None,
 ) -> tuple[bool, dict]:
@@ -1078,6 +1099,12 @@ def upsert_run(
             entry["pause_reason"] = pause_reason
         else:
             entry.pop("pause_reason", None)
+
+    if stage_evidence_policy is not _UNSET:
+        if stage_evidence_policy:
+            entry["stage_evidence_policy"] = dict(stage_evidence_policy)
+        else:
+            entry.pop("stage_evidence_policy", None)
 
     if status in {"complete", "failed"}:
         entry.pop("active_stage_id", None)
@@ -1485,6 +1512,22 @@ def _assert_inline_exception_pre_completion(run: dict, exception: dict, *, stage
         )
 
 
+def _stage_requires_spawn_evidence(run: dict, stage_id: str) -> bool:
+    """Return true when inline exceptions are audit-only, not completion evidence."""
+    stage_policy = run.get("stage_evidence_policy")
+    if isinstance(stage_policy, dict):
+        policy = str(stage_policy.get(stage_id) or "")
+        if policy == "spawn_required":
+            return True
+        if policy == "inline_allowed":
+            return False
+    if bool(run.get("requires_stage_spawn_evidence")):
+        return True
+    return str(run.get("mode") or "") == "autonomous-auto" and stage_id.startswith(
+        "autonomous_auto_"
+    )
+
+
 def require_completion_evidence(
     root: Path,
     *,
@@ -1516,6 +1559,11 @@ def require_completion_evidence(
                 raise ValueError(
                     f"missing completion evidence for run {run_id!r} stage {stage_id!r}: "
                     f"{paired_error}"
+                ) from paired_error
+            if _stage_requires_spawn_evidence(run, stage_id):
+                raise ValueError(
+                    f"inline exception is audit-only for run {run_id!r} stage {stage_id!r}; "
+                    f"paired stage spawn and summary evidence are required: {paired_error}"
                 ) from paired_error
             has_paired_evidence = (
                 _latest_stage_evidence(run, "stage_spawns", stage_id=stage_id) is not None
