@@ -41,6 +41,22 @@ to paste a large structured prompt. Instead:
 3. Discuss scope with the operator in the same session until the campaign vision is clear.
 4. Start autonomous self-development only after the operator approves the declaration.
 
+For known campaign shapes, prefer a native campaign preset before asking for
+bespoke declaration prose. Presets live under `.azoth/campaign-presets/` and
+compile to existing autonomous-auto init inputs; they are not route authority.
+Use `scripts/autonomous_campaign_presets.py <preset-id> --operator-goal <goal>`
+to render a draft approval packet. The initial PM-orchestrated architecture
+discovery preset is:
+
+```bash
+python3 scripts/autonomous_campaign_presets.py native-pm-campaign-architecture-discovery --operator-goal "<operator goal>"
+```
+
+The compiler output may seed `--vision-declaration-json`, `--allowed-action`,
+and `--queue-json` after human approval. Existing `autonomous_loop.py`
+strategy-preflight, lifecycle-route, scope gates, write claims, run-ledger
+evidence, and protected stop conditions remain authoritative.
+
 After approval, persist the locked declaration in loop state under `vision.declaration`
 and use it as the campaign's success anchor. Routine branch-local approvals may then be
 satisfied by the declaration's `approval_basis`; protected gates still stop.
@@ -105,6 +121,10 @@ adapt the stage list to the actual scope:
   and justified against the `delegation_plan.inline_policy`.
 - Insert `/eval-swarm` when `.claude/commands/eval.md` E1–E6 triggers fire.
 - Use bounded replay for failed review/eval findings; stop at the threshold.
+- For PM-orchestrated presets with agentic-eval requirements, evaluator stages
+  must emit formal packets with `score`, `threshold`, `dimensions`, and
+  `residual_risks`, plus `iteration_history` for evaluator-optimizer loops;
+  narrative "green" claims alone are incomplete instrumentation.
 - Close out through the normal session lifecycle and record the autonomous approval basis.
 
 The adaptive pipeline may be short for known-pattern edits or longer for planning-bank,

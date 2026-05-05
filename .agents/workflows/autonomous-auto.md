@@ -35,6 +35,19 @@ Instead, begin with a Vision Declaration phase:
 4. After explicit approval, initialize the loop and persist the locked declaration under
    `.azoth/autonomous-loop-state.local.yaml` `vision.declaration`.
 
+For known campaign shapes, use a repo-native preset compiler before asking the operator
+to paste a long bespoke declaration. Presets live in `.azoth/campaign-presets/` and compile
+to existing autonomous-auto init inputs without becoming route authority:
+
+```bash
+python3 scripts/autonomous_campaign_presets.py native-pm-campaign-architecture-discovery --operator-goal "<operator goal>"
+```
+
+After the operator approves the rendered packet, feed its existing fields into loop init
+(`--vision-declaration-json`, repeated `--allowed-action`, and `--queue-json`). Do not let
+the preset override `autonomous_loop.py` strategy-preflight, lifecycle-route, scope gates,
+write claims, run-ledger evidence, or protected stop conditions.
+
 Autonomous self-development starts after that approval. The declaration's `approval_basis`
 may satisfy branch-local routine approval fields, but protected human gates still stop.
 
@@ -63,6 +76,9 @@ Autonomous auto must still deliver with an adaptive pipeline:
   stages must record `stage_spawns` and `stage_summaries`; inline exceptions must be explicit
   and justified against the `delegation_plan.inline_policy`.
 - E1–E6 from `.claude/commands/eval.md` decide whether `/eval-swarm` is inserted.
+- PM-orchestrated presets with agentic-eval requirements must produce formal evaluator
+  packets with `score`, `threshold`, `dimensions`, `residual_risks`, and
+  `iteration_history`; narrative green status alone is incomplete instrumentation.
 - Bounded replay handles failed review/eval findings; stop at the replay threshold.
 - Scope/pipeline gates, write claims, run-ledger evidence, and closeout remain mechanical.
 
