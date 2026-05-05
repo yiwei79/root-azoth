@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "campaign_id": "pm-orchestrator-initiative-mobility-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-pm-orchestrator-mobility-capability-inventory-1",
+  "status": "complete",
+  "hydration_justified_now": false,
+  "recommended_next_child": {
+    "action": "refine_proposal",
+    "candidate_id": "pm-orchestrator-mobility-contract",
+    "title": "PM orchestrator mobility contract",
+    "writes_allowed": [
+      ".azoth/campaigns/pm-orchestrator-initiative-mobility-20260504/"
+    ],
+    "exit_gate": "A campaign-local implementation contract defines plan-only mobility helper behavior, exact gate packet shape, validation, and non-goals before any canonical write."
+  },
+  "recommended_first_implementation_slice": {
+    "contract_name": "pm_orchestrator_mobility_plan_v1",
+    "mode": "plan_only_read_only",
+    "expected_behavior": [
+      "compare live initiative and product lanes",
+      "refuse stale or fulfilled candidates",
+      "select the next safe route from research_initiative, refine_proposal, ship_task, hydrate_task, deliver_task, or stop",
+      "emit an exact human gate packet before hydration",
+      "delegate actual hydration only to existing roadmap_scaffold machinery after approval"
+    ],
+    "canonical_write_boundary": "blocked_until_fresh_human_gate",
+    "preferred_dependency": "scripts.planning_bank_validate.build_initiative_readiness_report"
+  },
+  "source_inventory": {
+    "existing_guarded_hydration_executor": "scripts/planning_bank_validate.py::hydrate_approved_initiative_candidate",
+    "existing_canonical_scaffold": "scripts/roadmap_scaffold.py",
+    "existing_candidate_surfacing": "scripts/planning_bank_surfacing.py",
+    "existing_seed_intake": "scripts/initiative_intake.py",
+    "existing_strategy_inputs": [
+      ".azoth/campaigns/product-strategy-orchestrator-20260504/child-6-product-management-decision-capsule.md",
+      ".azoth/campaigns/product-strategy-orchestrator-20260504/child-7-validation-and-replay-readiness.md"
+    ]
+  },
+  "candidate_readbacks": [
+    {
+      "initiative_id": "INI-EVI-002",
+      "readiness_status": "complete",
+      "candidate_status": "complete",
+      "pm_route": "stop_or_research_distinct_seed",
+      "reason": "Fulfilled T-046 lane; repeat hydration is blocked."
+    },
+    {
+      "initiative_id": "INI-MEM-003",
+      "readiness_status": "ready_to_hydrate",
+      "candidate_status": "hydrated",
+      "pm_route": "stop_or_delivery_gate",
+      "reason": "slice-mem-003-d has already been hydrated as T-058; repeat hydration is blocked."
+    }
+  ],
+  "blocked_until_fresh_gate": [
+    "roadmap/backlog/spec writes",
+    "initiative-bank hydration_history writes",
+    "phase advancement",
+    "public sync or release",
+    "cockpit or project writes",
+    "commits or pushes"
+  ],
+  "next_queue_item": {
+    "action": "refine_proposal",
+    "candidate_id": "pm-orchestrator-mobility-contract",
+    "source": "pm-orchestrator-initiative-mobility-20260504",
+    "target_classification": "implementation-contract",
+    "protected": false
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "contract": "pm_orchestrator_mobility_plan_v1",
+  "campaign_id": "pm-orchestrator-initiative-mobility-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-pm-orchestrator-mobility-contract-2",
+  "status": "complete",
+  "authority_model": {
+    "strategy_artifacts": "advisory_only",
+    "mobility_capsule": "plan_only_advisory",
+    "initiative_banks": "planning_readiness_truth",
+    "roadmap": "canonical_truth",
+    "backlog": "canonical_truth",
+    "hydration_executor": "scripts/planning_bank_validate.py --hydrate-approved",
+    "canonical_scaffold": "scripts/roadmap_scaffold.py"
+  },
+  "route_states": {
+    "raw_or_ambiguous": {
+      "safe_actions": [
+        "research_initiative"
+      ],
+      "blocked": [
+        "hydrate_task",
+        "canonical_writes"
+      ]
+    },
+    "discovery_active": {
+      "safe_actions": [
+        "research_initiative",
+        "refine_proposal"
+      ],
+      "blocked": [
+        "canonical_writes"
+      ]
+    },
+    "candidate_ready_for_review": {
+      "safe_actions": [
+        "ship_task"
+      ],
+      "blocked": [
+        "scaffold_execution"
+      ]
+    },
+    "approved_for_hydration": {
+      "safe_actions": [
+        "hydrate_task"
+      ],
+      "blocked": [
+        "different_candidate",
+        "different_write_path"
+      ]
+    },
+    "hydrated_not_delivered": {
+      "safe_actions": [
+        "stop",
+        "delivery_gate"
+      ],
+      "blocked": [
+        "repeat_hydration"
+      ]
+    },
+    "fulfilled_or_stale": {
+      "safe_actions": [
+        "stop",
+        "research_fresh_seed"
+      ],
+      "blocked": [
+        "repeat_hydration",
+        "duplicate_delivery"
+      ]
+    }
+  },
+  "capsule_required_fields": [
+    "schema_version",
+    "contract",
+    "generated_at",
+    "campaign_id",
+    "selected_route",
+    "route_state",
+    "selected_candidate",
+    "source_bank_ref",
+    "readiness_report",
+    "scorecard",
+    "refusal_reasons",
+    "hydration_recommendation",
+    "human_gate_required",
+    "required_human_approval",
+    "allowed_write_set_after_gate",
+    "scaffold_command_after_gate",
+    "validation_set_after_gate",
+    "canonical_boundary",
+    "non_goals"
+  ],
+  "implementation_recommendation": {
+    "helper_path": "scripts/pm_orchestrator_mobility.py",
+    "mode": "read_only",
+    "imports": [
+      "scripts.planning_bank_validate.build_initiative_readiness_report"
+    ],
+    "must_not_call": [
+      "scripts.planning_bank_validate.hydrate_approved_initiative_candidate",
+      "scripts/roadmap_scaffold.py"
+    ],
+    "must_not_write": [
+      ".azoth/roadmap.yaml",
+      ".azoth/backlog.yaml",
+      ".azoth/roadmap-specs/",
+      ".azoth/initiative-banks/"
+    ]
+  },
+  "acceptance_criteria": [
+    "Complete candidates route to stop or research_fresh_seed.",
+    "Hydrated candidates route to stop or delivery_gate, never repeat hydration.",
+    "Ready candidates emit an exact plan-only hydration gate packet.",
+    "Malformed candidates emit refusal reasons.",
+    "Tests prove no canonical roadmap/backlog/spec mutation."
+  ],
+  "next_queue_item": {
+    "action": "ship_task",
+    "candidate_id": "pm-orchestrator-plan-only-capsule",
+    "title": "PM orchestrator plan-only capsule",
+    "source": "pm-orchestrator-initiative-mobility-20260504",
+    "target_classification": "campaign-local-plan-capsule",
+    "protected": false,
+    "writes_allowed": [
+      ".azoth/campaigns/pm-orchestrator-initiative-mobility-20260504/"
+    ]
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "contract": "pm_orchestrator_mobility_plan_v1",
+  "generated_at": "2026-05-04T22:02:00Z",
+  "campaign_id": "pm-orchestrator-initiative-mobility-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-pm-orchestrator-plan-only-capsule-3",
+  "selected_route": "ship_task",
+  "route_state": "no_safe_hydration_candidate",
+  "selected_candidate": null,
+  "source_bank_ref": null,
+  "readiness_report": {
+    "evaluated_banks": [
+      ".azoth/initiative-banks/INI-EVI-002.yaml",
+      ".azoth/initiative-banks/INI-MEM-003.yaml"
+    ],
+    "safe_hydration_candidate_count": 0,
+    "summary": "Current live readbacks contain fulfilled or already hydrated lanes; no exact candidate is safe for hydration."
+  },
+  "scorecard": {
+    "authority": 100,
+    "freshness": 88,
+    "readiness": 0,
+    "strategic_fit": 75,
+    "duplication_risk": 100,
+    "blast_radius": 95,
+    "overall_route": "ship plan-only helper before any hydration gate"
+  },
+  "candidate_evaluations": [
+    {
+      "initiative_id": "INI-EVI-002",
+      "source_bank_ref": ".azoth/initiative-banks/INI-EVI-002.yaml",
+      "candidate_id": "slice-evi-002-f",
+      "candidate_task_ref": "T-046",
+      "readiness_status": "complete",
+      "candidate_status": "complete",
+      "ready_to_hydrate": false,
+      "route_state": "fulfilled_or_stale",
+      "selected_route": "stop_or_research_fresh_seed",
+      "scorecard": {
+        "authority": 80,
+        "freshness": 80,
+        "readiness": 0,
+        "strategic_fit": 60,
+        "duplication_risk": 100,
+        "blast_radius": 95
+      },
+      "refusal_reasons": [
+        "readiness.readiness_status is complete; no hydration action remains",
+        "candidate.status is complete; no hydration action remains",
+        "repeat hydration or helper implementation would duplicate fulfilled T-046 work"
+      ]
+    },
+    {
+      "initiative_id": "INI-MEM-003",
+      "source_bank_ref": ".azoth/initiative-banks/INI-MEM-003.yaml",
+      "candidate_id": "slice-mem-003-d",
+      "candidate_task_ref": "T-058",
+      "readiness_status": "ready_to_hydrate",
+      "candidate_status": "hydrated",
+      "ready_to_hydrate": false,
+      "route_state": "hydrated_not_delivered",
+      "selected_route": "stop_or_delivery_gate",
+      "scorecard": {
+        "authority": 80,
+        "freshness": 90,
+        "readiness": 0,
+        "strategic_fit": 55,
+        "duplication_risk": 100,
+        "blast_radius": 95
+      },
+      "refusal_reasons": [
+        "candidate.status is hydrated; no hydration action remains",
+        "repeat hydration is blocked; implementation or delivery would need a separate fresh gate"
+      ]
+    }
+  ],
+  "refusal_reasons": [
+    "No evaluated live candidate is safe for hydration.",
+    "Existing ready-looking authority is stale for repeat hydration because the selected candidate is already hydrated or complete.",
+    "The current campaign approval allows pre-hydration research/refine/ship work but does not name a fresh hydration candidate, scaffold/write path, and validation set."
+  ],
+  "hydration_recommendation": "Do not hydrate now. Ship the read-only PM mobility helper/validator next, then rerun candidate selection. Stop for a fresh human gate only if the helper identifies one exact ready candidate.",
+  "human_gate_required": false,
+  "required_human_approval": null,
+  "allowed_write_set_after_gate": [],
+  "scaffold_command_after_gate": null,
+  "validation_set_after_gate": [
+    "python3 scripts/roadmap_dashboard.py",
+    "python3 scripts/azoth-deploy.py --check",
+    "python3 scripts/run_ledger.py validate",
+    "git diff -- .azoth/roadmap.yaml .azoth/backlog.yaml"
+  ],
+  "canonical_boundary": {
+    "roadmap": ".azoth/roadmap.yaml",
+    "backlog": ".azoth/backlog.yaml",
+    "status": "unchanged_by_this_capsule",
+    "note": "This capsule recommends only; canonical movement remains blocked until a fresh exact hydration gate."
+  },
+  "non_goals": [
+    "No roadmap/backlog/spec write",
+    "No initiative-bank hydration_history write",
+    "No phase advancement",
+    "No public release or public checkout mutation",
+    "No cockpit/project write",
+    "No dependency/network/credential/destructive action",
+    "No kernel/governance/M1 mutation",
+    "No commit or push"
+  ],
+  "next_queue_item": {
+    "action": "ship_task",
+    "candidate_id": "pm-orchestrator-mobility-helper",
+    "title": "PM orchestrator mobility helper",
+    "source": "pm-orchestrator-initiative-mobility-20260504",
+    "target_classification": "read-only-helper",
+    "protected": false
+  }
+}
