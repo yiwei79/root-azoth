@@ -4,12 +4,12 @@
 0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
 
 ## Last Session
-- **Session**: 2026-05-06-autonomous-auto-campaign-breadth-route-legibility-implementation-3
-- **Goal**: Implement additive operator-read and campaign-report route legibility fields from the child-2 contract while preserving schema version 1 and raw fields.
+- **Session**: 2026-05-06-autonomous-auto-native-pm-campaign-architecture-discovery-1
+- **Goal**: native-pm-campaign-architecture-discovery
 - **Session mode**: delivery
 - **Pipeline**: autonomous-auto
 - **Outcome**: closed
-- **Episode**: ep-582 (success)
+- **Episode**: ep-583 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.
