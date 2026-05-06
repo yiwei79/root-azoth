@@ -3315,6 +3315,339 @@ def test_campaign_report_fails_closed_for_missing_handoff_completion_reason(
     assert report["observation"]["safe_to_continue_old_campaign"] is False
 
 
+def test_operator_read_uses_active_scope_strategy_preflight_route_authority(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        history=[
+            {
+                "session_id": "older-session",
+                "strategy_preflight": {
+                    "selected_route": "ship_task",
+                    "route_state": "delivery_ready",
+                    "route_authority": "ship_task:delivery_ready",
+                },
+            }
+        ],
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "session_id": "active-session",
+            "loop_decision": {
+                "route_decision": {
+                    "selected_route": "stop",
+                    "route_state": "stale_route",
+                },
+                "strategy_preflight": {
+                    "packet_type": "autonomous_auto_strategy_preflight",
+                    "selected_route": "research_initiative",
+                    "route_state": "campaign_strategy_preflight",
+                    "route_authority": "research_initiative:campaign_strategy_preflight",
+                },
+            },
+        },
+    )
+
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert read["next_likely_move"] == "blocked: active_scope_present"
+    assert read["route_authority"] == "research_initiative:campaign_strategy_preflight"
+    assert read["route_authority_source"] == "active_scope_strategy_preflight"
+
+
+def test_operator_read_uses_loop_history_route_authority_without_active_scope(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(
+        tmp_path,
+        status="stopped",
+        stop_reason="manual_pause",
+        history=[
+            {
+                "session_id": "older-session",
+                "strategy_preflight": {
+                    "selected_route": "hydrate_task",
+                    "route_state": "approved_for_hydration",
+                },
+            }
+        ],
+    )
+
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert read["next_likely_move"] == "blocked: manual_pause"
+    assert read["route_authority"] == "hydrate_task:approved_for_hydration"
+    assert read["route_authority_source"] == "loop_history"
+
+
+def test_campaign_report_adds_route_stage_risk_and_historical_handoff_readbacks(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path, last_session_id="active-session")
+    handoff_path = tmp_path / ".azoth/handoffs/2026-05-05-autonomous-auto-development-handoff.md"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        "\n".join(
+            [
+                "# Handoff",
+                "",
+                "## Current Truth",
+                "",
+                "- Completion reason: `vision_realized`",
+                "- Vision band: green",
+                "",
+                "## Known Residuals",
+                "",
+                "1. Historical auto_self_heal_now suggestion is display-only.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_json(
+        tmp_path / ".azoth/scope-gate.json",
+        {
+            "approved": True,
+            "expires_at": _future_expiry(),
+            "session_id": "active-session",
+            "loop_decision": {
+                "strategy_preflight": {
+                    "selected_route": "ship_task",
+                    "route_state": "delivery_ready",
+                    "route_authority": "ship_task:delivery_ready",
+                }
+            },
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/run-ledger.local.yaml",
+        {
+            "schema_version": 1,
+            "runs": [
+                {
+                    "run_id": "active-session",
+                    "mode": "autonomous-auto",
+                    "status": "active",
+                    "active_stage_id": "autonomous_auto_s2_planner",
+                    "pending_stage_ids": [
+                        "autonomous_auto_s1_architect",
+                        "autonomous_auto_s2_planner",
+                    ],
+                    "stage_spawns": [
+                        {
+                            "run_id": "active-session",
+                            "stage_id": "autonomous_auto_s1_architect",
+                            "subagent_type": "architect",
+                            "trigger": "strategy",
+                            "role_hint": "Design",
+                            "dependency_summary_refs": [],
+                            "spawned_at": "2026-05-06T10:00:00+00:00",
+                        },
+                        {
+                            "run_id": "active-session",
+                            "stage_id": "autonomous_auto_s2_planner",
+                            "subagent_type": "planner",
+                            "trigger": "plan",
+                            "role_hint": "Plan",
+                            "dependency_summary_refs": [],
+                            "spawned_at": "2026-05-06T10:10:00+00:00",
+                        },
+                    ],
+                    "stage_summaries": [
+                        {
+                            "run_id": "active-session",
+                            "stage_id": "autonomous_auto_s1_architect",
+                            "subagent_type": "architect",
+                            "trigger": "strategy",
+                            "role_hint": "Design",
+                            "dependency_summary_refs": [],
+                            "summary_recorded_at": "2026-05-06T10:05:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        }
+                    ],
+                    "stages_completed": ["autonomous_auto_s1_architect"],
+                }
+            ],
+        },
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
+    stages = {
+        item["stage_id"]: item for item in report["stage_evidence_states"]["stages"]
+    }
+
+    assert report["report_schema_version"] == 1
+    assert report["handoff_campaign"]["completion_reason"] == "vision_realized"
+    assert report["current_route_authority"] == {
+        "authority": "ship_task:delivery_ready",
+        "source": "active_scope_strategy_preflight",
+        "session_id": "active-session",
+    }
+    assert stages["autonomous_auto_s1_architect"]["state"] == (
+        "complete_with_paired_evidence"
+    )
+    assert stages["autonomous_auto_s2_planner"]["state"] == "in_progress_pending_summary"
+    assert report["historical_handoff"]["display_only"] is True
+    assert report["historical_handoff"]["can_open_auto_self_heal_now"] is False
+    assert report["historical_handoff"]["can_set_next_safe_action"] is False
+    assert report["historical_handoff_authority"]["current_authority"] is False
+    assert any(
+        item["risk"] == "stage_spawn_pending_summary"
+        for item in report["structured_residual_risks"]
+    )
+    assert "auto_self_heal_now" not in json.dumps(report["next_campaign_recommendation"])
+
+
+def _write_stage_evidence_run(tmp_path: Path, run: dict) -> None:
+    _write_yaml(
+        tmp_path / ".azoth/run-ledger.local.yaml",
+        {"schema_version": 1, "runs": [run]},
+    )
+
+
+def test_stage_evidence_marks_blocking_summary_disposition(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path, last_session_id="run-blocking")
+    _write_stage_evidence_run(
+        tmp_path,
+        {
+            "run_id": "run-blocking",
+            "mode": "autonomous-auto",
+            "status": "active",
+            "pending_stage_ids": ["autonomous_auto_s4_evaluator"],
+            "stage_spawns": [
+                {
+                    "run_id": "run-blocking",
+                    "stage_id": "autonomous_auto_s4_evaluator",
+                    "subagent_type": "evaluator",
+                    "trigger": "evaluate",
+                    "spawned_at": "2026-05-06T10:00:00+00:00",
+                }
+            ],
+            "stage_summaries": [
+                {
+                    "run_id": "run-blocking",
+                    "stage_id": "autonomous_auto_s4_evaluator",
+                    "subagent_type": "evaluator",
+                    "trigger": "evaluate",
+                    "summary_recorded_at": "2026-05-06T10:05:00+00:00",
+                    "summary_status": "complete",
+                    "summary_disposition": "request-changes",
+                }
+            ],
+        },
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    stage = report["stage_evidence_states"]["stages"][0]
+
+    assert stage["state"] == "summary_blocking"
+    assert stage["summary_status"] == "complete"
+    assert stage["summary_disposition"] == "request-changes"
+
+
+def test_stage_evidence_rejects_stale_or_mismatched_summary(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path, last_session_id="run-stale")
+    _write_stage_evidence_run(
+        tmp_path,
+        {
+            "run_id": "run-stale",
+            "mode": "autonomous-auto",
+            "status": "active",
+            "pending_stage_ids": ["autonomous_auto_s3_builder"],
+            "stage_spawns": [
+                {
+                    "run_id": "run-stale",
+                    "stage_id": "autonomous_auto_s3_builder",
+                    "subagent_type": "builder",
+                    "trigger": "implementation",
+                    "spawned_at": "2026-05-06T10:10:00+00:00",
+                }
+            ],
+            "stage_summaries": [
+                {
+                    "run_id": "run-stale",
+                    "stage_id": "autonomous_auto_s3_builder",
+                    "subagent_type": "planner",
+                    "trigger": "implementation",
+                    "summary_recorded_at": "2026-05-06T10:05:00+00:00",
+                    "summary_status": "complete",
+                    "summary_disposition": "approved",
+                }
+            ],
+            "stages_completed": ["autonomous_auto_s3_builder"],
+        },
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    stage = report["stage_evidence_states"]["stages"][0]
+
+    assert stage["state"] == "summary_mismatch_or_stale"
+    assert stage["summary_counts_for_completion"] is False
+
+
+def test_stage_evidence_emits_paired_completion_contract_state(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path, last_session_id="run-complete")
+    _write_stage_evidence_run(
+        tmp_path,
+        {
+            "run_id": "run-complete",
+            "mode": "autonomous-auto",
+            "status": "active",
+            "pending_stage_ids": ["autonomous_auto_s1_architect"],
+            "stage_spawns": [
+                {
+                    "run_id": "run-complete",
+                    "stage_id": "autonomous_auto_s1_architect",
+                    "subagent_type": "architect",
+                    "trigger": "strategy",
+                    "spawned_at": "2026-05-06T10:00:00+00:00",
+                }
+            ],
+            "stage_summaries": [
+                {
+                    "run_id": "run-complete",
+                    "stage_id": "autonomous_auto_s1_architect",
+                    "subagent_type": "architect",
+                    "trigger": "strategy",
+                    "summary_recorded_at": "2026-05-06T10:05:00+00:00",
+                    "summary_status": "complete",
+                    "summary_disposition": "approved",
+                }
+            ],
+            "stages_completed": ["autonomous_auto_s1_architect"],
+        },
+    )
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    stage = report["stage_evidence_states"]["stages"][0]
+
+    assert stage["state"] == "complete_with_paired_evidence"
+    assert stage["summary_counts_for_completion"] is True
+
+
+def test_campaign_report_route_authority_fails_closed_when_unavailable(
+    tmp_path: Path,
+) -> None:
+    state_path = _state(tmp_path, history=[])
+
+    report = autonomous_loop.campaign_report(tmp_path, state_path)
+    read = autonomous_loop.operator_read(tmp_path, state_path)
+
+    assert report["current_route_authority"]["authority"] == "unavailable_fail_closed"
+    assert read["route_authority"] == "unavailable_fail_closed"
+
+
 def _write_lifecycle_initiative_bank(tmp_path: Path) -> Path:
     path = tmp_path / ".azoth/initiative-banks/INI-AUTO-001.yaml"
     _write_yaml(
