@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "campaign_id": "public-release-readiness-preflight-no-public-mutation-20260506",
+  "session_id": "2026-05-06-autonomous-auto-public-release-readiness-preflight-no-public-mutation-1",
+  "artifact": ".azoth/campaigns/public-release-readiness-preflight-no-public-mutation-20260506/evidence-bundle.md",
+  "disposition": "pass",
+  "overall_score": 0.9,
+  "threshold": 0.9,
+  "dimensions": {
+    "correctness": 0.92,
+    "completeness": 0.88,
+    "quality": 0.9,
+    "test_coverage": 0.86,
+    "governance": 0.95,
+    "entropy": 0.93
+  },
+  "recommendation": "open_internal_repair_lane",
+  "approval_readiness": {
+    "internal_repair_lane": true,
+    "public_sync_tag_release": false
+  },
+  "key_findings": [
+    "The evidence bundle reconciles root HEAD, recorded public commit, local public HEAD/tag v0.2.0, and public origin/main.",
+    "The selected recommendation is exactly one allowed outcome: open internal repair lane.",
+    "Public origin/main drift is material because it touches scripts/azoth_release_profile.py.",
+    "The recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 is not locally resolvable.",
+    "The bundle correctly stops before public mutation and protected public sync/tag/release gates."
+  ],
+  "residual_risks": [
+    "No network or GitHub release freshness check was authorized.",
+    "PowerShell installer proof is skipped on this host.",
+    "Root checkout remains dirty and ahead of its remote-tracking branch.",
+    "Current root must not be represented as public release content."
+  ]
+}

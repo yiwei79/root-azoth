@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "campaign_id": "public-release-truth-internal-repair-no-public-mutation-20260506",
+  "session_id": "2026-05-06-autonomous-auto-public-release-truth-internal-repair-no-public-mutation-1",
+  "artifact": ".azoth/campaigns/public-release-truth-internal-repair-no-public-mutation-20260506/release-truth-repair-packet.md",
+  "disposition": "pass",
+  "overall_score": 0.86,
+  "recommendation": "open_narrower_internal_repair",
+  "approval_readiness": {
+    "release_truth_classification_packet": true,
+    "public_sync_gate": false,
+    "next_prompt_fit_after_bounded_replay": true
+  },
+  "key_findings": [
+    "The packet classifies 8e2b3283e8423a01fe64f131c92d52371f995954 as public-only, untagged, release-profile-adjacent drift.",
+    "The packet credibly supersedes corrupt recorded evidence 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 with verified commit 46fee0bc3ee9d16bcc9638efd3d96f6723314528.",
+    "The selected recommendation is open a narrower internal repair, not public sync/tag/release.",
+    "Boundary posture avoids public/cockpit/project mutation, release actions, network, dependencies, credentials, hydration, and implementation."
+  ],
+  "bounded_replay": {
+    "used": true,
+    "reason": "Evaluator found the initial next approval prompt under-scoped historical campaign/context artifacts that still cite the corrupt hash.",
+    "resolution": "Packet now states that historical campaign/context artifacts are superseded by the new repair report unless a later approval explicitly names them in the write set."
+  },
+  "residual_risks": [
+    "Public remote truth is based on local origin/main because network fetch and GitHub release checks were not authorized.",
+    "Public 8e2b3283e8423a01fe64f131c92d52371f995954 remains unreconciled with root release tooling.",
+    "Canonical release-truth artifacts still contain the corrupt hash until a root-only artifact repair scope is approved.",
+    "Public sync/tag/release remains premature."
+  ]
+}
