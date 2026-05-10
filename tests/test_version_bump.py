@@ -599,6 +599,41 @@ def test_patch_post_release_zero_indent_version_blocks(tmp_path: Path) -> None:
     assert current["current_patch"] == 4
 
 
+def test_patch_noops_when_active_post_release_slice_is_closed_at_final_patch(
+    tmp_path: Path,
+) -> None:
+    base = tmp_path / "t10b3"
+    base.mkdir(parents=True)
+    azoth_p = base / "azoth.yaml"
+    roadmap_p = base / "roadmap.yaml"
+    _write_settings(base, "0.1.4.34", phase="4")
+    azoth_p.write_text("version: 0.1.4.34\nphase: 4\nmilestone: v0.2.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        textwrap.dedent(
+            """\
+            active_version: v0.2.0-p4
+
+            versions:
+            - id: v0.2.0-p4
+              status: complete
+              final_patch: 34
+              goal: "Completed stabilization window"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run("--patch", azoth_p, roadmap_p)
+
+    assert result.returncode == 0, result.stderr
+    assert "already at closed roadmap final_patch 34" in result.stdout
+    assert yaml.safe_load(azoth_p.read_text(encoding="utf-8"))["version"] == "0.1.4.34"
+    roadmap = yaml.safe_load(roadmap_p.read_text(encoding="utf-8"))
+    current = next(x for x in roadmap["versions"] if x["id"] == "v0.2.0-p4")
+    assert current["final_patch"] == 34
+    assert "current_patch" not in current
+
+
 # ---------------------------------------------------------------------------
 # T10c — Post-release phase bump: 0.1.1.4 → 0.1.2.0 and v0.2.0-p1 → v0.2.0-p2
 # ---------------------------------------------------------------------------

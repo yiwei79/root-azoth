@@ -328,13 +328,31 @@ def _get_pending_task_refs(text: str, version_id: str) -> list[str]:
 
 
 def _get_current_patch_from_block(text: str, version_id: str) -> int:
-    """Return the current_patch integer for the named version block."""
+    """Return the current_patch integer for the named active version block."""
     start, end = _find_block(text, version_id)
     block = text[start:end]
     m = re.search(r"^\s+current_patch:\s*(\d+)", block, re.MULTILINE)
     if not m:
         _die(f"could not find 'current_patch:' in block '{version_id}' of roadmap.yaml")
     return int(m.group(1))
+
+
+def _get_patch_cursor_from_block(text: str, version_id: str) -> tuple[int, bool]:
+    """Return the patch cursor and whether the named roadmap block is already closed."""
+    start, end = _find_block(text, version_id)
+    block = text[start:end]
+    current = re.search(r"^\s+current_patch:\s*(\d+)", block, re.MULTILINE)
+    if current:
+        return int(current.group(1)), False
+    status = re.search(r"^\s+status:\s*(\S+)", block, re.MULTILINE)
+    final = re.search(r"^\s+final_patch:\s*(\d+)", block, re.MULTILINE)
+    if (
+        final
+        and status
+        and status.group(1).strip().strip("\"'").casefold() in {"complete", "completed"}
+    ):
+        return int(final.group(1)), True
+    _die(f"could not find 'current_patch:' in block '{version_id}' of roadmap.yaml")
 
 
 def _load_roadmap_mapping(text: str) -> dict:
@@ -455,7 +473,19 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
     else:
         new_version = f"{major}.{minor}.{phase}.{patch + 1}"
 
-    current_patch = _get_current_patch_from_block(roadmap_text, active_version)
+    current_patch, closed_version = _get_patch_cursor_from_block(roadmap_text, active_version)
+    if closed_version:
+        if patch != current_patch:
+            _die(
+                f"version '{raw_version}' does not match closed roadmap final_patch "
+                f"{current_patch} for {active_version}"
+            )
+        print(
+            f"version {raw_version} already at closed roadmap final_patch "
+            f"{current_patch} for {active_version}; no patch bump"
+        )
+        return
+
     new_patch = current_patch + 1
     new_roadmap = _replace_in_block(
         roadmap_text,
