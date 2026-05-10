@@ -940,6 +940,74 @@ def test_check_pipeline_gate_rejects_unapproved_gate(tmp_path: Path) -> None:
     assert "not approved" in message
 
 
+def test_check_pipeline_gate_treats_closed_residue_as_inert_when_not_required(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+    opened = datetime.now(timezone.utc).isoformat()
+    _write_scope_gate(
+        azoth_dir,
+        session_id="new-standard-session",
+        governance_mode="standard",
+        target_layer="infrastructure",
+        expires_at=expires,
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "old-closed-session",
+                "pipeline_command": "auto",
+                "approved": False,
+                "expires_at": expires,
+                "opened_at": opened,
+                "closed_at": opened,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is True
+    assert "closed" in message
+    assert "not required" in message
+
+
+def test_check_pipeline_gate_rejects_closed_residue_when_required(tmp_path: Path) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+    opened = datetime.now(timezone.utc).isoformat()
+    _write_scope_gate(
+        azoth_dir,
+        session_id="new-governed-session",
+        governance_mode="governed",
+        target_layer="M1",
+        expires_at=expires,
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "old-closed-session",
+                "pipeline_command": "auto",
+                "approved": False,
+                "expires_at": expires,
+                "opened_at": opened,
+                "closed_at": opened,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is False
+    assert "required" in message
+    assert "closed" in message
+
+
 def test_check_pipeline_gate_rejects_invalid_expires_at(tmp_path: Path) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()

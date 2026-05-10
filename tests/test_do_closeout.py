@@ -270,6 +270,33 @@ def _assert_closeout_rejects_before_mutation(
     )
 
 
+def test_update_episode_count_refreshes_pattern_count(tmp_path: Path) -> None:
+    memory_dir = tmp_path / ".azoth" / "memory"
+    memory_dir.mkdir(parents=True)
+    (tmp_path / "azoth.yaml").write_text(
+        "\n".join(
+            [
+                "version: 0.1.1.29",
+                "memory:",
+                "  episodes: 0",
+                "  patterns: 0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (memory_dir / "patterns.yaml").write_text(
+        yaml.safe_dump({"patterns": [{"id": "one"}, {"id": "two"}]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    do_closeout.update_episode_count(tmp_path, 3)
+
+    manifest = (tmp_path / "azoth.yaml").read_text(encoding="utf-8")
+    assert "  episodes: 3\n" in manifest
+    assert "  patterns: 2\n" in manifest
+
+
 def test_governed_closeout_requires_approval_evidence_before_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -528,6 +555,18 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     expected_verbatim_payload = json.loads(
         (repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8")
     )
+    (repo_root / ".azoth" / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": expected_verbatim_payload["session_id"],
+                "pipeline_command": "deliver-full",
+                "approved": True,
+                "expires_at": expected_verbatim_payload["expires_at"],
+                "opened_at": "2026-04-18T20:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     approvals_before = _write_approvals(
@@ -576,6 +615,11 @@ def test_governed_closeout_accepts_matching_human_approval_without_consuming_log
     scope = json.loads((repo_root / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
     assert scope["approved"] is False
     assert "closed_at" in scope
+    pipeline_gate = json.loads(
+        (repo_root / ".azoth" / "pipeline-gate.json").read_text(encoding="utf-8")
+    )
+    assert pipeline_gate["approved"] is False
+    assert pipeline_gate["closed_at"] == scope["closed_at"]
     backlog_text = (repo_root / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
     assert "status: active" not in backlog_text
     assert "status: complete" in backlog_text
@@ -2389,6 +2433,61 @@ def test_governed_closeout_runs_w3_before_w4(
     do_closeout.run_closeout(repo_root)
 
     assert order == ["W3", "W4"]
+
+
+def test_successful_w3_refreshes_existing_pending_sync_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = _build_repo(tmp_path, include_session_state=True)
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    _write_approvals(
+        repo_root,
+        {
+            "session_id": "sess-123",
+            "gate": "final-delivery",
+            "actor_type": "human",
+            "approved": True,
+            "decision": "approved",
+        },
+    )
+    (repo_root / do_closeout.CLAUDE_MEMORY_SYNC_PENDING).write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "pending",
+                "updated_at": "2026-05-06T12:40:50Z",
+                "source": "session-closeout",
+                "session_id": "old-session",
+                "goal": "Old closeout",
+                "latest_episode_id": "ep-000",
+                "latest_episode_summary": "Old summary.",
+                "next_action": "Old next action.",
+                "target_dir": "/tmp/old-memory",
+                "reason": "old sandbox denial",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(do_closeout, "write_claude_memory_mirror", lambda *a, **k: None)
+    monkeypatch.setattr(do_closeout, "run_version_bump", lambda *a, **k: None)
+    monkeypatch.setenv("HOME", str(fake_home))
+
+    do_closeout.run_closeout(repo_root)
+
+    pending = json.loads(
+        (repo_root / do_closeout.CLAUDE_MEMORY_SYNC_PENDING).read_text(encoding="utf-8")
+    )
+    assert pending["status"] == "synced"
+    assert pending["session_id"] == "sess-123"
+    assert pending["goal"] == "BL-123: Governed closeout"
+    assert pending["latest_episode_id"] == "ep-001"
+    assert pending["latest_episode_summary"].startswith("Completed session closeout")
+    assert pending["next_action"] == do_closeout.default_next_action()
+    assert pending["target_dir"] == str(do_closeout.claude_project_memory_dir(repo_root))
+    assert "reason" not in pending
 
 
 def test_w3_deferral_writes_pending_sync_artifact_and_still_runs_w4(

@@ -388,6 +388,20 @@ def close_scope_gate(repo_root: pathlib.Path, timestamp: str) -> dict[str, Any]:
     return gate_data
 
 
+def close_pipeline_gate(repo_root: pathlib.Path, *, scope: dict[str, Any], timestamp: str) -> None:
+    gate_path = repo_root / ".azoth" / "pipeline-gate.json"
+    if not gate_path.exists():
+        return
+    gate_data = load_json(gate_path)
+    if str(gate_data.get("session_id") or "") != str(scope.get("session_id") or ""):
+        return
+    gate_data["approved"] = False
+    gate_data["closed_at"] = timestamp
+    with open(gate_path, "w", encoding="utf-8") as handle:
+        json.dump(gate_data, handle, indent=2)
+    print(f"W2: pipeline gate closed at {gate_path}")
+
+
 def _completed_date(timestamp: str) -> str:
     return timestamp.split("T", 1)[0]
 
@@ -1311,6 +1325,13 @@ def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
     azoth_path = repo_root / "azoth.yaml"
     if not azoth_path.exists():
         return
+    patterns_path = repo_root / ".azoth" / "memory" / "patterns.yaml"
+    pattern_count: int | None = None
+    if patterns_path.exists():
+        patterns_data = load_yaml(patterns_path)
+        patterns = patterns_data.get("patterns")
+        if isinstance(patterns, list):
+            pattern_count = len(patterns)
 
     with open(azoth_path, "r", encoding="utf-8") as handle:
         lines = handle.readlines()
@@ -1319,10 +1340,12 @@ def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
         for line in lines:
             if line.startswith("  episodes: "):
                 handle.write(f"  episodes: {episode_count}\n")
+            elif pattern_count is not None and line.startswith("  patterns: "):
+                handle.write(f"  patterns: {pattern_count}\n")
             else:
                 handle.write(line)
 
-    print("W2b: azoth.yaml episode count updated")
+    print("W2b: azoth.yaml memory counts updated")
 
 
 def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
@@ -1367,11 +1390,28 @@ def mark_claude_memory_sync_pending_synced(
     repo_root: pathlib.Path,
     *,
     synced_at: str | None = None,
+    session_id: str | None = None,
+    goal: str | None = None,
+    latest_episode: dict[str, Any] | None = None,
+    next_action: str | None = None,
 ) -> pathlib.Path | None:
     pending_path = repo_root / CLAUDE_MEMORY_SYNC_PENDING
     if not pending_path.exists():
         return None
     payload = load_json(pending_path)
+    if session_id is not None:
+        payload["session_id"] = session_id
+    if goal is not None:
+        payload["goal"] = goal
+    if latest_episode is not None:
+        payload["latest_episode_id"] = str(latest_episode.get("id") or "")
+        payload["latest_episode_summary"] = str(latest_episode.get("summary") or "")
+    if next_action is not None:
+        payload["next_action"] = next_action
+    if any(value is not None for value in (session_id, goal, latest_episode, next_action)):
+        payload["source"] = "session-closeout"
+        payload["target_dir"] = str(claude_project_memory_dir(repo_root))
+        payload.pop("reason", None)
     payload["schema_version"] = 1
     payload["status"] = "synced"
     timestamp = synced_at or utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1735,6 +1775,8 @@ def run_closeout(
     ]
     if full_closeout:
         authoritative_files.extend([".azoth/scope-gate.json", "azoth.yaml"])
+        if (repo_root / ".azoth" / "pipeline-gate.json").exists():
+            authoritative_files.append(".azoth/pipeline-gate.json")
     else:
         authoritative_files.append(".azoth/session-gate.json")
     if full_closeout and backlog_id and backlog_id != "AD-HOC":
@@ -1772,6 +1814,7 @@ def run_closeout(
     selected_ide = str(existing_session_state.get("last_ide") or "")
     if full_closeout:
         close_scope_gate(repo_root, timestamp)
+        close_pipeline_gate(repo_root, scope=scope, timestamp=timestamp)
     else:
         close_session_gate(repo_root, timestamp=timestamp, session_id=session_id)
         print("W2-lite: exploratory session gate closed")
@@ -1862,7 +1905,13 @@ def run_closeout(
         print("W3 disposition: deferred")
     else:
         if full_closeout:
-            mark_claude_memory_sync_pending_synced(repo_root)
+            mark_claude_memory_sync_pending_synced(
+                repo_root,
+                session_id=session_id,
+                goal=str(session_context.get("goal") or "Session closeout"),
+                latest_episode=latest_episode,
+                next_action=next_action,
+            )
             print("W3 disposition: completed")
     print(f"Next operator action: {next_action}")
     if full_closeout:
