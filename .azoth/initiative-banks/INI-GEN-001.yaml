@@ -1,0 +1,260 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-GEN-001
+title: Project Genesis and Goal-mode autonomy
+status: discovery_active
+created_at: "2026-05-10T13:56:00+00:00"
+updated_at: "2026-05-10T13:56:00+00:00"
+owner: codex
+source_sessions:
+  - session_id: 2026-05-10-codex-goal-project-genesis
+    kind: codex-goal-planning-seed
+    artifact: .azoth/initiative-banks/INI-GEN-001.yaml
+    note: >
+      Seeded from the active Codex Goal to make Azoth practical for starting
+      and connecting personal projects while defining Goal-mode as a bounded
+      autonomy packet for low-risk planning-seed artifacts.
+contacts:
+  - id: operator
+    role: human decision owner
+    contact_type: human
+    note: >
+      Wants Azoth to support new personal spaces without heavy root-azoth
+      friction and clarified that Codex Goal should behave autonomously.
+  - id: goal-mode-proposal
+    role: architecture proposal
+    contact_type: artifact
+    path: .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+    note: Defines the Goal-mode authority packet and Project Genesis four-plane flow.
+  - id: public-release-profile
+    role: public install provenance
+    contact_type: artifact
+    path: scripts/azoth_release_profile.py
+    note: Existing surface for public Azoth extraction and consumer install boundaries.
+  - id: cockpit-ux-anchor
+    role: personal cockpit routing reference
+    contact_type: artifact
+    path: docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+    note: Existing safe-open cockpit UX reference for pointer-only project navigation.
+source_proposal_refs:
+  - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+  - .azoth/proposals/public-release-root-feature-parity.yaml
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+  - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+research_questions:
+  - question_id: rq-gen-001-001
+    question: What authority should Codex Goal-mode carry inside Azoth?
+    status: answered
+    opened_at: "2026-05-10T13:56:00+00:00"
+    needed_for: goal_mode_authority_packet
+    answer: >
+      Goal-mode should authorize only bounded planning-seed artifacts while an
+      active Codex Goal and operator intent exist. It may create proposals,
+      initiative/design banks, starter prompts, readiness notes, and validation
+      receipts. It must not write kernel/governance, scope/pipeline gates,
+      roadmap/backlog/spec hydration, public Azoth, personal cockpit, project
+      repos, dependencies, credentials, destructive changes, or broad runtime
+      implementation.
+    evidence_refs:
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml#details.proposed_model.goal_mode_authority_packet
+      - scripts/check_gates.py
+      - commands/next/body.md
+  - question_id: rq-gen-001-002
+    question: What is the minimum Project Genesis starter contract?
+    status: active
+    opened_at: "2026-05-10T13:56:00+00:00"
+    needed_for: project_local_starter_packet
+    answer: >
+      The starter should capture project identity, domain, why-now, success
+      signals, local context paths, open questions, safe boundaries, Azoth source
+      profile, cockpit route, and a validation receipt. It should remain
+      discovery/readiness-first until a later hydration-specific approval exists.
+    evidence_refs:
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml#details.proposed_model.project_genesis_starter_contract
+  - question_id: rq-gen-001-003
+    question: How should Project Genesis adapt to music, thesis, and agent-context spaces?
+    status: active
+    opened_at: "2026-05-10T13:56:00+00:00"
+    needed_for: domain_specific_starter_prompts
+    answer: >
+      Music production should preserve creative exploration language; bachelor
+      thesis work should preserve academic source, structure, and deadline
+      context; agent/context work should preserve architecture, compatibility,
+      and experiment framing. None should be forced into task hydration before
+      readiness is explicit.
+    evidence_refs:
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml#details.proposed_model.project_genesis_starter_contract.starter_examples
+research_refs:
+  - id: ref-gen-001-proposal
+    kind: architecture_proposal
+    path: .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+    note: Defines the first Project Genesis and Goal-mode autonomy contract.
+  - id: ref-gen-001-cockpit
+    kind: repo_artifact
+    path: docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+    note: Prior safe-open personal cockpit UX anchor.
+  - id: ref-gen-001-public
+    kind: repo_artifact
+    path: scripts/product_release_smoke.py
+    note: Existing public product smoke verifier for release-profile confidence.
+  - id: ref-gen-001-template
+    kind: repo_artifact
+    path: docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+    note: Planning-only starter packet template for project-local context and receipts.
+  - id: ref-gen-001-helper
+    kind: repo_artifact
+    path: scripts/project_genesis_starter.py
+    note: Read-only command helper that prints starter profiles and validates filled packets.
+local_findings:
+  - finding_id: lf-gen-001-001
+    summary: >
+      Current gate validation blocks writes when scope-gate.approved is false,
+      even if a Codex Goal is active.
+    evidence_refs:
+      - scripts/check_gates.py
+      - scripts/scope_gate_check.py
+    implication: >
+      Goal-mode needs an explicit special authority packet; otherwise Codex Goal
+      remains passive continuity rather than usable autonomy.
+  - finding_id: lf-gen-001-002
+    summary: >
+      Existing Project Genesis support is scattered across public extraction,
+      planning banks, proposals, and cockpit references rather than one friendly
+      start/connect flow.
+    evidence_refs:
+      - scripts/azoth_release_profile.py
+      - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+      - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+    implication: >
+      The first slice should unify the experience contract before mutating any
+      project or cockpit repository.
+external_findings: []
+assumptions:
+  - assumption_id: asm-gen-001-001
+    text: >
+      The operator wants Goal-mode autonomy for low-risk planning and readiness
+      progress, not unrestricted write authority across all Azoth planes.
+    confidence: high
+  - assumption_id: asm-gen-001-002
+    text: >
+      The first Project Genesis slice should not create or modify the music,
+      thesis, agent-context, public Azoth, or cockpit repositories.
+    confidence: high
+contradictions:
+  - contradiction_id: con-gen-001-001
+    text: >
+      Azoth's current approval gates are intentionally conservative, while Codex
+      Goal creates an expectation that the agent should keep moving
+      autonomously.
+    resolution_path: >
+      Introduce Goal-mode as a planning-seed-only authority packet first, then
+      later decide whether a mechanical scope opener is justified.
+challenge_log:
+  - challenge_id: ch-gen-001-001
+    challenge: >
+      Could Goal-mode become a governance bypass?
+    response: >
+      Not in the seed contract. It explicitly forbids protected and mutating
+      planes, hydration, dependencies, credentials, destructive edits, and broad
+      implementation.
+    status: open
+candidate_slices:
+  - candidate_id: slice-gen-001-a
+    proposed_task_id: GEN-001-A
+    title: Goal-mode Project Genesis seed contract and UX rehearsal
+    initiative_ref: INI-GEN-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Validate the Goal-mode authority packet and rehearse the Project Genesis
+      starter experience across music production, bachelor thesis, and
+      agent-context examples without mutating any external plane.
+    source_question_ids:
+      - rq-gen-001-001
+      - rq-gen-001-002
+      - rq-gen-001-003
+    acceptance_criteria:
+      - Proposal and initiative bank validate.
+      - Goal-mode allowed and forbidden outputs are explicit.
+      - Four-plane responsibilities are explicit.
+      - Music production, bachelor thesis, and agent-context starter prompts are present.
+      - Validation receipt records no public/cockpit/project/kernel/governance mutation.
+    known_non_goals:
+      - No kernel/governance edits.
+      - No scope-gate or pipeline-gate mutation.
+      - No roadmap/backlog/spec hydration.
+      - No public Azoth, cockpit, or project repo mutation.
+      - No dependency, credential, network, or destructive action.
+    open_questions:
+      - Should Goal-mode later receive a mechanical scope opener?
+      - Which project-local starter packet layout is most friendly for non-code spaces?
+      - What evidence should count as an acceptable validation receipt for creative work?
+    research_evidence_refs:
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+      - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+      - scripts/product_release_smoke.py
+      - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+      - scripts/project_genesis_starter.py
+    recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      This slice is ready for planning-seed validation but not hydration. A
+      first project-local starter packet template exists; the remaining work is
+      to review the Goal-mode boundary and rehearse it against real project
+      examples before any public, cockpit, or project-local mutation.
+  - candidate_id: slice-gen-001-b
+    proposed_task_id: GEN-001-B
+    title: Project-local starter packet template
+    initiative_ref: INI-GEN-001
+    status: candidate
+    target_layer: docs
+    delivery_pipeline: standard
+    summary: >
+      Add a reusable project-local starter packet template that captures local
+      context, readiness, starter prompts, cockpit pointer intent, validation
+      receipts, and Azoth upgrade provenance.
+    source_question_ids:
+      - rq-gen-001-002
+      - rq-gen-001-003
+    acceptance_criteria:
+      - Template captures context, discovery/readiness, starter prompt, cockpit route, and validation receipt.
+      - Template is domain-friendly for music, thesis, and agent/context examples.
+      - Template names safe upgrade path from public/installed Azoth.
+    known_non_goals:
+      - No project repo mutation.
+      - No cockpit route write.
+      - No hydration into roadmap/backlog/spec tasks.
+    open_questions:
+      - Should starter packets live in public Azoth templates or root-only docs first?
+      - Which fields should be optional for highly creative spaces?
+    research_evidence_refs:
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+      - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+      - scripts/project_genesis_starter.py
+    recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      A first planning-only template now exists. It remains non-hydrating until
+      the Goal-mode boundary is reviewed and a later slice decides whether the
+      template should move into public Azoth, root docs, or cockpit-adjacent
+      guidance.
+readiness:
+  readiness_status: continue_research
+  human_decision: goal_mode_seed_requested
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: >
+    Operator stated on 2026-05-10 that the Codex Goal feature is meant to be
+    autonomous and should not be blocked by repeated approvals, or should operate
+    in a special mode. This bank treats that as authority to capture a bounded
+    planning seed only, not as authority for protected or mutating planes.
+  candidate_first_slice: slice-gen-001-a
+  freshness_status: current_as_of_2026-05-10
+  hydration_recommendation: >
+    Do not hydrate yet. First review the Goal-mode authority packet and rehearse
+    the starter packet against real project examples; only then decide whether a
+    later hydration-specific approval should move anything into public Azoth,
+    cockpit-adjacent guidance, or a project-local repo.
+  open_questions:
+    - Should Goal-mode later get a mechanical scope opener, or stay as a planning-seed-only authority?
+    - Which project-local file layout should become the public default starter?
+    - Should cockpit route rehearsal remain pointer-only until project owners opt in?
+hydration_history: []
