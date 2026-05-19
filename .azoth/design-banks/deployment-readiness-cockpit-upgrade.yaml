@@ -1,0 +1,68 @@
+schema_version: 1
+bank_type: design
+id: deployment-readiness-cockpit-upgrade
+title: Deployment readiness cockpit upgrade
+status: active_refinement
+created_at: "2026-05-19T14:52:00Z"
+updated_at: "2026-05-19T16:01:40Z"
+source_proposal_refs:
+  - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+related_initiative_refs:
+  - INI-DEP-001
+related_decision_refs: [D11, D23, D38, D48, D50, D52]
+problem: >
+  Azoth needs a deployment and control-point design that scales from guide-only
+  adoption to governed autonomy without hiding which plane owns each action.
+design_thesis: >
+  Treat modes as explicit release/readiness contracts. Root owns architecture,
+  public Azoth ships consumer-safe bundles, cockpit shows pointer-only readiness,
+  and project-local spaces own selected mode receipts.
+options:
+  - {option_id: guide_only_default, status: preferred, summary: "Start new spaces with guidance and receipts before runtime mutation."}
+  - {option_id: full_by_default, status: rejected, summary: "Too likely to advertise project-management or autonomy without installed support."}
+  - {option_id: cockpit_write_hub, status: rejected, summary: "Would blur cockpit readback with cross-repo write authority."}
+tradeoffs:
+  - {tradeoff_id: simplicity_vs_truth, summary: "Mode labels simplify adoption but must fail closed when assets are missing.", mitigation: "Readiness reports name installed and missing assets."}
+  - {tradeoff_id: cockpit_power, summary: "A central control point is useful but can become hidden authority.", mitigation: "Keep cockpit pointer-only until project-local approval exists."}
+open_questions:
+  - {question_id: db-dep-001, status: answered, question: "Should guide and assisted modes be public release profiles or starter presets?", answer: "T-059 defines them as mode/readiness contract levels first; release-profile compiler work needs a fresh gate."}
+research_refs:
+  - .azoth/research/ini-dep-001-readiness-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+challenge_log:
+  - {challenge_id: ch-dep-design-001, status: active, prompt: "What would make modes misleading?", answer: "Claiming managed or governed-autonomy readiness without runtime, seed, and stop-condition checks."}
+routing_candidates:
+  - {route: initiative_candidate, status: selected, target: INI-DEP-001#slice-dep-001-a, rationale: "First buildable move is the mode matrix and first-use map."}
+readiness:
+  evaluated_at: "2026-05-19T16:01:40Z"
+  readiness_status: continue_refinement
+  freshness_status: current_as_of_2026-05-19-t059-delivered
+  human_decision: t059_delivery_approved_only
+  target_route: INI-DEP-001#slice-dep-001-a
+  recommended_next_artifact: release_profile_compiler_or_cockpit_readback_after_fresh_approval
+closeout_history_policy:
+  policy_id: planning_bank_closeout_history_merge_policy_v1
+  status: active
+  merge_strategy: append_only
+  routine_closeout:
+    planning_bank_write_mode: forbidden
+  explicit_hydration_history:
+    append_path: hydration_history
+    append_position: append_tail
+    required_metadata:
+      - hydrated_at
+      - session_id
+      - candidate_slice_ref
+      - task_ref
+      - spec_ref
+      - approval_scope
+      - approval_basis
+      - append_policy_ref
+      - append_mode
+      - merge_key
+  non_laundering_rule: >
+    historical planning truth may be recorded, but it must stay labeled as
+    non retroactive pipeline compliance rather than retroactive approval.
+history:
+  - {timestamp: "2026-05-19T14:52:00Z", event: created_from_goal_mode_planning_seed, summary: "Captured durable design owner for the deployment/readiness/cockpit mode upgrade."}
+  - {timestamp: "2026-05-19T16:01:40Z", event: t059_contract_delivered, summary: "T-059 delivered the root-local mode matrix, first-use map, and cockpit readback contract without runtime or release mutation."}

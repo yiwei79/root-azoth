@@ -4016,12 +4016,13 @@ items:
   priority: 2
   created_date: '2026-05-03'
   completed_date: '2026-05-03'
-  description: >
-    Hydrated from INI-MEM-003 slice-mem-003-d to adopt the T-057
-    recall-quality scorer into normal context-recall practice as an optional
-    advisory quality-check path. This task excludes command-contract edits,
-    mandatory scorer gating, vector/dependency/network expansion, M2 mutation,
-    personal-root reads, and INI-MEM-002 temporal-validity work.
+  description: 'Hydrated from INI-MEM-003 slice-mem-003-d to adopt the T-057 recall-quality
+    scorer into normal context-recall practice as an optional advisory quality-check
+    path. This task excludes command-contract edits, mandatory scorer gating, vector/dependency/network
+    expansion, M2 mutation, personal-root reads, and INI-MEM-002 temporal-validity
+    work.
+
+    '
   roadmap_ref: T-058
   initiative_ref: INI-MEM-003
   decision_ref:
@@ -4037,16 +4038,75 @@ items:
   priority: 1
   created_date: '2026-05-04'
   completed_date: '2026-05-04'
-  description: >
-    Persist and deliver the public release parity direction: published Azoth
-    releases should include the root feature capability surface rather than a
-    narrow installer subset. Private or workshop-local state must be sanitized
-    or transformed into consumer-safe project seeds, while root-level capability
-    classes such as roadmap, planning banks, command wrappers, runtime scripts,
-    pipelines, and autonomous-auto control surfaces are represented truthfully
-    in the release profile and first-use experience.
+  description: 'Persist and deliver the public release parity direction: published
+    Azoth releases should include the root feature capability surface rather than
+    a narrow installer subset. Private or workshop-local state must be sanitized or
+    transformed into consumer-safe project seeds, while root-level capability classes
+    such as roadmap, planning banks, command wrappers, runtime scripts, pipelines,
+    and autonomous-auto control surfaces are represented truthfully in the release
+    profile and first-use experience.
+
+    '
   decision_ref:
   - D38
   - D46
   - D48
   - D50
+- id: T-059
+  title: Deployment readiness mode matrix and first-use map
+  source: roadmap-scaffold-2026-05-19
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-05-19'
+  completed_date: '2026-05-19'
+  description: 'Turn INI-DEP-001 into an executable readiness contract: define the
+    guide, assisted, managed, and governed_autonomy mode matrix; map first-use checks
+    across installer, release profile, cockpit, planning bank, and autonomous-control
+    surfaces; and keep root, public, personal-cockpit, and project-local authority
+    boundaries explicit before any release or project mutation work.'
+  roadmap_ref: T-059
+  initiative_ref: INI-DEP-001
+  readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+- id: T-060
+  title: Cockpit mode readiness readback checker and simulator
+  source: approved-standard-auto-2026-05-19
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-05-19'
+  completed_date: '2026-05-19'
+  description: 'Extend the root-owned cockpit menu checker and no-write UX simulator
+    so project pointers must expose the T-059 selected-mode/readiness readback
+    contract before the cockpit reports them as valid. Keep the work limited to
+    root-azoth scripts/tests/planning-readiness artifacts, with no kernel/governance
+    edits, release publishing, public Azoth mutation, personal cockpit mutation,
+    or project-local repo mutation.'
+  roadmap_ref: T-060
+  initiative_ref: INI-DEP-001
+  candidate_slice_ref: slice-dep-001-c
+  readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+- id: T-061
+  title: Release profile matrix compiler
+  source: approved-standard-auto-2026-05-19
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  status: complete
+  target_version: v0.2.0-p4
+  priority: 3
+  created_date: '2026-05-19'
+  completed_date: '2026-05-19'
+  description: 'Add a root-local read-only compiler that turns the T-059 guide,
+    assisted, managed, and governed_autonomy mode matrix into release-profile
+    readiness output. Keep the work limited to root-azoth release-profile scripts,
+    tests, and planning-readiness artifacts, with no kernel/governance edits,
+    no kernel/templates edits, no release publishing, no public Azoth mutation,
+    no personal cockpit mutation, and no project-local repo mutation.'
+  roadmap_ref: T-061
+  initiative_ref: INI-DEP-001
+  candidate_slice_ref: slice-dep-001-b
+  readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml

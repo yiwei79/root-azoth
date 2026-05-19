@@ -848,12 +848,12 @@ initiatives:
       phase: v0.2.0-p4
       status: complete
       role: historical
-    summary: 'Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3 episodic
-      recall, complementing the current keyword/recency scan. Flat metadata tagging
-      (no Python class hierarchy) mirrors mempalace''s single "mempalace_drawers" ChromaDB
-      collection. Hybrid retrieval formula (`fused_dist = dist * (1.0 - weight * keyword_overlap)`)
-      should live in production code, not only benchmark scripts. The optional flag
-      keeps the JSONL path as the zero-dependency default.
+    summary: 'Introduce an optional vector backend (ChromaDB or SQLite-vec) for M3
+      episodic recall, complementing the current keyword/recency scan. Flat metadata
+      tagging (no Python class hierarchy) mirrors mempalace''s single "mempalace_drawers"
+      ChromaDB collection. Hybrid retrieval formula (`fused_dist = dist * (1.0 - weight
+      * keyword_overlap)`) should live in production code, not only benchmark scripts.
+      The optional flag keeps the JSONL path as the zero-dependency default.
 
       '
     initiative_bank_ref: .azoth/initiative-banks/INI-MEM-003.yaml
@@ -1305,6 +1305,77 @@ initiatives:
   - D44
   - D46
   spec_ref: .azoth/roadmap-specs/v0.2.0/P1-011.yaml
+- id: INI-DEP-001
+  title: Deployment readiness, cockpit control point, and multi-scale modes
+  category: deployment-readiness
+  theme: D
+  dimensions:
+    themes:
+    - D
+    categories:
+    - deployment-readiness
+    tracks:
+    - mode-matrix
+    - cockpit-control-point
+    - project-readiness
+  phase: v0.2.0-p4
+  priority: high
+  task_ref: T-061
+  slices:
+  - task_ref: T-059
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-059.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: primary
+  - task_ref: T-060
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-060.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: follow_on
+  - task_ref: T-061
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-061.yaml
+    phase: v0.2.0-p4
+    status: complete
+    role: follow_on
+  summary: 'Define Azoth deployment modes, first-use readiness, and cockpit readback
+    for new and existing projects while preserving root/public/cockpit/project-local
+    authority boundaries; T-060 now adds the root-owned cockpit readback checker
+    and no-write simulator assertions for that contract, and T-061 now adds the
+    root-owned release-profile readiness compiler.
+
+    '
+  decision_ref: []
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-061.yaml
+- id: INI-DEP-002
+  title: Project-local mode receipts and cockpit handoff
+  category: deployment-readiness
+  theme: D
+  dimensions:
+    themes:
+    - D
+    categories:
+    - deployment-readiness
+    tracks:
+    - project-local-readiness
+    - cockpit-handoff
+    - mode-receipts
+  phase: v0.2.0-p4
+  priority: high
+  summary: 'Hydrate the root-owned planning task for project-local mode-selection
+    receipts and cockpit pointer/readback handoff after INI-DEP-001/T-059/T-060/T-061.
+    This initiative preserves root/public/cockpit/project-local authority boundaries
+    and does not authorize public, cockpit, project-local, release, kernel, template,
+    or code mutation.
+
+    '
+  decision_ref:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+  initiative_bank_ref: .azoth/initiative-banks/INI-DEP-002.yaml
 versions:
 - id: v0.0.1
   status: complete
@@ -2211,17 +2282,31 @@ versions:
       closes.
   note: 'Closed as the post-stable stabilization repair window on 2026-05-03 after
     planning truth, cockpit deployment evidence, format-gate readiness, and closeout
-    candidate evidence were reconciled through T-058. The product flow remains
-    root-azoth -> public azoth -> installed consumer/cockpit updates; the operating
-    model is now four planes: root-azoth development workshop, public azoth product,
-    yiwei-azoth-cockpit personal control plane, and controlled project repos with
-    project-local context and write authority. Public azoth sync/release, cockpit
-    writes, project writes, backup/private remote work, kernel/governance/M1, and
-    dependency/network/credential/destructive actions remain separate protected
-    gates beyond this repo-internal phase close.'
+    candidate evidence were reconciled through T-058. The product flow remains root-azoth
+    -> public azoth -> installed consumer/cockpit updates; the operating model is
+    now four planes: root-azoth development workshop, public azoth product, yiwei-azoth-cockpit
+    personal control plane, and controlled project repos with project-local context
+    and write authority. Public azoth sync/release, cockpit writes, project writes,
+    backup/private remote work, kernel/governance/M1, and dependency/network/credential/destructive
+    actions remain separate protected gates beyond this repo-internal phase close.'
   pending_task_refs: []
   tasks: []
   completed_tasks:
+  - id: T-061
+    title: Release profile matrix compiler
+    completed_date: '2026-05-19'
+    initiative_ref: INI-DEP-001
+    decision_ref: []
+  - id: T-060
+    title: Cockpit mode readiness readback checker and simulator
+    completed_date: '2026-05-19'
+    initiative_ref: INI-DEP-001
+    decision_ref: []
+  - id: T-059
+    title: Deployment readiness mode matrix and first-use map
+    completed_date: '2026-05-19'
+    initiative_ref: INI-DEP-001
+    decision_ref: []
   - id: T-055
     title: Cockpit first-use command surface and no-write UX simulation
     completed_date: '2026-05-01'
@@ -2423,4 +2508,9 @@ versions:
     decision_ref:
     - D11
     - D45
-  - {id: T-058, title: "Context-recall scorer adoption path", completed_date: "2026-05-03", decision_ref: [D11, D45]}
+  - id: T-058
+    title: Context-recall scorer adoption path
+    completed_date: '2026-05-03'
+    decision_ref:
+    - D11
+    - D45

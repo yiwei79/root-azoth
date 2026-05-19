@@ -1,0 +1,84 @@
+id: T-060
+roadmap_version: v0.2.0
+title: Cockpit mode readiness readback checker and simulator
+decision_ref: []
+intent: Deliver the first root-owned cockpit runtime checker for the T-059 mode/readiness
+  readback contract.
+problem: T-059 defined the cockpit readback contract, but the root-owned cockpit
+  menu/checker and no-write UX simulator still only proved pointer_only profile
+  mode. They could not fail closed when a project pointer omitted selected mode,
+  readiness, freshness, authority, asset inventory, approval scope, write-claim,
+  next-action, or stop-reason fields.
+scope:
+- Extend the root-owned cockpit menu validation contract for project pointer metadata.
+- Render the selected mode/readiness readback fields in the deterministic cockpit
+  handoff output.
+- Extend the no-write UX simulator to require the richer readback fields in its
+  command-flow output.
+- Record the slice as root-local scripts/tests/planning-readiness work only.
+non_goals:
+- No kernel or governance edits.
+- No release publishing.
+- No public Azoth mutation.
+- No personal cockpit mutation.
+- No project-local repo mutation.
+- No silent mode upgrade, hidden project-local authority, dependency installation,
+  credential handling, commit, push, or tag.
+acceptance:
+- Cockpit validation requires the T-059 readback fields and rejects missing or badly
+  typed values.
+- Rendered menu output shows profile mode separately from selected Azoth mode.
+- Rendered menu output shows readiness, freshness, authority, pointer, installed
+  assets, missing assets, approval scope, active write claim, next safe action,
+  and stop reason for each project pointer.
+- UX simulation fails if the richer readback fields are absent from the rendered
+  command-flow output.
+- Targeted cockpit tests and planning-bank validations pass.
+dependencies:
+- T-059
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+  status: complete
+  completed_at: '2026-05-19T16:47:39Z'
+initiative_ref: INI-DEP-001
+candidate_slice_ref: slice-dep-001-c
+readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+implementation_refs:
+- scripts/cockpit_menu.py
+- scripts/cockpit_ux_simulate.py
+- tests/test_cockpit_menu.py
+- tests/test_cockpit_bootstrap_verify.py
+cockpit_readback_checker:
+  field_policy: read_only_status_until_project_local_gate
+  required_fields:
+  - project_pointer
+  - authority_plane
+  - selected_mode
+  - readiness_state
+  - freshness_status
+  - installed_asset_classes
+  - missing_asset_classes
+  - approval_scope
+  - active_write_claim
+  - next_safe_action
+  - stop_reason
+  render_policy:
+  - Keep Profile as pointer_only and render selected Azoth mode separately.
+  - Render missing assets explicitly even when readiness_state is ready.
+  - Render active_write_claim false as none.
+  fail_closed_when:
+  - any required field is absent
+  - string fields are blank
+  - asset fields are not lists of non-empty values
+  - active_write_claim is not boolean
+validation_refs:
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_cockpit_menu.py
+  tests/test_cockpit_bootstrap_verify.py tests/test_cockpit_ux_simulate.py -q
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml
+- python3 scripts/planning_bank_validate.py --check-roadmap-refs
+- python3 scripts/check_gates.py --session-id 2026-05-19-t-060-cockpit-mode-readiness-readback-delivery
+  --require-pipeline-gate
+elasticity: Future release-profile compiler work, personal cockpit deployment, public
+  Azoth sync, or project-local mode receipt hydration requires a fresh approval gate.

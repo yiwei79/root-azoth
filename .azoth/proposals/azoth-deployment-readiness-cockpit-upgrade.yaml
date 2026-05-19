@@ -1,0 +1,129 @@
+proposal_schema_version: 1
+created_at: "2026-05-19T14:39:38Z"
+session_id: "2026-05-19-azoth-deployment-readiness-cockpit-upgrade"
+backlog_id: "P6-003"
+title: "Azoth deployment readiness and cockpit upgrade"
+summary: >
+  Planning-seed proposal for making Azoth easier to deploy into new or existing
+  projects while preserving the source, product, cockpit, and project-local
+  authority boundaries. The upgrade should introduce a multi-scale Azoth mode
+  system, a clearer central cockpit/control-point experience, and readiness
+  checks that prevent public installs or project adoption from advertising
+  capabilities whose runtime bundle is missing.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    operator_need: >
+      Azoth must become simple to adopt across very different projects: some
+      spaces only need philosophical guidance, some need instructions, skills,
+      and pre-installed agents, and others need full project-management and
+      governed autonomy. Today those modes are implicit and scattered across
+      release profile, planning-bank, autonomous-auto, and cockpit surfaces.
+    current_gap: >
+      Root-azoth contains strong capability classes, but the install/readiness
+      story does not yet present them as a deliberate scale ladder with
+      consumer-safe templates, first-use checks, and cockpit routes.
+  mode_taxonomy:
+    guide:
+      purpose: "Philosophical guides, trust posture, orientation, and starter prompts."
+      installs: ["kernel/trust guidance", "readme/playbook", "orientation skill"]
+      excludes: ["agents", "project-management state", "autonomous-auto"]
+    assisted:
+      purpose: "Instructions, skills, and selected agents for low-friction project help."
+      installs: ["skills", "tier-1 agents", "command wrappers", "starter receipts"]
+      excludes: ["roadmap hydration", "autonomous write loops"]
+    managed:
+      purpose: "Full project-management substrate for ongoing work."
+      installs: ["roadmap seed", "backlog seed", "planning banks", "validators"]
+      excludes: ["branch-local no-human-gate autonomy"]
+    governed_autonomy:
+      purpose: "Campaign-bounded autonomous-auto for projects that want supervised execution."
+      installs: ["run ledger", "loop state examples", "stage evidence checks"]
+      excludes: ["root self-development authority", "private cockpit/project writes"]
+  authority_model:
+    root_azoth: "Owns architecture, validators, release profile, and governance truth."
+    public_azoth: "Publishes consumer-safe bundles and mode templates."
+    personal_cockpit: "Central pointer-only operator control point and readiness dashboard."
+    project_local: "Owns local goals, context, mode selection, and receipts."
+  upgrade_direction:
+    - "Create an explicit release/profile matrix for guide, assisted, managed, and governed-autonomy installs."
+    - "Add readiness checks that compare advertised commands/skills/agents with installed runtime dependencies."
+    - "Make the cockpit a control point for selecting projects, viewing mode/readiness, and safe-opening project context."
+    - "Keep project-local adoption receipt-driven so existing projects can opt in without hidden mutation."
+  candidate_surfaces:
+    - scripts/azoth_release_profile.py
+    - scripts/product_release_smoke.py
+    - scripts/cockpit_bootstrap_verify.py
+    - scripts/planning_bank_validate.py
+    - scripts/run_ledger.py
+  lifecycle:
+    map: "Inventory install, cockpit, planning-bank, and autonomous-control surfaces."
+    compile: "Generate mode-specific release/profile contracts."
+    verify: "Run first-use checks before claiming a mode is ready."
+    handoff: "Emit project-local receipts and cockpit readback without hidden writes."
+  artifact_contract:
+    owner: root_azoth
+    produced_artifacts: ["mode matrix", "readiness report", "project adoption receipt"]
+    blocked_artifacts: ["live gates", "roadmap hydration", "public/cockpit/project writes"]
+  governance:
+    protected_boundaries: ["kernel/governance", "public release", "cockpit mutation", "project-local mutation"]
+    approval_boundary: "Hydration or runtime implementation requires explicit human approval."
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-05-19"
+      sources:
+        - title: "Google Cloud Deploy metrics"
+          url: "https://docs.cloud.google.com/deploy/docs/metrics"
+          finding: "Deployment readiness should track frequency and failure rate, not just install success."
+        - title: "Atlassian GitOps overview"
+          url: "https://www.atlassian.com/git/tutorials/gitops"
+          finding: "Consumer project state should be reproducible from declarative versioned desired state."
+        - title: "Product Talk continuous discovery"
+          url: "https://www.producttalk.org/getting-started-with-discovery/"
+          finding: "New project adoption should keep small discovery loops active before broad delivery."
+      implications: ["Mode labels must map to installed assets.", "Stale or partial installs fail closed."]
+    artifact_boundary:
+      claim_owner: root_azoth
+      consumer_claim: "A project may only claim the mode whose readiness report passes."
+    command_policy:
+      default: "Read and validate before write."
+      stop_rule: "Stop when advertised commands reference missing runtime dependencies."
+    readiness_report_schema:
+      minimal_fields: ["project_id", "selected_mode", "freshness_status", "human_decision", "installed_assets", "missing_assets", "next_safe_action"]
+      fail_closed_rules: ["stale freshness_status", "missing runtime dependency", "approval scope does not match selected mode"]
+    hydration_handoff:
+      source: INI-DEP-001
+      next_candidate: slice-dep-001-a
+      scaffold_policy: "Use roadmap_scaffold only after explicit approval."
+  suggested_slices:
+    slice_dep_001_a:
+      title: "Deployment readiness mode matrix and first-use map"
+      purpose: "Turn this proposal into a validated initiative/readiness map without hydration."
+    slice_dep_001_b:
+      title: "Release profile matrix compiler"
+      purpose: "Implement consumer-safe mode manifests and smoke checks."
+    slice_dep_001_c:
+      title: "Cockpit project readiness readback"
+      purpose: "Show each project's selected Azoth mode and next safe action."
+  non_goals:
+    - "No kernel/governance edits in this planning seed."
+    - "No roadmap/backlog/spec hydration without explicit approval."
+    - "No public Azoth, cockpit, or project repository mutation."
+    - "No claim that current public install is ready for every mode."
+  validation:
+    - "python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml"
+    - "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml --readiness-report .azoth/initiative-banks/INI-DEP-001.yaml"
+  validation_replay:
+    - command: "python3 scripts/proposal_knowledge_richness.py .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml --json"
+      expected: "proposal is at least adequate before hydration"
+    - command: "python3 scripts/check_gates.py --session-id 2026-05-19-azoth-deployment-readiness-cockpit-upgrade --require-pipeline-gate"
+      expected: "planning-only scope remains active"

@@ -1,0 +1,60 @@
+schema_version: 1
+artifact_type: research_bank
+initiative_ref: INI-DEP-001
+created_at: "2026-05-19T14:39:38Z"
+session_id: "2026-05-19-azoth-deployment-readiness-cockpit-upgrade"
+purpose: >
+  Compact root-local readiness map for the deployment, cockpit/control-point,
+  and multi-scale Azoth mode upgrade. This is planning evidence only.
+delivery_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+current_surface_map:
+  installer_and_release_profile:
+    status: needs_mode_matrix
+    evidence_refs:
+      - scripts/azoth_release_profile.py
+      - scripts/product_release_smoke.py
+      - .azoth/proposals/public-release-root-feature-parity.yaml
+    implication: >
+      Install labels should map to real bundles and smoke tests, not vague
+      "full" claims.
+  planning_bank_and_project_management:
+    status: available_but_seed_first
+    evidence_refs:
+      - .azoth/design-banks/planning-banks-layer.yaml
+      - scripts/planning_bank_validate.py
+    implication: >
+      Managed mode can depend on roadmap/backlog/planning-bank seeds, but only
+      after explicit hydration approval.
+  cockpit_control_point:
+    status: pointer_only_readback_first
+    evidence_refs:
+      - scripts/cockpit_bootstrap_verify.py
+      - scripts/cockpit_ux_simulate.py
+    implication: >
+      The cockpit should show project mode and readiness, then safe-open or hand
+      off. It should not become hidden cross-repo write authority.
+  autonomous_control:
+    status: governed_autonomy_only
+    evidence_refs:
+      - .azoth/initiative-banks/INI-AUTO-001.yaml
+      - scripts/run_ledger.py
+    implication: >
+      Autonomous-auto belongs in the highest mode as supervised, campaign-bounded
+      project autonomy, not as default install behavior.
+mode_readiness_matrix:
+  guide:
+    ready_when: "orientation and trust guidance are installed and first prompt works"
+    blocked_by: "missing source/profile receipt"
+  assisted:
+    ready_when: "skills, tier-1 agents, wrappers, and helper scripts agree"
+    blocked_by: "prompt references missing runtime dependencies"
+  managed:
+    ready_when: "project roadmap/backlog/planning-bank seeds validate"
+    blocked_by: "hydrating project-management state without approval"
+  governed_autonomy:
+    ready_when: "ledger, loop examples, stage evidence, and stop conditions validate"
+    blocked_by: "no-human-gate authority leaking from root self-development to consumer projects"
+recommended_next_steps:
+  - "Treat T-059 as the delivered root-local contract for mode/readiness truth."
+  - "Open release-profile compiler or cockpit readback runtime as fresh approved follow-on slices."
+  - "Do not mutate public Azoth, cockpit, or project repositories from this readiness contract."

@@ -1,0 +1,78 @@
+id: T-061
+roadmap_version: v0.2.0
+title: Release profile matrix compiler
+decision_ref: []
+intent: Deliver a root-local compiler that turns the T-059 mode matrix into truthful release-profile readiness output.
+problem: T-059 defined guide, assisted, managed, and governed_autonomy readiness
+  expectations, but release-profile tooling still only materialized the Full
+  consumer profile. Operators lacked a read-only way to see which modes have
+  asset evidence, which modes require fresh authority, and which claims should
+  fail closed before any public release or project mutation.
+scope:
+- Add a read-only release-profile readiness compiler for the T-059 mode matrix.
+- Preserve the existing Full profile materializer CLI and behavior.
+- Emit readiness states for guide, assisted, managed, and governed_autonomy.
+- Fail closed for malformed mode matrices or missing mode assets.
+- Record the slice as root-local scripts/tests/planning-readiness work only.
+non_goals:
+- No kernel or governance edits.
+- No kernel/templates edits.
+- No release publishing.
+- No public Azoth mutation.
+- No personal cockpit mutation.
+- No project-local repo mutation.
+- No installer label rename, dependency installation, credential handling, commit,
+  push, or tag.
+acceptance:
+- The compiler parses the T-059 mode matrix and emits all four modes with installed
+  assets, missing assets, explicit exclusions, readiness state, authority notes,
+  and next safe action.
+- Guide and assisted readiness can be reported as ready only when their root-local
+  evidence exists.
+- Managed and governed_autonomy do not report ready without fresh project-local
+  or autonomy authority; they report requires_authority.
+- Non-authority missing mode assets produce blocked readiness with explicit missing
+  asset classes.
+- Authority-gated missing evidence, such as project-local receipts, is surfaced
+  without converting managed/governed modes into ready states.
+- Existing Full release profile materialization tests remain green.
+dependencies:
+- T-059
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+  status: complete
+  completed_at: '2026-05-19T18:37:10Z'
+initiative_ref: INI-DEP-001
+candidate_slice_ref: slice-dep-001-b
+readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+implementation_refs:
+- scripts/azoth_release_profile.py
+- tests/test_azoth_release_profile.py
+release_profile_matrix_compiler:
+  cli: python3 scripts/azoth_release_profile.py --readiness --source . --mode-matrix .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+  output_format: yaml
+  readiness_states:
+  - ready
+  - requires_authority
+  - blocked
+  fail_closed_when:
+  - required modes are absent
+  - mode fields are malformed
+  - unknown modes are present
+  - non-authority advertised asset classes lack root-local evidence
+  authority_policy:
+  - managed requires project-local approval before applying planning-bank seeds
+  - governed_autonomy requires fresh autonomy budget, ledger/write-claim proof,
+    and stop conditions
+validation_refs:
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest -p no:cacheprovider tests/test_azoth_release_profile.py -q
+- python3 scripts/azoth_release_profile.py --readiness --source . --mode-matrix .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+- python3 scripts/product_release_smoke.py --setup-level 3 --skip-ruff
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml
+- python3 scripts/planning_bank_validate.py --check-roadmap-refs
+- python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+- python3 scripts/check_gates.py --session-id 2026-05-19-t-061-release-profile-matrix-compiler-delivery --require-pipeline-gate
+elasticity: Future installer labels, public Azoth sync/release, cockpit integration,
+  or project-local mode receipts require fresh approval gates.

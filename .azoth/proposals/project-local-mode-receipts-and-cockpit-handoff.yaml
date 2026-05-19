@@ -1,0 +1,228 @@
+proposal_schema_version: 1
+created_at: "2026-05-19T19:36:00Z"
+session_id: "2026-05-19-deployment-project-readiness-handoff-planning"
+backlog_id: "P6-003"
+title: "Project-local mode receipts and cockpit handoff"
+summary: >
+  Planning proposal for the missing handoff contract after INI-DEP-001,
+  T-059, T-060, and T-061: project-local repositories must own their selected
+  Azoth mode receipt, while the cockpit may only display pointer/readback state
+  and the next safe action. This proposal does not hydrate T-062, publish a
+  release, mutate public Azoth, mutate the personal cockpit, or write into any
+  project-local repository.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    operator_need: >
+      After mode taxonomy, cockpit readback, and release-profile readiness are
+      defined, Azoth still needs a trustworthy adoption bridge for real projects:
+      the cockpit needs to show status, but the project-local repo must own the
+      receipt and write authority.
+    current_gap: >
+      INI-DEP-001 defines mode/readiness truth, T-060 defines cockpit readback,
+      and T-061 compiles release profile readiness. None of those artifacts yet
+      define the project-local receipt contract that proves which mode a project
+      selected and which plane owns the next action.
+  predecessor_contract:
+    completed_initiative_ref: INI-DEP-001
+    completed_tasks:
+      - T-059
+      - T-060
+      - T-061
+    non_reopen_rule: >
+      INI-DEP-002 must not re-litigate the mode taxonomy, cockpit readback
+      fields, or release profile matrix. It only defines the handoff contract
+      that connects those completed surfaces to project-local authority.
+  authority_model:
+    root_azoth: "Defines the receipt/readback contract and validation expectations."
+    public_azoth: "Later ships consumer-safe receipt templates after a release gate."
+    personal_cockpit: "Reads project pointers and displays read-only readiness state."
+    project_local: "Owns selected mode receipts, local context, and write authority."
+  source_of_truth_order:
+    - project_local_receipt
+    - cockpit_pointer_readback
+    - next_safe_action
+  canonical_readback_fields:
+    - project_pointer
+    - authority_plane
+    - selected_mode
+    - readiness_state
+    - freshness_status
+    - installed_asset_classes
+    - missing_asset_classes
+    - approval_scope
+    - active_write_claim
+    - next_safe_action
+    - stop_reason
+  project_local_receipt_schema:
+    future_project_local_path: ".azoth/project-local-mode-receipt.yaml"
+    minimum_fields:
+      - project_id
+      - repo_path
+      - receipt_owner
+      - selected_mode
+      - release_profile_ref
+      - readiness_state
+      - freshness_status
+      - installed_asset_classes
+      - missing_asset_classes
+      - approval_scope
+      - active_write_claim
+      - next_safe_action
+      - stop_reason
+      - handoff_receipt_ref
+    ownership_rule: >
+      Root and cockpit artifacts may propose or display this schema, but the
+      receipt is authoritative only when it is written and validated inside the
+      project-local authority boundary under a fresh gate.
+  mode_handoff_rules:
+    guide: "May route to orientation or an assisted-mode request only."
+    assisted: "May route to read-only checks or a managed-mode request only."
+    managed: "Requires project-local receipt approval before seed hydration."
+    governed_autonomy: "Requires managed readiness, ledger proof, budget, and stop conditions."
+  candidate_surfaces:
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    - scripts/cockpit_menu.py
+    - scripts/cockpit_ux_simulate.py
+    - scripts/azoth_release_profile.py
+    - scripts/planning_bank_validate.py
+  command_surface_options:
+    option_read_only_contract:
+      status: preferred_now
+      summary: "Define proposal, initiative, research, and design-bank artifacts only."
+    option_hydrate_t062_now:
+      status: rejected_without_fresh_gate
+      summary: "Would mutate roadmap/backlog/spec surfaces outside the approved boundary."
+    option_cockpit_receipt_writer:
+      status: rejected
+      summary: "Would blur pointer/readback with cross-repo write authority."
+  lifecycle:
+    map: "Record the receipt/readback bridge after INI-DEP-001 completion."
+    validate: "Run proposal and planning-bank validators on root-local artifacts."
+    hydrate: "Only after a later hydration-specific gate approves T-062."
+    implement: "Only after a separate delivery gate names code, public, cockpit, or project-local surfaces."
+  artifact_contract:
+    owner: root_azoth
+    produced_artifacts:
+      - proposal
+      - initiative bank
+      - readiness handoff map
+      - design bank
+    blocked_artifacts:
+      - roadmap backlog or spec hydration
+      - project-local receipt instantiation
+      - cockpit mutation
+      - public Azoth mutation
+      - release publishing
+  governance:
+    approval_scope: fresh_standard_auto_planning_only_deployment_cockpit_project_readiness
+    protected_boundaries:
+      - kernel_governance_edits
+      - kernel_templates_edits
+      - release_publishing
+      - public_azoth_mutation
+      - personal_cockpit_mutation
+      - project_local_repo_mutation
+      - roadmap_backlog_spec_hydration
+    stop_rule: "Stop before any mutation outside root-azoth planning artifacts."
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-05-19"
+      sources:
+        - title: "Google Cloud Deploy metrics"
+          url: "https://docs.cloud.google.com/deploy/docs/metrics"
+          finding: "Readiness needs failure and success signals, not just install success."
+        - title: "Atlassian GitOps overview"
+          url: "https://www.atlassian.com/git/tutorials/gitops"
+          finding: "Desired project state should be declarative and versioned."
+        - title: "Product Talk continuous discovery"
+          url: "https://www.producttalk.org/getting-started-with-discovery/"
+          finding: "Adoption should preserve small discovery loops before broad delivery."
+      implications:
+        - "Mode receipts must name installed and missing assets."
+        - "Stale or missing project-local receipts fail closed."
+        - "Cockpit status should guide the next decision without becoming write authority."
+    artifact_boundary:
+      claim_owner: root_azoth
+      consumer_claim: "A project may claim only the mode backed by its own non-stale receipt."
+    command_policy:
+      default: "Read and validate before writing."
+      stop_rule: "Stop if the next action would write outside the current authority plane."
+    readiness_report_schema:
+      minimal_fields:
+        - project_id
+        - project_pointer
+        - selected_mode
+        - readiness_state
+        - freshness_status
+        - installed_asset_classes
+        - missing_asset_classes
+        - approval_scope
+        - active_write_claim
+        - next_safe_action
+        - stop_reason
+        - handoff_receipt_ref
+      fail_closed_rules:
+        - "freshness_status is stale or missing"
+        - "selected_mode exceeds installed asset classes"
+        - "cockpit readback omits canonical T-059/T-060 fields"
+        - "approval_scope does not name the requested mode or action"
+    hydration_handoff:
+      source: INI-DEP-002
+      next_candidate: slice-dep-002-a
+      proposed_task_ref: T-062
+      status: proposed_only_no_hydration
+  initiative_candidate_criteria:
+    candidate: slice-dep-002-a
+    non_candidates:
+      - "Any direct public release work"
+      - "Any cockpit write hub"
+      - "Any project-local receipt creation"
+      - "Any roadmap/backlog/spec hydration before a fresh hydration gate"
+  readiness_rubric:
+    pass_conditions:
+      - "Proposal validates with architecture_proposal_validate.py."
+      - "INI-DEP-002 validates as an initiative bank."
+      - "Design bank validates and preserves closeout history policy."
+      - "Readiness report keeps ready_to_hydrate false."
+  challenge_points:
+    - "Do not rename the canonical T-059/T-060 readback fields into a new incompatible schema."
+    - "Do not treat cockpit pointer/readback as project-local write authority."
+    - "Do not turn a proposed T-062 candidate into roadmap/backlog/spec artifacts."
+  non_goals:
+    - "No kernel/governance edits."
+    - "No kernel/templates edits."
+    - "No release publishing."
+    - "No public Azoth mutation."
+    - "No personal cockpit mutation."
+    - "No project-local repo mutation."
+    - "No roadmap/backlog/spec hydration."
+    - "No code implementation."
+  example_scenarios:
+    - name: "Guide project without receipt"
+      expected: "Cockpit shows missing receipt and routes to orientation or assisted request."
+    - name: "Managed-mode request"
+      expected: "Fails closed until a project-local receipt and fresh managed-mode gate exist."
+  validation_replay:
+    - command: "python3 scripts/architecture_proposal_validate.py .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml"
+      expected: "new proposal schema passes"
+    - command: "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-002.yaml"
+      expected: "initiative bank schema passes"
+    - command: "python3 scripts/planning_bank_validate.py .azoth/design-banks/project-readiness-cockpit-handoff.yaml"
+      expected: "design bank schema passes"
+    - command: "python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-DEP-002.yaml --candidate-id slice-dep-002-a"
+      expected: "ready_to_hydrate remains false"
+  suggested_future_research_session:
+    questions:
+      - "Which project-local receipt fields are mandatory for each Azoth mode?"
+      - "How should public Azoth later ship receipt templates without private state?"
+      - "Which cockpit route should present stale receipt repair first?"
