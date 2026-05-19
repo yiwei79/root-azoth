@@ -4,7 +4,7 @@ initiative_id: INI-GEN-001
 title: Project Genesis and Goal-mode autonomy
 status: discovery_active
 created_at: "2026-05-10T13:56:00+00:00"
-updated_at: "2026-05-19T21:52:00Z"
+updated_at: "2026-05-19T22:00:10Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-10-codex-goal-project-genesis
@@ -62,7 +62,7 @@ research_questions:
       - commands/next/body.md
   - question_id: rq-gen-001-002
     question: What is the minimum Project Genesis starter contract?
-    status: active
+    status: answered
     opened_at: "2026-05-10T13:56:00+00:00"
     needed_for: project_local_starter_packet
     answer: >
@@ -72,9 +72,10 @@ research_questions:
       discovery/readiness-first until a later hydration-specific approval exists.
     evidence_refs:
       - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml#details.proposed_model.project_genesis_starter_contract
+      - .azoth/research/ini-gen-001-project-genesis-rehearsal.yaml#domain_rehearsals
   - question_id: rq-gen-001-003
     question: How should Project Genesis adapt to music, thesis, and agent-context spaces?
-    status: active
+    status: answered
     opened_at: "2026-05-10T13:56:00+00:00"
     needed_for: domain_specific_starter_prompts
     answer: >
@@ -85,6 +86,7 @@ research_questions:
       readiness is explicit.
     evidence_refs:
       - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml#details.proposed_model.project_genesis_starter_contract.starter_examples
+      - .azoth/research/ini-gen-001-project-genesis-rehearsal.yaml#domain_rehearsals
 research_refs:
   - id: ref-gen-001-proposal
     kind: architecture_proposal
@@ -176,7 +178,7 @@ candidate_slices:
     proposed_task_id: GEN-001-A
     title: Goal-mode Project Genesis seed contract and UX rehearsal
     initiative_ref: INI-GEN-001
-    status: candidate
+    status: complete
     target_layer: infrastructure
     delivery_pipeline: standard
     summary: >
@@ -195,25 +197,35 @@ candidate_slices:
       - Validation receipt records no public/cockpit/project/kernel/governance mutation.
     known_non_goals:
       - No kernel/governance edits.
-      - No scope-gate or pipeline-gate mutation.
+      - No scope-gate or pipeline-gate mutation outside the Goal-mode self-approval opener.
       - No roadmap/backlog/spec hydration.
       - No public Azoth, cockpit, or project repo mutation.
       - No dependency, credential, network, or destructive action.
-    open_questions:
-      - Which project-local starter packet layout is most friendly for non-code spaces?
-      - What evidence should count as an acceptable validation receipt for creative work?
+    open_questions: []
     research_evidence_refs:
       - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
       - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
       - scripts/product_release_smoke.py
       - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
       - scripts/project_genesis_starter.py
+      - .azoth/research/ini-gen-001-project-genesis-rehearsal.yaml
+      - .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-a-validation-receipt.yaml
     recommended_phase: post-v0.2.0-stabilization
     readiness_notes: >
-      This slice is ready for planning-seed validation but not hydration. A
-      first project-local starter packet template exists; the remaining work is
-      to review the Goal-mode boundary and rehearse it against real project
-      examples before any public, cockpit, or project-local mutation.
+      Delivered as a planning-seed rehearsal. The Goal-mode boundary was
+      reviewed against music, thesis, and agent-context examples, and the
+      validation receipt records no public, cockpit, project-local, kernel,
+      governance, release, dependency, credential, destructive, code, or
+      hydration mutation.
+    delivery_result:
+      delivered_at: "2026-05-19T22:00:10Z"
+      session_id: 2026-05-19-ini-gen-project-genesis-rehearsal
+      status: complete
+      receipt_ref: .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-a-validation-receipt.yaml
+      summary: >
+        Rehearsed the Project Genesis starter experience under Goal-mode across
+        music production, bachelor thesis, and agent-context examples while
+        keeping external and protected planes non-mutating.
   - candidate_id: slice-gen-001-b
     proposed_task_id: GEN-001-B
     title: Project-local starter packet template
@@ -314,19 +326,30 @@ readiness:
     2026-05-19. This bank treats that as authority for bounded planning-seed
     continuation and repo-local scripts/tests repair only, not as authority for
     protected or mutating planes.
-  candidate_first_slice: slice-gen-001-a
-  freshness_status: current_as_of_2026_05_19_goal_mode_v2_delivered
+  candidate_first_slice: slice-gen-001-b
+  freshness_status: current_as_of_2026_05_19_slice_gen_001_a_rehearsed
   hydration_recommendation: >
     Do not hydrate roadmap/backlog/spec state. The next safe move is a
-    planning-seed rehearsal for slice-gen-001-a that reviews the Goal-mode
-    boundary against Project Genesis examples and records no public, cockpit,
-    project-local, kernel, governance, release, dependency, credential, or
-    destructive mutation.
+    root-local planning-seed pass for slice-gen-001-b that turns the rehearsal
+    into a friendly project-local starter packet template, still without public,
+    cockpit, project-local, kernel, governance, release, dependency, credential,
+    destructive, code, or broad productization mutation.
   open_questions:
     - Which project-local file layout should become the public default starter?
     - Should cockpit route rehearsal remain pointer-only until project owners opt in?
 hydration_history: []
 delivery_history:
+  - delivered_at: "2026-05-19T22:00:10Z"
+    session_id: 2026-05-19-ini-gen-project-genesis-rehearsal
+    candidate_slice_ref: slice-gen-001-a
+    task_ref: GEN-001-A
+    approval_scope: goal_mode_project_genesis_rehearsal_no_hydration
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-a-validation-receipt.yaml
+    result: >
+      Completed the Goal-mode Project Genesis seed-contract rehearsal across
+      music production, bachelor thesis, and agent-context examples. External
+      and protected planes remained non-mutating; the next candidate is the
+      root-local project starter packet template.
   - delivered_at: "2026-05-19T21:49:00Z"
     session_id: 2026-05-19-goal-mode-continuation-repair
     candidate_slice_ref: slice-gen-001-c
