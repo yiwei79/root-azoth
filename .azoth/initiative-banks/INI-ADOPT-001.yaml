@@ -4,7 +4,7 @@ initiative_id: INI-ADOPT-001
 title: Project Genesis external-plane adoption gates
 status: discovery_active
 created_at: "2026-05-19T22:15:27Z"
-updated_at: "2026-05-19T22:15:27Z"
+updated_at: "2026-05-19T22:18:48Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-20-project-genesis-adoption-gates-seed
@@ -71,6 +71,10 @@ research_refs:
     kind: initiative_bank
     path: .azoth/initiative-banks/INI-GEN-001.yaml
     note: Completed Project Genesis and Goal-mode planning seed.
+  - id: ref-adopt-001-cockpit-preflight
+    kind: research_bank
+    path: .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml
+    note: Root-local pointer-only cockpit route rehearsal preflight for Project Genesis spaces.
 local_findings:
   - finding_id: lf-adopt-001-001
     summary: >
@@ -181,7 +185,7 @@ candidate_slices:
     proposed_task_id: ADOPT-001-C
     title: Pointer-only cockpit route rehearsal preflight
     initiative_ref: INI-ADOPT-001
-    status: candidate
+    status: complete
     target_layer: personal-root
     delivery_pipeline: standard
     summary: >
@@ -197,12 +201,29 @@ candidate_slices:
       - No personal cockpit mutation.
       - No project-local context loading.
       - No cross-repo write authority.
-    open_questions:
-      - Should the rehearsal use existing cockpit simulation helpers or a new root-local fixture?
+    open_questions: []
     research_evidence_refs:
       - .azoth/research/ini-adopt-001-route-board.yaml
       - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+      - .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml
+      - .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-c-validation-receipt.yaml
     recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      Completed as a root-local no-write preflight. Pointer-only readback
+      fields, safe-open prompts, and no-write simulation assertions are named;
+      mutating the personal cockpit repository still requires fresh explicit
+      approval.
+    delivery_result:
+      delivered_at: "2026-05-19T22:18:48Z"
+      session_id: 2026-05-20-ini-adopt-001-cockpit-route-preflight
+      status: complete
+      receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-c-validation-receipt.yaml
+      summary: >
+        Defined the pointer-only cockpit route rehearsal preflight for music,
+        thesis, and agent-context Project Genesis spaces without mutating the
+        personal cockpit, project-local repositories, public Azoth, kernel,
+        governance, release, dependency, credential, destructive, code, or
+        hydration surfaces.
   - candidate_id: slice-adopt-001-d
     proposed_task_id: ADOPT-001-D
     title: Project-local starter packet dry-run preflight
@@ -232,24 +253,34 @@ candidate_slices:
 readiness:
   readiness_status: continue_research
   human_decision: approved_for_planning_seed_only
-  approval_scope: goal_mode_external_adoption_route_board_no_mutation
+  approval_scope: goal_mode_external_adoption_and_cockpit_preflight_no_mutation
   approval_basis: >
     Active Codex Goal-mode authority permits root-local planning-seed artifacts
     and validation receipts. It does not authorize public Azoth, personal
     cockpit, project-local, roadmap/backlog/spec hydration, kernel/governance,
     release, dependency, credential, or destructive mutation.
-  candidate_first_slice: slice-adopt-001-c
-  freshness_status: current_as_of_2026_05_20_route_board_seeded
+  candidate_first_slice: slice-adopt-001-b
+  freshness_status: current_as_of_2026_05_20_cockpit_route_preflight_complete
   hydration_recommendation: >
-    Do not hydrate roadmap/backlog/spec state. The recommended next route is a
-    pointer-only cockpit route rehearsal preflight because it advances the
-    central control-point objective while staying root-local until the operator
-    explicitly approves cockpit mutation.
+    Do not hydrate roadmap/backlog/spec state. The pointer-only cockpit route
+    rehearsal preflight is complete as root-local evidence. The next
+    self-servable planning route is public template distribution preflight; any
+    actual public Azoth, personal cockpit, project-local, release, or hydration
+    mutation still requires a fresh target-plane approval.
   open_questions:
-    - Does the operator want cockpit route rehearsal first, or public template distribution first?
+    - Which public template path should be public-first if deployment ease becomes the next planning route?
     - Should the first project-local dry-run target music, thesis, or agent-context?
 hydration_history: []
 delivery_history:
+  - delivered_at: "2026-05-19T22:18:48Z"
+    session_id: 2026-05-20-ini-adopt-001-cockpit-route-preflight
+    candidate_slice_ref: slice-adopt-001-c
+    task_ref: ADOPT-001-C
+    approval_scope: goal_mode_cockpit_route_preflight_no_mutation
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-c-validation-receipt.yaml
+    result: >
+      Completed a root-local pointer-only cockpit route rehearsal preflight.
+      Personal cockpit mutation remains blocked until a fresh explicit gate.
   - delivered_at: "2026-05-19T22:15:27Z"
     session_id: 2026-05-20-project-genesis-adoption-gates-seed
     candidate_slice_ref: slice-adopt-001-a
