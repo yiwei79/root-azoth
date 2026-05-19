@@ -45,6 +45,47 @@ def test_valid_request_builds_self_approved_scope_and_pipeline() -> None:
     assert pipeline["session_id"] == request.session_id
 
 
+def test_repo_repair_request_allows_bounded_scripts_and_tests_scope() -> None:
+    request = _request(
+        scope_class="repo_repair",
+        target_layer="repo-local-repair",
+        allowed_writes=[
+            "scripts/azoth_release_profile.py",
+            "tests/test_azoth_release_profile.py",
+        ],
+    )
+
+    scope, pipeline = goal_mode.build_gate_payloads(request, now=NOW)
+
+    assert scope["goal_mode_self_approval"]["scope_class"] == "repo_repair"
+    assert scope["goal_mode_self_approval"]["allowed_writes"] == [
+        "scripts/azoth_release_profile.py",
+        "tests/test_azoth_release_profile.py",
+    ]
+    assert "bounded repo-local implementation" in scope["approval_basis"]
+    assert pipeline["pipeline_command"] == "auto"
+
+
+def test_rejects_unknown_scope_class() -> None:
+    with pytest.raises(goal_mode.GoalModeSelfApprovalError, match="scope_class"):
+        _request(scope_class="release_publish")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/goal_mode_self_approval.py",
+        "scripts/check_gates.py",
+        "scripts/scope_gate_check.py",
+        "scripts/run_ledger.py",
+        "scripts/do_closeout.py",
+    ],
+)
+def test_repo_repair_rejects_gate_control_plane_scripts(path: str) -> None:
+    with pytest.raises(goal_mode.GoalModeSelfApprovalError, match="requires human approval"):
+        _request(scope_class="repo_repair", allowed_writes=[path])
+
+
 def test_writes_scope_and_pipeline_when_existing_gate_is_closed(tmp_path: Path) -> None:
     azoth = tmp_path / ".azoth"
     azoth.mkdir()

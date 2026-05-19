@@ -2,11 +2,12 @@ proposal_schema_version: 1
 created_at: "2026-05-19T14:34:28Z"
 session_id: "2026-05-19-goal-mode-self-approval-v1"
 backlog_id: "P6-003"
-title: "Goal-mode self-approval v1"
+title: "Goal-mode self-approval v1/v2"
 summary: >
-  Goal-mode self-approval v1 gives an active Codex Goal a narrow way to open
-  its own planning-seed scope without waiting for a human gate on every
-  proposal, initiative-bank, design-bank, research-bank, or receipt artifact.
+  Goal-mode self-approval gives an active Codex Goal a narrow way to open
+  its own low-risk continuation scope without waiting for a human gate on every
+  proposal, initiative-bank, design-bank, research-bank, receipt artifact, or
+  bounded repo-local repair.
   It is not a general bypass. The opener is limited to planning/readiness
   surfaces, refuses protected Azoth control-plane files, and preserves human
   approval for kernel/governance, roadmap hydration, public product, cockpit,
@@ -37,12 +38,30 @@ details:
   contract:
     authority: active_codex_goal
     approved_by_value: goal-mode-self-approval
-    allowed_write_prefixes:
-      - .azoth/proposals/
-      - .azoth/initiative-banks/
-      - .azoth/design-banks/
-      - .azoth/research/
-      - .azoth/handoffs/goal-mode/
+    scope_classes:
+      planning_seed:
+        allowed_write_prefixes:
+          - .azoth/proposals/
+          - .azoth/initiative-banks/
+          - .azoth/design-banks/
+          - .azoth/research/
+          - .azoth/handoffs/goal-mode/
+      repo_repair:
+        purpose: "bounded repo-local implementation/test continuation for the active Goal"
+        allowed_write_prefixes:
+          - .azoth/proposals/
+          - .azoth/initiative-banks/
+          - .azoth/design-banks/
+          - .azoth/research/
+          - .azoth/handoffs/goal-mode/
+          - scripts/
+          - tests/
+        human_approval_required_exact_paths:
+          - scripts/check_gates.py
+          - scripts/do_closeout.py
+          - scripts/goal_mode_self_approval.py
+          - scripts/run_ledger.py
+          - scripts/scope_gate_check.py
     forbidden_surfaces:
       - kernel/
       - .azoth/kernel/
@@ -70,11 +89,13 @@ details:
     tests: tests/test_goal_mode_self_approval.py
     behavior:
       - Validate a JSON request with active_goal, session_id, goal, and allowed_writes.
+      - Validate scope_class; default to planning_seed and support explicit repo_repair.
       - Reject missing active_goal evidence.
       - Reject unsafe or protected write paths.
       - Reject active non-bootstrap scopes that belong to another session.
       - Write .azoth/scope-gate.json and .azoth/pipeline-gate.json only after validation.
       - Mark scope gates with approved_by goal-mode-self-approval and a metadata block.
+      - Mark metadata with scope_class so continuation audits know which authority class opened the gate.
   non_goals:
     - No kernel or governance edits.
     - No changes to the base scope_gate_check.py fail-closed behavior.

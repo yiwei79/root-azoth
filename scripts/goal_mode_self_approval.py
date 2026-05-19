@@ -22,13 +22,19 @@ MAX_TTL_MINUTES = 120
 DEFAULT_PIPELINE_COMMAND = "auto"
 DEFAULT_TARGET_LAYER = "infrastructure"
 DEFAULT_BACKLOG_ID = "AD-HOC-GOAL-MODE"
+DEFAULT_SCOPE_CLASS = "planning_seed"
+SCOPE_CLASSES = frozenset({"planning_seed", "repo_repair"})
 
-ALLOWED_WRITE_PREFIXES = (
+PLANNING_ALLOWED_WRITE_PREFIXES = (
     ".azoth/proposals/",
     ".azoth/initiative-banks/",
     ".azoth/design-banks/",
     ".azoth/research/",
     ".azoth/handoffs/goal-mode/",
+)
+REPO_REPAIR_ALLOWED_WRITE_PREFIXES = PLANNING_ALLOWED_WRITE_PREFIXES + (
+    "scripts/",
+    "tests/",
 )
 
 FORBIDDEN_EXACT_PATHS = {
@@ -39,8 +45,15 @@ FORBIDDEN_EXACT_PATHS = {
     ".azoth/scope-gate.json",
     "azoth.yaml",
 }
+REPO_REPAIR_HUMAN_APPROVAL_EXACT_PATHS = {
+    "scripts/check_gates.py",
+    "scripts/do_closeout.py",
+    "scripts/goal_mode_self_approval.py",
+    "scripts/run_ledger.py",
+    "scripts/scope_gate_check.py",
+}
 
-FORBIDDEN_PREFIXES = (
+COMMON_FORBIDDEN_PREFIXES = (
     ".azoth/autonomous-loop-state",
     ".azoth/final-delivery-approvals",
     ".azoth/kernel/",
@@ -57,13 +70,16 @@ FORBIDDEN_PREFIXES = (
     ".agents/",
     "agents/",
     "commands/",
-    "docs/",
     "kernel/",
     "pipelines/",
-    "scripts/",
     "skills/",
+)
+PLANNING_FORBIDDEN_PREFIXES = COMMON_FORBIDDEN_PREFIXES + (
+    "docs/",
+    "scripts/",
     "tests/",
 )
+REPO_REPAIR_FORBIDDEN_PREFIXES = COMMON_FORBIDDEN_PREFIXES + ("docs/",)
 
 FORBIDDEN_TARGET_LAYERS = {"kernel", "m1", "governance"}
 
@@ -84,13 +100,25 @@ class GoalModeSelfApprovalRequest:
     target_layer: str = DEFAULT_TARGET_LAYER
     ttl_minutes: int = DEFAULT_TTL_MINUTES
     pipeline_command: str = DEFAULT_PIPELINE_COMMAND
+    scope_class: str = DEFAULT_SCOPE_CLASS
 
     @classmethod
     def from_mapping(cls, payload: Mapping[str, Any]) -> "GoalModeSelfApprovalRequest":
         active_goal = _require_string(payload, "active_goal", max_length=4096)
         session_id = _require_string(payload, "session_id", max_length=128)
         goal = _require_string(payload, "goal", max_length=512)
-        allowed_writes = tuple(_normalize_allowed_writes(payload.get("allowed_writes")))
+        scope_class = str(payload.get("scope_class") or DEFAULT_SCOPE_CLASS).strip()
+        if scope_class not in SCOPE_CLASSES:
+            allowed = ", ".join(sorted(SCOPE_CLASSES))
+            raise GoalModeSelfApprovalError(
+                f"scope_class must be one of [{allowed}], got {scope_class!r}"
+            )
+        allowed_writes = tuple(
+            _normalize_allowed_writes(
+                payload.get("allowed_writes"),
+                scope_class=scope_class,
+            )
+        )
         if not allowed_writes:
             raise GoalModeSelfApprovalError("allowed_writes must contain at least one path")
 
@@ -120,6 +148,7 @@ class GoalModeSelfApprovalRequest:
             target_layer=target_layer,
             ttl_minutes=ttl_minutes,
             pipeline_command=pipeline_command,
+            scope_class=scope_class,
         )
 
 
@@ -149,23 +178,46 @@ def _normalize_repo_path(raw: Any) -> str:
     return normalized
 
 
-def _normalize_allowed_writes(value: Any) -> list[str]:
+def _normalize_allowed_writes(value: Any, *, scope_class: str) -> list[str]:
     if not isinstance(value, list):
         raise GoalModeSelfApprovalError("allowed_writes must be a list")
     paths = [_normalize_repo_path(item) for item in value]
     for path in paths:
-        validate_allowed_write_path(path)
+        validate_allowed_write_path(path, scope_class=scope_class)
     return paths
 
 
-def validate_allowed_write_path(path: str) -> None:
-    """Fail unless *path* is a planning-seed artifact path."""
+def _allowed_prefixes_for_scope(scope_class: str) -> tuple[str, ...]:
+    if scope_class == "repo_repair":
+        return REPO_REPAIR_ALLOWED_WRITE_PREFIXES
+    return PLANNING_ALLOWED_WRITE_PREFIXES
+
+
+def _forbidden_prefixes_for_scope(scope_class: str) -> tuple[str, ...]:
+    if scope_class == "repo_repair":
+        return REPO_REPAIR_FORBIDDEN_PREFIXES
+    return PLANNING_FORBIDDEN_PREFIXES
+
+
+def validate_allowed_write_path(
+    path: str,
+    *,
+    scope_class: str = DEFAULT_SCOPE_CLASS,
+) -> None:
+    """Fail unless *path* is allowed for the selected Goal-mode scope class."""
+    if scope_class not in SCOPE_CLASSES:
+        allowed = ", ".join(sorted(SCOPE_CLASSES))
+        raise GoalModeSelfApprovalError(
+            f"scope_class must be one of [{allowed}], got {scope_class!r}"
+        )
     if path in FORBIDDEN_EXACT_PATHS:
         raise GoalModeSelfApprovalError(f"{path} is protected and requires human approval")
-    for prefix in FORBIDDEN_PREFIXES:
+    if scope_class == "repo_repair" and path in REPO_REPAIR_HUMAN_APPROVAL_EXACT_PATHS:
+        raise GoalModeSelfApprovalError(f"{path} is protected and requires human approval")
+    for prefix in _forbidden_prefixes_for_scope(scope_class):
         if path.startswith(prefix):
             raise GoalModeSelfApprovalError(f"{path} is outside Goal-mode self-approval")
-    if not any(path.startswith(prefix) for prefix in ALLOWED_WRITE_PREFIXES):
+    if not any(path.startswith(prefix) for prefix in _allowed_prefixes_for_scope(scope_class)):
         raise GoalModeSelfApprovalError(f"{path} is not an allowed planning-seed artifact")
 
 
@@ -247,6 +299,7 @@ def build_gate_payloads(
     expires_text = expires_at.isoformat().replace("+00:00", "Z")
     metadata = {
         "schema_version": 1,
+        "scope_class": request.scope_class,
         "active_goal_excerpt": request.active_goal[:512],
         "allowed_writes": list(request.allowed_writes),
         "forbidden_boundaries": [
@@ -262,10 +315,7 @@ def build_gate_payloads(
         "goal": request.goal,
         "session_id": request.session_id,
         "approved_by": APPROVED_BY,
-        "approval_basis": (
-            "Goal-mode self-approval v1 opened this planning-seed scope from an "
-            "active Codex Goal after validating the allowed write set."
-        ),
+        "approval_basis": _approval_basis_for_scope_class(request.scope_class),
         "backlog_id": request.backlog_id,
         "delivery_pipeline": "standard",
         "governance_mode": "standard",
@@ -285,6 +335,18 @@ def build_gate_payloads(
         "session_id": request.session_id,
     }
     return scope_gate, pipeline_gate
+
+
+def _approval_basis_for_scope_class(scope_class: str) -> str:
+    if scope_class == "repo_repair":
+        return (
+            "Goal-mode self-approval v2 opened this bounded repo-local implementation "
+            "scope from an active Codex Goal after validating the allowed write set."
+        )
+    return (
+        "Goal-mode self-approval v1 opened this planning-seed scope from an "
+        "active Codex Goal after validating the allowed write set."
+    )
 
 
 def write_self_approved_gates(
