@@ -4115,14 +4115,16 @@ items:
   source: ini-dep-002-t-062-hydration-2026-05-19
   target_layer: project-local-readiness
   delivery_pipeline: standard
-  status: pending
+  status: complete
   target_version: v0.2.0-p4
   priority: 3
   created_date: '2026-05-19'
-  description: Hydrate the root-owned planning task for project-local mode-selection
-    receipts and cockpit pointer/readback handoff. This task is roadmap/backlog/spec
-    planning only; code, release, public Azoth, personal cockpit, project-local, kernel,
-    and kernel/templates mutation remain out of scope.
+  completed_date: '2026-05-19'
+  description: Delivered the root-owned project-local receipt/readback validation slice
+    for mode-selection receipts and cockpit pointer/readback handoff. The implementation
+    validates receipt authority in root-local helpers only; release publishing, public
+    Azoth mutation, personal cockpit mutation, project-local receipt creation, project-local
+    repo mutation, kernel/governance edits, and kernel/templates edits remain out of scope.
   roadmap_ref: T-062
   initiative_ref: INI-DEP-002
   decision_ref:

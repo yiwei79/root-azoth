@@ -1318,9 +1318,10 @@ initiatives:
     - mode-matrix
     - cockpit-control-point
     - project-readiness
-  phase: v0.2.0-p4
+  status: complete
+  phase: null
   priority: high
-  task_ref: T-061
+  task_ref: null
   slices:
   - task_ref: T-059
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-059.yaml
@@ -1359,13 +1360,14 @@ initiatives:
     - project-local-readiness
     - cockpit-handoff
     - mode-receipts
-  phase: v0.2.0-p4
+  status: complete
+  phase: null
   priority: high
-  summary: 'Hydrate the root-owned planning task for project-local mode-selection
-    receipts and cockpit pointer/readback handoff after INI-DEP-001/T-059/T-060/T-061.
-    This initiative preserves root/public/cockpit/project-local authority boundaries
-    and does not authorize public, cockpit, project-local, release, kernel, template,
-    or code mutation.
+  summary: 'Delivered the root-owned project-local receipt/readback validation slice
+    after INI-DEP-001/T-059/T-060/T-061. T-062 now preserves root/public/cockpit/project-local
+    authority boundaries by validating project-local receipt claims in root-local readiness
+    helpers while still blocking public, cockpit, project-local, release, kernel, and
+    template mutation.
 
     '
   decision_ref:
@@ -1376,7 +1378,7 @@ initiatives:
   - D50
   - D52
   initiative_bank_ref: .azoth/initiative-banks/INI-DEP-002.yaml
-  task_ref: T-062
+  task_ref: null
   spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
   slices:
   - task_ref: null
@@ -1387,7 +1389,7 @@ initiatives:
   - task_ref: T-062
     spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
     phase: v0.2.0-p4
-    status: active
+    status: complete
     role: primary
 versions:
 - id: v0.0.1
@@ -2303,9 +2305,12 @@ versions:
     backup/private remote work, kernel/governance/M1, and dependency/network/credential/destructive
     actions remain separate protected gates beyond this repo-internal phase close.'
   pending_task_refs: []
-  tasks:
+  tasks: []
+  completed_tasks:
   - id: T-062
     title: Project-local mode-selection receipt and cockpit handoff map
+    completed_date: '2026-05-19'
+    initiative_ref: INI-DEP-002
     decision_ref:
     - D11
     - D23
@@ -2313,8 +2318,6 @@ versions:
     - D48
     - D50
     - D52
-    initiative_ref: INI-DEP-002
-  completed_tasks:
   - id: T-061
     title: Release profile matrix compiler
     completed_date: '2026-05-19'

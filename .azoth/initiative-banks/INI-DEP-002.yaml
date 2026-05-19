@@ -2,12 +2,12 @@ schema_version: 1
 bank_type: initiative
 initiative_id: INI-DEP-002
 title: Project-local mode receipts and cockpit handoff
-status: active_refinement
+status: complete
 classification: planning_readiness_seed
 created_at: '2026-05-19T19:36:00Z'
-updated_at: '2026-05-19T19:36:00Z'
+updated_at: '2026-05-19T21:26:31Z'
 owner: codex
-delivery_authorized: false
+delivery_authorized: true
 source_sessions:
 - session_id: 2026-05-19-deployment-project-readiness-handoff-planning
   kind: fresh_standard_auto_planning_only
@@ -94,11 +94,12 @@ local_findings:
   - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
   - .azoth/roadmap-specs/v0.2.0/T-060.yaml
 - finding_id: lf-dep-002-002
-  status: active
-  summary: T-061 release profile readiness can point at receipt evidence later, but
-    this planning slice must not implement receipt validation.
+  status: answered
+  summary: T-062 now extends T-061 release profile readiness with root-local receipt
+    validation, while preserving the no public/cockpit/project-local mutation boundary.
   evidence_refs:
   - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-062.yaml
   - scripts/azoth_release_profile.py
 - finding_id: lf-dep-002-003
   status: active
@@ -136,9 +137,10 @@ challenge_log:
   status: answered_for_planning
   prompt: What would make INI-DEP-002 drift outside the approved campaign?
   answer: Before the hydration-specific gate, hydrating T-062 or editing roadmap/backlog/specs
-    was out of scope. After the 2026-05-19 T-062 hydration gate, drift means implementation
-    code, release publishing, public Azoth mutation, personal cockpit mutation, project-local
-    repo mutation, kernel/governance edits, or kernel/templates edits.
+    was out of scope. After the 2026-05-19 T-062 delivery gate, drift means release
+    publishing, public Azoth mutation, personal cockpit mutation, project-local repo
+    mutation, actual project-local receipt creation, kernel/governance edits, or kernel/templates
+    edits.
 - challenge_id: ch-dep-002-002
   status: answered_for_planning
   prompt: What would make the receipt contract misleading?
@@ -149,34 +151,35 @@ candidate_slices:
   proposed_task_id: T-062
   title: Project-local mode-selection receipt and cockpit handoff map
   initiative_ref: INI-DEP-002
-  status: hydrated
+  status: complete
   target_layer: project-local-readiness
   delivery_pipeline: standard
-  summary: 'Define the root-owned planning contract for project-local mode-selection
-    receipts and cockpit pointer/readback handoff after completed deployment readiness
-    work. This campaign authorizes only T-062 roadmap/backlog/spec hydration and planning-readiness
-    updates.
+  summary: 'Define and deliver the root-owned validation contract for project-local
+    mode-selection receipts and cockpit pointer/readback handoff after completed deployment
+    readiness work. This slice keeps validation in root-local helpers and does not
+    create project-local receipts or mutate public/cockpit/project repositories.
 
     '
   acceptance_criteria:
   - INI-DEP-002 references completed INI-DEP-001, T-059, T-060, and T-061 as predecessors.
   - Receipt schema bridges to canonical T-059/T-060 cockpit readback fields.
   - Source-of-truth order is project_local_receipt, cockpit_pointer_readback, next_safe_action.
-  - Readiness report authorizes only roadmap/backlog/spec hydration under the fresh
-    hydration-specific gate.
-  - T-062 is hydrated as planning-readiness scope only, with no code, public, cockpit,
-    release, kernel, or project-local artifacts mutated.
+  - Readiness report blocks repeat hydration after the fresh hydration-specific gate.
+  - Root-local cockpit/release-profile helpers fail closed for missing, stale, misowned,
+    malformed, or overclaimed project-local receipts.
+  - T-062 is delivered with no public, cockpit, release, kernel, template, or project-local
+    artifacts mutated.
   research_evidence_refs:
   - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
   - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
   - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
   - .azoth/initiative-banks/INI-DEP-001.yaml
   known_non_goals:
-  - No code implementation.
   - No release publishing.
   - No public Azoth mutation.
   - No personal cockpit mutation.
   - No project-local repo mutation.
+  - No actual project-local receipt creation.
   - No kernel/governance or kernel/templates edits.
   open_questions: []
   recommended_phase: post-v0.2.0-stabilization
@@ -194,27 +197,37 @@ candidate_slices:
     hydrated_task_ref: T-062
     hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
     hydrated_at: '2026-05-19T20:08:10Z'
+  delivery_result:
+    delivered_at: '2026-05-19T21:26:31Z'
+    session_id: 2026-05-19-t-062-delivery-goal-mode-receipts
+    status: complete
+    commit_ref: 4fbd9b2
+    evaluator_score: 0.92
+    summary: Root-local receipt-authority validation now fails closed in cockpit and
+      release-profile readiness helpers; Goal-mode same-active-goal continuation avoids
+      a repeat manual approval wall without expanding protected authority.
 readiness:
-  evaluated_at: '2026-05-19T19:50:20Z'
-  readiness_status: ready_to_hydrate
+  evaluated_at: '2026-05-19T21:26:31Z'
+  readiness_status: complete
   human_decision: approved
-  approval_scope: hydration_specific_ini_dep_002_slice_dep_002_a_t_062
-  approval_basis: 'Operator approved on 2026-05-19: Approve a fresh standard /auto
-    hydration-readiness campaign for INI-DEP-002 slice-dep-002-a / proposed T-062,
-    limited to root-azoth roadmap/backlog/spec hydration and planning-readiness artifacts
-    only, with no kernel/governance edits, no kernel/templates edits, no release publishing,
-    no public Azoth mutation, no personal cockpit mutation, no project-local repo
-    mutation, and no code implementation.
+  approval_scope: t_062_delivery_goal_mode_receipt_validation
+  approval_basis: 'Operator approved on 2026-05-19: approve the fresh standard /auto
+    T-062 delivery campaign and solve the Goal-mode repeated manual approval issue
+    once and for all, limited to root-azoth receipt/readback validation helpers and
+    focused tests. This scope did not authorize kernel/governance edits, kernel/templates
+    edits, release publishing, public Azoth mutation, personal cockpit mutation, project-local
+    repo mutation, or actual project-local receipt creation.
 
     '
   candidate_first_slice: slice-dep-002-a
-  freshness_status: current_as_of_2026_05_19_hydrated_to_t_062
+  freshness_status: current_as_of_2026_05_19_t_062_delivered
   acceptance_criteria_status: present
   non_goals_status: present
-  delivery_authorized: false
-  hydrate_authorized: true
-  hydration_recommendation: slice-dep-002-a has been hydrated as T-062. Do not repeat
-    hydration; route implementation through a separate delivery child.
+  delivery_authorized: true
+  hydrate_authorized: false
+  hydration_recommendation: slice-dep-002-a has been hydrated and delivered as T-062.
+    Do not repeat hydration or delivery; route future public/cockpit/project-local
+    receipt adoption through separate gated follow-ons.
 hydration_history:
 - hydrated_at: '2026-05-19T20:08:10Z'
   session_id: 2026-05-19-ini-dep-002-t-062-hydration-readiness
@@ -245,3 +258,17 @@ hydration_history:
     kernel/templates mutation remain out of scope."
   result: Created roadmap/backlog/spec artifacts for T-062; implementation and shipping
     remain separate.
+delivery_history:
+- delivered_at: '2026-05-19T21:26:31Z'
+  session_id: 2026-05-19-t-062-delivery-goal-mode-receipts
+  candidate_slice_ref: slice-dep-002-a
+  task_ref: T-062
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  backlog_ref: T-062
+  roadmap_ref: T-062
+  approval_scope: t_062_delivery_goal_mode_receipt_validation
+  commit_ref: 4fbd9b2
+  evaluator_score: 0.92
+  result: Delivered root-local receipt-authority validation and Goal-mode same-active-goal
+    continuation repair without public, cockpit, project-local, release, kernel, or template
+    mutation.
