@@ -1339,9 +1339,9 @@ initiatives:
     role: follow_on
   summary: 'Define Azoth deployment modes, first-use readiness, and cockpit readback
     for new and existing projects while preserving root/public/cockpit/project-local
-    authority boundaries; T-060 now adds the root-owned cockpit readback checker
-    and no-write simulator assertions for that contract, and T-061 now adds the
-    root-owned release-profile readiness compiler.
+    authority boundaries; T-060 now adds the root-owned cockpit readback checker and
+    no-write simulator assertions for that contract, and T-061 now adds the root-owned
+    release-profile readiness compiler.
 
     '
   decision_ref: []
@@ -1376,6 +1376,19 @@ initiatives:
   - D50
   - D52
   initiative_bank_ref: .azoth/initiative-banks/INI-DEP-002.yaml
+  task_ref: T-062
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  slices:
+  - task_ref: null
+    spec_ref: null
+    phase: v0.2.0-p4
+    status: complete
+    role: historical
+  - task_ref: T-062
+    spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+    phase: v0.2.0-p4
+    status: active
+    role: primary
 versions:
 - id: v0.0.1
   status: complete
@@ -2290,7 +2303,17 @@ versions:
     backup/private remote work, kernel/governance/M1, and dependency/network/credential/destructive
     actions remain separate protected gates beyond this repo-internal phase close.'
   pending_task_refs: []
-  tasks: []
+  tasks:
+  - id: T-062
+    title: Project-local mode-selection receipt and cockpit handoff map
+    decision_ref:
+    - D11
+    - D23
+    - D38
+    - D48
+    - D50
+    - D52
+    initiative_ref: INI-DEP-002
   completed_tasks:
   - id: T-061
     title: Release profile matrix compiler
