@@ -2,9 +2,9 @@ schema_version: 1
 bank_type: initiative
 initiative_id: INI-ADOPT-001
 title: Project Genesis external-plane adoption gates
-status: discovery_active
+status: complete
 created_at: "2026-05-19T22:15:27Z"
-updated_at: "2026-05-19T22:25:28Z"
+updated_at: "2026-05-19T22:29:24Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-20-project-genesis-adoption-gates-seed
@@ -79,6 +79,10 @@ research_refs:
     kind: research_bank
     path: .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml
     note: Root-local public template distribution preflight for Project Genesis starter docs and helper.
+  - id: ref-adopt-001-project-local-dry-run
+    kind: research_bank
+    path: .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml
+    note: Root-local project-local starter packet dry-run preflight for music-production-lab.
 local_findings:
   - finding_id: lf-adopt-001-001
     summary: >
@@ -248,7 +252,7 @@ candidate_slices:
     proposed_task_id: ADOPT-001-D
     title: Project-local starter packet dry-run preflight
     initiative_ref: INI-ADOPT-001
-    status: candidate
+    status: complete
     target_layer: project-local-readiness
     delivery_pipeline: standard
     summary: >
@@ -264,32 +268,49 @@ candidate_slices:
       - No project repository mutation.
       - No project-local receipt creation.
       - No managed/governed hydration.
-    open_questions:
-      - Which project should be selected first: music, thesis, or agent-context?
+    open_questions: []
     research_evidence_refs:
       - .azoth/research/ini-adopt-001-route-board.yaml
       - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+      - .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml
+      - .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-d-validation-receipt.yaml
     recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      Completed as a root-local dry-run preflight for music-production-lab in
+      guide/discovery mode. The packet was generated and validated from a temp
+      path without writing to a project repository, creating a project-local
+      receipt, loading project-local context, or hydrating roadmap/backlog/spec
+      state.
+    delivery_result:
+      delivered_at: "2026-05-19T22:29:24Z"
+      session_id: 2026-05-20-ini-adopt-001-project-local-dry-run-preflight
+      status: complete
+      receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-d-validation-receipt.yaml
+      summary: >
+        Seeded the project-local starter packet dry-run preflight and validated
+        a music-production-lab starter packet in /private/tmp, leaving real
+        project-local writes, receipts, context loading, managed hydration, and
+        external-plane mutation gated.
 readiness:
-  readiness_status: continue_research
+  readiness_status: complete
   human_decision: approved_for_planning_seed_only
-  approval_scope: goal_mode_external_adoption_and_cockpit_preflight_no_mutation
+  approval_scope: goal_mode_external_adoption_preflights_no_mutation
   approval_basis: >
     Active Codex Goal-mode authority permits root-local planning-seed artifacts
     and validation receipts. It does not authorize public Azoth, personal
     cockpit, project-local, roadmap/backlog/spec hydration, kernel/governance,
     release, dependency, credential, or destructive mutation.
   candidate_first_slice: slice-adopt-001-d
-  freshness_status: current_as_of_2026_05_20_public_template_preflight_complete
+  freshness_status: current_as_of_2026_05_20_external_adoption_preflights_complete
   hydration_recommendation: >
     Do not hydrate roadmap/backlog/spec state. The pointer-only cockpit route
-    rehearsal and public template distribution preflights are complete as
-    root-local evidence. The next self-servable planning route is project-local
-    starter packet dry-run preflight; any actual public Azoth, personal cockpit,
-    project-local, release, or hydration mutation still requires a fresh
-    target-plane approval.
+    rehearsal, public template distribution, and project-local starter packet
+    dry-run preflights are complete as root-local evidence. No self-servable
+    adoption-gate planning slice remains in INI-ADOPT-001; any actual public
+    Azoth, personal cockpit, project-local, release, or hydration mutation still
+    requires a fresh target-plane approval.
   open_questions:
-    - Should the first project-local dry-run target music, thesis, or agent-context?
+    - Which target-plane adoption should be approved first: public release extraction, cockpit pointer registration, or project-local starter packet creation?
 hydration_history: []
 delivery_history:
   - delivered_at: "2026-05-19T22:18:48Z"
@@ -311,6 +332,16 @@ delivery_history:
       Completed a root-local public template distribution preflight. Public
       repository mutation, release publishing, install/profile claim changes,
       and private-root artifact exposure remain blocked until a fresh explicit gate.
+  - delivered_at: "2026-05-19T22:29:24Z"
+    session_id: 2026-05-20-ini-adopt-001-project-local-dry-run-preflight
+    candidate_slice_ref: slice-adopt-001-d
+    task_ref: ADOPT-001-D
+    approval_scope: goal_mode_project_local_dry_run_preflight_no_mutation
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-d-validation-receipt.yaml
+    result: >
+      Completed a root-local dry-run preflight for music-production-lab. Project
+      repository mutation, project-local receipt creation, context loading, and
+      managed/governed hydration remain blocked until a fresh explicit gate.
   - delivered_at: "2026-05-19T22:15:27Z"
     session_id: 2026-05-20-project-genesis-adoption-gates-seed
     candidate_slice_ref: slice-adopt-001-a
