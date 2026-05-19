@@ -94,7 +94,7 @@ details:
       - Reject unsafe or protected write paths.
       - Reject active non-bootstrap scopes that belong to another session.
       - Write .azoth/scope-gate.json and .azoth/pipeline-gate.json only after validation.
-      - Copy the validated allowed write set to scope-gate.allowed_writes for ordinary audit/readback.
+      - Copy bookkeeping paths plus the validated allowed write set to scope-gate.allowed_writes for ordinary audit/readback.
       - Mark scope gates with approved_by goal-mode-self-approval and a metadata block.
       - Mark metadata with scope_class so continuation audits know which authority class opened the gate.
   non_goals:

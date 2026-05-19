@@ -82,6 +82,12 @@ PLANNING_FORBIDDEN_PREFIXES = COMMON_FORBIDDEN_PREFIXES + (
 REPO_REPAIR_FORBIDDEN_PREFIXES = COMMON_FORBIDDEN_PREFIXES + ("docs/",)
 
 FORBIDDEN_TARGET_LAYERS = {"kernel", "m1", "governance"}
+BOOKKEEPING_ALLOWED_WRITES = (
+    ".azoth/scope-gate.json",
+    ".azoth/pipeline-gate.json",
+    ".azoth/run-ledger.local.yaml",
+    ".azoth/codex-model-selector-traces.local.jsonl",
+)
 
 
 class GoalModeSelfApprovalError(ValueError):
@@ -323,7 +329,7 @@ def build_gate_payloads(
         "target_layer": request.target_layer,
         "alignment_mode": "async",
         "operator_lines_are_sequential_gates": False,
-        "allowed_writes": list(request.allowed_writes),
+        "allowed_writes": _top_level_allowed_writes(request),
         "forbidden_outputs": _forbidden_outputs_for_scope_class(request.scope_class),
         "goal_mode_self_approval": metadata,
     }
@@ -349,6 +355,10 @@ def _approval_basis_for_scope_class(scope_class: str) -> str:
         "Goal-mode self-approval v1 opened this planning-seed scope from an "
         "active Codex Goal after validating the allowed write set."
     )
+
+
+def _top_level_allowed_writes(request: GoalModeSelfApprovalRequest) -> list[str]:
+    return list(dict.fromkeys([*BOOKKEEPING_ALLOWED_WRITES, *request.allowed_writes]))
 
 
 def _forbidden_outputs_for_scope_class(scope_class: str) -> list[str]:

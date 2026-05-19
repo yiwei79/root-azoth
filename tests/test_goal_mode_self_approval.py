@@ -39,7 +39,13 @@ def test_valid_request_builds_self_approved_scope_and_pipeline() -> None:
     assert scope["approved"] is True
     assert scope["approved_by"] == "goal-mode-self-approval"
     assert scope["session_id"] == "2026-05-19-deployment-readiness-seed"
-    assert scope["allowed_writes"] == list(request.allowed_writes)
+    assert scope["allowed_writes"] == [
+        ".azoth/scope-gate.json",
+        ".azoth/pipeline-gate.json",
+        ".azoth/run-ledger.local.yaml",
+        ".azoth/codex-model-selector-traces.local.jsonl",
+        *request.allowed_writes,
+    ]
     assert "code_changes" in scope["forbidden_outputs"]
     assert scope["goal_mode_self_approval"]["schema_version"] == 1
     assert scope["goal_mode_self_approval"]["allowed_writes"] == list(request.allowed_writes)
@@ -65,6 +71,10 @@ def test_repo_repair_request_allows_bounded_scripts_and_tests_scope() -> None:
         "tests/test_azoth_release_profile.py",
     ]
     assert scope["allowed_writes"] == [
+        ".azoth/scope-gate.json",
+        ".azoth/pipeline-gate.json",
+        ".azoth/run-ledger.local.yaml",
+        ".azoth/codex-model-selector-traces.local.jsonl",
         "scripts/azoth_release_profile.py",
         "tests/test_azoth_release_profile.py",
     ]
