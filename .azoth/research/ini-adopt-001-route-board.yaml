@@ -1,7 +1,7 @@
 schema_version: 1
 artifact_type: adoption_route_board
 initiative_ref: INI-ADOPT-001
-created_at: "2026-05-20T00:15:00+00:00"
+created_at: "2026-05-19T22:15:27Z"
 session_id: 2026-05-20-project-genesis-adoption-gates-seed
 purpose: >
   Compare the next Project Genesis adoption routes after the root-local

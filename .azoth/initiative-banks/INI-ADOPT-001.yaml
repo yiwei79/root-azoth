@@ -3,8 +3,8 @@ bank_type: initiative
 initiative_id: INI-ADOPT-001
 title: Project Genesis external-plane adoption gates
 status: discovery_active
-created_at: "2026-05-20T00:15:00+00:00"
-updated_at: "2026-05-20T00:15:00+00:00"
+created_at: "2026-05-19T22:15:27Z"
+updated_at: "2026-05-19T22:15:27Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-20-project-genesis-adoption-gates-seed
@@ -33,7 +33,7 @@ research_questions:
   - question_id: rq-adopt-001-001
     question: What are the legal next adoption routes after root-local Project Genesis planning completes?
     status: answered
-    opened_at: "2026-05-20T00:15:00+00:00"
+    opened_at: "2026-05-19T22:15:27Z"
     needed_for: adoption_route_selection
     answer: >
       The legal routes are public Azoth template distribution, pointer-only
@@ -45,7 +45,7 @@ research_questions:
   - question_id: rq-adopt-001-002
     question: Which route best advances the active objective without external-plane mutation?
     status: answered
-    opened_at: "2026-05-20T00:15:00+00:00"
+    opened_at: "2026-05-19T22:15:27Z"
     needed_for: candidate_first_slice
     answer: >
       The cockpit route rehearsal preflight best advances the central
@@ -144,7 +144,7 @@ candidate_slices:
       rehearsal preflight as the next operator-visible route, with fresh approval
       required before any cockpit mutation.
     delivery_result:
-      delivered_at: "2026-05-20T00:15:00+00:00"
+      delivered_at: "2026-05-19T22:15:27Z"
       session_id: 2026-05-20-project-genesis-adoption-gates-seed
       status: complete
       receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-ini-adopt-001-route-board-receipt.yaml
@@ -250,7 +250,7 @@ readiness:
     - Should the first project-local dry-run target music, thesis, or agent-context?
 hydration_history: []
 delivery_history:
-  - delivered_at: "2026-05-20T00:15:00+00:00"
+  - delivered_at: "2026-05-19T22:15:27Z"
     session_id: 2026-05-20-project-genesis-adoption-gates-seed
     candidate_slice_ref: slice-adopt-001-a
     task_ref: ADOPT-001-A
