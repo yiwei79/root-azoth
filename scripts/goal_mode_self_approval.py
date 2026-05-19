@@ -218,7 +218,7 @@ def validate_allowed_write_path(
         if path.startswith(prefix):
             raise GoalModeSelfApprovalError(f"{path} is outside Goal-mode self-approval")
     if not any(path.startswith(prefix) for prefix in _allowed_prefixes_for_scope(scope_class)):
-        raise GoalModeSelfApprovalError(f"{path} is not an allowed planning-seed artifact")
+        raise GoalModeSelfApprovalError(f"{path} is not allowed for Goal-mode self-approval")
 
 
 def _parse_iso(raw: str) -> datetime | None:
@@ -323,6 +323,8 @@ def build_gate_payloads(
         "target_layer": request.target_layer,
         "alignment_mode": "async",
         "operator_lines_are_sequential_gates": False,
+        "allowed_writes": list(request.allowed_writes),
+        "forbidden_outputs": _forbidden_outputs_for_scope_class(request.scope_class),
         "goal_mode_self_approval": metadata,
     }
     pipeline_gate = {
@@ -347,6 +349,23 @@ def _approval_basis_for_scope_class(scope_class: str) -> str:
         "Goal-mode self-approval v1 opened this planning-seed scope from an "
         "active Codex Goal after validating the allowed write set."
     )
+
+
+def _forbidden_outputs_for_scope_class(scope_class: str) -> list[str]:
+    common = [
+        "kernel_governance_mutation",
+        "kernel_template_mutation",
+        "roadmap_backlog_spec_hydration",
+        "release_publishing",
+        "public_azoth_mutation",
+        "personal_cockpit_mutation",
+        "project_local_mutation",
+        "dependency_or_credential_changes",
+        "destructive_actions",
+    ]
+    if scope_class == "repo_repair":
+        return common + ["broad_productization_gate"]
+    return common + ["code_changes", "broad_productization_gate"]
 
 
 def write_self_approved_gates(

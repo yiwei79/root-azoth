@@ -39,6 +39,8 @@ def test_valid_request_builds_self_approved_scope_and_pipeline() -> None:
     assert scope["approved"] is True
     assert scope["approved_by"] == "goal-mode-self-approval"
     assert scope["session_id"] == "2026-05-19-deployment-readiness-seed"
+    assert scope["allowed_writes"] == list(request.allowed_writes)
+    assert "code_changes" in scope["forbidden_outputs"]
     assert scope["goal_mode_self_approval"]["schema_version"] == 1
     assert scope["goal_mode_self_approval"]["allowed_writes"] == list(request.allowed_writes)
     assert pipeline["pipeline_command"] == "auto"
@@ -62,6 +64,11 @@ def test_repo_repair_request_allows_bounded_scripts_and_tests_scope() -> None:
         "scripts/azoth_release_profile.py",
         "tests/test_azoth_release_profile.py",
     ]
+    assert scope["allowed_writes"] == [
+        "scripts/azoth_release_profile.py",
+        "tests/test_azoth_release_profile.py",
+    ]
+    assert "code_changes" not in scope["forbidden_outputs"]
     assert "bounded repo-local implementation" in scope["approval_basis"]
     assert pipeline["pipeline_command"] == "auto"
 
