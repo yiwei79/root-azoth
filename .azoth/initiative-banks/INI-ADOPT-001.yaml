@@ -4,7 +4,7 @@ initiative_id: INI-ADOPT-001
 title: Project Genesis external-plane adoption gates
 status: discovery_active
 created_at: "2026-05-19T22:15:27Z"
-updated_at: "2026-05-19T22:18:48Z"
+updated_at: "2026-05-19T22:25:28Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-20-project-genesis-adoption-gates-seed
@@ -75,6 +75,10 @@ research_refs:
     kind: research_bank
     path: .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml
     note: Root-local pointer-only cockpit route rehearsal preflight for Project Genesis spaces.
+  - id: ref-adopt-001-public-template-preflight
+    kind: research_bank
+    path: .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml
+    note: Root-local public template distribution preflight for Project Genesis starter docs and helper.
 local_findings:
   - finding_id: lf-adopt-001-001
     summary: >
@@ -160,7 +164,7 @@ candidate_slices:
     proposed_task_id: ADOPT-001-B
     title: Public Azoth Project Genesis template distribution preflight
     initiative_ref: INI-ADOPT-001
-    status: candidate
+    status: complete
     target_layer: release
     delivery_pipeline: standard
     summary: >
@@ -176,11 +180,27 @@ candidate_slices:
       - No public repository mutation.
       - No release publishing.
       - No installer/profile claim changes.
-    open_questions:
-      - Which template path should be public-first?
+    open_questions: []
     research_evidence_refs:
       - .azoth/research/ini-adopt-001-route-board.yaml
+      - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml
+      - .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-b-validation-receipt.yaml
     recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      Completed as a root-local public distribution preflight. It names
+      candidate public docs/helper paths, release-profile smoke checks, and
+      private-root exclusion checks without mutating public Azoth, release
+      profiles, installers, kernel/templates, or publish state.
+    delivery_result:
+      delivered_at: "2026-05-19T22:25:28Z"
+      session_id: 2026-05-20-ini-adopt-001-public-template-preflight
+      status: complete
+      receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-b-validation-receipt.yaml
+      summary: >
+        Seeded the public template distribution preflight for Project Genesis
+        starter docs and helper surfaces while leaving real public repository
+        mutation, release publishing, install/profile claims, kernel/templates,
+        and private-root artifacts gated.
   - candidate_id: slice-adopt-001-c
     proposed_task_id: ADOPT-001-C
     title: Pointer-only cockpit route rehearsal preflight
@@ -259,16 +279,16 @@ readiness:
     and validation receipts. It does not authorize public Azoth, personal
     cockpit, project-local, roadmap/backlog/spec hydration, kernel/governance,
     release, dependency, credential, or destructive mutation.
-  candidate_first_slice: slice-adopt-001-b
-  freshness_status: current_as_of_2026_05_20_cockpit_route_preflight_complete
+  candidate_first_slice: slice-adopt-001-d
+  freshness_status: current_as_of_2026_05_20_public_template_preflight_complete
   hydration_recommendation: >
     Do not hydrate roadmap/backlog/spec state. The pointer-only cockpit route
-    rehearsal preflight is complete as root-local evidence. The next
-    self-servable planning route is public template distribution preflight; any
-    actual public Azoth, personal cockpit, project-local, release, or hydration
-    mutation still requires a fresh target-plane approval.
+    rehearsal and public template distribution preflights are complete as
+    root-local evidence. The next self-servable planning route is project-local
+    starter packet dry-run preflight; any actual public Azoth, personal cockpit,
+    project-local, release, or hydration mutation still requires a fresh
+    target-plane approval.
   open_questions:
-    - Which public template path should be public-first if deployment ease becomes the next planning route?
     - Should the first project-local dry-run target music, thesis, or agent-context?
 hydration_history: []
 delivery_history:
@@ -281,6 +301,16 @@ delivery_history:
     result: >
       Completed a root-local pointer-only cockpit route rehearsal preflight.
       Personal cockpit mutation remains blocked until a fresh explicit gate.
+  - delivered_at: "2026-05-19T22:25:28Z"
+    session_id: 2026-05-20-ini-adopt-001-public-template-preflight
+    candidate_slice_ref: slice-adopt-001-b
+    task_ref: ADOPT-001-B
+    approval_scope: goal_mode_public_template_preflight_no_mutation
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-slice-adopt-001-b-validation-receipt.yaml
+    result: >
+      Completed a root-local public template distribution preflight. Public
+      repository mutation, release publishing, install/profile claim changes,
+      and private-root artifact exposure remain blocked until a fresh explicit gate.
   - delivered_at: "2026-05-19T22:15:27Z"
     session_id: 2026-05-20-project-genesis-adoption-gates-seed
     candidate_slice_ref: slice-adopt-001-a
