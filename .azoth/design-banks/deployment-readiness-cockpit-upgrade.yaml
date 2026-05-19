@@ -2,9 +2,9 @@ schema_version: 1
 bank_type: design
 id: deployment-readiness-cockpit-upgrade
 title: Deployment readiness cockpit upgrade
-status: active_refinement
+status: complete
 created_at: "2026-05-19T14:52:00Z"
-updated_at: "2026-05-19T16:01:40Z"
+updated_at: "2026-05-19T21:56:00Z"
 source_proposal_refs:
   - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
 related_initiative_refs:
@@ -25,21 +25,21 @@ tradeoffs:
   - {tradeoff_id: simplicity_vs_truth, summary: "Mode labels simplify adoption but must fail closed when assets are missing.", mitigation: "Readiness reports name installed and missing assets."}
   - {tradeoff_id: cockpit_power, summary: "A central control point is useful but can become hidden authority.", mitigation: "Keep cockpit pointer-only until project-local approval exists."}
 open_questions:
-  - {question_id: db-dep-001, status: answered, question: "Should guide and assisted modes be public release profiles or starter presets?", answer: "T-059 defines them as mode/readiness contract levels first; release-profile compiler work needs a fresh gate."}
+  - {question_id: db-dep-001, status: answered, question: "Should guide and assisted modes be public release profiles or starter presets?", answer: "T-059 defines them as mode/readiness contract levels first; T-061 delivered root-local release-profile readiness compilation, while public release templates remain a fresh gate."}
 research_refs:
   - .azoth/research/ini-dep-001-readiness-map.yaml
   - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
 challenge_log:
-  - {challenge_id: ch-dep-design-001, status: active, prompt: "What would make modes misleading?", answer: "Claiming managed or governed-autonomy readiness without runtime, seed, and stop-condition checks."}
+  - {challenge_id: ch-dep-design-001, status: answered, prompt: "What would make modes misleading?", answer: "Claiming managed or governed-autonomy readiness without runtime, seed, receipt, and stop-condition checks; T-061/T-062 keep those states authority-required until fresh project-local receipts exist."}
 routing_candidates:
-  - {route: initiative_candidate, status: selected, target: INI-DEP-001#slice-dep-001-a, rationale: "First buildable move is the mode matrix and first-use map."}
+  - {route: initiative_candidate, status: complete, target: INI-DEP-001, rationale: "T-059, T-060, and T-061 delivered the root-local mode matrix, cockpit readback, and release-profile compiler; do not repeat this initiative."}
 readiness:
-  evaluated_at: "2026-05-19T16:01:40Z"
-  readiness_status: continue_refinement
-  freshness_status: current_as_of_2026-05-19-t059-delivered
-  human_decision: t059_delivery_approved_only
-  target_route: INI-DEP-001#slice-dep-001-a
-  recommended_next_artifact: release_profile_compiler_or_cockpit_readback_after_fresh_approval
+  evaluated_at: "2026-05-19T21:56:00Z"
+  readiness_status: defer
+  freshness_status: current_as_of_2026_05_19_t061_delivered
+  human_decision: approved
+  target_route: null
+  recommended_next_artifact: "No INI-DEP-001 delivery remains. Future public templates, cockpit adoption, Project Genesis rehearsal, or project-local receipt work requires a fresh initiative, proposal, or improvement campaign."
 closeout_history_policy:
   policy_id: planning_bank_closeout_history_merge_policy_v1
   status: active
@@ -66,3 +66,6 @@ closeout_history_policy:
 history:
   - {timestamp: "2026-05-19T14:52:00Z", event: created_from_goal_mode_planning_seed, summary: "Captured durable design owner for the deployment/readiness/cockpit mode upgrade."}
   - {timestamp: "2026-05-19T16:01:40Z", event: t059_contract_delivered, summary: "T-059 delivered the root-local mode matrix, first-use map, and cockpit readback contract without runtime or release mutation."}
+  - {timestamp: "2026-05-19T16:47:39Z", event: t060_cockpit_readback_delivered, summary: "T-060 delivered root-local cockpit readback validation and no-write UX simulation for mode readiness."}
+  - {timestamp: "2026-05-19T18:37:10Z", event: t061_release_profile_delivered, summary: "T-061 delivered the root-local release-profile readiness compiler without public release, cockpit, or project-local mutation."}
+  - {timestamp: "2026-05-19T21:56:00Z", event: route_closed_after_ini_dep_001_completion, summary: "Closed the design-bank route after INI-DEP-001 completed through T-059, T-060, and T-061; future adoption work requires fresh gates."}

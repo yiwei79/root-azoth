@@ -2,10 +2,10 @@ schema_version: 1
 bank_type: initiative
 initiative_id: INI-DEP-001
 title: Deployment readiness, cockpit control point, and multi-scale modes
-status: active_refinement
-classification: planning_discovery_seed
+status: complete
+classification: root_readiness_contract_complete
 created_at: '2026-05-19T14:39:38Z'
-updated_at: '2026-05-19T18:37:10Z'
+updated_at: '2026-05-19T21:56:00Z'
 owner: codex
 delivery_authorized: false
 source_sessions:
