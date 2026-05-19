@@ -102,6 +102,56 @@ def test_rejects_replacing_unrelated_active_scope(tmp_path: Path) -> None:
         goal_mode.write_self_approved_gates(tmp_path, _request(), now=NOW)
 
 
+def test_allows_same_goal_continuation_to_replace_goal_mode_scope(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "approved_by": "goal-mode-self-approval",
+                "expires_at": "2026-05-19T16:34:28Z",
+                "session_id": "previous-goal-mode-session",
+                "goal_mode_self_approval": {
+                    "schema_version": 1,
+                    "active_goal_excerpt": "Design deployment readiness and cockpit upgrade.",
+                    "allowed_writes": [".azoth/proposals/old-seed.yaml"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    goal_mode.write_self_approved_gates(tmp_path, _request(), now=NOW)
+
+    scope = json.loads((azoth / "scope-gate.json").read_text(encoding="utf-8"))
+    assert scope["session_id"] == "2026-05-19-deployment-readiness-seed"
+
+
+def test_rejects_goal_mode_continuation_for_different_active_goal(tmp_path: Path) -> None:
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir()
+    (azoth / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "approved_by": "goal-mode-self-approval",
+                "expires_at": "2026-05-19T16:34:28Z",
+                "session_id": "previous-goal-mode-session",
+                "goal_mode_self_approval": {
+                    "schema_version": 1,
+                    "active_goal_excerpt": "Some other long-running goal.",
+                    "allowed_writes": [".azoth/proposals/old-seed.yaml"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(goal_mode.GoalModeSelfApprovalError, match="active Goal"):
+        goal_mode.write_self_approved_gates(tmp_path, _request(), now=NOW)
+
+
 @pytest.mark.parametrize(
     "path",
     [

@@ -12,7 +12,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from cockpit_menu import check_cockpit, load_cockpit, render_menu  # noqa: E402
+from cockpit_menu import READBACK_PROJECT_FIELDS, check_cockpit, load_cockpit, render_menu  # noqa: E402
 
 
 READBACK_FIELDS = {
@@ -28,6 +28,32 @@ READBACK_FIELDS = {
     "next_safe_action": "Open a project session; project writes require a fresh project-scoped gate.",
     "stop_reason": "none",
 }
+
+
+def _yaml_list_after_field(path: Path, field: str) -> list[str]:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start = next(index for index, line in enumerate(lines) if line.strip() == f"{field}:")
+    values: list[str] = []
+    for line in lines[start + 1 :]:
+        stripped = line.strip()
+        if not stripped.startswith("- "):
+            break
+        values.append(stripped[2:])
+    return values
+
+
+def test_planning_artifacts_preserve_canonical_cockpit_readback_fields() -> None:
+    spec_fields = _yaml_list_after_field(
+        ROOT / ".azoth" / "roadmap-specs" / "v0.2.0" / "T-062.yaml",
+        "canonical_readback_fields",
+    )
+    research_fields = _yaml_list_after_field(
+        ROOT / ".azoth" / "research" / "ini-dep-002-project-readiness-handoff-map.yaml",
+        "canonical_cockpit_readback_fields",
+    )
+
+    assert set(spec_fields) == READBACK_PROJECT_FIELDS
+    assert set(research_fields) == READBACK_PROJECT_FIELDS
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
@@ -86,6 +112,37 @@ def _write_cockpit_fixture(root: Path) -> Path:
         },
     )
     return root
+
+
+def _write_project_local_receipt(root: Path, project_path: Path, **overrides: object) -> str:
+    receipt_ref = ".azoth/projects/handoffs/project-local-mode.yaml"
+    receipt: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_type": "project_local_mode_receipt",
+        "project_id": "ras-or-ray",
+        "repo_path": str(project_path),
+        "receipt_owner": "project_local",
+        "selected_mode": "managed",
+        "release_profile_ref": "full@v0.2.0",
+        "readiness_state": "ready",
+        "freshness_status": "current",
+        "installed_asset_classes": [
+            "roadmap seed",
+            "backlog seed",
+            "planning-bank seed",
+            "validation helpers",
+            "project-local receipt",
+        ],
+        "missing_asset_classes": [],
+        "approval_scope": "managed_mode_project_local_gate",
+        "active_write_claim": False,
+        "next_safe_action": "hydrate planning state under the project-local managed-mode gate",
+        "stop_reason": "none",
+        "handoff_receipt_ref": receipt_ref,
+    }
+    receipt.update(overrides)
+    _write_yaml(root / receipt_ref, receipt)
+    return receipt_ref
 
 
 def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path) -> None:
@@ -189,6 +246,92 @@ def test_check_cockpit_rejects_invalid_asset_and_write_claim_types(tmp_path: Pat
     assert any("installed_asset_classes must be a list" in error for error in errors)
     assert any("missing_asset_classes must contain only non-empty values" in error for error in errors)
     assert any("active_write_claim must be a boolean" in error for error in errors)
+
+
+def test_check_cockpit_accepts_authoritative_project_local_receipt(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    project_path = root.parent / "ras or ray"
+    receipt_ref = _write_project_local_receipt(root, project_path)
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["authority_plane"] = "project_local"
+    doc["projects"][0]["selected_mode"] = "managed"
+    doc["projects"][0]["readiness_state"] = "ready"
+    doc["projects"][0]["approval_scope"] = "managed_mode_project_local_gate"
+    doc["projects"][0]["handoff_receipt_ref"] = receipt_ref
+    _write_yaml(projects_index, doc)
+
+    assert check_cockpit(load_cockpit(root, include_status=False)) == []
+
+
+def test_check_cockpit_fails_closed_for_unsafe_project_local_receipt(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    project_path = root.parent / "ras or ray"
+    receipt_ref = _write_project_local_receipt(
+        root,
+        project_path,
+        receipt_owner="root_azoth",
+        freshness_status="stale",
+    )
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["authority_plane"] = "project_local"
+    doc["projects"][0]["selected_mode"] = "managed"
+    doc["projects"][0]["approval_scope"] = "managed_mode_project_local_gate"
+    doc["projects"][0]["handoff_receipt_ref"] = receipt_ref
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("receipt_owner must be project_local" in error for error in errors)
+    assert any("freshness_status must be current" in error for error in errors)
+
+
+def test_check_cockpit_requires_receipt_for_project_local_managed_readback(
+    tmp_path: Path,
+) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["authority_plane"] = "project_local"
+    doc["projects"][0]["selected_mode"] = "managed"
+    doc["projects"][0]["handoff_receipt_ref"] = ""
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("handoff_receipt_ref is required for project-local authority" in error for error in errors)
+
+
+def test_check_cockpit_reports_malformed_project_local_receipt(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    receipt_ref = ".azoth/projects/handoffs/project-local-mode.yaml"
+    (root / receipt_ref).write_text("receipt: [unterminated\n", encoding="utf-8")
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["authority_plane"] = "project_local"
+    doc["projects"][0]["selected_mode"] = "managed"
+    doc["projects"][0]["handoff_receipt_ref"] = receipt_ref
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("failed to parse handoff receipt" in error for error in errors)
+
+
+def test_check_cockpit_rejects_managed_mode_without_project_local_authority(
+    tmp_path: Path,
+) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["selected_mode"] = "managed"
+    doc["projects"][0]["authority_plane"] = "personal_cockpit"
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("selected_mode managed requires authority_plane project_local" in error for error in errors)
 
 
 def test_project_filter_renders_only_selected_handoff(tmp_path: Path) -> None:

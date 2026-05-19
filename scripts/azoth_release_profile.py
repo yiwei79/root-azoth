@@ -57,6 +57,37 @@ MODE_AUTHORITY_ASSET_CLASSES: dict[str, tuple[str, ...]] = {
     "managed": ("project-local receipt",),
 }
 
+PROJECT_LOCAL_RECEIPT_PATHS: tuple[str, ...] = (
+    ".azoth/project-local-mode-receipt.yaml",
+    ".azoth/project-local-receipt.yaml",
+)
+PROJECT_LOCAL_RECEIPT_REQUIRED_FIELDS: tuple[str, ...] = (
+    "project_id",
+    "repo_path",
+    "receipt_owner",
+    "selected_mode",
+    "release_profile_ref",
+    "readiness_state",
+    "freshness_status",
+    "installed_asset_classes",
+    "missing_asset_classes",
+    "approval_scope",
+    "active_write_claim",
+    "next_safe_action",
+    "stop_reason",
+    "handoff_receipt_ref",
+)
+PROJECT_LOCAL_RECEIPT_LIST_FIELDS = {
+    "installed_asset_classes",
+    "missing_asset_classes",
+}
+PROJECT_LOCAL_RECEIPT_TEXT_FIELDS = (
+    set(PROJECT_LOCAL_RECEIPT_REQUIRED_FIELDS)
+    - PROJECT_LOCAL_RECEIPT_LIST_FIELDS
+    - {"active_write_claim"}
+)
+PROJECT_LOCAL_AUTHORITY_MODES = {"managed", "governed_autonomy"}
+
 RUNTIME_GITIGNORE_RULES: tuple[str, ...] = (
     ".azoth/scope-gate.json",
     "!.azoth/scope-gate.json.example",
@@ -225,6 +256,137 @@ def _has_any_path(source_root: Path, rel_paths: tuple[str, ...]) -> bool:
     return any((source_root / rel_path).exists() for rel_path in rel_paths)
 
 
+def is_project_local_mode_receipt(receipt: Mapping[str, Any]) -> bool:
+    """Return true when a receipt claims the T-062 project-local contract."""
+    return (
+        receipt.get("artifact_type") == "project_local_mode_receipt"
+        or "receipt_owner" in receipt
+        or "release_profile_ref" in receipt
+    )
+
+
+def _repo_relative_file_path(value: Any, *, field: str) -> str | None:
+    text = str(value or "").strip()
+    path = Path(text)
+    if not text or path.is_absolute() or ".." in path.parts or text.endswith("/"):
+        return f"{field} must be a repo-relative file path"
+    return None
+
+
+def _scope_authorizes_mode(approval_scope: str, selected_mode: str) -> bool:
+    scope = approval_scope.casefold().replace("-", "_")
+    if selected_mode == "managed":
+        return "managed" in scope
+    if selected_mode == "governed_autonomy":
+        return "governed" in scope or "autonomy" in scope
+    return True
+
+
+def validate_project_local_mode_receipt(
+    receipt: Mapping[str, Any],
+    *,
+    repo_root: Path | None = None,
+    expected_project_id: str | None = None,
+    expected_repo_path: str | Path | None = None,
+    expected_selected_mode: str | None = None,
+    expected_handoff_receipt_ref: str | None = None,
+) -> list[str]:
+    """Validate the T-062 project-local mode receipt contract."""
+    errors: list[str] = []
+    missing = sorted(field for field in PROJECT_LOCAL_RECEIPT_REQUIRED_FIELDS if field not in receipt)
+    for field in missing:
+        errors.append(f"missing required field {field}")
+
+    for field in sorted(PROJECT_LOCAL_RECEIPT_TEXT_FIELDS):
+        if field in receipt and not str(receipt.get(field) or "").strip():
+            errors.append(f"{field} must be a non-empty string")
+
+    for field in sorted(PROJECT_LOCAL_RECEIPT_LIST_FIELDS):
+        if field not in receipt:
+            continue
+        values = receipt.get(field)
+        if not isinstance(values, list):
+            errors.append(f"{field} must be a list")
+        elif any(not isinstance(item, str) or not item.strip() for item in values):
+            errors.append(f"{field} must contain only non-empty strings")
+
+    if "active_write_claim" in receipt and not isinstance(receipt.get("active_write_claim"), bool):
+        errors.append("active_write_claim must be a boolean")
+
+    if receipt.get("receipt_owner") != "project_local":
+        errors.append("receipt_owner must be project_local")
+
+    selected_mode = str(receipt.get("selected_mode") or "").strip()
+    if selected_mode and selected_mode not in MODE_ORDER:
+        errors.append(f"selected_mode must be one of {list(MODE_ORDER)}")
+    if expected_selected_mode and selected_mode and selected_mode != expected_selected_mode:
+        errors.append(
+            f"selected_mode {selected_mode} must match expected mode {expected_selected_mode}"
+        )
+
+    freshness_status = str(receipt.get("freshness_status") or "").strip()
+    if freshness_status and not freshness_status.startswith("current"):
+        errors.append("freshness_status must be current")
+
+    approval_scope = str(receipt.get("approval_scope") or "").strip()
+    if selected_mode and approval_scope and not _scope_authorizes_mode(approval_scope, selected_mode):
+        errors.append(f"approval_scope must authorize {selected_mode}")
+
+    if expected_project_id:
+        project_id = str(receipt.get("project_id") or "").strip()
+        if project_id and project_id != expected_project_id:
+            errors.append(f"project_id {project_id} must match cockpit project_id {expected_project_id}")
+
+    if expected_repo_path is not None:
+        repo_path = str(receipt.get("repo_path") or "").strip()
+        if repo_path:
+            expected_path = Path(expected_repo_path).expanduser().resolve()
+            actual_path = Path(repo_path).expanduser().resolve()
+            if actual_path != expected_path:
+                errors.append(f"repo_path {actual_path} must match cockpit repo_path {expected_path}")
+
+    handoff_ref = str(receipt.get("handoff_receipt_ref") or "").strip()
+    if handoff_ref:
+        path_error = _repo_relative_file_path(handoff_ref, field="handoff_receipt_ref")
+        if path_error:
+            errors.append(path_error)
+        elif repo_root is not None and not (repo_root / handoff_ref).is_file():
+            errors.append("handoff_receipt_ref must resolve to an existing file")
+    if expected_handoff_receipt_ref and handoff_ref and handoff_ref != expected_handoff_receipt_ref:
+        errors.append(
+            f"handoff_receipt_ref {handoff_ref} must match cockpit handoff_receipt_ref "
+            f"{expected_handoff_receipt_ref}"
+        )
+
+    return errors
+
+
+def _project_local_receipt_validation_errors(
+    source_root: Path,
+    *,
+    expected_selected_mode: str | None = None,
+) -> list[str]:
+    for rel_path in PROJECT_LOCAL_RECEIPT_PATHS:
+        path = source_root / rel_path
+        if not path.is_file():
+            continue
+        try:
+            loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            return [f"{rel_path}: failed to parse project-local receipt: {exc}"]
+        if not isinstance(loaded, Mapping):
+            return [f"{rel_path}: project-local receipt must be a mapping"]
+        return [
+            f"{rel_path}: {error}"
+            for error in validate_project_local_mode_receipt(
+                loaded,
+                repo_root=source_root,
+                expected_selected_mode=expected_selected_mode,
+            )
+        ]
+    return ["project-local receipt missing"]
+
+
 def _has_skill(source_root: Path, skill_name: str | None = None) -> bool:
     skills_root = source_root / ".agents" / "skills"
     if skill_name:
@@ -256,7 +418,13 @@ def _full_profile_seeds(source_root: Path) -> dict[str, str]:
         return {}
 
 
-def _asset_class_present(source_root: Path, seeds: Mapping[str, str], asset_class: str) -> bool:
+def _asset_class_present(
+    source_root: Path,
+    seeds: Mapping[str, str],
+    asset_class: str,
+    *,
+    target_mode: str | None = None,
+) -> bool:
     if asset_class == "trust and governance reading surface":
         return _has_any_path(
             source_root,
@@ -297,12 +465,9 @@ def _asset_class_present(source_root: Path, seeds: Mapping[str, str], asset_clas
             ("scripts/planning_bank_validate.py", "scripts/roadmap_dashboard.py"),
         )
     if asset_class == "project-local receipt":
-        return _has_any_path(
+        return not _project_local_receipt_validation_errors(
             source_root,
-            (
-                ".azoth/project-local-mode-receipt.yaml",
-                ".azoth/project-local-receipt.yaml",
-            ),
+            expected_selected_mode=target_mode,
         )
     if asset_class == "run ledger":
         return _has_any_path(
@@ -361,7 +526,7 @@ def compile_release_profile_readiness(
         missing_asset_classes = [
             asset_class
             for asset_class in mode_spec["installed_asset_classes"]
-            if not _asset_class_present(source, seeds, asset_class)
+            if not _asset_class_present(source, seeds, asset_class, target_mode=mode)
         ]
         authority_asset_classes = set(MODE_AUTHORITY_ASSET_CLASSES.get(mode, ()))
         blocking_missing_asset_classes = [
@@ -371,6 +536,11 @@ def compile_release_profile_readiness(
         ]
         authority_notes = list(MODE_AUTHORITY_NOTES.get(mode, ()))
         authority_required = bool(authority_notes)
+        unsafe_claims = (
+            _project_local_receipt_validation_errors(source, expected_selected_mode=mode)
+            if "project-local receipt" in mode_spec["installed_asset_classes"]
+            else []
+        )
         readiness_state = (
             "blocked"
             if blocking_missing_asset_classes
@@ -387,7 +557,7 @@ def compile_release_profile_readiness(
             "blocking_missing_asset_classes": blocking_missing_asset_classes,
             "explicit_exclusions": mode_spec["explicit_exclusions"],
             "next_safe_action": mode_spec["next_safe_action"],
-            "unsafe_claims": [],
+            "unsafe_claims": unsafe_claims,
         }
 
     return {

@@ -15,6 +15,11 @@ try:
 except ModuleNotFoundError as exc:  # pragma: no cover - environment guard.
     raise SystemExit("PyYAML is required to run cockpit_menu.py") from exc
 
+from azoth_release_profile import (  # noqa: E402
+    is_project_local_mode_receipt,
+    validate_project_local_mode_receipt,
+)
+
 
 FORBIDDEN_PROJECT_CONTEXT_FIELDS = {
     "source_files",
@@ -53,6 +58,7 @@ ALLOWED_SELECTED_MODES = {
     "managed",
     "governed_autonomy",
 }
+PROJECT_LOCAL_AUTHORITY_MODES = {"managed", "governed_autonomy"}
 REQUIRED_PROJECT_FIELDS = {
     "project_id",
     "title",
@@ -288,6 +294,14 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
             errors.append(f"{label}: authority_plane must be one of {sorted(ALLOWED_AUTHORITY_PLANES)}")
         if project.get("selected_mode") not in ALLOWED_SELECTED_MODES:
             errors.append(f"{label}: selected_mode must be one of {sorted(ALLOWED_SELECTED_MODES)}")
+        if (
+            project.get("selected_mode") in PROJECT_LOCAL_AUTHORITY_MODES
+            and project.get("authority_plane") != "project_local"
+        ):
+            errors.append(
+                f"{label}: selected_mode {project.get('selected_mode')} requires "
+                "authority_plane project_local"
+            )
         for field in sorted(LIST_READBACK_FIELDS):
             values = project.get(field)
             if not isinstance(values, list):
@@ -300,8 +314,35 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
             if field in project:
                 errors.append(f"{label}: forbidden context field {field}")
         receipt_ref = str(project.get("handoff_receipt_ref") or "")
-        if receipt_ref and not (root / receipt_ref).is_file():
+        receipt_path = root / receipt_ref
+        receipt_doc: dict[str, Any] = {}
+        requires_project_local_receipt = (
+            project.get("authority_plane") == "project_local"
+            or project.get("selected_mode") in PROJECT_LOCAL_AUTHORITY_MODES
+        )
+        if requires_project_local_receipt and not receipt_ref:
+            errors.append(f"{label}: handoff_receipt_ref is required for project-local authority")
+        elif receipt_ref and not receipt_path.is_file():
             errors.append(f"{label}: missing handoff receipt {receipt_ref}")
+        elif receipt_ref:
+            try:
+                loaded = yaml.safe_load(receipt_path.read_text(encoding="utf-8"))
+            except yaml.YAMLError as exc:
+                errors.append(f"{label}: failed to parse handoff receipt {receipt_ref}: {exc}")
+            else:
+                receipt_doc = loaded if isinstance(loaded, dict) else {}
+                if (
+                    project.get("authority_plane") == "project_local"
+                    or is_project_local_mode_receipt(receipt_doc)
+                ):
+                    for error in validate_project_local_mode_receipt(
+                        receipt_doc,
+                        expected_project_id=str(project.get("project_id") or ""),
+                        expected_repo_path=project.get("repo_path"),
+                        expected_selected_mode=str(project.get("selected_mode") or ""),
+                        expected_handoff_receipt_ref=receipt_ref,
+                    ):
+                        errors.append(f"{label}: {error}")
         repo_path = str(project.get("repo_path") or "")
         if repo_path and not Path(repo_path).is_dir():
             errors.append(f"{label}: repo_path does not exist {repo_path}")

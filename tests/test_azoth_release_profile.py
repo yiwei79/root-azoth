@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 
 import pytest
+import yaml
 
 PRIVATE_RUNTIME_STATE = (
     ".azoth/scope-gate.json",
@@ -124,6 +125,40 @@ def _write_release_readiness_assets(source: Path) -> None:
     _write(source / ".azoth" / "run-ledger.local.yaml.example", "schema_version: 1\n")
     _write(source / "pipelines" / "stage-summary.schema.yaml", "type: object\n")
     _write(source / "scripts" / "planning_bank_validate.py", "print('validate')\n")
+
+
+def _write_project_local_receipt(source: Path, **overrides: object) -> None:
+    handoff_ref = ".azoth/handoffs/project-local-mode.yaml"
+    receipt: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_type": "project_local_mode_receipt",
+        "project_id": "consumer-project",
+        "repo_path": str(source),
+        "receipt_owner": "project_local",
+        "selected_mode": "managed",
+        "release_profile_ref": "full@v0.2.0",
+        "readiness_state": "ready",
+        "freshness_status": "current",
+        "installed_asset_classes": [
+            "roadmap seed",
+            "backlog seed",
+            "planning-bank seed",
+            "validation helpers",
+            "project-local receipt",
+        ],
+        "missing_asset_classes": [],
+        "approval_scope": "managed_mode_project_local_gate",
+        "active_write_claim": False,
+        "next_safe_action": "hydrate planning state under the project-local managed-mode gate",
+        "stop_reason": "none",
+        "handoff_receipt_ref": handoff_ref,
+    }
+    receipt.update(overrides)
+    _write(source / handoff_ref, "receipt: linked\n")
+    _write(
+        source / ".azoth" / "project-local-mode-receipt.yaml",
+        yaml.safe_dump(receipt, sort_keys=False),
+    )
 
 
 def _write_mode_matrix(tmp_path: Path) -> Path:
@@ -277,6 +312,55 @@ def test_compile_release_profile_readiness_reports_truthful_mode_states(
     assert governed["readiness_state"] == "requires_authority"
     assert governed["authority_required"] is True
     assert "fresh autonomy budget" in " ".join(governed["authority_notes"])
+
+
+def test_compile_release_profile_readiness_accepts_valid_project_local_receipt(
+    tmp_path: Path,
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    source = _make_release_source(tmp_path)
+    _write_release_readiness_assets(source)
+    _write_project_local_receipt(source)
+
+    report = compile_readiness(source, _write_mode_matrix(tmp_path))
+
+    managed = report["modes"]["managed"]
+    assert managed["readiness_state"] == "requires_authority"
+    assert managed["authority_required"] is True
+    assert "project-local receipt" not in managed["missing_asset_classes"]
+    assert managed["blocking_missing_asset_classes"] == []
+    assert managed["unsafe_claims"] == []
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({"receipt_owner": "root_azoth"}, "receipt_owner must be project_local"),
+        ({"freshness_status": "stale"}, "freshness_status must be current"),
+        ({"approval_scope": "pointer_only_handoff"}, "approval_scope must authorize managed"),
+        (
+            {"selected_mode": "assisted", "approval_scope": "pointer_only_handoff"},
+            "selected_mode assisted must match expected mode managed",
+        ),
+        (
+            {"handoff_receipt_ref": ".azoth/handoffs/missing.yaml"},
+            "handoff_receipt_ref must resolve to an existing file",
+        ),
+    ],
+)
+def test_compile_release_profile_readiness_fails_closed_for_unsafe_project_local_receipt(
+    tmp_path: Path, overrides: dict[str, object], expected: str
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    source = _make_release_source(tmp_path)
+    _write_release_readiness_assets(source)
+    _write_project_local_receipt(source, **overrides)
+
+    report = compile_readiness(source, _write_mode_matrix(tmp_path))
+
+    managed = report["modes"]["managed"]
+    assert "project-local receipt" in managed["missing_asset_classes"]
+    assert any(expected in claim for claim in managed["unsafe_claims"])
 
 
 def test_compile_release_profile_readiness_blocks_missing_mode_assets(

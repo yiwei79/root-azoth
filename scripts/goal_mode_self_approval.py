@@ -210,9 +210,29 @@ def assert_can_open_scope(
         return
     if gate.get("goal_mode_bootstrap") is True and gate.get("approved_by") == "human":
         return
+    if _same_goal_mode_authority(gate, request):
+        return
     raise GoalModeSelfApprovalError(
         "active scope gate belongs to another session; do not replace it with Goal-mode"
     )
+
+
+def _same_goal_mode_authority(
+    gate: Mapping[str, Any],
+    request: GoalModeSelfApprovalRequest,
+) -> bool:
+    """Allow same-active-goal planning scopes to continue without a second approval."""
+    if gate.get("approved_by") != APPROVED_BY:
+        return False
+    metadata = gate.get("goal_mode_self_approval")
+    if not isinstance(metadata, Mapping):
+        return False
+    active_goal_excerpt = str(metadata.get("active_goal_excerpt") or "").strip()
+    if active_goal_excerpt != request.active_goal[:512]:
+        raise GoalModeSelfApprovalError(
+            "active Goal-mode scope belongs to a different active Goal; human approval required"
+        )
+    return True
 
 
 def build_gate_payloads(

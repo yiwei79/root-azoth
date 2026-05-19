@@ -18,7 +18,8 @@ scope:
 - Capture the project-local receipt field contract as a planning artifact only.
 - Preserve canonical T-059/T-060 cockpit readback fields and avoid inventing a
   competing vocabulary.
-- Map the source-of-truth order: project_local_receipt, cockpit_pointer_readback,
+- >
+  Map the source-of-truth order: project_local_receipt, cockpit_pointer_readback,
   then next_safe_action.
 - Define cockpit handoff states for missing, stale, ready, and authority-required
   receipts.
