@@ -2,9 +2,9 @@ schema_version: 1
 bank_type: design
 id: project-readiness-cockpit-handoff
 title: Project readiness cockpit handoff
-status: active_refinement
+status: complete
 created_at: "2026-05-19T19:36:00Z"
-updated_at: "2026-05-19T19:36:00Z"
+updated_at: "2026-05-19T21:37:32Z"
 source_proposal_refs:
   - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
 related_initiative_refs:
@@ -44,11 +44,13 @@ tradeoffs:
     mitigation: "Keep installed and missing asset classes visible."
 open_questions:
   - question_id: db-dep-002-001
-    status: open
+    status: answered_for_root_contract
     question: "Which receipt fields become mandatory per mode after T-062 hydration?"
+    answer: "T-062 defines root-local required fields for receipt validation; public, cockpit, and project-local mandatory-field adoption remains a separate gated follow-on."
   - question_id: db-dep-002-002
-    status: open
+    status: deferred_to_follow_on
     question: "Should public Azoth ship one receipt template or mode-specific templates?"
+    answer: "Out of scope for T-062; requires a fresh public-product/template gate."
 research_refs:
   - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
   - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
@@ -64,16 +66,16 @@ challenge_log:
     answer: "The cockpit readback field names and no-write cockpit behavior."
 routing_candidates:
   - route: initiative_candidate
-    status: selected
+    status: complete
     target: INI-DEP-002#slice-dep-002-a
-    rationale: "The next legal move is a proposed T-062 handoff map, not hydration."
+    rationale: "Delivered as T-062; do not repeat hydration or delivery for this candidate."
 readiness:
-  evaluated_at: "2026-05-19T19:36:00Z"
-  readiness_status: continue_refinement
-  human_decision: approved_for_planning_seed_only
-  freshness_status: current_as_of_2026_05_19_planning_only_gate
-  target_route: INI-DEP-002#slice-dep-002-a
-  recommended_next_artifact: "fresh hydration-specific T-062 gate, if the operator wants roadmap/backlog/spec hydration"
+  evaluated_at: "2026-05-19T21:37:32Z"
+  readiness_status: defer
+  human_decision: approved
+  freshness_status: current_as_of_2026_05_19_t_062_delivered
+  target_route: null
+  recommended_next_artifact: "No T-062 hydration remains. Future public, cockpit, or project-local receipt adoption requires a fresh initiative, proposal, or improvement campaign."
 closeout_history_policy:
   policy_id: planning_bank_closeout_history_merge_policy_v1
   status: active
@@ -109,3 +111,6 @@ history:
   - timestamp: "2026-05-19T19:36:00Z"
     event: created_from_fresh_auto_planning_campaign
     summary: "Captured project-local receipt and cockpit handoff design after terminal INI-DEP-001/T-061."
+  - timestamp: "2026-05-19T21:37:32Z"
+    event: route_closed_after_t_062_delivery
+    summary: "Closed the design-bank route after T-062 delivery and planning-truth reconciliation; repeat hydration is blocked and future adoption work requires fresh gates."
