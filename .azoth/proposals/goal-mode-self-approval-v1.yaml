@@ -1,0 +1,88 @@
+proposal_schema_version: 1
+created_at: "2026-05-19T14:34:28Z"
+session_id: "2026-05-19-goal-mode-self-approval-v1"
+backlog_id: "P6-003"
+title: "Goal-mode self-approval v1"
+summary: >
+  Goal-mode self-approval v1 gives an active Codex Goal a narrow way to open
+  its own planning-seed scope without waiting for a human gate on every
+  proposal, initiative-bank, design-bank, research-bank, or receipt artifact.
+  It is not a general bypass. The opener is limited to planning/readiness
+  surfaces, refuses protected Azoth control-plane files, and preserves human
+  approval for kernel/governance, roadmap hydration, public product, cockpit,
+  project-local, release, dependency, credential, commit, push, and destructive
+  actions.
+status: draft
+decision_refs:
+  - D11
+  - D21
+  - D23
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    current_friction: >
+      Codex Goal keeps a long-running objective alive, but Azoth's existing
+      gate model still treats every closed or expired scope as a full stop.
+      That is correct for implementation, release, and governed mutation, but
+      too heavy for bounded planning-seed artifacts that merely capture the
+      next proposal or readiness map required to continue the goal.
+    risk_boundary: >
+      The architecture already warns against broad agent self-approval. The
+      safe shape is therefore a small opener that proves the requested write set
+      is planning-only and emits ordinary scope/pipeline gates with auditable
+      Goal-mode metadata.
+  contract:
+    authority: active_codex_goal
+    approved_by_value: goal-mode-self-approval
+    allowed_write_prefixes:
+      - .azoth/proposals/
+      - .azoth/initiative-banks/
+      - .azoth/design-banks/
+      - .azoth/research/
+      - .azoth/handoffs/goal-mode/
+    forbidden_surfaces:
+      - kernel/
+      - .azoth/kernel/
+      - .azoth/scope-gate.json
+      - .azoth/pipeline-gate.json
+      - .azoth/run-ledger.local.yaml
+      - .azoth/backlog.yaml
+      - .azoth/roadmap.yaml
+      - .azoth/roadmap-specs/
+      - .azoth/memory/
+      - commands/
+      - skills/
+      - agents/
+      - pipelines/
+      - scripts/
+      - tests/
+      - docs/
+      - public azoth checkout
+      - personal cockpit checkout
+      - project repositories
+    ttl_minutes_max: 120
+    pipeline_command: auto
+  implementation_slice:
+    helper: scripts/goal_mode_self_approval.py
+    tests: tests/test_goal_mode_self_approval.py
+    behavior:
+      - Validate a JSON request with active_goal, session_id, goal, and allowed_writes.
+      - Reject missing active_goal evidence.
+      - Reject unsafe or protected write paths.
+      - Reject active non-bootstrap scopes that belong to another session.
+      - Write .azoth/scope-gate.json and .azoth/pipeline-gate.json only after validation.
+      - Mark scope gates with approved_by goal-mode-self-approval and a metadata block.
+  non_goals:
+    - No kernel or governance edits.
+    - No changes to the base scope_gate_check.py fail-closed behavior.
+    - No roadmap/backlog/spec hydration.
+    - No public product, cockpit, or project repository mutation.
+    - No commits, pushes, releases, dependency changes, credentials, or destructive actions.
+  validation:
+    focused_tests:
+      - python3 -m pytest tests/test_goal_mode_self_approval.py -q
+    gate_checks:
+      - python3 scripts/check_gates.py --session-id 2026-05-19-goal-mode-self-approval-v1 --require-pipeline-gate

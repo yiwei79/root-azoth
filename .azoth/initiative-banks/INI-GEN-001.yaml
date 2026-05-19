@@ -158,6 +158,17 @@ challenge_log:
       planes, hydration, dependencies, credentials, destructive edits, and broad
       implementation.
     status: open
+  - challenge_id: ch-gen-001-002
+    challenge: >
+      Can Goal-mode open its own scope without weakening Azoth's human-gated
+      trust model?
+    response: >
+      Yes, but only through a bounded planning-seed opener that validates the
+      requested write set and emits normal scope/pipeline gates. It must not
+      mutate kernel/governance, roadmap/backlog/spec hydration, public product,
+      cockpit, project repos, releases, dependencies, credentials, or destructive
+      surfaces.
+    status: active
 candidate_slices:
   - candidate_id: slice-gen-001-a
     proposed_task_id: GEN-001-A
@@ -237,24 +248,60 @@ candidate_slices:
       the Goal-mode boundary is reviewed and a later slice decides whether the
       template should move into public Azoth, root docs, or cockpit-adjacent
       guidance.
+  - candidate_id: slice-gen-001-c
+    proposed_task_id: GEN-001-C
+    title: Goal-mode self-approval v1 planning-seed opener
+    initiative_ref: INI-GEN-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Add a bounded Goal-mode self-approval helper that can open planning-seed
+      scopes for proposals, initiative/design banks, research banks, and
+      Goal-mode receipts while preserving human gates for protected surfaces.
+    source_question_ids:
+      - rq-gen-001-001
+    acceptance_criteria:
+      - Helper validates active_goal, session_id, goal, and allowed_writes.
+      - Helper writes normal scope and pipeline gates with approved_by goal-mode-self-approval.
+      - Protected surfaces fail closed.
+      - Existing unrelated active scopes cannot be replaced.
+      - Focused tests pass.
+    known_non_goals:
+      - No kernel/governance edits.
+      - No base scope_gate_check.py relaxation.
+      - No roadmap/backlog/spec hydration.
+      - No public Azoth, cockpit, or project repo mutation.
+      - No commits, pushes, releases, dependency, credential, network, or destructive action.
+    open_questions: []
+    research_evidence_refs:
+      - .azoth/proposals/goal-mode-self-approval-v1.yaml
+      - scripts/goal_mode_self_approval.py
+      - tests/test_goal_mode_self_approval.py
+    recommended_phase: post-v0.2.0-stabilization
+    readiness_notes: >
+      This is the first mechanical opener for Goal-mode. It intentionally
+      authorizes only planning-seed scopes and leaves all implementation,
+      hydration, release, cockpit, project-local, kernel, and governance work on
+      the existing human-gated paths.
 readiness:
   readiness_status: continue_research
-  human_decision: goal_mode_seed_requested
-  approval_scope: planning_seed_only_no_hydration
+  human_decision: bootstrap_goal_mode_self_approval_requested
+  approval_scope: goal_mode_self_approval_v1_bootstrap_no_hydration
   approval_basis: >
     Operator stated on 2026-05-10 that the Codex Goal feature is meant to be
     autonomous and should not be blocked by repeated approvals, or should operate
-    in a special mode. This bank treats that as authority to capture a bounded
-    planning seed only, not as authority for protected or mutating planes.
-  candidate_first_slice: slice-gen-001-a
-  freshness_status: current_as_of_2026-05-10
+    in a special mode. Operator then explicitly approved bootstrap scope
+    2026-05-19-goal-mode-self-approval-v1 on 2026-05-19. This bank treats that
+    as authority to implement a bounded planning-seed opener only, not as
+    authority for protected or mutating planes.
+  candidate_first_slice: slice-gen-001-c
+  freshness_status: current_as_of_2026-05-19
   hydration_recommendation: >
-    Do not hydrate yet. First review the Goal-mode authority packet and rehearse
-    the starter packet against real project examples; only then decide whether a
-    later hydration-specific approval should move anything into public Azoth,
-    cockpit-adjacent guidance, or a project-local repo.
+    Do not hydrate roadmap/backlog/spec state. First validate the bounded
+    Goal-mode self-approval opener, then use it only for planning-seed artifacts
+    such as the deployment/readiness/cockpit initiative and proposal.
   open_questions:
-    - Should Goal-mode later get a mechanical scope opener, or stay as a planning-seed-only authority?
     - Which project-local file layout should become the public default starter?
     - Should cockpit route rehearsal remain pointer-only until project owners opt in?
 hydration_history: []
