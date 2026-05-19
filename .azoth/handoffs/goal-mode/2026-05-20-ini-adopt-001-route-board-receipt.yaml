@@ -1,0 +1,59 @@
+schema_version: 1
+artifact_type: goal_mode_validation_receipt
+initiative_ref: INI-ADOPT-001
+candidate_slice_ref: slice-adopt-001-a
+task_ref: ADOPT-001-A
+status: pass
+created_at: "2026-05-20T00:15:00+00:00"
+validated_at: "2026-05-20T00:15:00+00:00"
+session_id: 2026-05-20-project-genesis-adoption-gates-seed
+scope_authority:
+  approved_by: goal-mode-self-approval
+  scope_class: planning_seed
+  allowed_planning_outputs:
+    - .azoth/proposals/project-genesis-external-adoption-gates.yaml
+    - .azoth/initiative-banks/INI-ADOPT-001.yaml
+    - .azoth/research/ini-adopt-001-route-board.yaml
+    - .azoth/handoffs/goal-mode/2026-05-20-ini-adopt-001-route-board-receipt.yaml
+  bookkeeping_outputs:
+    - .azoth/scope-gate.json
+    - .azoth/pipeline-gate.json
+    - .azoth/run-ledger.local.yaml
+mutation_audit:
+  root_azoth_planning_artifacts_changed: true
+  public_azoth_mutation: false
+  personal_cockpit_mutation: false
+  project_local_mutation: false
+  kernel_governance_mutation: false
+  kernel_template_mutation: false
+  roadmap_backlog_spec_hydration: false
+  code_changes: false
+  release_or_push: false
+  dependency_or_credential_change: false
+  destructive_action: false
+validation_commands:
+  - command: python3 scripts/architecture_proposal_validate.py .azoth/proposals/project-genesis-external-adoption-gates.yaml
+    expected_result: pass
+  - command: python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-ADOPT-001.yaml
+    expected_result: pass
+  - command: python3 scripts/check_gates.py --session-id 2026-05-20-project-genesis-adoption-gates-seed --require-pipeline-gate
+    expected_result: pass
+  - command: git diff --check -- .azoth/proposals/project-genesis-external-adoption-gates.yaml .azoth/initiative-banks/INI-ADOPT-001.yaml .azoth/research/ini-adopt-001-route-board.yaml .azoth/handoffs/goal-mode/2026-05-20-ini-adopt-001-route-board-receipt.yaml
+    expected_result: pass
+acceptance_result:
+  route_choices_explicit: pass
+  owner_plane_and_stop_boundaries_named: pass
+  recommended_next_route_preserves_authority: pass
+  no_external_or_protected_plane_mutation: pass
+next_route:
+  recommended_candidate_slice: slice-adopt-001-c
+  route_type: fresh_approval_required
+  reason: >
+    Pointer-only cockpit route rehearsal best advances the central control-point
+    objective while preserving no-write boundaries until explicitly approved.
+  stop_before:
+    - personal_cockpit_mutation
+    - public_azoth_mutation
+    - project_local_mutation
+    - roadmap_backlog_spec_hydration
+    - kernel_governance_mutation

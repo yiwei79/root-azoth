@@ -1,0 +1,89 @@
+schema_version: 1
+artifact_type: adoption_route_board
+initiative_ref: INI-ADOPT-001
+created_at: "2026-05-20T00:15:00+00:00"
+session_id: 2026-05-20-project-genesis-adoption-gates-seed
+purpose: >
+  Compare the next Project Genesis adoption routes after the root-local
+  planning seed completed, while preserving the no-mutation boundary for public
+  Azoth, personal cockpit, and project-local spaces.
+source_refs:
+  - .azoth/initiative-banks/INI-DEP-001.yaml
+  - .azoth/initiative-banks/INI-DEP-002.yaml
+  - .azoth/initiative-banks/INI-GEN-001.yaml
+  - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+  - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+route_options:
+  - route_id: public_template_distribution
+    owner_plane: public_azoth
+    operator_value: >
+      Makes Project Genesis starter packets available to installed/consumer
+      Azoth users as part of deployment ease.
+    root_local_next_step: >
+      Public extraction preflight that names candidate template paths, release
+      profile changes, smoke checks, and excluded private surfaces.
+    requires_fresh_approval: true
+    stop_before:
+      - public repository mutation
+      - release publishing
+      - install/profile claim changes
+    evidence_needed:
+      - root-to-public extraction allowlist
+      - product release smoke command
+      - private artifact exclusion check
+  - route_id: cockpit_route_rehearsal
+    owner_plane: personal_cockpit
+    operator_value: >
+      Makes the personal control point useful for seeing music, thesis, and
+      agent-context spaces as pointer-only routes.
+    root_local_next_step: >
+      No-write cockpit route rehearsal preflight that defines route readback,
+      safe-open prompts, and simulation evidence.
+    requires_fresh_approval: true
+    stop_before:
+      - personal cockpit repository mutation
+      - route file write
+      - project-local context loading
+    evidence_needed:
+      - pointer-only route schema
+      - no-write UX simulation checklist
+      - safe-open prompt review
+  - route_id: project_local_packet_creation
+    owner_plane: project_local_space
+    operator_value: >
+      Creates a real starter packet for a chosen personal project once the
+      project owns the target path and receipt.
+    root_local_next_step: >
+      Dry-run packet generation preflight for one selected project type, with
+      no write into the target project.
+    requires_fresh_approval: true
+    stop_before:
+      - project repository mutation
+      - project-local receipt creation
+      - managed/governed mode hydration
+    evidence_needed:
+      - target project path
+      - selected mode
+      - project-local receipt owner
+      - validation receipt confirms no mutation until approved
+recommended_sequence:
+  first: cockpit_route_rehearsal
+  rationale: >
+    The active objective emphasizes the central cockpit/control point across new
+    and existing projects. A pointer-only rehearsal gives the operator a visible
+    control surface without publishing public assets or writing project-local
+    files.
+  alternatives:
+    - route_id: public_template_distribution
+      when_to_choose: "Choose this first if deployment ease for installed Azoth users is more urgent."
+    - route_id: project_local_packet_creation
+      when_to_choose: "Choose this first if the operator wants to start one real personal project immediately."
+acceptance_map:
+  - criterion: Public, cockpit, and project-local adoption choices are explicit.
+    result: pass
+  - criterion: Each route names owner plane, approval need, and stop-before boundary.
+    result: pass
+  - criterion: Recommended next route preserves 3-tier product flow and 4-plane authority.
+    result: pass
+  - criterion: No external-plane mutation is performed.
+    result: pass
