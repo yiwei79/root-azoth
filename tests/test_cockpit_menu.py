@@ -15,6 +15,21 @@ if str(SCRIPTS_DIR) not in sys.path:
 from cockpit_menu import check_cockpit, load_cockpit, render_menu  # noqa: E402
 
 
+READBACK_FIELDS = {
+    "project_pointer": "ras-or-ray",
+    "authority_plane": "personal_cockpit",
+    "selected_mode": "assisted",
+    "readiness_state": "ready",
+    "freshness_status": "current",
+    "installed_asset_classes": ["skills", "command wrappers"],
+    "missing_asset_classes": ["planning-bank seed", "autonomous control"],
+    "approval_scope": "pointer_only_handoff",
+    "active_write_claim": False,
+    "next_safe_action": "Open a project session; project writes require a fresh project-scoped gate.",
+    "stop_reason": "none",
+}
+
+
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
@@ -61,6 +76,7 @@ def _write_cockpit_fixture(root: Path) -> Path:
                     "tracking_ref": "origin/main",
                     "privacy_class": "local-only",
                     "profile_mode": "pointer_only",
+                    **READBACK_FIELDS,
                     "handoff_receipt_ref": receipt,
                     "validation_commands": [
                         f"git -C '{project_path}' status --short --branch",
@@ -84,6 +100,17 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     assert "root-azoth workshop drift is advisory only" in text
     assert "manifest 0.1.4.0" in text
     assert "ras-or-ray" in text
+    assert "Mode: assisted" in text
+    assert "Readiness: ready" in text
+    assert "Freshness: current" in text
+    assert "Authority: personal_cockpit" in text
+    assert "Pointer: ras-or-ray" in text
+    assert "Installed assets: skills, command wrappers" in text
+    assert "Missing assets: planning-bank seed, autonomous control" in text
+    assert "Approval: pointer_only_handoff" in text
+    assert "Write claim: none" in text
+    assert "Next safe action: Open a project session" in text
+    assert "Stop reason: none" in text
     assert "cd " in text
     assert "ras or ray" in text
     assert "Project-local context is authoritative" in text
@@ -119,6 +146,51 @@ def test_check_cockpit_rejects_missing_receipt_and_context_fields(tmp_path: Path
     assert any("missing handoff receipt" in error for error in errors)
 
 
+def test_check_cockpit_rejects_incomplete_readback_contract(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    for field in ("selected_mode", "readiness_state", "next_safe_action"):
+        doc["projects"][0].pop(field)
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("missing required field next_safe_action" in error for error in errors)
+    assert any("missing required field readiness_state" in error for error in errors)
+    assert any("missing required field selected_mode" in error for error in errors)
+
+
+def test_check_cockpit_rejects_invalid_mode_and_authority(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["selected_mode"] = "invented"
+    doc["projects"][0]["authority_plane"] = "somewhere_else"
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("selected_mode must be one of" in error for error in errors)
+    assert any("authority_plane must be one of" in error for error in errors)
+
+
+def test_check_cockpit_rejects_invalid_asset_and_write_claim_types(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"][0]["installed_asset_classes"] = "skills"
+    doc["projects"][0]["missing_asset_classes"] = ["planning-bank seed", ""]
+    doc["projects"][0]["active_write_claim"] = "false"
+    _write_yaml(projects_index, doc)
+
+    errors = check_cockpit(load_cockpit(root, include_status=False))
+
+    assert any("installed_asset_classes must be a list" in error for error in errors)
+    assert any("missing_asset_classes must contain only non-empty values" in error for error in errors)
+    assert any("active_write_claim must be a boolean" in error for error in errors)
+
+
 def test_project_filter_renders_only_selected_handoff(tmp_path: Path) -> None:
     root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
     projects_index = root / ".azoth" / "projects" / "index.yaml"
@@ -132,6 +204,7 @@ def test_project_filter_renders_only_selected_handoff(tmp_path: Path) -> None:
             "tracking_ref": "origin/main",
             "privacy_class": "local-only",
             "profile_mode": "pointer_only",
+            **READBACK_FIELDS,
             "handoff_receipt_ref": ".azoth/projects/handoffs/t-other.yaml",
             "validation_commands": [],
         }

@@ -19,6 +19,21 @@ from cockpit_bootstrap_verify import (  # noqa: E402
 from cockpit_command_surface import COCKPIT_COMMANDS, deploy_cockpit_command_surface  # noqa: E402
 
 
+READBACK_FIELDS = {
+    "project_pointer": "ras-or-ray",
+    "authority_plane": "personal_cockpit",
+    "selected_mode": "assisted",
+    "readiness_state": "ready",
+    "freshness_status": "current",
+    "installed_asset_classes": ["skills", "command wrappers"],
+    "missing_asset_classes": ["planning-bank seed", "autonomous control"],
+    "approval_scope": "pointer_only_handoff",
+    "active_write_claim": False,
+    "next_safe_action": "Open a project session; project writes require a fresh project-scoped gate.",
+    "stop_reason": "none",
+}
+
+
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
@@ -147,6 +162,7 @@ Start cockpit.
                     "tracking_ref": "origin/main",
                     "privacy_class": "local-only",
                     "profile_mode": "pointer_only",
+                    **READBACK_FIELDS,
                     "handoff_receipt_ref": receipt,
                     "validation_commands": [
                         f"git -C '{project_path}' status --short --branch",

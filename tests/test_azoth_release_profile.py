@@ -49,6 +49,18 @@ def _load_materializer() -> Callable[[Path, Path], None]:
     return materialize_full_profile
 
 
+def _load_readiness_compiler() -> Callable[[Path, Path], dict[str, object]]:
+    from scripts.azoth_release_profile import compile_release_profile_readiness
+
+    return compile_release_profile_readiness
+
+
+def _load_release_profile_error() -> type[RuntimeError]:
+    from scripts.azoth_release_profile import ReleaseProfileError
+
+    return ReleaseProfileError
+
+
 def _write(path: Path, text: str = "seed\n") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -99,6 +111,76 @@ def _make_release_source(tmp_path: Path) -> Path:
         _write(source / private_path, "private: must-not-copy\n")
 
     return source
+
+
+def _write_release_readiness_assets(source: Path) -> None:
+    _write(source / "README.md", "# Azoth\n")
+    _write(source / "azoth.yaml", "version: test\n")
+    _write(source / "kernel" / "TRUST_CONTRACT.md", "# Trust\n")
+    _write(source / "kernel" / "GOVERNANCE.md", "# Governance\n")
+    _write(source / "docs" / "playbook" / "README.md", "# Playbook\n")
+    _write(source / "agents" / "tier1-core" / "architect.agent.md", "# Architect\n")
+    _write(source / ".codex" / "agents" / "architect.toml", "name = \"architect\"\n")
+    _write(source / ".azoth" / "run-ledger.local.yaml.example", "schema_version: 1\n")
+    _write(source / "pipelines" / "stage-summary.schema.yaml", "type: object\n")
+    _write(source / "scripts" / "planning_bank_validate.py", "print('validate')\n")
+
+
+def _write_mode_matrix(tmp_path: Path) -> Path:
+    path = tmp_path / "mode-matrix.yaml"
+    _write(
+        path,
+        """\
+schema_version: 1
+mode_matrix:
+  guide:
+    installed_asset_classes:
+      - trust and governance reading surface
+      - orientation or first prompt guidance
+      - starter documentation/playbook
+    explicit_exclusions:
+      - agents
+      - project-management state
+    next_safe_action: read orientation
+  assisted:
+    installed_asset_classes:
+      - skills
+      - tier-1 agents or generated equivalents
+      - command wrappers
+      - runtime helper references
+      - starter receipts
+    explicit_exclusions:
+      - roadmap hydration
+      - no-human-gate autonomy
+    next_safe_action: run read-only assisted checks
+  managed:
+    installed_asset_classes:
+      - roadmap seed
+      - backlog seed
+      - planning-bank seed
+      - validation helpers
+      - project-local receipt
+    explicit_exclusions:
+      - branch-local no-human-gate autonomy
+      - hidden hydration
+    next_safe_action: hydrate or repair project-local planning state under a fresh gate
+  governed_autonomy:
+    installed_asset_classes:
+      - run ledger
+      - loop-state examples
+      - stage-evidence requirements
+      - stop-condition contract
+      - bounded replay budget
+    explicit_exclusions:
+      - root self-development authority leaking into consumer projects
+      - open-ended loops
+    next_safe_action: open a bounded governed-autonomy campaign only with fresh authority
+first_use_evidence_map:
+  release_profile:
+    pass_signal: profile and smoke evidence agree for the selected mode
+""",
+    )
+    return path
 
 
 def _snapshot(root: Path) -> dict[str, bytes]:
@@ -163,3 +245,77 @@ def test_materialize_full_profile_errors_when_runtime_bundle_source_is_missing(
 
     with pytest.raises((FileNotFoundError, RuntimeError, ValueError), match="commands|runtime"):
         materialize_full_profile(source, tmp_path / "target")
+
+
+def test_compile_release_profile_readiness_reports_truthful_mode_states(
+    tmp_path: Path,
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    source = _make_release_source(tmp_path)
+    _write_release_readiness_assets(source)
+
+    report = compile_readiness(source, _write_mode_matrix(tmp_path))
+
+    assert report["schema_version"] == 1
+    modes = report["modes"]
+    assert set(modes) == {"guide", "assisted", "managed", "governed_autonomy"}
+
+    guide = modes["guide"]
+    assert guide["readiness_state"] == "ready"
+    assert guide["missing_asset_classes"] == []
+    assert "trust and governance reading surface" in guide["installed_asset_classes"]
+    assert guide["explicit_exclusions"] == ["agents", "project-management state"]
+    assert guide["next_safe_action"] == "read orientation"
+
+    managed = modes["managed"]
+    assert managed["readiness_state"] == "requires_authority"
+    assert managed["authority_required"] is True
+    assert "project-local receipt" in managed["missing_asset_classes"]
+    assert "project-local approval" in " ".join(managed["authority_notes"])
+
+    governed = modes["governed_autonomy"]
+    assert governed["readiness_state"] == "requires_authority"
+    assert governed["authority_required"] is True
+    assert "fresh autonomy budget" in " ".join(governed["authority_notes"])
+
+
+def test_compile_release_profile_readiness_blocks_missing_mode_assets(
+    tmp_path: Path,
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    source = _make_release_source(tmp_path)
+    _write_release_readiness_assets(source)
+    shutil.rmtree(source / "commands" / "start")
+    shutil.rmtree(source / ".agents" / "skills" / "azoth-start")
+
+    report = compile_readiness(source, _write_mode_matrix(tmp_path))
+
+    guide = report["modes"]["guide"]
+    assert guide["readiness_state"] == "blocked"
+    assert "orientation or first prompt guidance" in guide["missing_asset_classes"]
+
+
+def test_compile_release_profile_readiness_fails_closed_for_malformed_matrix(
+    tmp_path: Path,
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    release_error = _load_release_profile_error()
+    source = _make_release_source(tmp_path)
+    matrix = tmp_path / "malformed-mode-matrix.yaml"
+    _write(matrix, "mode_matrix:\n  guide:\n    installed_asset_classes: []\n")
+
+    with pytest.raises(release_error, match="mode_matrix.*assisted"):
+        compile_readiness(source, matrix)
+
+
+def test_compile_release_profile_readiness_wraps_yaml_parse_errors(
+    tmp_path: Path,
+) -> None:
+    compile_readiness = _load_readiness_compiler()
+    release_error = _load_release_profile_error()
+    source = _make_release_source(tmp_path)
+    matrix = tmp_path / "syntax-error-mode-matrix.yaml"
+    _write(matrix, "mode_matrix:\n  guide: [unterminated\n")
+
+    with pytest.raises(release_error, match="failed to parse mode matrix"):
+        compile_readiness(source, matrix)

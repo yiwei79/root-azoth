@@ -40,6 +40,23 @@ REQUIRED_SEED_PATHS: tuple[str, ...] = (
     ".azoth/autonomous-loop-state.local.yaml.example",
 )
 
+MODE_ORDER: tuple[str, ...] = ("guide", "assisted", "managed", "governed_autonomy")
+
+DEFAULT_MODE_MATRIX = Path(".azoth/research/t-059-deployment-readiness-mode-matrix.yaml")
+
+MODE_AUTHORITY_NOTES: dict[str, tuple[str, ...]] = {
+    "managed": (
+        "project-local approval is required before applying planning-bank seeds",
+    ),
+    "governed_autonomy": (
+        "fresh autonomy budget, ledger/write-claim proof, and stop conditions are required",
+    ),
+}
+
+MODE_AUTHORITY_ASSET_CLASSES: dict[str, tuple[str, ...]] = {
+    "managed": ("project-local receipt",),
+}
+
 RUNTIME_GITIGNORE_RULES: tuple[str, ...] = (
     ".azoth/scope-gate.json",
     "!.azoth/scope-gate.json.example",
@@ -150,6 +167,253 @@ def _load_legacy_full_profile_template(source_root: Path) -> dict[str, str]:
             raise FileNotFoundError(f"legacy Full release profile seed missing: {legacy_path}")
         seeds[rel_path] = legacy_path.read_text(encoding="utf-8")
     return seeds
+
+
+def _string_list(value: Any, *, field: str, mode: str) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        raise ReleaseProfileError(f"mode_matrix.{mode}.{field} must be a list of strings")
+    return list(value)
+
+
+def _load_mode_matrix(mode_matrix_path: Path) -> dict[str, dict[str, Any]]:
+    try:
+        data = yaml.safe_load(mode_matrix_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ReleaseProfileError(f"failed to parse mode matrix: {mode_matrix_path}") from exc
+    if not isinstance(data, Mapping):
+        raise ReleaseProfileError(f"mode matrix must be a mapping: {mode_matrix_path}")
+
+    mode_matrix = data.get("mode_matrix")
+    if not isinstance(mode_matrix, Mapping):
+        raise ReleaseProfileError("mode matrix must contain mode_matrix mapping")
+
+    missing_modes = [mode for mode in MODE_ORDER if mode not in mode_matrix]
+    if missing_modes:
+        formatted = ", ".join(missing_modes)
+        raise ReleaseProfileError(f"mode_matrix missing required modes: {formatted}")
+
+    unknown_modes = sorted(str(mode) for mode in mode_matrix if mode not in MODE_ORDER)
+    if unknown_modes:
+        formatted = ", ".join(unknown_modes)
+        raise ReleaseProfileError(f"mode_matrix contains unknown modes: {formatted}")
+
+    result: dict[str, dict[str, Any]] = {}
+    for mode in MODE_ORDER:
+        entry = mode_matrix[mode]
+        if not isinstance(entry, Mapping):
+            raise ReleaseProfileError(f"mode_matrix.{mode} must be a mapping")
+        next_safe_action = entry.get("next_safe_action")
+        if not isinstance(next_safe_action, str) or not next_safe_action.strip():
+            raise ReleaseProfileError(f"mode_matrix.{mode}.next_safe_action must be a string")
+        result[mode] = {
+            "installed_asset_classes": _string_list(
+                entry.get("installed_asset_classes"),
+                field="installed_asset_classes",
+                mode=mode,
+            ),
+            "explicit_exclusions": _string_list(
+                entry.get("explicit_exclusions"),
+                field="explicit_exclusions",
+                mode=mode,
+            ),
+            "next_safe_action": next_safe_action,
+        }
+    return result
+
+
+def _has_any_path(source_root: Path, rel_paths: tuple[str, ...]) -> bool:
+    return any((source_root / rel_path).exists() for rel_path in rel_paths)
+
+
+def _has_skill(source_root: Path, skill_name: str | None = None) -> bool:
+    skills_root = source_root / ".agents" / "skills"
+    if skill_name:
+        return (skills_root / skill_name / "SKILL.md").is_file()
+    return skills_root.is_dir() and any(skills_root.glob("*/SKILL.md"))
+
+
+def _has_agent(source_root: Path) -> bool:
+    agent_roots = (
+        source_root / "agents",
+        source_root / ".codex" / "agents",
+        source_root / ".claude" / "agents",
+        source_root / ".github" / "agents",
+    )
+    return any(root.is_dir() and any(root.rglob("*agent.*")) for root in agent_roots)
+
+
+def _has_command_wrapper(source_root: Path) -> bool:
+    commands_root = source_root / "commands"
+    if not commands_root.is_dir():
+        return False
+    return any((path / "command.yaml").is_file() for path in commands_root.iterdir() if path.is_dir())
+
+
+def _full_profile_seeds(source_root: Path) -> dict[str, str]:
+    try:
+        return _load_full_profile_template(source_root)
+    except (FileNotFoundError, ReleaseProfileError):
+        return {}
+
+
+def _asset_class_present(source_root: Path, seeds: Mapping[str, str], asset_class: str) -> bool:
+    if asset_class == "trust and governance reading surface":
+        return _has_any_path(
+            source_root,
+            (
+                "kernel/TRUST_CONTRACT.md",
+                "kernel/GOVERNANCE.md",
+                ".azoth/kernel/TRUST_CONTRACT.md",
+                ".azoth/kernel/GOVERNANCE.md",
+            ),
+        )
+    if asset_class == "orientation or first prompt guidance":
+        return _has_any_path(source_root, ("commands/start/command.yaml",)) or _has_skill(
+            source_root,
+            "azoth-start",
+        )
+    if asset_class == "starter documentation/playbook":
+        return _has_any_path(source_root, ("README.md", "docs/playbook/README.md"))
+    if asset_class == "skills":
+        return _has_skill(source_root)
+    if asset_class == "tier-1 agents or generated equivalents":
+        return _has_agent(source_root)
+    if asset_class == "command wrappers":
+        return _has_command_wrapper(source_root)
+    if asset_class == "runtime helper references":
+        scripts_root = source_root / "scripts"
+        return scripts_root.is_dir() and any(scripts_root.glob("*.py"))
+    if asset_class == "starter receipts":
+        return _has_any_path(source_root, ("azoth.yaml", ".azoth/source-profile-receipt.yaml"))
+    if asset_class == "roadmap seed":
+        return ".azoth/roadmap.yaml" in seeds
+    if asset_class == "backlog seed":
+        return ".azoth/backlog.yaml" in seeds
+    if asset_class == "planning-bank seed":
+        return ".azoth/initiative-banks/.gitkeep" in seeds and ".azoth/design-banks/.gitkeep" in seeds
+    if asset_class == "validation helpers":
+        return _has_any_path(
+            source_root,
+            ("scripts/planning_bank_validate.py", "scripts/roadmap_dashboard.py"),
+        )
+    if asset_class == "project-local receipt":
+        return _has_any_path(
+            source_root,
+            (
+                ".azoth/project-local-mode-receipt.yaml",
+                ".azoth/project-local-receipt.yaml",
+            ),
+        )
+    if asset_class == "run ledger":
+        return _has_any_path(
+            source_root,
+            (
+                ".azoth/run-ledger.local.yaml.example",
+                "pipelines/run-ledger.schema.yaml",
+                "scripts/run_ledger.py",
+            ),
+        )
+    if asset_class == "loop-state examples":
+        return ".azoth/autonomous-loop-state.local.yaml.example" in seeds or _has_any_path(
+            source_root,
+            (".azoth/autonomous-loop-state.local.yaml.example",),
+        )
+    if asset_class == "stage-evidence requirements":
+        return _has_any_path(
+            source_root,
+            ("pipelines/stage-summary.schema.yaml", "scripts/run_ledger.py"),
+        )
+    if asset_class == "stop-condition contract":
+        return _has_any_path(source_root, ("scripts/autonomous_loop.py",))
+    if asset_class == "bounded replay budget":
+        return _has_any_path(
+            source_root,
+            (
+                ".agents/skills/auto-router/SKILL.md",
+                ".agents/skills/autonomous-auto/SKILL.md",
+                "pipelines/full.pipeline.yaml",
+            ),
+        )
+    return False
+
+
+def compile_release_profile_readiness(
+    source_root: str | Path,
+    mode_matrix_path: str | Path = DEFAULT_MODE_MATRIX,
+) -> dict[str, Any]:
+    """Compile root-local release-profile readiness by Azoth deployment mode."""
+    source = Path(source_root).expanduser().resolve()
+    matrix_path = Path(mode_matrix_path).expanduser()
+    if not matrix_path.is_absolute():
+        matrix_path = source / matrix_path
+    matrix_path = matrix_path.resolve()
+
+    if not source.is_dir():
+        raise FileNotFoundError(f"release profile source is not a directory: {source}")
+    if not matrix_path.is_file():
+        raise FileNotFoundError(f"release profile mode matrix is missing: {matrix_path}")
+
+    matrix = _load_mode_matrix(matrix_path)
+    seeds = _full_profile_seeds(source)
+    modes: dict[str, dict[str, Any]] = {}
+    for mode in MODE_ORDER:
+        mode_spec = matrix[mode]
+        missing_asset_classes = [
+            asset_class
+            for asset_class in mode_spec["installed_asset_classes"]
+            if not _asset_class_present(source, seeds, asset_class)
+        ]
+        authority_asset_classes = set(MODE_AUTHORITY_ASSET_CLASSES.get(mode, ()))
+        blocking_missing_asset_classes = [
+            asset_class
+            for asset_class in missing_asset_classes
+            if asset_class not in authority_asset_classes
+        ]
+        authority_notes = list(MODE_AUTHORITY_NOTES.get(mode, ()))
+        authority_required = bool(authority_notes)
+        readiness_state = (
+            "blocked"
+            if blocking_missing_asset_classes
+            else "requires_authority"
+            if authority_required
+            else "ready"
+        )
+        modes[mode] = {
+            "readiness_state": readiness_state,
+            "authority_required": authority_required,
+            "authority_notes": authority_notes,
+            "installed_asset_classes": mode_spec["installed_asset_classes"],
+            "missing_asset_classes": missing_asset_classes,
+            "blocking_missing_asset_classes": blocking_missing_asset_classes,
+            "explicit_exclusions": mode_spec["explicit_exclusions"],
+            "next_safe_action": mode_spec["next_safe_action"],
+            "unsafe_claims": [],
+        }
+
+    return {
+        "schema_version": 1,
+        "artifact_type": "release_profile_readiness",
+        "source_root": str(source),
+        "mode_matrix_path": str(matrix_path),
+        "profile": "full",
+        "readiness_policy": "ready_requires_assets_and_truthful_authority",
+        "modes": modes,
+    }
+
+
+def assert_release_profile_readiness(report: Mapping[str, Any]) -> None:
+    """Fail when a compiled release-profile readiness report contains blocked modes."""
+    modes = report.get("modes")
+    if not isinstance(modes, Mapping):
+        raise ReleaseProfileError("release profile readiness report missing modes")
+    blocked = [
+        str(mode)
+        for mode, mode_report in modes.items()
+        if isinstance(mode_report, Mapping) and mode_report.get("readiness_state") == "blocked"
+    ]
+    if blocked:
+        formatted = ", ".join(blocked)
+        raise ReleaseProfileError(f"release profile readiness blocked for modes: {formatted}")
 
 
 def _copy_tree(source: Path, target: Path) -> None:
@@ -323,12 +587,22 @@ def materialize_full_profile(source_root: str | Path, target_root: str | Path) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("full",), required=True)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--profile", choices=("full",))
+    action.add_argument("--readiness", action="store_true")
     parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--target", type=Path, required=True)
+    parser.add_argument("--target", type=Path)
+    parser.add_argument("--mode-matrix", type=Path, default=DEFAULT_MODE_MATRIX)
     args = parser.parse_args()
 
+    if args.readiness:
+        report = compile_release_profile_readiness(args.source, args.mode_matrix)
+        print(yaml.safe_dump(report, sort_keys=False), end="")
+        return 0
+
     if args.profile == "full":
+        if args.target is None:
+            parser.error("--target is required when --profile full is selected")
         materialize_full_profile(args.source, args.target)
     return 0
 

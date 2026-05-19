@@ -23,6 +23,36 @@ FORBIDDEN_PROJECT_CONTEXT_FIELDS = {
     "secrets",
     "retrieval_index",
 }
+READBACK_PROJECT_FIELDS = {
+    "project_pointer",
+    "authority_plane",
+    "selected_mode",
+    "readiness_state",
+    "freshness_status",
+    "installed_asset_classes",
+    "missing_asset_classes",
+    "approval_scope",
+    "active_write_claim",
+    "next_safe_action",
+    "stop_reason",
+}
+LIST_READBACK_FIELDS = {
+    "installed_asset_classes",
+    "missing_asset_classes",
+}
+TEXT_READBACK_FIELDS = READBACK_PROJECT_FIELDS - LIST_READBACK_FIELDS - {"active_write_claim"}
+ALLOWED_AUTHORITY_PLANES = {
+    "root_azoth",
+    "public_azoth",
+    "personal_cockpit",
+    "project_local",
+}
+ALLOWED_SELECTED_MODES = {
+    "guide",
+    "assisted",
+    "managed",
+    "governed_autonomy",
+}
 REQUIRED_PROJECT_FIELDS = {
     "project_id",
     "title",
@@ -33,7 +63,7 @@ REQUIRED_PROJECT_FIELDS = {
     "profile_mode",
     "handoff_receipt_ref",
     "validation_commands",
-}
+} | READBACK_PROJECT_FIELDS
 
 
 def _default_root() -> Path:
@@ -139,6 +169,22 @@ def _project_handoff(project: dict[str, Any]) -> list[str]:
     ]
 
 
+def _format_values(value: Any) -> str:
+    if isinstance(value, list):
+        items = [str(item) for item in value if str(item).strip()]
+        return ", ".join(items) if items else "none"
+    text = str(value or "").strip()
+    return text or "none"
+
+
+def _format_write_claim(value: Any) -> str:
+    if value is False or value is None or value == "":
+        return "none"
+    if value is True:
+        return "active"
+    return str(value)
+
+
 def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
     root = Path(state["root"])
     manifest = state.get("manifest") if isinstance(state.get("manifest"), dict) else {}
@@ -170,6 +216,17 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
                 f"- {pid}: {title}",
                 f"  Path: {project.get('repo_path') or '?'}",
                 f"  Profile: {project.get('profile_mode') or '?'}",
+                f"  Mode: {_format_values(project.get('selected_mode'))}",
+                f"  Readiness: {_format_values(project.get('readiness_state'))}",
+                f"  Freshness: {_format_values(project.get('freshness_status'))}",
+                f"  Authority: {_format_values(project.get('authority_plane'))}",
+                f"  Pointer: {_format_values(project.get('project_pointer'))}",
+                f"  Installed assets: {_format_values(project.get('installed_asset_classes'))}",
+                f"  Missing assets: {_format_values(project.get('missing_asset_classes'))}",
+                f"  Approval: {_format_values(project.get('approval_scope'))}",
+                f"  Write claim: {_format_write_claim(project.get('active_write_claim'))}",
+                f"  Next safe action: {_format_values(project.get('next_safe_action'))}",
+                f"  Stop reason: {_format_values(project.get('stop_reason'))}",
                 f"  Status: {status}",
                 f"  Receipt: {project.get('handoff_receipt_ref') or '?'}",
             ]
@@ -224,6 +281,21 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
             errors.append(f"{label}: missing required field {field}")
         if project.get("profile_mode") != "pointer_only":
             errors.append(f"{label}: profile_mode must be pointer_only")
+        for field in sorted(TEXT_READBACK_FIELDS):
+            if not str(project.get(field) or "").strip():
+                errors.append(f"{label}: {field} must be a non-empty string")
+        if project.get("authority_plane") not in ALLOWED_AUTHORITY_PLANES:
+            errors.append(f"{label}: authority_plane must be one of {sorted(ALLOWED_AUTHORITY_PLANES)}")
+        if project.get("selected_mode") not in ALLOWED_SELECTED_MODES:
+            errors.append(f"{label}: selected_mode must be one of {sorted(ALLOWED_SELECTED_MODES)}")
+        for field in sorted(LIST_READBACK_FIELDS):
+            values = project.get(field)
+            if not isinstance(values, list):
+                errors.append(f"{label}: {field} must be a list")
+            elif any(not str(item).strip() for item in values):
+                errors.append(f"{label}: {field} must contain only non-empty values")
+        if not isinstance(project.get("active_write_claim"), bool):
+            errors.append(f"{label}: active_write_claim must be a boolean")
         for field in sorted(FORBIDDEN_PROJECT_CONTEXT_FIELDS):
             if field in project:
                 errors.append(f"{label}: forbidden context field {field}")
