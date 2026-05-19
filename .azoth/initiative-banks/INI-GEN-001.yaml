@@ -2,9 +2,9 @@ schema_version: 1
 bank_type: initiative
 initiative_id: INI-GEN-001
 title: Project Genesis and Goal-mode autonomy
-status: discovery_active
+status: complete
 created_at: "2026-05-10T13:56:00+00:00"
-updated_at: "2026-05-19T22:00:10Z"
+updated_at: "2026-05-19T22:20:00Z"
 owner: codex
 source_sessions:
   - session_id: 2026-05-10-codex-goal-project-genesis
@@ -108,6 +108,10 @@ research_refs:
     kind: repo_artifact
     path: scripts/project_genesis_starter.py
     note: Read-only command helper that prints starter profiles and validates filled packets.
+  - id: ref-gen-001-template-review
+    kind: research_bank
+    path: .azoth/research/ini-gen-001-starter-packet-template-review.yaml
+    note: Records the root-local starter packet placement and optional-field decision.
 local_findings:
   - finding_id: lf-gen-001-001
     summary: >
@@ -230,7 +234,7 @@ candidate_slices:
     proposed_task_id: GEN-001-B
     title: Project-local starter packet template
     initiative_ref: INI-GEN-001
-    status: candidate
+    status: complete
     target_layer: docs
     delivery_pipeline: standard
     summary: >
@@ -248,19 +252,28 @@ candidate_slices:
       - No project repo mutation.
       - No cockpit route write.
       - No hydration into roadmap/backlog/spec tasks.
-    open_questions:
-      - Should starter packets live in public Azoth templates or root-only docs first?
-      - Which fields should be optional for highly creative spaces?
+    open_questions: []
     research_evidence_refs:
       - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
       - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
       - scripts/project_genesis_starter.py
+      - .azoth/research/ini-gen-001-starter-packet-template-review.yaml
+      - .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-b-validation-receipt.yaml
     recommended_phase: post-v0.2.0-stabilization
     readiness_notes: >
-      A first planning-only template now exists. It remains non-hydrating until
-      the Goal-mode boundary is reviewed and a later slice decides whether the
-      template should move into public Azoth, root docs, or cockpit-adjacent
-      guidance.
+      Completed as a root-local planning review. The starter packet default
+      remains root docs plus a read-only helper. Public Azoth template
+      extraction, cockpit route guidance, and project-local packet writes remain
+      separate gated adoption campaigns.
+    delivery_result:
+      delivered_at: "2026-05-19T22:20:00Z"
+      session_id: 2026-05-19-ini-gen-starter-template-review
+      status: complete
+      receipt_ref: .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-b-validation-receipt.yaml
+      summary: >
+        Reviewed the starter packet placement and optional-field policy without
+        mutating public Azoth, cockpit, project-local, kernel/governance, or
+        roadmap/backlog/spec surfaces.
   - candidate_id: slice-gen-001-c
     proposed_task_id: GEN-001-C
     title: Goal-mode self-approval v1/v2 planning and repair opener
@@ -316,7 +329,7 @@ candidate_slices:
         scripts, kernel/governance, roadmap hydration, public/cockpit/project-local,
         release, dependency, credential, and destructive surfaces remain blocked.
 readiness:
-  readiness_status: continue_research
+  readiness_status: complete
   human_decision: approved_for_planning_seed_only
   approval_scope: goal_mode_project_genesis_rehearsal_no_hydration
   approval_basis: >
@@ -327,18 +340,27 @@ readiness:
     continuation and repo-local scripts/tests repair only, not as authority for
     protected or mutating planes.
   candidate_first_slice: slice-gen-001-b
-  freshness_status: current_as_of_2026_05_19_slice_gen_001_a_rehearsed
+  freshness_status: current_as_of_2026_05_19_project_genesis_planning_seed_complete
   hydration_recommendation: >
-    Do not hydrate roadmap/backlog/spec state. The next safe move is a
-    root-local planning-seed pass for slice-gen-001-b that turns the rehearsal
-    into a friendly project-local starter packet template, still without public,
-    cockpit, project-local, kernel, governance, release, dependency, credential,
-    destructive, code, or broad productization mutation.
-  open_questions:
-    - Which project-local file layout should become the public default starter?
-    - Should cockpit route rehearsal remain pointer-only until project owners opt in?
+    Do not hydrate roadmap/backlog/spec state from this campaign. GEN-001-A,
+    GEN-001-B, and GEN-001-C are complete as root-local planning/Goal-mode
+    slices. Future public templates, cockpit route rehearsal, project-local
+    packet creation, or managed-mode adoption requires a fresh initiative,
+    proposal, or explicitly approved external-plane campaign.
+  open_questions: []
 hydration_history: []
 delivery_history:
+  - delivered_at: "2026-05-19T22:20:00Z"
+    session_id: 2026-05-19-ini-gen-starter-template-review
+    candidate_slice_ref: slice-gen-001-b
+    task_ref: GEN-001-B
+    approval_scope: goal_mode_project_genesis_rehearsal_no_hydration
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-19-slice-gen-001-b-validation-receipt.yaml
+    result: >
+      Completed the root-local Project Genesis starter packet template review.
+      The default remains docs/playbook plus scripts/project_genesis_starter.py;
+      public, cockpit, and project-local adoption remain gated follow-on
+      campaigns.
   - delivered_at: "2026-05-19T22:00:10Z"
     session_id: 2026-05-19-ini-gen-project-genesis-rehearsal
     candidate_slice_ref: slice-gen-001-a

@@ -1,0 +1,97 @@
+schema_version: 1
+artifact_type: project_genesis_starter_template_review
+initiative_ref: INI-GEN-001
+candidate_slice_ref: slice-gen-001-b
+task_ref: GEN-001-B
+status: complete
+created_at: "2026-05-19T22:20:00Z"
+session_id: 2026-05-19-ini-gen-starter-template-review
+purpose: >
+  Review the Project Genesis starter packet template after the Goal-mode
+  rehearsal. This is a root-local planning artifact only; it does not move the
+  template into public Azoth, personal cockpit, or any project-local space.
+source_refs:
+  - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+  - scripts/project_genesis_starter.py
+  - .azoth/research/ini-gen-001-project-genesis-rehearsal.yaml
+  - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+placement_decision:
+  current_default: root_docs_and_helper
+  current_paths:
+    - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+    - scripts/project_genesis_starter.py
+  rationale: >
+    Keep the starter packet in root docs plus a read-only helper while the
+    concept is still being shaped. This lets root-azoth own the contract and
+    validation language without silently publishing templates, editing cockpit
+    routes, or writing project-local files.
+  future_public_azoth_condition: >
+    Move the template into public Azoth only after a release/productization gate
+    names the template path, install profile, smoke checks, and upgrade story.
+  future_project_local_condition: >
+    Write a starter packet into a project only after that project has its own
+    project-local approval and receipt owner.
+  future_cockpit_condition: >
+    Add cockpit-adjacent guidance only after a pointer-only cockpit route or
+    readback session approves the specific route surface.
+template_field_policy:
+  required_for_all_domains:
+    - project_id
+    - project_name
+    - domain
+    - goal.why_now
+    - goal.desired_help
+    - goal.success_signals
+    - azoth_source_profile.source
+    - azoth_source_profile.boundaries
+    - starter_prompt.intent
+    - starter_prompt.prompt
+    - readiness.status
+    - readiness.next_safe_action
+    - readiness.hydration_blockers
+    - cockpit_route.pointer_only
+    - cockpit_route.safe_open_prompt
+    - validation_receipt.confirms
+  optional_until_project_opt_in:
+    - local_context.project_paths
+    - local_context.people_or_roles
+    - local_context.current_state
+    - local_context.recent_history
+    - azoth_source_profile.version_or_commit
+    - validation_receipt.commands_or_checks
+    - validation_receipt.changed_files
+  creative_space_guidance: >
+    For music and other creative spaces, project paths and detailed current
+    state may stay blank until the operator chooses what to expose. The first
+    packet can still be useful if it captures taste, references, open questions,
+    and one low-friction experiment.
+  academic_space_guidance: >
+    For thesis work, the packet should prefer source state, advisor constraints,
+    deadlines, and argument gaps over generic task lists.
+  agent_context_guidance: >
+    For agent/context projects, the packet should separate compatibility
+    questions from root-azoth merge decisions.
+acceptance_map:
+  - criterion: Template captures context, discovery/readiness, starter prompt, cockpit route, and validation receipt.
+    result: pass
+    evidence_refs:
+      - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md#packet-template
+      - scripts/project_genesis_starter.py#build_profile
+  - criterion: Template is domain-friendly for music, thesis, and agent/context examples.
+    result: pass
+    evidence_refs:
+      - scripts/project_genesis_starter.py#DOMAINS
+      - .azoth/research/ini-gen-001-project-genesis-rehearsal.yaml#domain_rehearsals
+  - criterion: Template names safe upgrade path from public/installed Azoth.
+    result: pass
+    evidence_refs:
+      - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md#command-surface
+      - scripts/project_genesis_starter.py#azoth_source_profile
+result:
+  status: complete_for_planning_seed
+  ready_to_hydrate: false
+  next_safe_route: fresh_initiative_required_for_external_plane_adoption
+  summary: >
+    GEN-001-B is complete as a planning review. The starter packet default
+    remains root-local docs/helper. Public template extraction, cockpit routing,
+    and project-local packet writes require later explicit approvals.
