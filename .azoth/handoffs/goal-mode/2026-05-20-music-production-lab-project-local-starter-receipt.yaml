@@ -1,0 +1,147 @@
+schema_version: 1
+artifact_type: target_plane_validation_receipt
+created_at: "2026-05-20T20:46:00Z"
+session_id: 2026-05-20-music-production-lab-project-local-starter
+run_id: 2026-05-20-music-production-lab-project-local-starter-auto
+status: pass
+
+approval:
+  approved_by: human
+  approval_basis: >
+    Operator replied "continue" on 2026-05-20 after the Goal-mode continuation
+    route recorded project_local_starter_packet_creation for music-production-lab
+    as the recommended next protected target-plane lane.
+  bounded_to:
+    - ChordLab project-local guide-mode starter packet
+    - ChordLab project-local mode receipt
+    - ChordLab project-local handoff receipt
+    - root-side validation receipt
+
+scope:
+  backlog_id: P6-003
+  pipeline: auto
+  target_layer: project-local
+  root_repo: /Users/yiwei/GithubRepos/root-azoth
+  project_repo: /Users/yiwei/GithubRepos/FunProjects
+  project_path: /Users/yiwei/GithubRepos/FunProjects/ChordLab
+  root_branch: phase/v0.2.0-p4
+  root_prior_commit: 7d33ffb
+  project_commit: 16ee597
+
+staged_pipeline:
+  architect:
+    stage_id: auto_s2_architect
+    agent_id: 019e471d-16a9-7e60-88ff-40d8ac8dd6c3
+    status: complete
+    disposition: approved
+    summary: >
+      Approved exactly four allowed files, selected_mode guide, and no
+      project-source, cockpit, public Azoth, managed-mode, governed-autonomy,
+      dependency, credential, push, tag, kernel, governance, or release mutation.
+  builder:
+    stage_id: auto_s5_builder
+    execution: main_thread_bounded_patch
+    status: complete
+    summary: >
+      Created the ChordLab .azoth starter packet, project-local mode receipt,
+      and handoff receipt, then committed only those three files in FunProjects.
+
+deliverables:
+  - path: /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/project-genesis-starter.yaml
+    result: >
+      Adds the first project-local Project Genesis starter packet for
+      music-production-lab in guide mode.
+  - path: /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/project-local-mode-receipt.yaml
+    result: >
+      Records project-local ownership, selected_mode guide, readiness state,
+      freshness, installed/missing asset classes, and next safe action.
+  - path: /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/handoffs/project-local-mode.yaml
+    result: >
+      Provides the project-local handoff receipt referenced by the mode receipt.
+  - path: /Users/yiwei/GithubRepos/root-azoth/.azoth/handoffs/goal-mode/2026-05-20-music-production-lab-project-local-starter-receipt.yaml
+    result: >
+      Captures root-side staged evidence, validation commands, residual risks,
+      and remaining target-plane gates.
+
+project_local_receipt:
+  project_id: music-production-lab
+  repo_path: /Users/yiwei/GithubRepos/FunProjects/ChordLab
+  receipt_owner: project_local
+  selected_mode: guide
+  release_profile_ref: full@v0.2.0
+  readiness_state: ready_for_read_only_guidance
+  freshness_status: current_starter_packet_2026-05-20
+  approval_scope: project_local_starter_packet_creation_guide_mode_gate
+  active_write_claim: false
+  stop_reason: none
+  handoff_receipt_ref: .azoth/handoffs/project-local-mode.yaml
+  next_safe_action: >
+    Open a guide-mode music-production session from this packet, create a
+    creative context map, and choose one 30-60 minute experiment before any
+    source-code or managed-mode work.
+
+mutation_audit:
+  root_local_receipt_mutated: true
+  project_local_azoth_files_mutated: true
+  project_source_code_mutated: false
+  project_context_loaded_beyond_chordlab_agents: false
+  personal_cockpit_mutated: false
+  public_azoth_mutated: false
+  kernel_governance_mutated: false
+  kernel_template_mutated: false
+  roadmap_backlog_spec_hydrated: false
+  release_published: false
+  dependencies_or_credentials_changed: false
+  destructive_action_taken: false
+  managed_or_governed_autonomy_executed: false
+  pushes_or_tags_created: false
+
+validation:
+  status: pass
+  commands:
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/check_gates.py --session-id 2026-05-20-music-production-lab-project-local-starter --require-pipeline-gate
+      status: pass
+      evidence: Scope gate and pipeline gate valid; TTL reported 1h53m remaining after writes.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/project_genesis_starter.py validate /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/project-genesis-starter.yaml
+      status: pass
+      evidence: OK for project-genesis-starter.yaml
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -c "validate_project_local_mode_receipt(...)"
+      status: pass
+      evidence: receipt validation OK
+    - command: git -C /Users/yiwei/GithubRepos/FunProjects/ChordLab diff --check -- .azoth/project-genesis-starter.yaml .azoth/project-local-mode-receipt.yaml .azoth/handoffs/project-local-mode.yaml
+      status: pass
+      evidence: no whitespace errors reported
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest -p no:cacheprovider tests/test_project_genesis_starter.py tests/test_azoth_release_profile.py tests/test_cockpit_menu.py -q
+      status: pass
+      evidence: 27 passed
+    - command: git -C /Users/yiwei/GithubRepos/FunProjects status --short -- ChordLab/.azoth ChordLab/AGENTS.md ChordLab/src ChordLab/index.html ChordLab/style.css ChordLab/package.json
+      status: pass
+      evidence: no output after commit, proving scoped ChordLab files are clean.
+    - command: git -C /Users/yiwei/GithubRepos/FunProjects show --stat --oneline -1
+      status: pass
+      evidence: 16ee597 committed exactly three ChordLab .azoth files.
+
+residual_risks:
+  - >
+    The parent FunProjects repository still has unrelated dirty state outside
+    ChordLab/.azoth. This lane did not stage or commit those files.
+  - >
+    The starter packet validator retains no_project_repo_mutation wording from
+    the dry-run contract. In this lane it means no hidden or unapproved project
+    mutation; the approved project-local .azoth files were intentionally written.
+  - >
+    The personal cockpit was not refreshed to read back the project-local
+    receipt. A future cockpit refresh is a separate personal-cockpit gate.
+  - >
+    Public template distribution, managed-mode hydration, governed-autonomy
+    budget, project source work, and release publishing remain blocked.
+
+next_route:
+  completed: music_production_lab_project_local_guide_packet
+  self_servable_follow_on:
+    - root-local receipt/update that summarizes remaining goal matrix
+  human_gated_follow_on:
+    - cockpit readback refresh from project-local receipt
+    - public template distribution
+    - managed-mode project-local hydration
+    - source-code or creative project work inside ChordLab
