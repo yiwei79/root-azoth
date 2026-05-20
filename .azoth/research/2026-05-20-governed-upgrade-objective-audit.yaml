@@ -1,0 +1,162 @@
+schema_version: 1
+artifact_type: completion_audit
+created_at: "2026-05-20T05:46:04Z"
+session_id: 2026-05-20-governed-upgrade-objective-audit
+owner: codex
+scope: root_local_goal_mode_planning_seed
+active_goal_excerpt: >
+  Design and execute a governed Azoth upgrade initiative that improves
+  deployment ease, project readiness, and the central cockpit/control-point
+  mechanism across new and existing projects.
+audit_verdict:
+  full_objective_status: not_complete
+  root_local_status: complete
+  reason: >
+    Root-local design artifacts, readiness contracts, implementation slices, and
+    external-plane preflights are complete. The full objective still contains
+    target-plane adoption across public Azoth, the personal cockpit, and
+    project-local repositories; those mutations are intentionally blocked until
+    the operator approves a fresh target-plane gate.
+  do_not_call_update_goal: true
+evidence_method:
+  current_state_sources:
+    - .azoth/initiative-banks/INI-DEP-001.yaml
+    - .azoth/initiative-banks/INI-DEP-002.yaml
+    - .azoth/initiative-banks/INI-GEN-001.yaml
+    - .azoth/initiative-banks/INI-ADOPT-001.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-059.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+    - .azoth/research/ini-dep-001-readiness-map.yaml
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    - .azoth/research/ini-adopt-001-route-board.yaml
+    - scripts/goal_mode_self_approval.py
+  gate_state_at_audit:
+    session_id: 2026-05-20-governed-upgrade-objective-audit
+    scope_class: planning_seed
+    approved_by: goal-mode-self-approval
+    forbidden_outputs:
+      - kernel_governance_mutation
+      - kernel_template_mutation
+      - roadmap_backlog_spec_hydration
+      - release_publishing
+      - public_azoth_mutation
+      - personal_cockpit_mutation
+      - project_local_mutation
+      - dependency_or_credential_changes
+      - destructive_actions
+      - code_changes
+      - broad_productization_gate
+requirement_matrix:
+  - requirement_id: req-map-surfaces
+    requirement: >
+      Map installer, release-profile, cockpit, planning-bank, and
+      autonomous-control surfaces.
+    status: proved_for_root_local_contract
+    evidence_refs:
+      - .azoth/research/ini-dep-001-readiness-map.yaml#current_surface_map
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#first_use_evidence_map
+      - .azoth/roadmap-specs/v0.2.0/T-059.yaml#first_use_surfaces
+    notes: >
+      T-059 carries the root-local readiness map; target-plane application still
+      requires adoption approval.
+  - requirement_id: req-mode-taxonomy
+    requirement: >
+      Define a multi-scale Azoth mode taxonomy from guide-only through assisted
+      skills/agents to managed project-management and governed autonomy.
+    status: proved_for_root_local_contract
+    evidence_refs:
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix
+      - .azoth/roadmap-specs/v0.2.0/T-059.yaml#mode_matrix_summary
+      - .azoth/roadmap-specs/v0.2.0/T-061.yaml#release_profile_matrix_compiler
+  - requirement_id: req-repo-native-artifacts
+    requirement: >
+      Convert the design into repo-native initiative, proposal, research, and
+      task artifacts.
+    status: proved
+    evidence_refs:
+      - .azoth/initiative-banks/INI-DEP-001.yaml
+      - .azoth/initiative-banks/INI-DEP-002.yaml
+      - .azoth/initiative-banks/INI-GEN-001.yaml
+      - .azoth/initiative-banks/INI-ADOPT-001.yaml
+      - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+      - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+      - .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+      - .azoth/proposals/project-genesis-external-adoption-gates.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-059.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  - requirement_id: req-first-bounded-slices
+    requirement: Deliver first bounded implementation slices with validation.
+    status: proved_for_root_local_slices
+    evidence_refs:
+      - .azoth/initiative-banks/INI-DEP-001.yaml#delivery_history
+      - .azoth/initiative-banks/INI-DEP-002.yaml#candidate_slices
+      - .azoth/initiative-banks/INI-GEN-001.yaml#candidate_slices
+      - .azoth/initiative-banks/INI-ADOPT-001.yaml#candidate_slices
+      - scripts/azoth_release_profile.py
+      - scripts/cockpit_menu.py
+      - scripts/cockpit_ux_simulate.py
+      - scripts/project_genesis_starter.py
+      - scripts/goal_mode_self_approval.py
+    notes: >
+      Delivered slices remain bounded to root-local readiness, validation,
+      helper, and preflight surfaces.
+  - requirement_id: req-product-flow-and-authority
+    requirement: >
+      Preserve the three-tier product flow and four-plane authority model.
+    status: proved_for_root_local_artifacts
+    evidence_refs:
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#authority_planes
+      - .azoth/roadmap-specs/v0.2.0/T-062.yaml#receipt_contract
+      - .azoth/research/ini-adopt-001-route-board.yaml#route_options
+      - .azoth/initiative-banks/INI-ADOPT-001.yaml#readiness
+    notes: >
+      The route board keeps root-azoth, public Azoth, personal cockpit, and
+      project-local authority distinct.
+  - requirement_id: req-staged-governed-delivery
+    requirement: Use staged subagents or governed pipelines for governed delivery.
+    status: proved_by_existing_run_evidence
+    evidence_refs:
+      - .azoth/run-ledger.local.yaml
+      - .azoth/initiative-banks/INI-DEP-001.yaml#delivery_history
+      - .azoth/initiative-banks/INI-DEP-002.yaml#readiness
+      - .azoth/initiative-banks/INI-GEN-001.yaml#delivery_history
+    notes: >
+      This audit slice itself is an inline bounded planning-seed closeout because
+      no fresh-context implementation or independent review stage is being
+      substituted for protected mutation.
+  - requirement_id: req-stop-before-protected-gates
+    requirement: >
+      Stop for explicit human approval before kernel/governance changes or broad
+      productization/target-plane mutation.
+    status: proved_and_currently_blocking_completion
+    evidence_refs:
+      - .azoth/initiative-banks/INI-ADOPT-001.yaml#readiness
+      - .azoth/research/ini-adopt-001-route-board.yaml#route_options
+      - .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+    notes: >
+      This is the remaining blocker to full objective completion, not a defect
+      in root-local readiness.
+current_mode_readiness:
+  expected_profile_outcome:
+    guide: ready
+    assisted: ready
+    managed: requires_authority
+    governed_autonomy: requires_authority
+  interpretation: >
+    The readiness profile correctly refuses to advertise managed or governed
+    autonomy without project-local receipt and autonomy budget authority.
+remaining_decision:
+  blocking_question: >
+    Which target-plane adoption should be approved first: public release
+    extraction, cockpit pointer registration, project-local starter packet
+    creation, a new improvement campaign, or defer?
+  decision_brief_ref: .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+  recommended_option: approve_cockpit_pointer_registration
+  why: >
+    It most directly advances the central cockpit/control-point goal while
+    staying pointer-only and avoiding project-local or release writes until the
+    operator grants that authority.
