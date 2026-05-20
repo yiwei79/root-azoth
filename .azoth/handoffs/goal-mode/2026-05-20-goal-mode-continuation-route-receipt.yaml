@@ -1,0 +1,73 @@
+schema_version: 1
+artifact_type: goal_mode_validation_receipt
+created_at: "2026-05-20T19:16:28Z"
+session_id: 2026-05-20-goal-mode-continuation-route
+run_id: 2026-05-20-goal-mode-continuation-route-auto
+status: pass
+
+approval:
+  approved_by: goal-mode-self-approval
+  scope_class: planning_seed
+  basis: >
+    Active Codex Goal-mode authority opened a root-local planning-seed lane
+    after validating that the only artifact writes were under .azoth/research/
+    and .azoth/handoffs/goal-mode/.
+
+result:
+  answered_operator_question: true
+  answer: >
+    The unresolved Goal is not an error. The completed cockpit lane was one
+    child slice; the broader goal should remain open until public/installable
+    Azoth, personal cockpit, and project-local readiness adoption are either
+    completed or explicitly deferred.
+  continued_without_manual_approval: true
+  continuation_boundary: >
+    This lane used Goal-mode self-approval for safe root-local route evidence
+    only. It did not cross any target-plane mutation boundary.
+
+artifacts:
+  - path: .azoth/research/2026-05-20-goal-mode-continuation-route.yaml
+    purpose: >
+      Records the expected active-goal state, continuation policy, remaining
+      goal matrix, and next legal routes.
+  - path: .azoth/handoffs/goal-mode/2026-05-20-goal-mode-continuation-route-receipt.yaml
+    purpose: >
+      Captures validation evidence and residual target-plane gates for this
+      continuation lane.
+
+mutation_audit:
+  root_local_planning_artifacts_mutated: true
+  code_changed: false
+  kernel_governance_mutated: false
+  kernel_template_mutated: false
+  roadmap_backlog_spec_hydrated: false
+  public_azoth_mutated: false
+  personal_cockpit_mutated: false
+  project_local_mutated: false
+  project_local_context_loaded: false
+  release_published: false
+  dependencies_or_credentials_changed: false
+  destructive_action_taken: false
+
+validation_plan:
+  - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/check_gates.py --session-id 2026-05-20-goal-mode-continuation-route --require-pipeline-gate
+    expected: pass
+  - command: git diff --check -- .azoth/research/2026-05-20-goal-mode-continuation-route.yaml .azoth/handoffs/goal-mode/2026-05-20-goal-mode-continuation-route-receipt.yaml
+    expected: pass
+  - command: python3 scripts/run_ledger.py require-completion-evidence --run-id 2026-05-20-goal-mode-continuation-route-auto
+    expected: pass_after_completion
+
+residual_risks:
+  - >
+    The Codex Goal tool reports the goal as paused. This receipt cannot mutate
+    the external goal tracker into an active state because the exposed goal tool
+    only supports marking goals complete.
+  - >
+    Actual public Azoth mutation, cockpit sync/push, or project-local starter
+    packet creation remains correctly blocked until a named target-plane gate.
+
+next_safe_action:
+  recommended: >
+    Open a separate project-local starter-packet lane for music-production-lab
+    if the operator grants that target-plane write authority; otherwise Goal
+    mode may continue only with root-local planning/readiness evidence.

@@ -1,0 +1,143 @@
+schema_version: 1
+artifact_type: goal_mode_continuation_route
+created_at: "2026-05-20T19:16:28Z"
+session_id: 2026-05-20-goal-mode-continuation-route
+run_id: 2026-05-20-goal-mode-continuation-route-auto
+owner: codex
+status: active_goal_expected
+
+question:
+  asked_by_operator: >
+    The goal is still active. Is it an error, or should we continue to pursue
+    the goal?
+  answer: >
+    It is not an error. The cockpit pointer-registration lane completed, but
+    the broader Goal-mode objective remains unresolved because public Azoth,
+    personal cockpit, and project-local adoption are distinct target-plane
+    stages. The correct behavior is to continue pursuing the goal through the
+    next legal bounded lane, not to mark the Codex Goal complete.
+
+current_state:
+  codex_goal_status_observed: paused
+  interpretation: >
+    The Codex Goal tracker can report paused while the objective is still
+    semantically active. A new operator message can resume operational work,
+    but only repo-native gates and receipts determine what writes are legal.
+  latest_completed_lane:
+    session_id: 2026-05-20-cockpit-pointer-registration
+    result: complete
+    root_commit: 3574eb2
+    cockpit_commit: 12ae5ee
+    receipt_ref: .azoth/handoffs/goal-mode/2026-05-20-cockpit-pointer-registration-receipt.yaml
+  gate_state_before_this_lane:
+    scope_gate: closed
+    pipeline_gate: closed
+    write_claim: none
+  current_lane_authority:
+    approved_by: goal-mode-self-approval
+    scope_class: planning_seed
+    reason: >
+      This lane writes only root-local route and receipt artifacts under
+      .azoth/research/ and .azoth/handoffs/goal-mode/.
+
+continuation_policy:
+  rule_1_lane_completion_is_not_goal_completion: >
+    A completed child lane or target-plane slice must not call update_goal unless
+    the full objective matrix is complete and verified.
+  rule_2_goal_mode_should_continue_without_manual_approval_for_safe_work: >
+    When the active Goal still maps to root-local planning, readiness, research,
+    receipt, or bounded repo-repair work, use Goal-mode self-approval rather
+    than stopping for another chat approval.
+  rule_3_protected_planes_remain_named_gates: >
+    Goal-mode self-approval does not authorize kernel/governance mutation,
+    roadmap/backlog/spec hydration, public Azoth mutation, personal cockpit
+    mutation, project-local mutation, release publishing, dependencies,
+    credentials, destructive actions, pushes, or tags.
+  rule_4_continue_by_route_not_by_guess: >
+    After each lane, record whether the next step is self-servable, human-gated,
+    or complete. If self-servable, open it; if human-gated, stop with the exact
+    target-plane approval required.
+
+remaining_goal_matrix:
+  root_local_design_and_first_slices:
+    status: complete
+    evidence_refs:
+      - .azoth/research/2026-05-20-governed-upgrade-objective-audit.yaml
+      - .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+  personal_cockpit_control_point:
+    status: partially_adopted
+    evidence_refs:
+      - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/index.yaml
+      - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/project-genesis-cockpit-route-registration-2026-05-20.yaml
+    remaining:
+      - push or sync cockpit changes if desired
+      - project-local receipts for selected routes
+      - managed or governed mode proof after project authority exists
+  public_installable_azoth:
+    status: preflight_complete_not_adopted
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml
+    remaining:
+      - public template extraction under a fresh public Azoth gate
+      - release-profile or installer claim updates only under a release gate
+  project_local_spaces:
+    status: preflight_complete_not_adopted
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml
+    remaining:
+      - create first project-local starter packet under a project-local gate
+      - record project-local mode receipt
+      - validate cockpit readback from project-local receipt authority
+
+next_legal_routes:
+  self_servable_now:
+    - route_id: root_local_continuation_receipt
+      status: current_lane
+      purpose: >
+        Record that the unresolved Codex Goal is expected and that Goal mode
+        should keep using self-approval for safe root-local continuation.
+      allowed_outputs:
+        - .azoth/research/2026-05-20-goal-mode-continuation-route.yaml
+        - .azoth/handoffs/goal-mode/2026-05-20-goal-mode-continuation-route-receipt.yaml
+  human_gated_next:
+    - route_id: project_local_starter_packet_creation
+      target_plane: project_local
+      smallest_safe_target: music-production-lab
+      why_next: >
+        It turns the cockpit pointer into real project readiness without
+        needing public release work first.
+      requires: >
+        A named project-local approval that allows writing only the starter
+        packet and receipt in the selected project repository.
+    - route_id: public_template_distribution
+      target_plane: public_azoth
+      why_next: >
+        It improves deployment ease for future installs after Project Genesis
+        starter assets are extracted into the clean public product path.
+      requires: >
+        A named public Azoth approval; release publishing remains a later gate.
+    - route_id: cockpit_push_or_sync
+      target_plane: personal_cockpit
+      why_next: >
+        It would publish the already-completed local cockpit pointer state.
+      requires: >
+        A named sync/push approval for the personal cockpit repo.
+
+recommended_next_after_this_lane:
+  route_id: project_local_starter_packet_creation
+  target: music-production-lab
+  rationale: >
+    The cockpit control point is now visible. The smallest continuation that
+    proves project readiness is a single project-local starter packet and
+    receipt for the music-production-lab route, but that is not self-servable
+    under Goal-mode planning_seed authority because it writes a project repo.
+
+operator_experience_fix:
+  finding: >
+    The active Goal remaining open is correct. The UX bug would be treating
+    every child-lane close as terminal or treating every safe root-local
+    continuation as requiring chat approval.
+  durable_rule: >
+    Continue automatically for self-servable Goal-mode planning or bounded
+    repo-repair lanes; stop only when the next lane is a protected target-plane
+    mutation or the full objective is verified complete.
