@@ -15,11 +15,56 @@ try:
 except ModuleNotFoundError as exc:  # pragma: no cover - environment guard.
     raise SystemExit("PyYAML is required to run cockpit_menu.py") from exc
 
-from azoth_release_profile import (  # noqa: E402
-    is_project_local_mode_receipt,
-    validate_project_local_mode_receipt,
-)
-from harness_profile import route_capsule_for_profile  # noqa: E402
+try:
+    from azoth_release_profile import (  # noqa: E402
+        is_project_local_mode_receipt,
+        validate_project_local_mode_receipt,
+    )
+except ModuleNotFoundError:  # pragma: no cover - exercised by deployability tests.
+
+    def is_project_local_mode_receipt(doc: dict[str, Any]) -> bool:
+        return str(doc.get("artifact_type") or "") == "project_local_mode_receipt"
+
+    def validate_project_local_mode_receipt(
+        doc: dict[str, Any],
+        *,
+        expected_project_id: str,
+        expected_repo_path: Any,
+        expected_selected_mode: str,
+        expected_handoff_receipt_ref: str,
+    ) -> list[str]:
+        errors: list[str] = []
+        if str(doc.get("receipt_owner") or "") != "project_local":
+            errors.append("receipt_owner must be project_local")
+        if str(doc.get("freshness_status") or "") != "current":
+            errors.append("freshness_status must be current")
+        if str(doc.get("project_id") or "") != expected_project_id:
+            errors.append(f"project_id must be {expected_project_id}")
+        if str(doc.get("repo_path") or "") != str(expected_repo_path or ""):
+            errors.append("repo_path must match project pointer")
+        if str(doc.get("selected_mode") or "") != expected_selected_mode:
+            errors.append(f"selected_mode must match expected mode {expected_selected_mode}")
+        if str(doc.get("handoff_receipt_ref") or "") != expected_handoff_receipt_ref:
+            errors.append("handoff_receipt_ref must match project pointer")
+        return errors
+
+try:
+    from harness_profile import route_capsule_for_profile  # noqa: E402
+except ModuleNotFoundError:  # pragma: no cover - exercised by deployability tests.
+
+    def route_capsule_for_profile(profile: str) -> Any:
+        route = _LOCAL_ROUTE_CAPSULES.get(str(profile or "").strip())
+        if route is None:
+            raise ValueError(f"unknown harness profile {profile!r}")
+        return _LocalRouteCapsule(route)
+
+
+class _LocalRouteCapsule:
+    def __init__(self, route: dict[str, Any]) -> None:
+        self._route = route
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return dict(self._route)
 
 
 FORBIDDEN_PROJECT_CONTEXT_FIELDS = {
@@ -60,6 +105,40 @@ ALLOWED_SELECTED_MODES = {
     "governed_autonomy",
 }
 PROJECT_LOCAL_AUTHORITY_MODES = {"managed", "governed_autonomy"}
+_LOCAL_ROUTE_CAPSULES: dict[str, dict[str, Any]] = {
+    "guide": {
+        "profile": "guide",
+        "route_state": "answer",
+        "authority_required": False,
+        "authority_plane": "personal_cockpit",
+        "next_safe_action": "read orientation and decide whether to request assisted mode",
+        "stop_reason": "",
+    },
+    "assisted": {
+        "profile": "assisted",
+        "route_state": "assist",
+        "authority_required": False,
+        "authority_plane": "root_azoth",
+        "next_safe_action": "run read-only assisted checks or request managed-mode hydration",
+        "stop_reason": "",
+    },
+    "managed": {
+        "profile": "managed",
+        "route_state": "authority_required",
+        "authority_required": True,
+        "authority_plane": "project_local",
+        "next_safe_action": "hydrate or repair project-local planning state under a fresh gate",
+        "stop_reason": "fresh managed-mode authority required",
+    },
+    "governed_autonomy": {
+        "profile": "governed_autonomy",
+        "route_state": "authority_required",
+        "authority_required": True,
+        "authority_plane": "root_azoth",
+        "next_safe_action": "open a bounded governed-autonomy campaign only with fresh authority",
+        "stop_reason": "fresh governed-autonomy authority required",
+    },
+}
 REQUIRED_PROJECT_FIELDS = {
     "project_id",
     "title",

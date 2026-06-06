@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -372,3 +373,31 @@ def test_project_filter_renders_only_selected_handoff(tmp_path: Path) -> None:
 
     assert "ras-or-ray" in text
     assert "other-project" not in text
+
+
+def test_cockpit_menu_runs_as_single_file_in_cockpit_repo(tmp_path: Path) -> None:
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    deployed = root / "scripts" / "cockpit_menu.py"
+    deployed.parent.mkdir(parents=True)
+    deployed.write_text((SCRIPTS_DIR / "cockpit_menu.py").read_text(encoding="utf-8"), encoding="utf-8")
+
+    check = subprocess.run(
+        [sys.executable, str(deployed), "--check"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert check.returncode == 0, check.stderr
+
+    render = subprocess.run(
+        [sys.executable, str(deployed), "--project", "ras-or-ray"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert render.returncode == 0, render.stderr
+    assert "Harness profile: assisted" in render.stdout
+    assert "Build daily context packet:" in render.stdout
