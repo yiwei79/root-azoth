@@ -1,0 +1,169 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-HARNESS-001
+title: Personal Harness OS mode router and context spine
+status: active
+created_at: "2026-06-06T00:00:00Z"
+updated_at: "2026-06-06T00:00:00Z"
+owner: codex
+delivery_authorized: false
+source_sessions:
+  - session_id: 2026-06-06-personal-harness-os-s1
+    kind: goal-mode-self-approved-root-local-slice
+    artifact: .azoth/initiative-banks/INI-HARNESS-001.yaml
+    note: >
+      Seeded after the operator approved the Personal Harness OS design. This
+      initiative authorizes only root-local contracts, tests, and planning
+      artifacts until a fresh gate names any kernel, cockpit, public, or
+      project-local mutation.
+contacts:
+  - id: operator
+    role: human decision owner
+    contact_type: human
+    note: >
+      Asked for Azoth to become a reliable practical harness with automatic
+      mode heaviness, user-friendly personal operation, persistent context, and
+      only one real architecture alignment gate during the goal pursuit.
+source_proposal_refs:
+  - .azoth/proposals/azoth-personal-harness-os.yaml
+  - .azoth/proposals/azoth-harness-rethink-2026.yaml
+  - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+research_questions:
+  - question_id: rq-harness-001-001
+    question: What should replace the old stock-lite/azoth-lite/azoth-full user-facing language?
+    status: answered
+    opened_at: "2026-06-06T00:00:00Z"
+    needed_for: harness_profile_router
+    answer: >
+      Keep the old classifier as a lower-level implementation detail, but expose
+      the operator-facing ladder from the deployment readiness contract: guide,
+      assisted, managed, and governed_autonomy.
+    evidence_refs:
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix
+      - scripts/harness_profile.py
+  - question_id: rq-harness-001-002
+    question: How does the three-circle model reconcile with Azoth's four authority planes?
+    status: answered
+    opened_at: "2026-06-06T00:00:00Z"
+    needed_for: personal_operating_model
+    answer: >
+      Use three daily circles for the operator's mental model: personal cockpit,
+      project spaces, and Azoth supply chain. Preserve four authority planes for
+      safety: personal cockpit, project-local, root-azoth, and public Azoth.
+    evidence_refs:
+      - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+      - .azoth/research/personal-harness-os-context-map.yaml#authority_model
+research_refs:
+  - .azoth/research/personal-harness-os-context-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+local_findings:
+  - finding_id: lf-harness-001-001
+    status: active
+    summary: >
+      The existing azoth-lite classifier already detects side-effect heaviness,
+      but its profile names are implementation-centric and not sufficient for
+      daily personal use.
+    evidence_refs:
+      - scripts/azoth_lite.py
+      - tests/test_azoth_lite_classifier.py
+  - finding_id: lf-harness-001-002
+    status: active
+    summary: >
+      T-059 already defines the guide/assisted/managed/governed_autonomy mode
+      matrix and cockpit readback contract, so the Personal Harness OS should
+      reuse that contract instead of inventing a second ladder.
+    evidence_refs:
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+external_findings: []
+assumptions:
+  - assumption_id: asm-harness-001-001
+    status: active
+    statement: >
+      The operator prefers a cockpit-centered daily flow, but root-azoth should
+      not mutate the cockpit repository until explicitly authorized.
+    validation_path: Cockpit integration remains a follow-on slice.
+contradictions:
+  - contradiction_id: cx-harness-001-001
+    status: monitored
+    summary: >
+      Personal convenience pushes toward automatic state and cross-repo action,
+      while Azoth authority requires explicit receipts and gates.
+    resolution: >
+      Let HarnessProfile automate mode selection, but let RouteCapsule name the
+      authority plane and stop reason before any protected mutation.
+challenge_log:
+  - challenge_id: ch-harness-001-001
+    status: answered
+    prompt: Could this become another heavy control plane?
+    answer: >
+      The first slice is a pure advisory contract with tests. It adds a small
+      wrapper and context packet, not a new command loop or hidden writer.
+candidate_slices:
+  - candidate_id: slice-harness-001-a
+    proposed_task_id: HARNESS-001-A
+    title: HarnessProfile, RouteCapsule, and ContextView root-local contract
+    initiative_ref: INI-HARNESS-001
+    status: complete
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Implement the root-local pure advisory contract that maps requests into
+      personal harness modes and builds compact context packets.
+    acceptance_criteria:
+      - Guide, assisted, managed, and governed_autonomy requests classify deterministically.
+      - Managed and governed_autonomy routes require authority and name the plane.
+      - ContextView summarizes memory/personal/project context without raw dumping.
+      - Existing azoth-lite classifier tests remain green.
+    research_evidence_refs:
+      - .azoth/research/personal-harness-os-context-map.yaml
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    known_non_goals:
+      - No kernel/governance edits.
+      - No control-plane default switch.
+      - No public, cockpit, or project-local mutation.
+      - No release or autonomous campaign execution.
+    open_questions: []
+    recommended_phase: post-v0.2.0-stabilization
+    delivery_result:
+      delivered_at: "2026-06-06T00:00:00Z"
+      session_id: 2026-06-06-personal-harness-os-s1
+      status: complete
+      summary: >
+        Added the root-local HarnessProfile, RouteCapsule, and ContextView
+        advisory contract with focused tests and adjacent azoth-lite regression.
+  - candidate_id: slice-harness-001-b
+    proposed_task_id: HARNESS-001-B
+    title: Codex control-plane advisory integration
+    initiative_ref: INI-HARNESS-001
+    status: candidate
+    target_layer: infrastructure
+    delivery_pipeline: standard
+    summary: >
+      Show the personal harness route capsule in the existing Codex control
+      plane advisory while preserving all current gate behavior.
+    acceptance_criteria:
+      - Existing profile advisory includes HarnessProfile and RouteCapsule fields.
+      - No gate or run-ledger behavior changes.
+      - Existing control-plane and azoth-lite regression tests pass.
+    research_evidence_refs:
+      - .azoth/research/personal-harness-os-context-map.yaml
+      - scripts/harness_profile.py
+    known_non_goals:
+      - No kernel/governance edits.
+      - No cockpit or project mutation.
+    open_questions: []
+    recommended_phase: post-v0.2.0-stabilization
+readiness:
+  evaluated_at: "2026-06-06T00:00:00Z"
+  readiness_status: continue_research
+  freshness_status: current
+  target_route: slice-harness-001-a
+  blocking_questions: []
+  contradiction_disposition: monitored_by_route_capsule_authority_plane
+  source_refs:
+    - .azoth/proposals/azoth-personal-harness-os.yaml
+    - .azoth/design-banks/personal-harness-os.yaml
+    - .azoth/research/personal-harness-os-context-map.yaml
+  recommended_next_artifact: scripts/harness_profile.py
+  human_decision: approved_architecture_direction
+hydration_history: []

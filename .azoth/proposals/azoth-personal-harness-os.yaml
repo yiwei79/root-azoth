@@ -1,0 +1,86 @@
+proposal_schema_version: 1
+created_at: "2026-06-06T00:00:00+00:00"
+session_id: "2026-06-06-personal-harness-os-s1"
+backlog_id: "P6-003"
+title: "Azoth Personal Harness OS"
+summary: >
+  Architecture proposal for turning Azoth into a practical personal AI harness:
+  a daily-use operating surface that automatically selects the right heaviness
+  tier, exposes a compact context packet, preserves persistent memory and
+  project receipts, and stops before authority-plane crossings. The proposal
+  accepts the operator's alignment gate for the Personal Harness OS direction
+  and limits this slice to root-local contracts, tests, and planning artifacts.
+status: draft
+decision_refs:
+  - D23
+  - D45
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  accepted_direction: >
+    Use the prior three-circle operator model as the daily mental model:
+    personal cockpit, project spaces, and Azoth supply chain. Back it with the
+    existing four-plane authority model: personal cockpit, project-local,
+    root-azoth, and public Azoth.
+  personal_harness_contract:
+    stable_interfaces:
+      - HarnessProfile
+      - RouteCapsule
+      - ContextView
+      - MemorySummary
+      - ProjectReceipt
+    mode_ladder:
+      guide:
+        promise: Lightweight orientation and decision support.
+        stop_before:
+          - project mutation
+          - planning-state ownership
+          - autonomy claims
+      assisted:
+        promise: Skills, agents, wrappers, and focused checks without project-management ownership.
+        stop_before:
+          - roadmap hydration
+          - backlog ownership
+          - no-human-gate autonomy
+      managed:
+        promise: Project-management substrate after explicit local approval.
+        stop_before:
+          - hidden hydration
+          - cockpit-driven writes without project-local approval
+          - autonomy without ledger/budget/stop contract
+      governed_autonomy:
+        promise: Campaign-bounded autonomy only with fresh authority, budget, write claim, and stop conditions.
+        stop_before:
+          - open-ended loops
+          - stale campaign continuation
+          - root authority leaking into consumer projects
+  first_slice:
+    status: in_progress
+    deliverables:
+      - scripts/harness_profile.py
+      - scripts/context_view.py
+      - tests/test_harness_profile.py
+      - tests/test_context_view.py
+      - tests/fixtures/personal_harness_cases.yaml
+    non_goals:
+      - No kernel or governance edits.
+      - No default profile switch in Codex control plane.
+      - No public Azoth, cockpit, or project-local mutation.
+      - No release, closeout, or autonomous campaign execution.
+  follow_on_slices:
+    - id: harness-002
+      title: Codex control-plane advisory integration
+      purpose: Show HarnessProfile and RouteCapsule in the Codex profile advisory without changing gates.
+    - id: harness-003
+      title: Cockpit readback rehearsal
+      purpose: Feed ContextView into pointer-only cockpit readback for daily use.
+    - id: harness-004
+      title: Practice rehearsal pack
+      purpose: Rehearse music, thesis, and agent-context daily-use cases across all modes.
+  validation:
+    commands:
+      - "python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-personal-harness-os.yaml"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_harness_profile.py tests/test_context_view.py"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_azoth_lite_classifier.py"

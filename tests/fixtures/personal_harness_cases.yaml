@@ -1,0 +1,47 @@
+schema_version: 1
+cases:
+  - id: guide-daily-orientation
+    goal: What can Azoth do for me today?
+    requested_actions:
+      - read
+    expected:
+      profile: guide
+      side_effect_class: read_only
+      route_state: answer
+      authority_required: false
+      authority_plane: personal_cockpit
+  - id: assisted-focused-verification
+    goal: Verify whether the project context is healthy before I start.
+    requested_actions:
+      - focused_verification
+    trace_required: true
+    expected:
+      profile: assisted
+      side_effect_class: read_only
+      route_state: assist
+      authority_required: false
+      authority_plane: root_azoth
+  - id: managed-project-hydration
+    goal: Hydrate managed planning state for this project.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/project-local-mode-receipt.yaml
+    expected:
+      profile: managed
+      side_effect_class: governed_state
+      route_state: authority_required
+      authority_required: true
+      authority_plane: project_local
+  - id: governed-autonomy-campaign
+    goal: Continue the autonomous campaign with a fresh budget and stop conditions.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/run-ledger.yaml
+    expected:
+      profile: governed_autonomy
+      side_effect_class: governed_state
+      route_state: authority_required
+      authority_required: true
+      authority_plane: root_azoth
