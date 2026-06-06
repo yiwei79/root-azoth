@@ -168,6 +168,15 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     assert "Write claim: none" in text
     assert "Next safe action: Open a project session" in text
     assert "Stop reason: none" in text
+    assert "Harness profile: assisted" in text
+    assert "Route state: assist" in text
+    assert "Authority required: false" in text
+    assert "Harness authority: root_azoth" in text
+    assert (
+        "Harness next action: run read-only assisted checks or request managed-mode hydration"
+        in text
+    )
+    assert "Harness stop reason: none" in text
     assert "cd " in text
     assert "ras or ray" in text
     assert "Project-local context is authoritative" in text

@@ -139,6 +139,20 @@ def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> Har
     )
 
 
+def route_capsule_for_profile(
+    profile: str,
+    *,
+    side_effect_class: str | None = None,
+) -> RouteCapsule:
+    """Return the standard route capsule for a known Personal Harness profile."""
+    normalized = str(profile or "").strip()
+    if normalized not in HARNESS_PROFILES:
+        allowed = ", ".join(HARNESS_PROFILES)
+        raise ValueError(f"profile must be one of [{allowed}], got {profile!r}")
+    effective_side_effect = side_effect_class or _default_side_effect_for_profile(normalized)
+    return _route_for_profile(normalized, effective_side_effect, ())
+
+
 def _profile_for_lite_decision(
     lite_profile: str,
     side_effect_class: str,
@@ -153,6 +167,12 @@ def _profile_for_lite_decision(
     if lite_profile == "stock-lite":
         return "guide"
     return "assisted"
+
+
+def _default_side_effect_for_profile(profile: str) -> str:
+    if profile in {"guide", "assisted"}:
+        return "read_only"
+    return "governed_state"
 
 
 def _route_for_profile(

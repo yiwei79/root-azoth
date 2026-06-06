@@ -10,7 +10,11 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from harness_profile import HarnessRequest, classify_harness_request  # noqa: E402
+from harness_profile import (  # noqa: E402
+    HarnessRequest,
+    classify_harness_request,
+    route_capsule_for_profile,
+)
 
 
 FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "personal_harness_cases.yaml"
@@ -110,3 +114,25 @@ def test_route_capsule_is_deterministic_json_ready() -> None:
         "next_safe_action": "run read-only assisted checks or request managed-mode hydration",
         "stop_reason": "",
     }
+
+
+def test_route_capsule_for_profile_exposes_cockpit_readback_without_reclassifying_goal() -> None:
+    assert route_capsule_for_profile("assisted").to_json_dict() == {
+        "profile": "assisted",
+        "side_effect_class": "read_only",
+        "route_state": "assist",
+        "authority_required": False,
+        "authority_plane": "root_azoth",
+        "required_inputs": [
+            "guide-mode receipt",
+            "installed skill/agent/command inventory",
+            "explicit operator acceptance of assisted mode",
+        ],
+        "next_safe_action": "run read-only assisted checks or request managed-mode hydration",
+        "stop_reason": "",
+    }
+
+    governed = route_capsule_for_profile("governed_autonomy").to_json_dict()
+    assert governed["route_state"] == "authority_required"
+    assert governed["authority_required"] is True
+    assert governed["stop_reason"] == "fresh governed-autonomy authority required"

@@ -19,6 +19,7 @@ from azoth_release_profile import (  # noqa: E402
     is_project_local_mode_receipt,
     validate_project_local_mode_receipt,
 )
+from harness_profile import route_capsule_for_profile  # noqa: E402
 
 
 FORBIDDEN_PROJECT_CONTEXT_FIELDS = {
@@ -191,6 +192,16 @@ def _format_write_claim(value: Any) -> str:
     return str(value)
 
 
+def _project_harness_route(project: dict[str, Any]) -> dict[str, Any]:
+    selected_mode = str(project.get("selected_mode") or "").strip()
+    if not selected_mode:
+        return {}
+    try:
+        return route_capsule_for_profile(selected_mode).to_json_dict()
+    except ValueError:
+        return {}
+
+
 def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
     root = Path(state["root"])
     manifest = state.get("manifest") if isinstance(state.get("manifest"), dict) else {}
@@ -217,6 +228,7 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
         pid = str(project.get("project_id") or "unknown")
         title = str(project.get("title") or pid)
         status = state.get("project_statuses", {}).get(pid, "not checked")
+        harness_route = _project_harness_route(project)
         lines.extend(
             [
                 f"- {pid}: {title}",
@@ -233,6 +245,12 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
                 f"  Write claim: {_format_write_claim(project.get('active_write_claim'))}",
                 f"  Next safe action: {_format_values(project.get('next_safe_action'))}",
                 f"  Stop reason: {_format_values(project.get('stop_reason'))}",
+                f"  Harness profile: {_format_values(harness_route.get('profile'))}",
+                f"  Route state: {_format_values(harness_route.get('route_state'))}",
+                f"  Authority required: {str(bool(harness_route.get('authority_required'))).lower()}",
+                f"  Harness authority: {_format_values(harness_route.get('authority_plane'))}",
+                f"  Harness next action: {_format_values(harness_route.get('next_safe_action'))}",
+                f"  Harness stop reason: {_format_values(harness_route.get('stop_reason'))}",
                 f"  Status: {status}",
                 f"  Receipt: {project.get('handoff_receipt_ref') or '?'}",
             ]
