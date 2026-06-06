@@ -17,6 +17,7 @@ from session_gate import (
 )
 from session_continuity import resolve_transition
 from azoth_lite import AzothLiteDecision, AzothLiteRequest, classify_request
+from harness_profile import HarnessRequest, classify_harness_request
 
 PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
@@ -457,13 +458,33 @@ def _profile_advisory(
     decision: AzothLiteDecision | None = None,
 ) -> str:
     decision = decision or _profile_decision(parsed, goal=goal)
+    harness_decision = classify_harness_request(
+        HarnessRequest(
+            goal=decision.request.goal,
+            requested_actions=decision.request.requested_actions,
+            planned_paths=decision.request.planned_paths,
+            trace_required=decision.request.trace_required,
+            dirty_worktree=decision.request.dirty_worktree,
+            dirty_worktree_summary=decision.request.dirty_worktree_summary,
+            success_criteria=decision.request.success_criteria,
+            known_constraints=decision.request.known_constraints,
+            allow_stock_lite=decision.request.allow_stock_lite,
+        )
+    )
+    route = harness_decision.route
 
     parts = [
         "Profile selection (Phase 4 default posture):",
         f"profile_suggestion: {decision.selected_profile};",
+        f"harness_profile: {harness_decision.profile};",
+        f"route_state: {route.route_state};",
+        f"authority_required: {str(route.authority_required).lower()};",
+        f"authority_plane: {route.authority_plane};",
         f"side_effect_class: {decision.side_effect_class};",
         f"stop_state: {decision.stop_state}.",
     ]
+    if route.stop_reason:
+        parts.append(f"route_stop_reason: {route.stop_reason}.")
     if decision.escalation_reasons:
         parts.append(f"escalation_reasons: {', '.join(decision.escalation_reasons)}.")
     if decision.handoff_packet:

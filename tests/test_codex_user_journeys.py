@@ -9,7 +9,7 @@ import pytest
 from codex_journey_harness import (
     REPO,
     capture_plain_welcome,
-    copy_codex_router_fixture,
+    copy_codex_router_fixture as _copy_codex_router_fixture_base,
     extract_start_block,
     future_timestamp,
     run_router,
@@ -27,6 +27,15 @@ DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage
 DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
     "Declaration, gate write, or status card does not count as Stage 2 execution"
 )
+
+
+def copy_codex_router_fixture(tmp_path: Path, *, with_agents: bool = False) -> Path:
+    router = _copy_codex_router_fixture_base(tmp_path, with_agents=with_agents)
+    (tmp_path / "scripts" / "harness_profile.py").write_text(
+        (REPO / "scripts" / "harness_profile.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return router
 
 
 def test_pipeline_aliases_normalize_to_the_same_start_centered_route() -> None:
@@ -140,6 +149,9 @@ def test_profile_advisory_surfaces_read_only_without_changing_start_route(
 
     assert hook["updatedInput"] == "$azoth-start explain current repo status"
     assert "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: guide" in ctx
+    assert "route_state: answer" in ctx
+    assert "authority_plane: personal_cockpit" in ctx
     assert "side_effect_class: read_only" in ctx
     assert "stop_state: done" in ctx
 
@@ -155,6 +167,9 @@ def test_profile_advisory_surfaces_focused_verification_without_changing_start_r
 
     assert hook["updatedInput"] == f"$azoth-start {prompt}"
     assert "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: assisted" in ctx
+    assert "route_state: assist" in ctx
+    assert "authority_required: false" in ctx
     assert "side_effect_class: read_only" in ctx
     assert "stop_state: done" in ctx
 
@@ -172,6 +187,8 @@ def test_profile_default_routes_local_edit_to_lite_without_auto_pipeline(
     assert "Azoth-lite default posture detected" in ctx
     assert "pipeline_command=auto" not in hook["updatedInput"]
     assert "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: assisted" in ctx
+    assert "route_state: assist" in ctx
     assert "side_effect_class: local_edit" in ctx
     assert "stop_state: done" in ctx
 
@@ -188,6 +205,9 @@ def test_profile_default_escalates_governed_state_to_auto_delivery_route(
     assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
     assert "Governed delivery escalation detected" in ctx
     assert "profile_suggestion: azoth-full" in ctx
+    assert "harness_profile: managed" in ctx
+    assert "route_state: authority_required" in ctx
+    assert "authority_plane: project_local" in ctx
     assert "side_effect_class: governed_state" in ctx
     assert "stop_state: escalate" in ctx
     assert "escalation_reasons: governed_state_change" in ctx
@@ -234,6 +254,8 @@ def test_profile_advisory_escalates_finality_without_changing_routed_command(
     assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
     assert "Governed delivery escalation detected" in ctx
     assert "profile_suggestion: azoth-full" in ctx
+    assert "harness_profile: governed_autonomy" in ctx
+    assert "route_state: stop" in ctx
     assert "side_effect_class: external_or_destructive" in ctx
     assert "stop_state: escalate" in ctx
     assert "finality_or_packaging_requested" in ctx
