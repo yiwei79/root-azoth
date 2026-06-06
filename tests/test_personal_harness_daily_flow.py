@@ -59,6 +59,12 @@ def test_daily_flow_verifies_cockpit_readback_and_context_packet(tmp_path: Path)
     assert report["cockpit"]["menu_has_context_command"] is True
     assert report["context_packet"]["context_view"]["harness_profile"] == "assisted"
     assert report["context_packet"]["context_view"]["route_capsule"]["route_state"] == "assist"
+    assert report["context_packet"]["context_view"]["project_context"] == {
+        "project": "ras-or-ray",
+        "selected_mode": "assisted",
+        "freshness": "current",
+        "receipt_ref": ".azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml",
+    }
     assert report["context_packet"]["context_view"]["memory_context"][0]["id"] == "ep-463"
     assert {check["status"] for check in report["checks"]} == {"pass"}
     assert report["no_write_contract"] == {

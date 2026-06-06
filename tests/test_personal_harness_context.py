@@ -91,6 +91,31 @@ def test_missing_optional_personal_root_adds_warning_without_blocking(tmp_path: 
     assert any("personal knowledge recall skipped" in warning for warning in packet["warnings"])
 
 
+def test_build_personal_harness_context_includes_project_readback(tmp_path: Path) -> None:
+    _write_memory_fixture(tmp_path)
+
+    packet = build_personal_harness_context(
+        goal="Verify context before project work",
+        requested_actions=("focused_verification",),
+        query_tags=("context",),
+        repo_root=tmp_path,
+        project_readback={
+            "project": "ras-or-ray",
+            "selected_mode": "assisted",
+            "freshness": "current",
+            "receipt_ref": ".azoth/projects/handoffs/t-049.yaml",
+        },
+        as_of="2026-05-03T00:00:00Z",
+    )
+
+    assert packet["context_view"]["project_context"] == {
+        "project": "ras-or-ray",
+        "selected_mode": "assisted",
+        "freshness": "current",
+        "receipt_ref": ".azoth/projects/handoffs/t-049.yaml",
+    }
+
+
 def test_cli_outputs_json_packet(tmp_path: Path) -> None:
     _write_memory_fixture(tmp_path)
 

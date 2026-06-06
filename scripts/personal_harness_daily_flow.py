@@ -41,6 +41,7 @@ def run_daily_flow(
         query_tags=query_tags,
         repo_root=repo_path,
         personal_root=personal_root,
+        project_readback=_project_readback(project),
         as_of=as_of,
     )
     cockpit_errors = check_cockpit(load_cockpit(cockpit_path, include_status=False))
@@ -85,6 +86,17 @@ def _selected_project(state: dict[str, Any], project_id: str) -> dict[str, Any] 
         if isinstance(project, dict) and project.get("project_id") == project_id:
             return project
     return None
+
+
+def _project_readback(project: dict[str, Any] | None) -> dict[str, str] | None:
+    if project is None:
+        return None
+    return {
+        "project": str(project.get("project_id") or "").strip(),
+        "selected_mode": str(project.get("selected_mode") or "").strip(),
+        "freshness": str(project.get("freshness_status") or "").strip(),
+        "receipt_ref": str(project.get("handoff_receipt_ref") or "").strip(),
+    }
 
 
 def _checks(

@@ -22,6 +22,7 @@ def build_personal_harness_context(
     query_tags: Sequence[str] = (),
     repo_root: Path = Path("."),
     personal_root: Path | None = None,
+    project_readback: Mapping[str, Any] | None = None,
     top_k: int = 3,
     as_of: str | None = None,
 ) -> dict[str, Any]:
@@ -55,6 +56,7 @@ def build_personal_harness_context(
         harness_decision=decision,
         memory_results=_memory_context_items(memory_recall),
         personal_results=personal_results,
+        project_receipt=project_readback,
         max_items=top_k,
     )
     return {
@@ -174,6 +176,17 @@ def _first_source_ref(result: Mapping[str, Any]) -> str:
     return ""
 
 
+def _project_readback_from_args(args: argparse.Namespace) -> dict[str, str] | None:
+    if not any((args.project, args.selected_mode, args.freshness, args.receipt_ref)):
+        return None
+    return {
+        "project": str(args.project or "").strip(),
+        "selected_mode": str(args.selected_mode or "").strip(),
+        "freshness": str(args.freshness or "").strip(),
+        "receipt_ref": str(args.receipt_ref or "").strip(),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--goal", required=True)
@@ -182,6 +195,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tag", action="append", default=[])
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--personal-root", type=Path)
+    parser.add_argument("--project")
+    parser.add_argument("--selected-mode")
+    parser.add_argument("--freshness")
+    parser.add_argument("--receipt-ref")
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--as-of")
     parser.add_argument("--json", action="store_true")
@@ -196,6 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         query_tags=args.tag,
         repo_root=args.repo_root,
         personal_root=args.personal_root,
+        project_readback=_project_readback_from_args(args),
         top_k=args.top_k,
         as_of=args.as_of,
     )
