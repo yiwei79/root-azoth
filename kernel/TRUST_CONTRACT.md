@@ -23,7 +23,12 @@ reporting, and recoverable actions.
 Every agent action has a bounded blast radius. The ceiling prevents any
 single scope-gated session from creating unrecoverable damage. Limits are
 cumulative within a session (keyed to `session_id` in `.azoth/scope-gate.json`)
-and reset when the scope card changes.
+and reset when the scope card changes. The ceiling belongs to the current
+scope-gated session, not the higher-level active goal.
+
+When a persistent goal legitimately needs more work after an entropy checkpoint,
+checkpoint and open a fresh linked scope instead of shrinking or ending the goal.
+Agents must not mark a persistent goal complete, blocked, or stopped solely because an entropy checkpoint was reached.
 
 ### Session-Scoped Limits
 

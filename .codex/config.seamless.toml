@@ -12,6 +12,7 @@ Azoth Codex parity mode:
 # Trust Contract boundaries (source: kernel/TRUST_CONTRACT.md §1–§2)
 BEFORE any file write: read `.azoth/scope-gate.json` — if `session_id` missing or `expires_at` passed, STOP and ask.
 Entropy ceiling: max 10 files modified, max 10 files created, 0 files deleted without human approval, max 1000 lines changed.
+Entropy ceilings bound the current scope, not the active Codex Goal. If a persistent goal needs more work after the ceiling, checkpoint or commit the current slice, open a fresh linked scope, and continue the same active goal. Do not mark the goal complete, blocked, or stopped solely because the current scope hit an entropy checkpoint.
 NEVER modify without human approval: `kernel/*`, `.azoth/kernel/*`, `.azoth/memory/patterns.yaml`, governance files.
 NEVER add `Co-Authored-By` trailers to commits, PRs, or any output.
 

@@ -42,6 +42,11 @@ STAGE0_CHECKPOINT_MARKERS = (
     "routing_implications",
     "Fail closed",
 )
+ENTROPY_CONTINUATION_MARKERS = (
+    "Entropy ceilings bound the current scope, not the active Codex Goal.",
+    "checkpoint or commit the current slice, open a fresh linked scope, and continue the same active goal",
+    "Do not mark the goal complete, blocked, or stopped solely because the current scope hit an entropy checkpoint.",
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -105,6 +110,21 @@ def test_codex_seamless_config_uses_untrusted_with_rules() -> None:
     assert 'approval_policy = "untrusted"' in content
     assert 'rules = [".codex/rules/azoth-seamless.star"]' in content
     assert 'sandbox_mode = "workspace-write"' in content
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        CODEX_DIR / "config.toml.template",
+        CODEX_DIR / "config.seamless.toml.template",
+        REPO / ".codex" / "config.toml",
+        REPO / ".codex" / "config.seamless.toml",
+    ],
+)
+def test_codex_entropy_ceiling_preserves_active_goal_continuation(path: Path) -> None:
+    content = path.read_text(encoding="utf-8")
+    for marker in ENTROPY_CONTINUATION_MARKERS:
+        assert marker in content
 
 
 def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:

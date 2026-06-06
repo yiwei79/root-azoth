@@ -285,6 +285,24 @@ class TestAgentContent:
         for marker in BUILDER_POSTURE_MARKERS:
             assert marker in content, f"builder.agent.md missing posture marker: {marker}"
 
+    def test_entropy_ceiling_is_checkpoint_not_active_goal_stop(self) -> None:
+        markers = (
+            "scope-gated session, not the higher-level active goal",
+            "checkpoint and open a fresh linked scope",
+            "must not mark a persistent goal complete, blocked, or stopped solely because an entropy checkpoint was reached",
+        )
+        trust_contract = (REPO_ROOT / "kernel" / "TRUST_CONTRACT.md").read_text(
+            encoding="utf-8"
+        )
+        agents_manifest = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        deploy_script = (REPO_ROOT / "scripts" / "azoth-deploy.py").read_text(
+            encoding="utf-8"
+        )
+        for marker in markers:
+            assert marker in trust_contract
+            assert marker in agents_manifest
+            assert marker in deploy_script
+
 
 # ---------------------------------------------------------------------------
 # Cross-reference tests
