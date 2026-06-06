@@ -177,6 +177,9 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
         in text
     )
     assert "Harness stop reason: none" in text
+    assert "Build daily context packet:" in text
+    assert "python3 scripts/personal_harness_context.py --goal" in text
+    assert "--json" in text
     assert "cd " in text
     assert "ras or ray" in text
     assert "Project-local context is authoritative" in text

@@ -262,6 +262,7 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
             "",
             "## Safe Actions",
             "- Validate cockpit: python3 scripts/cockpit_menu.py --check",
+            "- Build daily context packet: python3 scripts/personal_harness_context.py --goal \"<today's intent>\" --json",
             "- Open project session: use the switch command and project-session prompt above.",
             "- Add project pointer: open an explicit cockpit-owned project-pointer lane.",
             "- Project code/source work: switch to that project repo and open a project-scoped gate.",

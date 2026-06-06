@@ -94,6 +94,8 @@ def _check_required_output(combined: str, project_id: str) -> list[str]:
         "Write claim:",
         "Next safe action:",
         "Stop reason:",
+        "Build daily context packet:",
+        "python3 scripts/personal_harness_context.py --goal",
         "Project-local context is authoritative",
         "/cockpit",
         "$azoth-cockpit",
