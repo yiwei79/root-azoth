@@ -37,7 +37,9 @@ def test_simulation_runs_all_cockpit_commands_without_writes(tmp_path: Path) -> 
     assert "Project-local context is authoritative" in result.output
     assert "$azoth-cockpit" in result.output
     assert "Build daily context packet:" in result.output
-    assert "python3 scripts/personal_harness_context.py --goal" in result.output
+    assert str(ROOT / "scripts" / "personal_harness_context.py") in result.output
+    assert f"--repo-root {ROOT}" in result.output
+    assert "--goal \"<today's intent>\"" in result.output
 
 
 def test_simulation_rejects_forbidden_context_leak(tmp_path: Path) -> None:

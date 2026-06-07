@@ -151,9 +151,25 @@ REQUIRED_PROJECT_FIELDS = {
     "validation_commands",
 } | READBACK_PROJECT_FIELDS
 
+ROOT_AZOTH = Path("/Users/yiwei/GithubRepos/root-azoth")
+LOCAL_CONTEXT_COMMAND = (
+    'python3 scripts/personal_harness_context.py --repo-root . --goal "<today\'s intent>" --json'
+)
+
 
 def _default_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def _daily_context_command() -> str:
+    root_context_script = ROOT_AZOTH / "scripts" / "personal_harness_context.py"
+    if root_context_script.is_file():
+        return (
+            f"python3 {shlex.quote(str(root_context_script))} "
+            f"--repo-root {shlex.quote(str(ROOT_AZOTH))} "
+            "--goal \"<today's intent>\" --json"
+        )
+    return LOCAL_CONTEXT_COMMAND
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -341,7 +357,7 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
             "",
             "## Safe Actions",
             "- Validate cockpit: python3 scripts/cockpit_menu.py --check",
-            "- Build daily context packet: python3 scripts/personal_harness_context.py --goal \"<today's intent>\" --json",
+            f"- Build daily context packet: {_daily_context_command()}",
             "- Open project session: use the switch command and project-session prompt above.",
             "- Add project pointer: open an explicit cockpit-owned project-pointer lane.",
             "- Project code/source work: switch to that project repo and open a project-scoped gate.",

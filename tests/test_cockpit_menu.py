@@ -16,6 +16,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 from cockpit_menu import READBACK_PROJECT_FIELDS, check_cockpit, load_cockpit, render_menu  # noqa: E402
 
 
+CONTEXT_COMMAND_SCRIPT = str(ROOT / "scripts" / "personal_harness_context.py")
 READBACK_FIELDS = {
     "project_pointer": "ras-or-ray",
     "authority_plane": "personal_cockpit",
@@ -179,7 +180,9 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     )
     assert "Harness stop reason: none" in text
     assert "Build daily context packet:" in text
-    assert "python3 scripts/personal_harness_context.py --goal" in text
+    assert CONTEXT_COMMAND_SCRIPT in text
+    assert f"--repo-root {ROOT}" in text
+    assert "--goal \"<today's intent>\"" in text
     assert "--json" in text
     assert "cd " in text
     assert "ras or ray" in text
@@ -401,3 +404,5 @@ def test_cockpit_menu_runs_as_single_file_in_cockpit_repo(tmp_path: Path) -> Non
     assert render.returncode == 0, render.stderr
     assert "Harness profile: assisted" in render.stdout
     assert "Build daily context packet:" in render.stdout
+    assert CONTEXT_COMMAND_SCRIPT in render.stdout
+    assert f"--repo-root {ROOT}" in render.stdout

@@ -68,7 +68,7 @@ def run_daily_flow(
             "selected_mode": str(project.get("selected_mode") or "") if project else "",
             "readiness_state": str(project.get("readiness_state") or "") if project else "",
             "authority_plane": str(project.get("authority_plane") or "") if project else "",
-            "menu_has_context_command": "personal_harness_context.py --goal" in menu,
+            "menu_has_context_command": _menu_has_context_command(menu),
             "check_errors": cockpit_errors,
         },
         "context_packet": context_packet,
@@ -117,7 +117,7 @@ def _checks(
         _check("project_pointer", project is not None, "project pointer found" if project else "missing project pointer"),
         _check(
             "context_command_visible",
-            "personal_harness_context.py --goal" in menu,
+            _menu_has_context_command(menu),
             "daily context command visible in cockpit menu",
         ),
         _check(
@@ -146,6 +146,10 @@ def _checks(
 
 def _check(check_id: str, passed: bool, summary: str) -> dict[str, str]:
     return {"id": check_id, "status": "pass" if passed else "fail", "summary": summary}
+
+
+def _menu_has_context_command(menu: str) -> bool:
+    return all(snippet in menu for snippet in ("personal_harness_context.py", "--goal", "--json"))
 
 
 def _git_status(path: Path | None) -> str:
