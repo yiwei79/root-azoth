@@ -251,11 +251,68 @@ def format_errors(errors: Iterable[str]) -> str:
     return "cockpit command surface FAILED\n" + "\n".join(f"- {error}" for error in items)
 
 
+def format_deploy_report(root: Path) -> str:
+    """Render a no-write operator report for the cockpit command surface."""
+    errors = check_cockpit_command_surface(root)
+    status = "READY" if not errors else "STALE"
+    root_text = str(root)
+    lines = [
+        "# Cockpit Command Surface Deploy Report",
+        "",
+        f"Target: {root_text}",
+        f"Status: {status}",
+        "Writes files: false",
+        "",
+        "## Check Result",
+    ]
+    if errors:
+        lines.extend(f"- {error}" for error in errors)
+    else:
+        lines.append("- cockpit command surface OK")
+    lines.extend(
+        [
+            "",
+            "## Deploy Command",
+            f"python3 scripts/cockpit_command_surface.py --root {root_text}",
+            "",
+            "## Verify Command",
+            f"python3 scripts/cockpit_command_surface.py --root {root_text} --check",
+            "",
+            "## Writes If Approved",
+            *[f"- {path.as_posix()}" for path in _write_targets()],
+            "",
+            "## Approval Boundary",
+            (
+                "Requires explicit approval before writing the live cockpit repo. "
+                "This report is read-only and does not push remotes."
+            ),
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _write_targets() -> list[Path]:
+    targets = [
+        command.skill_dir / "SKILL.md"
+        for command in COCKPIT_COMMANDS
+    ] + [
+        command.skill_dir / "agents" / "openai.yaml"
+        for command in COCKPIT_COMMANDS
+    ]
+    targets.append(Path("docs/ONBOARDING.md"))
+    return sorted(targets, key=lambda path: path.as_posix())
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=DEFAULT_COCKPIT_ROOT)
     parser.add_argument("--check", action="store_true", help="Check without writing.")
+    parser.add_argument("--report", action="store_true", help="Render a no-write deploy report.")
     args = parser.parse_args(argv)
+
+    if args.report:
+        print(format_deploy_report(args.root))
+        return 0
 
     errors = (
         check_cockpit_command_surface(args.root)

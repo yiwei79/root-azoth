@@ -17,6 +17,7 @@ from cockpit_command_surface import (  # noqa: E402
     command_by_name,
     deploy_cockpit_command_docs,
     deploy_cockpit_command_surface,
+    format_deploy_report,
     render_openai_metadata,
     render_skill,
 )
@@ -113,6 +114,37 @@ def test_deploy_updates_onboarding_daily_command_to_summary(tmp_path: Path) -> N
     assert "--tag context --summary" in text
     assert "--tag context --json" not in text
     assert check_cockpit_command_docs(tmp_path) == []
+
+
+def test_deploy_report_is_no_write_and_actionable_for_stale_surface(tmp_path: Path) -> None:
+    _write_minimal_docs(tmp_path)
+    deploy_cockpit_command_surface(tmp_path)
+    path = tmp_path / "docs" / "ONBOARDING.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("--tag context --summary", "--tag context --json"),
+        encoding="utf-8",
+    )
+
+    report = format_deploy_report(tmp_path)
+
+    assert "Status: STALE" in report
+    assert "Writes files: false" in report
+    assert "docs/ONBOARDING.md: stale summary-first daily command" in report
+    assert f"python3 scripts/cockpit_command_surface.py --root {tmp_path}" in report
+    assert f"python3 scripts/cockpit_command_surface.py --root {tmp_path} --check" in report
+    assert ".agents/skills/azoth-cockpit-daily/SKILL.md" in report
+    assert "Requires explicit approval before writing the live cockpit repo" in report
+    assert "--tag context --summary" not in path.read_text(encoding="utf-8")
+
+
+def test_deploy_report_ready_when_surface_matches(tmp_path: Path) -> None:
+    _write_minimal_docs(tmp_path)
+    deploy_cockpit_command_surface(tmp_path)
+
+    report = format_deploy_report(tmp_path)
+
+    assert "Status: READY" in report
+    assert "cockpit command surface OK" in report
 
 
 def test_check_fails_when_wrapper_missing(tmp_path: Path) -> None:
