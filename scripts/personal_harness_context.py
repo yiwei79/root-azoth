@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -147,12 +148,40 @@ def _personal_recall_results(
         results = recall_cards(
             personal_root,
             allowed_use="session_start_recall",
-            as_of=None,
+            as_of=_as_of_date(as_of),
         )
     except PersonalKnowledgeRecallError as exc:
         warnings.append(f"personal knowledge recall skipped: {exc}")
         return []
+    _append_personal_freshness_warning(results, warnings)
     return [_personal_context_item(result) for result in results]
+
+
+def _as_of_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        if "T" in text:
+            return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def _append_personal_freshness_warning(
+    results: Sequence[Mapping[str, Any]],
+    warnings: list[str],
+) -> None:
+    due_ids = [
+        str(result.get("card_id") or "").strip()
+        for result in results
+        if result.get("freshness_status") == "review_due" and result.get("card_id")
+    ]
+    if due_ids:
+        warnings.append(f"personal knowledge review due: {', '.join(due_ids)}")
 
 
 def _personal_context_item(result: Mapping[str, Any]) -> dict[str, Any]:

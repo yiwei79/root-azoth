@@ -111,6 +111,39 @@ def test_daily_flow_auto_loads_cockpit_personal_knowledge(tmp_path: Path) -> Non
         check["id"] == "personal_context_loaded" and check["status"] == "pass"
         for check in report["checks"]
     )
+    assert any(
+        check["id"] == "personal_context_freshness" and check["status"] == "pass"
+        for check in report["checks"]
+    )
+
+
+def test_daily_flow_warns_when_personal_knowledge_needs_review(tmp_path: Path) -> None:
+    cockpit = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    _write_memory_fixture(tmp_path)
+    _write_personal_cards(cockpit)
+
+    report = run_daily_flow(
+        cockpit_root=cockpit,
+        repo_root=tmp_path,
+        project_id="ras-or-ray",
+        goal="Verify context before project work",
+        requested_actions=("focused_verification",),
+        query_tags=("context",),
+        as_of="2026-06-01T00:00:00Z",
+    )
+
+    assert report["ok"] is True
+    assert report["context_packet"]["warnings"] == [
+        "personal knowledge review due: kb-root-azoth-001, kb-root-azoth-002, "
+        "kb-root-azoth-003, kb-root-azoth-004"
+    ]
+    assert any(
+        check["id"] == "personal_context_freshness"
+        and check["status"] == "warn"
+        and "kb-root-azoth-001" in check["summary"]
+        and "kb-root-azoth-004" in check["summary"]
+        for check in report["checks"]
+    )
 
 
 def test_daily_flow_fails_closed_when_cockpit_mode_disagrees_with_route(tmp_path: Path) -> None:

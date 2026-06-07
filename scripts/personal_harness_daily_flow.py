@@ -62,7 +62,7 @@ def run_daily_flow(
     return {
         "schema_version": 1,
         "packet_type": "personal_harness_daily_flow",
-        "ok": all(check["status"] == "pass" for check in checks),
+        "ok": all(check["status"] != "fail" for check in checks),
         "goal": goal,
         "cockpit": {
             "root": str(cockpit_path),
@@ -149,6 +149,10 @@ def _checks(
                 else "personal knowledge root not present; skipped"
             ),
         ),
+        _personal_context_freshness_check(
+            context_packet=context_packet,
+            personal_root_available=personal_root_available,
+        ),
         _check(
             "no_cockpit_write",
             cockpit_status_before == cockpit_status_after,
@@ -165,6 +169,41 @@ def _checks(
 
 def _check(check_id: str, passed: bool, summary: str) -> dict[str, str]:
     return {"id": check_id, "status": "pass" if passed else "fail", "summary": summary}
+
+
+def _personal_context_freshness_check(
+    *,
+    context_packet: dict[str, Any],
+    personal_root_available: bool,
+) -> dict[str, str]:
+    if not personal_root_available:
+        return _check(
+            "personal_context_freshness",
+            True,
+            "personal knowledge root not present; skipped",
+        )
+    personal_context = context_packet["context_view"].get("personal_context")
+    if not isinstance(personal_context, list) or not personal_context:
+        return _check("personal_context_freshness", False, "personal context absent")
+    due_summary = _personal_review_due_summary(context_packet)
+    if due_summary:
+        return {
+            "id": "personal_context_freshness",
+            "status": "warn",
+            "summary": due_summary,
+        }
+    return _check("personal_context_freshness", True, "personal context current")
+
+
+def _personal_review_due_summary(context_packet: dict[str, Any]) -> str:
+    warnings = context_packet.get("warnings")
+    if not isinstance(warnings, list):
+        return ""
+    for warning in warnings:
+        text = str(warning).strip()
+        if text.startswith("personal knowledge review due: "):
+            return text
+    return ""
 
 
 def _menu_has_context_command(menu: str) -> bool:
