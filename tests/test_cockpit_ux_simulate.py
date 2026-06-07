@@ -27,6 +27,7 @@ def test_simulation_runs_all_cockpit_commands_without_writes(tmp_path: Path) -> 
         "## /cockpit",
         "## /cockpit-check",
         "## /cockpit-project ras-or-ray",
+        "## /cockpit-daily",
         "## /cockpit-help",
         "## /cockpit-ux-simulate",
     ):
@@ -37,6 +38,9 @@ def test_simulation_runs_all_cockpit_commands_without_writes(tmp_path: Path) -> 
     assert "Project-local context is authoritative" in result.output
     assert "$azoth-cockpit" in result.output
     assert "Build daily context packet:" in result.output
+    assert "$azoth-cockpit-daily" in result.output
+    assert "personal_harness_daily_flow.py" in result.output
+    assert '"ok": true' in result.output
     assert str(ROOT / "scripts" / "personal_harness_context.py") in result.output
     assert f"--repo-root {ROOT}" in result.output
     assert "--goal \"<today's intent>\"" in result.output

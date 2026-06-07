@@ -68,6 +68,19 @@ COCKPIT_COMMANDS: tuple[CockpitCommand, ...] = (
         default_prompt_suffix=" ras-or-ray",
     ),
     CockpitCommand(
+        name="cockpit-daily",
+        display_name="/cockpit-daily",
+        description="Run the Personal Harness OS daily cockpit flow.",
+        summary="Build and verify the daily route-aware context packet without writes.",
+        execution_steps=(
+            "Use `$ARGUMENTS` as today's goal; default to `Verify context before project work` when empty.",
+            "Run `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal \"<today's goal>\" --action focused_verification --tag context --json`.",
+            "Report the selected harness profile, route state, authority plane, and no-write contract.",
+            "Do not open project-local context or mutate cockpit/project files.",
+        ),
+        default_prompt_suffix=" Verify context before project work",
+    ),
+    CockpitCommand(
         name="cockpit-help",
         display_name="/cockpit-help",
         description="Show the cockpit onboarding handbook and command reference.",

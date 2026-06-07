@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -12,13 +13,16 @@ from pathlib import Path
 try:
     from cockpit_bootstrap_verify import format_report, verify_cockpit_bootstrap
     from cockpit_menu import check_cockpit, load_cockpit, render_menu
+    from personal_harness_daily_flow import run_daily_flow
 except ModuleNotFoundError:  # pragma: no cover - defensive direct execution path.
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from cockpit_bootstrap_verify import format_report, verify_cockpit_bootstrap
     from cockpit_menu import check_cockpit, load_cockpit, render_menu
+    from personal_harness_daily_flow import run_daily_flow
 
 
 DEFAULT_COCKPIT_ROOT = Path("/Users/yiwei/GithubRepos/yiwei-azoth-cockpit")
+DEFAULT_ROOT_AZOTH = Path("/Users/yiwei/GithubRepos/root-azoth")
 FORBIDDEN_OUTPUT_SNIPPETS = (
     "source_files",
     "code_summaries",
@@ -96,12 +100,15 @@ def _check_required_output(combined: str, project_id: str) -> list[str]:
         "Stop reason:",
         "Build daily context packet:",
         "personal_harness_context.py",
+        "personal_harness_daily_flow",
         "--repo-root",
         "--goal",
         "--json",
         "Project-local context is authoritative",
         "/cockpit",
+        "/cockpit-daily",
         "$azoth-cockpit",
+        "$azoth-cockpit-daily",
     )
     for snippet in required:
         if snippet not in combined:
@@ -128,6 +135,14 @@ def simulate_cockpit_ux(
     menu = render_menu(state)
     project_handoff = render_menu(state, project_id=project_id)
     cockpit_errors = check_cockpit(load_cockpit(cockpit_root, include_status=False))
+    daily_report = run_daily_flow(
+        cockpit_root=cockpit_root,
+        repo_root=DEFAULT_ROOT_AZOTH,
+        project_id=project_id,
+        goal="Verify context before project work",
+        requested_actions=("focused_verification",),
+        query_tags=("context",),
+    )
     bootstrap_errors = (
         verify_cockpit_bootstrap(
             cockpit_root,
@@ -155,6 +170,30 @@ def simulate_cockpit_ux(
         f"## /cockpit-project {project_id}",
         project_handoff,
         "",
+        "## /cockpit-daily",
+        "Command: $azoth-cockpit-daily Verify context before project work",
+        (
+            "python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py "
+            "--cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit "
+            "--repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray "
+            "--goal \"Verify context before project work\" --action focused_verification "
+            "--tag context --json"
+        ),
+        json.dumps(
+            {
+                "ok": daily_report["ok"],
+                "harness_profile": daily_report["context_packet"]["context_view"].get("harness_profile"),
+                "route_state": daily_report["context_packet"]["context_view"]
+                .get("route_capsule", {})
+                .get("route_state"),
+                "authority_plane": daily_report["context_packet"]["context_view"]
+                .get("route_capsule", {})
+                .get("authority_plane"),
+                "no_write_contract": daily_report["no_write_contract"],
+            },
+            sort_keys=True,
+        ),
+        "",
         "## /cockpit-help",
         _onboarding_help(cockpit_root),
         "",
@@ -169,6 +208,8 @@ def simulate_cockpit_ux(
     errors.extend(cockpit_errors)
     errors.extend(bootstrap_errors)
     errors.extend(_check_required_output(output, project_id))
+    if not daily_report["ok"]:
+        errors.append("cockpit daily flow failed")
     if cockpit_status_before != cockpit_status_after:
         errors.append("cockpit git status changed during simulation")
     if project_status_before != project_status_after:

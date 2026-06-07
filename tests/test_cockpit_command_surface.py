@@ -43,6 +43,7 @@ def test_renders_all_minimal_cockpit_command_wrappers() -> None:
     expected = {
         "cockpit",
         "cockpit-check",
+        "cockpit-daily",
         "cockpit-project",
         "cockpit-help",
         "cockpit-ux-simulate",
