@@ -76,6 +76,7 @@ def test_daily_flow_verifies_cockpit_readback_and_context_packet(tmp_path: Path)
     }
     assert report["context_packet"]["context_view"]["memory_context"][0]["id"] == "ep-463"
     assert report["context_packet"]["context_view"]["personal_context"] == []
+    assert report["personal_knowledge_review"]["summary"]["overall_status"] == "skipped"
     assert {check["status"] for check in report["checks"]} == {"pass"}
     assert report["no_write_contract"] == {
         "cockpit_repo_mutated": False,
@@ -102,11 +103,15 @@ def test_daily_flow_auto_loads_cockpit_personal_knowledge(tmp_path: Path) -> Non
     assert report["ok"] is True
     assert report["cockpit"]["personal_knowledge_root"] == str(cockpit)
     personal_context = report["context_packet"]["context_view"]["personal_context"]
+    review = report["personal_knowledge_review"]
     assert [item["card_id"] for item in personal_context] == [
         "kb-root-azoth-001",
         "kb-root-azoth-002",
         "kb-root-azoth-003",
     ]
+    assert review["summary"]["overall_status"] == "current"
+    assert review["summary"]["total_cards"] == 4
+    assert review["due_cards"] == []
     assert any(
         check["id"] == "personal_context_loaded" and check["status"] == "pass"
         for check in report["checks"]
@@ -136,6 +141,19 @@ def test_daily_flow_warns_when_personal_knowledge_needs_review(tmp_path: Path) -
     assert report["context_packet"]["warnings"] == [
         "personal knowledge review due: kb-root-azoth-001, kb-root-azoth-002, "
         "kb-root-azoth-003, kb-root-azoth-004"
+    ]
+    assert report["personal_knowledge_review"]["summary"] == {
+        "total_cards": 4,
+        "current_cards": 0,
+        "review_due_cards": 4,
+        "requires_operator_review": True,
+        "overall_status": "review_due",
+    }
+    assert [card["card_id"] for card in report["personal_knowledge_review"]["due_cards"]] == [
+        "kb-root-azoth-001",
+        "kb-root-azoth-002",
+        "kb-root-azoth-003",
+        "kb-root-azoth-004",
     ]
     assert any(
         check["id"] == "personal_context_freshness"

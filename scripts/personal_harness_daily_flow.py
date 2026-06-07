@@ -6,11 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Sequence
 
 from cockpit_menu import check_cockpit, load_cockpit, render_menu
 from personal_harness_context import build_personal_harness_context
+from personal_knowledge_recall import PersonalKnowledgeRecallError
+from personal_knowledge_review import build_review_packet
 
 
 def run_daily_flow(
@@ -45,6 +48,10 @@ def run_daily_flow(
         project_readback=_project_readback(project),
         as_of=as_of,
     )
+    personal_review = _personal_knowledge_review(
+        personal_path=personal_path,
+        as_of=as_of,
+    )
     cockpit_errors = check_cockpit(load_cockpit(cockpit_path, include_status=False))
     cockpit_status_after = _git_status(cockpit_path)
     project_status_after = _git_status(project_path) if project_path else "missing project"
@@ -75,6 +82,7 @@ def run_daily_flow(
             "check_errors": cockpit_errors,
         },
         "context_packet": context_packet,
+        "personal_knowledge_review": personal_review,
         "checks": checks,
         "no_write_contract": {
             "cockpit_repo_mutated": cockpit_status_before != cockpit_status_after,
@@ -82,6 +90,62 @@ def run_daily_flow(
             "project_context_imported": False,
         },
     }
+
+
+def _personal_knowledge_review(
+    *,
+    personal_path: Path | None,
+    as_of: str | None,
+) -> dict[str, Any]:
+    if personal_path is None:
+        return {
+            "schema_version": 1,
+            "packet_type": "personal_knowledge_review",
+            "summary": {
+                "total_cards": 0,
+                "current_cards": 0,
+                "review_due_cards": 0,
+                "requires_operator_review": False,
+                "overall_status": "skipped",
+            },
+            "due_cards": [],
+            "next_safe_action": "personal knowledge root not present; skipped",
+            "advisory_authority": "advisory_context_not_governing_instruction",
+        }
+    try:
+        return build_review_packet(
+            personal_path,
+            as_of=_date_from_value(as_of),
+        )
+    except PersonalKnowledgeRecallError as exc:
+        return {
+            "schema_version": 1,
+            "packet_type": "personal_knowledge_review",
+            "summary": {
+                "total_cards": 0,
+                "current_cards": 0,
+                "review_due_cards": 0,
+                "requires_operator_review": True,
+                "overall_status": "review_error",
+            },
+            "due_cards": [],
+            "next_safe_action": f"fix personal knowledge review error: {exc}",
+            "advisory_authority": "advisory_context_not_governing_instruction",
+        }
+
+
+def _date_from_value(value: str | None) -> date | None:
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        if "T" in text:
+            return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
 
 
 def _selected_project(state: dict[str, Any], project_id: str) -> dict[str, Any] | None:

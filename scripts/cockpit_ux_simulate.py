@@ -186,6 +186,12 @@ def simulate_cockpit_ux(
                 "personal_context_count": len(
                     daily_report["context_packet"]["context_view"].get("personal_context", [])
                 ),
+                "personal_review_due": daily_report["personal_knowledge_review"]["summary"].get(
+                    "review_due_cards"
+                ),
+                "personal_review_status": daily_report["personal_knowledge_review"]["summary"].get(
+                    "overall_status"
+                ),
                 "route_state": daily_report["context_packet"]["context_view"]
                 .get("route_capsule", {})
                 .get("route_state"),
