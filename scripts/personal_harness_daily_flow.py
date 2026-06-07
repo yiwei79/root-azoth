@@ -271,7 +271,10 @@ def _personal_review_due_summary(context_packet: dict[str, Any]) -> str:
 
 
 def _menu_has_context_command(menu: str) -> bool:
-    return all(snippet in menu for snippet in ("personal_harness_context.py", "--goal", "--json"))
+    return all(
+        snippet in menu
+        for snippet in ("personal_harness_daily_flow.py", "--goal", "--summary")
+    )
 
 
 def _git_status(path: Path | None) -> str:

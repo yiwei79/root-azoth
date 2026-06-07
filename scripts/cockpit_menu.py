@@ -152,8 +152,10 @@ REQUIRED_PROJECT_FIELDS = {
 } | READBACK_PROJECT_FIELDS
 
 ROOT_AZOTH = Path("/Users/yiwei/GithubRepos/root-azoth")
-LOCAL_CONTEXT_COMMAND = (
-    'python3 scripts/personal_harness_context.py --repo-root . --goal "<today\'s intent>" --json'
+LOCAL_DAILY_SUMMARY_COMMAND = (
+    'python3 scripts/personal_harness_daily_flow.py --cockpit-root . --repo-root . '
+    '--project ras-or-ray --goal "<today\'s intent>" --action focused_verification '
+    "--tag context --summary"
 )
 
 
@@ -161,15 +163,17 @@ def _default_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _daily_context_command() -> str:
-    root_context_script = ROOT_AZOTH / "scripts" / "personal_harness_context.py"
-    if root_context_script.is_file():
+def _daily_context_command(cockpit_root: Path) -> str:
+    root_daily_script = ROOT_AZOTH / "scripts" / "personal_harness_daily_flow.py"
+    if root_daily_script.is_file():
         return (
-            f"python3 {shlex.quote(str(root_context_script))} "
+            f"python3 {shlex.quote(str(root_daily_script))} "
+            f"--cockpit-root {shlex.quote(str(cockpit_root))} "
             f"--repo-root {shlex.quote(str(ROOT_AZOTH))} "
-            "--goal \"<today's intent>\" --json"
+            "--project ras-or-ray --goal \"<today's intent>\" "
+            "--action focused_verification --tag context --summary"
         )
-    return LOCAL_CONTEXT_COMMAND
+    return LOCAL_DAILY_SUMMARY_COMMAND
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -357,7 +361,7 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
             "",
             "## Safe Actions",
             "- Validate cockpit: python3 scripts/cockpit_menu.py --check",
-            f"- Build daily context packet: {_daily_context_command()}",
+            f"- Build daily harness summary: {_daily_context_command(root)}",
             "- Open project session: use the switch command and project-session prompt above.",
             "- Add project pointer: open an explicit cockpit-owned project-pointer lane.",
             "- Project code/source work: switch to that project repo and open a project-scoped gate.",

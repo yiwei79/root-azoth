@@ -98,12 +98,12 @@ def _check_required_output(combined: str, project_id: str) -> list[str]:
         "Write claim:",
         "Next safe action:",
         "Stop reason:",
-        "Build daily context packet:",
-        "personal_harness_context.py",
+        "Build daily harness summary:",
+        "personal_harness_daily_flow.py",
         "personal_harness_daily_flow",
         "--repo-root",
         "--goal",
-        "--json",
+        "--summary",
         "Project-local context is authoritative",
         "/cockpit",
         "/cockpit-daily",
@@ -177,7 +177,7 @@ def simulate_cockpit_ux(
             "--cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit "
             "--repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray "
             "--goal \"Verify context before project work\" --action focused_verification "
-            "--tag context --json"
+            "--tag context --summary"
         ),
         json.dumps(
             {

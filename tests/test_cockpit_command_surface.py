@@ -15,6 +15,7 @@ from cockpit_command_surface import (  # noqa: E402
     check_cockpit_command_docs,
     check_cockpit_command_surface,
     command_by_name,
+    deploy_cockpit_command_docs,
     deploy_cockpit_command_surface,
     render_openai_metadata,
     render_skill,
@@ -25,6 +26,12 @@ def _write_minimal_docs(root: Path) -> None:
     command_lines = "\n".join(
         f"- `{command.display_name}` / `${command.skill_name}`" for command in COCKPIT_COMMANDS
     )
+    daily_summary = (
+        "python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py "
+        "--cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit "
+        "--repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray "
+        "--goal \"<goal>\" --action focused_verification --tag context --summary"
+    )
     text = f"""# Yiwei Azoth Cockpit
 
 Start cockpit.
@@ -32,6 +39,9 @@ Start cockpit.
 ## Cockpit Command Surface
 
 {command_lines}
+
+Run Personal Harness daily flow:
+`{daily_summary}`
 """
     for rel_path in ("docs/ONBOARDING.md", "AGENTS.md", "CLAUDE.md"):
         path = root / rel_path
@@ -63,6 +73,18 @@ def test_renders_all_minimal_cockpit_command_wrappers() -> None:
         assert metadata["policy"]["allow_implicit_invocation"] is False
 
 
+def test_cockpit_daily_wrapper_is_summary_first() -> None:
+    command = command_by_name("cockpit-daily")
+    assert command is not None
+
+    skill = render_skill(command)
+
+    assert "personal_harness_daily_flow.py" in skill
+    assert "--summary" in skill
+    assert "review-due cards" in skill
+    assert "--json" not in skill
+
+
 def test_deploy_and_check_command_surface(tmp_path: Path) -> None:
     _write_minimal_docs(tmp_path)
 
@@ -72,6 +94,25 @@ def test_deploy_and_check_command_surface(tmp_path: Path) -> None:
     for command in COCKPIT_COMMANDS:
         assert (tmp_path / command.skill_dir / "SKILL.md").is_file()
         assert (tmp_path / command.skill_dir / "agents" / "openai.yaml").is_file()
+
+
+def test_deploy_updates_onboarding_daily_command_to_summary(tmp_path: Path) -> None:
+    _write_minimal_docs(tmp_path)
+    path = tmp_path / "docs" / "ONBOARDING.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("--tag context --summary", "--tag context --json"),
+        encoding="utf-8",
+    )
+
+    assert deploy_cockpit_command_docs(tmp_path, check=True) == [
+        "docs/ONBOARDING.md: stale summary-first daily command"
+    ]
+    assert deploy_cockpit_command_docs(tmp_path) == []
+
+    text = path.read_text(encoding="utf-8")
+    assert "--tag context --summary" in text
+    assert "--tag context --json" not in text
+    assert check_cockpit_command_docs(tmp_path) == []
 
 
 def test_check_fails_when_wrapper_missing(tmp_path: Path) -> None:

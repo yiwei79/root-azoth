@@ -99,6 +99,7 @@ Start cockpit.
 | Open deterministic plain menu | `python3 scripts/cockpit_menu.py --plain` | No |
 | Render `ras-or-ray` handoff | `python3 scripts/cockpit_menu.py --project ras-or-ray` | No |
 | Render any project handoff | `python3 scripts/cockpit_menu.py --project <project_id>` | No |
+| Run Personal Harness daily flow | `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal "<goal>" --action focused_verification --tag context --summary` | No |
 | Validate cockpit knowledge layout | `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit` | No |
 
 ## Cockpit Command Surface

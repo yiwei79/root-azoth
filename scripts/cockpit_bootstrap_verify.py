@@ -61,6 +61,8 @@ HANDBOOK_REQUIRED_TEXT = (
     "python3 scripts/cockpit_menu.py --plain",
     "python3 scripts/cockpit_menu.py --project ras-or-ray",
     "python3 scripts/cockpit_menu.py --project <project_id>",
+    "personal_harness_daily_flow.py",
+    "--summary",
     "personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit",
 )
 STALE_STARTUP_PATTERNS = (

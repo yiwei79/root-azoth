@@ -71,11 +71,11 @@ COCKPIT_COMMANDS: tuple[CockpitCommand, ...] = (
         name="cockpit-daily",
         display_name="/cockpit-daily",
         description="Run the Personal Harness OS daily cockpit flow.",
-        summary="Build and verify the daily route-aware context packet without writes.",
+        summary="Show the daily route-aware harness summary without writes.",
         execution_steps=(
             "Use `$ARGUMENTS` as today's goal; default to `Verify context before project work` when empty.",
-            "Run `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal \"<today's goal>\" --action focused_verification --tag context --json`.",
-            "Report the selected harness profile, route state, authority plane, and no-write contract.",
+            "Run `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal \"<today's goal>\" --action focused_verification --tag context --summary`.",
+            "Report the summary status, selected harness profile, route state, review-due cards, next safe action, and no-write contract.",
             "Do not open project-local context or mutate cockpit/project files.",
         ),
         default_prompt_suffix=" Verify context before project work",
@@ -110,6 +110,8 @@ SAFE_OPEN_LINES = (
     "It must not write cockpit files, write project files, import project source, "
     "expand retrieval, onboard sources, or start hidden background work.",
 )
+STALE_DAILY_JSON_SNIPPET = "--tag context --json"
+SUMMARY_DAILY_SNIPPET = "--tag context --summary"
 
 
 def command_by_name(name: str) -> CockpitCommand | None:
@@ -185,6 +187,29 @@ def deploy_cockpit_command_surface(root: Path, *, check: bool = False) -> list[s
     return errors
 
 
+def deploy_cockpit_command_docs(root: Path, *, check: bool = False) -> list[str]:
+    path = root / "docs" / "ONBOARDING.md"
+    if not path.is_file():
+        return ["docs/ONBOARDING.md: missing"]
+    text = path.read_text(encoding="utf-8")
+    updated = _summary_first_daily_docs(text)
+    if updated == text:
+        return []
+    if check:
+        return ["docs/ONBOARDING.md: stale summary-first daily command"]
+    path.write_text(updated, encoding="utf-8")
+    return []
+
+
+def _summary_first_daily_docs(text: str) -> str:
+    lines: list[str] = []
+    for line in text.splitlines():
+        if "personal_harness_daily_flow.py" in line and STALE_DAILY_JSON_SNIPPET in line:
+            line = line.replace(STALE_DAILY_JSON_SNIPPET, SUMMARY_DAILY_SNIPPET)
+        lines.append(line)
+    return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+
 def check_cockpit_command_docs(root: Path) -> list[str]:
     errors: list[str] = []
     required = [
@@ -202,11 +227,21 @@ def check_cockpit_command_docs(root: Path) -> list[str]:
         for snippet in required:
             if snippet not in text:
                 errors.append(f"{rel_path}: missing command-surface text {snippet!r}")
+        if rel_path == "docs/ONBOARDING.md":
+            for snippet in ("personal_harness_daily_flow.py", "--summary"):
+                if snippet not in text:
+                    errors.append(f"{rel_path}: missing summary-first daily text {snippet!r}")
+            if "personal_harness_daily_flow.py" in text and STALE_DAILY_JSON_SNIPPET in text:
+                errors.append(f"{rel_path}: stale daily command uses --json")
     return errors
 
 
 def check_cockpit_command_surface(root: Path) -> list[str]:
-    return deploy_cockpit_command_surface(root, check=True) + check_cockpit_command_docs(root)
+    return (
+        deploy_cockpit_command_surface(root, check=True)
+        + deploy_cockpit_command_docs(root, check=True)
+        + check_cockpit_command_docs(root)
+    )
 
 
 def format_errors(errors: Iterable[str]) -> str:
@@ -225,7 +260,7 @@ def main(argv: list[str] | None = None) -> int:
     errors = (
         check_cockpit_command_surface(args.root)
         if args.check
-        else deploy_cockpit_command_surface(args.root)
+        else deploy_cockpit_command_surface(args.root) + deploy_cockpit_command_docs(args.root)
     )
     print(format_errors(errors))
     return 0 if not errors else 1
