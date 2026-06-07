@@ -290,6 +290,97 @@ def _git_status(path: Path | None) -> str:
     return result.stdout.strip()
 
 
+def format_daily_summary(report: dict[str, Any]) -> str:
+    """Render a compact operator-facing summary from the JSON report."""
+    context_view = report["context_packet"]["context_view"]
+    route_capsule = context_view.get("route_capsule", {})
+    review = report.get("personal_knowledge_review", {})
+    review_summary = review.get("summary", {})
+    checks = report.get("checks", [])
+    no_write = report.get("no_write_contract", {})
+    lines = [
+        "# Personal Harness Daily Flow",
+        "",
+        f"Status: {_daily_status(report)}",
+        f"Goal: {report.get('goal', '')}",
+        "",
+        "## Route",
+        f"- Harness profile: {context_view.get('harness_profile', '')}",
+        f"- Route state: {route_capsule.get('route_state', '')}",
+        f"- Authority plane: {route_capsule.get('authority_plane', '')}",
+        f"- Next safe action: {route_capsule.get('next_safe_action', '')}",
+        "",
+        "## Project",
+        f"- Project: {report['cockpit'].get('project_id', '')}",
+        f"- Cockpit mode: {report['cockpit'].get('selected_mode', '')}",
+        f"- Readiness: {report['cockpit'].get('readiness_state', '')}",
+        f"- Personal knowledge root: {report['cockpit'].get('personal_knowledge_root') or 'not present'}",
+        "",
+        "## Context",
+        f"- Memory items: {len(context_view.get('memory_context', []))}",
+        f"- Personal context items: {len(context_view.get('personal_context', []))}",
+        f"- Personal review status: {review_summary.get('overall_status', 'unknown')}",
+        f"- Personal cards due: {review_summary.get('review_due_cards', 0)}",
+    ]
+    due_cards = review.get("due_cards")
+    if isinstance(due_cards, list) and due_cards:
+        lines.extend(["", "## Personal Review Due"])
+        for card in due_cards:
+            if not isinstance(card, dict):
+                continue
+            lines.append(
+                "- "
+                f"{card.get('card_id', '')}: {card.get('title', '')} "
+                f"({card.get('review_reason', '')}; source: {_first_source_path(card)})"
+            )
+    lines.extend(
+        [
+            "",
+            "## Checks",
+            *_format_checks(checks),
+            "",
+            "## No-Write Contract",
+            f"- Cockpit mutated: {str(no_write.get('cockpit_repo_mutated', '')).lower()}",
+            f"- Project mutated: {str(no_write.get('project_repo_mutated', '')).lower()}",
+            f"- Project context imported: {str(no_write.get('project_context_imported', '')).lower()}",
+            "",
+            f"Next: {review.get('next_safe_action') or route_capsule.get('next_safe_action', '')}",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _daily_status(report: dict[str, Any]) -> str:
+    if not report.get("ok"):
+        return "FAIL"
+    checks = report.get("checks")
+    if isinstance(checks, list) and any(
+        isinstance(check, dict) and check.get("status") == "warn" for check in checks
+    ):
+        return "OK with warnings"
+    return "OK"
+
+
+def _format_checks(checks: Any) -> list[str]:
+    if not isinstance(checks, list):
+        return ["- unavailable"]
+    return [
+        f"- {check.get('id', '')}: {check.get('status', '')} - {check.get('summary', '')}"
+        for check in checks
+        if isinstance(check, dict)
+    ]
+
+
+def _first_source_path(card: dict[str, Any]) -> str:
+    refs = card.get("source_refs")
+    if not isinstance(refs, list):
+        return ""
+    for ref in refs:
+        if isinstance(ref, dict) and ref.get("path"):
+            return str(ref["path"]).strip()
+    return ""
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cockpit-root", required=True, type=Path)
@@ -302,9 +393,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--personal-root", type=Path)
     parser.add_argument("--as-of")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--summary", action="store_true")
     args = parser.parse_args(argv)
-    if not args.json:
-        parser.error("personal harness daily flow output requires --json")
+    if not args.json and not args.summary:
+        parser.error("personal harness daily flow output requires --json or --summary")
 
     report = run_daily_flow(
         cockpit_root=args.cockpit_root,
@@ -317,7 +409,10 @@ def main(argv: list[str] | None = None) -> int:
         personal_root=args.personal_root,
         as_of=args.as_of,
     )
-    print(json.dumps(report, indent=2, sort_keys=True))
+    if args.json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    if args.summary:
+        print(format_daily_summary(report))
     return 0 if report["ok"] else 1
 
 
