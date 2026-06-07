@@ -28,6 +28,7 @@ def run_daily_flow(
     """Run a no-write daily flow verification and return a JSON-ready report."""
     cockpit_path = cockpit_root.resolve()
     repo_path = repo_root.resolve()
+    personal_path = personal_root if personal_root is not None else _default_personal_root(cockpit_path)
     cockpit_status_before = _git_status(cockpit_path)
     state = load_cockpit(cockpit_path, include_status=True)
     project = _selected_project(state, project_id)
@@ -40,7 +41,7 @@ def run_daily_flow(
         planned_paths=planned_paths,
         query_tags=query_tags,
         repo_root=repo_path,
-        personal_root=personal_root,
+        personal_root=personal_path,
         project_readback=_project_readback(project),
         as_of=as_of,
     )
@@ -52,6 +53,7 @@ def run_daily_flow(
         project=project,
         menu=menu,
         context_packet=context_packet,
+        personal_root_available=personal_path is not None,
         cockpit_status_before=cockpit_status_before,
         cockpit_status_after=cockpit_status_after,
         project_status_before=project_status_before,
@@ -69,6 +71,7 @@ def run_daily_flow(
             "readiness_state": str(project.get("readiness_state") or "") if project else "",
             "authority_plane": str(project.get("authority_plane") or "") if project else "",
             "menu_has_context_command": _menu_has_context_command(menu),
+            "personal_knowledge_root": str(personal_path) if personal_path is not None else "",
             "check_errors": cockpit_errors,
         },
         "context_packet": context_packet,
@@ -99,12 +102,18 @@ def _project_readback(project: dict[str, Any] | None) -> dict[str, str] | None:
     }
 
 
+def _default_personal_root(cockpit_path: Path) -> Path | None:
+    card_dir = cockpit_path / ".azoth" / "knowledge" / "cards" / "root-azoth"
+    return cockpit_path if card_dir.is_dir() else None
+
+
 def _checks(
     *,
     cockpit_errors: list[str],
     project: dict[str, Any] | None,
     menu: str,
     context_packet: dict[str, Any],
+    personal_root_available: bool,
     cockpit_status_before: str,
     cockpit_status_after: str,
     project_status_before: str,
@@ -129,6 +138,16 @@ def _checks(
             "memory_context_loaded",
             bool(context_packet["context_view"].get("memory_context")),
             "memory context present",
+        ),
+        _check(
+            "personal_context_loaded",
+            (not personal_root_available)
+            or bool(context_packet["context_view"].get("personal_context")),
+            (
+                "personal context present"
+                if personal_root_available
+                else "personal knowledge root not present; skipped"
+            ),
         ),
         _check(
             "no_cockpit_write",

@@ -183,6 +183,9 @@ def simulate_cockpit_ux(
             {
                 "ok": daily_report["ok"],
                 "harness_profile": daily_report["context_packet"]["context_view"].get("harness_profile"),
+                "personal_context_count": len(
+                    daily_report["context_packet"]["context_view"].get("personal_context", [])
+                ),
                 "route_state": daily_report["context_packet"]["context_view"]
                 .get("route_capsule", {})
                 .get("route_state"),

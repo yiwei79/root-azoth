@@ -182,8 +182,8 @@ def recall_cards(
     query_text = (query or "").strip()
     card_id_text = (card_id or "").strip()
     source_path_text = (source_path or "").strip()
-    if not any((query_text, card_id_text, source_path_text)):
-        raise PersonalKnowledgeRecallError("provide query, card_id, or source_path")
+    if not any((query_text, card_id_text, source_path_text, allowed_use)):
+        raise PersonalKnowledgeRecallError("provide query, card_id, source_path, or allowed_use")
 
     cards = _load_cards(personal_root)
     if allowed_use:
@@ -205,6 +205,11 @@ def recall_cards(
         ]
 
     if not query_text:
+        if allowed_use:
+            return [
+                _as_result(card, match_reason="allowed_use", as_of=as_of)
+                for card in cards
+            ]
         return []
 
     query_tokens = _tokens(query_text)
@@ -217,7 +222,17 @@ def recall_cards(
     if scored:
         best_score = scored[0][0]
         scored = [item for item in scored if item[0] == best_score]
-    return [_as_result(card, match_reason="metadata_tokens", as_of=as_of) for _, _, card in scored]
+    if scored:
+        return [
+            _as_result(card, match_reason="metadata_tokens", as_of=as_of)
+            for _, _, card in scored
+        ]
+    if allowed_use:
+        return [
+            _as_result(card, match_reason="allowed_use_fallback", as_of=as_of)
+            for card in cards
+        ]
+    return []
 
 
 def main(argv: list[str] | None = None) -> int:

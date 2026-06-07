@@ -15,6 +15,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from personal_harness_daily_flow import run_daily_flow  # noqa: E402
 from test_cockpit_bootstrap_verify import _write_cockpit_bootstrap_fixture  # noqa: E402
+from test_personal_knowledge_recall import _card, _write_yaml  # noqa: E402
 
 
 def _write_memory_fixture(repo: Path) -> None:
@@ -38,6 +39,13 @@ def _write_memory_fixture(repo: Path) -> None:
     )
 
 
+def _write_personal_cards(personal_root: Path) -> None:
+    card_dir = personal_root / ".azoth" / "knowledge" / "cards" / "root-azoth"
+    for index in range(1, 6):
+        card_id = f"kb-root-azoth-00{index}"
+        _write_yaml(card_dir / f"{card_id}.yaml", _card(card_id))
+
+
 def test_daily_flow_verifies_cockpit_readback_and_context_packet(tmp_path: Path) -> None:
     cockpit = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
     _write_memory_fixture(tmp_path)
@@ -57,6 +65,7 @@ def test_daily_flow_verifies_cockpit_readback_and_context_packet(tmp_path: Path)
     assert report["cockpit"]["project_id"] == "ras-or-ray"
     assert report["cockpit"]["selected_mode"] == "assisted"
     assert report["cockpit"]["menu_has_context_command"] is True
+    assert report["cockpit"]["personal_knowledge_root"] == ""
     assert report["context_packet"]["context_view"]["harness_profile"] == "assisted"
     assert report["context_packet"]["context_view"]["route_capsule"]["route_state"] == "assist"
     assert report["context_packet"]["context_view"]["project_context"] == {
@@ -66,12 +75,42 @@ def test_daily_flow_verifies_cockpit_readback_and_context_packet(tmp_path: Path)
         "receipt_ref": ".azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml",
     }
     assert report["context_packet"]["context_view"]["memory_context"][0]["id"] == "ep-463"
+    assert report["context_packet"]["context_view"]["personal_context"] == []
     assert {check["status"] for check in report["checks"]} == {"pass"}
     assert report["no_write_contract"] == {
         "cockpit_repo_mutated": False,
         "project_repo_mutated": False,
         "project_context_imported": False,
     }
+
+
+def test_daily_flow_auto_loads_cockpit_personal_knowledge(tmp_path: Path) -> None:
+    cockpit = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    _write_memory_fixture(tmp_path)
+    _write_personal_cards(cockpit)
+
+    report = run_daily_flow(
+        cockpit_root=cockpit,
+        repo_root=tmp_path,
+        project_id="ras-or-ray",
+        goal="Verify context before project work",
+        requested_actions=("focused_verification",),
+        query_tags=("context",),
+        as_of="2026-05-03T00:00:00Z",
+    )
+
+    assert report["ok"] is True
+    assert report["cockpit"]["personal_knowledge_root"] == str(cockpit)
+    personal_context = report["context_packet"]["context_view"]["personal_context"]
+    assert [item["card_id"] for item in personal_context] == [
+        "kb-root-azoth-001",
+        "kb-root-azoth-002",
+        "kb-root-azoth-003",
+    ]
+    assert any(
+        check["id"] == "personal_context_loaded" and check["status"] == "pass"
+        for check in report["checks"]
+    )
 
 
 def test_daily_flow_fails_closed_when_cockpit_mode_disagrees_with_route(tmp_path: Path) -> None:

@@ -197,6 +197,43 @@ def test_semantic_metadata_lookup_uses_metadata_and_allowed_use_filter(tmp_path:
     assert results[0]["match_reason"] == "metadata_tokens"
 
 
+def test_allowed_use_only_lookup_returns_approved_metadata_without_body(tmp_path: Path) -> None:
+    personal_root = _write_personal_root(tmp_path)
+
+    from personal_knowledge_recall import recall_cards
+
+    results = recall_cards(personal_root, allowed_use="session_start_recall")
+
+    assert [result["card_id"] for result in results] == [
+        "kb-root-azoth-001",
+        "kb-root-azoth-002",
+        "kb-root-azoth-003",
+        "kb-root-azoth-004",
+    ]
+    assert {result["match_reason"] for result in results} == {"allowed_use"}
+    assert all("body" not in result for result in results)
+
+
+def test_allowed_use_fallback_keeps_session_start_context_available(tmp_path: Path) -> None:
+    personal_root = _write_personal_root(tmp_path)
+
+    from personal_knowledge_recall import recall_cards
+
+    results = recall_cards(
+        personal_root,
+        query="xyzzynomatch",
+        allowed_use="session_start_recall",
+    )
+
+    assert [result["card_id"] for result in results] == [
+        "kb-root-azoth-001",
+        "kb-root-azoth-002",
+        "kb-root-azoth-003",
+        "kb-root-azoth-004",
+    ]
+    assert {result["match_reason"] for result in results} == {"allowed_use_fallback"}
+
+
 def test_semantic_metadata_lookup_does_not_match_body_only_text(tmp_path: Path) -> None:
     personal_root = _write_personal_root(tmp_path)
     card_path = (

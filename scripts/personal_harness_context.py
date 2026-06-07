@@ -146,8 +146,7 @@ def _personal_recall_results(
     try:
         results = recall_cards(
             personal_root,
-            query=goal,
-            allowed_use="route_selection",
+            allowed_use="session_start_recall",
             as_of=None,
         )
     except PersonalKnowledgeRecallError as exc:
