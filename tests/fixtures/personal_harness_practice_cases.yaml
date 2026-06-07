@@ -1,0 +1,66 @@
+schema_version: 1
+cases:
+  - id: music-guide-orientation
+    domain: music
+    goal: Which Azoth mode should I use for a new music production idea?
+    requested_actions:
+      - read
+    query_tags:
+      - context
+    expected:
+      profile: guide
+      route_state: answer
+      authority_required: false
+      authority_plane: personal_cockpit
+  - id: thesis-assisted-context-check
+    domain: thesis
+    goal: Verify thesis context before a focused writing session.
+    requested_actions:
+      - focused_verification
+    query_tags:
+      - context
+    project_readback:
+      project: thesis-notes
+      selected_mode: assisted
+      freshness: pointer_current
+      receipt_ref: .azoth/projects/handoffs/thesis-notes.yaml
+    expected:
+      profile: assisted
+      route_state: assist
+      authority_required: false
+      authority_plane: root_azoth
+      project: thesis-notes
+  - id: music-managed-planning-hydration
+    domain: music
+    goal: Hydrate managed planning state for the music production lab.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/project-local-mode-receipt.yaml
+    query_tags:
+      - context
+    project_readback:
+      project: music-production-lab
+      selected_mode: managed
+      freshness: local_receipt_required
+      receipt_ref: .azoth/projects/handoffs/music-production-lab.yaml
+    expected:
+      profile: managed
+      route_state: authority_required
+      authority_required: true
+      authority_plane: project_local
+      project: music-production-lab
+  - id: agent-context-governed-autonomy
+    domain: agent-context
+    goal: Continue the autonomous campaign for agent context repair with a fresh budget and stop conditions.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/run-ledger.local.yaml
+    query_tags:
+      - context
+    expected:
+      profile: governed_autonomy
+      route_state: authority_required
+      authority_required: true
+      authority_plane: root_azoth
