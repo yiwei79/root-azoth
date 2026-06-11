@@ -17,7 +17,7 @@ milestone: v0.2.0
 lifecycle_phase: 8  # historical 1–7 + Next marker for shipped pre-1.0 roadmap + v0.1.0 gate
 
 # Architecture decisions count
-decisions: 54
+decisions: 57  # D55 trust-bearing hosts, D56 hermes substrate, D57 runtime guards added 2026-06-11
 
 # Layer status
 layers:
@@ -40,12 +40,42 @@ memory:
   patterns: 29
   last_sync: null
 
+# Trust-bearing hosts (D55) — committed 2026-06-11 in phase/v0.2.0-p5
+trust_bearing_hosts:
+  - hermes
+  - codex
+  - opencode
+
+# Hermes substrate (D56) — kernel installed once per profile, not per project
+hermes_substrate:
+  enabled: true
+  profile: azoth-personal-cockpit
+  skill_anchor: ~/.hermes/profiles/azoth-personal-cockpit/skills/azoth-substrate/SKILL.md
+  docs: docs/HERMES_SUBSTRATE.md
+  shim_layer: ~/.hermes/profiles/azoth-personal-cockpit/bin/
+
+# Friction-event runtime guards (D57) — mechanical subprocess enforcement
+runtime_guards:
+  enabled: true
+  count: 4
+  modules:
+    - scripts/check_fd_003_subagent_isolation.py
+    - scripts/check_fd_004_hydration_scope.py
+    - scripts/check_fd_005_completion_semantics.py
+    - scripts/check_fd_008_subagent_contract.py
+  runner: scripts/azoth_guards.py
+  manifest_check: scripts/hermes_manifest_check.py
+
 # Platform compatibility
 platforms:
-  claude_code: primary
-  opencode: compatible  # Reads CLAUDE.md natively
-  copilot: adapter      # Via .github/ files
-  codex: adapter        # Via .codex/ + .agents/ files
+  claude_code: best-effort  # Was primary; now best-effort mirror (D55)
+  hermes: trust-bearing    # Primary substrate (D55, D56)
+  opencode: trust-bearing  # Co-trust (D55)
+  codex: trust-bearing     # Co-trust (D55)
+  copilot: adapter         # Best-effort mirror
+  cursor: adapter          # Best-effort mirror
+  gemini: adapter          # Best-effort mirror
+  antigravity: adapter     # Best-effort mirror
 
 # Sync source (set when configured)
 sync:

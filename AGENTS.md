@@ -55,21 +55,6 @@ All agents operate under the Azoth Trust Contract:
 - **Posture tiers**: `always_do` / `ask_first` / `never_auto`
   (see `kernel/TRUST_CONTRACT.md`)
 
-## Trust-bearing hosts (D55)
-
-Per `kernel/TRUST_HOSTS.md`, Azoth treats exactly three hosts as **trust-bearing**
-(mechanical gate enforcement + runtime guard execution):
-
-- **Hermes** — primary; profile-level kernel + memory + skills
-- **Codex** — secondary; command + skill-routed
-- **OpenCode** — secondary; plugin permission: deny mirrors Trust Contract posture
-
-The remaining five platforms (Claude Code, Antigravity, GitHub Copilot, Cursor,
-Gemini) are best-effort mirrors. Their `.mdc` / `GEMINI.md` / `.github/`
-adapter files document the kernel; they do not enforce it. Drift between
-mirror behavior and kernel truth is detected by `scripts/hermes_manifest_check.py`
-on trust-bearing hosts and warned (not blocked) on mirror hosts.
-
 ## Platform File Locations
 
 | Platform | Agents | Commands | Skills | IDE rules |
