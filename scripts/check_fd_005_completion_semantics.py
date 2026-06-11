@@ -18,18 +18,12 @@ Input: JSON payload with:
   - achieved_states (list[str]): the states the run has reached.
   - missing_states (list[str], optional): explicit missing-states list.
 
-Exit codes:
-  0 — guard passes
-  1 — guard blocks
-  2 — usage error
+Invoked by scripts/azoth_guards.py (the runner).
 """
 
 from __future__ import annotations
 
-import argparse
-import json
-import sys
-from pathlib import Path
+from typing import Any
 
 
 REQUIRED_FOR_COMPLETION = (
@@ -41,7 +35,7 @@ REQUIRED_FOR_COMPLETION = (
 ADMIN_ONLY_STATES = frozenset({"hydrated", "planned", "scoped"})
 
 
-def check(payload: dict[str, object]) -> dict[str, object]:
+def check(payload: dict[str, Any]) -> dict[str, Any]:
     marking = str(payload.get("marking") or "").lower().strip()
     if marking not in ("complete", "done"):
         return {
@@ -73,31 +67,3 @@ def check(payload: dict[str, object]) -> dict[str, object]:
             }
         ],
     }
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--json", action="store_true")
-    args = parser.parse_args(argv)
-
-    if not args.input.is_file():
-        print(f"error: --input {args.input} not found", file=sys.stderr)
-        return 2
-
-    payload = json.loads(args.input.read_text(encoding="utf-8"))
-    result = check(payload)
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        if result["ok"]:
-            print("FD-005: OK")
-        else:
-            print("FD-005: FAIL")
-            for v in result["violations"]:
-                print(f"  - {v['rule']}: {v['message']}")
-    return 0 if result["ok"] else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

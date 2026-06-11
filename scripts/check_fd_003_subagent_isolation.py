@@ -16,17 +16,14 @@ Input: JSON payload with a "stages" list. Each stage is a dict with at least
 "name" and "kind". "spawned_subagent" (bool) and "subagent_type" (str|None)
 are honored when present.
 
-Exit codes:
-  0 — guard passes
-  1 — guard blocks (violation)
-  2 — usage error (bad input)
+Invoked by scripts/azoth_guards.py (the runner). Standalone CLI removed —
+operators debugging a guard should run the test suite or invoke the runner
+with a single-section payload.
 """
 
 from __future__ import annotations
 
-import argparse
-import json
-from pathlib import Path
+from typing import Any
 
 
 SIDE_EFFECT_STAGE_KINDS = {
@@ -38,7 +35,7 @@ SIDE_EFFECT_STAGE_KINDS = {
 }
 
 
-def check(payload: dict[str, object]) -> dict[str, object]:
+def check(payload: dict[str, Any]) -> dict[str, Any]:
     stages = payload.get("stages")
     if stages is None:
         return {"ok": True, "violations": [], "reason": "no stages provided"}
@@ -84,31 +81,3 @@ def check(payload: dict[str, object]) -> dict[str, object]:
         "spawned_count": len(spawned),
         "side_effect_stage_count": len(side_effect_stages),
     }
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--json", action="store_true")
-    args = parser.parse_args(argv)
-
-    if not args.input.is_file():
-        print(f"error: --input {args.input} not found", file=__import__("sys").stderr)
-        return 2
-
-    payload = json.loads(args.input.read_text(encoding="utf-8"))
-    result = check(payload)
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        if result["ok"]:
-            print("FD-003: OK")
-        else:
-            print("FD-003: FAIL")
-            for v in result["violations"]:
-                print(f"  - {v['rule']}: {v['message']}")
-    return 0 if result["ok"] else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

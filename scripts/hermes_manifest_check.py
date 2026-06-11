@@ -60,10 +60,23 @@ def _check_kernel_files_present(repo_root: Path) -> list[dict[str, object]]:
 
 
 def _check_kernel_checksum(repo_root: Path) -> tuple[bool, list[dict[str, object]]]:
-    """Return (ok, results). ok=True iff checksums file matches reality (or absent)."""
+    """Return (ok, results). ok=False (yellow-zone finding) when the checksum file is absent;
+    ok reflects whether the recorded checksums match reality for the present files."""
     sums = _checksums_path(repo_root)
     if not sums.is_file():
-        return True, [{"kind": "kernel_checksum", "status": "no_manifest", "ok": True}]
+        return False, [
+            {
+                "kind": "kernel_checksum",
+                "name": "checksum_file",
+                "ok": False,
+                "severity": "warning",
+                "reason": (
+                    ".azoth/kernel-checksums.sha256 missing — kernel integrity cannot be "
+                    "verified. Generate one with: "
+                    "sha256sum kernel/*.md > .azoth/kernel-checksums.sha256"
+                ),
+            }
+        ]
     expected: dict[str, str] = {}
     for line in sums.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -160,7 +173,7 @@ def _check_trust_hosts_md(repo_root: Path) -> tuple[bool, dict[str, object]]:
     return True, {"kind": "trust_hosts_md", "ok": True}
 
 
-def run_check(repo_root: Path, *, strict: bool = False) -> dict[str, object]:
+def run_check(repo_root: Path) -> dict[str, object]:
     kernel_present = _check_kernel_files_present(repo_root)
     kernel_ok = all(c["present"] for c in kernel_present)
     checksum_ok, checksum_results = _check_kernel_checksum(repo_root)
@@ -179,7 +192,6 @@ def run_check(repo_root: Path, *, strict: bool = False) -> dict[str, object]:
 
     return {
         "ok": all_ok,
-        "strict": strict,
         "kernel_checksum_ok": checksum_ok,
         "agents_md_parity_ok": parity_ok,
         "tests_directory_present": tests_ok,
@@ -192,10 +204,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
-    parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     args = parser.parse_args(argv)
 
-    payload = run_check(args.repo_root.resolve(), strict=args.strict)
+    payload = run_check(args.repo_root.resolve())
     if args.json:
         print(json.dumps(payload, indent=2))
     else:

@@ -18,18 +18,12 @@ Input: JSON payload with:
   - pipeline (str): the pipeline identifier.
   - stages (list[dict]): the stage plans, each with name, spawned, subagent_type.
 
-Exit codes:
-  0 — guard passes
-  1 — guard blocks (named role not spawned or wrong type)
-  2 — usage error
+Invoked by scripts/azoth_guards.py (the runner).
 """
 
 from __future__ import annotations
 
-import argparse
-import json
-import sys
-from pathlib import Path
+from typing import Any
 
 
 GOVERNED_PIPELINES = frozenset(
@@ -46,7 +40,7 @@ REQUIRED_SPAWNS = {
 }
 
 
-def check(payload: dict[str, object]) -> dict[str, object]:
+def check(payload: dict[str, Any]) -> dict[str, Any]:
     pipeline = str(payload.get("pipeline") or "").strip()
     if pipeline not in GOVERNED_PIPELINES:
         return {
@@ -78,12 +72,12 @@ def check(payload: dict[str, object]) -> dict[str, object]:
             ],
         }
 
-    by_name: dict[str, dict[str, object]] = {}
+    by_name: dict[str, dict[str, Any]] = {}
     for stage in stages:
         if isinstance(stage, dict) and stage.get("name") in REQUIRED_SPAWNS:
             by_name[str(stage["name"])] = stage
 
-    violations: list[dict[str, object]] = []
+    violations: list[dict[str, Any]] = []
     for name, expected_type in REQUIRED_SPAWNS.items():
         if name not in by_name:
             continue  # not part of this run; not a violation
@@ -115,31 +109,3 @@ def check(payload: dict[str, object]) -> dict[str, object]:
         "violations": violations,
         "pipeline": pipeline,
     }
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--json", action="store_true")
-    args = parser.parse_args(argv)
-
-    if not args.input.is_file():
-        print(f"error: --input {args.input} not found", file=sys.stderr)
-        return 2
-
-    payload = json.loads(args.input.read_text(encoding="utf-8"))
-    result = check(payload)
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        if result["ok"]:
-            print("FD-008: OK")
-        else:
-            print("FD-008: FAIL")
-            for v in result["violations"]:
-                print(f"  - {v['rule']}: {v['message']}")
-    return 0 if result["ok"] else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
