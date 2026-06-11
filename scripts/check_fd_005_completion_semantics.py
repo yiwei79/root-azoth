@@ -58,22 +58,20 @@ def check(payload: dict[str, object]) -> dict[str, object]:
 
     # Distinguish: admin-only completion vs partial-delivery completion.
     is_admin_only = achieved.issubset(ADMIN_ONLY_STATES) and bool(achieved)
-    rule = (
-        "fd_005_admin_complete_pretends_delivery"
-        if is_admin_only
-        else "fd_005_incomplete_state"
-    )
+    rule = "fd_005_admin_complete_pretends_delivery" if is_admin_only else "fd_005_incomplete_state"
     return {
         "ok": False,
-        "violations": [{
-            "rule": rule,
-            "message": (
-                f"Cannot mark '{marking}'. Missing required states: {missing}. "
-                "Hydration alone does not prove delivery acceptance."
-            ),
-            "missing": missing,
-            "achieved": sorted(achieved),
-        }],
+        "violations": [
+            {
+                "rule": rule,
+                "message": (
+                    f"Cannot mark '{marking}'. Missing required states: {missing}. "
+                    "Hydration alone does not prove delivery acceptance."
+                ),
+                "missing": missing,
+                "achieved": sorted(achieved),
+            }
+        ],
     }
 
 

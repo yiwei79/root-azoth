@@ -53,10 +53,12 @@ def check(payload: dict[str, object]) -> dict[str, object]:
     if not isinstance(paths, list):
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_004_invalid_payload",
-                "message": "planned_paths must be a list",
-            }],
+            "violations": [
+                {
+                    "rule": "fd_004_invalid_payload",
+                    "message": "planned_paths must be a list",
+                }
+            ],
         }
 
     touches_governed = any(_is_governed_path(str(p)) for p in paths)
@@ -67,14 +69,16 @@ def check(payload: dict[str, object]) -> dict[str, object]:
     if not isinstance(scope, dict) or not str(scope.get("session_id") or "").strip():
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_004_no_scope",
-                "message": (
-                    "Hydration action touches governed state but no scope gate "
-                    "is open. Open a fresh scope-gate via /next or /auto before "
-                    "hydrating planning state."
-                ),
-            }],
+            "violations": [
+                {
+                    "rule": "fd_004_no_scope",
+                    "message": (
+                        "Hydration action touches governed state but no scope gate "
+                        "is open. Open a fresh scope-gate via /next or /auto before "
+                        "hydrating planning state."
+                    ),
+                }
+            ],
         }
 
     return {

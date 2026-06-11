@@ -45,33 +45,37 @@ def check(payload: dict[str, object]) -> dict[str, object]:
     if not isinstance(stages, list):
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_003_invalid_payload",
-                "message": "payload.stages must be a list",
-            }],
+            "violations": [
+                {
+                    "rule": "fd_003_invalid_payload",
+                    "message": "payload.stages must be a list",
+                }
+            ],
         }
 
     side_effect_stages = [
-        s for s in stages
+        s
+        for s in stages
         if isinstance(s, dict) and str(s.get("kind", "")).strip() in SIDE_EFFECT_STAGE_KINDS
     ]
     spawned = [
-        s for s in side_effect_stages
-        if isinstance(s, dict) and bool(s.get("spawned_subagent"))
+        s for s in side_effect_stages if isinstance(s, dict) and bool(s.get("spawned_subagent"))
     ]
 
     if len(side_effect_stages) >= 2 and not spawned:
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_003_no_spawned_subagent",
-                "message": (
-                    "Pipeline declares multiple side-effectful stages with zero "
-                    "spawned subagents. Stage narration would happen inline. "
-                    "Either spawn a real subagent or mark stages as advisory."
-                ),
-                "stages": [str(s.get("kind")) for s in side_effect_stages],
-            }],
+            "violations": [
+                {
+                    "rule": "fd_003_no_spawned_subagent",
+                    "message": (
+                        "Pipeline declares multiple side-effectful stages with zero "
+                        "spawned subagents. Stage narration would happen inline. "
+                        "Either spawn a real subagent or mark stages as advisory."
+                    ),
+                    "stages": [str(s.get("kind")) for s in side_effect_stages],
+                }
+            ],
         }
 
     return {

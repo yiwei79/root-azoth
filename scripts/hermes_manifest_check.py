@@ -24,7 +24,6 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 
 
@@ -49,12 +48,14 @@ def _check_kernel_files_present(repo_root: Path) -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
     for name in KERNEL_FILES:
         path = kdir / name
-        results.append({
-            "kind": "kernel_file",
-            "name": name,
-            "path": str(path),
-            "present": path.is_file(),
-        })
+        results.append(
+            {
+                "kind": "kernel_file",
+                "name": name,
+                "path": str(path),
+                "present": path.is_file(),
+            }
+        )
     return results
 
 
@@ -80,25 +81,29 @@ def _check_kernel_checksum(repo_root: Path) -> tuple[bool, list[dict[str, object
         path = kdir / name
         rel = f"kernel/{name}"
         if not path.is_file():
-            results.append({
-                "kind": "kernel_checksum_entry",
-                "name": name,
-                "ok": False,
-                "reason": "missing",
-            })
+            results.append(
+                {
+                    "kind": "kernel_checksum_entry",
+                    "name": name,
+                    "ok": False,
+                    "reason": "missing",
+                }
+            )
             ok = False
             continue
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
         match = expected.get(rel) == actual
         if not match:
             ok = False
-        results.append({
-            "kind": "kernel_checksum_entry",
-            "name": name,
-            "ok": match,
-            "expected": expected.get(rel),
-            "actual": actual,
-        })
+        results.append(
+            {
+                "kind": "kernel_checksum_entry",
+                "name": name,
+                "ok": match,
+                "expected": expected.get(rel),
+                "actual": actual,
+            }
+        )
     return ok, results
 
 

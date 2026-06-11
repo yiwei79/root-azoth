@@ -51,28 +51,34 @@ def _check_guard(name: str, payload: dict[str, object]) -> dict[str, object]:
     except FileNotFoundError as exc:
         return {
             "ok": False,
-            "violations": [{
-                "rule": f"{name}_load_error",
-                "message": f"guard module not found: {exc}",
-            }],
+            "violations": [
+                {
+                    "rule": f"{name}_load_error",
+                    "message": f"guard module not found: {exc}",
+                }
+            ],
         }
     except Exception as exc:  # noqa: BLE001 — guard load may raise arbitrary errors
         return {
             "ok": False,
-            "violations": [{
-                "rule": f"{name}_load_error",
-                "message": str(exc),
-            }],
+            "violations": [
+                {
+                    "rule": f"{name}_load_error",
+                    "message": str(exc),
+                }
+            ],
         }
     try:
         return module.check(payload)
     except Exception as exc:  # noqa: BLE001 — surface unexpected errors as violations
         return {
             "ok": False,
-            "violations": [{
-                "rule": f"{name}_check_error",
-                "message": str(exc),
-            }],
+            "violations": [
+                {
+                    "rule": f"{name}_check_error",
+                    "message": str(exc),
+                }
+            ],
         }
 
 

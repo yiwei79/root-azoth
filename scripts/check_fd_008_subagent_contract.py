@@ -32,11 +32,13 @@ import sys
 from pathlib import Path
 
 
-GOVERNED_PIPELINES = frozenset({
-    "deliver_full",
-    "dynamic_full_auto_governed",
-    "auto_governed",
-})
+GOVERNED_PIPELINES = frozenset(
+    {
+        "deliver_full",
+        "dynamic_full_auto_governed",
+        "auto_governed",
+    }
+)
 
 REQUIRED_SPAWNS = {
     "architect_brief": "architect",
@@ -58,18 +60,22 @@ def check(payload: dict[str, object]) -> dict[str, object]:
     if stages is None:
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_008_invalid_payload",
-                "message": "stages must be provided for governed pipelines",
-            }],
+            "violations": [
+                {
+                    "rule": "fd_008_invalid_payload",
+                    "message": "stages must be provided for governed pipelines",
+                }
+            ],
         }
     if not isinstance(stages, list):
         return {
             "ok": False,
-            "violations": [{
-                "rule": "fd_008_invalid_payload",
-                "message": "stages must be a list",
-            }],
+            "violations": [
+                {
+                    "rule": "fd_008_invalid_payload",
+                    "message": "stages must be a list",
+                }
+            ],
         }
 
     by_name: dict[str, dict[str, object]] = {}
@@ -83,22 +89,26 @@ def check(payload: dict[str, object]) -> dict[str, object]:
             continue  # not part of this run; not a violation
         stage = by_name[name]
         if not bool(stage.get("spawned")):
-            violations.append({
-                "rule": f"fd_008_inline_{name}",
-                "message": (
-                    f"Governed pipeline {pipeline!r} requires stage "
-                    f"{name!r} to be a spawned subagent. The orchestrator "
-                    f"must not draft {name!r} inline."
-                ),
-            })
+            violations.append(
+                {
+                    "rule": f"fd_008_inline_{name}",
+                    "message": (
+                        f"Governed pipeline {pipeline!r} requires stage "
+                        f"{name!r} to be a spawned subagent. The orchestrator "
+                        f"must not draft {name!r} inline."
+                    ),
+                }
+            )
         elif stage.get("subagent_type") != expected_type:
-            violations.append({
-                "rule": f"fd_008_wrong_subagent_type_{name}",
-                "message": (
-                    f"Stage {name!r} must be spawned as {expected_type!r}, "
-                    f"got {stage.get('subagent_type')!r}."
-                ),
-            })
+            violations.append(
+                {
+                    "rule": f"fd_008_wrong_subagent_type_{name}",
+                    "message": (
+                        f"Stage {name!r} must be spawned as {expected_type!r}, "
+                        f"got {stage.get('subagent_type')!r}."
+                    ),
+                }
+            )
 
     return {
         "ok": not violations,
