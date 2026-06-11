@@ -72,13 +72,16 @@ and unified governance model.
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | ✅ implemented | `scripts/welcome.py` + `.claude/commands/start.md` (BL-007); Phase 5: `.claude/hooks/session_start_welcome.py`, `.azoth/session-orientation.txt` (runtime), `CLAUDE.md` rule 9 | 4 |
 | D53 | Auto-versioning policy: delivery-triggered version increments | ✅ implemented | `scripts/version-bump.py` (--patch / --phase / --release) + roadmap `active_version`; /session-closeout + /deliver-full `--patch` (BL-009); `--release` closes v0.0.7→v0.1.0 and activates v0.2.0 | 4 |
 | D54 | Branch model + worktree policy | ✅ implemented | `CLAUDE.md` §Git Conventions (Branch Model, Worktree Policy, Merge Hygiene); two permanent branches (`main`, `phase/v0.2.0-pN`); short-lived `patch/<bl-id>` + `feat/<slug>` branches deleted on merge; zero-worktree default with run-ledger claim required for parallel worktrees | 8 |
+| D55 | Trust-bearing hosts (D55): Hermes + Codex + OpenCode | ✅ implemented | `kernel/TRUST_HOSTS.md`, `tests/test_trust_hosts_contract.py`, `AGENTS.md` §Trust-bearing hosts (via deploy generator) | p5 |
+| D56 | Hermes as operating substrate (kernel = profile-level state) | ✅ implemented | `docs/HERMES_SUBSTRATE.md`, `~/.hermes/profiles/azoth-personal-cockpit/skills/azoth-substrate/SKILL.md`, `azoth.yaml` §hermes_substrate | p5 |
+| D57 | Friction-event runtime guards (FD-003/004/005/008 as subprocesses) | ✅ implemented | `scripts/check_fd_003_subagent_isolation.py`, `scripts/check_fd_004_hydration_scope.py`, `scripts/check_fd_005_completion_semantics.py`, `scripts/check_fd_008_subagent_contract.py`, `scripts/azoth_guards.py` (combined runner), `scripts/hermes_manifest_check.py` | p5 |
 
 ## Summary
 
 | Status | Count |
 |--------|-------|
-| ✅ implemented | 39 |
+| ✅ implemented | 42 |
 | 🔧 partial | 9 |
 | 📋 planned | 5 |
 | 🔄 superseded | 1 |
-| **Total** | **54** |
+| **Total** | **57** |
