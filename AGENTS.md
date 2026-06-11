@@ -55,6 +55,13 @@ All agents operate under the Azoth Trust Contract:
 - **Posture tiers**: `always_do` / `ask_first` / `never_auto`
   (see `kernel/TRUST_CONTRACT.md`)
 
+## Trust-bearing hosts (D55)
+
+Per `kernel/TRUST_HOSTS.md`, Azoth treats exactly three hosts as **trust-bearing**
+(mechanical gate enforcement + runtime guard execution): Hermes, Codex,
+OpenCode. The remaining five platforms are best-effort mirrors. See
+`docs/HOST_TRUST_MATRIX.md` for the per-host enforcement table.
+
 ## Platform File Locations
 
 | Platform | Agents | Commands | Skills | IDE rules |
