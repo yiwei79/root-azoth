@@ -24,7 +24,12 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
+
+# Make _azoth_yaml importable when this script runs directly.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _azoth_yaml import load_fenced_yaml_file  # noqa: E402
 
 
 KERNEL_FILES = (
@@ -163,12 +168,19 @@ def _check_trust_hosts_md(repo_root: Path) -> tuple[bool, dict[str, object]]:
             "ok": False,
             "reason": "kernel/TRUST_HOSTS.md missing",
         }
-    text = path.read_text(encoding="utf-8")
-    if "<!-- trust_hosts:start -->" not in text or "<!-- trust_hosts:end -->" not in text:
+    try:
+        data = load_fenced_yaml_file(path, name="trust_hosts")
+    except (AssertionError, Exception) as exc:
         return False, {
             "kind": "trust_hosts_md",
             "ok": False,
-            "reason": "fences missing",
+            "reason": f"trust_hosts fence failed to parse: {exc}",
+        }
+    if "trust_bearing_hosts" not in data or "best_effort_mirrors" not in data:
+        return False, {
+            "kind": "trust_hosts_md",
+            "ok": False,
+            "reason": "trust_hosts fence missing required keys (trust_bearing_hosts, best_effort_mirrors)",
         }
     return True, {"kind": "trust_hosts_md", "ok": True}
 

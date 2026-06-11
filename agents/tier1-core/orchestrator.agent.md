@@ -67,16 +67,23 @@ to Orchestrate.
 ## Composition references
 
 Decision tables, checkpoints, dispatch rules, and isolation patterns live in
-**skills**, not in this file. Load on demand:
+**existing skills and runtime subprocesses**, not in this file. Load on demand:
 
-- **Route decision table** → `skills/azoth-route-decision/SKILL.md`
-- **Stage 0 Assumption Checkpoint** → `skills/azoth-assumption-checkpoint/SKILL.md`
-- **E1–E6 evaluator dispatch** → `skills/azoth-eval-dispatch/SKILL.md`
-- **Friction-event guards** (FD-003/004/005/008) → `skills/azoth-fd-guard/SKILL.md`
-  (and the runtime guard subprocesses in `scripts/check_fd_*.py`)
+- **Existing skills** (already on the skills list above): `context-map` for
+  repo-dependency mapping, `subagent-router` for per-stage subagent
+  assignment, `auto-router` for goal-based pipeline composition. These
+  cover the route-decision, Stage 0 Assumption Checkpoint, and E1–E6
+  evaluator dispatch territories.
+- **Friction-event runtime guards** (FD-003/004/005/008): the
+  decision logic lives in **Python subprocesses**, not skill content.
+  See "Friction-event guards" below.
 
-The orchestrator owns gate execution. Skill references supply the decision
-logic; this file stays short.
+The orchestrator owns gate execution. The skill and subprocess references
+supply the decision logic; this file stays short.
+
+Important: when slimming the orchestrator, do NOT add references to
+skills that don't exist. Anti-slop rule (kernel/TRUST_CONTRACT.md §6):
+documentation states facts, not aspirations.
 
 ## Subagent handoff
 

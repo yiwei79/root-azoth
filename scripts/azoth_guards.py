@@ -36,6 +36,15 @@ GUARD_MODULES = {
     "fd_008": "check_fd_008_subagent_contract",
 }
 
+# Maps each guard id to the payload-section key that feeds it. Hoisted out
+# of the run() loop so the dict is built once, not on every iteration.
+GUARD_TO_SECTION_KEY = {
+    "fd_003": "friction_check",
+    "fd_004": "hydration_check",
+    "fd_005": "completion_check",
+    "fd_008": "subagent_contract_check",
+}
+
 
 def _load_guard(module_file: str):
     path = SCRIPTS_DIR / f"{module_file}.py"
@@ -85,14 +94,8 @@ def _check_guard(name: str, payload: dict[str, object]) -> dict[str, object]:
 def run(payload: dict[str, object]) -> dict[str, object]:
     guards: dict[str, dict[str, object]] = {}
     total_violations = 0
-    for guard_id, _module_name in GUARD_MODULES.items():
-        section_key = {
-            "fd_003": "friction_check",
-            "fd_004": "hydration_check",
-            "fd_005": "completion_check",
-            "fd_008": "subagent_contract_check",
-        }[guard_id]
-        section_payload = payload.get(section_key) or {}
+    for guard_id, module_name in GUARD_MODULES.items():
+        section_payload = payload.get(GUARD_TO_SECTION_KEY[guard_id]) or {}
         result = _check_guard(guard_id, section_payload)
         guards[guard_id] = result
         total_violations += len(result.get("violations") or [])

@@ -41,10 +41,19 @@ memory:
   last_sync: null
 
 # Trust-bearing hosts (D55) — committed 2026-06-11 in phase/v0.2.0-p5
+# Single source of truth for trust posture. Mirror this list in
+# kernel/TRUST_HOSTS.md and azoth-deploy.py's platform mapping.
 trust_bearing_hosts:
   - hermes
   - codex
   - opencode
+
+best_effort_mirrors:
+  - claude_code
+  - antigravity
+  - copilot
+  - cursor
+  - gemini
 
 # Hermes substrate (D56) — kernel installed once per profile, not per project
 hermes_substrate:
@@ -66,16 +75,17 @@ runtime_guards:
   runner: scripts/azoth_guards.py
   manifest_check: scripts/hermes_manifest_check.py
 
-# Platform compatibility
+# Platform compatibility — flat list of all supported platforms.
+# Trust posture lives in trust_bearing_hosts + best_effort_mirrors above.
 platforms:
-  claude_code: best-effort  # Was primary; now best-effort mirror (D55)
-  hermes: trust-bearing    # Primary substrate (D55, D56)
-  opencode: trust-bearing  # Co-trust (D55)
-  codex: trust-bearing     # Co-trust (D55)
-  copilot: adapter         # Best-effort mirror
-  cursor: adapter          # Best-effort mirror
-  gemini: adapter          # Best-effort mirror
-  antigravity: adapter     # Best-effort mirror
+  - claude_code
+  - hermes
+  - opencode
+  - codex
+  - copilot
+  - cursor
+  - gemini
+  - antigravity
 
 # Sync source (set when configured)
 sync:
