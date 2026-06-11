@@ -120,10 +120,18 @@ class HarnessDecision:
 
 def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> HarnessDecision:
     """Classify a request into an operator-facing personal harness mode."""
-    active_request = request if isinstance(request, HarnessRequest) else HarnessRequest.from_mapping(request)
+    active_request = (
+        request if isinstance(request, HarnessRequest) else HarnessRequest.from_mapping(request)
+    )
     lite_decision = classify_request(active_request.to_azoth_lite_request())
-    profile = _profile_for_lite_decision(lite_decision.selected_profile, lite_decision.side_effect_class, lite_decision.escalation_reasons)
-    route = _route_for_profile(profile, lite_decision.side_effect_class, lite_decision.escalation_reasons)
+    profile = _profile_for_lite_decision(
+        lite_decision.selected_profile,
+        lite_decision.side_effect_class,
+        lite_decision.escalation_reasons,
+    )
+    route = _route_for_profile(
+        profile, lite_decision.side_effect_class, lite_decision.escalation_reasons
+    )
     mode = _MODE_CONTRACTS[profile]
 
     return HarnessDecision(
@@ -133,7 +141,9 @@ def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> Har
         route=route,
         operator_promise=mode["operator_promise"],
         explicit_exclusions=tuple(mode["explicit_exclusions"]),
-        source_refs=(f".azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix.{profile}",),
+        source_refs=(
+            f".azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix.{profile}",
+        ),
         azoth_lite_profile=lite_decision.selected_profile,
         escalation_reasons=lite_decision.escalation_reasons,
     )

@@ -31,7 +31,9 @@ def run_daily_flow(
     """Run a no-write daily flow verification and return a JSON-ready report."""
     cockpit_path = cockpit_root.resolve()
     repo_path = repo_root.resolve()
-    personal_path = personal_root if personal_root is not None else _default_personal_root(cockpit_path)
+    personal_path = (
+        personal_root if personal_root is not None else _default_personal_root(cockpit_path)
+    )
     cockpit_status_before = _git_status(cockpit_path)
     state = load_cockpit(cockpit_path, include_status=True)
     project = _selected_project(state, project_id)
@@ -186,8 +188,14 @@ def _checks(
     context_profile = str(context_packet["context_view"].get("harness_profile") or "")
     cockpit_mode = str(project.get("selected_mode") or "") if project else ""
     checks = [
-        _check("cockpit_metadata", not cockpit_errors, "; ".join(cockpit_errors) or "cockpit check OK"),
-        _check("project_pointer", project is not None, "project pointer found" if project else "missing project pointer"),
+        _check(
+            "cockpit_metadata", not cockpit_errors, "; ".join(cockpit_errors) or "cockpit check OK"
+        ),
+        _check(
+            "project_pointer",
+            project is not None,
+            "project pointer found" if project else "missing project pointer",
+        ),
         _check(
             "context_command_visible",
             _menu_has_context_command(menu),
@@ -272,8 +280,7 @@ def _personal_review_due_summary(context_packet: dict[str, Any]) -> str:
 
 def _menu_has_context_command(menu: str) -> bool:
     return all(
-        snippet in menu
-        for snippet in ("personal_harness_daily_flow.py", "--goal", "--summary")
+        snippet in menu for snippet in ("personal_harness_daily_flow.py", "--goal", "--summary")
     )
 
 
