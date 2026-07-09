@@ -1,0 +1,1 @@
+{"friction_check": {"stages": [{"name": "context_recovery", "kind": "context_recovery", "spawned_subagent": true, "subagent_type": "context-architect"}]}, "hydration_check": {"action": "edit_readme", "planned_paths": ["README.md"]}, "completion_check": {"marking": "in_progress", "achieved_states": ["hydrated"]}, "subagent_contract_check": {"pipeline": "deliver", "stages": []}}

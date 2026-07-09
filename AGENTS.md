@@ -67,7 +67,7 @@ OpenCode. The remaining five platforms are best-effort mirrors. See
 | Platform | Agents | Commands | Skills | IDE rules |
 |----------|--------|----------|--------|-----------|
 | Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |
-| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |
+| Claude Code | `.claude/agents/` | `.claude/commands/` | — | hooks in `.claude/settings.json` |
 | Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |
 | GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |
 | OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |

@@ -6,8 +6,8 @@ prompt rule. Run in CI on trust-bearing hosts (Hermes, Codex, OpenCode);
 run in best-effort warning mode on adapters (see kernel/TRUST_HOSTS.md).
 
 Checks performed:
-  1. All four kernel files exist (BOOTLOADER, TRUST_CONTRACT, GOVERNANCE, PROMOTION_RUBRIC).
-  2. Kernel checksum file matches the four kernel files (when .azoth/kernel-checksums.sha256 exists).
+  1. All five kernel files exist (BOOTLOADER, GOVERNANCE, PROMOTION_RUBRIC, TRUST_CONTRACT, TRUST_HOSTS).
+  2. Kernel checksum file matches the five kernel files (when .azoth/kernel-checksums.sha256 exists).
   3. AGENTS.md uses scope-gated entropy wording (not stale per-session).
   4. tests/ directory exists with at least one test_*.py file.
   5. kernel/TRUST_HOSTS.md exists and parses.
@@ -34,9 +34,10 @@ from _azoth_yaml import load_fenced_yaml_file  # noqa: E402
 
 KERNEL_FILES = (
     "BOOTLOADER.md",
-    "TRUST_CONTRACT.md",
     "GOVERNANCE.md",
     "PROMOTION_RUBRIC.md",
+    "TRUST_CONTRACT.md",
+    "TRUST_HOSTS.md",
 )
 
 

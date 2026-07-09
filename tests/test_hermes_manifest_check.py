@@ -23,11 +23,11 @@ def test_check_runs_and_reports_json() -> None:
     assert "trust_hosts_md_present" in payload
 
 
-def test_kernel_files_checked_are_four() -> None:
+def test_kernel_files_checked_are_five() -> None:
     payload = _payload_for(REPO_ROOT)
     kernel_checks = [c for c in payload["checks"] if c.get("kind") == "kernel_file"]
-    assert len(kernel_checks) == 4, (
-        "Manifest check must cover all 4 kernel files (BOOTLOADER, TRUST_CONTRACT, GOVERNANCE, PROMOTION_RUBRIC)"
+    assert len(kernel_checks) == 5, (
+        "Manifest check must cover all 5 kernel files (BOOTLOADER, GOVERNANCE, PROMOTION_RUBRIC, TRUST_CONTRACT, TRUST_HOSTS)"
     )
 
 
@@ -37,8 +37,10 @@ def test_check_detects_missing_kernel_file(tmp_path: Path) -> None:
     fake_root.mkdir()
     payload = _payload_for(fake_root)
     assert not payload["ok"]
-    missing_files = [c for c in payload["checks"] if c.get("kind") == "kernel_file" and not c.get("present")]
-    assert len(missing_files) == 4
+    missing_files = [
+        c for c in payload["checks"] if c.get("kind") == "kernel_file" and not c.get("present")
+    ]
+    assert len(missing_files) == 5
     assert payload["trust_hosts_md_present"] is False
     assert payload["tests_directory_present"] is False
     assert payload["agents_md_parity_ok"] is False

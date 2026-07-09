@@ -16,7 +16,7 @@ human alignment point.
 
 ## Architecture
 
-Full architecture: `docs/AZOTH_ARCHITECTURE.md` (53 decisions, 4 layers).
+Full architecture: `docs/AZOTH_ARCHITECTURE.md` (57 decisions, 4 layers).
 
 ### The Water Molecule Model
 

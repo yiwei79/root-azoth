@@ -64,6 +64,7 @@ load_skills = _mod.load_skills
 gemini_command_name = _mod.gemini_command_name
 shared_skill_name = _mod.shared_skill_name
 transform_shared_skill = _mod.transform_shared_skill
+missing_agent_skill_references = _mod.missing_agent_skill_references
 write_file = _mod.write_file
 main = _mod.main
 
@@ -326,6 +327,35 @@ def test_codex_agent_model_optional() -> None:
     out_with_model = transform_agent_codex(agent_with_model)
     data_with_model = tomllib.loads(out_with_model)
     assert data_with_model["model"] == "gpt-5.4"
+
+
+def test_agent_outputs_report_missing_skill_references() -> None:
+    bad_agent = {
+        "meta": {
+            "name": "orchestrator",
+            "role": "Pipeline entry",
+            "tier": 1,
+        },
+        "body": "# Orchestrator\n\nSee `skills/missing-skill/SKILL.md`.\n",
+    }
+    missing = missing_agent_skill_references(
+        [bad_agent],
+        [{"name": "context-map"}],
+        {"codex"},
+        "claude",
+    )
+    assert missing == [".codex/agents/orchestrator.toml: skills/missing-skill/SKILL.md"]
+
+
+def test_canonical_agent_outputs_reference_existing_skills() -> None:
+    root = Path(__file__).resolve().parent.parent
+    missing = missing_agent_skill_references(
+        load_agents(root),
+        load_skills(root),
+        set(_mod.ALL_PLATFORMS),
+        "claude",
+    )
+    assert missing == []
 
 
 def test_builder_posture_projects_to_agent_transforms() -> None:

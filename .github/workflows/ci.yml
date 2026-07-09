@@ -31,6 +31,9 @@ jobs:
           python3 scripts/kernel-integrity.py
           python3 scripts/kernel-integrity.py --verify-checksums
 
+      - name: Deploy parity
+        run: python3 scripts/azoth-deploy.py --check
+
       - name: Pipeline lint
         run: python3 scripts/pipeline_lint.py
 

@@ -208,13 +208,13 @@ and `agents/` — equally.
 
 ### Integrity Check Mechanism
 
-The **canonical** hashed set is the four root-level governance documents (lexicographic order for stable tooling output):
+The **canonical** hashed set is the five root-level kernel governance documents (lexicographic order for stable tooling output):
 
-`kernel/BOOTLOADER.md`, `kernel/GOVERNANCE.md`, `kernel/PROMOTION_RUBRIC.md`, `kernel/TRUST_CONTRACT.md`
+`kernel/BOOTLOADER.md`, `kernel/GOVERNANCE.md`, `kernel/PROMOTION_RUBRIC.md`, `kernel/TRUST_CONTRACT.md`, `kernel/TRUST_HOSTS.md`
 
 ```bash
 sha256sum kernel/BOOTLOADER.md kernel/GOVERNANCE.md \
-  kernel/PROMOTION_RUBRIC.md kernel/TRUST_CONTRACT.md \
+  kernel/PROMOTION_RUBRIC.md kernel/TRUST_CONTRACT.md kernel/TRUST_HOSTS.md \
   > .azoth/kernel-checksums.sha256
 
 sha256sum -c .azoth/kernel-checksums.sha256

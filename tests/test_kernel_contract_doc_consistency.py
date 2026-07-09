@@ -14,10 +14,11 @@ def _read(rel: str) -> str:
 
 
 class TestKernelChecksumBlock:
-    def test_governance_integrity_lists_four_explicit_paths(self) -> None:
+    def test_governance_integrity_lists_five_explicit_paths(self) -> None:
         gov = _read("kernel/GOVERNANCE.md")
         assert "sha256sum kernel/BOOTLOADER.md kernel/GOVERNANCE.md" in gov
         assert "kernel/PROMOTION_RUBRIC.md kernel/TRUST_CONTRACT.md" in gov
+        assert "kernel/TRUST_HOSTS.md" in gov
         assert "kernel/*.md" not in gov.split("### Integrity Check Mechanism")[1].split("```")[1]
 
     def test_trust_section3_points_to_governance(self) -> None:

@@ -3,10 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-import yaml
-
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TRUST_HOSTS_PATH = REPO_ROOT / "kernel" / "TRUST_HOSTS.md"
 TRUST_HOSTS_YAML = REPO_ROOT / "kernel" / "trust_hosts.yaml"
@@ -41,10 +37,10 @@ def test_trust_bearing_hosts_are_exactly_three() -> None:
     )
 
 
-def test_best_effort_mirrors_include_four_remaining_platforms() -> None:
+def test_best_effort_mirrors_include_five_remaining_platforms() -> None:
     payload = _parse_trust_hosts(TRUST_HOSTS_PATH.read_text(encoding="utf-8"))
     mirrors = sorted(str(m) for m in payload["best_effort_mirrors"])
-    # 6 hosts total; 3 trust-bearing + 3 best-effort mirrors
+    # 8 hosts total; 3 trust-bearing + 5 best-effort mirrors
     assert mirrors == ["antigravity", "claude_code", "copilot", "cursor", "gemini"], (
         "Best-effort mirrors must include antigravity, claude_code, copilot, cursor, gemini."
     )
@@ -57,4 +53,6 @@ def test_runtime_guards_listed_are_filenames_only() -> None:
     assert len(guards) >= 4, "Must list at least 4 friction-event guards"
     for g in guards:
         assert isinstance(g, str)
-        assert g.startswith("scripts/check_fd_"), f"Guard name {g!r} must follow scripts/check_fd_*.py"
+        assert g.startswith("scripts/check_fd_"), (
+            f"Guard name {g!r} must follow scripts/check_fd_*.py"
+        )

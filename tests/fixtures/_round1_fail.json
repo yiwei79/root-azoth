@@ -1,0 +1,1 @@
+{"friction_check": {"stages": [{"name": "context_recovery", "kind": "context_recovery", "spawned_subagent": false}, {"name": "planning_bank", "kind": "planning_bank", "spawned_subagent": false}]}, "subagent_contract_check": {"pipeline": "deliver_full", "stages": [{"name": "architect_brief", "spawned": false, "subagent_type": null}]}}

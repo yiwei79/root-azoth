@@ -497,6 +497,42 @@ def transform_agent_gemini(agent: dict[str, Any]) -> str:
     return render_frontmatter(fm) + agent["body"]
 
 
+SKILL_REF_RE = re.compile(r"(?<![\w./-])skills/([A-Za-z0-9_-]+)/SKILL\.md")
+
+
+def missing_agent_skill_references(
+    agents: list[dict[str, Any]],
+    skills: list[dict[str, Any]],
+    platforms: set[str],
+    copilot_agent_location: str,
+) -> list[str]:
+    """Return generated agent outputs that reference non-existent skills."""
+    known_skills = {str(skill["name"]) for skill in skills}
+    known_skills.update(shared_skill_name(str(skill["name"])) for skill in skills)
+    missing: list[str] = []
+
+    for agent in agents:
+        name = str(agent["meta"]["name"])
+        outputs: list[tuple[str, str]] = []
+        if _deploy_claude_agents(platforms, copilot_agent_location):
+            outputs.append((f".claude/agents/{name}.md", transform_agent_claude(agent)))
+        if _deploy_github_agents(platforms, copilot_agent_location):
+            outputs.append((f".github/agents/{name}.agent.md", transform_agent_copilot(agent)))
+        if "opencode" in platforms:
+            outputs.append((f".opencode/agents/{name}.md", transform_agent_opencode(agent)))
+        if "codex" in platforms:
+            outputs.append((f".codex/agents/{name}.toml", transform_agent_codex(agent)))
+        if "gemini" in platforms:
+            outputs.append((f".gemini/agents/{name}.md", transform_agent_gemini(agent)))
+
+        for output_path, text in outputs:
+            for ref in sorted(set(SKILL_REF_RE.findall(text))):
+                if ref not in known_skills:
+                    missing.append(f"{output_path}: skills/{ref}/SKILL.md")
+
+    return missing
+
+
 # ── Command transformations ──────────────────────────────────────────────────
 
 
@@ -839,7 +875,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Platform | Agents | Commands | Skills | IDE rules |",
         "|----------|--------|----------|--------|-----------|",
         "| Antigravity (Gemini) | — | `.agents/workflows/` | `.agents/skills/` | `.agents/rules/*.md` ← `azoth-deploy --platforms antigravity` |",
-        "| Claude Code | `.claude/agents/` | `.claude/commands/` | `.claude/skills/` | hooks in `.claude/settings.json` |",
+        "| Claude Code | `.claude/agents/` | `.claude/commands/` | — | hooks in `.claude/settings.json` |",
         "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
@@ -1229,6 +1265,15 @@ def main(argv: list[str] | None = None) -> int:
     skills = load_skills(root)
 
     print(f"sources: {len(agents)} agents, {len(commands)} commands, {len(skills)} skills\n")
+
+    missing_skill_refs = missing_agent_skill_references(
+        agents, skills, platforms, copilot_agent_location
+    )
+    if missing_skill_refs:
+        print("error: generated agent output references missing skills:", file=sys.stderr)
+        for ref in missing_skill_refs:
+            print(f"  - {ref}", file=sys.stderr)
+        return 1
 
     count = 0
     stale = 0

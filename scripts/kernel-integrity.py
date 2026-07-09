@@ -18,6 +18,7 @@ CHECKSUM_REL = (
     "kernel/GOVERNANCE.md",
     "kernel/PROMOTION_RUBRIC.md",
     "kernel/TRUST_CONTRACT.md",
+    "kernel/TRUST_HOSTS.md",
 )
 
 

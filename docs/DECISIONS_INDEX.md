@@ -1,6 +1,6 @@
 # Architecture Decisions Index
 
-Machine-readable index of all architecture decisions (D1–D54).
+Machine-readable index of all architecture decisions (D1–D57).
 Agents use this to check compliance and track implementation status.
 
 See `docs/AZOTH_ARCHITECTURE.md` for full rationale and context.

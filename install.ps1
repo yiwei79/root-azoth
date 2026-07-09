@@ -182,9 +182,10 @@ New-Item -ItemType Directory -Force -Path ".azoth\telemetry" | Out-Null
 New-Item -ItemType Directory -Force -Path ".azoth\kernel" | Out-Null
 
 Copy-Item "$SCRIPT_DIR\kernel\BOOTLOADER.md" ".azoth\kernel\"
-Copy-Item "$SCRIPT_DIR\kernel\TRUST_CONTRACT.md" ".azoth\kernel\"
 Copy-Item "$SCRIPT_DIR\kernel\GOVERNANCE.md" ".azoth\kernel\"
 Copy-Item "$SCRIPT_DIR\kernel\PROMOTION_RUBRIC.md" ".azoth\kernel\"
+Copy-Item "$SCRIPT_DIR\kernel\TRUST_CONTRACT.md" ".azoth\kernel\"
+Copy-Item "$SCRIPT_DIR\kernel\TRUST_HOSTS.md" ".azoth\kernel\"
 
 Ok "Kernel deployed to .azoth\kernel\"
 
@@ -335,9 +336,17 @@ Ok "Memory system initialized"
 
 # ── Step 7: Generate kernel checksums ──────────────────────────
 Info "Generating kernel checksums..."
-$checksums = Get-ChildItem ".azoth\kernel\*.md" | ForEach-Object {
-    $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
-    "$hash  $($_.FullName)"
+$kernelChecksumPaths = @(
+    ".azoth\kernel\BOOTLOADER.md"
+    ".azoth\kernel\GOVERNANCE.md"
+    ".azoth\kernel\PROMOTION_RUBRIC.md"
+    ".azoth\kernel\TRUST_CONTRACT.md"
+    ".azoth\kernel\TRUST_HOSTS.md"
+)
+$checksums = $kernelChecksumPaths | ForEach-Object {
+    $item = Get-Item $_
+    $hash = (Get-FileHash $item.FullName -Algorithm SHA256).Hash.ToLower()
+    "$hash  $($item.FullName)"
 }
 $checksums | Set-Content ".azoth\kernel-checksums.sha256"
 Ok "Kernel integrity baseline established"
