@@ -26,7 +26,7 @@ skills:
       - subagent-router
 
   - name: autonomous-auto
-    description: Standalone adaptive mode for branch-local Azoth self-development with async operator alignment, bounded replay, and scope/pipeline gate enforcement.
+    description: Standalone adaptive mode for branch-local consumer-project delivery with async operator alignment, bounded replay, and scope/pipeline gate enforcement.
     depends_on:
       - auto-router
       - subagent-router

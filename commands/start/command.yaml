@@ -74,5 +74,4 @@ migration:
     - .claude/commands/start.md is now a deployed output, not the authored semantic source.
 
 references:
-  - .azoth/roadmap-specs/v0.2.0/T-002.yaml
   - docs/CANONICAL_COMMAND_CONTRACT.md

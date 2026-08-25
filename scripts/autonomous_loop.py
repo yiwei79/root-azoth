@@ -2,8 +2,8 @@
 """Autonomous-auto loop governor.
 
 The governor is intentionally deterministic: it reads a local loop-state file,
-decides the next safe Azoth self-development action, and can open the next
-scope gate for a bounded autonomous-auto iteration.
+decides the next safe consumer-project action, and can open the next scope gate
+for a bounded autonomous-auto iteration.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from typing import Any
 
 import yaml
 
+import roadmap_task_id
 from autonomous_campaign_audit import (
     build_campaign_audit,
     build_nightly_automation_audit_bundle,
@@ -98,7 +99,7 @@ ALIGNMENT_PACKET_TYPES = {"async_advisory", "async_override", "async_stop", "app
 ALIGNMENT_DISPOSITIONS = {"pending", "applied", "deferred", "rejected"}
 DEFAULT_ALIGNMENT_CHECKPOINT = "next_safe_checkpoint"
 VISION_BANDS = {"red": 0, "yellow": 1, "green": 2}
-DEFAULT_VISION_ANCHOR = ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
+VISION_ANCHOR_FILENAME = "AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
 DEFAULT_VISION_TARGET_BAND = "green"
 DEFAULT_STOP_CONDITIONS = [
     "active_scope_present",
@@ -158,6 +159,26 @@ def _load_yaml_mapping(path: Path) -> dict[str, Any]:
         return {}
     data = safe_load_yaml_path(path)
     return data if isinstance(data, dict) else {}
+
+
+def _active_roadmap_milestone(root: Path) -> str:
+    roadmap = _load_yaml_mapping(root / ".azoth" / "roadmap.yaml")
+    try:
+        return roadmap_task_id.active_milestone(roadmap)
+    except ValueError:
+        return ""
+
+
+def _active_spec_ref(root: Path, filename: str) -> str:
+    milestone = _active_roadmap_milestone(root)
+    if not milestone:
+        return ""
+    return f".azoth/roadmap-specs/{milestone}/{filename}"
+
+
+def _optional_vision_anchor(root: Path) -> str:
+    anchor = _active_spec_ref(root, VISION_ANCHOR_FILENAME)
+    return anchor if anchor and (root / anchor).is_file() else ""
 
 
 def _write_yaml_mapping(path: Path, data: dict[str, Any]) -> None:
@@ -486,8 +507,11 @@ def _vision_state(state: dict[str, Any]) -> dict[str, Any]:
     target_rank = VISION_BANDS.get(target_band, VISION_BANDS[DEFAULT_VISION_TARGET_BAND])
     current_rank = VISION_BANDS.get(current_band)
     realized = bool(current_rank is not None and current_rank >= target_rank)
+    anchor = str(vision.get("anchor") or "")
     return {
-        "anchor": str(vision.get("anchor") or DEFAULT_VISION_ANCHOR),
+        "anchor": anchor,
+        "anchor_required": False,
+        "anchor_available": bool(anchor),
         "target_band": target_band if target_band in VISION_BANDS else DEFAULT_VISION_TARGET_BAND,
         "current_band": current_band,
         "realized": realized,
@@ -787,6 +811,15 @@ def _next_campaign_recommendation(
     threshold_rationale = _selection_threshold_rationale(ranked)
     if threshold_rationale:
         draft_declaration["threshold_rationale"] = threshold_rationale
+    evidence_refs = [
+        ".azoth/autonomous-loop-state.local.yaml",
+        ".azoth/initiative-banks/",
+        ".azoth/proposals/",
+        ".azoth/backlog.yaml",
+    ]
+    vision_anchor = _optional_vision_anchor(root)
+    if vision_anchor:
+        evidence_refs.insert(1, vision_anchor)
     return {
         "available": True,
         "reason": "completed_green_campaign_ready_for_fresh_budget",
@@ -797,13 +830,12 @@ def _next_campaign_recommendation(
             "readiness",
             "fresh_budget_required",
         ],
-        "evidence_refs": [
-            ".azoth/autonomous-loop-state.local.yaml",
-            ".azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md",
-            ".azoth/initiative-banks/",
-            ".azoth/proposals/",
-            ".azoth/backlog.yaml",
-        ],
+        "evidence_refs": evidence_refs,
+        "vision_anchor": {
+            "path": vision_anchor or None,
+            "required": False,
+            "available": bool(vision_anchor),
+        },
         "ux_anchor_gaps": [
             "continuation_after_closeout",
             "direction_over_micromanagement",
@@ -3936,14 +3968,30 @@ def _candidate_hydrated_task_ref(candidate: dict[str, Any]) -> str:
     return str(hydration_plan.get("hydrated_task_ref") or candidate.get("proposed_task_id") or "")
 
 
-def _candidate_hydrated_spec_ref(candidate: dict[str, Any], task_ref: str) -> str:
+def _safe_roadmap_spec_ref(raw: Any) -> str:
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts:
+        return ""
+    if len(path.parts) < 4 or path.parts[:2] != (".azoth", "roadmap-specs"):
+        return ""
+    return path.as_posix()
+
+
+def _candidate_hydrated_spec_ref(
+    root: Path,
+    candidate: dict[str, Any],
+    task_ref: str,
+) -> str:
     hydration_plan = (
         candidate.get("hydration_plan") if isinstance(candidate.get("hydration_plan"), dict) else {}
     )
     if hydration_plan.get("hydrated_spec_ref"):
-        return str(hydration_plan.get("hydrated_spec_ref"))
+        return _safe_roadmap_spec_ref(hydration_plan.get("hydrated_spec_ref"))
     if task_ref:
-        return f".azoth/roadmap-specs/v0.2.0/{task_ref}.yaml"
+        return _active_spec_ref(root, f"{task_ref}.yaml")
     return ""
 
 
@@ -3989,7 +4037,7 @@ def _candidate_slice_rows(root: Path, doc: dict[str, Any]) -> list[dict[str, Any
                 "initiative_ref": str(candidate.get("initiative_ref") or ""),
                 "status": status or "missing",
                 "hydrated_task_ref": task_ref,
-                "hydrated_spec_ref": _candidate_hydrated_spec_ref(candidate, task_ref),
+                "hydrated_spec_ref": _candidate_hydrated_spec_ref(root, candidate, task_ref),
                 "target_layer": str(candidate.get("target_layer") or ""),
                 "delivery_pipeline": str(candidate.get("delivery_pipeline") or ""),
                 "planning_vs_executable_status": _candidate_planning_vs_executable_status(
@@ -4459,9 +4507,7 @@ def _hydrated_task_artifacts_exist(root: Path, task_ref: str) -> bool:
     task_id = str(task_ref or "").strip()
     if not task_id:
         return False
-    spec_path = root / ".azoth" / "roadmap-specs" / "v0.2.0" / f"{task_id}.yaml"
-    if not spec_path.exists():
-        return False
+    spec_refs: set[str] = set()
     for rel_path in (".azoth/roadmap.yaml", ".azoth/backlog.yaml"):
         path = root / rel_path
         if not path.exists():
@@ -4469,7 +4515,15 @@ def _hydrated_task_artifacts_exist(root: Path, task_ref: str) -> bool:
         data = safe_load_yaml_path(path)
         if not _yaml_tree_contains_task_ref(data, task_id):
             return False
-    return True
+        for node in _yaml_tree_matching_task_nodes(data, task_id):
+            spec_ref = _safe_roadmap_spec_ref(node.get("spec_ref"))
+            if spec_ref:
+                spec_refs.add(spec_ref)
+    if not spec_refs:
+        active_ref = _active_spec_ref(root, f"{task_id}.yaml")
+        if active_ref:
+            spec_refs.add(active_ref)
+    return any((root / spec_ref).is_file() for spec_ref in spec_refs)
 
 
 def _high_severity_quality_signal(report: dict[str, Any]) -> dict[str, str] | None:
@@ -4913,7 +4967,8 @@ def _route_decision_from_lifecycle_report(root: Path, report: dict[str, Any]) ->
             "scaffold_command": readiness.get("scaffold_command"),
         },
         "ux_anchor_rationale": {
-            "anchor": DEFAULT_VISION_ANCHOR,
+            "anchor": _optional_vision_anchor(root) or None,
+            "anchor_required": False,
             "route_basis": ux_basis,
         },
         "protected_stops": protected_stops,
@@ -5368,7 +5423,8 @@ def init_loop(
             }
         ],
         "vision": {
-            "anchor": DEFAULT_VISION_ANCHOR,
+            "anchor": _optional_vision_anchor(root),
+            "anchor_required": False,
             "target_band": DEFAULT_VISION_TARGET_BAND,
             "current_band": "unevaluated",
             "realized": False,
@@ -5431,7 +5487,8 @@ def record_vision_score(
     realized = VISION_BANDS[normalized_band] >= VISION_BANDS[target_band]
     vision.update(
         {
-            "anchor": str(vision.get("anchor") or DEFAULT_VISION_ANCHOR),
+            "anchor": str(vision.get("anchor") or ""),
+            "anchor_required": False,
             "target_band": target_band,
             "current_band": normalized_band,
             "realized": realized,

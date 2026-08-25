@@ -55,11 +55,10 @@ At session start, declare:
 After approval, the orchestrator may continue end-to-end until a required human gate,
 threshold stop, or explicit abort condition is reached.
 
-**Digest artifact (canonical path):**
-
-`.azoth/roadmap-specs/<active_roadmap_version>/SWARM_RESEARCH_DIGEST.yaml`
-
-Align `<active_roadmap_version>` with `.azoth/roadmap.yaml` top-level `active_version` (D48).
+**Digest artifact:** place `SWARM_RESEARCH_DIGEST.yaml` in the current project's active
+milestone roadmap-spec directory. Resolve the milestone from `.azoth/roadmap.yaml`
+top-level `active_version` by removing its `-pN` working-slice suffix; never substitute
+the installed Azoth toolkit version.
 
 ## Prerequisites
 
@@ -80,7 +79,10 @@ Before running DYNAMIC-FULL-AUTO+ end-to-end:
 
 ## Friction map (P1-012)
 
-Canonical problem statement (from `.azoth/roadmap-specs/v0.2.0/P1-012.yaml`): documented DFA+ implies a smooth path from goal through digest to gated delivery, but **scope/pipeline gates**, **IDE asymmetry** (hooks vs simulated parity), **manual queen merge / append-pack / validate**, uneven `Task` fan-out, and **handoff to `/auto` | `/deliver` often needing a fresh scope approval** make the flow feel discontinuous. **P1-001 / P1-002** (durable run state, declarative waves) are deferred and widen the honesty gap until delivered.
+Known friction: DFA+ implies a smooth path from goal through digest to gated delivery, but
+**scope/pipeline gates**, **IDE asymmetry** (hooks vs simulated parity), **manual queen
+merge / append-pack / validate**, uneven worker fan-out, and **handoff to `/auto` or
+`/deliver` often needing a fresh scope approval** can make the flow feel discontinuous.
 
 | Friction | Blast radius (surfaces) | Decisions |
 | -------- | ------------------------ | --------- |
@@ -95,11 +97,14 @@ Canonical problem statement (from `.azoth/roadmap-specs/v0.2.0/P1-012.yaml`): do
 **Mechanical helper:**
 
 ```bash
-python3 scripts/swarm_research_digest.py validate .azoth/roadmap-specs/v0.2.0/SWARM_RESEARCH_DIGEST.yaml
-python3 scripts/swarm_research_digest.py init PATH --roadmap-version v0.2.0
+python3 scripts/swarm_research_digest.py validate "$DIGEST_PATH"
+python3 scripts/swarm_research_digest.py init "$DIGEST_PATH" --roadmap-version "$ACTIVE_MILESTONE"
 # append one pack: YAML mapping with id, topic, sources[], implications_for_azoth[], risks[]
 python3 scripts/swarm_research_digest.py append-pack PATH --pack new_pack.yaml
 ```
+
+Set `ACTIVE_MILESTONE` from the consumer roadmap before the run and set `DIGEST_PATH` to
+that milestone's project-local digest file.
 
 Use `**append-pack**` after each researcher Task returns a pack (idempotent on `id`: duplicate
 `id` is rejected). Run `**validate**` before commit and after manual edits.

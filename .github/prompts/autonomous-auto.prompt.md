@@ -1,7 +1,7 @@
 ---
 mode: agent
 description: 'Autonomous Auto Mode: standalone adaptive pipeline for branch-local
-  Azoth self-development with alignment_mode: async, alignment packets, and approval_basis
+  consumer-project delivery with alignment_mode: async, alignment packets, and approval_basis
   persistence'
 agent: orchestrator
 ---
@@ -14,8 +14,8 @@ Mode; do not treat it as a submode of `dynamic-full-auto`.
 
 ## Autonomous Auto Mode
 
-Use `autonomous-auto` when the operator grants a branch-local autonomy budget for Azoth
-self-development and wants alignment to arrive asynchronously. The session must route through
+Use `autonomous-auto` when the operator grants a branch-local autonomy budget for consumer-project
+delivery and wants alignment to arrive asynchronously. The session must route through
 the delivery control plane as `pipeline_command=autonomous-auto`.
 
 Before execution, declare:
@@ -56,7 +56,7 @@ After the operator approves the rendered packet, feed its existing fields into l
 the preset override `autonomous_loop.py` strategy-preflight, lifecycle-route, scope gates,
 write claims, run-ledger evidence, or protected stop conditions.
 
-Autonomous self-development starts after that approval. The declaration's `approval_basis`
+Autonomous project delivery starts after that approval. The declaration's `approval_basis`
 may satisfy branch-local routine approval fields, but protected human gates still stop.
 
 ## Async Alignment
@@ -70,10 +70,12 @@ apply them at the next safe checkpoint while non-blocked work continues.
 Autonomous auto must still deliver with an adaptive pipeline:
 
 - Stage 0 classification and `skills/auto-router/SKILL.md` composition are required.
-- When autonomous-mode behavior is in scope, read
-  `.azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md`; architect stages emit
-  `UX Anchor Fit` and evaluator stages emit `UX Anchor Scorecard` using Green/Yellow/Red
-  alignment bands.
+- When autonomous-mode behavior is in scope, resolve the active milestone from
+  `.azoth/roadmap.yaml`. A project may optionally provide an
+  `AUTONOMOUS-AUTO-UX-EXPERIENCE.md` file in that milestone's roadmap-spec directory.
+  When present, architect stages emit `UX Anchor Fit` and evaluator stages emit
+  `UX Anchor Scorecard`; when absent, use the approved vision declaration and do not
+  require a toolkit-private anchor.
 - Research/explore waves are inserted when the goal is not ready to hydrate or deliver.
 - Hydration and implementation stay separate artifact-class stages when both are needed.
 - Each opened child scope carries a compact `delegation_plan` in `.azoth/scope-gate.json`.
@@ -92,7 +94,7 @@ Autonomous auto must still deliver with an adaptive pipeline:
 
 ## Loop Governor
 
-When the operator grants a continuing self-development budget, run `autonomous-auto` as a
+When the operator grants a continuing project-delivery budget, run `autonomous-auto` as a
 bounded loop of normal Azoth sessions:
 
 1. Finish the current adaptive pipeline and close out. Treat that closeout as a checkpoint,
@@ -123,7 +125,7 @@ Non-stop loop decisions carry an architect decision capsule with selected candid
 rejected alternatives where visible, readiness/risk/value scoring, and alignment checkpoint
 summary. Opened scope gates should persist the autonomy budget and decision capsule.
 
-For durable self-development over time, prefer a Codex automation or cron-style wakeup that
+For durable project evolution over time, prefer a Codex automation or cron-style wakeup that
 runs one bounded iteration per wakeup. A single long interactive thread is acceptable for
 calibration experiments, but not the durable default.
 

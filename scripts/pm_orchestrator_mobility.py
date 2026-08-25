@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import roadmap_task_id
 from planning_bank_validate import build_initiative_readiness_report
 from yaml_helpers import safe_load_yaml_path
 
@@ -17,12 +18,6 @@ from yaml_helpers import safe_load_yaml_path
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = "pm_orchestrator_mobility_plan_v1"
 DEFAULT_CAMPAIGN_ID = "pm-orchestrator-initiative-mobility-20260504"
-CANONICAL_WRITE_SET = [
-    ".azoth/roadmap.yaml",
-    ".azoth/backlog.yaml",
-    ".azoth/roadmap-specs/v0.2.0/",
-    ".azoth/initiative-banks/",
-]
 VALIDATION_SET = [
     "python3 scripts/roadmap_dashboard.py",
     "python3 scripts/azoth-deploy.py --check",
@@ -44,6 +39,22 @@ _BACKLOG_DONE_STATUSES = {"complete", "completed", "deferred"}
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _canonical_write_set(repo_root: Path) -> list[str]:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    if not roadmap_path.is_file():
+        raise ValueError("consumer roadmap is required to resolve the hydration write set")
+    roadmap = safe_load_yaml_path(roadmap_path)
+    if not isinstance(roadmap, dict):
+        raise ValueError("consumer roadmap must be a mapping")
+    milestone = roadmap_task_id.active_milestone(roadmap)
+    return [
+        ".azoth/roadmap.yaml",
+        ".azoth/backlog.yaml",
+        f".azoth/roadmap-specs/{milestone}/",
+        ".azoth/initiative-banks/",
+    ]
 
 
 def discover_initiative_banks(repo_root: Path) -> list[Path]:
@@ -107,13 +118,14 @@ def _score_report(report: dict[str, Any], route_state: str) -> dict[str, int]:
     }
 
 
-def _approval_prompt(report: dict[str, Any]) -> str:
+def _approval_prompt(report: dict[str, Any], *, repo_root: Path) -> str:
     candidate_id = report.get("candidate_id") or "UNKNOWN-CANDIDATE"
     source_bank = report.get("source_bank_ref") or "UNKNOWN-BANK"
     command = report.get("scaffold_command") or "UNKNOWN-SCAFFOLD"
+    write_set = _canonical_write_set(repo_root)
     return (
         f"Approve hydrate_task for {candidate_id} from {source_bank} using {command}. "
-        f"Allowed writes: {', '.join(CANONICAL_WRITE_SET)}. "
+        f"Allowed writes: {', '.join(write_set)}. "
         f"Validation: {'; '.join(VALIDATION_SET)}. "
         "This approval does not authorize any other candidate, public sync/release, "
         "cockpit/project writes, dependency/network/credential work, destructive actions, "
@@ -139,7 +151,7 @@ def _candidate_evaluation(report: dict[str, Any], *, repo_root: Path = ROOT) -> 
         "scaffold_command": report.get("scaffold_command"),
     }
     if report.get("ready_to_hydrate"):
-        evaluation["required_human_approval"] = _approval_prompt(report)
+        evaluation["required_human_approval"] = _approval_prompt(report, repo_root=repo_root)
     return evaluation
 
 
@@ -195,7 +207,9 @@ def build_mobility_capsule(
         ),
         "human_gate_required": human_gate_required,
         "required_human_approval": (selected.get("required_human_approval") if selected else None),
-        "allowed_write_set_after_gate": CANONICAL_WRITE_SET if human_gate_required else [],
+        "allowed_write_set_after_gate": (
+            _canonical_write_set(repo_root) if human_gate_required else []
+        ),
         "scaffold_command_after_gate": selected.get("scaffold_command") if selected else None,
         "validation_set_after_gate": VALIDATION_SET,
         "canonical_boundary": {

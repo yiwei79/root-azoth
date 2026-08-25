@@ -7,6 +7,7 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -14,6 +15,16 @@ SCRIPT = REPO_ROOT / "scripts" / "roadmap_task_id.py"
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import roadmap_task_id as mod  # noqa: E402
+
+
+def test_active_milestone_resolves_consumer_seed_and_rejects_unsafe_values() -> None:
+    assert mod.active_milestone({"active_version": "v0.1.0-p1"}) == "v0.1.0"
+
+    with pytest.raises(ValueError, match="active_version is required"):
+        mod.active_milestone({})
+
+    with pytest.raises(ValueError, match="invalid milestone"):
+        mod.active_milestone({"active_version": "../../private"})
 
 
 def _write_repo(

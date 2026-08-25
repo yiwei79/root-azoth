@@ -131,14 +131,16 @@ Full closeout only.
   and complete W1/W2/W4. Do not silently skip W3.
 - Log: `W3 ✓ memory updated — proceeding to W4`
 
-**W4 — Bump patch version and refresh orientation cache** → `python scripts/version-bump.py --patch`
+**W4 — Refresh the session orientation cache**
 
 Full closeout only.
 
-- Run `python scripts/version-bump.py --patch` from the repo root
-- This always fires — every closeout increments the patch version
-- Delete `.azoth/session-orientation.txt` (if present) so that IDEs without a `SessionStart` hook do not surface stale orientation in the next session.
-- Log: `W4 ✓ version bumped X → Y, orientation cache cleared`
+- Delete `.azoth/session-orientation.txt` (if present) so that IDEs without a
+  `SessionStart` hook do not surface stale orientation in the next session.
+- Do not mutate the installed Azoth toolkit version during routine consumer-project
+  closeout. If the project has its own release/version policy, run that separately under
+  the project's explicit release approval and native tooling.
+- Log: `W4 ✓ orientation cache cleared; project version unchanged by Azoth closeout`
 
 ### On Failure
 

@@ -40,6 +40,16 @@ def _load_yaml(path: Path) -> dict:
     return loaded
 
 
+def test_active_spec_ref_uses_neutral_consumer_roadmap_seed(tmp_path: Path) -> None:
+    roadmap_path = tmp_path / ".azoth/roadmap.yaml"
+    roadmap_path.parent.mkdir(parents=True)
+    roadmap_path.write_text("active_version: v0.1.0-p1\n", encoding="utf-8")
+
+    assert planning_bank_validate._active_spec_ref(tmp_path, "T-001") == (
+        ".azoth/roadmap-specs/v0.1.0/T-001.yaml"
+    )
+
+
 def _write_temp_initiative_bank(
     repo: Path, *, initiative_id: str = "INI-TEST"
 ) -> tuple[Path, dict]:

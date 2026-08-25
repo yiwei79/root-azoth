@@ -41,5 +41,4 @@ migration:
     - .claude/commands/sync.md remains the authored semantic body during the bridge.
 
 references:
-  - .azoth/roadmap-specs/v0.2.0/T-004.yaml
   - docs/CANONICAL_COMMAND_CONTRACT.md

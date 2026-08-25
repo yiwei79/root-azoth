@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+import roadmap_task_id
 import research_sufficiency
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -144,6 +146,20 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise PlanningBankValidationError(f"{path}: root must be a mapping")
     return loaded
+
+
+def _active_spec_ref(repo_root: Path, task_ref: str) -> str:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    if not roadmap_path.is_file():
+        raise PlanningBankValidationError(
+            "consumer roadmap is required to resolve the hydrated task spec"
+        )
+    roadmap = _load_yaml(roadmap_path)
+    try:
+        milestone = roadmap_task_id.active_milestone(roadmap)
+    except ValueError as exc:
+        raise PlanningBankValidationError(str(exc)) from exc
+    return f".azoth/roadmap-specs/{milestone}/{task_ref}.yaml"
 
 
 def _non_empty_string(value: Any) -> str | None:
@@ -897,12 +913,14 @@ def hydrate_approved_initiative_candidate(
     task_ref = output_lines[0] if output_lines else ""
     if not task_ref:
         raise PlanningBankValidationError("roadmap_scaffold.py did not emit a task id")
-    spec_ref = f".azoth/roadmap-specs/v0.2.0/{task_ref}.yaml"
+    spec_ref = ""
     for line in output_lines[1:]:
         marker = ".azoth/roadmap-specs/"
         if marker in line and line.endswith(".yaml"):
             spec_ref = line[line.index(marker) :]
             break
+    if not spec_ref:
+        spec_ref = _active_spec_ref(repo_root, task_ref)
 
     doc = _load_yaml(path)
     candidates = doc.get("candidate_slices")

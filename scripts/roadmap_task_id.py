@@ -28,6 +28,7 @@ BACKLOG_WIDTH = 3
 
 _ID_RE = re.compile(r"^([A-Z][A-Z0-9]*)-(\d+)$")
 _SLICE_RE = re.compile(r"^(v\d+\.\d+\.\d+)-p\d+$")
+_MILESTONE_RE = re.compile(r"^v\d+\.\d+\.\d+$")
 
 
 def _die(msg: str) -> None:
@@ -49,6 +50,17 @@ def milestone_for_version(version_id: str) -> str:
     if match:
         return match.group(1)
     return version_id.strip()
+
+
+def active_milestone(roadmap: dict[str, Any]) -> str:
+    """Resolve a safe roadmap-spec milestone from roadmap active_version."""
+    active_version = str(roadmap.get("active_version") or "").strip()
+    if not active_version:
+        raise ValueError("roadmap active_version is required to resolve roadmap specs")
+    milestone = milestone_for_version(active_version)
+    if not _MILESTONE_RE.fullmatch(milestone):
+        raise ValueError(f"roadmap active_version has an invalid milestone: {active_version!r}")
+    return milestone
 
 
 def resolve_namespace_policy(roadmap: dict[str, Any], milestone: str) -> tuple[str, int]:

@@ -27,6 +27,10 @@ seeds:
 
     This directory is reserved for the consumer project's first project-local
     roadmap milestone. Its version is independent of the installed Azoth toolkit version.
+
+    Runtime helpers resolve this directory from `.azoth/roadmap.yaml` `active_version`
+    (`v0.1.0-p1` resolves to milestone `v0.1.0`). Project-specific vision or UX anchors
+    are optional and must not be assumed to exist unless the project creates them.
   .azoth/initiative-banks/.gitkeep: ""
   .azoth/design-banks/.gitkeep: ""
   .azoth/autonomous-loop-state.local.yaml.example: |

@@ -23,4 +23,4 @@ Execution contract:
 Command metadata:
 - Contract path: `commands/autonomous-auto/command.yaml`
 - Body source path: `.claude/commands/autonomous-auto.md`
-- Description: Autonomous Auto Mode: standalone adaptive pipeline for branch-local Azoth self-development with alignment_mode: async, alignment packets, and approval_basis persistence
+- Description: Autonomous Auto Mode: standalone adaptive pipeline for branch-local consumer-project delivery with alignment_mode: async, alignment packets, and approval_basis persistence

@@ -71,5 +71,4 @@ migration:
     - .claude/commands/test.md remains the authored semantic body during the bridge.
 
 references:
-  - .azoth/roadmap-specs/v0.2.0/T-003.yaml
   - docs/CANONICAL_COMMAND_CONTRACT.md

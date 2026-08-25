@@ -168,6 +168,63 @@ def test_init_loop_writes_active_state_with_approval_packet(tmp_path: Path) -> N
     assert read["pending_alignment_packets"] == 0
     assert read["vision_target"] == "green"
     assert read["continuation_required"] is True
+    assert state["vision"]["anchor"] == ""
+    assert state["vision"]["anchor_required"] is False
+
+
+def test_consumer_seed_derives_task_specs_and_uses_optional_vision_anchor(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path / ".azoth/roadmap.yaml",
+        {
+            "active_version": "v0.1.0-p1",
+            "tasks": [
+                {
+                    "id": "T-001",
+                    "spec_ref": ".azoth/roadmap-specs/v0.1.0/T-001.yaml",
+                }
+            ],
+        },
+    )
+    _write_yaml(
+        tmp_path / ".azoth/backlog.yaml",
+        [
+            {
+                "id": "T-001",
+                "status": "pending",
+                "spec_ref": ".azoth/roadmap-specs/v0.1.0/T-001.yaml",
+            }
+        ],
+    )
+    _write_yaml(
+        tmp_path / ".azoth/roadmap-specs/v0.1.0/T-001.yaml",
+        {"id": "T-001", "title": "Consumer task"},
+    )
+    anchor = tmp_path / ".azoth/roadmap-specs/v0.1.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
+    anchor.write_text("# Optional project vision anchor\n", encoding="utf-8")
+
+    state_path = tmp_path / ".azoth/autonomous-loop-state.local.yaml"
+    autonomous_loop.init_loop(
+        tmp_path,
+        state_path,
+        approval_basis="User approved one consumer-project iteration.",
+        objective="Consumer-project iteration",
+        loop_id="loop-consumer-seed",
+        branch="codex/test",
+        max_iterations=1,
+        replay_threshold=0,
+        allowed_actions=["ship_task"],
+    )
+    state = yaml.safe_load(state_path.read_text(encoding="utf-8"))
+
+    assert state["vision"]["anchor"] == (
+        ".azoth/roadmap-specs/v0.1.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md"
+    )
+    assert autonomous_loop._candidate_hydrated_spec_ref(tmp_path, {}, "T-001") == (
+        ".azoth/roadmap-specs/v0.1.0/T-001.yaml"
+    )
+    assert autonomous_loop._hydrated_task_artifacts_exist(tmp_path, "T-001") is True
 
 
 def test_init_loop_refuses_existing_state_without_replace(tmp_path: Path) -> None:

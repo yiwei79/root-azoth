@@ -69,8 +69,11 @@ def _base_bank(initiative_id: str, candidate_id: str) -> dict:
 
 
 def _write_bank(repo: Path, bank: dict) -> Path:
+    roadmap_path = repo / ".azoth" / "roadmap.yaml"
+    roadmap_path.parent.mkdir(parents=True, exist_ok=True)
+    roadmap_path.write_text("active_version: v0.1.0-p1\n", encoding="utf-8")
     path = repo / ".azoth" / "initiative-banks" / f"{bank['initiative_id']}.yaml"
-    path.parent.mkdir(parents=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(bank, sort_keys=False), encoding="utf-8")
     return path
 
@@ -89,6 +92,7 @@ def test_ready_candidate_emits_plan_only_gate_packet(tmp_path: Path) -> None:
     assert capsule["selected_candidate"]["candidate_id"] == "slice-temp-001-a"
     assert capsule["scaffold_command_after_gate"].startswith("python3 scripts/roadmap_scaffold.py")
     assert ".azoth/roadmap.yaml" in capsule["allowed_write_set_after_gate"]
+    assert ".azoth/roadmap-specs/v0.1.0/" in capsule["allowed_write_set_after_gate"]
     assert "Approve hydrate_task for slice-temp-001-a" in capsule["required_human_approval"]
     assert capsule["canonical_boundary"]["status"] == "unchanged_by_this_helper"
 

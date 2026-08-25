@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Create, append to, and validate SWARM_RESEARCH_DIGEST.yaml (DYNAMIC-FULL-AUTO+).
 
-Canonical path pattern: .azoth/roadmap-specs/<roadmap_version>/SWARM_RESEARCH_DIGEST.yaml
+The digest belongs in the consumer project's active milestone roadmap-spec directory.
 See skills/dynamic-full-auto/SKILL.md.
 """
 

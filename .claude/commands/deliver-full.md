@@ -112,8 +112,10 @@ spawn body.
      `{"session_id":"<session>","gate":"final-delivery","actor_type":"human","approved":true,"decision":"approved"}`
    - `scripts/do_closeout.py` consumes that JSONL evidence read-only and must fail closed
      if the latest matching session record is missing, non-human, malformed, or denied.
-   - After human final approval passes: run `python scripts/version-bump.py --patch`
-   - Log: `Stage 7 ✓ version bumped X → Y`
+   - Do not mutate the installed Azoth toolkit version as part of consumer-project
+     delivery. If the project has its own release/version policy, run it separately under
+     that project's explicit release approval and native tooling.
+   - Log: `Stage 7 ✓ final delivery approval recorded`
 
 ## Rules
 
