@@ -97,7 +97,7 @@ REQUIRED_PRODUCT_PATHS = (
     "kernel/TRUST_CONTRACT.md",
 )
 
-REQUIRED_CONSUMER_PATHS = (
+BASE_CONSUMER_PATHS = (
     "CLAUDE.md",
     "AGENTS.md",
     "azoth.yaml",
@@ -111,6 +111,9 @@ REQUIRED_CONSUMER_PATHS = (
     ".azoth/kernel-checksums.sha256",
     ".azoth/memory/episodes.jsonl",
     ".azoth/memory/patterns.yaml",
+)
+
+STANDARD_CONSUMER_PATHS = (
     "skills",
     "agents",
 )
@@ -363,7 +366,9 @@ def assert_sanitized(root: Path, strip_patterns: list[str]) -> None:
 
 
 def assert_consumer_install(consumer: Path, *, setup_level: str | None = None) -> None:
-    assert_required_paths(consumer, REQUIRED_CONSUMER_PATHS)
+    assert_required_paths(consumer, BASE_CONSUMER_PATHS)
+    if setup_level in {"2", "3"}:
+        assert_required_paths(consumer, STANDARD_CONSUMER_PATHS)
     manifest = yaml.safe_load((consumer / "azoth.yaml").read_text(encoding="utf-8"))
     platforms = manifest.get("platforms")
     if not isinstance(platforms, list) or not platforms:

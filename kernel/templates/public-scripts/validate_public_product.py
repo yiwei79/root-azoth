@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 EXPECTED_VERSION = "{{PUBLIC_VERSION}}"
 EXPECTED_CHANNEL = "{{RELEASE_CHANNEL}}"
-EXPECTED_TEST_PATHS = [path for path in """{{PUBLIC_TEST_PATHS_LINES}}""".splitlines() if path]
+EXPECTED_TEST_PATHS = """{{PUBLIC_TEST_PATHS_LINES}}""".splitlines()
 TEXT_SUFFIXES = {".md", ".yaml", ".yml", ".json", ".py", ".txt", ".toml"}
 REQUIRED_PATHS = (
     "README.md",

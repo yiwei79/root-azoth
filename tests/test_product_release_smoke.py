@@ -53,8 +53,11 @@ def _consumer_path_from_stdout(stdout: str) -> Path:
     raise AssertionError(f"missing consumer_bash path in output:\n{stdout}")
 
 
-def _write_minimal_consumer_install(root: Path) -> None:
-    for required_path in product_release_smoke.REQUIRED_CONSUMER_PATHS:
+def _write_minimal_consumer_install(root: Path, *, setup_level: str | None = None) -> None:
+    required_paths = list(product_release_smoke.BASE_CONSUMER_PATHS)
+    if setup_level in {"2", "3"}:
+        required_paths.extend(product_release_smoke.STANDARD_CONSUMER_PATHS)
+    for required_path in required_paths:
         path = root / required_path
         if path.suffix:
             _write(path, "seed\n")
@@ -111,6 +114,37 @@ def test_product_release_smoke_checks_extract_without_install(tmp_path: Path) ->
     assert not (tmp_path / "product" / ".venv").exists()
 
 
+@pytest.mark.parametrize("setup_level", ("1", "2"))
+def test_product_release_smoke_validates_minimal_and_standard_installs(
+    tmp_path: Path,
+    setup_level: str,
+) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--out",
+            str(tmp_path / f"product-{setup_level}"),
+            "--setup-level",
+            setup_level,
+            "--skip-ruff",
+        ],
+        cwd=REPO,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    consumer = _consumer_path_from_stdout(result.stdout)
+    product_release_smoke.assert_consumer_install(consumer, setup_level=setup_level)
+    if setup_level == "1":
+        assert not (consumer / "skills").exists()
+        assert not (consumer / "agents").exists()
+    else:
+        assert (consumer / "skills").is_dir()
+        assert (consumer / "agents").is_dir()
+
+
 def test_product_release_smoke_setup_level_3_materializes_full_runtime(
     tmp_path: Path,
 ) -> None:
@@ -150,7 +184,7 @@ def test_assert_consumer_install_rejects_missing_installed_runtime_reference(
 ) -> None:
     consumer = tmp_path / "consumer"
     consumer.mkdir()
-    _write_minimal_consumer_install(consumer)
+    _write_minimal_consumer_install(consumer, setup_level="3")
     _write_full_runtime_bundle(consumer)
     _write(consumer / ".gitignore", "\n".join(product_release_smoke.FULL_RUNTIME_GITIGNORE_RULES))
     _write(
