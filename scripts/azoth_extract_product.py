@@ -69,7 +69,7 @@ DEFAULT_CLAUDE_SUBSTITUTIONS: dict[str, str] = {
     "PROJECT_NAME": "Azoth",
     "GITHUB_USER": "your-org",
     "LANGUAGE": "Python",
-    "DESCRIPTION": "The Universal Agentic Toolkit — agentic development discipline for AI-assisted projects.",
+    "DESCRIPTION": "An inspectable toolkit for governed AI-assisted software delivery.",
     "SOURCE_DIR": "src",
     "TEST_DIR": "tests",
     "FORMATTER": "ruff format + ruff check",
@@ -142,30 +142,6 @@ def transform_agent_copilot(agent_path: Path) -> tuple[str, str]:
     if "model" in meta:
         frontmatter["model"] = meta["model"]
     return name, render_frontmatter(frontmatter) + body
-
-
-PUBLIC_COPILOT_ONBOARDING = """
-## Fresh GitHub Copilot project
-
-From an empty target repository, force the Copilot surface explicitly:
-
-```bash
-AZOTH_PLATFORMS=copilot bash /path/to/azoth/install.sh
-```
-
-Windows PowerShell:
-
-```powershell
-$env:AZOTH_PLATFORMS = "copilot"
-pwsh -File C:\\path\\to\\azoth\\install.ps1
-```
-
-The Copilot install creates `.github/copilot-instructions.md`, `.github/prompts/`,
-`.github/agents/`, `AGENTS.md`, `CLAUDE.md`, `azoth.yaml`, and `.azoth/kernel/`.
-If no `AZOTH_PLATFORMS` override is set, the installers include GitHub Copilot
-alongside detected tools; if no tools are detected, they default to Claude Code +
-GitHub Copilot.
-"""
 
 
 def _die(msg: str) -> None:
@@ -459,7 +435,7 @@ def apply_set_public_manifest(
         "schema_version": 1,
         "name": "azoth",
         "version": public_version,
-        "description": source_manifest.get("description") or "The Universal Agentic Toolkit",
+        "description": source_manifest.get("description") or "An inspectable toolkit for governed AI-assisted software delivery",
         "release_channel": release_channel,
         "provenance": {
             "source_delivery_version": str(source_manifest.get("version") or "unknown"),
@@ -617,8 +593,6 @@ def emit_public_assets(
         rtext = rtext.replace("{{" + k + "}}", v)
     if "{{" in rtext:
         raise RuntimeError("README template has unresolved placeholders")
-    if "AZOTH_PLATFORMS=copilot" not in rtext:
-        rtext = rtext.rstrip() + "\n\n" + PUBLIC_COPILOT_ONBOARDING.strip() + "\n"
     readme_dest.write_text(rtext, encoding="utf-8")
 
     copilot_template = source_root / "kernel" / "templates" / "copilot-instructions.md.template"

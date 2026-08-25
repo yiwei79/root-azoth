@@ -103,7 +103,7 @@ def test_product_release_smoke_checks_extract_without_install(tmp_path: Path) ->
     assert "product_release_smoke: OK" in result.stdout
     assert (tmp_path / "product" / "README.md").is_file()
     product_readme = (tmp_path / "product" / "README.md").read_text(encoding="utf-8")
-    assert "AZOTH_PLATFORMS=copilot" in product_readme
+    assert "AZOTH_PLATFORMS=copilot" not in product_readme
     assert (tmp_path / "product" / ".github" / "workflows" / "ci.yml").is_file()
     assert (tmp_path / "product" / ".github" / "copilot-instructions.md").is_file()
     assert (tmp_path / "product" / ".github" / "prompts" / "auto.prompt.md").is_file()

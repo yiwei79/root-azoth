@@ -3,7 +3,7 @@
 
 name: root-azoth
 version: 0.2.1.0
-description: The Universal Agentic Toolkit
+description: An inspectable toolkit for governed AI-assisted software delivery
 
 # Root scaffold identity (D34-D38)
 scope:

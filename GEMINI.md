@@ -1,13 +1,14 @@
-# AZOTH - The Universal Agentic Toolkit
+# AZOTH - Governed Agentic Engineering Toolkit
 
 > *"Be water, my friend."* - Azoth is the alchemist's universal solvent:
 > it dissolves into any project and transforms how agents work within it.
 
 ## What Is Azoth
 
-This project uses the **Azoth** agentic toolkit. Azoth provides disciplined
-agents, auto-improving memory, trusted autonomous pipelines, and a single
-human alignment point.
+This project uses **Azoth**, an inspectable toolkit for governed AI-assisted
+software delivery. Its Personal Harness preview keeps ordinary work lightweight
+while preserving explicit authority, evidence, stopping, and recovery boundaries
+for consequential work.
 
 ## Context Files
 
