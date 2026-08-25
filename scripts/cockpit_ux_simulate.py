@@ -21,8 +21,7 @@ except ModuleNotFoundError:  # pragma: no cover - defensive direct execution pat
     from personal_harness_daily_flow import run_daily_flow
 
 
-DEFAULT_COCKPIT_ROOT = Path("/Users/yiwei/GithubRepos/yiwei-azoth-cockpit")
-DEFAULT_ROOT_AZOTH = Path("/Users/yiwei/GithubRepos/root-azoth")
+DEFAULT_TOOLKIT_ROOT = Path(__file__).resolve().parent.parent
 FORBIDDEN_OUTPUT_SNIPPETS = (
     "source_files",
     "code_summaries",
@@ -123,22 +122,31 @@ def _check_required_output(combined: str, project_id: str) -> list[str]:
 def simulate_cockpit_ux(
     root: Path,
     *,
-    project_id: str = "ras-or-ray",
+    project_id: str | None = None,
+    repo_root: Path | None = None,
     include_bootstrap_verify: bool = True,
 ) -> SimulationResult:
     cockpit_root = root.resolve()
-    project_path = _project_path(cockpit_root, project_id)
+    toolkit_root = (repo_root or DEFAULT_TOOLKIT_ROOT).resolve()
+    selected_project_id = project_id or _first_project_id(cockpit_root)
+    if not selected_project_id:
+        return SimulationResult(output="", errors=["cockpit has no project pointer to simulate"])
+    project_path = _project_path(cockpit_root, selected_project_id)
     project_status_before = _git_status(project_path) if project_path else "missing project"
     cockpit_status_before = _git_status(cockpit_root)
 
     state = load_cockpit(cockpit_root, include_status=True)
-    menu = render_menu(state)
-    project_handoff = render_menu(state, project_id=project_id)
+    menu = render_menu(state, repo_root=toolkit_root)
+    project_handoff = render_menu(
+        state,
+        project_id=selected_project_id,
+        repo_root=toolkit_root,
+    )
     cockpit_errors = check_cockpit(load_cockpit(cockpit_root, include_status=False))
     daily_report = run_daily_flow(
         cockpit_root=cockpit_root,
-        repo_root=DEFAULT_ROOT_AZOTH,
-        project_id=project_id,
+        repo_root=toolkit_root,
+        project_id=selected_project_id,
         goal="Verify context before project work",
         requested_actions=("focused_verification",),
         query_tags=("context",),
@@ -167,17 +175,16 @@ def simulate_cockpit_ux(
         "cockpit menu check OK" if not cockpit_errors else "\n".join(cockpit_errors),
         format_report(cockpit_root, bootstrap_errors),
         "",
-        f"## /cockpit-project {project_id}",
+        f"## /cockpit-project {selected_project_id}",
         project_handoff,
         "",
         "## /cockpit-daily",
         "Command: $azoth-cockpit-daily Verify context before project work",
         (
-            "python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py "
-            "--cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit "
-            "--repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray "
-            "--goal \"Verify context before project work\" --action focused_verification "
-            "--tag context --summary"
+            f"python3 {toolkit_root / 'scripts' / 'personal_harness_daily_flow.py'} "
+            f"--cockpit-root {cockpit_root} --repo-root {toolkit_root} "
+            f"--project {selected_project_id} --goal \"Verify context before project work\" "
+            "--action focused_verification --tag context --summary"
         ),
         json.dumps(
             {
@@ -216,13 +223,13 @@ def simulate_cockpit_ux(
     errors = []
     errors.extend(cockpit_errors)
     errors.extend(bootstrap_errors)
-    errors.extend(_check_required_output(output, project_id))
+    errors.extend(_check_required_output(output, selected_project_id))
     if not daily_report["ok"]:
         errors.append("cockpit daily flow failed")
     if cockpit_status_before != cockpit_status_after:
         errors.append("cockpit git status changed during simulation")
     if project_status_before != project_status_after:
-        errors.append(f"{project_id} git status changed during simulation")
+        errors.append(f"{selected_project_id} git status changed during simulation")
 
     return SimulationResult(output=output, errors=errors)
 
@@ -237,10 +244,22 @@ def format_result(result: SimulationResult) -> str:
     )
 
 
+def _first_project_id(root: Path) -> str | None:
+    state = load_cockpit(root, include_status=False)
+    for project in state.get("projects", []):
+        if not isinstance(project, dict):
+            continue
+        project_id = str(project.get("project_id") or "").strip()
+        if project_id:
+            return project_id
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=DEFAULT_COCKPIT_ROOT)
-    parser.add_argument("--project", default="ras-or-ray")
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--repo-root", type=Path, default=DEFAULT_TOOLKIT_ROOT)
+    parser.add_argument("--project")
     parser.add_argument(
         "--skip-bootstrap-verify",
         action="store_true",
@@ -251,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
     result = simulate_cockpit_ux(
         args.root,
         project_id=args.project,
+        repo_root=args.repo_root,
         include_bootstrap_verify=not args.skip_bootstrap_verify,
     )
     print(format_result(result))

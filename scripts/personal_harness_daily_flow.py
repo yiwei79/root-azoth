@@ -155,6 +155,17 @@ def _selected_project(state: dict[str, Any], project_id: str) -> dict[str, Any] 
     return None
 
 
+def _first_project_id(cockpit_root: Path) -> str | None:
+    state = load_cockpit(cockpit_root.resolve(), include_status=False)
+    for project in state.get("projects", []):
+        if not isinstance(project, dict):
+            continue
+        project_id = str(project.get("project_id") or "").strip()
+        if project_id:
+            return project_id
+    return None
+
+
 def _project_readback(project: dict[str, Any] | None) -> dict[str, str] | None:
     if project is None:
         return None
@@ -388,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cockpit-root", required=True, type=Path)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
-    parser.add_argument("--project", default="ras-or-ray")
+    parser.add_argument("--project")
     parser.add_argument("--goal", required=True)
     parser.add_argument("--action", action="append", default=[])
     parser.add_argument("--path", action="append", default=[])
@@ -401,10 +412,14 @@ def main(argv: list[str] | None = None) -> int:
     if not args.json and not args.summary:
         parser.error("personal harness daily flow output requires --json or --summary")
 
+    project_id = args.project or _first_project_id(args.cockpit_root)
+    if not project_id:
+        parser.error("--project is required when the cockpit has no registered project pointer")
+
     report = run_daily_flow(
         cockpit_root=args.cockpit_root,
         repo_root=args.repo_root,
-        project_id=args.project,
+        project_id=project_id,
         goal=args.goal,
         requested_actions=args.action,
         planned_paths=args.path,

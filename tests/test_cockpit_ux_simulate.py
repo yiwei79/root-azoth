@@ -18,6 +18,7 @@ def test_simulation_runs_all_cockpit_commands_without_writes(tmp_path: Path) -> 
     result = simulate_cockpit_ux(
         root,
         project_id="ras-or-ray",
+        repo_root=ROOT,
         include_bootstrap_verify=False,
     )
 
@@ -58,6 +59,7 @@ def test_simulation_rejects_forbidden_context_leak(tmp_path: Path) -> None:
     result = simulate_cockpit_ux(
         root,
         project_id="ras-or-ray",
+        repo_root=ROOT,
         include_bootstrap_verify=False,
     )
 

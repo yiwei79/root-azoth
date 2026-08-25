@@ -151,29 +151,27 @@ REQUIRED_PROJECT_FIELDS = {
     "validation_commands",
 } | READBACK_PROJECT_FIELDS
 
-ROOT_AZOTH = Path("/Users/yiwei/GithubRepos/root-azoth")
-LOCAL_DAILY_SUMMARY_COMMAND = (
-    'python3 scripts/personal_harness_daily_flow.py --cockpit-root . --repo-root . '
-    '--project ras-or-ray --goal "<today\'s intent>" --action focused_verification '
-    "--tag context --summary"
-)
-
-
 def _default_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _daily_context_command(cockpit_root: Path) -> str:
-    root_daily_script = ROOT_AZOTH / "scripts" / "personal_harness_daily_flow.py"
-    if root_daily_script.is_file():
-        return (
-            f"python3 {shlex.quote(str(root_daily_script))} "
-            f"--cockpit-root {shlex.quote(str(cockpit_root))} "
-            f"--repo-root {shlex.quote(str(ROOT_AZOTH))} "
-            "--project ras-or-ray --goal \"<today's intent>\" "
-            "--action focused_verification --tag context --summary"
-        )
-    return LOCAL_DAILY_SUMMARY_COMMAND
+def _daily_context_command(
+    cockpit_root: Path,
+    *,
+    repo_root: Path | None = None,
+    project_id: str | None = None,
+) -> str:
+    """Return a portable command for the selected cockpit and toolkit checkout."""
+    active_repo_root = (repo_root or _default_root()).resolve()
+    daily_script = active_repo_root / "scripts" / "personal_harness_daily_flow.py"
+    selected_project = str(project_id or "<project-id>").strip() or "<project-id>"
+    return (
+        f"python3 {shlex.quote(str(daily_script))} "
+        f"--cockpit-root {shlex.quote(str(cockpit_root))} "
+        f"--repo-root {shlex.quote(str(active_repo_root))} "
+        f"--project {shlex.quote(selected_project)} --goal \"<today's intent>\" "
+        "--action focused_verification --tag context --summary"
+    )
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -301,7 +299,12 @@ def _project_harness_route(project: dict[str, Any]) -> dict[str, Any]:
         return {}
 
 
-def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
+def render_menu(
+    state: dict[str, Any],
+    *,
+    project_id: str | None = None,
+    repo_root: Path | None = None,
+) -> str:
     root = Path(state["root"])
     manifest = state.get("manifest") if isinstance(state.get("manifest"), dict) else {}
     projects = [item for item in state.get("projects", []) if isinstance(item, dict)]
@@ -356,12 +359,17 @@ def render_menu(state: dict[str, Any], *, project_id: str | None = None) -> str:
         )
         lines.extend(_project_handoff(project))
 
+    daily_project_id = project_id
+    if not daily_project_id and projects:
+        daily_project_id = str(projects[0].get("project_id") or "").strip() or None
+
     lines.extend(
         [
             "",
             "## Safe Actions",
             "- Validate cockpit: python3 scripts/cockpit_menu.py --check",
-            f"- Build daily harness summary: {_daily_context_command(root)}",
+            "- Build daily harness summary: "
+            f"{_daily_context_command(root, repo_root=repo_root, project_id=daily_project_id)}",
             "- Open project session: use the switch command and project-session prompt above.",
             "- Add project pointer: open an explicit cockpit-owned project-pointer lane.",
             "- Project code/source work: switch to that project repo and open a project-scoped gate.",
@@ -474,6 +482,12 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=None, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Toolkit checkout containing scripts/personal_harness_daily_flow.py.",
+    )
     parser.add_argument("--plain", action="store_true", help="Print deterministic plain text.")
     parser.add_argument("--project", help="Render one project handoff by project_id.")
     parser.add_argument("--check", action="store_true", help="Validate cockpit menu metadata.")
@@ -489,7 +503,7 @@ def main(argv: list[str] | None = None) -> int:
         print("cockpit menu check OK")
         return 0
 
-    print(render_menu(state, project_id=args.project))
+    print(render_menu(state, project_id=args.project, repo_root=args.repo_root))
     return 0
 
 

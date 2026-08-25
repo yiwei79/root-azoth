@@ -404,5 +404,5 @@ def test_cockpit_menu_runs_as_single_file_in_cockpit_repo(tmp_path: Path) -> Non
     assert render.returncode == 0, render.stderr
     assert "Harness profile: assisted" in render.stdout
     assert "Build daily harness summary:" in render.stdout
-    assert DAILY_FLOW_SCRIPT in render.stdout
-    assert f"--repo-root {ROOT}" in render.stdout
+    assert str(root / "scripts" / "personal_harness_daily_flow.py") in render.stdout
+    assert f"--repo-root {root}" in render.stdout

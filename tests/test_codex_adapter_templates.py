@@ -353,6 +353,7 @@ def _copy_router_fixture(tmp_path: Path) -> Path:
     for script_name in (
         "azoth_lite.py",
         "codex_control_plane.py",
+        "harness_profile.py",
         "session_continuity.py",
         "session_gate.py",
     ):
