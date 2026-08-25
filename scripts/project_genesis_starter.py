@@ -121,12 +121,15 @@ def build_profile(args: argparse.Namespace) -> dict[str, Any]:
             "why_now": args.why_now or preset["why_now"],
             "desired_help": args.desired_help or preset["desired_help"],
             "success_signals": list(preset["success"]),
-            "not_success": ["A hidden write into project, cockpit, public Azoth, kernel, or governance."],
+            "not_success": [
+                "A hidden write into project, cockpit, public Azoth, kernel, or governance."
+            ],
         },
         "azoth_source_profile": {
             "source": args.azoth_source,
             "version_or_commit": args.version_or_commit or "",
-            "upgrade_path": args.upgrade_path or "Record installed/public Azoth version before mutation.",
+            "upgrade_path": args.upgrade_path
+            or "Record installed/public Azoth version before mutation.",
             "boundaries": [
                 "Root-azoth owns toolkit development.",
                 "Personal cockpit owns pointer-only routing.",
@@ -190,14 +193,24 @@ def validate_packet(doc: Any) -> list[str]:
     for key in ("project_id", "project_name", "domain", "created_at"):
         if not isinstance(doc.get(key), str) or not doc.get(key).strip():
             errors.append(f"{key} must be a non-empty string")
-    for key in ("goal", "azoth_source_profile", "local_context", "starter_prompt", "readiness", "cockpit_route", "validation_receipt"):
+    for key in (
+        "goal",
+        "azoth_source_profile",
+        "local_context",
+        "starter_prompt",
+        "readiness",
+        "cockpit_route",
+        "validation_receipt",
+    ):
         if not isinstance(doc.get(key), dict):
             errors.append(f"{key} must be a mapping")
 
     cockpit = doc.get("cockpit_route") if isinstance(doc.get("cockpit_route"), dict) else {}
     if cockpit.get("pointer_only") is not True:
         errors.append("cockpit_route.pointer_only must be true")
-    missing_load = sorted(MUST_NOT_LOAD - set(str(item) for item in _list(cockpit.get("must_not_load"))))
+    missing_load = sorted(
+        MUST_NOT_LOAD - set(str(item) for item in _list(cockpit.get("must_not_load")))
+    )
     if missing_load:
         errors.append("cockpit_route.must_not_load missing: " + ", ".join(missing_load))
 
@@ -209,7 +222,11 @@ def validate_packet(doc: Any) -> list[str]:
         if confirms.get(key) is not True:
             errors.append(f"validation_receipt.confirms.{key} must be true")
 
-    blockers = _list((doc.get("readiness") or {}).get("hydration_blockers") if isinstance(doc.get("readiness"), dict) else None)
+    blockers = _list(
+        (doc.get("readiness") or {}).get("hydration_blockers")
+        if isinstance(doc.get("readiness"), dict)
+        else None
+    )
     if not blockers:
         errors.append("readiness.hydration_blockers must be a non-empty list")
     return errors
@@ -243,7 +260,11 @@ def build_parser() -> argparse.ArgumentParser:
     profile.add_argument("--project-id", default="")
     profile.add_argument("--project-name", default="")
     profile.add_argument("--project-path", default="")
-    profile.add_argument("--azoth-source", default="public_install", choices=["public_install", "root_azoth", "personal_cockpit", "mixed"])
+    profile.add_argument(
+        "--azoth-source",
+        default="public_install",
+        choices=["public_install", "root_azoth", "personal_cockpit", "mixed"],
+    )
     profile.add_argument("--version-or-commit", default="")
     profile.add_argument("--upgrade-path", default="")
     profile.add_argument("--why-now", default="")

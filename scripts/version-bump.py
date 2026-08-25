@@ -42,12 +42,8 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 
 _VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
-_MILESTONE_RE = re.compile(
-    r"^v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$"
-)
-_ACTIVE_WORKING_SLICE_RE = re.compile(
-    r"^(?P<milestone>v\d+\.\d+\.\d+)-p(?P<phase>\d+)$"
-)
+_MILESTONE_RE = re.compile(r"^v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$")
+_ACTIVE_WORKING_SLICE_RE = re.compile(r"^(?P<milestone>v\d+\.\d+\.\d+)-p(?P<phase>\d+)$")
 _TASK_ID_POLICY_BLOCK = (
     "task_id_policy:\n"
     "  legacy_milestones:\n"

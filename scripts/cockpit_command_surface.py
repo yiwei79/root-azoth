@@ -74,7 +74,7 @@ COCKPIT_COMMANDS: tuple[CockpitCommand, ...] = (
         summary="Show the daily route-aware harness summary without writes.",
         execution_steps=(
             "Use `$ARGUMENTS` as today's goal; default to `Verify context before project work` when empty.",
-            "Run `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal \"<today's goal>\" --action focused_verification --tag context --summary`.",
+            'Run `python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py --cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray --goal "<today\'s goal>" --action focused_verification --tag context --summary`.',
             "Report the summary status, selected harness profile, route state, review-due cards, next safe action, and no-write contract.",
             "Do not open project-local context or mutate cockpit/project files.",
         ),
@@ -292,12 +292,8 @@ def format_deploy_report(root: Path) -> str:
 
 
 def _write_targets() -> list[Path]:
-    targets = [
-        command.skill_dir / "SKILL.md"
-        for command in COCKPIT_COMMANDS
-    ] + [
-        command.skill_dir / "agents" / "openai.yaml"
-        for command in COCKPIT_COMMANDS
+    targets = [command.skill_dir / "SKILL.md" for command in COCKPIT_COMMANDS] + [
+        command.skill_dir / "agents" / "openai.yaml" for command in COCKPIT_COMMANDS
     ]
     targets.append(Path("docs/ONBOARDING.md"))
     return sorted(targets, key=lambda path: path.as_posix())

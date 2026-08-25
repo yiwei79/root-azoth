@@ -31,9 +31,7 @@ def build_review_packet(
         as_of=as_of,
     )
     cards = [_review_item(result) for result in results]
-    due_cards = [
-        card for card in cards if card["freshness_status"] in REVIEW_DUE_STATUSES
-    ]
+    due_cards = [card for card in cards if card["freshness_status"] in REVIEW_DUE_STATUSES]
     return {
         "schema_version": 1,
         "packet_type": "personal_knowledge_review",

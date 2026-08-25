@@ -206,10 +206,7 @@ def recall_cards(
 
     if not query_text:
         if allowed_use:
-            return [
-                _as_result(card, match_reason="allowed_use", as_of=as_of)
-                for card in cards
-            ]
+            return [_as_result(card, match_reason="allowed_use", as_of=as_of) for card in cards]
         return []
 
     query_tokens = _tokens(query_text)
@@ -224,13 +221,11 @@ def recall_cards(
         scored = [item for item in scored if item[0] == best_score]
     if scored:
         return [
-            _as_result(card, match_reason="metadata_tokens", as_of=as_of)
-            for _, _, card in scored
+            _as_result(card, match_reason="metadata_tokens", as_of=as_of) for _, _, card in scored
         ]
     if allowed_use:
         return [
-            _as_result(card, match_reason="allowed_use_fallback", as_of=as_of)
-            for card in cards
+            _as_result(card, match_reason="allowed_use_fallback", as_of=as_of) for card in cards
         ]
     return []
 

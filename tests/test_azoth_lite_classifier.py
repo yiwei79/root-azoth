@@ -88,9 +88,7 @@ def test_autonomous_continuation_escalates_with_contract_handoff_packet() -> Non
     assert decision.selected_profile == "azoth-full"
     assert decision.stop_state == "escalate"
     assert decision.escalate is True
-    assert decision.escalation_reasons == (
-        case["expected"]["escalation_reason"],
-    )
+    assert decision.escalation_reasons == (case["expected"]["escalation_reason"],)
     assert decision.handoff_packet == {
         "profile_handoff_id": "azoth-lite-to-azoth-full-autonomous-continuation-requested",
         "date": "",

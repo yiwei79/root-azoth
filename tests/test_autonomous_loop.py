@@ -1744,8 +1744,7 @@ def test_open_next_writes_scope_gate_and_advances_state(tmp_path: Path) -> None:
         "evaluator",
     ]
     assert all(
-        stage["evidence_policy"] == "spawn_required"
-        for stage in scope["delegation_plan"]["stages"]
+        stage["evidence_policy"] == "spawn_required" for stage in scope["delegation_plan"]["stages"]
     )
     assert scope["delegation_plan"]["stage_evidence_policy"] == {
         "autonomous_auto_s1_architect": "spawn_required",
@@ -3477,9 +3476,7 @@ def test_campaign_report_adds_route_stage_risk_and_historical_handoff_readbacks(
     )
 
     report = autonomous_loop.campaign_report(tmp_path, state_path, handoff_path=handoff_path)
-    stages = {
-        item["stage_id"]: item for item in report["stage_evidence_states"]["stages"]
-    }
+    stages = {item["stage_id"]: item for item in report["stage_evidence_states"]["stages"]}
 
     assert report["report_schema_version"] == 1
     assert report["handoff_campaign"]["completion_reason"] == "vision_realized"
@@ -3488,9 +3485,7 @@ def test_campaign_report_adds_route_stage_risk_and_historical_handoff_readbacks(
         "source": "active_scope_strategy_preflight",
         "session_id": "active-session",
     }
-    assert stages["autonomous_auto_s1_architect"]["state"] == (
-        "complete_with_paired_evidence"
-    )
+    assert stages["autonomous_auto_s1_architect"]["state"] == ("complete_with_paired_evidence")
     assert stages["autonomous_auto_s2_planner"]["state"] == "in_progress_pending_summary"
     assert report["historical_handoff"]["display_only"] is True
     assert report["historical_handoff"]["can_open_auto_self_heal_now"] is False

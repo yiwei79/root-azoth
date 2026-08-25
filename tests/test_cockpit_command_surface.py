@@ -31,7 +31,7 @@ def _write_minimal_docs(root: Path) -> None:
         "python3 /Users/yiwei/GithubRepos/root-azoth/scripts/personal_harness_daily_flow.py "
         "--cockpit-root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit "
         "--repo-root /Users/yiwei/GithubRepos/root-azoth --project ras-or-ray "
-        "--goal \"<goal>\" --action focused_verification --tag context --summary"
+        '--goal "<goal>" --action focused_verification --tag context --summary'
     )
     text = f"""# Yiwei Azoth Cockpit
 

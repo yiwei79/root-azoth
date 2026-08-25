@@ -130,9 +130,7 @@ class GoalModeSelfApprovalRequest:
 
         ttl_minutes = int(payload.get("ttl_minutes") or DEFAULT_TTL_MINUTES)
         if ttl_minutes < 1 or ttl_minutes > MAX_TTL_MINUTES:
-            raise GoalModeSelfApprovalError(
-                f"ttl_minutes must be between 1 and {MAX_TTL_MINUTES}"
-            )
+            raise GoalModeSelfApprovalError(f"ttl_minutes must be between 1 and {MAX_TTL_MINUTES}")
 
         pipeline_command = str(payload.get("pipeline_command") or DEFAULT_PIPELINE_COMMAND)
         if pipeline_command != DEFAULT_PIPELINE_COMMAND:

@@ -240,7 +240,9 @@ def test_rejects_kernel_target_layer_even_with_planning_path() -> None:
         _request(target_layer="M1")
 
 
-def test_cli_check_accepts_valid_request(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_check_accepts_valid_request(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     request_path = tmp_path / "request.json"
     request_path.write_text(
         json.dumps(

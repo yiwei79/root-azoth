@@ -1269,9 +1269,7 @@ def test_inline_allowed_policy_can_satisfy_autonomous_auto_completion(
     data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
     data["runs"][0]["mode"] = "autonomous-auto"
     data["runs"][0]["stages_completed"] = ["autonomous_auto_s1_architect"]
-    data["runs"][0]["stage_evidence_policy"] = {
-        "autonomous_auto_s1_architect": "inline_allowed"
-    }
+    data["runs"][0]["stage_evidence_policy"] = {"autonomous_auto_s1_architect": "inline_allowed"}
     ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
     record_stage_inline_exception(
         tmp_path,

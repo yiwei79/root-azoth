@@ -190,7 +190,7 @@ def test_daily_flow_summary_is_operator_readable_and_actionable(tmp_path: Path) 
     assert "Cockpit mutated: false" in summary
     assert "Project mutated: false" in summary
     assert "approved personal-knowledge review lane" in summary
-    assert "\"packet_type\"" not in summary
+    assert '"packet_type"' not in summary
 
 
 def test_daily_flow_fails_closed_when_cockpit_mode_disagrees_with_route(tmp_path: Path) -> None:
@@ -212,7 +212,10 @@ def test_daily_flow_fails_closed_when_cockpit_mode_disagrees_with_route(tmp_path
     )
 
     assert report["ok"] is False
-    assert any(check["id"] == "mode_consistency" and check["status"] == "fail" for check in report["checks"])
+    assert any(
+        check["id"] == "mode_consistency" and check["status"] == "fail"
+        for check in report["checks"]
+    )
 
 
 def test_daily_flow_cli_outputs_json(tmp_path: Path) -> None:

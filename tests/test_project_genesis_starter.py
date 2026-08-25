@@ -34,6 +34,7 @@ def test_profile_generates_valid_music_packet() -> None:
     assert packet["cockpit_route"]["pointer_only"] is True
     assert starter.validate_packet(packet) == []
 
+
 def test_validate_rejects_mutating_cockpit_route() -> None:
     packet = starter.build_profile(_args())
     packet["cockpit_route"]["pointer_only"] = False
@@ -43,7 +44,9 @@ def test_validate_rejects_mutating_cockpit_route() -> None:
 
 def test_cli_validate_accepts_generated_packet(tmp_path: Path, capsys) -> None:
     packet_path = tmp_path / "packet.yaml"
-    packet_path.write_text(yaml.safe_dump(starter.build_profile(_args()), sort_keys=False), encoding="utf-8")
+    packet_path.write_text(
+        yaml.safe_dump(starter.build_profile(_args()), sort_keys=False), encoding="utf-8"
+    )
 
     assert starter.main(["validate", str(packet_path)]) == 0
     assert "OK:" in capsys.readouterr().out

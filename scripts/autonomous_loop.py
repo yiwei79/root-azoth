@@ -3315,9 +3315,7 @@ def _stage_state_from_evidence(
     summary_counts_for_completion = bool(summary_is_fresh and metadata_paired)
     if latest_summary and not summary_counts_for_completion:
         state = "summary_mismatch_or_stale"
-    elif latest_summary and _stage_summary_is_blocking(
-        summary_status, summary_disposition
-    ):
+    elif latest_summary and _stage_summary_is_blocking(summary_status, summary_disposition):
         state = "summary_blocking"
     elif summary_counts_for_completion and summary_status == "complete":
         state = "complete_with_paired_evidence"
@@ -3389,11 +3387,7 @@ def _stage_evidence_states(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             stage_ids.append(str(evidence.get("stage_id")))
     ordered_stage_ids = list(dict.fromkeys(stage_ids))
     completed_stage_ids = (
-        {
-            str(item)
-            for item in selected.get("stages_completed", [])
-            if str(item or "").strip()
-        }
+        {str(item) for item in selected.get("stages_completed", []) if str(item or "").strip()}
         if isinstance(selected.get("stages_completed"), list)
         else set()
     )
