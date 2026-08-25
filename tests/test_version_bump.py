@@ -699,32 +699,35 @@ def test_phase_advances_post_release_working_slice(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T11 — session-closeout.md contains "version-bump.py --patch" and "W4"
+# T11 — session-closeout.md preserves the consumer version boundary at W4
 # ---------------------------------------------------------------------------
 
 
-def test_session_closeout_references_version_bump() -> None:
+def test_session_closeout_preserves_consumer_version_boundary() -> None:
     closeout = COMMANDS_DIR / "session-closeout.md"
     assert closeout.exists(), f"Missing {closeout}"
     text = closeout.read_text()
-    assert "version-bump.py --patch" in text, (
-        "session-closeout.md must reference 'version-bump.py --patch'"
+    assert "**W4 — Refresh the session orientation cache**" in text
+    assert (
+        "Do not mutate the installed Azoth toolkit version during routine consumer-project" in text
     )
-    assert "W4" in text, "session-closeout.md must contain a W4 checkpoint for version bumping"
+    assert "W4 ✓ orientation cache cleared; project version unchanged by Azoth closeout" in text
+    assert "version-bump.py --patch" not in text
 
 
 # ---------------------------------------------------------------------------
-# T12 — deliver-full.md contains "version-bump.py --patch"
+# T12 — deliver-full.md preserves the consumer version boundary at Stage 7
 # ---------------------------------------------------------------------------
 
 
-def test_deliver_full_references_version_bump() -> None:
+def test_deliver_full_preserves_consumer_version_boundary() -> None:
     deliver_full = COMMANDS_DIR / "deliver-full.md"
     assert deliver_full.exists(), f"Missing {deliver_full}"
     text = deliver_full.read_text()
-    assert "version-bump.py --patch" in text, (
-        "deliver-full.md must reference 'version-bump.py --patch'"
-    )
+    assert "Do not mutate the installed Azoth toolkit version as part of consumer-project" in text
+    assert "that project's explicit release approval and native tooling." in text
+    assert "Stage 7 ✓ final delivery approval recorded" in text
+    assert "version-bump.py --patch" not in text
 
 
 # ---------------------------------------------------------------------------

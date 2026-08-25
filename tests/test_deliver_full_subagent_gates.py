@@ -112,9 +112,14 @@ def test_orchestration_constraints_has_all_required_bullets() -> None:
         assert bullet in _CONTENT, f"Missing orchestration constraint: {bullet!r}"
 
 
-def test_version_bump_step_present() -> None:
-    """Stage 7 must still call version-bump after human approval."""
-    assert "python scripts/version-bump.py --patch" in _CONTENT
+def test_stage7_preserves_consumer_version_boundary() -> None:
+    """Stage 7 must leave consumer-project versioning to native tooling."""
+    assert (
+        "Do not mutate the installed Azoth toolkit version as part of consumer-project" in _CONTENT
+    )
+    assert "that project's explicit release approval and native tooling." in _CONTENT
+    assert "Stage 7 ✓ final delivery approval recorded" in _CONTENT
+    assert "python scripts/version-bump.py --patch" not in _CONTENT
 
 
 # ── Absence of old inline gate language ───────────────────────────────────────

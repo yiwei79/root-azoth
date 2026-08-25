@@ -1657,10 +1657,7 @@ def test_bl057_residual_bundle_contract_metadata_is_complete_and_consistent(
     assert any("BL-057" in note for note in contract["migration"]["notes"])
     assert any(cmd["body_source_path"] in note for note in contract["migration"]["notes"])
 
-    assert contract["references"] == [
-        ".azoth/roadmap-specs/v0.2.0/T-003.yaml",
-        "docs/CANONICAL_COMMAND_CONTRACT.md",
-    ]
+    assert contract["references"] == ["docs/CANONICAL_COMMAND_CONTRACT.md"]
 
     assert contract["projection"] == {
         "claude": {
