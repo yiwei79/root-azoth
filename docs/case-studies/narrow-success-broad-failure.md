@@ -24,18 +24,23 @@ that makes useful trajectories more likely.
 The portable implementation is documented in
 [Personal Harness OS](../PERSONAL_HARNESS_OS.md).
 
-## Proof at a glance
+## Project lineage
 
-- **GloBuddy:** in my official AI Data Analyst role, I own a production
-  conversational-AI Rider CRM that has handled 41,000+ conversations; the figure
-  establishes operating scale, not causal business lift.
-- **SupplyOps:** in the same role, I independently rebuilt fragmented reporting
-  into an operational-intelligence backbone used by Supply Operations across 22
-  countries, from daily operations to leadership reporting.
-- **Azoth:** I built this independent public preview of selected routing,
-  context, and no-write rehearsal contracts. It is distinct from the employer
-  framework and production systems; no production deployment of Azoth, external
-  adoption, or finished universal harness is claimed.
+The work progressed through three connected stages:
+
+- Production AI and operational-data systems exposed how failures enter through
+  business meaning, context, tools, state, authority, and feedback—not only
+  through model behaviour.
+- A comprehensive internal Agentic Framework tested richer governance, memory,
+  routing, and delivery patterns, including machinery whose state and ceremony
+  later proved too costly.
+- Azoth distils those lessons into an independent public preview centred on
+  minimum-sufficient routing, context, authority, evaluation, and rehearsal
+  contracts.
+
+GloBuddy and SupplyOps appear later as design examples, not as Azoth
+deployments. This release candidate claims the implementation and tests it
+ships, not external adoption or a finished universal harness.
 
 ## 1. The narrow success envelope and broad failure surface
 
@@ -368,10 +373,10 @@ The boundaries matter as much as the thesis:
 
 - This is an engineering lens, not a formal control-theory result.
 - The probability expression is a decision heuristic, not a measured model.
-- GloBuddy and SupplyOps demonstrate production system ownership; they do not
-  prove that every business has the same adoption problem.
-- The Agentic Framework demonstrates an evidence-led evolution, including
-  complexity that was later reduced; it was not minimal from the beginning.
+- GloBuddy and SupplyOps show where the lens was shaped in production; they do
+  not prove that every business has the same adoption problem.
+- The Agentic Framework records an evidence-led evolution, including complexity
+  that was later reduced; it was not minimal from the beginning.
 - The selected Personal Harness routing, context, and rehearsal contracts are
   implemented and tested in the `v0.3.0-rc.1` executable candidate. The wider
   operating profile remains under development; it is not a finished universal
@@ -381,7 +386,7 @@ The boundaries matter as much as the thesis:
 - No claim is made here of external Azoth adoption, causal business lift, or
   having invented the broader industry concepts used to explain the work.
 
-The differentiator is therefore not a claim to possess a universal recipe. It
-is a way of engineering under uncertainty: make success explicit, keep the
-signal path trustworthy, expose authority and feedback, and let the smallest
-system that satisfies those conditions emerge from evidence.
+The practical contribution is therefore not a claim to possess a universal
+recipe. It is a way of engineering under uncertainty: make success explicit,
+keep the signal path trustworthy, expose authority and feedback, and let the
+smallest system that satisfies those conditions emerge from evidence.

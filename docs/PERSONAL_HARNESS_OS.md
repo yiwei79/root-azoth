@@ -181,8 +181,8 @@ It intentionally excludes:
 - any claim that the preview is a finished universal harness or has external
   adoption.
 
-The excluded integrations remain useful implementation evidence, but they are
-not part of a consumer-safe product surface.
+The excluded integrations remain part of the broader project, but they are not
+part of the portable preview surface.
 
 ## Portable rehearsal surface
 

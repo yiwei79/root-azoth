@@ -1,20 +1,18 @@
 # Azoth
 
-**An inspectable toolkit for governed AI-assisted software delivery.**
+**A personal agentic-engineering project for governed AI-assisted software
+delivery.**
 
-Azoth treats AI coding agents as programmable probabilistic components inside
-an engineered control flow. It connects intent to compact context, bounded
-tools, explicit authority, evidence, stopping, and recovery so agent-assisted
-work can remain useful without becoming unbounded.
+Azoth explores a practical question: how should AI coding agents be engineered
+when they are programmable probabilistic components inside a larger system,
+rather than copilots or simulated employees? It connects intent to compact
+context, bounded tools, explicit authority, evidence, stopping, and recovery so
+agent-assisted work can remain useful without becoming unbounded.
 
-Azoth is an independent project by Yiwei Ye, informed by production AI and
-operational-data delivery. `v0.3.0-rc.1` is an implemented and tested
-preview—not a finished universal harness, and no external adoption is claimed.
-
-The approach is grounded in Yiwei's work owning GloBuddy, a production
-conversational-AI Rider CRM, and independently rebuilding SupplyOps, an
-operational-intelligence foundation used across 22 countries. Those systems
-informed Azoth's design; neither is an Azoth deployment.
+Azoth is my independent project. `v0.3.0-rc.1` is the latest implemented
+snapshot of that exploration, focused on Personal Harness OS. It is an
+unfinished release candidate, not a finished universal harness or an external
+adoption claim.
 
 ## Personal Harness OS preview
 
@@ -35,7 +33,7 @@ The design uses the smallest architecture that preserves the controls a task
 actually needs. Retrieval, durable memory, or multi-agent coordination are
 added only when a demonstrated failure mode justifies their cost.
 
-**Implemented proof in this RC:** deterministic request classification, typed
+**Implemented in this RC:** deterministic request classification, typed
 route packets, bounded context assembly, a generic no-write rehearsal runner
 and fixture, and 30 passing portable public tests. Private operator state and
 environment-specific adapters remain excluded, and the wider profile remains
@@ -62,6 +60,23 @@ claim or a measured signal-to-noise model.
 
 - [Engineering case study: *Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md)
 - [Personal Harness contracts and preview boundary](docs/PERSONAL_HARNESS_OS.md)
+
+## How the project fits together
+
+Azoth is one evolving project, not a collection of separate products. The
+repository preserves both the current minimum-sufficient direction and the
+broader framework that preceded it:
+
+| Surface | Role in the project |
+|---|---|
+| Personal Harness OS | The current direction and the focus of `v0.3.0-rc.1` |
+| Routing, context, rehearsal, and focused tests | The validated release surface for this RC |
+| Kernel, skills, agents, commands, and pipelines | The broader governed toolkit and design history from which the lighter path emerged |
+| *Narrow Success, Broad Failure* | The case study explaining the architectural evolution and its trade-offs |
+
+The wider repository remains useful for inspection and continued development,
+but this release validates only the selected Personal Harness contracts and
+tests described above.
 
 ## Why Azoth
 
@@ -180,7 +195,7 @@ cross-host parity and supported adoption are outside the preview boundary.
 | [`docs/`](docs/) | Architecture, decisions, platform strategy and protocols |
 | [`scripts/`](scripts/) | Routing, context, validation, checkpoint and support utilities |
 | [`examples/personal-harness/`](examples/personal-harness/) | Portable no-write rehearsal cases |
-| [Focused public tests](tests/test_personal_harness_practice_rehearsal.py) | Routing, context, recall/review and rehearsal contract proof |
+| [Focused public tests](tests/test_personal_harness_practice_rehearsal.py) | Routing, context, recall/review and rehearsal contract coverage |
 
 ## Inspect the preview
 
