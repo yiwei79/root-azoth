@@ -1,0 +1,122 @@
+schema_version: 1
+kind: autonomous_auto_research_candidate_board
+campaign:
+  loop_id: p4-long-run-repair-governor-evidence-reliability-20260503
+  child_session_id: 2026-05-03-autonomous-auto-p4-long-run-repair-governor-discovery-1
+  objective: P4 Long-Run Repair Governor and Evidence Reliability
+  generated_at: "2026-05-03T20:45:00Z"
+  branch: codex/autonomous-roadmap-self-development
+live_state:
+  worktree: clean_at_campaign_open
+  active_run: 2026-05-03-autonomous-auto-p4-long-run-repair-governor-discovery-1
+  write_claim: held_by_discovery_child
+  roadmap:
+    active_version: v0.2.0-p4
+    current_patch: 30
+    pending_task_refs: []
+    completed_p4_refs:
+      - T-056
+      - T-057
+      - T-058
+  public_freshness:
+    command: python3 scripts/public_release_freshness.py
+    result: "public release freshness OK: v0.2.0 status=intentionally_stale"
+    route_authority: advisory_only_no_public_sync
+evidence_refs:
+  - path: .azoth/roadmap.yaml
+    note: v0.2.0-p4 is active, current_patch 30, and T-056/T-057/T-058 are complete.
+  - path: .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-FRESHNESS-POLICY.yaml
+    note: Public azoth v0.2.0 remains intentionally stale and authoritative.
+  - path: .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md
+    note: Still lists cockpit Codex hook repair as P0 even though root verifier now checks and live cockpit verification passes.
+  - path: .azoth/roadmap-specs/v0.2.0/T-028.yaml
+    note: Run-ledger serialized stage evidence writes were already hydrated and completed.
+  - path: scripts/run_ledger.py
+    note: Ledger lock helpers and record-spawn/record-summary failure messaging are present.
+  - path: tests/test_run_ledger.py
+    note: Stage-evidence focused tests are present.
+  - path: scripts/cockpit_bootstrap_verify.py
+    note: Verifier now rejects enabled Codex hooks, registered prompt hooks, and missing root-only hook module references.
+  - path: tests/test_cockpit_bootstrap_verify.py
+    note: Focused tests cover disabled hooks, prompt hook registration, and missing codex_control_plane references.
+  - path: .azoth/memory/episodes.jsonl
+    note: ep-540 records Green closeout for the prior p4 truth reconciliation refresh.
+candidate_board:
+  selected:
+    candidate_id: p4-cockpit-hook-evidence-reconciliation
+    action: ship_task
+    title: P4 cockpit hook evidence reconciliation
+    target_layer: documentation
+    delivery_pipeline: standard
+    protected: false
+    rationale: >
+      Root-owned verifier and tests already cover the cockpit hook failure class, and
+      live verification of /Users/yiwei/GithubRepos/yiwei-azoth-cockpit passes without
+      writing the cockpit repo. The remaining fresh gap is stale p4 narrative evidence
+      that still presents the cockpit hook repair as live P0 work.
+    expected_write_set:
+      - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md
+    validation:
+      - python3 scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --skip-git-status --json
+      - python3 -m pytest tests/test_cockpit_bootstrap_verify.py -q
+      - python3 scripts/public_release_freshness.py
+      - python3 scripts/azoth-deploy.py --check
+    scorecard:
+      safety: 92
+      readiness: 88
+      long_running_value: 72
+      p4_fit: 84
+      protected_boundary_risk: 12
+      total: 324
+  rejected:
+    - candidate_id: run-ledger-atomic-stage-evidence
+      action: hydrate_task_or_ship_task
+      route: stale_or_rejected
+      reason: T-028 already hydrated and complete; scripts/run_ledger.py and tests/test_run_ledger.py contain the scoped lock/test implementation.
+    - candidate_id: INI-AUTO-001/slice-auto-001-i
+      action: hydrate_task_or_ship_task
+      route: completed_or_stale_campaign
+      reason: lifecycle-route reports hydrated task T-033 complete and blocks repeat hydration/shipping.
+    - candidate_id: INI-MEM-003/slice-mem-003-d
+      action: hydrate_task_or_ship_task
+      route: completed_or_stale_campaign
+      reason: lifecycle-route reports hydrated task T-058 complete and blocks repeat hydration/shipping.
+    - candidate_id: T-056
+      action: hydrate_task_or_ship_task
+      route: stale_or_rejected
+      reason: Nightly automation audit bundle and approval contract is already complete in p4.
+    - candidate_id: T-057
+      action: hydrate_task_or_ship_task
+      route: stale_or_rejected
+      reason: Recall-quality scorer is already complete in p4.
+    - candidate_id: public-product-freshness-sync
+      action: ship_task
+      route: human_gate_required
+      reason: Public azoth v0.2.0 must remain intentionally stale without a separate public sync gate.
+    - candidate_id: cockpit-repo-hook-repair
+      action: ship_task
+      route: human_gate_required
+      reason: Direct cockpit repo writes require a separate cockpit/project-scoped gate.
+    - candidate_id: format-gate-repair
+      action: ship_task
+      route: defer_to_intake
+      reason: Broad formatting sweep is a valid p4 repair lane but high-churn and unrelated to long-run evidence reliability.
+    - candidate_id: backup-private-remote
+      action: research_initiative
+      route: human_gate_required
+      reason: Backup/private remote decisions require explicit operator policy and may involve external/private infrastructure.
+next_route:
+  recommendation: open_child_scope
+  action: ship_task
+  candidate_id: p4-cockpit-hook-evidence-reconciliation
+  guardrails:
+    - No cockpit repo writes.
+    - No public sync, tag, release, or freshness=fresh claim.
+    - No command-contract, kernel, governance, M1, dependency, network, or destructive work.
+    - Keep the write set to stale p4 narrative evidence unless validation proves a narrower adjacent doc must change.
+ux_anchor_fit:
+  band: green_candidate
+  rationale: >
+    The selected child improves long-running campaign judgment by collapsing a stale
+    P0 repair lane into auditable current evidence, while rejecting completed,
+    protected, public, and broad-churn alternatives.

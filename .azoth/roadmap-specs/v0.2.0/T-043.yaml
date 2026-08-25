@@ -1,0 +1,52 @@
+id: T-043
+roadmap_version: v0.2.0
+title: Planning-bank closeout history merge policy
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: >
+  Define the policy and focused validation for how planning-bank history may be
+  appended during closeout or lifecycle transitions without creating avoidable
+  merge churn.
+problem: >
+  Planning banks are now visible as seed/readiness state, but the remaining
+  design-bank question is how closeout should record bank history safely. A
+  naive closeout writer could rewrite active design or initiative banks during
+  routine sessions, increasing merge conflicts and confusing planning authority.
+scope:
+- Specify which planning-bank history events are safe for automatic append and
+  which must stay tied to explicit task hydration, implementation, or closeout
+  evidence.
+- Update the narrow planning-bank validation or lifecycle helper surface needed
+  to enforce that policy.
+- Add focused tests that prove routine closeout does not broadly rewrite bank
+  state while explicit hydration/history events remain auditable.
+- >
+  Preserve the `/next` boundary: planning-bank seeds stay read-only until a
+  concrete backlog/spec task exists.
+non_goals:
+- Do not implement personal-root deployment or knowledge card creation.
+- Do not create a second roadmap/backlog writer.
+- Do not make `/next` write scope from planning-bank seeds.
+- Do not change kernel, M1, or governance contracts.
+- Do not repeat the completed T-022 plan-only helper identity.
+acceptance:
+- The planning-bank closeout history policy is explicit and anchored to the
+  existing design/initiative-bank contract.
+- Focused validation or tests cover merge-safe append behavior for planning-bank
+  history.
+- Routine closeout remains bounded and does not broadly rewrite planning-bank
+  files.
+- Hydration/history events remain traceable to explicit task or initiative
+  actions.
+- Personal-root, public release, M1, and kernel surfaces remain untouched.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

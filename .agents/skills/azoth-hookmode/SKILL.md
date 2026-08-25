@@ -6,7 +6,9 @@ description: Explicit Codex entrypoint for Azoth's `/hookmode` workflow. Use whe
 
 Use this skill as the Codex-visible entrypoint for Azoth's `/hookmode` workflow.
 
-Codex does not register repository-defined slash commands in its built-in `/` command picker.
+Codex uses skills as the custom command surface for Azoth workflows.
+In the Codex app, enabled skills may appear in the slash command list.
+In Codex CLI/IDE, use `/skills` or `$azoth-hookmode`.
 This skill is the explicit Codex-native equivalent of typing `/hookmode`.
 
 Execution contract:
@@ -21,4 +23,4 @@ Execution contract:
 Command metadata:
 - Contract path: `commands/hookmode/command.yaml`
 - Body source path: `.claude/commands/hookmode.md`
-- Description: Inspect or switch the local Codex hook profile
+- Description: Inspect or switch the local Codex operating mode

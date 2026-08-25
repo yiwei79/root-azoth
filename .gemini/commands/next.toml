@@ -33,6 +33,25 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
      (`active` items are already claimed by a running session — skip them; `deferred` items target a future `target_version`)
    - `blocked_by` is null/absent, or every referenced id has `status: complete` in the backlog
    Sort by `priority` ascending (lower = higher priority).
+3b. **Planning-bank fallback when no candidate tasks exist**: If Step 3 finds no
+   claimable backlog candidates, read tracked planning banks before falling back to
+   the next roadmap-version preview.
+   - Read only `.azoth/design-banks/*.yaml` and `.azoth/initiative-banks/*.yaml`.
+   - Do **not** read `.azoth/proposals/` as a candidate source. Proposal paths may be
+     shown only when a tracked bank cites them as provenance.
+   - Summarize up to three active planning seeds, preferring banks with
+     `readiness.human_decision`, `readiness.candidate_first_slice`,
+     `readiness.hydration_recommendation`, `routing_candidates`, or open questions.
+   - If a bank's `readiness.candidate_first_slice` is already `hydrated`, `complete`,
+     or `completed`, do not let that completed slice hide the live continuation.
+     Surface the next ordered candidate slice whose status is `candidate`, `parked`,
+     or `ready_to_hydrate`, and state that it still needs explicit approval before
+     hydration, deployment, or personal-root mutation.
+   - Treat these as **read-only discovery seeds**, not scope authority. Do not write
+     `scope-gate.json`, claim a run, or mutate backlog/roadmap/spec state from a
+     bank seed alone.
+   - Route the operator to `/plan`, research/refinement, proposal refinement, or an
+     explicit hydration/scaffold step before any future `/next` scope approval.
 4. **Select primary task**: Highest-priority unblocked item.
 5. **Select secondary tasks** (optional, max 2):
    - Next unblocked items after primary
@@ -105,9 +124,9 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     ```
 
     **Pipeline selection after scope approval (all scopes):** Writing `.azoth/scope-gate.json`
-    declares intent; it does **not** authorize direct implementation. After scope approval,
+    declares intent; it does **not** authorize direct implementation. azoth-lite is the default posture for ordinary work, but an approved scope card is a delivery handoff. After scope approval,
     the next step is delivery pipeline selection. If the human did **not** explicitly choose a
-    pipeline, `/auto` is the default (D23) and must run **Stage 0 goal clarification**
+    pipeline, route through explicit `/auto` as the default governed delivery route (D23) and run **Stage 0 goal clarification**
     before implementation begins.
 
     **Governed delivery (mechanical):** If the primary item has `delivery_pipeline: governed` **or**
@@ -116,7 +135,7 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
     For standard scopes, Stage 0 / pipeline selection still applies even though
     `pipeline-gate.json` is not required.
 
-    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. If none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
+    Confirm: "scope-gate.json written — intent declared; select a delivery pipeline next. azoth-lite remains the ordinary-work default, but scoped delivery needs an explicit pipeline; if none was specified, use /auto and run Stage 0 before implementation. Governed scopes still require pipeline-gate.json after Stage 0 of the chosen delivery pipeline."
 
 10c. **Mark backlog item as active**: After the write claim is successfully acquired,
     update `.azoth/backlog.yaml`: find the item whose `id` matches `backlog_id` from
@@ -150,12 +169,14 @@ Read the backlog and roadmap, produce a scope card, and write scope-gate.json on
 **Why:** {decision_ref} — {one-line decision summary from DECISIONS_INDEX.md}
 **Episode context:** ep-{NNN}: {one-line summary}    ← omit if no relevant episode
 **Excluded:** {N} item(s) skipped — claimed by another session ({id}, …)    ← omit if excluded-ids set is empty (Step 0b)
+**Planning-bank seeds:** {bank_id or initiative_id}: {readiness/human decision/candidate/readiness gate}    ← only when Step 3 has no candidate tasks and Step 3b finds tracked banks
+**Planning-bank-only route:** no scope-gate approval is available from seeds alone; use `/plan`, research/refinement, proposal refinement, or explicit hydration/scaffold approval first    ← only when Step 3 has no candidate tasks
 
 **Architecture proposal (read-only, informational only):** `{backlog_id}` — {title} — status {status}    ← only if step 8b matches exactly one file
 
 ---
-Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.
-Type `skip` to skip primary and show next candidate.
+Type `approved` to write scope-gate.json (valid 2h) and unblock Write/Edit.    ← only when Primary names a concrete backlog item
+Type `skip` to skip primary and show next candidate.    ← only when Primary names a concrete backlog item
 ```
 
 ## Rules
@@ -167,8 +188,12 @@ Type `skip` to skip primary and show next candidate.
   `/session-closeout` when the session ends
 - **If a live scope already exists**, stop and route to `/resume`, `/park`, or `/session-closeout`
 - **Never mix M1 and non-M1** in a single scope card (D51: M1 requires dedicated session)
-- **Skip completed items** — if all backlog items are complete, congratulate and show the
-  next version entry from `roadmap.yaml versions:` as a preview
+- **Skip completed items** — if all backlog items are complete, congratulate, surface any
+  tracked planning-bank seeds as read-only discovery context, then show the next version
+  entry from `roadmap.yaml versions:` as a preview
+- **Planning banks are seeds, not scopes** — design and initiative banks can make
+  research/refinement or hydration candidates discoverable, but they do not authorize
+  scope-gate writes until a concrete backlog/roadmap/spec boundary is approved
 - **If backlog.yaml is missing**, suggest running `/bootstrap` to initialize
 - **Scope card validator**: if a mixed card would result, show the conflict and propose
   the primary-only card instead

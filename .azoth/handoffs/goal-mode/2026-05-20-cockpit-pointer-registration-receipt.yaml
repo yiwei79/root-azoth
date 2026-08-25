@@ -1,0 +1,170 @@
+schema_version: 1
+artifact_type: target_plane_validation_receipt
+created_at: "2026-05-20T18:45:00Z"
+session_id: 2026-05-20-cockpit-pointer-registration
+run_id: 2026-05-20-cockpit-pointer-registration-auto
+status: pass
+
+approval:
+  approved_by: human
+  approval_basis: >
+    Operator replied "proceed" on 2026-05-20 after the governed upgrade
+    decision brief recommended approve_cockpit_pointer_registration as the
+    next target-plane adoption route.
+  bounded_to:
+    - pointer-only personal cockpit route registration
+    - existing cockpit pointer readback metadata enrichment
+    - root-side receipt and run-ledger evidence
+
+scope:
+  backlog_id: P6-003
+  pipeline: auto
+  target_layer: personal-cockpit
+  source_root: /Users/yiwei/GithubRepos/root-azoth
+  target_root: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  root_branch: phase/v0.2.0-p4
+  root_prior_commit: 2d6bf74
+  target_commit: 12ae5ee
+
+staged_pipeline:
+  architect:
+    stage_id: auto_s2_architect
+    agent_id: 019e46ac-e1a1-7c71-bee2-6e26bcd80285
+    status: complete
+    disposition: approved
+    summary: >
+      Approved a GREEN, pointer-only target-plane lane with four scoped files
+      and explicit stops against project-local context loading, public release,
+      source import, and managed or governed autonomy execution.
+  builder:
+    stage_id: auto_s5_builder
+    execution: main_thread_bounded_patch
+    status: complete
+    summary: >
+      Applied the explicit target-plane pointer registration and root receipt
+      after architect review; no project repositories were mutated.
+
+deliverables:
+  - path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/index.yaml
+    result: >
+      Added pointer-only Project Genesis routes for music-production-lab and
+      agent-context-project, and enriched existing cockpit pointers with
+      mode, readiness, freshness, authority, write-claim, next-action, and
+      stop-reason readback fields.
+  - path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/scripts/cockpit_menu.py
+    result: >
+      Added self-contained validation and rendering for T-059/T-060 cockpit
+      readback metadata without importing root-only release-profile helpers.
+  - path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/project-genesis-cockpit-route-registration-2026-05-20.yaml
+    result: >
+      Captured the cockpit-owned handoff receipt for the two new pointer-only
+      Project Genesis routes and the enrichment of existing pointers.
+  - path: /Users/yiwei/GithubRepos/root-azoth/.azoth/handoffs/goal-mode/2026-05-20-cockpit-pointer-registration-receipt.yaml
+    result: >
+      Captured root-side target-plane validation, staged-pipeline evidence,
+      residual risks, and remaining human-gated follow-ons.
+
+registered_routes:
+  - project_id: music-production-lab
+    title: Music Production Lab
+    repo_path: /Users/yiwei/GithubRepos/FunProjects/ChordLab
+    selected_mode: guide
+    readiness_state: discovery_active
+    freshness_status: starter_prompt_ready
+    authority_plane: personal_cockpit
+    active_write_claim: false
+    stop_reason: project_local_receipt_not_approved
+  - project_id: agent-context-project
+    title: Agent Context Project
+    repo_path: /Users/yiwei/GithubRepos/Yiwei_Tasks_Space
+    selected_mode: assisted
+    readiness_state: discovery_active
+    freshness_status: starter_prompt_ready
+    authority_plane: personal_cockpit
+    active_write_claim: false
+    stop_reason: project_local_experiment_boundary_not_approved
+
+enriched_existing_routes:
+  - project_id: ras-or-ray
+    selected_mode: assisted
+    readiness_state: ready
+    freshness_status: pointer_current
+    authority_plane: personal_cockpit
+    active_write_claim: false
+    stop_reason: project_local_gate_required_for_writes
+  - project_id: bachelor-thesis-citm-upc
+    selected_mode: guide
+    readiness_state: discovery_active
+    freshness_status: starter_packet_present
+    authority_plane: personal_cockpit
+    active_write_claim: false
+    stop_reason: project_local_gate_required_for_thesis_writes
+
+mutation_audit:
+  root_azoth_mutated: true
+  personal_cockpit_mutated: true
+  public_azoth_mutated: false
+  project_local_mutated: false
+  project_local_context_loaded: false
+  kernel_governance_mutated: false
+  kernel_template_mutated: false
+  roadmap_backlog_spec_hydrated: false
+  release_published: false
+  dependencies_or_credentials_changed: false
+  destructive_action_taken: false
+  managed_or_governed_autonomy_executed: false
+
+validation:
+  status: pass
+  commands:
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/check_gates.py --session-id 2026-05-20-cockpit-pointer-registration --require-pipeline-gate
+      status: pass
+      evidence: Scope gate and pipeline gate valid; TTL reported 1h50m remaining.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/scripts/cockpit_menu.py --check
+      status: pass
+      evidence: cockpit menu check OK
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/root-azoth/scripts/cockpit_menu.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --check
+      status: pass
+      evidence: cockpit menu check OK
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/root-azoth/scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+      status: pass
+      evidence: "cockpit bootstrap verify OK: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit"
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/root-azoth/scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project music-production-lab --skip-bootstrap-verify
+      status: pass
+      evidence: cockpit UX simulation OK
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/root-azoth/scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project agent-context-project --skip-bootstrap-verify
+      status: pass
+      evidence: cockpit UX simulation OK
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 /Users/yiwei/GithubRepos/root-azoth/scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project bachelor-thesis-citm-upc --skip-bootstrap-verify
+      status: pass
+      evidence: cockpit UX simulation OK
+    - command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit diff --check
+      status: pass
+      evidence: no whitespace errors reported
+    - command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+      status: pass
+      evidence: "## main...origin/main [ahead 2]"
+
+residual_risks:
+  - >
+    The personal cockpit repo is clean but local-only and ahead of origin/main by
+    two commits; this lane intentionally did not push.
+  - >
+    The music-production-lab route points at ChordLab under a dirty
+    FunProjects workspace. The simulation surfaced those pre-existing changes;
+    this lane did not mutate that project workspace.
+  - >
+    No project-local receipts, source imports, starter packets, managed-mode
+    seeds, governed-autonomy budgets, public release changes, or project-local
+    writes were created in this lane.
+
+next_route:
+  completed: cockpit_pointer_registration
+  still_human_gated:
+    - public template distribution or release publishing
+    - project-local starter packet creation
+    - project-local source import or context loading
+    - managed or governed autonomy hydration
+  recommended_next_approval: >
+    Open a separate project-local lane for whichever registered route should
+    receive its first local starter packet or compatibility/readiness proof.

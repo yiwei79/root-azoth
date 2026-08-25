@@ -1,0 +1,47 @@
+schema_version: 1
+name: personal_knowledge_import_batch
+required:
+  - schema_version
+  - id
+  - created_at
+  - source_plane
+  - source_refs
+  - candidates
+  - operator_review
+candidate_required:
+  - candidate_id
+  - decision
+  - rationale
+  - safety_classification
+  - privacy
+  - authority_home
+  - freshness
+  - source_refs
+enums:
+  source_plane:
+    - root-azoth
+    - public-azoth
+    - personal-root
+    - project-repo
+    - external-source
+  candidate_decision:
+    - approved
+    - rejected
+    - revise
+    - defer
+  safety_classification:
+    - approved_source_candidate
+    - manual_excerpt_required
+    - blocked_raw_bulk_import
+  privacy:
+    - public
+    - internal
+    - private
+    - secret_pointer_only
+constraints:
+  candidates_min: 1
+  approved_candidates_require_card_path: true
+  approved_card_path_prefix: .azoth/knowledge/cards/
+  rejected_candidates_require_reason: true
+  candidate_review_after_required: true
+  operator_review_required_before_deploy: true

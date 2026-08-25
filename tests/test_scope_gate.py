@@ -6,6 +6,8 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
+
 ORCHESTRATOR_PATH = (
     Path(__file__).resolve().parent.parent / ".claude" / "hooks" / "edit_pretooluse_orchestrator.py"
 )
@@ -159,6 +161,108 @@ def test_t3_edit_gate_absent(tmp_path: Path) -> None:
     output = _run("Edit", gate_path)
     assert _decision(output) == "deny"
     assert "scope-gate" in _reason(output)
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        ".azoth/session-gate.json",
+        ".azoth/run-ledger.local.yaml",
+        ".azoth/session-state.md",
+        ".azoth/bootloader-state.md",
+        ".azoth/memory/episodes.jsonl",
+    ],
+)
+def test_t3d_exploratory_session_allows_bounded_lifecycle_write_without_scope_gate(
+    tmp_path: Path,
+    relative_path: str,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
+    (azoth_dir / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-explore",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": _future_expiry(),
+                "updated_at": _future_expiry(),
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / relative_path))
+    assert _decision(output) == "allow"
+
+
+def test_t3e_exploratory_session_still_denies_normal_repo_write_without_scope_gate(
+    tmp_path: Path,
+) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
+    (azoth_dir / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-explore",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": _future_expiry(),
+                "updated_at": _future_expiry(),
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "normal-file.txt"))
+    assert _decision(output) == "deny"
+    assert "exploratory session has no delivery scope" in _reason(output)
+
+
+def test_t3f_exploratory_session_denies_scope_session_id_mismatch(tmp_path: Path) -> None:
+    gate_path = tmp_path / "scope-gate.json"
+    gate_path.write_text(
+        json.dumps(
+            {
+                "approved": True,
+                "expires_at": _future_expiry(),
+                "goal": "BL-123: delivery work",
+                "session_id": "sess-delivery",
+                "approved_by": "human",
+                "backlog_id": "BL-123",
+                "governance_mode": "standard",
+                "pipeline_command": "auto",
+                "target_layer": "application",
+            }
+        ),
+        encoding="utf-8",
+    )
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir(exist_ok=True)
+    (azoth_dir / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-explore",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": _future_expiry(),
+                "updated_at": _future_expiry(),
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = _run("Write", gate_path, file_path=str(tmp_path / "normal-file.txt"))
+    assert _decision(output) == "deny"
+    assert "active session does not match delivery scope" in _reason(output)
 
 
 def test_t3b_create_file_gate_absent_vscode_payload(tmp_path: Path) -> None:

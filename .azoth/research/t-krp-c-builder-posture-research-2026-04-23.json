@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "reusable-research",
+  "source_session_id": "2026-04-23-t-krp-c-planning-repair",
+  "source_backlog_id": "T-KRP-C",
+  "initiative_ref": "INI-KRP-001",
+  "goal": "T-KRP-C: Builder agent posture: surgical changes + simplicity-first enforcement",
+  "captured_at": "2026-04-23T22:18:00Z",
+  "volatility": "mixed",
+  "limitations": [
+    "External upstream repository shape and vendor instruction surfaces are time-sensitive and were checked during the 2026-04-23 dynamic-full-auto planning repair.",
+    "This capsule is planning evidence for hydrating T-KRP-C into backlog/spec state. It does not authorize editing builder agent posture files without a later governed M1 delivery scope.",
+    "T-KRP-C should stay builder-specific: do not implement orchestrator goal-classification checkpoints reserved for T-KRP-D or structured-autonomy success gates reserved for T-KRP-E.",
+    "Generated builder mirrors should not be manually edited. If a later implementation changes canonical builder posture, generated surfaces must be refreshed through scripts/azoth-deploy.py.",
+    "The upstream Karpathy guidelines inform acceptance criteria, but Azoth must keep repo-native governance, staged handoffs, deploy parity, and validation expectations."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this capsule be reused for the next T-KRP-C planning or delivery pass?",
+      "status": "answered",
+      "answered_at": "2026-04-23T22:18:00Z",
+      "fresh_until": "2026-05-23T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-goal-ad-hoc-hydrate-t-krp-c-planning-state-with-resea",
+      "question": "What evidence is sufficient for the current AD-HOC T-KRP-C planning repair?",
+      "status": "answered",
+      "answered_at": "2026-04-23T22:18:00Z",
+      "fresh_until": "2026-05-23T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-slice-t-krp-c-t-krp-c-builder-agent-posture-surgical-changes-s",
+      "question": "What should the future governed T-KRP-C builder posture slice include and defer?",
+      "status": "answered",
+      "answered_at": "2026-04-23T22:18:00Z",
+      "fresh_until": "2026-05-23T00:00:00Z"
+    }
+  ],
+  "execution_audit": {
+    "pipeline": "dynamic-full-auto",
+    "run_id": "2026-04-23-t-krp-c-planning-repair-dynamic-full-auto",
+    "model_tiers": [
+      {
+        "wave": "Wave A online research",
+        "model_tier": "standard",
+        "purpose": "External/source research for builder-posture acceptance criteria."
+      },
+      {
+        "wave": "Wave B repo exploration",
+        "model_tier": "standard",
+        "purpose": "Repo-local blast-radius and hydration-boundary exploration."
+      },
+      {
+        "wave": "Queen merge",
+        "model_tier": "standard",
+        "purpose": "Merge research and exploration into planning artifacts only."
+      }
+    ],
+    "stage_summaries": [
+      {
+        "stage_id": "dfa_wave_a_research",
+        "status": "complete",
+        "disposition": "research_pack_ready"
+      },
+      {
+        "stage_id": "dfa_wave_b_explore",
+        "status": "complete",
+        "disposition": "planning_repair_only"
+      }
+    ]
+  },
+  "thesis": "T-KRP-C should make the Builder agent's later implementation posture explicitly enforce small, goal-traceable, simplicity-first changes with narrow verification. The planning repair should create only backlog/spec/research state; the future governed delivery should edit canonical builder posture and regenerate mirrors through the deploy path.",
+  "source_resolution": {
+    "observed_at": "2026-04-23",
+    "upstream_guidelines": {
+      "canonical_url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "canonical_skill_url": "https://github.com/forrestchang/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md",
+      "builder_relevant_principles": [
+        "Simplicity First",
+        "Surgical Changes",
+        "Goal-Driven Execution"
+      ],
+      "implication": "Builder posture should require the minimum change that solves the task, avoid speculative abstractions, preserve unrelated code, and report verification evidence."
+    },
+    "industry_review_practice": {
+      "small_changes": "Google engineering guidance favors small, focused changes because they are easier and faster to review and less risky to roll back.",
+      "pull_request_focus": "Microsoft engineering playbook guidance emphasizes focused pull requests with clear evidence and reviewability.",
+      "code_review_surface": "GitHub pull request review mechanics reinforce that changed files and conversations are the review surface; builder reports should make changed paths and residual risk explicit."
+    },
+    "agent_vendor_context": {
+      "openai_codex": "Codex guidance around repo instructions and checks supports keeping builder behavior tied to local instructions and verifiable commands.",
+      "anthropic_claude_code": "Claude Code best-practice guidance supports explicit context, planning, and verification rather than broad ungrounded edits."
+    }
+  },
+  "repo_evidence": {
+    "planned_task": {
+      "roadmap_ref": ".azoth/roadmap.yaml",
+      "task_id": "T-KRP-C",
+      "title": "Builder agent posture: surgical changes + simplicity-first enforcement",
+      "target_layer": "M1",
+      "delivery_pipeline": "governed",
+      "initiative_ref": "INI-KRP-001"
+    },
+    "existing_boundaries": [
+      "T-KRP-A owns root CLAUDE.md always-on behavioral guidance.",
+      "T-KRP-B owns the dedicated karpathy-principles skill.",
+      "T-KRP-C owns builder agent posture only.",
+      "T-KRP-D owns orchestrator assumption-surfacing at goal classification.",
+      "T-KRP-E owns structured-autonomy-plan success criteria."
+    ],
+    "canonical_builder_surface": [
+      "agents/tier1-core/builder.agent.md is the likely authored builder source.",
+      ".claude/agents/builder.md and .codex/agents/builder.toml are generated or platform-projected surfaces and should not be manually edited in the planning repair."
+    ]
+  },
+  "spec_direction": {
+    "intent": "Hydrate a governed M1 task for refining Builder posture around surgical changes, simplicity-first implementation, and goal-driven verification.",
+    "scope": [
+      "Refine the canonical Builder agent posture so implementation stages state owned surfaces before editing and keep changes traceable to the approved goal.",
+      "Require Builder to prefer existing repo patterns and helpers over new abstractions unless the abstraction removes real repeated complexity.",
+      "Require Builder to avoid drive-by cleanup and preserve unrelated dirty state.",
+      "Require Builder final reports to name changed paths, goal mapping, validation commands, outcomes, and residual risk.",
+      "Regenerate generated builder mirrors only through scripts/azoth-deploy.py if the future implementation touches canonical builder posture."
+    ],
+    "non_goals": [
+      "No orchestrator goal-classification policy changes.",
+      "No structured-autonomy-plan success-criteria gate changes.",
+      "No manual edits to generated builder mirrors.",
+      "No hook-level enforcement in the initial T-KRP-C implementation unless explicitly re-scoped.",
+      "No broad rewrite of all agent archetypes."
+    ],
+    "acceptance": [
+      "The future governed implementation updates the canonical builder posture with explicit simplicity-first and surgical-change constraints.",
+      "Builder guidance includes a pre-edit scope statement and a final verification/reporting checklist.",
+      "Generated mirrors are refreshed via scripts/azoth-deploy.py if affected.",
+      "Acceptance keeps T-KRP-D and T-KRP-E explicitly deferred.",
+      "Validation includes deploy parity checks and targeted tests for generated agent surfaces."
+    ]
+  },
+  "expected_regression_surfaces": {
+    "tests": [
+      "tests/test_agents.py",
+      "tests/test_azoth_deploy.py",
+      "tests/test_codex_adapter_templates.py"
+    ],
+    "commands": [
+      "python3 scripts/azoth-deploy.py --check",
+      "PYTHONPATH=scripts python3 -m pytest tests/test_agents.py tests/test_azoth_deploy.py tests/test_codex_adapter_templates.py -q"
+    ],
+    "integration_expectations": [
+      "Canonical builder source changes must project to enabled platform mirrors.",
+      "Generated mirrors must be refreshed through azoth-deploy rather than manually edited.",
+      "Future builder-stage summaries should expose scope traceability, verification evidence, and residual risk."
+    ]
+  },
+  "decision_ref_ready": {
+    "decision_refs": [
+      "D21",
+      "D23",
+      "D26",
+      "D44",
+      "D51"
+    ],
+    "rationale": [
+      "D21 governs staged typed gates for M1 delivery.",
+      "D23 governs auto-family routing and dynamic pipeline composition.",
+      "D26 governs proactive agent posture tiers.",
+      "D44 governs structured quality review expectations.",
+      "D51 governs M1 promotion and human-gated governance expectations."
+    ]
+  },
+  "sources": [
+    {
+      "kind": "external",
+      "label": "forrestchang/andrej-karpathy-skills repository",
+      "url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "accessed_at": "2026-04-23T22:18:00Z",
+      "use": "Current upstream repository identity and four-principle framing."
+    },
+    {
+      "kind": "external",
+      "label": "upstream karpathy-guidelines SKILL.md",
+      "url": "https://github.com/forrestchang/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md",
+      "accessed_at": "2026-04-23T22:18:00Z",
+      "use": "Reference shape for builder-relevant simplicity, surgical-change, and goal-driven principles."
+    },
+    {
+      "kind": "external",
+      "label": "Google Engineering Practices - Small CLs",
+      "url": "https://google.github.io/eng-practices/review/developer/small-cls.html",
+      "accessed_at": "2026-04-23T22:18:00Z",
+      "use": "Small focused change reviewability and risk framing."
+    },
+    {
+      "kind": "external",
+      "label": "Microsoft Engineering Fundamentals Playbook - Pull Requests",
+      "url": "https://microsoft.github.io/code-with-engineering-playbook/code-reviews/pull-requests/",
+      "accessed_at": "2026-04-23T22:18:00Z",
+      "use": "Focused pull request and evidence expectations."
+    },
+    {
+      "kind": "external",
+      "label": "GitHub Docs - Reviewing proposed changes in a pull request",
+      "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+      "accessed_at": "2026-04-23T22:18:00Z",
+      "use": "Changed-file review surface and review workflow context."
+    },
+    {
+      "kind": "repo-local",
+      "label": "T-KRP-B spec",
+      "path": ".azoth/roadmap-specs/v0.2.0/T-KRP-B.yaml",
+      "use": "Adjacent Karpathy slice boundaries and spec shape."
+    },
+    {
+      "kind": "repo-local",
+      "label": "Dynamic-full-auto skill",
+      "path": ".agents/skills/dynamic-full-auto/SKILL.md",
+      "use": "Dynamic research/explore/merge orchestration contract."
+    }
+  ],
+  "next_step": "Hydrate T-KRP-C into backlog/spec state with this capsule as planning evidence, then rerun /next so the governed M1 scope card can be approved separately."
+}

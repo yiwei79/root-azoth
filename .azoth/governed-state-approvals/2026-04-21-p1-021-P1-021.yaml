@@ -1,0 +1,18 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-21-p1-021
+backlog_id: P1-021
+goal: "P1-021: Memory operation platform parity"
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-21T21:20:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - P1-021
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: bc03f1aa638ebbbd2f6c56d663379f290ecdaff2ee3f93ca99c4c0260ffce1f9

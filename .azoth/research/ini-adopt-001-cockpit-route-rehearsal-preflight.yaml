@@ -1,0 +1,160 @@
+schema_version: 1
+artifact_type: cockpit_route_rehearsal_preflight
+initiative_ref: INI-ADOPT-001
+candidate_slice_ref: slice-adopt-001-c
+task_ref: ADOPT-001-C
+status: complete
+created_at: "2026-05-19T22:18:48Z"
+session_id: 2026-05-20-ini-adopt-001-cockpit-route-preflight
+purpose: >
+  Define the root-local, no-write cockpit route rehearsal for Project Genesis
+  spaces before any personal cockpit repository mutation or project-local
+  context loading is approved.
+authority_boundary:
+  root_azoth_may_define:
+    - pointer-only route readback fields
+    - safe-open project-session prompts
+    - no-write cockpit simulation checklist
+    - validation receipt for this preflight
+  forbidden_in_this_slice:
+    - personal_cockpit_mutation
+    - project_local_mutation
+    - public_azoth_mutation
+    - roadmap_backlog_spec_hydration
+    - kernel_governance_mutation
+    - code_changes
+    - release_publishing
+route_readback_contract:
+  source_refs:
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+    - scripts/cockpit_menu.py#READBACK_PROJECT_FIELDS
+    - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#cockpit-main-menu-and-context-firewall
+  required_fields:
+    - project_id
+    - title
+    - repo_path
+    - default_branch
+    - tracking_ref
+    - privacy_class
+    - profile_mode
+    - project_pointer
+    - authority_plane
+    - selected_mode
+    - readiness_state
+    - freshness_status
+    - installed_asset_classes
+    - missing_asset_classes
+    - approval_scope
+    - active_write_claim
+    - next_safe_action
+    - stop_reason
+    - handoff_receipt_ref
+    - validation_commands
+  invariants:
+    - profile_mode is pointer_only
+    - authority_plane is personal_cockpit for pointer display, not project_local authority
+    - selected_mode remains guide or assisted until a project-local receipt exists
+    - active_write_claim is false for menu display
+    - no source_files, code_summaries, dependency_inventory, secrets, or retrieval_index fields
+route_fixtures:
+  - project_id: music-production-lab
+    title: Music Production Lab
+    selected_mode: guide
+    readiness_state: discovery_active
+    freshness_status: starter_prompt_ready
+    authority_plane: personal_cockpit
+    approval_scope: pointer_only_route_rehearsal
+    installed_asset_classes:
+      - project_genesis_starter_prompt
+      - pointer_only_safe_open_prompt
+    missing_asset_classes:
+      - project_local_receipt
+      - project_local_packet
+      - managed_mode_seed
+    safe_open_prompt: >
+      Open music-production-lab as a creative exploration space. Use the Project
+      Genesis starter prompt, do not load project files in the cockpit, and do
+      not create a project-local packet until that project approves it.
+    next_safe_action: >
+      Start a project-local session only after the operator names the music
+      workspace path and approval boundary.
+    stop_reason: project_local_path_and_receipt_not_approved
+  - project_id: bachelor-thesis
+    title: Bachelor Thesis
+    selected_mode: guide
+    readiness_state: discovery_active
+    freshness_status: starter_prompt_ready
+    authority_plane: personal_cockpit
+    approval_scope: pointer_only_route_rehearsal
+    installed_asset_classes:
+      - project_genesis_starter_prompt
+      - pointer_only_safe_open_prompt
+    missing_asset_classes:
+      - project_local_receipt
+      - source_import_approval
+      - managed_mode_seed
+    safe_open_prompt: >
+      Open bachelor-thesis as an academic work space. Map research question,
+      source state, deadlines, and writing gaps in a project-local session; do
+      not alter documents or import sources from the cockpit.
+    next_safe_action: >
+      Start a project-local thesis session after the operator names the thesis
+      folder and source boundaries.
+    stop_reason: project_local_path_and_source_boundaries_not_approved
+  - project_id: agent-context-project
+    title: Agent Context Project
+    selected_mode: assisted
+    readiness_state: discovery_active
+    freshness_status: starter_prompt_ready
+    authority_plane: personal_cockpit
+    approval_scope: pointer_only_route_rehearsal
+    installed_asset_classes:
+      - project_genesis_starter_prompt
+      - pointer_only_safe_open_prompt
+      - compatibility_questions
+    missing_asset_classes:
+      - project_local_receipt
+      - compatibility_test_evidence
+      - managed_mode_seed
+    safe_open_prompt: >
+      Open agent-context-project as a separate project. Compare design intent,
+      artifacts, risks, and Azoth compatibility without merging it into
+      root-azoth or mutating either repository.
+    next_safe_action: >
+      Start a project-local session after the operator names the repo or notes
+      path and approves a no-mutation compatibility map.
+    stop_reason: project_local_target_and_experiment_boundary_not_approved
+no_write_simulation_plan:
+  fixture_strategy: >
+    Build a temporary cockpit project-index fixture from the three route
+    fixtures, then run root-local render/check assertions equivalent to
+    scripts/cockpit_menu.py and scripts/cockpit_ux_simulate.py. The simulation
+    must compare cockpit and project git status before and after.
+  required_assertions:
+    - rendered menu includes Mode, Readiness, Freshness, Authority, Pointer, Installed assets, Missing assets, Approval, Write claim, Next safe action, and Stop reason
+    - rendered handoff includes a project-session prompt
+    - output contains no forbidden project context fields
+    - cockpit git status does not change
+    - project git status does not change
+    - route write is not performed
+  suggested_command_after_approval: >
+    python3 scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project <approved_project_id>
+acceptance_map:
+  - criterion: Pointer-only route readback fields are named.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml#route_readback_contract
+  - criterion: Safe-open prompts for the three project examples are named.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml#route_fixtures
+  - criterion: No-write cockpit simulation evidence is planned.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml#no_write_simulation_plan
+outcome:
+  result: slice-adopt-001-c complete as root-local preflight
+  next_approval_needed: >
+    Explicit operator approval naming whether to mutate the personal cockpit
+    repository with pointer-only Project Genesis routes, or to switch to public
+    template distribution or project-local packet dry-run instead.

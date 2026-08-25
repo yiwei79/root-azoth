@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "campaign_id": "public-release-truth-artifact-repair-root-only-20260510",
+  "session_id": "2026-05-10-autonomous-auto-public-release-truth-artifact-repair-root-only-1",
+  "artifact": ".azoth/campaigns/public-release-truth-artifact-repair-root-only-20260510/repair-report.md",
+  "disposition": "pass",
+  "overall_score": 0.94,
+  "recommendation": "keep_stale",
+  "dimensions": {
+    "correctness": 0.97,
+    "completeness": 0.93,
+    "quality": 0.92,
+    "test_coverage": 0.9,
+    "governance": 0.96,
+    "entropy": 0.92
+  },
+  "key_findings": [
+    "Verified 46fee0bc3ee9d16bcc9638efd3d96f6723314528 exists as the intended root evidence commit.",
+    "Verified corrupt 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 does not resolve locally and is only retained as superseded corrupt evidence.",
+    "The repaired artifacts record the evidence chain 46fee0bc -> d2a73a -> public 499a450.",
+    "Public origin/main 8e2b3283e8423a01fe64f131c92d52371f995954 is classified as public-only untagged release-profile drift.",
+    "No public sync/tag/release, network, dependency, credential, cockpit, or project repo mutation occurred."
+  ],
+  "residual_risks": [
+    "Public remote truth was not refreshed live because network was not authorized.",
+    "Public origin/main remains one untagged commit ahead of the peeled v0.2.0 tag target.",
+    "Public sync/tag/release remains a separate guarded gate.",
+    "Existing unrelated dirty Azoth state must be packaged separately from the repair artifacts."
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "packet_type": "autonomous_auto_child_evaluator_scorecard",
+  "campaign_id": "multi-operating-profile-feature-completion-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-reconciliation-1",
+  "route": "research_initiative",
+  "threshold": 0.9,
+  "score": 0.93,
+  "verdict": "pass",
+  "dimensions": {
+    "repo_native_evidence": {
+      "score": 0.95,
+      "evidence": "Read architecture proposal, migration phases, Phase 1 shadow log, prior operating-profile decision, classifier, control-plane router, command/workflow docs, architecture docs, fixtures, and tests."
+    },
+    "phase_truth": {
+      "score": 0.94,
+      "evidence": "Separated Phase 0 accepted, Phase 1 complete narrow, Phase 2 advisory implemented, Phase 3 partially implemented, Phase 4 incomplete, and Phase 5 research-only."
+    },
+    "boundary_safety": {
+      "score": 0.96,
+      "evidence": "Rejected public release/sync/freshness, hydration, broad default switch, meta-harness productionization, commits, pushes, and packaging."
+    },
+    "next_child_specificity": {
+      "score": 0.92,
+      "evidence": "Selected a refine_proposal child that must lock profile contract, trace rule, handoff schema, source map, and proof plan."
+    },
+    "pipeline_visibility": {
+      "score": 0.91,
+      "evidence": "Recorded architect and researcher inline exceptions before substantive synthesis; evaluator packet includes iteration history and replay accounting."
+    },
+    "residual_risk_clarity": {
+      "score": 0.88,
+      "evidence": "Main residual risk is docs/router appearing ahead of the missing canonical contract; child 2 is designed to close or downgrade that gap."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.93,
+      "finding": "Research packet is complete enough for the child route and names a specific next child. No below-threshold finding requires replay.",
+      "disposition": "pass_without_replay"
+    }
+  ],
+  "bounded_replay_count": 0,
+  "rejected_alternatives": [
+    {
+      "candidate": "broad_default_switch_now",
+      "reason": "Rejected because Phase 4 is not proven and protected/generated surfaces would exceed this child."
+    },
+    {
+      "candidate": "public_release_or_freshness_lane",
+      "reason": "Rejected because public release is on-demand only and not part of this campaign."
+    },
+    {
+      "candidate": "hydrate_roadmap_or_backlog",
+      "reason": "Rejected because campaign declaration blocks hydration."
+    },
+    {
+      "candidate": "skip_to_shadow_eval",
+      "reason": "Rejected because shadow eval should score against a canonical contract, not infer one."
+    }
+  ],
+  "residual_risks": [
+    "Existing docs and routing may be read as stronger than the contract currently justifies.",
+    "The helper handoff packet is smaller than the architecture-spec handoff packet.",
+    "Autonomous continuation needs an explicit fixture before final proof.",
+    "Future generated-surface edits may require deploy parity checks if touched."
+  ],
+  "final_disposition": "pass"
+}

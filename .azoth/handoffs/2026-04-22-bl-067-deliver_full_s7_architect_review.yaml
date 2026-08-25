@@ -1,0 +1,43 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s7_architect_review
+agent: architect
+stage_kind: audit
+status: complete
+entropy: YELLOW
+gate_outcome: "Architect review pass: BL-067 stayed within the approved four-surface slice, satisfied the two-layer replay contract, and passed targeted verification; ready for the final human gate."
+session_id: 2026-04-22-bl-067
+done:
+  - "Compared the implemented diff against the replayed Stage 2 design and confirmed writes remain limited to `tests/test_stage_summary_schema.py`, `pipelines/stage-summary.schema.yaml`, `.claude/hooks/stage_summary_validate.py`, and `.agents/skills/subagent-router/SKILL.md`."
+  - "Verified the two-layer regression contract holds: `pipelines/stage-summary.schema.yaml` now enforces replay-field co-presence with `dependentRequired`, and `.claude/hooks/stage_summary_validate.py` rejects any partial replay bundle before handoff write time."
+  - "Confirmed `tests/test_stage_summary_schema.py` now proves both layers directly by inspecting the raw schema structure and by accepting zero-field and full-field replay metadata while rejecting representative partial bundles."
+  - "Re-ran `python3 -m pytest tests/test_stage_summary_schema.py` on current repo state and observed `9 passed`."
+decisions:
+  - "Disposition: pass. The implementation matches the approved replayed Stage 2 design with no scope creep and no missing acceptance evidence."
+  - "Treat downstream producers that still emit partial replay metadata as a separate follow-up risk, not a reason to reopen this bounded BL-067 slice."
+  - "Do not expand this fix into router ownership, queue, ledger, or deliver-full command work; the approved repair was completed inside the four contract surfaces."
+open:
+  - "Residual follow-up risk: any producer that still sends partial replay metadata will now fail closed under the hardened schema and hook and will need separate remediation."
+artifact_refs:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s5.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s6.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+replay_iteration: 1
+replay_target_stage: deliver_full_s2_architect
+finding_class: test-strategy
+threshold_limit: 3
+lineage_artifacts:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s5.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s6.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+next: "Final human delivery review can treat BL-067 as complete. Any newly exposed producer failures from partial replay metadata should be tracked separately from this closed four-surface hardening slice."

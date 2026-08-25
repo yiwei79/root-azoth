@@ -1,0 +1,83 @@
+id: T-048
+roadmap_version: v0.2.0
+title: Personal-root RC update rehearsal from desired state
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Rehearse applying an explicitly approved Azoth release candidate or release into
+  the personal root from declarative desired state, then validate the result and
+  record receipt evidence. This is the first follow-on slice after T-047 that may
+  mutate personal-root state, and only after a fresh governed delivery gate names
+  the exact product revision, target path, storage policy, validation commands,
+  and rollback point.
+problem: >
+  T-047 defined the cloud-native deployment procedure, but the personal control
+  plane is not deployment-complete until the procedure is rehearsed against the
+  personal root with real desired-state, validation, receipt, and rollback
+  evidence. The unsafe path would be to treat roadmap hydration as deployment
+  approval, or to combine release selection, storage policy, source onboarding,
+  project mutation, retrieval expansion, and public release into one broad run.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/roadmap-specs/v0.2.0/T-047.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+scope:
+- Open a governed delivery gate for the rehearsal before any personal-root write.
+- Name the target personal-root path, product revision or RC revision,
+  desired-state manifest, validation commands, storage policy, and rollback
+  reference before applying anything.
+- Run the personal-root validator before and after the rehearsal, preserving
+  clean-state evidence for root-azoth and personal-root or explicitly packaging
+  any residual changes.
+- Apply only the approved desired-state update needed for the RC/release
+  rehearsal; keep source registry, project onboarding, retrieval, and public
+  release outside this slice.
+- Record a provenance-rich receipt with source revision, product revision,
+  target paths, validation command/result, applied timestamp, rollback reference,
+  and residual risk.
+non_goals:
+- Do not start from this scaffold without a fresh governed T-048 delivery gate.
+- Do not access credentials, configure cloud accounts, or create external cloud
+  infrastructure unless a separate approval explicitly adds that scope.
+- Do not onboard source registries or mutate project repositories.
+- Do not expand recall, vector, graph, or retrieval indexing.
+- Do not publish public azoth or tag a stable release.
+- Do not change governance, kernel, M1, or protected instruction surfaces.
+acceptance:
+- Operator approval names the target path, product revision, desired-state
+  manifest, validation commands, storage policy, and rollback point before any
+  personal-root write.
+- Personal-root validator passes before and after the rehearsal, and root-azoth
+  plus personal-root git states are clean or explicitly packaged.
+- Receipt records source revision, product revision, target paths, validation
+  command/result, applied timestamp, rollback reference, and residual risk.
+- Scope, pipeline, and write-claim artifacts show that the rehearsal was governed
+  separately from hydration/scaffold approval.
+- Final handoff identifies whether the next proper route is project onboarding
+  pilot, storage-policy follow-up, or stable personal-control-plane deployment
+  closeout.
+dependencies:
+- T-047
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: >
+  Phase 1 = open a governed T-048 rehearsal scope and confirm exact release/RC,
+  target path, storage policy, validation commands, and rollback point. Phase 2 =
+  apply and verify only the approved desired-state update. Phase 3 = route either
+  project onboarding pilot (T-049) or stable closeout (T-050) based on receipt
+  evidence. Stop immediately if the rehearsal requires new credentials, cloud
+  provisioning, source onboarding, project writes, retrieval expansion, or public
+  release approval.

@@ -16,6 +16,7 @@ meta:
   wave_a3: "mandatory external research lane — official Git docs plus bounded academic workflow/evaluation sources"
   wave_b3: "repo-local explore lane — proposal validator/tests, worktree-sync command/backend/tests, playbook, roadmap/backlog placement"
   checkpoint_gamma_2026_04_19: "planning-only slice → refresh proposal + digest + research capsule + roadmap/backlog; no implementation handoff in this session"
+  bl_065_refresh_2026_04_19: "Revalidated RP-WT-IND and RP-WT-ACAD against live upstream docs/pages; no directional change, but the sparse-checkout source now points to the current manual path and the bounded-lane conclusions remain in force."
 
 consensus_themes:
   - id: durability
@@ -189,7 +190,7 @@ research_packs:
     topic: "Official Git worktree lifecycle and per-worktree state"
     sources:
       - { title: "git-worktree manual", url: "https://git-scm.com/docs/git-worktree.html" }
-      - { title: "git-sparse-checkout manual", url: "https://git-scm.com/docs/git-sparse-checkout/2.36.0" }
+      - { title: "git-sparse-checkout manual", url: "https://git-scm.com/docs/git-sparse-checkout" }
     implications_for_azoth:
       - "Treat temporary integration worktrees as explicit short-lived lifecycle objects."
       - "Keep transient integration state isolated per worktree rather than broadening live target state."

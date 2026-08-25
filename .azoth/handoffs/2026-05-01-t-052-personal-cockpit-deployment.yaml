@@ -1,0 +1,152 @@
+schema_version: 1
+task_ref: T-052
+session_id: 2026-05-01-t-052-dynamic-cockpit-deployment
+delivery_mode: governed_personal_cockpit_local_rename
+observed_at: '2026-05-01T09:12:00Z'
+dynamic_full_auto:
+  stage0_classification:
+    scope: mixed
+    risk: additive
+    complexity: medium
+    knowledge: known-pattern
+    target_layer: infrastructure
+  selected_mode: dynamic-full-auto
+  delivery_pipeline: deliver-full
+  replay_threshold: 1
+  discovery_policy: local_evidence_only
+  checkpoint_gamma_route: governed deliver-full because the approved operation crosses
+    root planning truth and a local personal-cockpit repository mutation.
+  stage_evidence:
+  - stage_id: t052_architect_preflight
+    subagent_type: architect
+    trigger: context-isolation
+    disposition: approved
+  - stage_id: t052_reviewer_gate
+    subagent_type: reviewer
+    trigger: review-independence
+    disposition: request_changes
+    replay_reason: root packaging, lock cleanup, and entropy accounting needed before closeout.
+  - stage_id: t052_reviewer_replay
+    subagent_type: reviewer
+    trigger: review-independence
+    disposition: approved
+    closeout_can_proceed: true
+gate:
+  command: python3 scripts/check_gates.py --session-id 2026-05-01-t-052-dynamic-cockpit-deployment --require-pipeline-gate
+  status: passed
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  mutation_authority:
+    root_planning_truth: true
+    local_personal_cockpit_rename: true
+    cockpit_receipt: true
+    project_source: false
+    retrieval_index: false
+    source_registry: false
+    credentials: false
+    cloud_or_storage: false
+    public_product: false
+    governance: false
+    kernel: false
+    m1: false
+preflight:
+  source_path: /Users/yiwei/GithubRepos/personal-azoth-root
+  target_path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  source_status_before:
+  - '## main'
+  source_validator_before: passed
+  target_absent_before: true
+  rollback_ref: aeac2fac1628623dc54bb2bb0e050f6135255280
+applied:
+  renamed_from: /Users/yiwei/GithubRepos/personal-azoth-root
+  renamed_to: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  cockpit_commit: 56dcb693cd24d4431a0ba89c37228264cf45285d
+  cockpit_status_after:
+  - '## main'
+  cockpit_receipt_ref: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-052-personal-cockpit-deployment-2026-05-01.yaml
+  cockpit_files_changed:
+  - README.md
+  - azoth.yaml
+  - .azoth/projects/index.yaml
+  - .azoth/releases/applied.yaml
+  - .azoth/projects/handoffs/t-052-personal-cockpit-deployment-2026-05-01.yaml
+  project_profiles_preserved:
+  - ras-or-ray
+  pointer_only_contract_preserved: true
+root_artifacts_changed:
+- .azoth/backlog.yaml
+- .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/roadmap.yaml
+- .azoth/roadmap-specs/v0.2.0/T-052.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- tests/test_personal_control_plane_procedure.py
+- tests/test_post_t050_continuation_intake.py
+- tests/test_t049_project_onboarding_receipt.py
+- tests/test_t050_stable_personal_control_plane.py
+entropy_accounting:
+  trust_contract_root_file_ceiling: 10
+  root_files_changed_count: 10
+  root_files_changed_count_status: within_ceiling_after_repair
+  deleted_untracked_lock: .azoth/run-ledger.local.yaml.lock
+  deleted_lock_status: removed_before_reviewer_replay
+  cockpit_repo_package:
+    path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+    commit: 56dcb693cd24d4431a0ba89c37228264cf45285d
+    files_changed_count: 5
+    package_boundary: separate_local_repo_commit
+  repair_replay:
+    reason: Reviewer requested packaging hygiene and entropy accounting before closeout.
+    root_packaging_strategy: Folded T-052 tests into an already-touched test module
+      so the root package stays at exactly 10 files.
+    reviewer_replay_status: approved
+forbidden_outputs_confirmed:
+- project_source_mutation
+- project_code_mutation
+- source_registry_onboarding
+- retrieval_indexing
+- graph_or_vector_indexing
+- credential_access
+- cloud_account_provisioning
+- storage_backup_provisioning
+- public_product_mutation
+- public_release_publication
+- governance_change
+- kernel_change
+- m1_change
+validation_results:
+- command: python3 scripts/check_gates.py --session-id 2026-05-01-t-052-dynamic-cockpit-deployment --require-pipeline-gate
+  status: passed
+  result: Scope gate and pipeline gate valid for T-052 governed delivery.
+- command: python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  status: passed
+  result: personal knowledge validation OK.
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+  status: passed
+  result: '## main'
+- command: python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml --check-roadmap-refs
+  status: passed
+  result: OK.
+- command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_control_plane_procedure.py tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py tests/test_t049_project_onboarding_receipt.py -q
+  status: passed
+  result: 20 passed after reviewer-requested packaging repair.
+- command: python3 -m ruff check tests/test_personal_control_plane_procedure.py tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py tests/test_t049_project_onboarding_receipt.py
+  status: passed
+  result: All checks passed.
+- command: python3 scripts/roadmap_dashboard.py --theme E
+  status: passed
+  result: Dashboard renders T-052 as delivered with no planning drift warning.
+- command: python3 scripts/azoth-deploy.py --check
+  status: passed
+  result: All 277 platform mirror files in sync.
+- command: git diff --check
+  status: passed
+  result: No whitespace errors.
+- command: python3 scripts/run_ledger.py require-stage-evidence --run-id 2026-05-01-t-052-dynamic-cockpit-deployment --stage-id t052_reviewer_replay
+  status: passed
+  result: Stage evidence OK for reviewer replay.
+- command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest -q
+  status: passed
+  result: 2111 passed, 3 xfailed after T-052 gate close and write-claim release.
+next_safe_action: Open a separate operator-selected gate for private backup/recovery,
+  another project consumer pilot, retrieval/source onboarding, public-product update,
+  or project-scoped writes.

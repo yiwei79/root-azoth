@@ -1,0 +1,116 @@
+schema_version: 1
+bank_type: design
+id: project-readiness-cockpit-handoff
+title: Project readiness cockpit handoff
+status: complete
+created_at: "2026-05-19T19:36:00Z"
+updated_at: "2026-05-19T21:37:32Z"
+source_proposal_refs:
+  - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+related_initiative_refs:
+  - INI-DEP-002
+related_decision_refs:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+problem: >
+  Azoth needs a central cockpit/control-point experience that is useful for
+  project readiness without becoming hidden authority over public, cockpit, or
+  project-local repositories.
+design_thesis: >
+  Treat project-local mode receipts as the authoritative project state, and
+  treat cockpit readback as pointer-only display plus next-safe-action routing.
+  Root-azoth defines the contract; public Azoth and project-local repositories
+  may only adopt it after their own explicit gates.
+options:
+  - option_id: project_local_receipt_first
+    status: preferred
+    summary: "Project-local receipt is authoritative; cockpit reads and routes."
+  - option_id: cockpit_as_writer
+    status: rejected
+    summary: "Would turn central control point into cross-repo write authority."
+  - option_id: release_template_first
+    status: deferred
+    summary: "Needs a later public release/template gate before shipping."
+tradeoffs:
+  - tradeoff_id: central_visibility_vs_authority
+    summary: "Cockpit visibility is valuable, but write authority must remain local."
+    mitigation: "Require source-of-truth order: receipt, pointer readback, next safe action."
+  - tradeoff_id: adoption_ease_vs_truth
+    summary: "Simple mode labels help adoption but can overstate readiness."
+    mitigation: "Keep installed and missing asset classes visible."
+open_questions:
+  - question_id: db-dep-002-001
+    status: answered_for_root_contract
+    question: "Which receipt fields become mandatory per mode after T-062 hydration?"
+    answer: "T-062 defines root-local required fields for receipt validation; public, cockpit, and project-local mandatory-field adoption remains a separate gated follow-on."
+  - question_id: db-dep-002-002
+    status: deferred_to_follow_on
+    question: "Should public Azoth ship one receipt template or mode-specific templates?"
+    answer: "Out of scope for T-062; requires a fresh public-product/template gate."
+research_refs:
+  - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+  - .azoth/research/ini-dep-001-readiness-map.yaml
+challenge_log:
+  - challenge_id: ch-dep-design-002-001
+    status: answered_for_planning
+    prompt: "What would make this handoff unsafe?"
+    answer: "Claiming project readiness from root/cockpit artifacts without a project-local receipt."
+  - challenge_id: ch-dep-design-002-002
+    status: answered_for_planning
+    prompt: "What should stay canonical from T-059/T-060?"
+    answer: "The cockpit readback field names and no-write cockpit behavior."
+routing_candidates:
+  - route: initiative_candidate
+    status: complete
+    target: INI-DEP-002#slice-dep-002-a
+    rationale: "Delivered as T-062; do not repeat hydration or delivery for this candidate."
+readiness:
+  evaluated_at: "2026-05-19T21:37:32Z"
+  readiness_status: defer
+  human_decision: approved
+  freshness_status: current_as_of_2026_05_19_t_062_delivered
+  target_route: null
+  recommended_next_artifact: "No T-062 hydration remains. Future public, cockpit, or project-local receipt adoption requires a fresh initiative, proposal, or improvement campaign."
+closeout_history_policy:
+  policy_id: planning_bank_closeout_history_merge_policy_v1
+  status: active
+  merge_strategy: append_only
+  routine_closeout:
+    planning_bank_write_mode: forbidden
+    allowed_effects:
+      - "Read planning banks for closeout summaries, route context, or residual-risk reporting."
+      - "Record ordinary session closure outside planning-bank directories."
+    blocked_effects:
+      - "Do not rewrite .azoth/design-banks during routine closeout."
+      - "Do not rewrite .azoth/initiative-banks during routine closeout."
+      - "Do not append hydration_history without an explicit hydration action."
+  explicit_hydration_history:
+    append_path: hydration_history
+    append_position: append_tail
+    required_metadata:
+      - hydrated_at
+      - session_id
+      - candidate_slice_ref
+      - task_ref
+      - spec_ref
+      - approval_scope
+      - approval_basis
+      - append_policy_ref
+      - append_mode
+      - merge_key
+    merge_key_shape: "candidate_slice_ref:task_ref:hydrated_at"
+  non_laundering_rule: >
+    historical planning truth may be recorded, but it must preserve historical
+    and non retroactive pipeline compliance language.
+history:
+  - timestamp: "2026-05-19T19:36:00Z"
+    event: created_from_fresh_auto_planning_campaign
+    summary: "Captured project-local receipt and cockpit handoff design after terminal INI-DEP-001/T-061."
+  - timestamp: "2026-05-19T21:37:32Z"
+    event: route_closed_after_t_062_delivery
+    summary: "Closed the design-bank route after T-062 delivery and planning-truth reconciliation; repeat hydration is blocked and future adoption work requires fresh gates."

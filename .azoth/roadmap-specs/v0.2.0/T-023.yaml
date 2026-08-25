@@ -1,0 +1,44 @@
+id: T-023
+roadmap_version: v0.2.0
+title: Initiative intake and seed contract
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: >
+  Implement the first executable slice of INI-AUTO-001 by adding a seed-only
+  raw initiative intake contract and validator/helper for autonomous-auto.
+problem: >
+  Autonomous-auto can now report initiative lifecycle state and hydrate this
+  candidate, but it still needs a safe raw-initiative intake path before the
+  broader "throw any initiative at Azoth" vision can proceed without manual
+  artifact setup or accidental delivery authority.
+scope:
+- Add or update a seed-only intake contract/helper for raw operator initiatives.
+- Validate required intake fields, allowed outputs, forbidden outputs, protected boundaries, and approval basis.
+- Ensure raw initiative intake creates only discovery/planning seed artifacts and never opens scope gates, run ledger entries, backlog rows, roadmap tasks, task specs, hydration writes, or implementation work.
+- Keep the lifecycle report and planning-bank readiness path aligned with the new intake contract.
+non_goals:
+- Do not implement write-mode hydration.
+- Do not create backlog, roadmap task, or task spec artifacts from raw intake.
+- Do not implement durable autonomous-auto wakeups.
+- Do not bypass protected gates for M1, kernel, governance, destructive, credential, network, or cross-branch work.
+acceptance:
+- Raw initiative input is classified as planning/discovery, not delivery.
+- The intake contract records initiative id, operator goal, why-now, constraints, success signals, protected boundaries, initial uncertainty, approval scope, and approval basis.
+- Missing operator goal, missing approval basis, protected-scope expansion, and missing allowed/forbidden outputs fail closed without writing executable artifacts.
+- Tests prove planning_seed_only_no_hydration never authorizes hydrate_task or ship_task.
+- Lifecycle report output exposes why hydration, delivery, or stop is the next safe action.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  implement the helper/validator and tests; Phase 3 = use the helper as the intake
+  source for later lifecycle routing and approved hydration slices.
+source_proposal_ref: .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
+candidate_slice_ref: slice-auto-001-a

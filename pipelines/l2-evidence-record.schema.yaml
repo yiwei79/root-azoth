@@ -37,7 +37,7 @@ properties:
     maxLength: 64
   source_pipeline:
     type: string
-    enum: [auto, deliver, deliver-full]
+    enum: [auto, autonomous-auto, deliver, deliver-full]
   source_stage_id:
     type: string
     minLength: 1

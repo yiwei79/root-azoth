@@ -217,6 +217,17 @@ def evaluate_research_sufficiency(
             "reasons": ["Research capsule must be a JSON object."],
         }
 
+    return evaluate_research_capsule(capsule, goal=goal, backlog_id=backlog_id)
+
+
+def evaluate_research_capsule(
+    capsule: Mapping[str, object],
+    *,
+    goal: str | None = None,
+    backlog_id: str | None = None,
+    now: datetime | None = None,
+) -> dict:
+    """Evaluate whether an in-memory research capsule is reusable for Phase 1."""
     missing_capsule = CAPSULE_REQUIRED_FIELDS - set(capsule.keys())
     if missing_capsule:
         return {
@@ -249,7 +260,10 @@ def evaluate_research_sufficiency(
         }
 
     required_questions = derive_required_questions(goal=goal, backlog_id=backlog_id)
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now = now.astimezone(timezone.utc)
     refresh_reasons: list[str] = []
     question_details: dict[str, dict[str, object]] = {}
     for index, question in enumerate(questions):

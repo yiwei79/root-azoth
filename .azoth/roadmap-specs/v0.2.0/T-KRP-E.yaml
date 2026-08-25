@@ -1,0 +1,118 @@
+id: T-KRP-E
+roadmap_version: v0.2.0
+title: 'structured-autonomy-plan: goal → success-criteria gate (T-006 dependency,
+  autonomous loop enabler)'
+decision_ref:
+- D21
+- D23
+- D26
+- D44
+- D51
+intent: >
+  Hydrate the governed structured-autonomy-plan slice for INI-KRP-001 so a
+  later approved M1 delivery can add a goal-to-success-criteria gate before
+  planner-to-builder handoff. This planning hydration persists the research and
+  explore evidence without implementing the skill behavior change in the same
+  session.
+problem: >
+  T-KRP-A established the always-on root behavioral layer, T-KRP-B added the
+  injectable karpathy-principles skill, T-KRP-C refined Builder posture, and
+  T-KRP-D scoped Orchestrator assumption surfacing. The remaining Karpathy
+  follow-on is the planning contract itself: structured-autonomy-plan currently
+  restates goals, decomposes tasks, and requires test strategy, but it lacks a
+  distinct checkpoint that turns the goal into falsifiable success criteria
+  before tasks and validation are locked. Without a hydrated T-KRP-E backlog/spec
+  entry, /next cannot truthfully select the last active INI-KRP-001 slice even
+  though roadmap.yaml shows it as planned phase-3 work.
+scope:
+- 'Refine canonical `skills/structured-autonomy-plan/SKILL.md` so future plans
+  derive explicit success criteria from the stated goal before task decomposition
+  or before final plan validation.'
+- 'Require success criteria to be falsifiable, observable from repo-local evidence
+  or tests, and mapped to task-level validation plus the test strategy.'
+- 'Make non-goals and deferrals part of the success-criteria checkpoint so the
+  builder and any revise-and-continue replay share the same target.'
+- 'Explain the T-006 dependency: iterative replay needs stable success criteria
+  so reviewer/evaluator findings can route to the lowest legitimate corrective
+  stage without changing the goal mid-loop.'
+- 'If the future implementation changes canonical skill content, regenerate
+  generated mirrors through `python3 scripts/azoth-deploy.py` and verify deploy
+  parity.'
+non_goals:
+- 'No implementation edits to structured-autonomy-plan in this planning-hydration
+  session.'
+- 'No rewrite of T-006 runtime loops or bounded replay mechanics.'
+- 'No root `CLAUDE.md` expansion; T-KRP-A already owns the always-on root layer.'
+- 'No `karpathy-principles` skill rewrite; T-KRP-B owns the injectable discipline
+  slot.'
+- 'No Builder posture changes; T-KRP-C owns implementation-stage posture.'
+- 'No Orchestrator Stage 0 assumption checkpoint or D23 routing change; T-KRP-D
+  owns classification-time assumption surfacing.'
+- 'No new pipeline stage, Trust Contract rule, or governance gate unless a later
+  scope explicitly reclassifies the work and receives human approval.'
+- 'No manual edits to generated mirrors such as `.agents/skills/azoth-structured-autonomy-plan/SKILL.md`
+  or `.opencode/skills/structured-autonomy-plan/SKILL.md`.'
+acceptance:
+- 'The T-KRP-E backlog row exists with `target_layer: M1`, `delivery_pipeline:
+  governed`, `status: pending`, and `target_version: v0.2.0-p3` so `/next` can
+  select it truthfully.'
+- 'This spec names `.azoth/research/t-krp-e-structured-autonomy-success-criteria-gate-2026-04-24.json`
+  as planning evidence for the future governed structured-autonomy-plan delivery.'
+- 'The future implementation updates canonical `skills/structured-autonomy-plan/SKILL.md`
+  first and refreshes generated mirrors only through `scripts/azoth-deploy.py`
+  if mirrors are affected.'
+- 'The future gate derives falsifiable success criteria from the goal and maps
+  each criterion to task validation, test strategy, or explicit human review.'
+- 'The future plan template or quality criteria make non-goals/deferrals visible
+  before builder handoff.'
+- 'The future delivery keeps T-KRP-A/B/C/D boundaries explicit and does not alter
+  root instructions, karpathy-principles, Builder posture, Orchestrator
+  classification, or D23 routing.'
+- 'The future delivery validates generated parity and targeted skill/deploy
+  surfaces with `python3 scripts/azoth-deploy.py --check` and focused tests.'
+- 'Implementation does not begin unless a fresh T-KRP-E scope gate is approved
+  and the required governed pipeline gate is present.'
+dependencies:
+- T-KRP-A
+- T-KRP-B
+- T-KRP-C
+- T-KRP-D
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: Phase 1 = hydrate backlog/spec/research state. Phase 2 = implement
+  canonical structured-autonomy-plan success-criteria gating under a fresh governed
+  M1 delivery scope.
+research_evidence:
+  kind: repo-local
+  path: .azoth/research/t-krp-e-structured-autonomy-success-criteria-gate-2026-04-24.json
+  outcome: research_sufficient
+readiness:
+  current_scope_gate: planning_hydration_only
+  current_pipeline_gate: dynamic_full_auto_research_and_explore
+  implementation_authorized: false
+  implementation_boundary: >
+    This session authorizes planning hydration only. structured-autonomy-plan
+    implementation requires a later T-KRP-E governed scope and pipeline gate.
+expected_validation:
+  hydration_tests:
+  - tests/test_roadmap_scaffold.py
+  - tests/test_roadmap_dashboard.py
+  - tests/test_welcome.py
+  future_delivery_tests:
+  - tests/test_skills.py
+  - tests/test_azoth_deploy.py
+  commands:
+  - PYTHONPATH=scripts python3 -m pytest tests/test_roadmap_scaffold.py tests/test_roadmap_dashboard.py tests/test_welcome.py -q
+  - python3 scripts/roadmap_dashboard.py
+  - python3 scripts/welcome.py --plain
+  - python3 scripts/azoth-deploy.py --check
+handoff_comments:
+- 'Comment only in authored surfaces touched by the future implementation; do
+  not hand-edit generated mirrors.'
+- 'Comment intent should clarify ownership and boundaries: T-KRP-E owns
+  structured success criteria; T-KRP-D owns assumption surfacing before D23
+  routing.'
+- 'Parity tests should explain why they lock marker presence, so future
+  maintainers do not treat the assertions as arbitrary string matching.'

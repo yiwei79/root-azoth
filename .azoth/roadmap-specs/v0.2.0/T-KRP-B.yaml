@@ -1,0 +1,97 @@
+id: T-KRP-B
+roadmap_version: v0.2.0
+title: 'New skill: karpathy-principles SKILL.md for injectable discipline slot'
+decision_ref:
+- D21
+- D23
+- D44
+- D51
+intent: >
+  Add a dedicated Azoth `karpathy-principles` skill as an injectable discipline
+  slot so agents can deliberately load the four Karpathy-inspired behaviors during
+  coding, review, planning, refactoring, or high-autonomy execution without expanding
+  the always-on root instruction surface. This spec hydrates the future governed
+  implementation slice; it does not authorize implementation while the current
+  scope gate is closed/unapproved and the pipeline gate is absent.
+problem: >
+  T-KRP-A established the root CLAUDE.md behavioral layer, but the repo still lacks
+  an on-demand skill that can carry the same discipline into specific stages and
+  agents without duplicating policy everywhere. The upstream karpathy-guidelines
+  skill proves the pattern, but Azoth needs a repo-native M1 skill with governance
+  anchors, Stage 6 depth, skill-index registration, and generated mirror projection.
+scope:
+- 'Create canonical `skills/karpathy-principles/SKILL.md` as an on-demand discipline
+  skill for coding, review, planning, refactoring, and high-autonomy execution where
+  the Karpathy principles materially reduce risk.'
+- 'Register the skill in `skills/index.yaml` with a one-line description and explicit
+  dependency list.'
+- 'Adapt the upstream four-principle shape into Azoth-native guidance: Think Before
+  Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution.'
+- 'Include a falsifiable invocation cue, Overview, When to Use, governance anchor,
+  and at least one concrete usage pattern so the skill satisfies Stage 6 structured-content
+  review.'
+- 'Include an Integration section or equivalent invocation guidance that explains
+  how agents, pipelines, or other skills should deliberately load the skill, and
+  make that section reviewable by `stage6-rubric` when invoked by pipeline/skill
+  quality gates.'
+- 'After source skill edits, regenerate generated skill mirrors with `python3 scripts/azoth-deploy.py`
+  and verify parity with `python3 scripts/azoth-deploy.py --check`.'
+- 'Record model-tier auditability for future routed work, including Wave A research,
+  Wave B repo exploration, review/eval, and any corrective replay stages.'
+- 'Before implementation, require a fresh approved T-KRP-B scope gate and the governed
+  pipeline gate required for M1 delivery; preserve unrelated dirty state such as
+  `.codex/config.toml`.'
+non_goals:
+- 'No root `CLAUDE.md` expansion in T-KRP-B; T-KRP-A already owns the always-on
+  root instruction layer.'
+- 'No manual edits to generated `AGENTS.md` or generated skill mirrors.'
+- 'No builder agent posture rewrite; reserve that for T-KRP-C.'
+- 'No orchestrator goal-classification policy rewrite; reserve that for T-KRP-D.'
+- 'No `structured-autonomy-plan` success-criteria gate implementation; reserve that
+  for T-KRP-E.'
+acceptance:
+- 'The new skill exists at `skills/karpathy-principles/SKILL.md` with Azoth-native
+  frontmatter, `governance_anchor`, Overview, When to Use, principle guidance, and
+  a concrete usage pattern.'
+- '`skills/index.yaml` includes `karpathy-principles` with a concise description
+  and intentional dependencies.'
+- 'The skill uses the task-scoped research capsule `.azoth/research/t-krp-b-karpathy-principles-skill-research-2026-04-23.json`
+  as planning evidence without copying external text wholesale.'
+- 'The implementation keeps T-KRP-C, T-KRP-D, and T-KRP-E explicitly deferred.'
+- '`python3 scripts/azoth-deploy.py --check` passes after generated mirrors are refreshed.'
+- 'Regression coverage includes the relevant skill/index/deploy surfaces:
+  `tests/test_skills.py`, `tests/test_agents.py`, and `tests/test_azoth_deploy.py`.'
+- 'The skill includes an Integration section or equivalent invocation guidance that
+  `stage6-rubric` can review when the skill is invoked by pipelines or other skills.'
+- 'Delivery evidence records model-tier usage for Wave A, Wave B, review/eval, and
+  replay stages instead of relying on transient chat history.'
+- 'Implementation does not begin unless a fresh T-KRP-B scope gate is approved and
+  the governed pipeline gate is present.'
+dependencies:
+- T-009
+- T-KRP-A
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.
+research_evidence:
+  kind: repo-local
+  path: .azoth/research/t-krp-b-karpathy-principles-skill-research-2026-04-23.json
+  outcome: research_sufficient
+readiness:
+  current_scope_gate: closed_not_approved_for_t_krp_b
+  current_pipeline_gate: absent
+  unrelated_dirty_state:
+  - .codex/config.toml
+  implementation_authorized: false
+expected_validation:
+  tests:
+  - tests/test_skills.py
+  - tests/test_agents.py
+  - tests/test_azoth_deploy.py
+  commands:
+  - python3 scripts/azoth-deploy.py --check
+  quality_gate:
+  - stage6-rubric integration review when invoked by pipeline or skill paths

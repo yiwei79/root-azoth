@@ -13,13 +13,27 @@ from datetime import datetime, timezone
 from typing import Any
 
 import yaml
+from episode_store import (
+    append_episode_record,
+    load_episode_records,
+    with_verbatim_context,
+)
 from reinforcement_count import ReinforcementError, increment_reinforcement_count
-from run_ledger import release_write_claim, upsert_run, upsert_session
+from run_ledger import (
+    assert_governed_run_completion_evidence,
+    release_write_claim,
+    upsert_run,
+    upsert_session,
+)
+from session_gate import active_session_gate, close_session_gate, normalized_session_mode
+from session_continuity import active_scope
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
+from yaml_helpers import safe_load_yaml_path
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FINAL_DELIVERY_APPROVALS = pathlib.Path(".azoth") / "final-delivery-approvals.jsonl"
+CLAUDE_MEMORY_SYNC_PENDING = pathlib.Path(".azoth") / "claude-memory-sync-pending.json"
 _SESSION_STATE_CHECKPOINT_FIELDS = (
     "pipeline",
     "pipeline_position",
@@ -82,8 +96,10 @@ def load_jsonl(path: pathlib.Path) -> list[dict[str, Any]]:
 def load_yaml(path: pathlib.Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with open(path, "r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle) or {}
+    try:
+        data = safe_load_yaml_path(path) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise CloseoutError(f"Could not read/parse YAML in {path}: {exc}") from exc
     if not isinstance(data, dict):
         raise CloseoutError(f"Expected YAML mapping in {path}")
     return data
@@ -104,6 +120,8 @@ def is_governed_scope(scope: dict[str, Any]) -> bool:
 
 
 def closeout_pipeline_label(scope: dict[str, Any]) -> str:
+    if normalized_session_mode(scope) == "exploratory":
+        return "exploratory"
     candidate = selected_pipeline_command(scope)
     if candidate:
         return candidate
@@ -170,6 +188,109 @@ def enforce_governed_closeout_approval(
         )
 
 
+def enforce_governed_closeout_stage_evidence(
+    repo_root: pathlib.Path,
+    scope: dict[str, Any],
+) -> None:
+    if not is_governed_scope(scope):
+        return
+
+    session_id = str(scope.get("session_id") or "").strip()
+    if not session_id:
+        raise CloseoutError("Governed closeout blocked: scope-gate.json is missing session_id.")
+
+    try:
+        assert_governed_run_completion_evidence(repo_root, session_id=session_id)
+    except ValueError as exc:
+        raise CloseoutError(f"Governed closeout blocked: {exc}") from exc
+
+
+def _scope_gate_indicates_closed(scope: dict[str, Any], *, session_id: str) -> bool:
+    if str(scope.get("session_id") or "").strip() != session_id:
+        return False
+    if scope.get("approved") is False:
+        return True
+    scope_status = str(scope.get("scope_status") or "").strip().lower()
+    if scope_status and scope_status != "active":
+        return True
+    return bool(str(scope.get("closed_at") or "").strip())
+
+
+def _session_state_indicates_closed(
+    session_state: dict[str, Any],
+    *,
+    session_id: str,
+) -> bool:
+    return (
+        str(session_state.get("session_id") or "").strip() == session_id
+        and str(session_state.get("state") or "").strip().lower() == "closed"
+    )
+
+
+def _session_registry_status(repo_root: pathlib.Path, *, session_id: str) -> str:
+    ledger = load_yaml(repo_root / ".azoth" / "run-ledger.local.yaml")
+    sessions = ledger.get("sessions")
+    if not isinstance(sessions, list):
+        return ""
+    for entry in reversed(sessions):
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("session_id") or "").strip() != session_id:
+            continue
+        return str(entry.get("status") or "").strip().lower()
+    return ""
+
+
+def enforce_not_already_closed_session(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+    session_state: dict[str, Any],
+) -> None:
+    session_id = str(scope.get("session_id") or "").strip()
+    if not session_id:
+        return
+
+    session_state_closed = _session_state_indicates_closed(
+        session_state,
+        session_id=session_id,
+    )
+    session_registry_status = _session_registry_status(
+        repo_root,
+        session_id=session_id,
+    )
+    session_registry_closed = session_registry_status == "closed"
+    if not session_registry_closed and not (
+        session_state_closed and _scope_gate_indicates_closed(scope, session_id=session_id)
+    ):
+        return
+
+    scope_closed = _scope_gate_indicates_closed(scope, session_id=session_id)
+    scope_names_same_session = str(scope.get("session_id") or "").strip() == session_id
+    if session_registry_closed:
+        if not scope_names_same_session:
+            return
+    elif not scope_closed:
+        return
+
+    reason_parts: list[str] = []
+    if scope_closed:
+        reason_parts.append("scope-gate")
+    elif scope_names_same_session and scope.get("approved") is True:
+        reason_parts.append("scope-gate still names the session")
+    if session_state_closed:
+        reason_parts.append("session-state")
+    if session_registry_closed:
+        reason_parts.append("session registry")
+
+    joined = " + ".join(reason_parts) or "closeout state"
+    raise CloseoutError(
+        f"Closeout blocked: session '{session_id}' is already closed ({joined}). "
+        "Do not re-run W1-W4 for a finished session; run `/next` to select the next "
+        "scoped task."
+    )
+
+
 def _next_episode_id(episodes: list[dict[str, Any]]) -> str:
     last_num = 0
     for episode in episodes:
@@ -188,9 +309,11 @@ def append_episode(
     timestamp: str,
     *,
     files_changed: list[str],
+    verbatim_source: str,
+    verbatim_payload: dict[str, Any],
 ) -> tuple[str, dict[str, Any], int]:
     episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
-    episodes = load_jsonl(episodes_path)
+    episodes = load_episode_records(episodes_path)
     new_id = _next_episode_id(episodes)
 
     new_episode = {
@@ -206,10 +329,14 @@ def append_episode(
         "m2_candidate": False,
         "context": {"files_changed": files_changed},
     }
+    new_episode = with_verbatim_context(
+        new_episode,
+        source=verbatim_source,
+        payload=verbatim_payload,
+    )
 
     episodes_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(episodes_path, "a", encoding="utf-8") as handle:
-        handle.write(json.dumps(new_episode) + "\n")
+    append_episode_record(episodes_path, new_episode, require_verbatim=True)
 
     print(f"W1: Appended episode {new_id} to {episodes_path}")
     return new_id, new_episode, len(episodes) + 1
@@ -222,8 +349,14 @@ def validate_reinforcement_targets(
     if not reinforce_episode_ids:
         return
 
-    episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
-    existing_ids = {str(episode.get("id") or "") for episode in episodes}
+    episodes = load_episode_records(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+    id_counts: dict[str, int] = {}
+    for episode in episodes:
+        episode_id = str(episode.get("id") or "")
+        if not episode_id:
+            continue
+        id_counts[episode_id] = id_counts.get(episode_id, 0) + 1
+    existing_ids = set(id_counts)
     missing_ids = [
         episode_id for episode_id in reinforce_episode_ids if episode_id not in existing_ids
     ]
@@ -232,6 +365,15 @@ def validate_reinforcement_targets(
         raise ReinforcementValidationError(
             "Closeout blocked: unknown reinforce episode id(s): "
             f"{quoted_ids}. Confirm exact existing episode ids before running closeout."
+        )
+    ambiguous_ids = sorted(
+        {episode_id for episode_id in reinforce_episode_ids if id_counts.get(episode_id, 0) > 1}
+    )
+    if ambiguous_ids:
+        quoted_ids = ", ".join(repr(episode_id) for episode_id in ambiguous_ids)
+        raise ReinforcementValidationError(
+            "Closeout blocked: ambiguous reinforce episode id(s): "
+            f"{quoted_ids}. Duplicate episode ids must be repaired before reinforcement."
         )
 
 
@@ -244,6 +386,20 @@ def close_scope_gate(repo_root: pathlib.Path, timestamp: str) -> dict[str, Any]:
         json.dump(gate_data, handle, indent=2)
     print(f"W2: scope gate closed at {gate_path}")
     return gate_data
+
+
+def close_pipeline_gate(repo_root: pathlib.Path, *, scope: dict[str, Any], timestamp: str) -> None:
+    gate_path = repo_root / ".azoth" / "pipeline-gate.json"
+    if not gate_path.exists():
+        return
+    gate_data = load_json(gate_path)
+    if str(gate_data.get("session_id") or "") != str(scope.get("session_id") or ""):
+        return
+    gate_data["approved"] = False
+    gate_data["closed_at"] = timestamp
+    with open(gate_path, "w", encoding="utf-8") as handle:
+        json.dump(gate_data, handle, indent=2)
+    print(f"W2: pipeline gate closed at {gate_path}")
 
 
 def _completed_date(timestamp: str) -> str:
@@ -460,6 +616,12 @@ def _initiative_slices(initiative: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _slice_is_live(item: dict[str, Any]) -> bool:
+    status = str(item.get("status") or "").strip().casefold()
+    role = str(item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
 def _rewrite_initiative_block(
     roadmap_path: pathlib.Path,
     *,
@@ -515,32 +677,45 @@ def _sync_initiative_alias_after_task_completion(
                 item["role"] = "historical"
             changed = True
 
-    if current_alias == roadmap_task_id:
-        next_slice = next(
-            (
-                item
-                for item in slices
-                if str(item.get("task_ref") or "").strip() != roadmap_task_id
-                and str(item.get("task_ref") or "").strip() not in completed_ids
-                and str(item.get("status") or "") not in {"complete", "historical"}
-            ),
-            None,
-        )
-        if next_slice is not None:
+    next_slice = next((item for item in slices if _slice_is_live(item)), None)
+    if next_slice is not None:
+        next_task_ref = str(next_slice.get("task_ref") or "").strip()
+        next_spec_ref = next_slice.get("spec_ref")
+        next_phase = next_slice.get("phase")
+        if (
+            current_alias != next_task_ref
+            or initiative.get("spec_ref") != next_spec_ref
+            or initiative.get("phase") != next_phase
+            or str(next_slice.get("role") or "") != "primary"
+            or str(next_slice.get("status") or "") != "active"
+        ):
             for item in slices:
                 if item is next_slice:
                     item["role"] = "primary"
                     item["status"] = "active"
-                elif str(item.get("role") or "") == "primary":
+                elif str(item.get("status") or "").strip().casefold() in {"complete", "completed"}:
                     item["role"] = "historical"
-            initiative["task_ref"] = next_slice.get("task_ref")
-            initiative["spec_ref"] = next_slice.get("spec_ref")
-            initiative["phase"] = next_slice.get("phase")
+                elif str(item.get("role") or "").strip() == "primary":
+                    item["role"] = "follow-on"
+            initiative["task_ref"] = next_task_ref or None
+            initiative["spec_ref"] = next_spec_ref
+            initiative["phase"] = next_phase
             changed = True
             print(
                 f"W2c: initiative {initiative['id']} retargeted to next slice "
                 f"{initiative['task_ref']}"
             )
+    elif (
+        initiative.get("phase") is not None
+        or current_alias
+        or initiative.get("spec_ref") is not None
+    ):
+        initiative["phase"] = None
+        initiative["task_ref"] = None
+        if "spec_ref" in initiative:
+            initiative["spec_ref"] = None
+        changed = True
+        print(f"W2c: initiative {initiative['id']} demoted to phase-null history")
 
     if not changed:
         return False
@@ -618,6 +793,15 @@ def _version_field_indent(block: str) -> str:
     return "  "
 
 
+def _section_sequence_indent(section_block: str, key_indent: str) -> str:
+    """Return the indent used by direct sequence items in a YAML section."""
+    for line in section_block.splitlines():
+        match = re.match(r"^(\s*)-\s+", line)
+        if match:
+            return match.group(1)
+    return key_indent + "  "
+
+
 def _remove_multiline_task_entry(block: str, task_id: str) -> tuple[str, bool]:
     lines = block.splitlines(keepends=True)
     start_idx: int | None = None
@@ -644,6 +828,93 @@ def _remove_multiline_task_entry(block: str, task_id: str) -> tuple[str, bool]:
     return "".join(lines[:start_idx] + lines[end_idx:]), True
 
 
+def _remove_task_from_section(
+    block: str,
+    *,
+    section_name: str,
+    task_id: str,
+) -> tuple[str, bool]:
+    bounds = _find_section_bounds(block, section_name)
+    if bounds is None:
+        return block, False
+
+    start, end = bounds
+    section_block = block[start:end]
+    new_section, removed = _remove_multiline_task_entry(section_block, task_id)
+    if not removed:
+        inline_entry = re.search(
+            rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*(?:\n|$)',
+            section_block,
+            flags=re.MULTILINE,
+        )
+        if inline_entry:
+            new_section = (
+                section_block[: inline_entry.start()] + section_block[inline_entry.end() :]
+            )
+            removed = True
+
+    if not removed:
+        return block, False
+
+    header_match = re.search(
+        rf"^(\s*){re.escape(section_name)}:\s*(?:null|\[\])?\s*$",
+        new_section,
+        flags=re.MULTILINE,
+    )
+    assert header_match is not None
+    if not re.search(r"^\s*-\s+(?:id:|\{id:)", new_section[header_match.end() :], re.MULTILINE):
+        new_section = f"{header_match.group(1)}{section_name}: []\n"
+
+    return block[:start] + new_section + block[end:], True
+
+
+def _remove_stale_open_task_copies(
+    repo_root: pathlib.Path,
+    *,
+    roadmap_task_id: str,
+    target_version: str,
+) -> bool:
+    roadmap_path = repo_root / ".azoth" / "roadmap.yaml"
+    roadmap = load_yaml(roadmap_path)
+    versions = roadmap.get("versions")
+    if not isinstance(versions, list):
+        return False
+
+    ordered_version_ids = [
+        str(version.get("id") or "")
+        for version in versions
+        if isinstance(version, dict) and str(version.get("id") or "")
+    ]
+    if target_version not in ordered_version_ids:
+        return False
+
+    target_index = ordered_version_ids.index(target_version)
+    candidate_version_ids = ordered_version_ids[:target_index]
+    text = roadmap_path.read_text(encoding="utf-8")
+    changed = False
+
+    for version_id in candidate_version_ids:
+        bounds = _find_version_block(text, version_id)
+        if bounds is None:
+            continue
+        start, end = bounds
+        block = text[start:end]
+        new_block, removed = _remove_task_from_section(
+            block,
+            section_name="tasks",
+            task_id=roadmap_task_id,
+        )
+        if not removed:
+            continue
+        text = text[:start] + new_block + text[end:]
+        changed = True
+        print(f"W2c: removed stale open copy of {roadmap_task_id} from {version_id} tasks")
+
+    if changed:
+        roadmap_path.write_text(text, encoding="utf-8")
+    return changed
+
+
 def _mark_roadmap_task_complete(
     repo_root: pathlib.Path,
     *,
@@ -666,30 +937,43 @@ def _mark_roadmap_task_complete(
     task_id = roadmap_task_id
     changed = False
 
-    block, removed_task = _remove_multiline_task_entry(block, task_id)
+    block, removed_task = _remove_task_from_section(
+        block,
+        section_name="tasks",
+        task_id=task_id,
+    )
     if removed_task:
         changed = True
 
-    deferred_bounds = _find_section_bounds(block, "deferred_tasks")
-    if deferred_bounds is not None:
-        deferred_start, deferred_end = deferred_bounds
-        deferred_block = block[deferred_start:deferred_end]
-        deferred_entry = re.search(
-            rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*(?:\n|$)',
-            deferred_block,
-            flags=re.MULTILINE,
-        )
-        if deferred_entry:
-            deferred_block = (
-                deferred_block[: deferred_entry.start()] + deferred_block[deferred_entry.end() :]
-            )
-            block = block[:deferred_start] + deferred_block + block[deferred_end:]
-            changed = True
+    block, removed_deferred = _remove_task_from_section(
+        block,
+        section_name="deferred_tasks",
+        task_id=task_id,
+    )
+    if removed_deferred:
+        changed = True
 
-    completed_pattern = rf'^\s*-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
-    completed_entry = re.search(completed_pattern, block, flags=re.MULTILINE)
     decision_text = f"[{', '.join(decision_ref)}]" if decision_ref else "[]"
     title_text = title.replace("\\", "\\\\").replace('"', '\\"')
+    completed_bounds = _find_section_bounds(block, "completed_tasks")
+    completed_entry: re.Match[str] | None = None
+    completed_entry_offset = 0
+    if completed_bounds is not None:
+        completed_start, completed_end = completed_bounds
+        completed_block = block[completed_start:completed_end]
+        header_match = re.search(
+            r"^(\s*)completed_tasks:\s*(?:null|\[\])?\s*$",
+            completed_block,
+            flags=re.MULTILINE,
+        )
+        assert header_match is not None
+        key_indent = header_match.group(1)
+        item_indent = _section_sequence_indent(completed_block, key_indent)
+        completed_pattern = (
+            rf'^{re.escape(item_indent)}-\s+\{{id:\s*["\']?{re.escape(task_id)}["\']?,.*$'
+        )
+        completed_entry = re.search(completed_pattern, completed_block, flags=re.MULTILINE)
+        completed_entry_offset = completed_start
     if completed_entry:
         new_line = re.sub(
             r'completed_date: "[^"]*"',
@@ -698,10 +982,11 @@ def _mark_roadmap_task_complete(
             count=1,
         )
         if new_line != completed_entry.group(0):
-            block = block[: completed_entry.start()] + new_line + block[completed_entry.end() :]
+            start_index = completed_entry_offset + completed_entry.start()
+            end_index = completed_entry_offset + completed_entry.end()
+            block = block[:start_index] + new_line + block[end_index:]
             changed = True
     else:
-        completed_bounds = _find_section_bounds(block, "completed_tasks")
         if completed_bounds is None:
             key_indent = _version_field_indent(block)
             item_indent = key_indent + "  "
@@ -721,7 +1006,7 @@ def _mark_roadmap_task_complete(
             )
             assert header_match is not None
             key_indent = header_match.group(1)
-            item_indent = key_indent + "  "
+            item_indent = _section_sequence_indent(completed_block, key_indent)
             completed_line = (
                 f'{item_indent}- {{id: {task_id}, title: "{title_text}", '
                 f'completed_date: "{completed_date}", decision_ref: {decision_text}}}\n'
@@ -793,12 +1078,19 @@ def update_planning_completion(
     )
     if roadmap_changed:
         changed_paths.append(".azoth/roadmap.yaml")
-        initiative_changed = _sync_initiative_alias_after_task_completion(
-            repo_root,
-            roadmap_task_id=roadmap_task_id,
-        )
-        if initiative_changed and ".azoth/roadmap.yaml" not in changed_paths:
-            changed_paths.append(".azoth/roadmap.yaml")
+    stale_copy_changed = _remove_stale_open_task_copies(
+        repo_root,
+        roadmap_task_id=roadmap_task_id,
+        target_version=target_version,
+    )
+    if stale_copy_changed and ".azoth/roadmap.yaml" not in changed_paths:
+        changed_paths.append(".azoth/roadmap.yaml")
+    initiative_changed = _sync_initiative_alias_after_task_completion(
+        repo_root,
+        roadmap_task_id=roadmap_task_id,
+    )
+    if initiative_changed and ".azoth/roadmap.yaml" not in changed_paths:
+        changed_paths.append(".azoth/roadmap.yaml")
     return changed_paths
 
 
@@ -855,6 +1147,66 @@ def _open_run_for_session(
     return open_runs[-1]
 
 
+def _administrative_finalize_delivery_scope(
+    repo_root: pathlib.Path,
+    *,
+    scope: dict[str, Any],
+) -> dict[str, Any] | None:
+    session_id = str(scope.get("session_id") or "").strip()
+    backlog_id = str(scope.get("backlog_id") or "").strip()
+    if not session_id or not backlog_id or backlog_id == "AD-HOC":
+        return None
+    if not _scope_gate_indicates_closed(scope, session_id=session_id):
+        return None
+
+    ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
+    ledger = load_yaml(ledger_path) if ledger_path.exists() else {"schema_version": 1, "runs": []}
+    sessions = ledger.get("sessions")
+    matching_session = None
+    if isinstance(sessions, list):
+        matching_session = next(
+            (
+                entry
+                for entry in sessions
+                if isinstance(entry, dict) and str(entry.get("session_id") or "") == session_id
+            ),
+            None,
+        )
+
+    preferred_run_id = (
+        str(matching_session.get("active_run_id") or "")
+        if isinstance(matching_session, dict)
+        else ""
+    ) or None
+    open_run = _open_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
+    resumable_run = _resumable_run_for_session(
+        ledger,
+        session_id=session_id,
+        preferred_run_id=preferred_run_id,
+    )
+    session_status = str(matching_session.get("status") or "").strip().lower()
+    if session_status == "closed":
+        return None
+    if matching_session is None and open_run is None and resumable_run is None:
+        return None
+
+    session_context = dict(scope)
+    session_context.setdefault("session_mode", "delivery")
+    return session_context
+
+
+def _closed_delivery_scope_requires_fail_closed(scope: dict[str, Any]) -> bool:
+    session_id = str(scope.get("session_id") or "").strip()
+    backlog_id = str(scope.get("backlog_id") or "").strip()
+    if not session_id or not backlog_id or backlog_id == "AD-HOC":
+        return False
+    return _scope_gate_indicates_closed(scope, session_id=session_id)
+
+
 def update_session_registry(
     repo_root: pathlib.Path,
     *,
@@ -897,6 +1249,7 @@ def update_session_registry(
     )
     backlog_id = str(scope.get("backlog_id") or "AD-HOC")
     goal = str(scope.get("goal") or "Session closeout")
+    session_mode = str(scope.get("session_mode") or "delivery")
     ide = str(
         (
             (matching_session.get("ide") if isinstance(matching_session, dict) else None)
@@ -905,12 +1258,13 @@ def update_session_registry(
             or "unknown"
         )
     )
+    terminal_governed_closeout = is_governed_scope(scope) and not administrative_finalize
     closed_next_action = (
         "Administrative finalize complete — run `/next` to select the next scoped task."
         if administrative_finalize
         else default_next_action()
     )
-    if resumable_run is not None and not administrative_finalize:
+    if resumable_run is not None and not administrative_finalize and not terminal_governed_closeout:
         next_action = str(
             resumable_run.get("next_action")
             or (matching_session.get("next_action") if isinstance(matching_session, dict) else None)
@@ -924,6 +1278,7 @@ def update_session_registry(
             status="parked",
             ide=ide,
             next_action=next_action,
+            session_mode=session_mode,
             updated_at=timestamp,
             active_run_id=str(resumable_run.get("run_id") or preferred_run_id or ""),
         )
@@ -956,6 +1311,7 @@ def update_session_registry(
             status="closed",
             ide=ide,
             next_action=next_action,
+            session_mode=session_mode,
             updated_at=timestamp,
             closed_at=timestamp,
         )
@@ -969,6 +1325,13 @@ def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
     azoth_path = repo_root / "azoth.yaml"
     if not azoth_path.exists():
         return
+    patterns_path = repo_root / ".azoth" / "memory" / "patterns.yaml"
+    pattern_count: int | None = None
+    if patterns_path.exists():
+        patterns_data = load_yaml(patterns_path)
+        patterns = patterns_data.get("patterns")
+        if isinstance(patterns, list):
+            pattern_count = len(patterns)
 
     with open(azoth_path, "r", encoding="utf-8") as handle:
         lines = handle.readlines()
@@ -977,10 +1340,12 @@ def update_episode_count(repo_root: pathlib.Path, episode_count: int) -> None:
         for line in lines:
             if line.startswith("  episodes: "):
                 handle.write(f"  episodes: {episode_count}\n")
+            elif pattern_count is not None and line.startswith("  patterns: "):
+                handle.write(f"  patterns: {pattern_count}\n")
             else:
                 handle.write(line)
 
-    print("W2b: azoth.yaml episode count updated")
+    print("W2b: azoth.yaml memory counts updated")
 
 
 def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
@@ -990,6 +1355,70 @@ def claude_project_memory_dir(repo_root: pathlib.Path) -> pathlib.Path:
         normalized = f"/{normalized}"
     project_key = "-" + normalized.lstrip("/").replace("/", "-")
     return pathlib.Path.home() / ".claude" / "projects" / project_key / "memory"
+
+
+def write_claude_memory_sync_pending(
+    repo_root: pathlib.Path,
+    *,
+    session_id: str,
+    goal: str,
+    latest_episode: dict[str, Any] | None,
+    next_action: str,
+    error: str,
+) -> pathlib.Path:
+    pending_path = repo_root / CLAUDE_MEMORY_SYNC_PENDING
+    episode = latest_episode or {}
+    payload = {
+        "schema_version": 1,
+        "status": "pending",
+        "updated_at": utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": "session-closeout",
+        "session_id": session_id,
+        "goal": goal,
+        "latest_episode_id": str(episode.get("id") or ""),
+        "latest_episode_summary": str(episode.get("summary") or ""),
+        "next_action": next_action,
+        "target_dir": str(claude_project_memory_dir(repo_root)),
+        "reason": error,
+    }
+    pending_path.parent.mkdir(parents=True, exist_ok=True)
+    pending_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return pending_path
+
+
+def mark_claude_memory_sync_pending_synced(
+    repo_root: pathlib.Path,
+    *,
+    synced_at: str | None = None,
+    session_id: str | None = None,
+    goal: str | None = None,
+    latest_episode: dict[str, Any] | None = None,
+    next_action: str | None = None,
+) -> pathlib.Path | None:
+    pending_path = repo_root / CLAUDE_MEMORY_SYNC_PENDING
+    if not pending_path.exists():
+        return None
+    payload = load_json(pending_path)
+    if session_id is not None:
+        payload["session_id"] = session_id
+    if goal is not None:
+        payload["goal"] = goal
+    if latest_episode is not None:
+        payload["latest_episode_id"] = str(latest_episode.get("id") or "")
+        payload["latest_episode_summary"] = str(latest_episode.get("summary") or "")
+    if next_action is not None:
+        payload["next_action"] = next_action
+    if any(value is not None for value in (session_id, goal, latest_episode, next_action)):
+        payload["source"] = "session-closeout"
+        payload["target_dir"] = str(claude_project_memory_dir(repo_root))
+        payload.pop("reason", None)
+    payload["schema_version"] = 1
+    payload["status"] = "synced"
+    timestamp = synced_at or utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload["synced_at"] = timestamp
+    payload["updated_at"] = timestamp
+    pending_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return pending_path
 
 
 def _active_version_snapshot(repo_root: pathlib.Path) -> tuple[str, int | None]:
@@ -1016,6 +1445,7 @@ def update_bootloader_state(
     next_action: str,
     session_status: str,
     pending_decisions: list[str],
+    full_closeout: bool,
 ) -> None:
     azoth_data = load_yaml(repo_root / "azoth.yaml")
     active_version, current_patch = _active_version_snapshot(repo_root)
@@ -1023,6 +1453,7 @@ def update_bootloader_state(
     phase = azoth_data.get("phase", "unknown")
     goal = str(scope.get("goal") or "Session closeout")
     pipeline = closeout_pipeline_label(scope)
+    session_mode = str(scope.get("session_mode") or "delivery")
 
     lines = [
         "# Azoth Bootloader State",
@@ -1036,14 +1467,23 @@ def update_bootloader_state(
         "## Last Session",
         f"- **Session**: {scope.get('session_id', 'unknown-session')}",
         f"- **Goal**: {goal}",
+        f"- **Session mode**: {session_mode}",
         f"- **Pipeline**: {pipeline}",
         f"- **Outcome**: {session_status}",
         f"- **Episode**: {latest_episode.get('id', 'unknown')} ({latest_episode.get('type', 'unknown')})",
         "",
         "## Key Changes This Session",
         "1. W1 appended the closeout episode.",
-        "2. W2 closed the scope gate and refreshed repo-local handoff state.",
-        "3. W3/W4 should mirror and finalize this closeout state without changing W2 authority.",
+        (
+            "2. W2 closed the scope gate and refreshed repo-local handoff state."
+            if full_closeout
+            else "2. W2 closed the exploratory session gate and refreshed repo-local handoff state."
+        ),
+        (
+            "3. W3/W4 should mirror and finalize this closeout state without changing W2 authority."
+            if full_closeout
+            else "3. Light closeout stopped after W2-lite; no W3/W4 mirror or version bump ran."
+        ),
         "",
         "## Open Decisions",
     ]
@@ -1118,6 +1558,7 @@ def write_session_state(
     approved_scope: str,
     next_action: str,
     selected_ide: str | None = None,
+    session_mode: str = "delivery",
     create_if_missing: bool = False,
     checkpoint: dict[str, Any] | None = None,
 ) -> str:
@@ -1126,6 +1567,7 @@ def write_session_state(
         return "W2: .azoth/session-state.md not present (W2 handoff artifact skipped)"
     session_state = {
         "session_id": session_id,
+        "session_mode": session_mode,
         "state": state,
         "last_ide": str(selected_ide or "unknown"),
         "timestamp": timestamp,
@@ -1153,12 +1595,19 @@ def update_session_state(
     clear_checkpoint: bool = False,
 ) -> str:
     goal = str(scope.get("goal") or "Session closeout")
+    session_mode = str(scope.get("session_mode") or "delivery")
     pending_decisions = existing_session_state.get("pending_decisions")
     if not isinstance(pending_decisions, list):
         pending_decisions = []
     state = "parked" if session_status == "parked" else "closed"
-    active_task = f"Parked — {goal}" if state == "parked" else f"Closed — {goal}"
-    approved_scope = goal if state == "parked" else f"Completed: {goal}"
+    if session_mode == "exploratory":
+        active_task = (
+            f"Exploratory — {goal}" if state == "parked" else f"Closed exploratory — {goal}"
+        )
+        approved_scope = "Exploratory session (no write scope)"
+    else:
+        active_task = f"Parked — {goal}" if state == "parked" else f"Closed — {goal}"
+        approved_scope = goal if state == "parked" else f"Completed: {goal}"
     return write_session_state(
         repo_root,
         session_id=str(scope.get("session_id") or "unknown-session"),
@@ -1170,6 +1619,7 @@ def update_session_state(
         approved_scope=approved_scope,
         next_action=next_action,
         selected_ide=str(existing_session_state.get("last_ide") or selected_ide or "unknown"),
+        session_mode=session_mode,
         checkpoint={} if clear_checkpoint else extract_session_checkpoint(existing_session_state),
     )
 
@@ -1186,7 +1636,7 @@ def write_claude_memory_mirror(
     azoth_data = load_yaml(repo_root / "azoth.yaml")
     active_version, current_patch = _active_version_snapshot(repo_root)
     if latest_episode is None:
-        episodes = load_jsonl(repo_root / ".azoth" / "memory" / "episodes.jsonl")
+        episodes = load_episode_records(repo_root / ".azoth" / "memory" / "episodes.jsonl")
         latest_episode = episodes[-1] if episodes else {}
     next_step = next_action or default_next_action()
 
@@ -1250,23 +1700,86 @@ def run_closeout(
     administrative_finalize: bool = False,
 ) -> None:
     scope = load_json(repo_root / ".azoth" / "scope-gate.json")
-    enforce_governed_closeout_approval(repo_root, scope)
+    session_gate = active_session_gate(repo_root)
+    live_scope = active_scope(repo_root)
+    administrative_scope = (
+        _administrative_finalize_delivery_scope(repo_root, scope=scope)
+        if administrative_finalize and not live_scope
+        else None
+    )
+    if (
+        administrative_finalize
+        and not live_scope
+        and administrative_scope is None
+        and _closed_delivery_scope_requires_fail_closed(scope)
+    ):
+        session_id = str(scope.get("session_id") or "unknown-session")
+        raise CloseoutError(
+            "Administrative finalize blocked: closed delivery scope "
+            f"'{session_id}' has no matching open delivery session state. "
+            "Refusing exploratory fallback before W1."
+        )
+    session_state_path = repo_root / ".azoth" / "session-state.md"
+    existing_session_state = load_yaml(session_state_path)
+    if live_scope or administrative_scope or not session_gate:
+        enforce_not_already_closed_session(
+            repo_root,
+            scope=scope,
+            session_state=existing_session_state,
+        )
+    if live_scope:
+        session_context = dict(live_scope)
+        session_context.setdefault("session_mode", "delivery")
+        if session_gate and str(session_gate.get("session_id") or "") == str(
+            live_scope.get("session_id") or ""
+        ):
+            session_context["session_mode"] = normalized_session_mode(session_gate)
+        full_closeout = True
+        verbatim_source = "scope-gate.json"
+        verbatim_payload = dict(scope)
+    elif administrative_scope:
+        session_context = dict(administrative_scope)
+        session_context.setdefault("session_mode", "delivery")
+        full_closeout = True
+        verbatim_source = "scope-gate.json"
+        verbatim_payload = dict(scope)
+    elif session_gate:
+        session_context = {
+            "session_id": str(session_gate.get("session_id") or "unknown-session"),
+            "goal": str(session_gate.get("goal") or "Exploratory session"),
+            "backlog_id": "AD-HOC",
+            "session_mode": normalized_session_mode(session_gate),
+            "approved_by": str(session_gate.get("approved_by") or "system"),
+        }
+        full_closeout = False
+        verbatim_source = "session-gate.json"
+        verbatim_payload = dict(session_gate)
+    else:
+        raise CloseoutError(
+            "No active session to close. Run `/remember` or start a new exploratory session first."
+        )
+
+    if full_closeout:
+        enforce_governed_closeout_approval(repo_root, scope)
+        enforce_governed_closeout_stage_evidence(repo_root, scope)
     reinforce_episode_ids = reinforce_episode_ids or []
     validate_reinforcement_targets(repo_root, reinforce_episode_ids)
 
     timestamp = utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    session_id = str(scope.get("session_id") or "unknown-session")
-    backlog_id = str(scope.get("backlog_id") or "").strip()
+    session_id = str(session_context.get("session_id") or "unknown-session")
+    backlog_id = str(session_context.get("backlog_id") or "").strip()
     ledger_path = repo_root / ".azoth" / "run-ledger.local.yaml"
-    session_state_path = repo_root / ".azoth" / "session-state.md"
-    existing_session_state = load_yaml(session_state_path)
     authoritative_files = [
         ".azoth/memory/episodes.jsonl",
         ".azoth/bootloader-state.md",
-        ".azoth/scope-gate.json",
-        "azoth.yaml",
     ]
-    if backlog_id and backlog_id != "AD-HOC":
+    if full_closeout:
+        authoritative_files.extend([".azoth/scope-gate.json", "azoth.yaml"])
+        if (repo_root / ".azoth" / "pipeline-gate.json").exists():
+            authoritative_files.append(".azoth/pipeline-gate.json")
+    else:
+        authoritative_files.append(".azoth/session-gate.json")
+    if full_closeout and backlog_id and backlog_id != "AD-HOC":
         authoritative_files.extend([".azoth/backlog.yaml", ".azoth/roadmap.yaml"])
     if ledger_path.exists():
         authoritative_files.append(".azoth/run-ledger.local.yaml")
@@ -1275,9 +1788,11 @@ def run_closeout(
 
     _episode_id, latest_episode, episode_count = append_episode(
         repo_root,
-        scope,
+        session_context,
         timestamp,
         files_changed=authoritative_files,
+        verbatim_source=verbatim_source,
+        verbatim_payload=verbatim_payload,
     )
     for episode_id in reinforce_episode_ids:
         try:
@@ -1297,21 +1812,27 @@ def run_closeout(
             f"(count={result.reinforcement_count})"
         )
     selected_ide = str(existing_session_state.get("last_ide") or "")
-    close_scope_gate(repo_root, timestamp)
+    if full_closeout:
+        close_scope_gate(repo_root, timestamp)
+        close_pipeline_gate(repo_root, scope=scope, timestamp=timestamp)
+    else:
+        close_session_gate(repo_root, timestamp=timestamp, session_id=session_id)
+        print("W2-lite: exploratory session gate closed")
     next_action, session_status, registry_note = update_session_registry(
         repo_root,
-        scope=scope,
+        scope=session_context,
         timestamp=timestamp,
         selected_ide=selected_ide or None,
         administrative_finalize=administrative_finalize,
     )
     print(registry_note)
-    update_planning_completion(
-        repo_root,
-        scope=scope,
-        timestamp=timestamp,
-        session_status=session_status,
-    )
+    if full_closeout:
+        update_planning_completion(
+            repo_root,
+            scope=session_context,
+            timestamp=timestamp,
+            session_status=session_status,
+        )
     if release_write_claim(repo_root, session_id):
         print(f"W2: write claim released for session '{session_id}'")
     else:
@@ -1333,7 +1854,7 @@ def run_closeout(
     active_files = authoritative_files.copy()
     session_state_note = update_session_state(
         repo_root,
-        scope=scope,
+        scope=session_context,
         timestamp=timestamp,
         session_status=session_status,
         active_files=active_files,
@@ -1346,7 +1867,7 @@ def run_closeout(
     print("W2 handoff artifact: .azoth/session-state.md")
     update_bootloader_state(
         repo_root,
-        scope=scope,
+        scope=session_context,
         latest_episode=latest_episode,
         next_action=next_action,
         session_status=session_status,
@@ -1355,27 +1876,51 @@ def run_closeout(
             if isinstance(existing_session_state.get("pending_decisions"), list)
             else []
         ),
+        full_closeout=full_closeout,
     )
-    update_episode_count(repo_root, episode_count)
+    if full_closeout:
+        update_episode_count(repo_root, episode_count)
     try:
-        write_claude_memory_mirror(
+        if full_closeout:
+            write_claude_memory_mirror(
+                repo_root,
+                latest_episode=latest_episode,
+                next_action=next_action,
+            )
+        else:
+            print("W3 disposition: skipped (light closeout)")
+    except Exception as exc:
+        pending_path = write_claude_memory_sync_pending(
             repo_root,
+            session_id=session_id,
+            goal=str(session_context.get("goal") or "Session closeout"),
             latest_episode=latest_episode,
             next_action=next_action,
+            error=str(exc),
         )
-    except Exception as exc:
         print(
-            "W3 deferred — sync ~/.claude/.../memory/ manually or rerun closeout "
-            f"in Claude Code ({exc})"
+            "W3 deferred — run `python3 scripts/sync_claude_memory.py` with host "
+            f"write access (or rerun closeout in Claude Code). Pending artifact: {pending_path} ({exc})"
         )
         print("W3 disposition: deferred")
     else:
-        print("W3 disposition: completed")
+        if full_closeout:
+            mark_claude_memory_sync_pending_synced(
+                repo_root,
+                session_id=session_id,
+                goal=str(session_context.get("goal") or "Session closeout"),
+                latest_episode=latest_episode,
+                next_action=next_action,
+            )
+            print("W3 disposition: completed")
     print(f"Next operator action: {next_action}")
-    finalize_closeout_artifacts(
-        repo_root,
-        administrative_finalize=administrative_finalize,
-    )
+    if full_closeout:
+        finalize_closeout_artifacts(
+            repo_root,
+            administrative_finalize=administrative_finalize,
+        )
+    else:
+        print("W4 disposition: skipped (light closeout)")
 
 
 def main() -> int:

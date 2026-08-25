@@ -1,0 +1,672 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "reusable-research",
+  "source_session_id": "2026-04-22-adhoc-research-t-krp-a-ini-krp-001-and-produce-a-reusa",
+  "source_backlog_id": "T-KRP-A",
+  "initiative_ref": "INI-KRP-001",
+  "goal": "CLAUDE.md kernel: embed Karpathy behavioral layer before governed delivery",
+  "captured_at": "2026-04-22T17:02:39Z",
+  "refreshed_at": "2026-04-22T17:51:02Z",
+  "refresh_summary": "Adaptive refinement pass plus bounded replay. The capsule now resolves the upstream repo identity, reconciles Anthropic and OpenAI instruction-surface guidance with Azoth's repo-native constraints, records the immediate promotion path into governed spec hydration, sharpens the remaining-open list to future work only, and records the final evaluator outcome from the bounded 3-round loop.",
+  "volatility": "mixed",
+  "shortcomings_addressed": [
+    "Resolved the upstream-source ambiguity by locking `forrestchang/andrej-karpathy-skills` as the canonical public upstream and recording `multica-ai/andrej-karpathy-skills` as a legacy redirect observed on 2026-04-22.",
+    "Closed the instruction-surface tension between Anthropic's CLAUDE.md guidance and OpenAI's AGENTS.md guidance by making the repo-native interpretation explicit: T-KRP-A is authored in root CLAUDE.md, while AGENTS.md remains generated metadata in this repository.",
+    "Converted the immediate promotion question from an open issue into an explicit task-level path: this capsule feeds governed T-KRP-A spec hydration next, rather than promoting directly into always-on policy surfaces.",
+    "Separated high-confidence repo truth from time-sensitive vendor guidance so the next spec pass can distinguish durable local facts from externally refreshed recommendations."
+  ],
+  "limitations": [
+    "External documentation and upstream repositories are time-sensitive; the external findings were refreshed on 2026-04-22 local time and should be revisited before hardening them into always-on policy.",
+    "This capsule is planning-grade evidence for T-KRP-A and adjacent proposal work. It does not authorize implementation of T-KRP-B, T-KRP-C, T-KRP-D, T-KRP-E, or a broader exploratory-write contract.",
+    "The current session became write-enabled through an approved scope gate for this goal, not through a change to Azoth's exploratory-session governance. Any productized exploratory-write model still needs its own approved slice.",
+    "Cross-platform guidance from Anthropic and OpenAI informs layering and artifact boundaries, but Azoth still needs repo-native governance choices for promotion, TTL, and audit semantics."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this capsule be reused for the next T-KRP-A planning or delivery pass?",
+      "status": "answered",
+      "answered_at": "2026-04-22T17:02:39Z",
+      "fresh_until": "2026-05-22T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-slice-t-krp-a-claude-md-kernel-embed-karpathy-behavioral-layer",
+      "question": "What is the minimum safe, highest-reach T-KRP-A slice, and what stays deferred to T-KRP-B, T-KRP-C, T-KRP-D, and T-KRP-E?",
+      "status": "answered",
+      "answered_at": "2026-04-22T17:02:39Z",
+      "fresh_until": "2026-05-22T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-exploratory-persistence-contract",
+      "question": "What bounded exploratory write contract, allowed paths, audit fields, and TTL semantics are required so research sessions can persist artifacts safely without becoming general delivery scopes?",
+      "status": "conflicting",
+      "answered_at": "2026-04-22T17:02:39Z",
+      "fresh_until": "2026-05-06T00:00:00Z",
+      "resolved": false,
+      "blocking": false,
+      "future_work": true,
+      "conflict_summary": "The need for a bounded exploratory-artifact contract is established, but the exact write model, TTL semantics, and audit surface remain future governance design work.",
+      "candidate_positions": [
+        "A narrow exploratory-artifact class with explicit TTL, write budget, and audit fields.",
+        "A broader session-bound write policy layered onto exploratory sessions.",
+        "No general exploratory write widening; require governed delivery for all persistent repo artifacts."
+      ],
+      "resolution_trigger": "Future approved proposal or slice dedicated to exploratory artifact persistence."
+    },
+    {
+      "question_id": "phase-1-exploratory-memory-surface",
+      "question": "Which iterative memories belong in a new exploratory append-only surface versus durable M3 episodes captured by /remember or closeout?",
+      "status": "conflicting",
+      "answered_at": "2026-04-22T17:02:39Z",
+      "fresh_until": "2026-05-06T00:00:00Z",
+      "resolved": false,
+      "blocking": false,
+      "future_work": true,
+      "conflict_summary": "The repo needs a separate iterative exploration-memory surface if it wants durable exploratory notes, but the exact split from M3 durable episodes is not yet decided.",
+      "candidate_positions": [
+        "Introduce a sibling append-only exploratory-memory surface distinct from .azoth/memory/episodes.jsonl.",
+        "Refresh task-scoped research capsules in place and keep exploratory notes out of durable memory entirely.",
+        "Continue relying only on M3 /remember and closeout, with no new exploratory-memory surface."
+      ],
+      "resolution_trigger": "Future approved proposal or slice dedicated to exploratory memory semantics."
+    }
+  ],
+  "thesis": "T-KRP-A should land as a thin, named behavioral layer in root CLAUDE.md that maps the four Karpathy principles onto existing Azoth sources of truth rather than duplicating policy. The reusable planning evidence should live in a task-scoped research capsule under .azoth/research/, while deeper behavior hardening and exploratory-write-enablement remain separate follow-on work.",
+  "decisions_locked": {
+    "t_krp_a_shape": "thin named behavioral layer over existing Azoth rules",
+    "primary_instruction_surface": "root CLAUDE.md",
+    "canonical_source_policy": "For T-KRP-A, root CLAUDE.md is the sole human-authored source; AGENTS.md stays generated and any other mirrors are generated consequences or deferred follow-on work.",
+    "research_bank_surface": ".azoth/research task-scoped capsule",
+    "deferred_follow_ons": [
+      "T-KRP-B",
+      "T-KRP-C",
+      "T-KRP-D",
+      "T-KRP-E"
+    ],
+    "exploratory_write_policy_status": "researched but not productized in this slice"
+  },
+  "source_resolution": {
+    "observed_at": "2026-04-22",
+    "upstream_repo": {
+      "canonical_url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "canonical_owner_handle": "forrestchang",
+      "canonical_owner_name": "Jiayuan Zhang",
+      "legacy_aliases": [
+        {
+          "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+          "status": "redirect",
+          "note": "Observed redirect to the canonical upstream on 2026-04-22."
+        }
+      ],
+      "resolution_note": "Use `forrestchang/andrej-karpathy-skills` as the canonical upstream reference. Mention `multica-ai/andrej-karpathy-skills` only as a historical alias when provenance matters."
+    },
+    "instruction_surface_reconciliation": {
+      "anthropic_guidance": "Anthropic documents CLAUDE.md as the always-loaded instruction surface and recommends importing AGENTS.md when AGENTS.md is the existing shared instruction source.",
+      "openai_guidance": "OpenAI documents AGENTS.md as the Codex always-on instruction surface and keeps workflows in skills plus execution control in rules/approval settings.",
+      "repo_native_resolution": "In this repository, AGENTS.md is generated AAIF metadata rather than the human-authored T-KRP-A authoring surface, so the Karpathy layer should be authored in root CLAUDE.md for this slice. Any Codex-facing AGENTS.md consequence or fallback-filename policy remains later parity work rather than a T-KRP-A requirement.",
+      "source_refs": [
+        "How Claude remembers your project",
+        "Custom instructions with AGENTS.md",
+        "Agent Skills",
+        "Agent approvals & security"
+      ],
+      "repo_refs": [
+        "AGENTS.md:7-8",
+        "AGENTS.md:56-66",
+        "CLAUDE.md:62-99"
+      ]
+    }
+  },
+  "confidence_notes": {
+    "high_confidence_repo_truth": [
+      "Root CLAUDE.md is the intended T-KRP-A authoring target in current roadmap and backlog context.",
+      "AGENTS.md is generated in this repository and should not be treated as the manual T-KRP-A editing target.",
+      "The overlap map across CLAUDE.md, orchestrator, builder, context-map, and TRUST_CONTRACT is grounded in exact repo anchors."
+    ],
+    "vendor_guidance_applied_with_repo_interpretation": [
+      "Anthropic and OpenAI both support keeping always-on instruction surfaces concise and moving procedures into skills or path-scoped mechanisms.",
+      "Anthropic's AGENTS import recommendation and OpenAI's AGENTS discovery model inform parity design, but they do not override this repo's current generated-AGENTS architecture."
+    ],
+    "time_sensitive_external_points": [
+      "Upstream repo ownership and redirect behavior.",
+      "Vendor instruction-surface, memory, skills, rules, and approval documentation."
+    ]
+  },
+  "promotion_path_for_t_krp_a": {
+    "current_artifact_role": "Primary planning evidence for the next governed T-KRP-A spec hydration run.",
+    "immediate_next_step": "Hydrate .azoth/roadmap-specs/v0.2.0/T-KRP-A.yaml under a governed delivery pipeline using this capsule as the primary evidence input.",
+    "not_authorized_from_this_artifact_alone": [
+      "Direct edits to CLAUDE.md",
+      "Manual AGENTS.md parity decisions",
+      "Broader repo-wide policy for promoting research capsules into always-on instruction surfaces"
+    ],
+    "policy_note": "The immediate task-level promotion path is capsule -> governed spec hydration. A general promotion policy from research capsules into always-on policy surfaces remains future governance work."
+  },
+  "decision_ref_ready": {
+    "decision_refs": [
+      "D21",
+      "D23",
+      "D51"
+    ],
+    "rationale": [
+      "D21 governs staged pipeline execution, typed handoffs, and the role-bound delivery path that this capsule feeds next.",
+      "D23 governs classification and adaptive pipeline composition, which supports the thin-layer and bounded follow-on interpretation.",
+      "D51 governs pipeline-gate mechanics for governed or M1 work, which is the next step after this exploratory capsule."
+    ]
+  },
+  "spec_readiness": {
+    "level": "spec-driving",
+    "resolved_for_t_krp_a": [
+      "Canonical authoring surface for this slice",
+      "Upstream source identity and freshness note",
+      "Thin-layer scope boundaries",
+      "Non-goals and deferred follow-ons",
+      "Spec-hydration acceptance direction"
+    ],
+    "intentionally_open_but_non_blocking": [
+      "Whether later Codex parity should come from generated AGENTS.md consequences or a fallback-filename strategy",
+      "Broader policy for promoting research-bank artifacts into always-on instruction surfaces",
+      "Exploratory-artifact and exploratory-memory governance design"
+    ],
+    "blocking_open_items": []
+  },
+  "section_spec": {
+    "intended_section_name": "Karpathy Behavioral Layer",
+    "intended_parent_section": "Development Instructions",
+    "intended_placement_note": "Place the section after Core Rules and before Development Workflow in root CLAUDE.md.",
+    "principle_to_anchor_map": [
+      {
+        "principle": "Think Before Coding",
+        "repo_refs": [
+          "CLAUDE.md:71-74",
+          "CLAUDE.md:82-87",
+          "agents/tier1-core/orchestrator.agent.md:52-60",
+          "agents/tier1-core/builder.agent.md:37-38,55-60",
+          ".agents/skills/context-map/SKILL.md:10-21,23-29"
+        ]
+      },
+      {
+        "principle": "Simplicity First",
+        "repo_refs": [
+          "agents/tier1-core/builder.agent.md:38-39,88-90",
+          "kernel/TRUST_CONTRACT.md:169-175,193-200",
+          "CLAUDE.md:119-124"
+        ]
+      },
+      {
+        "principle": "Surgical Changes",
+        "repo_refs": [
+          "CLAUDE.md:119-121",
+          "agents/tier1-core/builder.agent.md:38-39,47-50,102-106",
+          ".agents/skills/context-map/SKILL.md:60-88,123-138",
+          "kernel/TRUST_CONTRACT.md:21-38,46-57"
+        ]
+      },
+      {
+        "principle": "Goal-Driven Execution",
+        "repo_refs": [
+          "agents/tier1-core/orchestrator.agent.md:130-157,193-209",
+          ".agents/skills/azoth-structured-autonomy-plan/SKILL.md:36-50,81-97,151-157",
+          "agents/tier1-core/builder.agent.md:40,71-76"
+        ]
+      }
+    ]
+  },
+  "latest_eval": {
+    "stage_id": "exploratory_r3_final_eval",
+    "disposition": "conditional-pass",
+    "score": 0.89,
+    "refresh_applied_at": "2026-04-22T17:51:02Z",
+    "applied_tightening": [
+      "Locked root CLAUDE.md as the sole human-authored placement story for T-KRP-A.",
+      "Added exact repo anchors for the overlap map across CLAUDE.md, orchestrator, builder, context-map, and TRUST_CONTRACT.",
+      "Promoted acceptance into spec-ready checks for placement, non-duplication, deferment, and parity handling.",
+      "Resolved upstream-source identity and reconciled Anthropic/OpenAI instruction-surface guidance with repo-native constraints.",
+      "Packaged decision refs, fixed the intended subsection name, and added source/repo crosswalks for spec-driving claims.",
+      "Added dependency rationale and machine-readable conflict metadata for unresolved future-work questions."
+    ],
+    "remaining_open": [
+      "Design exploratory-artifact and exploratory-memory persistence as separate future work."
+    ],
+    "last_findings": [
+      {
+        "severity": "low",
+        "finding": "The bounded 3-round loop converged below the strict 0.90 target but left the artifact spec-driving and ready to feed governed T-KRP-A spec hydration.",
+        "fix_suggestion": "Treat this artifact as the current high-water mark and re-open refinement only if new evidence or the governed spec pass reveals a concrete gap."
+      }
+    ],
+    "threshold_context": {
+      "target_score": 0.9,
+      "max_rounds": 3,
+      "result": "threshold_exhausted_stop"
+    },
+    "post_eval_sync_note": "Final evaluator findings were synchronized into latest_eval after round 3. No further evaluator replay was run."
+  },
+  "sources": [
+    {
+      "kind": "upstream-repo",
+      "title": "forrestchang/andrej-karpathy-skills",
+      "url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "GitHub repository observed on 2026-04-22",
+      "findings": [
+        "Frames the four principles as a small behavioral layer to merge with existing project-specific instructions.",
+        "Defines Think Before Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution as a compact guidance layer rather than a full workflow system.",
+        "Ties Goal-Driven Execution to verifiable success criteria and lightweight plans.",
+        "Observed on 2026-04-22 as the canonical public upstream; the legacy multica-ai URL redirects here."
+      ]
+    },
+    {
+      "kind": "upstream-repo",
+      "title": "multica-ai/andrej-karpathy-skills (legacy redirect)",
+      "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "GitHub redirect observed on 2026-04-22",
+      "findings": [
+        "Redirects to `forrestchang/andrej-karpathy-skills` and should be treated as a historical alias rather than the canonical owner handle."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "How Claude remembers your project",
+      "url": "https://code.claude.com/docs/en/memory",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Anthropic documentation observed on 2026-04-22",
+      "findings": [
+        "Claude Code reads CLAUDE.md as the always-loaded project instruction surface.",
+        "If a repository already uses AGENTS.md for other agents, CLAUDE.md should import AGENTS.md to avoid duplication rather than restating it.",
+        "If an entry is a multi-step procedure or only matters for part of the codebase, it belongs in a skill or path-scoped rule instead of broad CLAUDE.md memory.",
+        "Auto memory is a Claude-written recall surface, not the human-authored instruction source."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Best Practices for Claude Code",
+      "url": "https://code.claude.com/docs/en/best-practices",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Anthropic documentation observed on 2026-04-22",
+      "findings": [
+        "Claude performs better when exploration, planning, and implementation are separated.",
+        "CLAUDE.md should stay short, human-readable, and broadly applicable; workflows or occasionally relevant domain knowledge should move into skills.",
+        "Subagents are recommended for investigation to preserve main-thread context quality.",
+        "Explicit verification and success criteria are a high-leverage ingredient for agentic coding quality."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Extend Claude with skills",
+      "url": "https://code.claude.com/docs/en/skills",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Anthropic documentation observed on 2026-04-22",
+      "findings": [
+        "Skills are the right home for reusable workflows, large procedures, and progressively disclosed reference content.",
+        "Anthropic explicitly recommends creating a skill when a section of CLAUDE.md has grown into a procedure rather than a fact."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Hooks reference",
+      "url": "https://code.claude.com/docs/en/hooks",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Anthropic documentation observed on 2026-04-22",
+      "findings": [
+        "PreToolUse hooks are the hard-control layer for allow, deny, ask, defer, and tool-input modification decisions.",
+        "Hooks can tighten behavior but remain bounded by broader permission precedence."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Custom instructions with AGENTS.md",
+      "url": "https://developers.openai.com/codex/guides/agents-md",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI documentation observed on 2026-04-22",
+      "findings": [
+        "Codex reads AGENTS.md before work and layers global guidance with project-specific overrides.",
+        "Instruction discovery is size-bounded by project_doc_max_bytes (32 KiB by default), which argues against turning always-on instruction files into research banks.",
+        "Nested overrides should sit close to specialized work rather than bloating the root guidance layer.",
+        "Alternate always-on filenames are ignored unless explicitly configured as fallback filenames."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Agent Skills",
+      "url": "https://developers.openai.com/codex/skills",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI documentation observed on 2026-04-22",
+      "findings": [
+        "Skills are the authoring format for reusable workflows in Codex.",
+        "Codex begins with skill metadata and loads the full skill body only when the skill is selected, which makes skills a better fit than always-on instruction files for evolving or procedural guidance."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Memories",
+      "url": "https://developers.openai.com/codex/memories",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI documentation observed on 2026-04-22",
+      "findings": [
+        "Memories are a local recall layer for stable preferences and recurring workflows rather than the authoritative rule surface.",
+        "Required team guidance should remain in AGENTS.md or checked-in documentation."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Rules",
+      "url": "https://developers.openai.com/codex/rules",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI documentation observed on 2026-04-22",
+      "findings": [
+        "Execution control belongs in Codex rules rather than in always-on instruction prose."
+      ]
+    },
+    {
+      "kind": "vendor-official",
+      "title": "Agent approvals & security",
+      "url": "https://developers.openai.com/codex/agent-approvals-security",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI documentation observed on 2026-04-22",
+      "findings": [
+        "Approval behavior lives in sandbox and approval configuration rather than in always-on instruction text."
+      ]
+    }
+  ],
+  "repo_findings": [
+    "The current repo already encodes strong overlap with the four Karpathy principles across CLAUDE.md, orchestrator guidance, builder posture, context-map, and the Trust Contract.",
+    "T-KRP-A should add a named operating lens, not a second canonical policy layer, because CLAUDE.md already centralizes development rules and AGENTS.md is generated output rather than a human-authored instruction source.",
+    "For this slice, root CLAUDE.md is the sole human-authored placement surface; AGENTS.md and any other mirrors are generated consequences or explicit non-goals unless a later slice says otherwise.",
+    "Anthropic's CLAUDE.md guidance and OpenAI's AGENTS.md guidance do not conflict once mapped onto Azoth's current repo architecture: CLAUDE.md is the T-KRP-A authoring target, while AGENTS.md parity remains generated or deferred.",
+    "The thin-layer shape for T-KRP-A should preserve the split of later follow-ons: T-KRP-C for deeper builder hardening, T-KRP-D for orchestrator assumption-surfacing, and T-KRP-E for goal-to-success-criteria gating.",
+    "The task-scoped reusable artifact should live under .azoth/research/, while SWARM_RESEARCH_DIGEST.yaml remains a roadmap-level swarm aggregate rather than the per-slice bank entry.",
+    "Current exploratory write access is intentionally narrow and exact-path only. Safe research-bank persistence in general exploratory sessions needs a separate exploratory-artifact class or session-bound write policy rather than a wider raw allowlist."
+  ],
+  "principle_overlap_map": [
+    {
+      "principle": "Think Before Coding",
+      "summary": "Azoth already requires discovery, ambiguity handling, and context mapping before implementation.",
+      "anchors": [
+        {
+          "path": "CLAUDE.md",
+          "lines": "71-74",
+          "note": "Architecture-first posture and orchestrated delivery routing."
+        },
+        {
+          "path": "CLAUDE.md",
+          "lines": "82-87",
+          "note": "Orchestrator persona classifies intent and clarifies gray-zone scope before acting."
+        },
+        {
+          "path": "agents/tier1-core/orchestrator.agent.md",
+          "lines": "52-60",
+          "note": "Inline-vs-orchestrate classification defaults to orchestration when ambiguity or latest facts matter."
+        },
+        {
+          "path": "agents/tier1-core/builder.agent.md",
+          "lines": "37-38,55-60",
+          "note": "Understand before acting and gather context before making changes."
+        },
+        {
+          "path": ".agents/skills/context-map/SKILL.md",
+          "lines": "10-21,23-29",
+          "note": "Map blast radius before action."
+        }
+      ]
+    },
+    {
+      "principle": "Simplicity First",
+      "summary": "Azoth already discourages speculative abstraction, scope creep, and unnecessary complexity.",
+      "anchors": [
+        {
+          "path": "agents/tier1-core/builder.agent.md",
+          "lines": "38-39,88-90",
+          "note": "Minimal, correct diffs and no extra dependencies for small problems."
+        },
+        {
+          "path": "kernel/TRUST_CONTRACT.md",
+          "lines": "169-175,193-200",
+          "note": "Scope discipline and explicit rejection of premature abstraction."
+        },
+        {
+          "path": "CLAUDE.md",
+          "lines": "119-124",
+          "note": "Scope-limited fixes and first-pass quality instead of filler or overbuild."
+        }
+      ]
+    },
+    {
+      "principle": "Surgical Changes",
+      "summary": "Azoth already treats bounded blast radius and minimal diffs as core operating behavior.",
+      "anchors": [
+        {
+          "path": "CLAUDE.md",
+          "lines": "119-121",
+          "note": "Scope-limited fixes should stay confined to the requested artifact."
+        },
+        {
+          "path": "agents/tier1-core/builder.agent.md",
+          "lines": "38-39,47-50,102-106",
+          "note": "Minimal diffs, no silent redesign, and explicit escalation for deviations."
+        },
+        {
+          "path": ".agents/skills/context-map/SKILL.md",
+          "lines": "60-88,123-138",
+          "note": "Blast-radius accounting and proceed-or-scope-down discipline."
+        },
+        {
+          "path": "kernel/TRUST_CONTRACT.md",
+          "lines": "21-38,46-57",
+          "note": "Entropy ceiling and checkpoint protocol for bounded changes."
+        }
+      ]
+    },
+    {
+      "principle": "Goal-Driven Execution",
+      "summary": "Azoth already turns goals into staged plans, validation steps, and bounded replay loops.",
+      "anchors": [
+        {
+          "path": "agents/tier1-core/orchestrator.agent.md",
+          "lines": "130-157,193-209",
+          "note": "Pipeline composition, typed handoffs, and bounded replay."
+        },
+        {
+          "path": ".agents/skills/azoth-structured-autonomy-plan/SKILL.md",
+          "lines": "36-50,81-97,151-157",
+          "note": "Goal restatement, explicit test strategy, and validation-first plans."
+        },
+        {
+          "path": "agents/tier1-core/builder.agent.md",
+          "lines": "40,71-76",
+          "note": "Tests and verification are mandatory completion criteria."
+        }
+      ]
+    }
+  ],
+  "repo_evidence": [
+    {
+      "path": "CLAUDE.md",
+      "anchors": [
+        "71-74",
+        "82-87",
+        "119-124"
+      ],
+      "findings": [
+        "Already encodes architecture-first work, direct-vs-orchestrated routing, and scope-limited fixes."
+      ]
+    },
+    {
+      "path": "AGENTS.md",
+      "anchors": [
+        "7-8",
+        "56-66"
+      ],
+      "findings": [
+        "AAIF manifest is generated by scripts/azoth-deploy.py and lists platform locations; it is not the manual authoring surface for this slice."
+      ]
+    },
+    {
+      "path": "agents/tier1-core/orchestrator.agent.md",
+      "anchors": [
+        "43-60",
+        "130-157",
+        "159-209"
+      ],
+      "findings": [
+        "Owns ambiguity handling, goal clarification, evidence-first routing, conservative orchestration, and bounded replay."
+      ]
+    },
+    {
+      "path": "agents/tier1-core/builder.agent.md",
+      "anchors": [
+        "33-41",
+        "47-50",
+        "55-76",
+        "102-106"
+      ],
+      "findings": [
+        "Already pushes understand-before-acting, minimal-correct-diff behavior, verification, and explicit escalation for plan drift."
+      ]
+    },
+    {
+      "path": ".agents/skills/context-map/SKILL.md",
+      "anchors": [
+        "10-21",
+        "60-88",
+        "123-138"
+      ],
+      "findings": [
+        "Implements look-before-you-leap and blast-radius discipline that overlaps with Think Before Coding and Surgical Changes."
+      ]
+    },
+    {
+      "path": "kernel/TRUST_CONTRACT.md",
+      "anchors": [
+        "21-38",
+        "46-57",
+        "169-175",
+        "193-209"
+      ],
+      "findings": [
+        "Provides bounded blast radius, scope discipline, and anti-premature-abstraction semantics that overlap with Simplicity First and Surgical Changes."
+      ]
+    },
+    {
+      "path": ".agents/skills/azoth-structured-autonomy-plan/SKILL.md",
+      "anchors": [
+        "17-23",
+        "36-50",
+        "81-97",
+        "151-157"
+      ],
+      "findings": [
+        "Carries explicit goal restatement, task decomposition, and test strategy that overlap with Goal-Driven Execution."
+      ]
+    },
+    {
+      "path": ".azoth/backlog.yaml",
+      "anchors": [
+        "2652-2665"
+      ],
+      "findings": [
+        "Marks T-KRP-A as the first scoped slice for embedding the Karpathy layer before wider rollout."
+      ]
+    },
+    {
+      "path": ".azoth/roadmap-specs/v0.2.0/T-KRP-A.yaml",
+      "anchors": [
+        "1-23"
+      ],
+      "findings": [
+        "Spec stub is still placeholder-heavy, so the current deliverable should prioritize spec hydration from research rather than implementation."
+      ]
+    },
+    {
+      "path": "scripts/session_gate.py",
+      "anchors": [
+        "16-22"
+      ],
+      "findings": [
+        "Current exploratory write targets are exact-path lifecycle files only."
+      ]
+    },
+    {
+      "path": ".claude/hooks/scope_gate_core.py",
+      "anchors": [
+        "59-68"
+      ],
+      "findings": [
+        "Exploratory writes are treated as a bounded bootstrap exemption and normal repo writes remain blocked without scope."
+      ]
+    }
+  ],
+  "open_research_threads": [
+    "Future cross-platform parity policy: if the CLAUDE.md layer later needs generated mirrors, decide whether deploy owns that propagation and what parity checks are required.",
+    "Broader repo-wide promotion policy: define how research-bank artifacts graduate into always-on instruction surfaces outside the immediate T-KRP-A spec path.",
+    "Design a bounded exploratory-artifact write contract with explicit TTL, write budget, and audit fields if Azoth wants general exploratory persistence in future sessions.",
+    "Define a sibling append-only exploratory-memory surface instead of overloading .azoth/memory/episodes.jsonl for iterative research notes."
+  ],
+  "recommended_reuse_for": [
+    "T-KRP-A spec hydration",
+    "INI-KRP-001 sequencing decisions",
+    "future architecture proposal for exploratory-artifact persistence",
+    "follow-on T-KRP-B, T-KRP-C, T-KRP-D, and T-KRP-E scoping"
+  ],
+  "spec_hydration": {
+    "intent": "Embed a short named Karpathy behavioral layer in root CLAUDE.md as the lowest-effort, highest-reach first slice, while keeping wider behavior rollout, generated-mirror policy, and enforcement work out of T-KRP-A.",
+    "problem": "INI-KRP-001 is registered and queued, but T-KRP-A is still placeholder-only. The repo needs a spec-ready, repo-native mapping from the four Karpathy principles onto the current CLAUDE.md entrypoint before governed delivery can refine the kernel surface without duplicating existing Azoth policy.",
+    "scope": [
+      "Primary human-authored instruction surface: root CLAUDE.md.",
+      "One short named subsection under Development Instructions near Core Rules titled 'Karpathy Behavioral Layer'.",
+      "Only parity or deploy mirrors strictly required by the canonical instruction source; no manual AGENTS.md authorship.",
+      "Task-scoped reusable research capsule under .azoth/research/ as the planning evidence artifact."
+    ],
+    "non_goals": [
+      "No implementation of T-KRP-B, T-KRP-C, T-KRP-D, or T-KRP-E in the same slice.",
+      "No productized exploratory-write-enablement implementation bundled into T-KRP-A; treat it as a separate follow-on or proposal.",
+      "No duplication of existing Azoth governance or enforcement semantics inside CLAUDE.md.",
+      "No new shared imported instruction source or manual edits to generated AGENTS.md for T-KRP-A.",
+      "No overfitting directly from the upstream Karpathy repository without live Azoth mapping."
+    ],
+    "acceptance": [
+      "The research capsule answers both machine-derived reuse questions for T-KRP-A and records exact overlap anchors for CLAUDE.md, orchestrator.agent.md, builder.agent.md, context-map, and TRUST_CONTRACT.md.",
+      "The hydrated spec declares root CLAUDE.md as the sole human-authored canonical placement for T-KRP-A; AGENTS.md is treated as generated metadata and any other mirrors are either deploy-generated consequences or explicit non-goals.",
+      "The hydrated spec proposes one short named subsection in root CLAUDE.md titled 'Karpathy Behavioral Layer', placed under Development Instructions after Core Rules and before Development Workflow, that maps Think Before Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution to existing Azoth sources rather than restating governance.",
+      "Acceptance language includes non-duplication checks, explicit deferment of T-KRP-B through T-KRP-E, and parity/deploy verification only if mirror surfaces are touched.",
+      "Any exploratory persistence design is captured as research input only, not silently merged into the delivery slice."
+    ],
+    "dependencies": [
+      "D21",
+      "D23",
+      "D51",
+      "T-009"
+    ],
+    "dependency_rationale": {
+      "D21": "Governs staged pipeline execution and typed handoffs for the next governed T-KRP-A spec hydration run.",
+      "D23": "Governs goal classification and adaptive pipeline composition, which support the bounded thin-layer interpretation for T-KRP-A.",
+      "D51": "Governs pipeline-gate mechanics for governed or M1 work, which is the immediate next lane after this research artifact.",
+      "T-009": "Defines the reusable research capsule contract and sufficiency path that this task-scoped artifact is using."
+    },
+    "source_refs": [
+      "How Claude remembers your project",
+      "Best Practices for Claude Code",
+      "Extend Claude with skills",
+      "Custom instructions with AGENTS.md",
+      "Agent Skills",
+      "Memories",
+      "Rules",
+      "Agent approvals & security",
+      "forrestchang/andrej-karpathy-skills"
+    ],
+    "repo_refs": [
+      "CLAUDE.md:71-74",
+      "CLAUDE.md:82-87",
+      "CLAUDE.md:119-124",
+      "AGENTS.md:7-8",
+      "AGENTS.md:56-66",
+      "agents/tier1-core/orchestrator.agent.md:43-60,130-209",
+      "agents/tier1-core/builder.agent.md:33-41,47-50,55-76,102-106",
+      ".agents/skills/context-map/SKILL.md:10-21,60-88,123-138",
+      "kernel/TRUST_CONTRACT.md:21-38,46-57,169-175,193-209",
+      ".azoth/backlog.yaml:2652-2665",
+      ".azoth/roadmap-specs/v0.2.0/T-KRP-A.yaml:1-23"
+    ]
+  }
+}

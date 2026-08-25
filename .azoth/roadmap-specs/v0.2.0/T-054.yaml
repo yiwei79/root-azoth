@@ -1,0 +1,76 @@
+id: T-054
+roadmap_version: v0.2.0
+title: Cockpit main menu and context-firewall UX
+decision_ref:
+- D11
+- D30
+- D34
+- D42
+- D48
+- D50
+- D52
+intent: Represent the completed cockpit-local UX slice that made
+  `yiwei-azoth-cockpit` usable as a safe-open terminal cockpit without hidden
+  project-context imports.
+problem: After T-053 documented backup/recovery readiness and onboarding, the
+  cockpit still needed a visible first control surface. The operator should be
+  able to open the cockpit, see release sync and project pointers, and switch
+  into `ras-or-ray` through handoff execution without importing project source,
+  summaries, instructions, retrieval indexes, secrets, or dependency inventory
+  into the cockpit.
+context_refs:
+- docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+- docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+- scripts/cockpit_menu.py
+- tests/test_cockpit_menu.py
+- /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/scripts/cockpit_menu.py
+- /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/index.yaml
+scope:
+- Extend the UX anchor with a cockpit-specific main-menu mental model and
+  context firewall.
+- Add a cockpit-local terminal main menu that reads cockpit identity, repo
+  status, release ledger, project pointer metadata, and handoff receipts.
+- Show public/installable `azoth` release sync as the cockpit authority,
+  including applied release `v0.2.0`, release commit, cockpit manifest version,
+  and root-workshop drift as advisory only.
+- Render `ras-or-ray` as a pointer-only registered project with a
+  project-session handoff prompt.
+- Keep project switching as handoff execution; the cockpit prints the project
+  path and prompt, and project-local context loads only after the operator
+  starts or switches into that project repo/session.
+non_goals:
+- No current-project marker.
+- No cockpit registry write.
+- No receipt write from the menu itself.
+- No project repo mutation.
+- No project source import, source summary, dependency inventory, retrieval
+  index, secret, or project-instruction import.
+- No public product mutation or release publication.
+- No governance, kernel, or M1 change.
+acceptance:
+- The UX anchor describes the cockpit main menu, context firewall,
+  cockpit-owned versus project-owned state, safe-open menu behavior, and future
+  explicit write lanes.
+- The cockpit menu renders the cockpit identity, release sync, and
+  `ras-or-ray` pointer-only handoff from cockpit-local metadata.
+- The menu and `--check` command write no files and start no hidden work.
+- Context firewall tests assert menu output excludes source files, code
+  summaries, dependency inventories, secrets, retrieval indexes, and project
+  instructions.
+- Roadmap, backlog, and INI-PKB-001 now record T-054 as completed historical
+  cockpit UX work.
+dependencies:
+- T-053
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  suggested_command: /auto
+validation:
+- python3 scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+- python3 scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project ras-or-ray
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_cockpit_menu.py
+  tests/test_cockpit_bootstrap_verify.py -q
+elasticity: Future cockpit-owned writes require explicit lanes such as add project
+  pointer, update cockpit memory, record receipt, or update release ledger.
+  Project-owned writes require a project repo session or fresh project-scoped
+  gate.

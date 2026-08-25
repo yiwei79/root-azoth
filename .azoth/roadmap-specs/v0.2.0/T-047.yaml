@@ -1,0 +1,70 @@
+id: T-047
+roadmap_version: v0.2.0
+title: Personal control-plane cloud-native deployment procedure
+decision_ref: []
+intent: >
+  Turn the final personal-control-plane deployment stage into a cloud-native,
+  GitOps-style operating procedure before any new personal-root mutation. The
+  procedure must define desired state, reconciliation, provenance receipts,
+  rollback, privacy/storage boundaries, and operator approval gates for moving an
+  approved Azoth release or release candidate into the personal root and then into
+  project pilots.
+problem: >
+  The personal-control-plane arc has proven the model, empty skeleton, approved
+  Batch 0 cards, deployment receipt, and recall pilot, but the next deployment
+  step is still too implicit. Without an explicit cloud-native procedure, the
+  system could again blur release approval, personal-root deployment approval,
+  source onboarding, project mutation, and retrieval expansion. The roadmap needs
+  a concrete procedural slice that makes the final deployment path safe to run.
+scope:
+- Define a declarative desired-state contract for the personal root, including
+  release/RC input, target path, storage policy, enabled surfaces, approved card
+  set, project pilot list, validation commands, and rollback point.
+- Define the reconciliation preflight - root-azoth clean state, product extraction
+  or public azoth revision, personal-root clean state, validator output, write
+  claim/scope truth, and explicit operator approval for the exact target.
+- Define the deployment receipt/provenance contract - source revision, product
+  revision, candidate/card ids, target paths, validation command/result, applied
+  timestamp, rollback reference, and residual-risk statement.
+- Define staged follow-on roadmap candidates for personal-root RC update rehearsal,
+  project onboarding pilot, and stable deployment closeout without executing those
+  writes in this slice.
+- Update INI-PKB-001 and p4 rollout guidance so `/next` surfaces the procedure
+  task before any personal-root mutation, source registry onboarding, or retrieval
+  expansion.
+non_goals:
+- Do not mutate `/Users/yiwei/GithubRepos/personal-azoth-root`.
+- Do not access credentials, configure cloud accounts, or create external cloud
+  infrastructure.
+- Do not onboard new sources or projects.
+- Do not broaden recall, vector, graph, or retrieval indexing.
+- Do not publish public azoth or tag a stable release.
+- Do not change governance, kernel, M1, or protected instruction surfaces.
+acceptance:
+- Roadmap, backlog, task spec, and INI-PKB-001 agree that T-047 is the next
+  personal-control-plane route.
+- The procedure describes a declarative desired-state manifest, reconciliation
+  preflight, apply step, verification, receipt, rollback, and closeout path.
+- The staged follow-on path is explicit - personal-root RC update rehearsal before
+  source/project onboarding, and project pilot before stable personal-plane
+  closeout.
+- All approval boundaries are visible - release approval does not imply
+  personal-root deployment approval, and personal-root approval does not imply
+  project-write approval.
+- Validation includes planning-bank validation, roadmap/dashboard rendering,
+  azoth-deploy parity, product extraction validation, pipeline lint, and focused
+  tests for touched planning surfaces if needed.
+artifacts:
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+dependencies:
+- T-045
+- BL-077
+delivery:
+  target_layer: planning
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Phase 1 = write the procedure and route truth only. Phase 2 = after explicit
+  approval, rehearse applying an approved azoth RC/release into the personal root
+  with receipt evidence. Phase 3 = after that evidence, pilot one or two project
+  consumers. Stop before any step whose target plane is not explicitly approved.

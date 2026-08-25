@@ -52,7 +52,9 @@ PIPELINE_GATE_CORE_REQUIRED_FIELDS = frozenset(
 )
 
 PIPELINE_GATE_MODE_FIELDS = frozenset({"pipeline", "pipeline_command"})
-PIPELINE_COMMANDS = frozenset({"auto", "dynamic-full-auto", "deliver", "deliver-full"})
+PIPELINE_COMMANDS = frozenset(
+    {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
+)
 WINDOWS_DRIVE_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 
@@ -78,6 +80,12 @@ def _parse_iso(raw: str) -> datetime | None:
 
 def _pipeline_command(pipeline_gate: dict) -> str:
     return str(pipeline_gate.get("pipeline_command") or pipeline_gate.get("pipeline") or "").strip()
+
+
+def _pipeline_gate_is_closed(pipeline_gate: dict) -> bool:
+    return pipeline_gate.get("approved") is False and bool(
+        str(pipeline_gate.get("closed_at") or "").strip()
+    )
 
 
 def _scope_requires_pipeline_gate(scope_gate: dict) -> bool:
@@ -305,6 +313,11 @@ def check_pipeline_gate(
             "❌ BLOCKED — pipeline-gate.json missing mode field: require one of "
             "['pipeline', 'pipeline_command']",
         )
+
+    if _pipeline_gate_is_closed(gate):
+        if require:
+            return False, "❌ BLOCKED — pipeline-gate.json required but existing gate is closed."
+        return True, "ℹ️  pipeline-gate.json closed (not required)."
 
     if not gate.get("approved"):
         return False, "❌ BLOCKED — pipeline-gate.json is not approved."

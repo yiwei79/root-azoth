@@ -1,0 +1,53 @@
+# Roadmap task spec — v0.2.0
+id: BL-070
+roadmap_version: v0.2.0
+title: "Governed session-closeout terminal-finalize routing hardening"
+decision_ref: [D50, D52, D53]
+
+intent: >
+  Make the closeout lifecycle honest for terminal governed runs by ensuring final-delivery
+  approval leads to one authoritative closed state and by preventing administrative
+  finalization from latching onto stale exploratory state after the delivery scope
+  is already closed.
+
+problem: >
+  The T-KRP-A hydration closeout exposed a lifecycle edge case in `scripts/do_closeout.py`.
+  A governed `deliver-full` run that was terminal in practice still parked at W2 because
+  `update_session_registry(...)` preferred any resumable run when `administrative_finalize`
+  was false. After the scope gate closed, a follow-up administrative finalize could
+  no longer see that delivery scope and instead fell through to a stale exploratory
+  `session-gate.json`, appending an unrelated light-closeout episode and mutating
+  repo-local handoff state away from the governed session. `BL-053` introduced administrative
+  no-bump finalization and `BL-069` blocked already-closed re-entry, but this terminal
+  governed handoff path remains under-specified and insufficiently tested.
+
+scope:
+  - "scripts/do_closeout.py session selection and `update_session_registry(...)` lifecycle logic for terminal governed runs"
+  - "tests/test_do_closeout.py regression coverage for final-approved governed closeout, administrative finalize targeting, and stale exploratory session-gate interference"
+  - "If needed, the canonical `commands/session-closeout/body.md` wording only where it must clarify terminal closeout vs bookkeeping-finalize semantics"
+
+non_goals:
+  - "Reworking exploratory light-closeout behavior generally when no governed delivery session is involved"
+  - "Changing the W1 append-only episode history model or rewriting already-recorded episodes"
+  - "Broad session lifecycle redesign outside the specific terminal governed closeout and administrative-finalize routing gap"
+  - "Touching roadmap scheduling, Karpathy initiative scope, or unrelated closeout/memory features in the same slice"
+
+acceptance:
+  - "A final-approved governed closeout whose active run is terminal no longer parks merely because the run is technically resumable; the authoritative delivery session closes cleanly in one pass"
+  - "Administrative finalize cannot drift to a stale exploratory `.azoth/session-gate.json` after a governed scope has already closed; it must target the matching delivery session or fail closed before W1"
+  - "Regression tests cover the reproduced sequence: governed closeout after final approval, closed scope with still-resumable run metadata, and stale exploratory session-gate present"
+  - "The fix preserves legitimate parked semantics for truly incomplete or review-paused delivery runs that still need follow-up work"
+  - "The lifecycle remains no-bump for bookkeeping finalize paths and does not introduce duplicate closeout episodes or stale `pending_decisions` for the finalized delivery session"
+
+dependencies: []
+
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+
+elasticity: >
+  Phase 1 = fix terminal governed closeout routing, stale session-gate protection,
+  and the reproduced regression tests. Phase 2 = only if needed, clarify command-surface
+  wording or add more explicit selection diagnostics once the lifecycle behavior
+  is mechanically correct.

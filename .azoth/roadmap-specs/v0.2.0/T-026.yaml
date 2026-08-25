@@ -1,0 +1,41 @@
+id: T-026
+roadmap_version: v0.2.0
+title: Durable autonomous-auto wakeup driver
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: Provide a repo-local one-iteration wakeup path for autonomous-auto so a fresh
+  operator or automation can safely ask whether one more bounded iteration may run.
+problem: Autonomous-auto can now run governed campaigns in a chat thread, but durable
+  continuation still depends on a human-visible thread unless a wakeup can read state,
+  gates, claims, campaign reports, and stop conditions before opening work.
+scope:
+- Add a wakeup/report command path that checks loop state, campaign report, scope
+  gates, run ledger, write claim, autonomy budget, async packets, and stop conditions.
+- Allow at most one decide/open iteration per invocation when all checks pass.
+- Emit an operator-readable stop report before opening work when state is missing,
+  stale, completed, protected, or blocked by active gates or write claims.
+non_goals:
+- Do not create an unbounded daemon, scheduler, or hidden continuation loop.
+- Do not bypass scope gates, run-ledger evidence, write claims, or protected human
+  gates.
+- Do not perform network, credential, kernel, governance, M1, destructive, or cross-branch
+  work.
+acceptance:
+- A wakeup checks loop state, campaign report, gates, run ledger, write claim, autonomy
+  budget, async packets, and stop conditions before opening work.
+- A wakeup runs at most one bounded decide/open iteration.
+- Stale or completed campaigns require fresh budget and produce a clear operator report.
+- Blocked continuation emits an operator-readable stop report before any opened work.
+- Tests cover active scope, active write claim, completed campaign, missing state,
+  protected gate stops, and one-iteration limit.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "packet_type": "autonomous_auto_child_evaluator_scorecard",
+  "campaign_id": "multi-operating-profile-feature-completion-rerun-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-helper-proof-slice-3",
+  "route": "ship_task",
+  "threshold": 0.9,
+  "score": 0.92,
+  "verdict": "pass",
+  "dimensions": {
+    "correctness": {
+      "score": 0.98,
+      "evidence": "Exact phrase autonomous continuation now routes to governed_state, azoth-full, stop_state escalate, with autonomous_continuation_requested."
+    },
+    "completeness": {
+      "score": 0.94,
+      "evidence": "campaign loop execution is in the continuation phrase set and evaluator direct probe returned the required escalation route."
+    },
+    "quality": {
+      "score": 0.92,
+      "evidence": "Small classifier change with a dedicated helper and no broad control-plane rewrite."
+    },
+    "test_coverage": {
+      "score": 0.92,
+      "evidence": "Focused fixture and test cover the exact phrase that failed the first evaluator pass."
+    },
+    "governance": {
+      "score": 0.9,
+      "evidence": "Handoff packet includes contract-style fields and compatibility aliases."
+    },
+    "entropy_scope": {
+      "score": 0.8,
+      "evidence": "Evaluated replay diff stayed inside the three requested files; broader dirty worktree state remains outside this slice."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.84,
+      "disposition": "request-changes",
+      "finding": "Exact phrase autonomous continuation still classified as read_only stock-lite."
+    },
+    {
+      "iteration": 2,
+      "score": 0.92,
+      "disposition": "pass",
+      "finding": "Bounded replay added exact phrase coverage and focused tests passed."
+    }
+  ],
+  "bounded_replay_count": 1,
+  "rejected_alternatives": [
+    {
+      "candidate": "pass_as_is",
+      "reason": "Rejected because the first evaluator pass found missing exact phrase coverage."
+    },
+    {
+      "candidate": "broad_synonym_expansion",
+      "reason": "Rejected because the accepted continuation and campaign-loop phrases were sufficient for the bounded proof."
+    },
+    {
+      "candidate": "router_journey_expansion",
+      "reason": "Rejected because classifier integration was not changed."
+    },
+    {
+      "candidate": "public_release_or_freshness",
+      "reason": "Rejected because those actions are explicitly on-demand only and out of scope."
+    }
+  ],
+  "residual_risks": [
+    "campaign loop execution is covered by phrase list and evaluator direct probe, but not by a named fixture case.",
+    "This is helper-level proof, not full runtime shadow/eval completion.",
+    "Broader dirty worktree state remains outside this child slice and must be separated during packaging."
+  ],
+  "final_disposition": "pass",
+  "next_child_recommendation": {
+    "route": "research_initiative",
+    "candidate_id": "multi-operating-profile-shadow-eval-proof",
+    "goal": "Run the shadow/eval proof against read-only, focused verification, local edit, governed-state escalation, finality escalation, and autonomous continuation before claiming feature completion."
+  }
+}

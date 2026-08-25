@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-product-management-decision-capsule-6",
+  "decision": {
+    "selected_spine": "initiative-discovery-pm-lane",
+    "strategic_constraint": "harness-rethink",
+    "routing_substrate": "autonomous-initiative-lifecycle",
+    "authority": "campaign_advisory_only"
+  },
+  "next_safe_internal_move": {
+    "action": "research_initiative",
+    "candidate_id": "product-strategy-validation-and-replay-readiness",
+    "title": "Product Strategy Validation And Replay Readiness",
+    "reason": "Validate live state, protected boundaries, and operator readability before marking campaign Green."
+  },
+  "next_product_move_requires_human_gate": [
+    "packaging_commit",
+    "hydration_specific_campaign",
+    "public_release_strategy",
+    "delivery_campaign"
+  ],
+  "blocked_without_fresh_human_gate": [
+    "hydrate_task",
+    "roadmap_write",
+    "backlog_write",
+    "spec_write",
+    "public_sync",
+    "public_release",
+    "public_checkout_mutation",
+    "cockpit_write",
+    "project_write",
+    "backup_private_remote",
+    "credential_work",
+    "dependency_network_expansion",
+    "destructive_action",
+    "kernel_governance_m1",
+    "commit",
+    "push"
+  ]
+}

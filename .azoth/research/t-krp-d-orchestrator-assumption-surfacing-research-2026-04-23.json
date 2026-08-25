@@ -1,0 +1,114 @@
+{
+  "id": "t-krp-d-orchestrator-assumption-surfacing-research-2026-04-23",
+  "task_id": "T-KRP-D",
+  "session_id": "2026-04-23-adhoc-t-krp-d-context-engineering",
+  "goal": "Hydrate T-KRP-D with repo-local research and explore evidence before governed delivery.",
+  "outcome": "research_sufficient",
+  "scope": "planning_hydration_only",
+  "network_refresh": false,
+  "research_pack_id": "t-krp-d-orchestrator-assumption-surfacing-context-pack-2026-04-24",
+  "topic": "Orchestrator assumption-surfacing checkpoint at goal classification",
+  "local_sources": [
+    {
+      "path": ".azoth/research/t-krp-a-karpathy-behavioral-layer-research-2026-04-22.json",
+      "use": "Establishes Karpathy initiative boundaries, thin-layer precedent, D23 relevance, and deferral of T-KRP-D."
+    },
+    {
+      "path": ".azoth/research/t-krp-b-karpathy-principles-skill-research-2026-04-23.json",
+      "use": "Establishes the injectable skill boundary and reserves orchestrator goal-classification policy for T-KRP-D."
+    },
+    {
+      "path": ".azoth/research/t-krp-c-builder-posture-research-2026-04-23.json",
+      "use": "Establishes builder-only boundary and defers orchestrator assumption surfacing to T-KRP-D."
+    },
+    {
+      "path": ".agents/skills/karpathy-principles/SKILL.md",
+      "use": "Provides the repo-local assumption-surfacing discipline and explicit T-KRP-D boundary."
+    },
+    {
+      "path": "agents/tier1-core/orchestrator.agent.md",
+      "use": "Canonical authored orchestrator posture surface and existing Stage 0 classification contract."
+    },
+    {
+      "path": ".agents/skills/auto-router/SKILL.md",
+      "use": "D23 routing contract that should consume better classification inputs rather than be replaced."
+    },
+    {
+      "path": ".claude/commands/auto.md",
+      "use": "Stage 0 classification schema, Declaration flow, gate-write order, and run-ledger expectations."
+    },
+    {
+      "path": "pipelines/auto.pipeline.yaml",
+      "use": "Concrete routing rows and classification dimensions affected by T-KRP-D."
+    },
+    {
+      "path": ".azoth/roadmap.yaml",
+      "use": "Confirms T-KRP-D title, M1 target layer, governed delivery pipeline, and INI-KRP-001 placement."
+    }
+  ],
+  "implications_for_azoth": [
+    "T-KRP-D should turn goal classification into a falsifiable checkpoint that names assumptions before composing a pipeline.",
+    "The checkpoint belongs between context recall/repo evidence read-back and the Declaration, so the human sees uncertainty before approval.",
+    "The checkpoint should explain why the classification is known-pattern, needs-research, novel, instruction-refinement, or otherwise routed.",
+    "Auto-router should remain the routing table; T-KRP-D should improve the quality of inputs to D23 rather than replace it.",
+    "Generated mirrors are projection targets only after the future governed implementation edits canonical source."
+  ],
+  "explore_findings": {
+    "canonical_likely": [
+      "agents/tier1-core/orchestrator.agent.md",
+      ".claude/commands/auto.md",
+      ".agents/skills/auto-router/SKILL.md",
+      "pipelines/auto.pipeline.yaml"
+    ],
+    "generated_or_projected": [
+      ".claude/agents/orchestrator.md",
+      ".codex/agents/orchestrator.toml",
+      ".github/agents/orchestrator.agent.md",
+      ".opencode/agents/orchestrator.md",
+      ".gemini/agents/orchestrator.md",
+      ".agents/skills/azoth-auto/SKILL.md",
+      ".github/prompts/auto.prompt.md",
+      ".opencode/commands/auto.md",
+      ".gemini/commands/auto.toml",
+      ".agents/workflows/auto.md"
+    ],
+    "blast_radius": "RED if generated mirrors are counted; YELLOW if only authored canonical surfaces are counted.",
+    "implementation_risks": [
+      "Editing generated mirrors directly can create deploy parity drift.",
+      "Changing auto-router or auto.pipeline.yaml changes D23 routing behavior and needs focused router tests.",
+      ".claude/commands/auto.md is the current authored body source referenced by commands/auto/command.yaml.",
+      "Assumption surfacing can broaden into a governance rule; keep it an orchestrator classification checkpoint unless re-scoped."
+    ]
+  },
+  "recommended_scope": [
+    "Hydrate .azoth/roadmap-specs/v0.2.0/T-KRP-D.yaml as a governed M1 spec.",
+    "Scope future implementation to canonical orchestrator posture around Stage 0 goal classification.",
+    "Specify an assumption checkpoint output that captures goal interpretation, owned surfaces, out-of-scope surfaces, evidence basis, uncertainty, and classification rationale.",
+    "Require the checkpoint to feed Declaration rationale and auto-router classification.",
+    "Require generated mirror refresh and deploy parity checks only in the later implementation slice."
+  ],
+  "non_goals": [
+    "No implementation edits in this planning hydration session.",
+    "No builder posture changes.",
+    "No karpathy-principles skill rewrite.",
+    "No structured-autonomy-plan success-criteria gate.",
+    "No root CLAUDE.md expansion.",
+    "No manual edits to generated orchestrator mirrors.",
+    "No new governance or Trust Contract semantics unless separately scoped and approved."
+  ],
+  "acceptance_seeds": [
+    "T-KRP-D spec exists and references this context pack plus prior T-KRP-A/B/C capsules.",
+    "Spec identifies target_layer: M1 and delivery_pipeline: governed.",
+    "Spec names canonical orchestrator source as the authored implementation surface.",
+    "Spec requires a pre-Declaration assumption checkpoint during goal classification.",
+    "Checkpoint covers scope, risk, complexity, knowledge, evidence basis, uncertainty, gates, owned surfaces, and deferrals.",
+    "Spec explicitly preserves T-KRP-A/B/C/E boundaries.",
+    "Future implementation adds concise comments in authored surfaces and parity tests explaining the T-KRP-D/D23 handoff boundary.",
+    "Future validation includes azoth-deploy parity checks and targeted agent/template tests."
+  ],
+  "comment_handoff": [
+    "Do not edit parallel implementation-session files just to add comments from this planning session.",
+    "Carry the comment requirement forward in the T-KRP-D spec so the future implementation can add comments in the same scoped slice as the behavior change.",
+    "Comments should explain that the checkpoint improves inputs to auto-router and does not replace D23 or implement T-KRP-E."
+  ]
+}

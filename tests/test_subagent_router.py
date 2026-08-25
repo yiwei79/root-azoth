@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SKILL_PATH = REPO_ROOT / "skills" / "subagent-router" / "SKILL.md"
+SKILL_PATH = REPO_ROOT / ".agents" / "skills" / "subagent-router" / "SKILL.md"
 
 # Read once; reused across all unit tests.
 _CONTENT = SKILL_PATH.read_text(encoding="utf-8")
@@ -27,8 +27,8 @@ _CONTENT = SKILL_PATH.read_text(encoding="utf-8")
 
 
 def test_skill_file_exists() -> None:
-    """skills/subagent-router/SKILL.md must exist (D21)."""
-    assert SKILL_PATH.is_file(), "skills/subagent-router/SKILL.md must exist"
+    """.agents/skills/subagent-router/SKILL.md must exist (D21)."""
+    assert SKILL_PATH.is_file(), ".agents/skills/subagent-router/SKILL.md must exist"
 
 
 # ── Trigger definitions ───────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ def test_architect_exclusion_clause_present() -> None:
 def test_spawn_prompt_contract_present() -> None:
     """BL-011: skill must define the minimal spawn template and stage briefs."""
     assert "## Spawn Prompt Contract (BL-011)" in _CONTENT
-    assert "pipeline: deliver-full | deliver | auto" in _CONTENT
+    assert "pipeline: autonomous-auto | deliver-full | deliver | auto" in _CONTENT
     assert "§Stage briefs: deliver-full" in _CONTENT or "Stage briefs: deliver-full" in _CONTENT
 
 
@@ -105,6 +105,22 @@ def test_before_after_token_illustration_present() -> None:
     """BL-011: illustrative before/after table for spawn body size."""
     assert "Before / after" in _CONTENT
     assert "anti-pattern" in _CONTENT.lower()
+
+
+def test_codex_resolver_contract_present() -> None:
+    """T-025: Codex spawns must use the runtime resolver before Agent()."""
+    assert "## Codex Model Selector Contract (T-025)" in _CONTENT
+    assert "scripts/codex_model_selector.py" in _CONTENT
+    assert ".azoth/codex-model-selector-policy.yaml" in _CONTENT
+    assert ".azoth/codex-model-selector-traces.local.jsonl" in _CONTENT
+
+
+def test_codex_spawn_fields_are_explicit() -> None:
+    """T-025: spawned Codex subagents must receive explicit model and effort fields."""
+    assert "model: <resolved-model>" in _CONTENT
+    assert "reasoning_effort: <low|medium|high|xhigh>" in _CONTENT
+    assert "Do not omit `model` or `reasoning_effort`" in _CONTENT
+    assert "Parent `xhigh` reasoning must not leak" in _CONTENT
 
 
 # ── Integration: file-scoped collateral guard ─────────────────────────────────

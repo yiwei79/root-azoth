@@ -1,0 +1,53 @@
+id: T-020
+roadmap_version: v0.2.0
+title: Planning-bank surfacing and routing in session dashboards
+decision_ref:
+- D23
+- D48
+- D50
+- D52
+intent: Make tracked planning-bank state visible in the operator-facing routing loop
+  so design banks and initiative banks are discoverable before they become executable
+  roadmap/backlog work.
+problem: T-018 and T-019 made the planning-bank layer real, but `/start`, `/roadmap`,
+  and `/next` still route mainly through backlog, roadmap initiatives, and legacy
+  proposal/research surfaces. That leaves active design-bank continuation state easy
+  to miss and can cause the next session to conclude that no work exists even when
+  a planning bank is explicitly asking for refinement or routing.
+scope:
+- Surface tracked design-bank and initiative-bank summaries in one or more existing
+  session routing/dashboard paths.
+- Preserve the boundary that planning banks are planning/readiness state, not executable
+  backlog until an explicit human-approved hydration step creates roadmap/backlog/spec
+  artifacts.
+- Include validation or regression coverage proving tracked banks are discoverable
+  while ignored proposal drafts remain non-authoritative.
+non_goals:
+- Do not add write-mode hydration helper behavior.
+- Do not make planning banks replace roadmap.yaml, backlog.yaml, or roadmap specs.
+- Do not turn every proposal, research file, or initiative into a required planning
+  bank.
+- Do not mutate M1/kernel governance policy.
+acceptance:
+- '`/start`, `/roadmap`, or a closely related routing surface exposes tracked planning-bank
+  state when no backlog item is claimable.'
+- The surfaced state distinguishes design banks, initiative banks, proposal drafts,
+  and executable backlog/spec work.
+- The routing text recommends refinement or explicit hydration rather than direct
+  implementation from a planning bank.
+- Existing planning-bank validators continue to pass for the live design and initiative
+  banks.
+- Focused tests cover the new surfacing or routing behavior and protect against
+  authoritative refs to ignored proposal inbox files.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = dashboard/routing surfacing only. Phase 2 = command-level
+  route actions or hydration helper design only after the surfacing behavior proves
+  the operator path.
+source_bank_ref: .azoth/design-banks/planning-banks-layer.yaml
+related_bank_refs:
+- .azoth/design-banks/planning-banks-layer.yaml
+- .azoth/initiative-banks/INI-EVI-002.yaml

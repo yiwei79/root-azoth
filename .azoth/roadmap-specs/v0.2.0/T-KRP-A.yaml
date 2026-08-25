@@ -1,0 +1,46 @@
+id: T-KRP-A
+roadmap_version: v0.2.0
+title: 'CLAUDE.md kernel: embed Karpathy behavioral layer (Think Before Coding, Simplicity
+  First, Surgical Changes, Goal-Driven Execution)'
+decision_ref:
+- D21
+- D23
+- D51
+intent: >
+  Hydrate the governed spec for a short named Karpathy behavioral layer in root
+  CLAUDE.md as the lowest-effort, highest-reach first slice, while keeping this
+  task limited to spec authoring and deferring any future implementation,
+  generated-mirror policy, or enforcement work to separately approved follow-on
+  runs.
+problem: >
+  INI-KRP-001 is registered and queued, but T-KRP-A is still placeholder-only.
+  The repo needs a spec-ready, repo-native mapping from the four Karpathy
+  principles onto the current CLAUDE.md entrypoint before any governed delivery
+  can refine the kernel surface without duplicating existing Azoth policy or
+  silently broadening the slice into implementation.
+scope:
+- "Declare root CLAUDE.md as the sole human-authored canonical instruction surface for any future T-KRP-A implementation, with AGENTS.md remaining generated metadata rather than a manual authoring surface."
+- "Specify one short named subsection under Development Instructions after Core Rules and before Development Workflow titled 'Karpathy Behavioral Layer'."
+- "Map Think Before Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution onto the existing overlap anchors identified for this task rather than restating governance."
+- "Treat the task-scoped reusable research capsule under .azoth/research/ as planning evidence for this slice only, not as delivery scope or implementation authorization."
+- "If a later implementation touches mirror surfaces, limit parity or deploy consequences to mirrors strictly required by the canonical instruction source rather than manual AGENTS.md authorship."
+non_goals:
+- "No direct implementation edits to CLAUDE.md, AGENTS.md, or any generated mirror in this spec-hydration run, and no implicit authorization for later CLAUDE.md implementation without a separate governed, human-approved run."
+- "No implementation of T-KRP-B, T-KRP-C, T-KRP-D, or T-KRP-E in the same slice."
+- "No productized exploratory-write-enablement or exploratory-memory policy bundled into T-KRP-A."
+- "No duplication of existing Azoth governance or enforcement semantics inside the future CLAUDE.md layer."
+- "No new shared imported instruction source or manual edits to generated AGENTS.md for T-KRP-A."
+acceptance:
+- "The hydrated spec declares root CLAUDE.md as the sole human-authored canonical placement for T-KRP-A, while AGENTS.md remains generated metadata rather than a manual authoring surface."
+- "The hydrated spec proposes one short named subsection in root CLAUDE.md titled 'Karpathy Behavioral Layer', placed under Development Instructions after Core Rules and before Development Workflow."
+- "The hydrated spec requires each of the four Karpathy principles to map onto the existing overlap anchors evidenced in the task-scoped research capsule across CLAUDE.md, orchestrator, builder, context-map, and TRUST_CONTRACT, rather than restating governance generically."
+- "Acceptance language explicitly treats the task-scoped research capsule as planning evidence only, defers T-KRP-B through T-KRP-E, and leaves any future CLAUDE.md implementation to a separate governed, human-approved run."
+- "Any future parity or deploy verification is conditional on a later implementation run actually touching mirror surfaces."
+dependencies:
+- T-009
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

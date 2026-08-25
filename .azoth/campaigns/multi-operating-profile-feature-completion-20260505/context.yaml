@@ -1,0 +1,124 @@
+schema_version: 1
+campaign_id: multi-operating-profile-feature-completion-20260505
+name: Multi-Operating Profile Feature Completion
+mode: autonomous-auto
+branch: phase/v0.2.0-p4
+created_at: "2026-05-05"
+status: locked_design
+approval_basis: >-
+  Operator approved locking the campaign design and starting the autonomous-auto
+  loop for Multi-Operating Profile Feature Completion on 2026-05-05.
+design_intent: >-
+  Complete the internal multi-operating-profile feature for Azoth end-to-end:
+  reconcile accepted profile-split research with implemented classifier,
+  routing, docs, and tests; define the canonical profile contract; implement the
+  smallest safe internal slice only after route evidence supports it; run
+  shadow-trial/eval cases; and stop with evaluator-scored proof that
+  stock-lite, azoth-lite, azoth-full, and meta-harness-experimental are coherent
+  and escalation-safe.
+locked_declaration: .azoth/campaigns/multi-operating-profile-feature-completion-20260505/locked-campaign-declaration.md
+budget:
+  max_child_scopes: 6
+  bounded_replays_per_child: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+  - capture_self_improvement
+blocked_without_fresh_gate:
+  - hydrate_task
+  - roadmap_backlog_or_spec_hydration
+  - public_azoth_mutation
+  - public_release_sync_or_freshness_work
+  - cockpit_or_project_repo_writes
+  - network_or_dependency_expansion
+  - credential_or_backup_work
+  - kernel_governance_or_m1_mutation
+  - destructive_actions
+packaging_policy:
+  commits_allowed: false
+  pushes_allowed: false
+  note: >-
+    Campaign may produce artifacts and internal implementation changes under
+    budget, but packaging/commit remains a separate operator gate unless later
+    explicitly approved.
+source_anchors:
+  - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/operating-profile-decision.md
+  - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/evaluator-scorecard.json
+  - .azoth/inbox/session-reflection-2026-05-05-autonomous-auto-pipeline-visibility-gap.jsonl
+  - meta_session_research/architecture-update-proposal/proposal.md
+  - meta_session_research/architecture-update-proposal/migration-phases.md
+  - meta_session_research/architecture-update-proposal/test-and-eval-plan.md
+  - scripts/azoth_lite.py
+  - scripts/codex_control_plane.py
+  - tests/test_azoth_lite_classifier.py
+  - tests/fixtures/azoth_lite_phase2_cases.json
+  - docs/AZOTH_ARCHITECTURE.md
+expected_child_sequence:
+  - child: 1
+    route: research_initiative
+    purpose: Reconcile live implementation state with accepted profile-split research and prior campaign decision.
+  - child: 2
+    route: refine_proposal
+    purpose: Lock canonical profile contract, trace/handoff semantics, and proof plan.
+  - child: 3
+    route: ship_task
+    purpose: Implement the smallest safe internal slice if child 2 proves a concrete gap.
+  - child: 4
+    route: research_initiative
+    purpose: Run shadow-trial/eval cases and score profile lightness, escalation precision, and safety.
+  - child: 5
+    route: ship_task
+    purpose: Harden integration or docs/tests only if eval finds a bounded gap.
+  - child: 6
+    route: refine_proposal
+    purpose: Final evaluator packet, residual risks, and next internal campaign recommendation.
+success_bar:
+  - Profiles are mechanically and operator-legibly distinct.
+  - Governed and finality work escalates to azoth-full before mutation.
+  - Public release/sync/freshness remains blocked by default and on-demand only.
+  - Existing governed flows and generated surfaces remain in sync.
+  - Pipeline stage evidence is visible immediately after child open.
+child_session_contract:
+  each_child_is_own_session: true
+  require_open_next: true
+  require_scope_gate: true
+  require_write_claim: true
+  require_immediate_stage_evidence_after_open: true
+  require_completion_evidence_before_close: true
+  require_closeout_before_next_child: true
+  forbid_next_child_with_active_write_claim: true
+orchestration_pipeline_pattern:
+  research_initiative:
+    - architect_question_framing
+    - researcher_evidence_gathering
+    - evaluator_completeness_scoring
+  refine_proposal:
+    - architect_contract_framing
+    - reviewer_boundary_critique
+    - evaluator_scorecard_and_replay_decision
+  ship_task:
+    - architect_slice_framing
+    - builder_owned_change
+    - evaluator_verification
+    - reviewer_when_independence_or_blast_radius_requires
+  capture_self_improvement:
+    - architect_root_cause_framing
+    - capture_artifact
+    - evaluator_mistake_to_artifact_acceptance
+evaluator_iterative_improvement:
+  required: true
+  threshold_default: 0.9
+  required_fields:
+    - score
+    - threshold
+    - dimensions
+    - iteration_history
+    - bounded_replay_count
+    - rejected_alternatives
+    - residual_risks
+    - final_disposition
+  replay_rule: >-
+    If the first evaluator score is below threshold and the finding is inside
+    the child budget, run one bounded replay through the narrowest affected
+    stage; otherwise stop with residual risks.

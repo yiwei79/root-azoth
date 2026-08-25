@@ -1,0 +1,165 @@
+{
+  "phase1_cases": [
+    {
+      "id": "F1-read-only-status",
+      "goal": "Inspect repo status and the meta research README to answer current Phase 1 status.",
+      "requested_actions": ["status", "read"],
+      "planned_paths": [
+        "meta_session_research/manual-trials/azoth-lite-phase-1-shadow-pack/README.md"
+      ],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "read_only",
+        "selected_profile": "azoth-lite",
+        "stop_state": "done",
+        "escalate": false
+      }
+    },
+    {
+      "id": "F2-focused-verification",
+      "goal": "Run one narrow existing test target without changing code.",
+      "requested_actions": ["focused_test"],
+      "planned_paths": ["tests/test_codex_hooks_mode.py"],
+      "trace_required": false,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "read_only",
+        "selected_profile": "azoth-lite",
+        "stop_state": "done",
+        "escalate": false
+      }
+    },
+    {
+      "id": "F3-ordinary-local-edit",
+      "goal": "Create or update non-governed manual trial artifacts under meta_session_research.",
+      "requested_actions": ["edit"],
+      "planned_paths": [
+        "meta_session_research/manual-trials/azoth-lite-phase-1-shadow-pack/run-log.md"
+      ],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "local_edit",
+        "selected_profile": "azoth-lite",
+        "stop_state": "done",
+        "escalate": false
+      }
+    },
+    {
+      "id": "F4-governed-state-escalation",
+      "goal": "Append .azoth/memory/episodes.jsonl for the profile split acceptance.",
+      "requested_actions": ["edit"],
+      "planned_paths": [".azoth/memory/episodes.jsonl"],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "governed_state",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true
+      }
+    },
+    {
+      "id": "F5-finality-packaging-escalation",
+      "goal": "Package, finalize, commit, or declare clean final delivery while dirty state exists.",
+      "requested_actions": ["commit", "final_delivery"],
+      "planned_paths": [],
+      "trace_required": true,
+      "dirty_worktree": true,
+      "expected": {
+        "side_effect_class": "external_or_destructive",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true
+      }
+    }
+  ],
+  "side_effect_cases": [
+    {
+      "id": "S1-read-only-stock-baseline",
+      "goal": "Summarize the current git status without research trace.",
+      "requested_actions": ["status"],
+      "planned_paths": [],
+      "trace_required": false,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "read_only",
+        "selected_profile": "stock-lite",
+        "stop_state": "done",
+        "escalate": false
+      }
+    },
+    {
+      "id": "S2-local-edit-source",
+      "goal": "Update an ordinary source helper and its tests.",
+      "requested_actions": ["edit", "test"],
+      "planned_paths": ["scripts/example_helper.py", "tests/test_example_helper.py"],
+      "trace_required": false,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "local_edit",
+        "selected_profile": "azoth-lite",
+        "stop_state": "done",
+        "escalate": false
+      }
+    },
+    {
+      "id": "S3-governed-state-roadmap",
+      "goal": "Edit the roadmap task state.",
+      "requested_actions": ["edit"],
+      "planned_paths": [".azoth/roadmap.yaml"],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "governed_state",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true
+      }
+    },
+    {
+      "id": "S4-kernel-governance",
+      "goal": "Change the trust contract entropy ceiling.",
+      "requested_actions": ["edit"],
+      "planned_paths": ["kernel/TRUST_CONTRACT.md"],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "kernel_or_governance",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true
+      }
+    },
+    {
+      "id": "S5-external-or-destructive",
+      "goal": "Deploy the package and publish release artifacts.",
+      "requested_actions": ["deploy", "publish"],
+      "planned_paths": [],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "external_or_destructive",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true
+      }
+    },
+    {
+      "id": "S6-autonomous-continuation-exact-phrase",
+      "goal": "autonomous continuation",
+      "requested_actions": [],
+      "planned_paths": [],
+      "trace_required": true,
+      "dirty_worktree": false,
+      "expected": {
+        "side_effect_class": "governed_state",
+        "selected_profile": "azoth-full",
+        "stop_state": "escalate",
+        "escalate": true,
+        "escalation_reason": "autonomous_continuation_requested"
+      }
+    }
+  ]
+}

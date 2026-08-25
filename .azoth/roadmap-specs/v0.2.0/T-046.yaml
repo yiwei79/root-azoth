@@ -1,0 +1,95 @@
+id: T-046
+roadmap_version: v0.2.0
+title: Task research capsule derivation from initiative-bank evidence
+decision_ref: []
+intent: Define the implementation boundary for deriving task-specific research capsules
+  from initiative-bank evidence while preserving provenance, freshness, and task-level
+  sufficiency checks.
+problem: Initiative banks can accumulate rich evidence before a slice becomes a task,
+  but delivery still needs slice-specific research capsules that satisfy scripts/research_sufficiency.py.
+  Without a bounded derivation contract, future helpers could copy stale initiative-level
+  evidence, hide conflicts, or bypass task-level freshness checks.
+scope:
+- Define the derived-capsule field contract compatible with scripts/research_sufficiency.py,
+  including the required JSON capsule fields and initiative-derived provenance fields
+  from rq-evi-002-010.
+- Specify freshness narrowing from source evidence into derived questions, including
+  stale/conflicting evidence exclusion or refresh-required outcomes.
+- Define the refusal matrix for complete, hydrated, rejected, stale, conflicting,
+  missing, protected, unapproved, or insufficiently evidenced candidate slices.
+- Keep the output helper boundary plan-first; standalone .azoth/research/*.json capsule
+  emission requires a later explicit implementation scope.
+non_goals:
+- Do not implement the derivation helper in this hydration scope.
+- Do not emit standalone .azoth/research/*.json capsules.
+- Do not replace scripts/research_sufficiency.py or turn initiative banks into task-level
+  sufficiency evidence by themselves.
+- Do not mutate personal-root state, kernel, M1, governance, release, or deployment surfaces.
+acceptance:
+- The task spec preserves rq-evi-002-010's derived-capsule field contract, freshness
+  narrowing rule, and refusal matrix.
+- Future implementation must call or feed scripts/research_sufficiency.py rather than
+  duplicating or bypassing its sufficiency logic.
+- The helper boundary keeps initiative-bank provenance traceable without copying unrelated
+  bank history.
+- Hydration history links this task back to INI-EVI-002 slice-evi-002-f and the approved
+  dynamic-full-auto hydration scope.
+derived_capsule_contract:
+  source_question_ref: .azoth/initiative-banks/INI-EVI-002.yaml#rq-evi-002-010
+  repo_local_capsule_path: .azoth/research/*.json
+  sufficiency_evaluator: scripts/research_sufficiency.py
+  required_capsule_fields:
+  - schema_version
+  - source_session_id
+  - goal
+  - captured_at
+  - volatility
+  - limitations
+  - questions
+  required_question_fields:
+  - question_id
+  - question
+  - status
+  - answered_at
+  - fresh_until
+  initiative_provenance_fields:
+  - source_initiative_ref
+  - source_bank_ref
+  - candidate_slice_ref
+  - source_evidence_refs
+  - freshness_window
+  - excluded_stale_evidence
+  - decision_context
+  bypass_policy: 'forbidden: initiative banks alone are not task-level sufficiency evidence'
+  output_boundary:
+    this_scope: plan_only_definition
+    allowed_output: roadmap spec contract and test coverage only
+    forbidden_output: standalone .azoth/research/*.json capsule emission
+    future_scope_required: explicit helper implementation approval
+freshness_narrowing:
+  per_question_rule: derive fresh_until from the most restrictive relevant source
+    evidence window
+  required_trace_fields:
+  - source_evidence_refs
+  - freshness_window
+  - excluded_stale_evidence
+  stale_or_conflicting_source_policy:
+  - exclude from source_evidence_refs and record in excluded_stale_evidence
+  - or force refresh before any derived capsule becomes delivery evidence
+refusal_matrix:
+  complete: 'refuse: no repeat derivation or hydration action remains'
+  hydrated: 'refuse: task already exists; define delivery boundary only'
+  rejected: 'refuse: candidate is not eligible evidence'
+  stale: 'refuse: refresh source evidence before derivation'
+  conflicting: 'refuse: resolve or carry conflict through research_sufficiency.py'
+  missing: 'refuse: required candidate or evidence fields are absent'
+  protected: 'refuse: protected/kernel/governance outputs require human gate'
+  unapproved: 'refuse: explicit approval is required before derivation output'
+  insufficient: 'refuse: research_sufficiency.py must report sufficient'
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

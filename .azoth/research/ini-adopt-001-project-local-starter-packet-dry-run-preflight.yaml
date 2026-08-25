@@ -1,0 +1,118 @@
+schema_version: 1
+artifact_type: project_local_starter_packet_dry_run_preflight
+initiative_ref: INI-ADOPT-001
+candidate_slice_ref: slice-adopt-001-d
+task_ref: ADOPT-001-D
+status: complete
+created_at: "2026-05-19T22:29:24Z"
+session_id: 2026-05-20-ini-adopt-001-project-local-dry-run-preflight
+purpose: >
+  Define and validate a root-local, no-project-write starter packet dry-run for
+  the first Project Genesis project-local example before any project repository
+  mutation, project-local receipt creation, context loading, or managed-mode
+  hydration is approved.
+source_refs:
+  - .azoth/initiative-banks/INI-ADOPT-001.yaml
+  - .azoth/research/ini-adopt-001-route-board.yaml
+  - .azoth/research/ini-adopt-001-cockpit-route-rehearsal-preflight.yaml
+  - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml
+  - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+  - scripts/project_genesis_starter.py
+authority_boundary:
+  source_panel: root_azoth
+  target_panel: project_local_space
+  selected_project_type: music_production
+  selected_project_id: music-production-lab
+  selected_mode: guide
+  target_project_path_authorized: false
+  project_repository_mutation_authorized: false
+  project_local_receipt_creation_authorized: false
+  project_local_context_loading_authorized: false
+  managed_or_governed_hydration_authorized: false
+  approval_basis: >
+    Goal-mode self-approval authorizes root-local planning-seed artifacts only.
+    The selected project type is a dry-run profile, not a real project path or
+    project-local write approval.
+selection_rationale:
+  selected_first: music-production-lab
+  reason: >
+    Music production is the lowest-risk Project Genesis example for a first
+    dry-run because it can exercise creative starter language without requiring
+    thesis documents, source imports, code repositories, or compatibility tests.
+  unselected_examples:
+    - bachelor-thesis remains available for a later source/document-bound dry-run.
+    - agent-context-project remains available for a later repo/architecture-bound dry-run.
+dry_run_packet:
+  generation_command: >
+    python3 scripts/project_genesis_starter.py profile music_production --project-id music-production-lab --project-name "Music Production Lab" > /private/tmp/music-production-lab-project-genesis.yaml
+  validation_command: >
+    python3 scripts/project_genesis_starter.py validate /private/tmp/music-production-lab-project-genesis.yaml
+  validation_result: pass
+  temp_artifact: /private/tmp/music-production-lab-project-genesis.yaml
+  project_repo_written: false
+  project_context_loaded: false
+  cockpit_route_written: false
+  public_azoth_mutated: false
+packet_contract_readback:
+  project_id: music-production-lab
+  domain: music_production
+  azoth_source_profile: public_install
+  readiness_status: discovery_active
+  next_safe_action: Create a context map and choose one 30-60 minute experiment.
+  hydration_blockers:
+    - No project-local approval yet.
+    - No cockpit route approval yet.
+    - No root roadmap/backlog/spec hydration approval yet.
+  forbidden_outputs:
+    - project code mutation
+    - cockpit write
+    - root roadmap/backlog/spec hydration
+    - kernel or governance edit
+receipt_plan_for_real_project:
+  receipt_owner: selected_project_repo
+  receipt_required_before:
+    - project-local packet file creation
+    - project-local context loading
+    - project-local memory or gate reads
+    - managed-mode hydration
+    - governed-autonomy child scope
+  minimum_receipt_fields:
+    - project_id
+    - repo_path
+    - receipt_owner
+    - selected_mode
+    - release_profile_ref
+    - readiness_state
+    - freshness_status
+    - approval_scope
+    - active_write_claim
+    - next_safe_action
+    - stop_reason
+    - handoff_receipt_ref
+acceptance_map:
+  - criterion: Target project type and selected mode are explicit.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml#authority_boundary
+  - criterion: Dry-run packet validates without writing to the project.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml#dry_run_packet
+  - criterion: Receipt owner and stop-before boundaries are explicit.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-project-local-starter-packet-dry-run-preflight.yaml#receipt_plan_for_real_project
+stop_rules:
+  - Stop before writing any file into a project repository.
+  - Stop before creating a project-local receipt.
+  - Stop before loading project source, project-local memory, project-local gates, or project instructions.
+  - Stop before registering cockpit pointers or writing cockpit routes.
+  - Stop before managed/governed hydration, roadmap/backlog/spec hydration, or child autonomous scopes.
+  - Stop before public Azoth mutation, release publishing, installer/profile claims, kernel/governance edits, dependencies, credentials, network, or destructive actions.
+outcome:
+  result: slice-adopt-001-d complete as root-local project-local dry-run preflight
+  next_self_servable_candidate: none
+  next_approval_needed: >
+    A fresh explicit target-plane approval is required to create a real
+    project-local starter packet, register cockpit pointers, publish public
+    Project Genesis assets, or hydrate any roadmap/backlog/spec task.

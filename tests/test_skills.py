@@ -32,12 +32,18 @@ EXPECTED_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "autonomous-auto",
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
     "dynamic-full-auto",
     "orientation",
+    "karpathy-principles",
 ]
+
+INJECTABLE_ONLY_SKILLS = {
+    "karpathy-principles",
+}
 
 EXTRACTED_SKILLS = [
     "context-map",
@@ -53,11 +59,13 @@ NEW_SKILLS = [
     "self-improve",
     "subagent-router",
     "auto-router",
+    "autonomous-auto",
     "stage6-rubric",
     "context-recall",
     "cursor-review-insights",
     "dynamic-full-auto",
     "orientation",
+    "karpathy-principles",
 ]
 
 
@@ -208,6 +216,79 @@ class TestSkillContent:
             f"{skill_name} SKILL.md has {len(lines)} lines — minimum 50 expected"
         )
 
+    def test_structured_autonomy_plan_derives_success_criteria_before_tasks(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
+
+        goal_idx = content.index("### 1. Goal Restatement")
+        criteria_idx = content.index("### 2. Success Criteria")
+        checkpoint_idx = content.index("#### Non-Goals and Deferrals Checkpoint")
+        decomposition_idx = content.index("### 3. Task Decomposition")
+
+        assert goal_idx < criteria_idx < checkpoint_idx < decomposition_idx, (
+            "structured-autonomy-plan must derive falsifiable success criteria before "
+            "task decomposition"
+        )
+        assert "falsifiable" in content[criteria_idx:decomposition_idx].lower()
+
+    def test_structured_autonomy_plan_maps_each_success_criterion_to_validation(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
+
+        mapping_needles = (
+            "Each success criterion MUST map to exactly one validation disposition:",
+            "automated_test",
+            "manual_validation",
+            "human_review",
+            "deferred",
+            "criteria_id",
+            "validation_disposition",
+            "validation_ref",
+        )
+        for needle in mapping_needles:
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
+    def test_structured_autonomy_plan_requires_non_goals_before_builder_handoff(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
+
+        checkpoint_idx = content.index("#### Non-Goals and Deferrals Checkpoint")
+        decomposition_idx = content.index("### 3. Task Decomposition")
+        handoff_idx = content.index("consumed by the test-builder and builder stages")
+
+        assert checkpoint_idx < decomposition_idx < handoff_idx
+        for needle in (
+            "Before builder handoff",
+            "non_goals:",
+            "deferrals:",
+            "linked_success_criteria",
+            "The checkpoint MUST appear before task decomposition",
+        ):
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
+    def test_structured_autonomy_plan_template_places_non_goals_before_tasks(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
+        template = content[content.index("## Plan Template") :]
+
+        success_criteria_idx = template.index("### Success Criteria")
+        non_goals_idx = template.index("### Non-Goals and Deferrals")
+        tasks_idx = template.index("### Tasks")
+
+        assert success_criteria_idx < non_goals_idx < tasks_idx, (
+            "Plan Template must put Non-Goals and Deferrals before Tasks"
+        )
+
+    def test_structured_autonomy_plan_declares_krp_and_replay_boundaries(self) -> None:
+        content = (SKILLS_DIR / "structured-autonomy-plan" / "SKILL.md").read_text(encoding="utf-8")
+
+        for needle in (
+            "T-KRP-A root behavior",
+            "T-KRP-B injectable skill",
+            "T-KRP-C Builder posture",
+            "T-KRP-D Orchestrator assumption surfacing",
+            "T-KRP-E structured success criteria",
+            "T-006 stable criteria for replay routing",
+            "lowest legitimate corrective stage",
+        ):
+            assert needle in content, f"structured-autonomy-plan missing {needle!r}"
+
 
 class TestSkillConsistency:
     """Verify skills are consistent with architecture and each other."""
@@ -218,7 +299,7 @@ class TestSkillConsistency:
 
     def test_extracted_vs_new_count(self) -> None:
         assert len(EXTRACTED_SKILLS) == 5, "Should have 5 extracted skills"
-        assert len(NEW_SKILLS) == 10, "Should have 10 new skills"
+        assert len(NEW_SKILLS) == 12, "Should have 12 new skills"
         assert len(EXTRACTED_SKILLS) + len(NEW_SKILLS) == len(EXPECTED_SKILLS)
 
     def test_skill_index_lists_all_expected_skills(self) -> None:
@@ -239,10 +320,18 @@ class TestSkillConsistency:
                 )
 
     def test_architecture_references_all_skills(self) -> None:
-        """CLAUDE.md should reference every skill slug (BL-013 progressive disclosure)."""
+        """CLAUDE.md should reference non-injectable skill slugs (BL-013)."""
         claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
-        for slug in EXPECTED_SKILLS:
+        for slug in sorted(set(EXPECTED_SKILLS) - INJECTABLE_ONLY_SKILLS):
             assert slug in claude_md, f"CLAUDE.md must reference skill slug {slug!r}"
+
+    def test_injectable_only_skills_are_not_added_to_root_architecture(self) -> None:
+        """Injectable-only skills stay opt-in instead of expanding the root instruction surface."""
+        claude_md = (REPO_ROOT / "CLAUDE.md").read_text()
+        for slug in sorted(INJECTABLE_ONLY_SKILLS):
+            assert slug not in claude_md, (
+                f"Injectable-only skill {slug!r} must not be added to CLAUDE.md"
+            )
 
     def test_azoth_yaml_skill_count(self) -> None:
         """azoth.yaml should reflect correct skill count."""
@@ -270,6 +359,47 @@ class TestSkillConsistency:
         assert "L1" in content
         assert "L2" in content
         assert "L3" in content
+
+    def test_karpathy_principles_content_contract(self) -> None:
+        """T-KRP-B: injectable discipline skill must carry the scoped Karpathy contract."""
+        skill_md = SKILLS_DIR / "karpathy-principles" / "SKILL.md"
+        assert skill_md.is_file(), "T-KRP-B requires skills/karpathy-principles/SKILL.md"
+
+        content = skill_md.read_text(encoding="utf-8")
+        lowered = content.lower()
+        fm = TestSkillFrontmatter._parse_frontmatter("karpathy-principles")
+
+        assert fm.get("name") == "karpathy-principles"
+        assert "governance_anchor" in fm, (
+            "karpathy-principles frontmatter must include a governance_anchor"
+        )
+        for section in (
+            "## Overview",
+            "## When to Use",
+            "## Integration",
+        ):
+            assert section.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing required section: {section}"
+            )
+        for principle in (
+            "Think Before Coding",
+            "Simplicity First",
+            "Surgical Changes",
+            "Goal-Driven Execution",
+        ):
+            assert principle.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing principle: {principle}"
+            )
+        for phrase in (
+            "stage6-rubric",
+            "usage pattern",
+            "T-KRP-C",
+            "T-KRP-D",
+            "T-KRP-E",
+        ):
+            assert phrase.lower() in lowered, (
+                f"karpathy-principles SKILL.md missing T-KRP-B contract phrase: {phrase}"
+            )
 
 
 class TestP1007RecallGovernance:
@@ -336,6 +466,17 @@ class TestP1007RecallGovernance:
         assert "archive" in content and "supersede" in content, (
             "P1-007 requires an explicit archive-vs-supersede policy for recalled episodes"
         )
+
+    def test_context_recall_exposes_advisory_quality_scorer(self) -> None:
+        content = self._read_skill("context-recall")
+        assert "advisory quality check" in content
+        assert "scripts/context_recall_quality.py" in content
+        assert "--fixtures tests/fixtures/context_recall_quality.yaml --json" in content
+        assert "--query" in content and "--tags" in content
+        assert "--top-k" in content and "--as-of" in content
+        assert "advisory_context_not_governing_instruction" in content
+        assert "does not" in content and "replace the manual scoring flow" in content
+        assert "never writes to m3 or m2" in content
 
     def test_remember_documents_when_not_to_add_a_pattern(self) -> None:
         content = self._read_skill("remember")

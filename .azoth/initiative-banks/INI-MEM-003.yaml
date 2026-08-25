@@ -1,0 +1,602 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-MEM-003
+title: Vector retrieval layer for M3 context-recall
+status: active_refinement
+classification: planning_discovery_seed
+created_at: '2026-05-03T17:00:20Z'
+updated_at: '2026-05-03T18:32:00Z'
+owner: codex
+delivery_authorized: false
+source_sessions:
+- session_id: 2026-05-03-autonomous-auto-ini-mem-003-1
+  kind: autonomous-auto-research-initiative
+  artifact: .azoth/initiative-banks/INI-MEM-003.yaml
+  note: 'Seeded durable initiative/readiness truth for the Memory Recall Quality Spine
+    campaign. The seed does not authorize hydration, implementation, dependency expansion,
+    vector runtime support, or M2 invalidation.
+
+    '
+- session_id: 2026-05-03-autonomous-auto-ini-mem-003-2
+  kind: autonomous-auto-research-initiative
+  artifact: .azoth/initiative-banks/INI-MEM-003.yaml
+  note: 'Refined slice-mem-003-a with a hydratable zero-dependency executable surface,
+    JSON output contract, replay fixture set, and explicit protected boundaries.
+
+    '
+- session_id: 2026-05-03-autonomous-auto-ini-mem-003-1
+  kind: autonomous-auto-refine-proposal
+  artifact: .azoth/initiative-banks/INI-MEM-003.yaml
+  note: 'Opened the Memory Recall Adoption Layer campaign and refined a new slice-mem-003-d
+    adoption candidate that makes the shipped recall-quality scorer discoverable from
+    context-recall practice without command-surface, dependency, vector, M2 mutation,
+    or governance expansion.
+
+    '
+contacts:
+- id: operator
+  role: human decision owner
+  contact_type: human
+  note: 'Approves hydration, dependency expansion, vector backend support, and any
+    future temporal-validity lane.
+
+    '
+- id: roadmap-initiative
+  role: seed authority
+  contact_type: artifact
+  path: .azoth/roadmap.yaml#INI-MEM-003
+  note: Defines the optional vector/hybrid retrieval initiative and JSONL default.
+- id: context-recall-skill
+  role: current recall contract
+  contact_type: artifact
+  path: .agents/skills/context-recall/SKILL.md
+  note: Defines current tag/recency/reinforcement scoring and output expectations.
+- id: recall-quality-scorer
+  role: advisory quality scorer
+  contact_type: artifact
+  path: scripts/context_recall_quality.py
+  note: Provides the zero-dependency JSON query and fixture-eval packets shipped by
+    T-057.
+- id: episode-store
+  role: M3 storage contract
+  contact_type: artifact
+  path: scripts/episode_store.py
+  note: Owns append-only JSONL loading and validation invariants for M3 episodes.
+source_proposal_refs:
+- .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+research_questions:
+- question_id: rq-mem-003-001
+  question: What is the current M3/context-recall behavior that a quality spine must
+    preserve?
+  status: answered
+  opened_at: '2026-05-03T17:00:20Z'
+  answered_at: '2026-05-03T17:00:20Z'
+  needed_for: slice-mem-003-a
+  answer: 'Context-recall is currently instruction-level. It extracts 3-5 goal tags,
+    scores M3 episodes with tag overlap, recency, and reinforcement_count, scores
+    M2 patterns by trigger/reinforcement, reviews stale/contradictory or superseded
+    candidates, and surfaces top 1-3 advisory results.
+
+    '
+  evidence_refs:
+  - .agents/skills/context-recall/SKILL.md
+  - .azoth/memory/episodes.jsonl
+  - .azoth/memory/patterns.yaml
+- question_id: rq-mem-003-002
+  question: Which corpus is safe for the first recall-quality spine?
+  status: answered
+  opened_at: '2026-05-03T17:00:20Z'
+  answered_at: '2026-05-03T17:00:20Z'
+  needed_for: slice-mem-003-a
+  answer: 'Use governed repo-local M3 JSONL through episode_store plus read-only M2
+    patterns. Do not index raw inbox, personal-root content, unreviewed source material,
+    or hidden instruction bodies.
+
+    '
+  evidence_refs:
+  - scripts/episode_store.py
+  - scripts/personal_knowledge_recall.py
+  - tests/test_personal_knowledge_recall.py
+- question_id: rq-mem-003-003
+  question: What is the smallest zero-dependency recall-quality spine?
+  status: answered
+  opened_at: '2026-05-03T17:00:20Z'
+  answered_at: '2026-05-03T17:00:20Z'
+  needed_for: slice-mem-003-a
+  answer: 'A pure-Python scorer/eval harness that loads M3, reads M2 patterns read-only,
+    accepts query tags or query text, returns top-1/top-3 results with score reasons
+    and source ids, and verifies deterministic fixture cases.
+
+    '
+  evidence_refs:
+  - .agents/skills/context-recall/SKILL.md
+  - scripts/episode_store.py
+  - scripts/personal_knowledge_recall.py
+- question_id: rq-mem-003-004
+  question: When should INI-MEM-002 temporal validity enter this campaign?
+  status: answered
+  opened_at: '2026-05-03T17:00:20Z'
+  answered_at: '2026-05-03T17:00:20Z'
+  needed_for: adjacent_lane_decision
+  answer: 'Only if recall-quality replay shows stale M2 patterns, supersession gaps,
+    or point-in-time pattern selection are actual correctness blockers. It is not
+    prerequisite for the M3 zero-dependency baseline, and M2 invalidation remains
+    HITL-only.
+
+    '
+  evidence_refs:
+  - .azoth/roadmap.yaml#INI-MEM-002
+  - .azoth/memory/patterns.yaml
+- question_id: rq-mem-003-005
+  question: What evidence would justify optional vector backend work?
+  status: active
+  opened_at: '2026-05-03T17:00:20Z'
+  needed_for: optional_vector_backend
+  answer: 'Future vector work needs an explicit backend choice, dependency/freshness
+    approval, indexed-field list, storage and cleanup rules, privacy/access boundaries,
+    JSONL fallback, and measured improvement over the deterministic baseline.
+
+    '
+  evidence_refs:
+  - .azoth/roadmap.yaml#INI-MEM-003
+  - requirements-dev.txt
+- question_id: rq-mem-003-006
+  question: What exact executable surface should slice-mem-003-a hydrate?
+  status: answered
+  opened_at: '2026-05-03T17:16:14Z'
+  answered_at: '2026-05-03T17:16:14Z'
+  needed_for: slice-mem-003-a
+  answer: 'Hydrate a single zero-dependency importable script/CLI, scripts/context_recall_quality.py.
+    It must require --json, load M3 through episode_store.load_episode_records, read
+    M2 patterns read-only, support query scoring and fixture eval modes, and emit
+    a stable JSON packet with score components and advisory authority.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+  - scripts/personal_knowledge_recall.py
+  - scripts/episode_store.py
+- question_id: rq-mem-003-007
+  question: Which first replay fixtures make the recall-quality spine evaluable?
+  status: answered
+  opened_at: '2026-05-03T17:16:14Z'
+  answered_at: '2026-05-03T17:16:14Z'
+  needed_for: slice-mem-003-a
+  answer: 'Use eight repo-local fixtures: exact_context_recall_delivery, memory_architecture_origin,
+    m2_read_back_pattern, keyword_only_write_only_sink, m2_reinforcement_boost_control_plane,
+    same_day_recency_tiebreak_closeout, planning_bank_duplicate_supersede, and no_match_empty_result.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+- question_id: rq-mem-003-008
+  question: What is the smallest safe adoption path for the shipped recall-quality
+    scorer?
+  status: answered
+  opened_at: '2026-05-03T18:32:00Z'
+  answered_at: '2026-05-03T18:32:00Z'
+  needed_for: slice-mem-003-d
+  answer: 'Adopt the scorer through the canonical context-recall skill as an optional
+    advisory quality-check path with exact query and fixture commands. The existing
+    /start surfaces already route operators to the skill, so this slice can avoid
+    command-contract edits and refresh only generated skill mirrors after changing
+    the canonical skill source.
+
+    '
+  evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - scripts/context_recall_quality.py
+  - tests/test_context_recall_quality.py
+research_refs:
+- .azoth/research/ini-mem-003-research-bank.yaml
+local_findings:
+- finding_id: lf-mem-003-001
+  status: active
+  summary: 'INI-MEM-003 is roadmap-visible but had no initiative bank, candidate slice,
+    or task hydration before this child scope.
+
+    '
+  evidence_refs:
+  - .azoth/roadmap.yaml#INI-MEM-003
+  - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#INI-MEM-003
+- finding_id: lf-mem-003-002
+  status: active
+  summary: 'The current context-recall contract is documented in a skill, but there
+    is no executable M3 scorer or recall-quality eval harness.
+
+    '
+  evidence_refs:
+  - .agents/skills/context-recall/SKILL.md
+  - tests/test_skills.py
+- finding_id: lf-mem-003-003
+  status: active
+  summary: 'The personal knowledge recall pilot is the closest zero-dependency pattern:
+    deterministic metadata search, source-preserving output, advisory authority, freshness
+    status, and raw-surface denial.
+
+    '
+  evidence_refs:
+  - scripts/personal_knowledge_recall.py
+  - tests/test_personal_knowledge_recall.py
+- finding_id: lf-mem-003-004
+  status: active
+  summary: 'The repo currently has no vector database dependency; any ChromaDB, SQLite-vec,
+    embedding model, network, or persistent index lane needs a fresh explicit approval
+    packet.
+
+    '
+  evidence_refs:
+  - requirements-dev.txt
+- finding_id: lf-mem-003-005
+  status: active
+  summary: 'The hydratable first surface is a zero-dependency script and fixture eval
+    harness, not a context-recall skill rewrite or vector backend.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+  - scripts/personal_knowledge_recall.py
+- finding_id: lf-mem-003-006
+  status: active
+  summary: 'Eight concrete M3/M2 replay fixtures now cover exact tag match, keyword
+    rescue, M2 trigger/reinforcement scoring, recency tie-break, stale or superseded
+    annotation, mixed corpus ordering, and no-match behavior.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+- finding_id: lf-mem-003-007
+  status: active
+  summary: 'The normal /start workflow already tells operators to invoke context-recall
+    through skills/context-recall/SKILL.md before routing, so scorer discoverability
+    can be added to context-recall practice without changing /start or /next command
+    contracts.
+
+    '
+  evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - .opencode/commands/start.md
+external_findings:
+- finding_id: ef-mem-003-001
+  status: deferred
+  summary: 'External backend freshness was intentionally not refreshed in this child
+    scope because the first safe route is local, zero-dependency, and no new vector
+    backend may be added without explicit approval.
+
+    '
+  source_ref: future_dependency_freshness_gate
+assumptions:
+- assumption_id: as-mem-003-001
+  status: active
+  statement: 'A deterministic M3/M2 scorer plus eval fixtures can expose the recall-quality
+    gaps before vector retrieval is justified.
+
+    '
+  validation_path: 'Hydrate and run a zero-dependency recall-quality spine; compare
+    misses before any optional vector backend proposal.
+
+    '
+- assumption_id: as-mem-003-002
+  status: active
+  statement: 'The first useful quality metric is top-1/top-3 fixture hit rate with
+    visible score reasons and source refs, not embedding distance quality.
+
+    '
+  validation_path: 'Implement replay fixtures over current M3/M2 surfaces and inspect
+    failed cases for tag drift, stale context, contradiction, or missing provenance.
+
+    '
+contradictions:
+- contradiction_id: cx-mem-003-001
+  status: monitored
+  summary: 'The roadmap title names vector retrieval, but campaign safety requires
+    a zero-dependency default recall-quality spine first.
+
+    '
+  resolution: 'Treat vector backend support as optional and gated after JSONL/default
+    evaluation works and shows an evidence-backed gap.
+
+    '
+- contradiction_id: cx-mem-003-002
+  status: monitored
+  summary: 'Context-recall reads both M3 and M2, but INI-MEM-002 temporal validity
+    could widen the campaign into M2 governance.
+
+    '
+  resolution: 'Keep INI-MEM-002 adjacent-only unless replay evidence proves stale
+    M2 validity is the recall-correctness blocker; do not auto-expire or rewrite M2.
+
+    '
+challenge_log:
+- challenge_id: ch-mem-003-001
+  status: active
+  prompt: What would make the first implementation slice too broad?
+  answer: 'Combining M3 scorer, M2 temporal metadata, vector backend, persistent index,
+    embedding generation, source import, or context-recall skill rewrite in one slice.
+
+    '
+- challenge_id: ch-mem-003-002
+  status: active
+  prompt: What would make hydration unsafe?
+  answer: 'Missing replay fixtures, no explicit corpus boundary, unmeasured ranking
+    criteria, open dependency/backend choice, or any need to mutate M2 patterns.
+
+    '
+candidate_slices:
+- candidate_id: slice-mem-003-a
+  proposed_task_id: T-057
+  title: M3 recall quality eval harness and deterministic default scorer
+  initiative_ref: INI-MEM-003
+  status: hydrated
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'Build the smallest zero-dependency recall-quality spine for current Azoth
+    memory: load governed M3 JSONL, read M2 patterns read-only, score by tags, metadata
+    tokens, recency, and reinforcement, and verify top-1/top-3 fixture cases before
+    any vector backend.
+
+    '
+  acceptance_criteria:
+  - 'scripts/context_recall_quality.py supports --json query mode and fixture eval
+    mode, loads M3 only through scripts/episode_store.py, reads M2 patterns read-only,
+    and never mutates memory surfaces.
+
+    '
+  - 'JSON output includes schema_version, packet_type, query, query_tags, as_of, top_k,
+    corpus, results, warnings, no_match, and advisory_authority.
+
+    '
+  - 'Each result includes rank, source_type, id, source_ref, summary, timestamp, tags,
+    score_total, score_components, match_reasons, freshness_status, conflict_status,
+    and advisory_authority.
+
+    '
+  - 'Eval mode reports fixture_set_id, fixture_results, top1_pass_count, top3_pass_count,
+    failed_fixture_ids, and pass_fail.
+
+    '
+  - 'Fixture coverage includes exact tag hit, keyword-only rescue, M2 trigger match,
+    recency tie-break, reinforcement boost, stale/supersede annotation, mixed M3/M2
+    deterministic top-3, and no-match empty result.
+
+    '
+  - 'Tests prove no new dependency, vector runtime, network access, raw inbox indexing,
+    personal-root read, context-recall skill replacement, or M2 invalidation/expiry
+    is introduced.
+
+    '
+  research_evidence_refs:
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-local-recall-surfaces-001
+  - .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+  - .agents/skills/context-recall/SKILL.md
+  - scripts/episode_store.py
+  - scripts/personal_knowledge_recall.py
+  - tests/fixtures/context_recall_quality.yaml
+  known_non_goals:
+  - No vector backend or embedding generation.
+  - No new dependencies or network access.
+  - No M2 invalidation, rewrite, auto-expiry, or temporal-validity schema change.
+  - No raw inbox, personal-root, or unreviewed source indexing.
+  - No /start or /next integration in this slice.
+  - No context-recall skill behavior replacement in this slice.
+  - No stale, archived, or superseded candidate mutation; annotation only.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: M3 recall quality eval harness and deterministic default scorer
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "M3 recall quality
+      eval harness and deterministic default scorer" --initiative-ref INI-MEM-003
+      --target-layer infrastructure --delivery-pipeline standard --priority 2 --source
+      "INI-MEM-003/slice-mem-003-a-recall-quality-spine"
+    mode: executed
+    hydrated_task_ref: T-057
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-057.yaml
+    hydrated_at: '2026-05-03T17:37:54Z'
+- candidate_id: slice-mem-003-b
+  proposed_task_id: TBD-MEM-003-B
+  title: Optional vector backend spike behind explicit dependency gate
+  initiative_ref: INI-MEM-003
+  status: parked
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: 'Evaluate optional vector backend support only after the zero-dependency
+    scorer works and an explicit approval packet names dependency, storage, privacy,
+    freshness, cleanup, fallback, and measured quality-delta gates.
+
+    '
+  acceptance_criteria:
+  - Zero-dependency baseline has passing eval fixtures and visible miss analysis.
+  - Operator explicitly approves backend choice and dependency/network/storage boundaries.
+  - A no-backend JSONL fallback remains the default behavior.
+  - The vector path has lifecycle cleanup, index freshness, and source-provenance
+    rules.
+  research_evidence_refs:
+  - .azoth/roadmap.yaml#INI-MEM-003
+  known_non_goals:
+  - No automatic dependency install.
+  - No hidden persistent index.
+  - No raw inbox or personal-root indexing.
+  - No vector runtime as the default recall path.
+  open_questions:
+  - Which backend, if any, is acceptable under Azoth dependency policy?
+  - What measured improvement over baseline is sufficient to justify the dependency?
+  - Where would an optional index live and how would it be cleaned or refreshed?
+  recommended_phase: future-gated-continuation
+- candidate_id: slice-mem-003-c
+  proposed_task_id: TBD-MEM-003-C
+  title: M2 temporal-validity adjacency review
+  initiative_ref: INI-MEM-003
+  status: parked
+  target_layer: planning
+  delivery_pipeline: standard
+  summary: 'Review whether INI-MEM-002 temporal validity is actually required for
+    recall correctness after the M3/M2 evaluation harness exposes real misses.
+
+    '
+  acceptance_criteria:
+  - Miss analysis identifies stale M2, supersession, or point-in-time recall as a
+    blocker.
+  - Review preserves HITL-only M2 invalidation and does not auto-expire patterns.
+  - Output is a recommendation or proposal, not an M2 mutation.
+  research_evidence_refs:
+  - .azoth/roadmap.yaml#INI-MEM-002
+  - .azoth/memory/patterns.yaml
+  known_non_goals:
+  - No M2 pattern rewrite.
+  - No automated invalidation or auto-expiry.
+  - No kernel/governance/M1 mutation.
+  open_questions:
+  - Do replay failures actually point to temporal validity, or to tag quality and
+    scorer gaps?
+  recommended_phase: future-adjacent-lane
+- candidate_id: slice-mem-003-d
+  proposed_task_id: T-058
+  title: Context-recall scorer adoption path
+  initiative_ref: INI-MEM-003
+  status: hydrated
+  target_layer: mineral
+  delivery_pipeline: standard
+  summary: 'Adopt the T-057 recall-quality scorer into normal context-recall practice
+    by documenting an optional advisory quality-check path, exact deterministic query
+    and fixture-eval commands, and the authority boundary that results inform planning
+    but never govern or mutate memory.
+
+    '
+  acceptance_criteria:
+  - 'skills/context-recall/SKILL.md points agents to scripts/context_recall_quality.py
+    as an optional advisory quality-check path after ordinary tag extraction and before
+    architect planning.
+
+    '
+  - 'The adoption text gives exact zero-dependency commands for fixture eval and deterministic
+    query mode using --json, --query, --tags, --top-k, and --as-of without requiring
+    vector, network, embedding, or dependency setup.
+
+    '
+  - 'The skill keeps JSONL/default recall primary, states that scorer output is advisory_context_not_governing_instruction,
+    and preserves append-only M3 plus read-only M2 behavior.
+
+    '
+  - 'Generated skill mirrors are refreshed through scripts/azoth-deploy.py rather
+    than hand-editing .agents or .opencode copies.
+
+    '
+  - 'Focused tests cover both the existing T-057 fixtures and an adoption-flow assertion
+    proving context-recall exposes the scorer command and advisory boundary.
+
+    '
+  research_evidence_refs:
+  - skills/context-recall/SKILL.md
+  - .agents/skills/context-recall/SKILL.md
+  - .opencode/skills/context-recall/SKILL.md
+  - .claude/commands/start.md
+  - .agents/workflows/start.md
+  - scripts/context_recall_quality.py
+  - tests/test_context_recall_quality.py
+  known_non_goals:
+  - No command-contract edits to /start, /next, or platform command mirrors.
+  - No context-recall behavior replacement or mandatory scorer gate.
+  - No vector backend, embeddings, persistent index, new dependencies, or network
+    access.
+  - No raw inbox indexing, personal-root reads, or unreviewed source indexing.
+  - No M2 invalidation, M2 mutation, temporal-validity schema change, or INI-MEM-002
+    work.
+  - No M1, kernel, governance, or public-release mutation.
+  open_questions: []
+  recommended_phase: current-adoption-layer
+  hydration_plan:
+    proposed_title: Context-recall scorer adoption path
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Context-recall
+      scorer adoption path" --initiative-ref INI-MEM-003 --target-layer mineral --delivery-pipeline
+      standard --priority 2 --source "INI-MEM-003/slice-mem-003-d-recall-quality-adoption"
+    mode: executed
+    hydrated_task_ref: T-058
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-058.yaml
+    hydrated_at: '2026-05-03T18:39:25Z'
+readiness:
+  readiness_status: ready_to_hydrate
+  human_decision: approved
+  freshness_status: current_as_of_2026_05_03_hydrated_to_t_058
+  approval_scope: hydration_specific_slice_mem_003_d
+  approval_basis: 'Operator approved the fresh Memory Recall Adoption Layer autonomous-auto
+    campaign on 2026-05-03 with hydrate_task allowed inside a four-child-scope budget.
+    Child scope 2026-05-03-autonomous-auto-ini-mem-003-1 converted the post-T-057
+    adoption need into slice-mem-003-d with explicit command-surface avoidance, advisory
+    authority, zero-dependency scorer invocation, generated-mirror refresh, and adoption-flow
+    test boundaries. This approval is limited to hydrating slice-mem-003-d and does
+    not authorize implementation, command-contract edits, dependency expansion, vector
+    backend support, network use, M2 invalidation, governance/M1/kernel changes, personal-root
+    reads, or adjacent INI-MEM-002 work.
+
+    '
+  candidate_first_slice: slice-mem-003-d
+  acceptance_criteria_status: stable
+  non_goals_status: stable
+  hydration_recommendation: slice-mem-003-d has been hydrated as T-058. Do not repeat
+    hydration; route implementation through a separate delivery child.
+  blocking_reasons: []
+  non_laundering_note: 'This bank converts campaign approval into hydration authority
+    only for slice-mem-003-d planning artifacts. It does not launder that approval
+    into implementation, command-contract edits, vector backend, dependency, network,
+    M2 invalidation, governance/M1/kernel changes, personal-root reads, or INI-MEM-002
+    authority.
+
+    '
+hydration_history:
+- hydrated_at: '2026-05-03T17:37:54Z'
+  session_id: 2026-05-03-autonomous-auto-slice-mem-003-a-3
+  candidate_slice_ref: slice-mem-003-a
+  task_ref: T-057
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-057.yaml
+  backlog_ref: T-057
+  roadmap_ref: T-057
+  approval_scope: hydration_specific_slice_mem_003_a
+  approval_basis: 'Operator approved the fresh Memory Recall Quality Spine autonomous-auto
+    campaign on 2026-05-03 with hydrate_task allowed inside a six-child-scope budget.
+    Child scope 2026-05-03-autonomous-auto-ini-mem-003-2 converted slice-mem-003-a
+    into a hydratable zero-dependency planning scaffold with an exact executable surface,
+    JSON contract, fixture set, and protected boundaries. This approval is limited
+    to hydrating slice-mem-003-a and does not authorize implementation, dependency
+    expansion, vector backend support, network use, M2 invalidation, or adjacent INI-MEM-002
+    work.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-mem-003-a:T-057:2026-05-03T17:37:54Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "M3 recall quality
+    eval harness and deterministic default scorer" --initiative-ref INI-MEM-003 --target-layer
+    infrastructure --delivery-pipeline standard --priority 2 --source "INI-MEM-003/slice-mem-003-a-recall-quality-spine"
+  result: Created roadmap/backlog/spec artifacts for T-057; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-03T18:39:25Z'
+  session_id: 2026-05-03-autonomous-auto-slice-mem-003-d-2
+  candidate_slice_ref: slice-mem-003-d
+  task_ref: T-058
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-058.yaml
+  backlog_ref: T-058
+  roadmap_ref: T-058
+  approval_scope: hydration_specific_slice_mem_003_d
+  approval_basis: 'Operator approved the fresh Memory Recall Adoption Layer autonomous-auto
+    campaign on 2026-05-03 with hydrate_task allowed inside a four-child-scope budget.
+    Child scope 2026-05-03-autonomous-auto-ini-mem-003-1 converted the post-T-057
+    adoption need into slice-mem-003-d with explicit command-surface avoidance, advisory
+    authority, zero-dependency scorer invocation, generated-mirror refresh, and adoption-flow
+    test boundaries. This approval is limited to hydrating slice-mem-003-d and does
+    not authorize implementation, command-contract edits, dependency expansion, vector
+    backend support, network use, M2 invalidation, governance/M1/kernel changes, personal-root
+    reads, or adjacent INI-MEM-002 work.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-mem-003-d:T-058:2026-05-03T18:39:25Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Context-recall scorer
+    adoption path" --initiative-ref INI-MEM-003 --target-layer mineral --delivery-pipeline
+    standard --priority 2 --source "INI-MEM-003/slice-mem-003-d-recall-quality-adoption"
+  result: Created roadmap/backlog/spec artifacts for T-058; implementation and shipping
+    remain separate.

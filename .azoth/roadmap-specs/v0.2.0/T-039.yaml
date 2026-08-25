@@ -1,0 +1,126 @@
+id: T-039
+roadmap_version: v0.2.0
+title: Release candidate validation and rollout closeout
+decision_ref:
+- D11
+- D34
+- D35
+- D37
+- D38
+- D42
+- D46
+- D48
+- D50
+- D52
+intent: >
+  Run the final release-candidate checklist and close v0.2.0-p4 only when root,
+  product, personal-control-plane, and learning-system rollout evidence are all
+  reviewable.
+problem: >
+  A release phase can appear complete if each slice passes locally, but Azoth needs
+  one final operator-facing proof bundle before it is safe to use for real projects.
+  The proof bundle must show that included features work end-to-end, including the
+  calibrated autonomous-auto learning/self-heal promise.
+scope:
+- 'Run root validation: generated mirrors, pipeline lint, extraction validation, focused tests, and the full root pytest suite.'
+- 'Run product validation: full extract, product tree smoke, public CI expectations, and release notes.'
+- 'Run personal deployment validation: rehearsal or documented dry run of the personal root install model.'
+- Repair release-blocking learning-system defects that would make the first stable
+  contract untrue, including inbox schema drift, route-chain gaps, protected-stop
+  proof gaps, or missing supervised-autonomy documentation.
+- Prove autonomous-auto learning/self-heal behavior from repo-native evidence;
+  learning route visibility, protected/cross-system stop behavior, completed-loop
+  fresh-approval boundary, and no active write claim.
+- Collect residual risks and explicit deferred features.
+- Record the post-p4 continuation route for unfinished initiatives after the
+  release/update loop is available.
+- Close the p4 milestone only after the operator accepts the release candidate evidence.
+non_goals:
+- Do not add new release-scope tasks during closeout unless a gate fails.
+- Do not publish final release artifacts without the operator's release approval.
+- Do not claim package-manager availability unless T-037 added and verified it.
+- Do not auto-drain `.azoth/inbox/`, make `$azoth-intake` decisions, or mutate
+  governance/instructions automatically as part of first stable.
+acceptance:
+- All p4 predecessor tasks are complete or explicitly deferred with accepted residual risk.
+- Root validation commands pass and are recorded in the release-candidate evidence bundle.
+- The full root pytest suite passes before any release-candidate or final stable tag.
+- Any current or newly discovered full-suite failures are either fixed or named as
+  operator-accepted release blockers that prevent stable tagging.
+- Current learning-system blockers, including inbox schema drift and any route-chain
+  regressions, are fixed or explicitly listed as blockers that prevent stable tagging.
+- Product extraction and consumer smoke evidence are recorded with exact commands and paths.
+- Personal root deployment model has either a successful rehearsal or a clear approved deferral.
+- The learning/self-heal evidence bundle records exact outputs for `status --operator-read`,
+  `campaign-report`, strategy-preflight protected/cross-system blocking, and focused
+  autonomous-loop tests.
+- Learning captures and inbox reflections used as release evidence are schema-valid
+  and deliberately routed to `auto_self_heal_now`, `capture_only`, `defer_to_intake`,
+  or `human_gate_required`; no release claim treats inbox rows as silently applied.
+- Release notes state that automatic self-healing is supervised and campaign-bounded;
+  approved campaigns can continue through safe child work without per-step babysitting,
+  but protected changes, cross-system changes, and post-Green continuation still require
+  human approval or inbox/intake.
+- Post-p4 continuation explicitly routes unfinished initiatives back through initiative
+  banks, planning banks, inbox, and backlog surfaces after the rollout loop is proven.
+- The final handoff states whether the next action is public release, personal deployment, or blocked risk repair.
+evidence:
+- date: '2026-04-28'
+  status: pipeline_reconciliation_active
+  session_id: 2026-04-28-t-039-pipeline-reconciliation
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/T-039-PIPELINE-RECONCILIATION.md
+  decision: Accept the already-validated release-readiness repairs as local evidence with an explicit process-deviation note; do not claim stable readiness until T-038, final T-039 closeout, and operator acceptance pass.
+- date: '2026-04-28'
+  status: rc_evidence_ready_pending_operator_acceptance
+  session_id: 2026-04-28-t-039-final-rc-closeout
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-EVIDENCE-BUNDLE.md
+  decision: Candidate evidence is assembled without publication or stable claim; full root pytest passed after write-claim release and the operator must explicitly accept the evidence before RC publication.
+- date: '2026-04-28'
+  status: rc_published_stable_pending
+  session_id: 2026-04-28-publish-v0.2.0-rc.1
+  pipeline_command: dynamic-full-auto
+  public_release_url: https://github.com/yiwei79/azoth/releases/tag/v0.2.0-rc.1
+  source_root_commit: f5dc6d3155ed521dd26b8d9921567d557ff3fe89
+  public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  decision: RC publication completed after operator approval; final stable v0.2.0 remains unpublished and requires a separate explicit approval.
+- date: '2026-04-29'
+  status: retro_eval_complete_stable_blocked
+  session_id: 2026-04-29-t-039-rc-retro-eval
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
+  decision: Retrospective pipeline/eval run records that v0.2.0-rc.1 publication was approved and evidence-backed but not originally executed through the full staged pipeline; preserve RC, do not publish stable, and require a separate stable approval gate.
+- date: '2026-04-29'
+  status: stable_preflight_complete_stable_approval_pending
+  session_id: 2026-04-29-t-039-stable-preflight
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PREFLIGHT-EVIDENCE.md
+  decision: Stable-preflight validation completed with full root pytest, product smoke, learning/self-heal route proof, public release absence checks, operator-approved Windows/PowerShell skip, and evaluator recheck PASS at 0.94; stable v0.2.0 remains unpublished pending a separate explicit approval gate.
+- date: '2026-04-29'
+  status: stable_publish_review_green_publication_human_gate
+  session_id: 2026-04-29-v0.2.0-stable-publish
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-PUBLISH-REVIEW-CHECKS.md
+  decision: Comprehensive publishing review checks passed across root validation, full pytest, product smoke, public worktree validation, release-state checks, and public CI inspection; stable v0.2.0 remains unpublished until explicit operator approval to create and push the stable tag and GitHub release.
+- date: '2026-04-29'
+  status: stable_v0.2.0_published
+  session_id: 2026-04-29-v0.2.0-stable-publish
+  pipeline_command: dynamic-full-auto
+  evidence_doc: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+  public_release_url: https://github.com/yiwei79/azoth/releases/tag/v0.2.0
+  public_commit: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+  tag: v0.2.0
+  tag_object: a1d711d24353601b03e476aa94a11bbb56b33408
+  decision: Stable v0.2.0 was published after explicit operator approval, using the clean public worktree and reviewed release notes; final release remains bounded by the accepted Windows/PowerShell deferral and no package-manager distribution claim.
+dependencies:
+- T-035
+- T-036
+- T-037
+- T-038
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: If a gate fails, open the narrowest blocker task inside p4; do not reopen
+  feature initiative development by default.

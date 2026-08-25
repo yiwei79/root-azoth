@@ -1,0 +1,46 @@
+schema_version: 1
+name: personal_knowledge_card
+required:
+  - schema_version
+  - id
+  - title
+  - type
+  - scope
+  - authority_home
+  - privacy
+  - status
+  - confidence
+  - freshness
+  - source_refs
+  - allowed_use
+  - forbidden_use
+  - body
+enums:
+  type:
+    - operating_principle
+    - operator_preference
+    - project_summary
+    - source_note
+    - toolkit_lesson
+    - decision_context
+    - glossary_term
+  status:
+    - active
+    - stale
+    - superseded
+    - archived
+  privacy:
+    - public
+    - internal
+    - private
+    - secret_pointer_only
+  confidence:
+    - low
+    - medium
+    - high
+constraints:
+  source_refs_min: 1
+  body_min_chars: 40
+  body_max_chars: 1200
+  review_after_required_for_active: true
+  source_ref_paths_must_be_safe_relative: true

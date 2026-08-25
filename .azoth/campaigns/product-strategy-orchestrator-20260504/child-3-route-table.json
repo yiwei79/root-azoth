@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-product-strategy-decision-surface-3",
+  "authority": "non_authoritative_campaign_surface",
+  "source_of_truth_boundary": {
+    "roadmap": ".azoth/roadmap.yaml",
+    "backlog": ".azoth/backlog.yaml",
+    "note": "This route table may recommend next actions but must not drive automation or certify readiness by itself."
+  },
+  "routes": [
+    {
+      "condition": "portfolio_or_evidence_missing",
+      "preferred_route": "research_initiative",
+      "stop_before": ["protected_source_truth"]
+    },
+    {
+      "condition": "strategy_frame_incomplete",
+      "preferred_route": "research_initiative",
+      "alternate_route": "refine_proposal",
+      "stop_before": ["implementation_default_change"]
+    },
+    {
+      "condition": "pm_model_clear_but_not_concrete",
+      "preferred_route": "ship_task",
+      "stop_before": ["roadmap_write", "backlog_write", "spec_hydration"]
+    },
+    {
+      "condition": "valuable_lane_assumption_heavy",
+      "preferred_route": "research_initiative",
+      "stop_before": ["hydrate_task"]
+    },
+    {
+      "condition": "lane_evidence_ready_but_needs_sequence",
+      "preferred_route": "refine_proposal",
+      "stop_before": ["task_creation"]
+    },
+    {
+      "condition": "hydration_or_delivery_required",
+      "preferred_route": "stop_for_human_gate",
+      "stop_before": ["hydrate_task", "ship_authoritative_code"]
+    },
+    {
+      "condition": "protected_or_packaging_action_required",
+      "preferred_route": "stop_for_human_gate",
+      "stop_before": [
+        "public_sync",
+        "public_release",
+        "public_checkout_mutation",
+        "cockpit_write",
+        "project_write",
+        "backup_private_remote",
+        "credential_work",
+        "dependency_network_expansion",
+        "destructive_action",
+        "kernel_governance_m1",
+        "broad_roadmap_backlog_rephase",
+        "commit",
+        "push"
+      ]
+    }
+  ],
+  "selected_next_lane": {
+    "action": "research_initiative",
+    "candidate_id": "harness-rethink-deep-dive",
+    "title": "Harness Rethink Deep Dive",
+    "reason": "Clarify the strategic product shape before refining the PM workflow or opening any delivery/hydration lane.",
+    "protected": false,
+    "writes_allowed": [
+      ".azoth/campaigns/product-strategy-orchestrator-20260504/"
+    ]
+  },
+  "rejected_alternatives": [
+    {
+      "candidate_id": "initiative-discovery-pm-lane",
+      "reason": "Strong PM fit, but should be shaped by the strategic harness decision first."
+    },
+    {
+      "candidate_id": "public-release-root-feature-parity",
+      "reason": "High product value, but close to public/release protected gates."
+    },
+    {
+      "candidate_id": "INI-MEM-003",
+      "reason": "Useful bounded quality lane, but narrower than the requested product-strategy capability."
+    }
+  ]
+}

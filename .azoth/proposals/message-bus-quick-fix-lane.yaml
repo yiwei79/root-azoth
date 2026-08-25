@@ -1,0 +1,175 @@
+proposal_schema_version: 1
+created_at: "2026-04-24T06:05:00+00:00"
+session_id: "2026-04-24-message-bus-quick-fix-lane-proposal"
+backlog_id: "P6-003"
+title: "Message bus quick-fix lane for scoped defects"
+summary: >
+  Azoth has durable paths for external insights (`.azoth/inbox/` plus `/intake`)
+  and broad architectural ideas (`.azoth/proposals/`), but it lacks a low-friction,
+  non-scope-creep lane for clearly defined, well-scoped defects discovered during
+  an active session. Directly editing backlog or initiative state can skip useful
+  discovery and research, while routing every small defect through full intake or
+  an architecture proposal adds too much ceremony. This proposal explores a
+  message-bus upgrade: a bounded quick-fix issue packet that captures actionable
+  bug evidence for later scoped work without authorizing implementation inside
+  the current session.
+status: draft
+decision_refs:
+  - D21
+  - D23
+  - D47
+  - D49
+  - D50
+  - D51
+scope_layers:
+  - mixed
+details:
+  problem:
+    missing_lane: >
+      The current message bus has good destinations for external review signals
+      and large architectural changes, but it does not have a first-class path
+      for "we found a real, bounded bug; do not fix it in this session; make it
+      easy to scope next." The result is either too much process or too much
+      temptation to fix it as scope creep.
+    intake_friction: >
+      `.azoth/inbox/` plus `/intake` is useful for external insights such as code
+      review notes, automation reports, and trusted source records. For internal
+      operator-discovered defects, however, the full external-insight path can
+      feel like too many steps before a small fix becomes actionable.
+    proposal_mismatch: >
+      Architecture proposals are better for broad workflow or layer changes.
+      Using a proposal for every concrete defect blurs the line between design
+      exploration and small repair work.
+    direct_backlog_risk: >
+      Directly adding backlog rows or initiatives can skip useful discovery:
+      verifying the bug, checking whether it is a symptom of a broader design
+      issue, deciding whether research is needed, and preserving the current
+      session's scope boundary.
+  motivating_examples:
+    stale_ledger_skip:
+      observation: >
+        `/next` reported an excluded `AD-HOC` backlog id because
+        `.azoth/run-ledger.local.yaml` still contained old active AD-HOC sessions.
+        The real next task, `T-KRP-D`, was still available, but the stale ledger
+        state is a bounded lifecycle bug worth fixing later rather than silently
+        absorbing into the current scope.
+      desired_route: >
+        Capture a quick-fix issue packet with evidence, affected files, and a
+        suggested small repair path; do not implement it inside the T-KRP-D scope.
+    conceptual_closeout_gap:
+      observation: >
+        A previous agent treated closeout conceptually instead of running the
+        literal canonical closeout path, causing follow-on lifecycle confusion.
+      desired_route: >
+        Capture the failure in M3/M2-candidate memory, and if a concrete repair
+        is identified, queue a scoped quick-fix packet rather than mixing it into
+        unrelated delivery work.
+  proposed_direction:
+    statement: >
+      Add a lightweight internal issue-packet lane to Azoth's message bus. The
+      packet is not a backlog item, not an initiative, not an architecture
+      proposal, and not scope authorization. It is a small durable handoff object
+      for verified, well-scoped defects that should become future scoped work
+      only after a minimal triage step.
+    candidate_artifact:
+      path_options:
+        - ".azoth/issues/*.yaml"
+        - ".azoth/quick-fixes/*.yaml"
+        - ".azoth/inbox/internal/*.jsonl"
+      recommended_start: ".azoth/issues/*.yaml"
+      reason: >
+        A separate `.azoth/issues/` lane keeps internal scoped defects distinct
+        from external trusted-source inbox files and from architecture proposals,
+        while still behaving like a message-bus artifact.
+    packet_fields:
+      required:
+        - "schema_version"
+        - "id"
+        - "created_at"
+        - "source_session_id"
+        - "source_context"
+        - "title"
+        - "observed_bug"
+        - "evidence"
+        - "affected_surfaces"
+        - "suggested_minimal_fix"
+        - "scope_boundary"
+        - "triage_status"
+      optional:
+        - "related_episode_ids"
+        - "related_backlog_ids"
+        - "suspected_root_cause"
+        - "research_needed"
+        - "candidate_pipeline"
+        - "accepted_backlog_id"
+        - "supersedes_issue_id"
+    lifecycle:
+      - "capture: write a packet only when the bug is concrete and evidence-backed."
+      - "triage: decide quick-fix, research-needed, proposal-needed, duplicate, or reject."
+      - "scope: if accepted as quick-fix, mint or link a backlog row through the normal scoped-work path."
+      - "delivery: implement only under an approved future scope gate and pipeline gate when required."
+      - "close: mark the packet done or superseded after the linked scope closes."
+  routing_policy:
+    external_insight: >
+      Use `.azoth/inbox/` and `/intake` when the source is an external review,
+      automation report, human-submitted insight bundle, or trusted-source record.
+    architecture_proposal: >
+      Use `.azoth/proposals/` when the issue implies a broad workflow, command,
+      layer-boundary, or governance design change.
+    quick_fix_packet: >
+      Use the proposed issue-packet lane when the defect is concrete,
+      repo-local, evidence-backed, and plausibly fixable in a bounded future
+      scope, but should not be implemented in the current session.
+    direct_backlog: >
+      Use direct backlog creation only after triage confirms the issue is
+      actionable enough to scope and does not need research/proposal shaping.
+  guardrails:
+    - "A quick-fix packet never authorizes Write/Edit outside the current approved scope."
+    - "Capturing a packet must not expand the active delivery scope."
+    - "Packets should include evidence, not just annoyance or suspicion."
+    - "If root cause or ownership is unclear, route to research or proposal instead of quick-fix."
+    - "If the issue is broad or architectural, do not shrink-wrap it into a fake quick fix."
+    - "If the issue is external input, keep the trusted-source `/intake` path authoritative."
+  open_questions:
+    - "Should issue packets be processed by `/intake`, `/next`, `/promote`, or a new small command?"
+    - "Should packet capture be allowed during closeout, or should closeout only surface pending packets?"
+    - "Should `/next` be able to surface accepted quick-fix packets alongside backlog items?"
+    - "How should duplicate detection work across M3 episodes, inbox insights, proposals, and issue packets?"
+    - "Should packet ids share the backlog namespace or have a separate `ISS-###` namespace?"
+    - "What minimal validation script should fail closed on malformed packet fields?"
+  candidate_surfaces:
+    - ".azoth/issues/"
+    - ".azoth/inbox/"
+    - ".azoth/backlog.yaml"
+    - ".azoth/run-ledger.local.yaml"
+    - ".azoth/memory/episodes.jsonl"
+    - "commands/intake/body.md"
+    - "commands/next/body.md"
+    - "commands/session-closeout/body.md"
+    - "scripts/roadmap_task_id.py"
+    - "scripts/welcome.py"
+  follow_on_slices:
+    - id: "Slice A"
+      title: "Message-bus taxonomy and schema"
+      deliverables:
+        - "Define external insight, memory capture, proposal, backlog, and quick-fix packet boundaries."
+        - "Choose the packet path and id namespace."
+        - "Write a schema and validation contract for packet files."
+    - id: "Slice B"
+      title: "Triage flow"
+      deliverables:
+        - "Decide whether `/intake`, `/next`, or a new command processes packets."
+        - "Define quick-fix, research-needed, proposal-needed, duplicate, and reject outcomes."
+        - "Specify how an accepted packet becomes a normal backlog item without skipping scope gates."
+    - id: "Slice C"
+      title: "Operator UX"
+      deliverables:
+        - "Surface pending quick-fix packets in welcome or closeout without making them active scope."
+        - "Add examples for stale ledger cleanup and conceptual-closeout lifecycle defects."
+        - "Add tests that prove packet capture does not alter active scope or backlog state."
+  non_goals:
+    - "No implementation of `.azoth/issues/` in this proposal slice."
+    - "No direct backlog row for the stale AD-HOC ledger issue from this proposal."
+    - "No changes to the active T-KRP-D scope recommendation."
+    - "No weakening of `/intake`, `/next`, scope-gate, or pipeline-gate contracts."
+    - "No automatic repair of discovered bugs during unrelated sessions."

@@ -1,14 +1,15 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.2.67 · Phase 2 · active_version: v0.2.0-p2 · current_patch: 64
+0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
 
 ## Last Session
-- **Session**: 2026-04-19-adhoc-pr14-full-ci-regressions
-- **Goal**: AD-HOC: fix remaining full CI regressions on PR #14, then continue toward review completion + merge
+- **Session**: 2026-05-10-adhoc-autonomous-lifecycle-truth-stabilization
+- **Goal**: AD-HOC: autonomous lifecycle truth stabilization
+- **Session mode**: delivery
 - **Pipeline**: auto
 - **Outcome**: closed
-- **Episode**: ep-285 (success)
+- **Episode**: ep-588 (success)
 
 ## Key Changes This Session
 1. W1 appended the closeout episode.

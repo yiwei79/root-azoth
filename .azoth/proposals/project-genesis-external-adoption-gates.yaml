@@ -1,0 +1,102 @@
+proposal_schema_version: 1
+created_at: "2026-05-19T22:15:27Z"
+session_id: "2026-05-20-project-genesis-adoption-gates-seed"
+backlog_id: "P6-003"
+title: "Project Genesis external-plane adoption gates"
+summary: >
+  Architecture proposal for the next step after the root-local Project Genesis
+  and Goal-mode planning seed completed. The starter packet, mode taxonomy,
+  cockpit readback, and project-local receipt contracts now exist in root-azoth,
+  but moving any of them into public Azoth, the personal cockpit, or a
+  project-local space crosses an authority boundary. This proposal defines the
+  adoption-gate model so the operator can choose the next route explicitly
+  without broad productization or hidden cross-repo writes.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    current_state: >
+      INI-DEP-001, INI-DEP-002, and INI-GEN-001 have completed root-local
+      contracts for mode taxonomy, release-profile readiness, cockpit readback,
+      project-local receipt authority, Goal-mode self-approval, and the
+      Project Genesis starter packet.
+    remaining_gap: >
+      The next valuable outcomes live on external planes: public template
+      distribution, personal cockpit route rehearsal, and actual project-local
+      starter packet creation. Treating those as automatic continuation would
+      violate the 3-tier product flow and 4-plane authority model.
+  proposed_model:
+    adoption_gate_rule: >
+      Root-azoth may prepare route evidence and candidate scopes, but each
+      adoption route requires a fresh approval naming the target plane, allowed
+      outputs, stop conditions, validation commands, and rollback or no-write
+      evidence.
+    route_options:
+      public_template_distribution:
+        owner_plane: public_azoth
+        purpose: "Expose Project Genesis starter templates through the public/installable product."
+        requires_approval_for:
+          - public Azoth repository or release-profile mutation
+          - install/profile claims
+          - release smoke evidence
+        root_local_preflight: "Confirm which root-only starter assets are safe to extract."
+      cockpit_route_rehearsal:
+        owner_plane: personal_cockpit
+        purpose: "Show Project Genesis spaces as pointer-only routes in the personal control point."
+        requires_approval_for:
+          - personal cockpit route files or UX state
+          - safe-open prompts
+          - no-write route simulation evidence
+        root_local_preflight: "Define the route readback fields and no-write simulation checklist."
+      project_local_packet_creation:
+        owner_plane: project_local_space
+        purpose: "Create a starter packet inside a chosen music, thesis, or agent-context project."
+        requires_approval_for:
+          - target project path
+          - project-local receipt owner
+          - selected mode and hydration boundary
+        root_local_preflight: "Produce a dry-run packet and validation receipt without writing to the project."
+    invariants:
+      - "Root-azoth remains the development workshop and planning authority."
+      - "Public Azoth receives only consumer-safe extracted assets after release validation."
+      - "Personal cockpit remains pointer-only until a route write is explicitly approved."
+      - "Project-local spaces own their own context and write authority."
+      - "Goal-mode planning-seed authority does not authorize external-plane mutation."
+  suggested_slices:
+    slice_adopt_001_a:
+      title: "External-plane adoption route board"
+      purpose: >
+        Record the public, cockpit, and project-local adoption choices as a
+        root-local decision board and stop before selecting a mutating route.
+    slice_adopt_001_b:
+      title: "Public Azoth Project Genesis template distribution preflight"
+      purpose: >
+        Prepare a productization preflight for extracting the starter packet
+        into public Azoth, without publishing or mutating the public repository
+        until approved.
+    slice_adopt_001_c:
+      title: "Pointer-only cockpit route rehearsal preflight"
+      purpose: >
+        Prepare a no-write cockpit route rehearsal for music, thesis, and
+        agent-context pointers, without mutating the cockpit repository until
+        approved.
+    slice_adopt_001_d:
+      title: "Project-local starter packet dry-run preflight"
+      purpose: >
+        Prepare dry-run starter packets and receipt checks for a selected
+        project-local space, without writing into that project until approved.
+  risks:
+    - risk: "A root-local planning success is mistaken for public product readiness."
+      mitigation: "Require a public Azoth adoption gate and smoke evidence before extraction."
+    - risk: "The cockpit becomes hidden cross-repo write authority."
+      mitigation: "Keep cockpit adoption pointer-only and require no-write simulation evidence."
+    - risk: "A project-local starter packet is written before the project owns the decision."
+      mitigation: "Require target path, receipt owner, selected mode, and local approval."

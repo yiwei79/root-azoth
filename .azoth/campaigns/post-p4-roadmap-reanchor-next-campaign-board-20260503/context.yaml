@@ -1,0 +1,396 @@
+campaign_context_version: 1
+campaign_id: post-p4-roadmap-reanchor-next-campaign-board-20260503
+campaign_name: Post-P4 Roadmap Re-Anchor and Next-Campaign Board
+status: checkpointed
+created_at: "2026-05-03T21:54:40Z"
+updated_at: "2026-05-03T22:31:00Z"
+source_session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
+source_design_artifact: .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
+mode:
+  declared_mode: dynamic-full-auto
+  execution_controller: autonomous-auto
+  pipeline_command: autonomous-auto
+  alignment_mode: async
+objective: >
+  Establish the post-p4 planning anchor and persist campaign design context as
+  durable repo-native state before opening any hydration or implementation work.
+approval_basis: >
+  Operator approved dynamic-full-auto campaign on 2026-05-03: Post-P4 Roadmap
+  Re-Anchor and Next-Campaign Board. Goal: decide and establish the post-p4
+  roadmap anchor, then produce a ranked next-campaign board from live repo-native
+  state. Budget up to 3 child scopes and 1 bounded replay per child.
+budget:
+  max_child_scopes: 3
+  replay_threshold_per_child: 1
+  allowed_actions:
+    - research_initiative
+    - refine_proposal
+    - capture_self_improvement
+  allowed_writes:
+    - repo_internal_planning_truth
+    - one_campaign_selection_or_context_artifact
+  forbidden_actions:
+    - task_hydration
+    - implementation_delivery
+    - public_azoth_sync_or_release
+    - cockpit_repo_writes
+    - controlled_project_repo_writes
+    - backup_or_private_remote_work
+    - kernel_governance_or_m1_changes
+    - dependency_network_credential_or_destructive_actions
+  stop_conditions:
+    - active_scope_present
+    - active_session_gate_conflict
+    - active_write_claim_present
+    - budget_exhausted
+    - protected_gate_required
+    - async_stop_packet
+    - no_safe_candidate
+context_pack:
+  current_scope_gate: .azoth/scope-gate.json
+  current_loop_state: .azoth/autonomous-loop-state.local.yaml
+  current_run_ledger: .azoth/run-ledger.local.yaml
+  ux_anchor: .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+  source_design:
+    - .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
+  related_proposals:
+    - .azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml
+    - .azoth/proposals/autonomous-auto-learning-harvester.yaml
+    - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+repo_status_snapshot:
+  branch: codex/autonomous-roadmap-self-development
+  p4_status: complete
+  p4_final_patch: 34
+  p4_completed_date: "2026-05-03"
+  active_version_read: v0.2.0-p4
+  interpretation: >
+    v0.2.0-p4 is a closed anchor. New hydration or implementation should wait
+    until this campaign resolves whether the next planning anchor remains the
+    last closed version intentionally or moves to a new post-p4 planning lane.
+decision_board:
+  selected:
+    candidate_id: post-p4-campaign-context-state
+    action: research_initiative
+    title: Campaign context state system for persistent campaign designs
+    route_authority: research_initiative:discovery_active
+    reason: >
+      The approved campaign itself exposed the next control-plane gap: campaign
+      designs are durable as markdown and local loop state, but not yet as a
+      tracked campaign strategy object that later child scopes can resume from.
+  deferred:
+    - candidate_id: INI-MEM-003
+      title: Optional vector backend spike
+      reason: Dependency/backend gate remains parked until anchor selection.
+    - candidate_id: INI-MEM-002
+      title: Temporal validity review
+      reason: Needs recall-quality evidence before mutation.
+    - candidate_id: INI-UX-001
+      title: Phone-friendly output
+      reason: Strong operator value, but less foundational than anchor/context state.
+    - candidate_id: INI-PLT-005
+      title: Antigravity deploy target
+      reason: Platform freshness and install-path questions should not lead this campaign.
+recommended_campaign_context_system:
+  name: Campaign Context Ledger
+  canonical_path_pattern: .azoth/campaigns/<campaign_id>/context.yaml
+  role: >
+    Tracked, durable campaign strategy state. It records the approved design,
+    route authority, candidate board, budget, protected boundaries, child-scope
+    timeline, and latest checkpoint without acting as a write gate.
+  source_of_truth_boundaries:
+    - surface: .azoth/campaigns/<campaign_id>/context.yaml
+      authority: Durable campaign design, approved budget, candidate board, checkpoints, and child-scope index.
+      non_authority: Does not grant write authority by itself.
+    - surface: .azoth/scope-gate.json
+      authority: Current child-scope write permission and delegation plan.
+      non_authority: Not a durable historical campaign state; overwritten per active scope.
+    - surface: .azoth/autonomous-loop-state.local.yaml
+      authority: Local loop driver, queue, async alignment packets, and iteration accounting.
+      non_authority: Local runtime state; not safe as the only campaign memory.
+    - surface: .azoth/run-ledger.local.yaml
+      authority: Stage spawn/summary evidence and active write claim.
+      non_authority: Does not define campaign strategy or selected next board.
+    - surface: campaign-report or campaign-audit
+      authority: Read-only reconstruction and evidence evaluation.
+      non_authority: Advisory only; completed campaign evidence cannot authorize new work.
+  lifecycle_states:
+    - id: draft
+      meaning: Designed from repo discovery; no operator approval and no write authority.
+    - id: approved
+      meaning: Operator approved the campaign declaration and budget; child scopes still require scope gates.
+    - id: active
+      meaning: At least one child scope is open or eligible under the approved budget.
+    - id: checkpointed
+      meaning: A child scope closed and the context records result, residual risk, and next route.
+    - id: completed
+      meaning: Campaign acceptance is satisfied and closeout records final disposition.
+    - id: stopped
+      meaning: Budget, protected gate, stale state, or operator stop ended the campaign before completion.
+    - id: superseded
+      meaning: A later approved context replaces this campaign as the active strategy object.
+  required_fields:
+    - campaign_context_version
+    - campaign_id
+    - campaign_name
+    - status
+    - objective
+    - approval_basis
+    - budget
+    - context_pack
+    - decision_board
+    - recommended_campaign_context_system
+    - state_transitions
+    - child_scopes
+    - latest_checkpoint
+  future_minimal_implementation:
+    phase_1: >
+      Keep a tracked context.yaml per campaign and require new campaign designs
+      to create or update it before opening child work.
+    phase_2: >
+      Add scripts/campaign_context.py check/init/checkpoint so local loop state
+      and scope gates can validate against the tracked context before open-next.
+    phase_3: >
+      Teach autonomous_loop.py campaign-report and strategy preflight to link the
+      active campaign context, report stale-context warnings, and checkpoint
+      child-scope outcomes.
+acceptance_criteria:
+  - A future operator can reconstruct the approved campaign design from a tracked repo artifact, not chat memory.
+  - Child scopes can cite one campaign context path as their parent strategy object.
+  - The context complements scope-gate, loop state, and run-ledger instead of replacing their authority.
+  - The context can record async alignment and child-scope checkpoints after closeout.
+  - Protected boundaries remain explicit and fail closed.
+state_transitions:
+  - at: "2026-05-03T21:54:40Z"
+    from: none
+    to: approved
+    actor: operator
+    evidence_refs:
+      - .azoth/autonomous-loop-state.local.yaml
+      - .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
+  - at: "2026-05-03T21:54:56Z"
+    from: approved
+    to: active
+    actor: autonomous-auto-loop
+    evidence_refs:
+      - .azoth/scope-gate.json
+      - .azoth/run-ledger.local.yaml
+  - at: "2026-05-03T22:12:00Z"
+    from: active
+    to: checkpointed
+    actor: administrative-closeout
+    evidence_refs:
+      - .azoth/memory/episodes.jsonl#ep-547
+      - .azoth/bootloader-state.md
+  - at: "2026-05-03T22:26:48Z"
+    from: checkpointed
+    to: active
+    actor: autonomous-auto-loop
+    evidence_refs:
+      - .azoth/scope-gate.json
+      - .azoth/run-ledger.local.yaml
+      - .azoth/autonomous-loop-state.local.yaml
+  - at: "2026-05-03T22:30:12Z"
+    from: active
+    to: checkpointed
+    actor: administrative-closeout
+    evidence_refs:
+      - .azoth/memory/episodes.jsonl#ep-548
+      - .azoth/bootloader-state.md
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+child_scopes:
+  - session_id: 2026-05-03-autonomous-auto-post-p4-campaign-context-state-1
+    iteration: 1
+    action: research_initiative
+    candidate_id: post-p4-campaign-context-state
+    purpose: Suggest and persist the campaign context state system.
+    status: closed
+    closeout_episode_id: ep-547
+    artifacts:
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+  - session_id: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
+    iteration: 2
+    action: research_initiative
+    candidate_id: post-p4-roadmap-anchor-analysis
+    purpose: Decide whether the post-p4 planning anchor should be a new version shell,
+      a phase-null planning board, or a patch/maintenance lane.
+    status: closed
+    closeout_episode_id: ep-548
+    artifacts:
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+  - session_id: 2026-05-04-autonomous-auto-post-p4-candidate-board-synthesis-3
+    iteration: 3
+    action: research_initiative
+    candidate_id: post-p4-candidate-board-synthesis
+    purpose: Rank live post-p4 next-campaign candidates from repo-native state without
+      hydration or implementation.
+    status: active_with_evaluator_block
+    artifacts:
+      - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+roadmap_anchor_analysis:
+  analyzed_at: "2026-05-03T22:28:27Z"
+  session_id: 2026-05-03-autonomous-auto-post-p4-roadmap-anchor-analysis-2
+  executive_read: >
+    Treat v0.2.0-p4 as the last closed historical roadmap anchor, not as an
+    automatically claimable planning lane. Do not mint a new version shell or
+    reopen p4 during the analysis child. The live post-p4 planning anchor for
+    the next decision is this campaign context ledger plus the phase-null
+    candidate board to be synthesized in the next child.
+  selected_anchor_model: phase_null_campaign_board_over_last_closed_p4
+  rejected_anchor_models:
+    - model: new_version_shell_now
+      reason: >
+        No next campaign has been selected yet, and minting a new version shell
+        would imply scheduled work before the candidate board has ranked the
+        eligible lanes.
+    - model: p4_patch_or_maintenance_lane
+      reason: >
+        v0.2.0-p4 is complete with empty pending_task_refs; further p4 repairs
+        require fresh named-lane route evidence and must not reopen the closed
+        repair window by default.
+  evidence_refs:
+    - .azoth/roadmap.yaml#active_version=v0.2.0-p4
+    - .azoth/roadmap.yaml#versions.v0.2.0-p4.status=complete
+    - .azoth/roadmap.yaml#versions.v0.2.0-p4.pending_task_refs=[]
+    - .azoth/roadmap-specs/v0.2.0/POST-P4-NEXT-CAMPAIGN-DESIGN.md
+    - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md
+    - scripts/roadmap_dashboard.py
+  implications:
+    - v0.2.0-p4 remains complete and is not reopened.
+    - Candidate-board synthesis should rank phase-null and parked candidates
+      before any roadmap/backlog/spec hydration.
+    - If child 3 performs minimal anchor repair, the least-powerful repair is a
+      repo-internal planning pointer or campaign selection artifact, not task
+      hydration or implementation.
+    - Public azoth sync/release, cockpit/project writes, backup/private remote,
+      kernel/governance/M1, and dependency/network/credential/destructive gates
+      remain stop lines.
+  next_child_recommendation:
+    action: research_initiative
+    candidate_id: post-p4-candidate-board-synthesis
+    purpose: Rank the visible post-p4 candidates from live repo-native state and
+      select one recommended next campaign without hydrating tasks.
+latest_checkpoint:
+  status: candidate_board_synthesis_recorded_with_replay_needed
+  next_action: >
+    Close or replay the active candidate-board child so the control-plane
+    preflight-clearing implementation edits are packaged separately from the
+    research-only board. After that cleanup, the first recommended next campaign
+    is the format-gate repair lane.
+  blocking_gates:
+    - evaluator_blocked_research_child_due_preexisting_control_plane_code_edits
+    - active_write_claim_until_child_closeout
+  stale_context_flags: []
+candidate_board_synthesis:
+  synthesized_at: "2026-05-04T18:59:25Z"
+  session_id: 2026-05-04-autonomous-auto-post-p4-candidate-board-synthesis-3
+  scope_boundary: research_only_no_hydration_no_implementation
+  board_status: conditional_needs_scope_cleanup
+  executive_read: >
+    v0.2.0-p4 stays closed. The post-p4 planning anchor is the phase-null
+    candidate board over the last closed p4 state. Before opening a new campaign,
+    finish the current control-plane/preflight cleanup and release the active
+    write claim. The first real next campaign after that cleanup should be the
+    narrow format-gate repair lane, because it is repo-local, currently red, and
+    prerequisite to PR/publish confidence.
+  immediate_prerequisite:
+    candidate_id: current-scope-cleanup
+    title: Close candidate-board child and package control-plane preflight repair separately
+    disposition: required_before_next_campaign
+    reason: >
+      The preflight clearing repair opened the research child successfully, but
+      evaluator review found those implementation/test edits should not be
+      laundered into the research-only candidate-board scope.
+  ranked_candidates:
+    - rank: 1
+      candidate_id: format-gate-repair
+      title: P1 format-gate repair lane
+      recommended_action: refine_proposal_or_ship_task_after_scope_approval
+      disposition: recommended_first_campaign
+      rationale: >
+        Live research reports formatting drift remains a pre-PR confidence
+        blocker, and the lane can stay repo-local, narrow, and non-protected.
+      evidence_refs:
+        - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-POSTMORTEM-AND-NEXT-LANES.md#pre-pr-readiness
+        - .azoth/handoffs/2026-05-02-t-060-p1-pre-pr-fast-fail-repair.yaml
+    - rank: 2
+      candidate_id: public-freshness-policy-reconciliation
+      title: Public freshness and release-policy reconciliation
+      recommended_action: research_initiative
+      disposition: viable_later_research
+      rationale: >
+        Public v0.2.0 patch evidence exists, but freshness policy can remain
+        intentionally stale after root drift. Reconcile policy truth before any
+        public sync or release gate.
+      evidence_refs:
+        - .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+        - .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-FRESHNESS-POLICY.yaml
+    - rank: 3
+      candidate_id: INI-UX-001
+      title: Phone-friendly output
+      recommended_action: research_initiative
+      disposition: viable_later_product_ux_campaign
+      rationale: >
+        High operator value and low dependency risk, especially for narrow
+        terminals and daily dashboard use, but less urgent than repo hygiene.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-UX-001
+    - rank: 4
+      candidate_id: INI-RST-006
+      title: Historical phase boards / continuity snapshots
+      recommended_action: research_initiative
+      disposition: viable_later_planning_campaign
+      rationale: >
+        Low-risk continuity support for completed phases, useful after p4 but not
+        a pre-PR blocker.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-RST-006
+    - rank: 5
+      candidate_id: INI-PLT-005
+      title: Antigravity deploy target and install path
+      recommended_action: research_initiative
+      disposition: viable_later_with_freshness_gate
+      rationale: >
+        Valuable platform work, but install/deploy/runtime freshness and global
+        path boundaries make it less suitable as the first post-p4 campaign.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-PLT-005
+        - .azoth/roadmap-specs/v0.2.0/P1-014.yaml
+    - rank: 6
+      candidate_id: INI-MEM-002
+      title: Temporal validity windows for M2 patterns
+      recommended_action: research_initiative
+      disposition: parked_until_recall_miss_evidence
+      rationale: >
+        Keep adjacent-only until recall-quality evidence shows stale M2 temporal
+        validity is the real blocker; no M2 mutation in this route.
+      evidence_refs:
+        - .azoth/roadmap.yaml#INI-MEM-002
+        - .azoth/initiative-banks/INI-MEM-003.yaml
+    - rank: 7
+      candidate_id: INI-MEM-003
+      title: Optional vector backend spike
+      recommended_action: stop_until_dependency_approval
+      disposition: parked_dependency_gate
+      rationale: >
+        T-057/T-058 completed the zero-dependency baseline and adoption path.
+        Vector work needs explicit backend, dependency, storage, privacy, and
+        measured-quality approval.
+      evidence_refs:
+        - .azoth/initiative-banks/INI-MEM-003.yaml
+  excluded_or_deferred:
+    - candidate_id: INI-EVI-002
+      reason: T-046 and derived task-capsule helper lane are fulfilled; needs a fresh distinct seed.
+      evidence_refs:
+        - .azoth/initiative-banks/INI-EVI-002.yaml
+    - candidate_id: public-azoth-sync-or-release
+      reason: Protected public release/sync gate; not authorized in this campaign.
+    - candidate_id: cockpit-or-project-writes
+      reason: Protected cockpit/project mutation gate; keep pointer-only and project-local authority boundaries.
+    - candidate_id: backup-private-remote-or-credential-work
+      reason: Protected backup/private remote/credential gate; open only by explicit operator-selected lane.
+    - candidate_id: kernel-governance-m1
+      reason: Protected kernel/governance/M1 gate; excluded from this post-p4 research board.
+  stage_evidence:
+    architect: architect subagent approved board structure and stop lines.
+    researcher: researcher subagent recommended format-gate repair first after scope cleanup.
+    evaluator: evaluator subagent returned FAIL until implementation edits are separated from this research-only child.

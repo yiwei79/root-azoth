@@ -20,18 +20,21 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
-import yaml
 from rich import box
 from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from planning_bank_surfacing import format_planning_bank_plain
+from planning_bank_surfacing import format_planning_bank_rich
+from planning_bank_surfacing import load_planning_bank_summaries
 from run_ledger import load_active_run as load_active_ledger_run
 from run_ledger import load_resumable_sessions
+from session_gate import active_session_gate, normalized_session_mode
 from session_continuity import governance_mode as normalized_governance_mode
 from session_continuity import selected_pipeline_command
+from yaml_helpers import safe_load_yaml_path
 
 ROOT = Path(__file__).resolve().parent.parent
 console = Console()
@@ -49,8 +52,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        with path.open() as f:
-            return yaml.safe_load(f) or {}
+        return safe_load_yaml_path(path) or {}
     except Exception:
         return {}
 
@@ -325,10 +327,93 @@ def continuity_status(
     return ("MISMATCH", detail)
 
 
+def resume_menu_state(
+    scope: dict[str, Any],
+    session_state: dict[str, Any],
+    open_sessions: list[dict[str, Any]],
+    *,
+    complete_ids: set[str] | None = None,
+) -> dict[str, Any]:
+    """Build the primary and alternate resume actions for dashboard rendering.
+
+    The resumable session registry is authoritative. A parked session-state mirror is
+    only used as the primary resume target when the same session still exists in the
+    resumable registry, which prevents stale closed/finalized mirrors from surfacing
+    as resumable work.
+    """
+    scope_session_id = (
+        str(scope.get("session_id") or "") if is_scope_active(scope, complete_ids) else ""
+    )
+    resumable_entries = [
+        entry
+        for entry in open_sessions
+        if isinstance(entry, dict) and str(entry.get("session_id") or "").strip()
+    ]
+    parked_session_id = (
+        str(session_state.get("session_id") or "")
+        if str(session_state.get("state") or "").strip() == "parked"
+        else ""
+    )
+
+    primary_kind: str | None = None
+    primary_goal = ""
+    alternate_entries = resumable_entries
+
+    if scope_session_id:
+        primary_kind = "scope"
+        primary_goal = str(scope.get("goal") or "")
+        alternate_entries = [
+            entry
+            for entry in resumable_entries
+            if str(entry.get("session_id") or "") != scope_session_id
+        ]
+    else:
+        parked_entry = next(
+            (
+                entry
+                for entry in resumable_entries
+                if str(entry.get("session_id") or "") == parked_session_id
+            ),
+            None,
+        )
+        if parked_entry is not None:
+            primary_kind = "parked"
+            primary_goal = str(
+                session_state.get("approved_scope")
+                or session_state.get("active_task")
+                or parked_entry.get("goal")
+                or ""
+            )
+            alternate_entries = [
+                entry
+                for entry in resumable_entries
+                if str(entry.get("session_id") or "") != parked_session_id
+            ]
+
+    return {
+        "primary_kind": primary_kind,
+        "primary_goal": primary_goal,
+        "alternate_entries": alternate_entries,
+    }
+
+
 # ── Dashboard data + renderers ────────────────────────────────────────────────
 
 
 _INITIATIVE_PRIO: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def _slice_is_actionable(slice_item: dict[str, Any]) -> bool:
+    status = str(slice_item.get("status") or "").strip().casefold()
+    role = str(slice_item.get("role") or "").strip().casefold()
+    return status not in {"complete", "completed"} and role != "historical"
+
+
+def _initiative_has_actionable_open_slice(initiative: dict[str, Any]) -> bool:
+    slices = initiative.get("slices")
+    if isinstance(slices, list) and slices:
+        return any(isinstance(item, dict) and _slice_is_actionable(item) for item in slices)
+    return str(initiative.get("status") or "").strip().casefold() not in {"complete", "completed"}
 
 
 def load_active_run(root: Path) -> dict[str, Any] | None:
@@ -337,11 +422,17 @@ def load_active_run(root: Path) -> dict[str, Any] | None:
 
 
 def gather_unphased_initiatives(roadmap_data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Return phase-agnostic initiatives sorted by priority (high→medium→low). Skips non-dict entries."""
+    """Return actionable phase-null initiatives sorted by priority (high→medium→low)."""
     raw = roadmap_data.get("initiatives")
     if not raw or not isinstance(raw, list):
         return []
-    result = [item for item in raw if isinstance(item, dict) and item.get("phase") is None]
+    result = [
+        item
+        for item in raw
+        if isinstance(item, dict)
+        and item.get("phase") is None
+        and _initiative_has_actionable_open_slice(item)
+    ]
     return sorted(result, key=lambda x: _INITIATIVE_PRIO.get(str(x.get("priority", "")), 9))
 
 
@@ -351,6 +442,7 @@ def gather_dashboard_state() -> dict[str, Any]:
     roadmap_data = load_yaml(ROOT / ".azoth" / "roadmap.yaml")
     backlog_data = load_yaml(ROOT / ".azoth" / "backlog.yaml")
     scope = load_json(ROOT / ".azoth" / "scope-gate.json")
+    session_gate = active_session_gate(ROOT)
     pipeline_gate = load_json(ROOT / ".azoth" / "pipeline-gate.json")
     session_state = load_yaml(ROOT / ".azoth" / "session-state.md")
     episodes = load_jsonl(ROOT / ".azoth" / "memory" / "episodes.jsonl")
@@ -368,12 +460,14 @@ def gather_dashboard_state() -> dict[str, Any]:
     complete_ids = {item["id"] for item in items if item.get("status") in {"complete", "completed"}}
     top3 = filter_unblocked_items(items, complete_ids)[:3]
     unphased_initiatives = gather_unphased_initiatives(roadmap_data)
+    planning_banks = load_planning_bank_summaries(ROOT)
 
     return {
         "azoth": azoth,
         "roadmap": roadmap_data,
         "backlog_data": backlog_data,
         "scope": scope,
+        "session_gate": session_gate,
         "pipeline_gate": pipeline_gate,
         "session_state": session_state,
         "episodes": episodes,
@@ -389,6 +483,7 @@ def gather_dashboard_state() -> dict[str, Any]:
         "complete_ids": complete_ids,
         "top3": top3,
         "unphased_initiatives": unphased_initiatives,
+        "planning_banks": planning_banks,
         "open_sessions": open_sessions,
         "continuity": continuity_status(
             scope,
@@ -422,6 +517,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     """Structured plain text: same information density as Rich, no markup."""
     azoth = state["azoth"]
     scope = state["scope"]
+    session_gate = state["session_gate"]
     pipeline_gate = state["pipeline_gate"]
     session_state = state["session_state"]
     episodes = state["episodes"]
@@ -434,9 +530,16 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    planning_banks = state.get("planning_banks", {})
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
+    resume_state = resume_menu_state(
+        scope,
+        session_state,
+        open_sessions,
+        complete_ids=complete_ids,
+    )
 
     current_phase = strip_phase
 
@@ -526,6 +629,12 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
         lines.append("  Scope: EXPIRED  (run /next to open a new scope card)")
     else:
         lines.append("  Scope: NONE  (run /next to open a scope card)")
+        if session_gate:
+            session_mode = normalized_session_mode(session_gate)
+            lines.append(
+                f"  Session: ACTIVE  ({session_mode}, {session_gate.get('session_id', '?')})"
+            )
+            lines.append(f"    Goal: {session_gate.get('goal', '')}")
 
     if continuity:
         status, detail = continuity
@@ -573,9 +682,20 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
             lines.append(f"    {layer} · {pipeline}")
             lines.append("")
     else:
+        planning_lines = format_planning_bank_plain(planning_banks)
+        if planning_lines:
+            lines.extend(planning_lines)
+            lines.append("  No claimable backlog item is required before refining a planning bank.")
+            lines.append("")
+            return_to_backlog = True
+        else:
+            return_to_backlog = False
         ini_fallback = state.get("unphased_initiatives", [])[:3]
         if ini_fallback:
-            lines.append("  No unblocked pending backlog items — unscheduled initiatives:")
+            if not return_to_backlog:
+                lines.append("  No unblocked pending backlog items — unscheduled initiatives:")
+            else:
+                lines.append("  Also visible from roadmap initiatives:")
             lines.append("")
             for ini in ini_fallback:
                 iid = ini.get("id", "?")
@@ -584,7 +704,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
                 lines.append(f"  {iid}  [priority: {prio}]")
                 lines.append(f"    {title}")
                 lines.append("")
-        else:
+        elif not planning_lines:
             lines.append("  (all backlog items complete)")
             lines.append("")
 
@@ -607,32 +727,16 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("")
 
     lines.append("── START (what to type) ──")
-    parked_session_id = (
-        str(session_state.get("session_id") or "")
-        if str(session_state.get("state") or "") == "parked"
-        else ""
-    )
-    if is_scope_active(scope, complete_ids):
-        goal_truncated = (scope.get("goal") or "")[:72]
+    if resume_state["primary_kind"] == "scope":
+        goal_truncated = resume_state["primary_goal"][:72]
         lines.append(f"  resume   → continue approved scope: {goal_truncated}")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != scope.get("session_id"):
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
-    elif parked_session_id:
-        parked_goal = (
-            session_state.get("approved_scope") or session_state.get("active_task") or ""
-        )[:72]
+    elif resume_state["primary_kind"] == "parked":
+        parked_goal = resume_state["primary_goal"][:72]
         lines.append(f"  resume   → /resume — reopen parked session: {parked_goal}")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != parked_session_id:
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
-    elif open_sessions:
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id:
-                lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
+    for entry in resume_state["alternate_entries"][:3]:
+        session_id = str(entry.get("session_id") or "")
+        if session_id:
+            lines.append(f"  resume {session_id}   → /resume — reopen parked session directly")
     lines.append("  next     → /next — scope card for next priority task")
     lines.append("  intake   → /intake — process .azoth/inbox/")
     lines.append("  promote  → /promote — M2→M1 promotion review")
@@ -640,10 +744,17 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append("  roadmap  → /roadmap — versioned roadmap dashboard (D48)")
     lines.append("  plan     → /plan — structured autonomy / planning")
     lines.append("  remember → /remember — quick M3 capture (no full closeout)")
-    lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
-    lines.append("  <goal>   → /auto — auto-pipeline for a custom goal")
+    if (
+        session_gate
+        and normalized_session_mode(session_gate) == "exploratory"
+        and not is_scope_active(scope, complete_ids)
+    ):
+        lines.append("  closeout → /session-closeout — light closeout for exploratory session")
+    else:
+        lines.append("  closeout → /session-closeout — episodes W1–W4 + handoff capsule")
+    lines.append("  <goal>   → azoth-lite default; explicit /auto for governed delivery")
     lines.append(
-        "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only"
+        "  codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto / $azoth-autonomous-auto; app slash list for enabled azoth-* skills; raw slash tokens remain compatibility fallback"
     )
     lines.append("")
     lines.append(sep)
@@ -652,7 +763,7 @@ def render_dashboard_plain(state: dict[str, Any]) -> None:
     lines.append(sep)
 
     out = "\n".join(lines) + "\n"
-    console.print(out)
+    console.print(out, markup=False)
 
 
 def render_dashboard() -> None:
@@ -660,6 +771,7 @@ def render_dashboard() -> None:
     state = gather_dashboard_state()
     azoth = state["azoth"]
     scope = state["scope"]
+    session_gate = state["session_gate"]
     pipeline_gate = state["pipeline_gate"]
     session_state = state["session_state"]
     episodes = state["episodes"]
@@ -672,9 +784,16 @@ def render_dashboard() -> None:
     phase_header = str(state.get("phase_header") or f"Phase {phase}")
     complete_ids = state["complete_ids"]
     top3 = state["top3"]
+    planning_banks = state.get("planning_banks", {})
     open_sessions = state.get("open_sessions", [])
     continuity = state.get("continuity")
     now = state.get("now")
+    resume_state = resume_menu_state(
+        scope,
+        session_state,
+        open_sessions,
+        complete_ids=complete_ids,
+    )
 
     header_text = Text(justify="center")
     header_text.append("AZOTH", style="bold white")
@@ -773,6 +892,12 @@ def render_dashboard() -> None:
         )
     else:
         health_lines.append(":red_circle: [red]Scope: NONE[/red]  [dim](run /next to open)[/dim]")
+        if session_gate:
+            session_mode = normalized_session_mode(session_gate)
+            health_lines.append(
+                f":speech_balloon: [cyan]Session: ACTIVE[/cyan]  "
+                f"[dim]{session_mode}, {session_gate.get('session_id', '?')}[/dim]"
+            )
 
     if continuity:
         status, detail = continuity
@@ -830,7 +955,10 @@ def render_dashboard() -> None:
             f"  [dim]{layer} · {pipeline}[/dim]"
         )
     if not top3:
+        planning_body = format_planning_bank_rich(planning_banks)
         ini_fallback = state.get("unphased_initiatives", [])[:3]
+        if planning_body:
+            backlog_lines.append(planning_body)
         if ini_fallback:
             for ini in ini_fallback:
                 iid = ini.get("id", "?")
@@ -842,7 +970,7 @@ def render_dashboard() -> None:
                     f"  {title}\n"
                     f"  [dim]initiative · unscheduled[/dim]"
                 )
-        else:
+        elif not planning_body:
             backlog_lines.append("[green]:party_popper: All backlog items complete![/green]")
     backlog_panel = Panel(
         "\n\n".join(backlog_lines), title="[bold]Top Backlog[/bold]", box=box.ROUNDED
@@ -868,49 +996,27 @@ def render_dashboard() -> None:
     last_panel = Panel(last_content, title="[bold]Last Session[/bold]", box=box.ROUNDED)
 
     options_lines: list[str] = []
-    parked_session_id = (
-        str(session_state.get("session_id") or "")
-        if str(session_state.get("state") or "") == "parked"
-        else ""
-    )
-    if is_scope_active(scope, complete_ids):
-        goal_truncated = (scope.get("goal") or "")[:60]
+    if resume_state["primary_kind"] == "scope":
+        goal_truncated = resume_state["primary_goal"][:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"
             f"   Continue: [italic]{goal_truncated}[/italic]"
         )
         options_lines.append("")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != scope.get("session_id"):
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
-    elif parked_session_id:
-        parked_goal = (
-            session_state.get("approved_scope") or session_state.get("active_task") or ""
-        )[:60]
+    elif resume_state["primary_kind"] == "parked":
+        parked_goal = resume_state["primary_goal"][:60]
         options_lines.append(
             f"[bold green]:right_arrow: resume[/bold green]"
             f"   Reopen parked session: [italic]{parked_goal}[/italic]"
         )
         options_lines.append("")
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id and session_id != parked_session_id:
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
-    elif open_sessions:
-        for entry in open_sessions[:3]:
-            session_id = str(entry.get("session_id") or "")
-            if session_id:
-                options_lines.append(
-                    f"[bold cyan]resume {session_id}[/bold cyan]"
-                    "   :right_arrow: /resume — reopen parked session directly"
-                )
+    for entry in resume_state["alternate_entries"][:3]:
+        session_id = str(entry.get("session_id") or "")
+        if session_id:
+            options_lines.append(
+                f"[bold cyan]resume {session_id}[/bold cyan]"
+                "   :right_arrow: /resume — reopen parked session directly"
+            )
     options_lines += [
         "[bold cyan]next[/bold cyan]     :right_arrow: /next — open scope card for next priority task",
         "[bold cyan]intake[/bold cyan]   :right_arrow: /intake — process queued insights from inbox",
@@ -919,9 +1025,15 @@ def render_dashboard() -> None:
         "[bold cyan]roadmap[/bold cyan]  :right_arrow: /roadmap — versioned roadmap dashboard (D48)",
         "[bold cyan]plan[/bold cyan]     :right_arrow: /plan — structured autonomy / planning",
         "[bold cyan]remember[/bold cyan] :right_arrow: /remember — quick M3 capture (not full closeout)",
-        "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff",
-        "[bold cyan]<goal>[/bold cyan]   :right_arrow: /auto — launch auto-pipeline for custom goal",
-        "[bold magenta]codex[/bold magenta]    :right_arrow: primary /skills or $azoth-resume / $azoth-next / $azoth-auto; raw slash tokens are compatibility fallback only",
+        (
+            "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — light closeout for exploratory session"
+            if session_gate
+            and normalized_session_mode(session_gate) == "exploratory"
+            and not is_scope_active(scope, complete_ids)
+            else "[bold cyan]closeout[/bold cyan] :right_arrow: /session-closeout — W1–W4 + session handoff"
+        ),
+        "[bold cyan]<goal>[/bold cyan]   :right_arrow: azoth-lite default; explicit /auto for governed delivery",
+        "[bold magenta]codex[/bold magenta]    :right_arrow: primary: /skills or $azoth-resume / $azoth-next / $azoth-auto / $azoth-autonomous-auto; app slash list for enabled azoth-* skills; raw slash tokens remain compatibility fallback",
     ]
     start_panel = Panel("\n".join(options_lines), title="[bold]START[/bold]", box=box.ROUNDED)
 

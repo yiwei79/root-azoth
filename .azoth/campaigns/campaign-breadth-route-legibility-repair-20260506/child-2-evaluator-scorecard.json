@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "packet_type": "campaign_breadth_route_legibility_child_2_evaluator_scorecard",
+  "campaign_id": "campaign-breadth-route-legibility-repair-20260506",
+  "child_scope": "2026-05-06-autonomous-auto-campaign-breadth-route-legibility-contract-2",
+  "threshold": 0.9,
+  "score": 0.94,
+  "verdict": "pass",
+  "bounded_replay_used": 1,
+  "recommended_next_child": {
+    "action": "ship_task",
+    "candidate_id": "campaign-breadth-route-legibility-implementation",
+    "title": "Route Readback and Campaign Report Legibility Implementation",
+    "target_files": [
+      "scripts/autonomous_loop.py",
+      "tests/test_autonomous_loop.py"
+    ]
+  },
+  "dimensions": {
+    "contract_coverage": 0.95,
+    "route_authority_semantics": 0.94,
+    "stage_evidence_states": 0.92,
+    "historical_protection_boundary": 0.94,
+    "next_ship_scope": 0.91,
+    "governance_entropy": 0.96,
+    "ux_anchor_fit": 0.93
+  },
+  "iteration_history": [
+    {
+      "iteration": 0,
+      "gate": "initial reviewer",
+      "score": 0.86,
+      "result": "request-changes"
+    },
+    {
+      "iteration": 1,
+      "gate": "bounded replay architect",
+      "score": null,
+      "result": "contract fields pinned"
+    },
+    {
+      "iteration": 2,
+      "gate": "replay reviewer",
+      "score": 0.94,
+      "result": "approved"
+    },
+    {
+      "iteration": 3,
+      "gate": "evaluator",
+      "score": 0.94,
+      "result": "pass"
+    }
+  ],
+  "residual_risks": [
+    "Child 3 must preserve report_schema_version 1 and all existing raw fields.",
+    "stage_evidence_states must use latest effective summary/completion evidence, not first summary or spawn presence.",
+    "learning_harvester.selected_learning_route may still show advisory auto_self_heal_now; implementation must keep advisory and boundary-note separation crisp.",
+    "Report derivation should avoid trusting only stale active_stage_id metadata."
+  ]
+}

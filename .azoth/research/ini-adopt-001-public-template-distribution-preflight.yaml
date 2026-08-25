@@ -1,0 +1,137 @@
+schema_version: 1
+artifact_type: public_template_distribution_preflight
+initiative_ref: INI-ADOPT-001
+candidate_slice_ref: slice-adopt-001-b
+task_ref: ADOPT-001-B
+status: complete
+created_at: "2026-05-19T22:25:28Z"
+session_id: 2026-05-20-ini-adopt-001-public-template-preflight
+purpose: >
+  Define the root-local public Azoth distribution preflight for Project Genesis
+  starter docs and helper surfaces before any public repository mutation,
+  release publishing, installer/profile claim change, or kernel/template edit is
+  approved.
+source_refs:
+  - .azoth/initiative-banks/INI-ADOPT-001.yaml
+  - .azoth/research/ini-adopt-001-route-board.yaml
+  - .azoth/initiative-banks/INI-GEN-001.yaml
+  - .azoth/initiative-banks/INI-DEP-001.yaml
+  - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+  - scripts/project_genesis_starter.py
+  - scripts/azoth_release_profile.py
+  - scripts/product_release_smoke.py
+  - sync-config.yaml#product_extraction
+authority_boundary:
+  source_panel: root_azoth
+  target_panel: public_azoth
+  target_panel_mutation_authorized: false
+  release_publishing_authorized: false
+  installer_profile_claim_change_authorized: false
+  kernel_template_change_authorized: false
+  approval_basis: >
+    Goal-mode self-approval authorizes root-local planning-seed artifacts only.
+    It does not authorize public Azoth repository writes, release tags,
+    installer/profile claim edits, kernel/template edits, or extraction into a
+    public product repository.
+candidate_public_paths:
+  - source_path: docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+    candidate_public_path: docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+    rationale: >
+      User-facing planning-only Project Genesis packet that already states it
+      does not authorize project, cockpit, public Azoth, roadmap, kernel, or
+      governance writes.
+    publish_condition: >
+      Only after public release approval confirms docs/playbook remains in the
+      extracted public product and no private root references are introduced.
+  - source_path: scripts/project_genesis_starter.py
+    candidate_public_path: scripts/project_genesis_starter.py
+    rationale: >
+      Read-only helper that prints starter profiles and validates filled
+      packets, matching deployment ease without mutating consumer projects.
+    publish_condition: >
+      Only after public release approval confirms script inclusion and smoke
+      coverage for profile generation and validation.
+  - source_path: kernel/templates/release-profiles/full-consumer.yaml
+    candidate_public_path: kernel/templates/release-profiles/full-consumer.yaml
+    rationale: >
+      Existing Full consumer profile seed surface already creates planning-bank
+      placeholders and local loop-state examples. This preflight does not
+      propose editing it; it marks the profile as the release-readiness check
+      point if Project Genesis becomes an advertised Full-profile capability.
+    publish_condition: >
+      Any profile claim or seed change requires a fresh release/profile approval.
+extraction_allowlist:
+  include_candidates:
+    - docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md
+    - scripts/project_genesis_starter.py
+  verify_existing_profile_surface:
+    - scripts/azoth_release_profile.py --readiness --source .
+    - scripts/product_release_smoke.py --skip-install --skip-ruff
+  do_not_change_without_fresh_approval:
+    - sync-config.yaml
+    - kernel/templates/release-profiles/full-consumer.yaml
+    - install.sh
+    - install.ps1
+    - README.md
+    - public release notes or tags
+private_artifact_exclusions:
+  excluded_by_product_extraction:
+    - .azoth/
+    - .claude/commands/
+    - .claude/hooks/
+    - .claude/settings.json
+    - .claude/settings.local.json
+    - .codex/hooks.mode.local
+    - .codex/permission_profile.local
+    - tests/
+    - workspace/
+    - root-azoth.code-workspace
+  must_not_publish:
+    - .azoth/proposals/
+    - .azoth/initiative-banks/
+    - .azoth/research/
+    - .azoth/handoffs/
+    - .azoth/memory/
+    - .azoth/run-ledger.local.yaml
+    - .azoth/scope-gate.json
+    - .azoth/pipeline-gate.json
+    - personal cockpit paths
+    - project-local paths
+smoke_checks:
+  root_local_checks:
+    - command: python3 scripts/azoth_release_profile.py --readiness --source .
+      expected_result: emits release_profile_readiness with guide and assisted ready, managed/governed_autonomy requiring authority where applicable
+    - command: python3 scripts/product_release_smoke.py --skip-install --skip-ruff
+      expected_result: extracts consumer-safe product surface and reports private runtime state absent
+    - command: python3 scripts/project_genesis_starter.py profile music_production --project-id music-production-lab --project-name "Music Production Lab"
+      expected_result: prints a planning-only Project Genesis starter packet with no mutation authority
+    - command: python3 -m pytest tests/test_project_genesis_starter.py tests/test_product_release_smoke.py tests/test_azoth_release_profile.py
+      expected_result: focused public/starter/release-profile tests pass
+acceptance_map:
+  - criterion: Candidate public template paths are named.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml#candidate_public_paths
+  - criterion: Release profile and smoke checks are named.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml#smoke_checks
+  - criterion: Private/root-only artifacts are excluded.
+    result: pass
+    evidence_refs:
+      - .azoth/research/ini-adopt-001-public-template-distribution-preflight.yaml#private_artifact_exclusions
+stop_rules:
+  - Stop before public Azoth repository mutation.
+  - Stop before release publishing, tagging, pushing, or release-note claims.
+  - Stop before installer/profile claim changes.
+  - Stop before sync-config, kernel/template, install script, or README edits.
+  - Stop before personal cockpit or project-local repository mutation.
+  - Stop before roadmap/backlog/spec hydration.
+  - Stop before dependency, credential, network, or destructive actions.
+outcome:
+  result: slice-adopt-001-b complete as root-local public distribution preflight
+  next_self_servable_candidate: slice-adopt-001-d
+  next_approval_needed: >
+    A fresh explicit public release/product approval is required before copying
+    or publishing Project Genesis assets into public Azoth, changing installer
+    claims, changing release profile seeds, or tagging a release.

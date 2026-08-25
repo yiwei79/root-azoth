@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "packet_type": "campaign_breadth_route_legibility_child_3_evaluator_scorecard",
+  "campaign_id": "campaign-breadth-route-legibility-repair-20260506",
+  "child_scope": "2026-05-06-autonomous-auto-campaign-breadth-route-legibility-implementation-3",
+  "threshold": 0.9,
+  "initial_score": 0.84,
+  "score": 0.93,
+  "verdict": "pass",
+  "bounded_replay_used": 1,
+  "dimensions": {
+    "correctness": 0.94,
+    "completeness": 0.92,
+    "quality": 0.9,
+    "test_coverage": 0.95,
+    "governance": 0.96,
+    "entropy": 0.91
+  },
+  "ux_anchor_scorecard": {
+    "operator_legibility": 0.92,
+    "current_route_authority": "green",
+    "historical_separation": "green",
+    "stage_state_legibility": "green",
+    "safe_autonomy": "green"
+  },
+  "iteration_history": [
+    {
+      "iteration": 0,
+      "score": 0.84,
+      "result": "fail",
+      "finding": "Stage-evidence semantics were too loose and missing authority did not use the contract's fail-closed vocabulary."
+    },
+    {
+      "iteration": 1,
+      "score": 0.93,
+      "result": "pass",
+      "finding": "Bounded replay added exact stage-state vocabulary, summary pairing, fail-closed authority, and focused tests."
+    }
+  ],
+  "verification": [
+    {
+      "command": "PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_autonomous_loop.py -q",
+      "result": "121 passed"
+    },
+    {
+      "command": "git diff --check -- scripts/autonomous_loop.py tests/test_autonomous_loop.py",
+      "result": "clean"
+    },
+    {
+      "command": "PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/autonomous_loop.py status --operator-read",
+      "result": "Route authority: ship_task:delivery_ready"
+    }
+  ],
+  "residual_risks": [
+    "Live write claim remains until normal child closeout releases implementation-3.",
+    "Structured residual risks are campaign-adequate but not a full diagnostic catalog for every non-green stage state.",
+    "No commit or public release was performed; packaging remains separately gated."
+  ],
+  "green_eligible": true
+}

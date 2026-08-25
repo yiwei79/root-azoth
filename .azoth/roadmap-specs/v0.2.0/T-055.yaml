@@ -1,0 +1,75 @@
+id: T-055
+roadmap_version: v0.2.0
+title: Cockpit first-use command surface and no-write UX simulation
+decision_ref:
+- D11
+- D30
+- D34
+- D42
+- D48
+- D50
+- D52
+intent: Represent the completed first-use cockpit command surface that made
+  `yiwei-azoth-cockpit` operable in Codex without complex prompts.
+problem: The cockpit menu made the control surface visible, but normal Codex use
+  still needed discoverable cockpit-local command wrappers, handbook references,
+  bootstrap verification, and a no-write user-experience simulation proving the
+  safe-open contract before the operator could trust it for daily routing.
+context_refs:
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+- scripts/cockpit_command_surface.py
+- scripts/cockpit_bootstrap_verify.py
+- scripts/cockpit_ux_simulate.py
+- tests/test_cockpit_command_surface.py
+- tests/test_cockpit_bootstrap_verify.py
+- tests/test_cockpit_ux_simulate.py
+- /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/docs/ONBOARDING.md
+- /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.agents/skills/azoth-cockpit/SKILL.md
+scope:
+- Add minimal cockpit command wrappers and Codex-visible metadata for
+  `/cockpit`, `/cockpit-check`, `/cockpit-project`, `/cockpit-help`, and
+  `/cockpit-ux-simulate`.
+- Keep the wrappers safe-open; no cockpit writes, no project writes, no project
+  source import, no retrieval/source onboarding, and no hidden background work.
+- Extend the root-owned bootstrap verifier to require the deployed cockpit
+  command surface and T-055 first-use receipt.
+- Update cockpit-local handbooks so `docs/ONBOARDING.md`, `AGENTS.md`, and
+  `CLAUDE.md` list the command surface and safe write-lane rules.
+- Add and run a no-write UX simulation covering fresh orientation, menu,
+  check, project handoff, help, and simulation output.
+non_goals:
+- No full Azoth development command suite deployed into the cockpit.
+- No native slash-command registration guarantee beyond skill wrappers and
+  display metadata.
+- No cockpit file writes during command execution or simulation.
+- No project repo writes.
+- No project source import, retrieval expansion, or source onboarding.
+- No public product mutation or release publication.
+- No governance, kernel, or M1 change.
+acceptance:
+- The cockpit bootstrap verifier passes against
+  `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` and requires the minimal command
+  wrappers plus app slash metadata.
+- The no-write UX simulation passes for `ras-or-ray` and proves cockpit and
+  project git states remain unchanged.
+- Command output shows release sync, `ras-or-ray` pointer-only handoff, and
+  project-local context authority.
+- Command output excludes source files, code summaries, dependency inventories,
+  secrets, retrieval indexes, and project instructions.
+- Roadmap, backlog, and INI-PKB-001 now record T-055 as completed historical
+  first-use cockpit work.
+dependencies:
+- T-054
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  suggested_command: /auto
+validation:
+- python3 scripts/cockpit_bootstrap_verify.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+- python3 scripts/cockpit_ux_simulate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit --project ras-or-ray
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_cockpit_command_surface.py
+  tests/test_cockpit_bootstrap_verify.py tests/test_cockpit_ux_simulate.py -q
+elasticity: Future command expansion must stay cockpit-scoped unless the operator
+  opens a separate meta-deploy lane. Project commands must be executed from the
+  project repo or through a fresh project-scoped gate.

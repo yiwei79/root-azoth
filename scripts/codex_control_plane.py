@@ -10,14 +10,27 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from session_gate import (
+    classify_goal_intent,
+    ensure_exploratory_session,
+    matching_exploratory_session,
+)
 from session_continuity import resolve_transition
+from azoth_lite import AzothLiteDecision, AzothLiteRequest, classify_request
+from harness_profile import HarnessRequest, classify_harness_request
 
-PIPELINE_COMMANDS = {"auto", "dynamic-full-auto", "deliver", "deliver-full"}
+PIPELINE_COMMANDS = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 LEADING_COMMAND_RE = re.compile(r"^\s*/([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
 SKILL_COMMAND_RE = re.compile(r"^\s*\$azoth-([a-z][a-z0-9-]*)\b(.*)$", re.DOTALL)
+NONLEADING_COMMAND_MENTION_RE = re.compile(r"(?<!\S)/([a-z][a-z0-9-]*)\b")
 PIPELINE_OVERRIDE_RE = re.compile(
-    r"^\s*pipeline_command=(dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
+    r"^\s*pipeline_command=(autonomous-auto|dynamic-full-auto|deliver-full|deliver|auto)\b(.*)$",
     re.DOTALL,
+)
+PATH_HINT_RE = re.compile(
+    r"(?P<path>(?:\.azoth|\.claude|\.codex|\.cursor|\.gemini|\.github|\.opencode|"
+    r"agents|commands|docs|kernel|meta_session_research|pipelines|scaffold|scripts|skills|tests|"
+    r"AGENTS\.md|CLAUDE\.md|GEMINI\.md)[A-Za-z0-9_./-]*)"
 )
 
 _ACTIONABLE_PREFIXES = (
@@ -37,9 +50,80 @@ _ACTIONABLE_PREFIXES = (
     "update",
     "refactor",
     "change",
+    "patch",
+    "wire",
+    "migrate",
+    "edit",
+    "explore",
+    "research",
+    "brainstorm",
+    "plan",
+    "explain",
+    "diagnose",
+    "compare",
+    "commit",
+    "delete",
+    "deploy",
+    "finalize",
+    "merge",
+    "package",
+    "publish",
+    "release",
+    "reset",
+    "think through",
+    "let's think through",
+    "lets think through",
+    "walk through",
 )
 _CONTINUE_PREFIXES = ("continue", "resume", "keep going", "let's continue", "lets continue")
 _NEW_GOAL_PREFIXES = ("start a new goal", "start new goal", "new goal", "start ")
+_PROFILE_READ_ONLY_TERMS = (
+    "explain",
+    "inspect",
+    "read",
+    "search",
+    "status",
+    "summarize",
+)
+_PROFILE_FOCUSED_VERIFICATION_TERMS = (
+    "focused test",
+    "focused verification",
+    "narrow test",
+    "run test",
+    "test target",
+    "verify",
+    "verification",
+)
+_PROFILE_LOCAL_EDIT_TERMS = (
+    "add",
+    "change",
+    "create",
+    "edit",
+    "fix",
+    "implement",
+    "migrate",
+    "patch",
+    "refactor",
+    "update",
+    "wire",
+    "write",
+)
+_PROFILE_EXTERNAL_TERMS = (
+    "close out",
+    "closeout",
+    "commit",
+    "delete",
+    "deploy",
+    "final delivery",
+    "finalize",
+    "merge",
+    "package",
+    "publish",
+    "release",
+    "reset",
+)
+_PROFILE_GOVERNED_COMMANDS = {"remember", "promote", "intake"}
+_PROFILE_GOVERNED_PIPELINES = {"autonomous-auto", "deliver", "deliver-full", "dynamic-full-auto"}
 
 
 @dataclass(frozen=True)
@@ -51,6 +135,7 @@ class ParsedPrompt:
     effective_route_name: str = ""
     effective_pipeline_command: str = ""
     prompt_goal: str = ""
+    requested_session_id: str = ""
     is_freeform: bool = False
 
 
@@ -97,22 +182,49 @@ def _looks_like_actionable_freeform(prompt: str) -> bool:
     return any(stripped.startswith(prefix) for prefix in _ACTIONABLE_PREFIXES)
 
 
-def _start_argument_parts(arguments: str) -> tuple[str, str, str]:
+def _mentions_command_token_only(prompt: str) -> bool:
+    stripped = prompt.strip()
+    return (
+        bool(stripped)
+        and not stripped.startswith("/")
+        and bool(NONLEADING_COMMAND_MENTION_RE.search(stripped))
+    )
+
+
+def _extract_session_id(arguments: str) -> tuple[str, str]:
     stripped = arguments.strip()
     if not stripped:
-        return "", "", ""
+        return "", ""
+    match = re.match(r"^session_id=([A-Za-z0-9._:-]+)\b(.*)$", stripped, re.DOTALL)
+    if not match:
+        return "", stripped
+    return match.group(1), match.group(2).strip()
+
+
+def _start_argument_parts(arguments: str) -> tuple[str, str, str, str]:
+    stripped = arguments.strip()
+    if not stripped:
+        return "", "", "", ""
     override_match = PIPELINE_OVERRIDE_RE.match(stripped)
     if override_match:
         pipeline = override_match.group(1)
-        goal = override_match.group(2).strip()
-        return pipeline, "", goal
+        session_id, goal = _extract_session_id(override_match.group(2))
+        return pipeline, "", goal, session_id
     token, _, remainder = stripped.partition(" ")
     if token in {"next", "resume", "closeout"}:
-        return "", token, remainder.strip()
-    return "", "", stripped
+        session_id, goal = _extract_session_id(remainder)
+        return "", token, goal, session_id
+    session_id, goal = _extract_session_id(stripped)
+    return "", "", goal, session_id
 
 
-def _canonical_start_input(*, pipeline_command: str = "", keyword: str = "", goal: str = "") -> str:
+def _canonical_start_input(
+    *,
+    pipeline_command: str = "",
+    keyword: str = "",
+    goal: str = "",
+    session_id: str = "",
+) -> str:
     if keyword == "closeout":
         return "$azoth-session-closeout"
     parts = ["$azoth-start"]
@@ -120,6 +232,8 @@ def _canonical_start_input(*, pipeline_command: str = "", keyword: str = "", goa
         parts.append(f"pipeline_command={pipeline_command}")
     elif keyword:
         parts.append(keyword)
+    if session_id:
+        parts.append(f"session_id={session_id}")
     if goal:
         parts.append(goal)
     return " ".join(parts).strip()
@@ -161,7 +275,7 @@ def _parsed_command_prompt(
             effective_route_name="session-closeout",
         )
     if name == "start":
-        pipeline_command, keyword, goal = _start_argument_parts(arguments)
+        pipeline_command, keyword, goal, session_id = _start_argument_parts(arguments)
         effective_route_name = "session-closeout" if keyword == "closeout" else "start"
         return ParsedPrompt(
             raw_prompt=prompt,
@@ -171,10 +285,12 @@ def _parsed_command_prompt(
                 pipeline_command=pipeline_command,
                 keyword=keyword,
                 goal=goal,
+                session_id=session_id,
             ),
             effective_route_name=effective_route_name,
             effective_pipeline_command=pipeline_command,
             prompt_goal=goal,
+            requested_session_id=session_id,
         )
     if _command_contract(root, name) is None:
         return None
@@ -200,6 +316,9 @@ def parse_prompt(root: Path, prompt: str) -> ParsedPrompt | None:
     match = SKILL_COMMAND_RE.match(stripped)
     if match:
         return _parsed_command_prompt(root, prompt, name=match.group(1), arguments=match.group(2))
+
+    if _mentions_command_token_only(prompt):
+        return None
 
     if not _looks_like_actionable_freeform(prompt):
         return None
@@ -242,6 +361,7 @@ def _transition_guidance(
             command_name=parsed.source_command,
             command_args=parsed.prompt_goal or parsed.raw_arguments,
             prompt_goal=parsed.prompt_goal,
+            requested_session_id=parsed.requested_session_id or None,
         )
 
     if not decision.active_session_id or decision.action == "new":
@@ -277,6 +397,110 @@ def _governed_write_reminder() -> str:
     )
 
 
+def _profile_action_hints(parsed: ParsedPrompt, goal: str) -> tuple[str, ...]:
+    lowered = f"{parsed.source_command} {parsed.effective_pipeline_command} {goal}".lower()
+    actions: list[str] = []
+
+    if parsed.effective_route_name == "session-closeout":
+        actions.append("closeout")
+    if parsed.source_command in _PROFILE_GOVERNED_COMMANDS:
+        actions.append("edit")
+    if parsed.effective_pipeline_command in _PROFILE_GOVERNED_PIPELINES:
+        actions.append("final_delivery")
+    if any(_starts_with_action(lowered, term) for term in _PROFILE_EXTERNAL_TERMS):
+        for term in _PROFILE_EXTERNAL_TERMS:
+            if _starts_with_action(lowered, term):
+                actions.append(term.replace(" ", "_"))
+                break
+    if any(term in lowered for term in _PROFILE_FOCUSED_VERIFICATION_TERMS):
+        actions.append("focused_verification")
+    if any(_starts_with_action(lowered, term) for term in _PROFILE_LOCAL_EDIT_TERMS):
+        actions.append(_first_matching_action(lowered, _PROFILE_LOCAL_EDIT_TERMS))
+    if not actions and any(term in lowered for term in _PROFILE_READ_ONLY_TERMS):
+        actions.append("status" if "status" in lowered else "read")
+    if not actions and parsed.canonical_input == "$azoth-start next":
+        actions.append("status")
+
+    return tuple(dict.fromkeys(action for action in actions if action))
+
+
+def _profile_path_hints(goal: str) -> tuple[str, ...]:
+    paths: list[str] = []
+    for match in PATH_HINT_RE.finditer(goal):
+        path = match.group("path").strip("`'\",;:()[]{}")
+        if path:
+            paths.append(path)
+    return tuple(dict.fromkeys(paths))
+
+
+def _profile_decision(parsed: ParsedPrompt, *, goal: str | None = None) -> AzothLiteDecision:
+    advisory_goal = (
+        goal or parsed.prompt_goal or parsed.raw_arguments or parsed.raw_prompt
+    ).strip()
+    if not advisory_goal:
+        advisory_goal = parsed.canonical_input or parsed.source_command or "Codex route"
+
+    return classify_request(
+        AzothLiteRequest(
+            goal=advisory_goal,
+            requested_actions=_profile_action_hints(parsed, advisory_goal),
+            planned_paths=_profile_path_hints(advisory_goal),
+            trace_required=False,
+            dirty_worktree=False,
+        )
+    )
+
+
+def _profile_advisory(
+    parsed: ParsedPrompt,
+    *,
+    goal: str | None = None,
+    decision: AzothLiteDecision | None = None,
+) -> str:
+    decision = decision or _profile_decision(parsed, goal=goal)
+    harness_decision = classify_harness_request(
+        HarnessRequest(
+            goal=decision.request.goal,
+            requested_actions=decision.request.requested_actions,
+            planned_paths=decision.request.planned_paths,
+            trace_required=decision.request.trace_required,
+            dirty_worktree=decision.request.dirty_worktree,
+            dirty_worktree_summary=decision.request.dirty_worktree_summary,
+            success_criteria=decision.request.success_criteria,
+            known_constraints=decision.request.known_constraints,
+            allow_stock_lite=decision.request.allow_stock_lite,
+        )
+    )
+    route = harness_decision.route
+
+    parts = [
+        "Profile selection (Phase 4 default posture):",
+        f"profile_suggestion: {decision.selected_profile};",
+        f"harness_profile: {harness_decision.profile};",
+        f"route_state: {route.route_state};",
+        f"authority_required: {str(route.authority_required).lower()};",
+        f"authority_plane: {route.authority_plane};",
+        f"side_effect_class: {decision.side_effect_class};",
+        f"stop_state: {decision.stop_state}.",
+    ]
+    if route.stop_reason:
+        parts.append(f"route_stop_reason: {route.stop_reason}.")
+    if decision.escalation_reasons:
+        parts.append(f"escalation_reasons: {', '.join(decision.escalation_reasons)}.")
+    if decision.handoff_packet:
+        parts.append("handoff_note: stop before mutation; recommended_route: azoth-full.")
+    return " ".join(parts)
+
+
+def _starts_with_action(text: str, action: str) -> bool:
+    stripped = text.strip()
+    return stripped.startswith(f"{action} ") or stripped.startswith(f"{action}:")
+
+
+def _first_matching_action(text: str, actions: tuple[str, ...]) -> str:
+    return next((action for action in actions if _starts_with_action(text, action)), "")
+
+
 def staged_delegation_available(root: Path) -> bool:
     agents_dir = root / ".codex" / "agents"
     required = ("orchestrator.toml", "builder.toml", "reviewer.toml")
@@ -303,8 +527,30 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
         [
             "Keep the orchestrator in the main thread.",
             "This is a request for staged pipeline execution and staged delegation, not permission to improvise the work inline.",
+            "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`; before protected downstream stages, run `scripts/run_ledger.py require-stage-evidence` and fail closed on missing, mismatched, blocked, or needs-input evidence.",
+            "For final completion, run `scripts/run_ledger.py require-completion-evidence`; a declared completed stage needs paired stage evidence or a pre-work `stage_inline_exceptions` entry, and retrospective inbox notes do not satisfy this guard.",
         ]
     )
+    if pipeline in {"auto", "autonomous-auto", "dynamic-full-auto"}:
+        guidance.append(
+            "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning and no required fresh-context, review-independence, or human gate is being bypassed."
+        )
+    if pipeline == "autonomous-auto":
+        guidance.extend(
+            [
+                "Autonomous Auto Mode is a standalone adaptive pipeline, not a submode of `dynamic-full-auto`.",
+                "Use `alignment_mode: async`; classify later operator messages as alignment packets and apply them at the next safe checkpoint unless they are `async_stop`.",
+                "Persist `approval_basis` beside any branch-local autonomous approval fields.",
+            ]
+        )
+    if pipeline == "deliver-full":
+        guidance.extend(
+            [
+                "For governed `/deliver-full`, the next legal stage is spawned `deliver_full_s2_architect`.",
+                "For governed `/deliver-full`, inline architecture prose does not satisfy Stage 2.",
+                "For governed `/deliver-full`, a Declaration, gate write, or status card does not count as Stage 2 execution.",
+            ]
+        )
     if not staged_delegation_available(root):
         guidance.append(
             "Staged delegation is unavailable in this runtime. STOP after the Declaration and ask the human whether to authorize delegation, adjust the pipeline, or switch platforms."
@@ -316,6 +562,15 @@ def _pipeline_guidance(root: Path, parsed: ParsedPrompt) -> list[str]:
     guidance.append(
         "For write-enabled or governed stages, follow the gate procedure before editing."
     )
+    exploratory_gate = matching_exploratory_session(root, parsed.prompt_goal)
+    if exploratory_gate and (
+        not parsed.prompt_goal
+        or str(exploratory_gate.get("goal") or "").strip() == parsed.prompt_goal.strip()
+    ):
+        guidance.append(
+            "A matching exploratory session is already active. Reuse its `session_id` when "
+            "the delivery flow writes `.azoth/scope-gate.json` so exploration → delivery stays one session."
+        )
     return guidance
 
 
@@ -365,11 +620,92 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
         return None
 
     if parsed.is_freeform:
+        command_name, prompt_goal = _freeform_transition_inputs(parsed.raw_prompt)
+        decision = resolve_transition(
+            root,
+            command_name=command_name,
+            prompt_goal=prompt_goal,
+        )
         transition = _transition_guidance(root, parsed)
-        if not transition:
+        if decision.action in {"replace", "conflict", "extend"}:
+            guidance = [transition, _governed_write_reminder()] if transition else []
+            guidance.append(_profile_advisory(parsed, goal=prompt_goal))
+            return PromptDirective(additional_context=" ".join(guidance))
+        if command_name == "resume":
+            guidance = [transition] if transition else []
+            if guidance:
+                guidance.append(_profile_advisory(parsed, goal=prompt_goal))
+                return PromptDirective(additional_context=" ".join(guidance))
             return None
-        guidance = [transition, _governed_write_reminder()]
-        return PromptDirective(additional_context=" ".join(guidance))
+
+        goal = prompt_goal or parsed.raw_prompt.strip()
+        if not goal:
+            return None
+
+        intent = classify_goal_intent(goal)
+        profile_decision = _profile_decision(parsed, goal=goal)
+        profile_advisory = _profile_advisory(
+            parsed,
+            goal=goal,
+            decision=profile_decision,
+        )
+        if profile_decision.escalate:
+            guidance = [
+                f"Governed delivery escalation detected for `{goal}`.",
+                "Normalize this request through `$azoth-start pipeline_command=auto ...` so azoth-full delivery is explicit.",
+                profile_advisory,
+            ]
+            exploratory_gate = matching_exploratory_session(root, goal)
+            session_id = ""
+            if exploratory_gate:
+                session_id = str(exploratory_gate.get("session_id") or "").strip()
+                guidance.append(
+                    "A matching exploratory session is already active. Carry its `session_id` forward "
+                    "in the routed input and write `.azoth/scope-gate.json` with that same session."
+                )
+            if transition:
+                guidance.append(transition)
+                guidance.append(_governed_write_reminder())
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(
+                    pipeline_command="auto",
+                    goal=goal,
+                    session_id=session_id,
+                ),
+            )
+
+        if intent == "exploratory":
+            gate = ensure_exploratory_session(root, goal=goal)
+            guidance = [
+                f"Exploratory intent detected for `{goal}`.",
+                f"Opened `.azoth/session-gate.json` for session `{gate['session_id']}`.",
+                "Treat this as a real no-scope session: memory capture and light closeout are allowed, "
+                "but governed, finality, external, or destructive work must stop and escalate into explicit `/auto` first.",
+                "Normalize this request through `$azoth-start` so the Codex control plane stays start-centered.",
+                profile_advisory,
+            ]
+            if transition:
+                guidance.append(transition)
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(goal=goal),
+            )
+
+        if not profile_decision.escalate:
+            guidance = [
+                f"Azoth-lite default posture detected for `{goal}`.",
+                "Normalize this request through `$azoth-start ...`; do not add `pipeline_command=auto` unless the human explicitly invokes `/auto` or the profile escalates.",
+                "Ordinary local edits may proceed in azoth-lite within current Codex/tool permissions; preserve governed escalation triggers before `.azoth`, kernel/governance, finality, closeout, or external/destructive work.",
+                profile_advisory,
+            ]
+            if transition:
+                guidance.append(transition)
+                guidance.append(_governed_write_reminder())
+            return PromptDirective(
+                additional_context=" ".join(guidance),
+                updated_input=_canonical_start_input(goal=goal),
+            )
 
     if parsed.effective_route_name == "session-closeout":
         guidance = _closeout_guidance(root, parsed)
@@ -384,6 +720,7 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
     if transition:
         guidance.append(transition)
         guidance.append(_governed_write_reminder())
+    guidance.append(_profile_advisory(parsed))
 
     return PromptDirective(
         additional_context=" ".join(guidance),

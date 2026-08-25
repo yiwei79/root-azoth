@@ -29,7 +29,7 @@ from run_ledger import (
     upsert_run,
     upsert_session,
 )
-from session_continuity import scope_conflict_message
+from session_continuity import active_scope, scope_conflict_message
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -328,7 +328,7 @@ def _normalize_pipeline_command(
         _coerce_string(run_entry.get("mode") if isinstance(run_entry, dict) else ""),
         _coerce_string(delivery_pipeline),
     ):
-        if candidate in {"auto", "dynamic-full-auto", "deliver", "deliver-full"}:
+        if candidate in {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}:
             return candidate
     if target_layer == "M1" or delivery_pipeline == "governed":
         return "deliver-full"
@@ -425,6 +425,7 @@ def park_session(
         status="parked",
         ide=selected_ide,
         next_action=next_action,
+        session_mode="delivery",
         updated_at=when,
         active_run_id=resolved_active_run_id,
     )
@@ -493,7 +494,10 @@ def _resolve_resume_target(
     repo_root: Path, session_id: str | None = None
 ) -> tuple[str, dict[str, Any]]:
     existing_state = load_yaml(repo_root / ".azoth" / "session-state.md")
+    live_scope = active_scope(repo_root)
     resolved_session_id = _coerce_string(session_id)
+    if not resolved_session_id and live_scope:
+        resolved_session_id = _coerce_string(live_scope.get("session_id"))
     if not resolved_session_id and _coerce_string(existing_state.get("state")) == "parked":
         resolved_session_id = _coerce_string(existing_state.get("session_id"))
     if not resolved_session_id:
@@ -510,6 +514,14 @@ def _resolve_resume_target(
         raise ParkSessionError(f"{conflict} Options: park current, close current, or abort.")
 
     session_entry = load_session(repo_root, resolved_session_id)
+    if session_entry is None and live_scope:
+        live_scope_session_id = _coerce_string(live_scope.get("session_id"))
+        if live_scope_session_id == resolved_session_id:
+            session_entry = _synthesize_live_scope_session_entry(
+                repo_root,
+                live_scope=live_scope,
+                existing_state=existing_state,
+            )
     if session_entry is None:
         raise ParkSessionError(
             f"Cannot resume session: no run-ledger entry found for '{resolved_session_id}'."
@@ -521,6 +533,63 @@ def _resolve_resume_target(
             f"Cannot resume session '{resolved_session_id}': status is {status or 'unknown'}."
         )
     return resolved_session_id, session_entry
+
+
+def _matching_resume_run(repo_root: Path, *, session_id: str) -> dict[str, Any] | None:
+    ledger = load_yaml(repo_root / ".azoth" / "run-ledger.local.yaml")
+    runs = ledger.get("runs")
+    if not isinstance(runs, list):
+        return None
+    for entry in reversed(runs):
+        if not isinstance(entry, dict):
+            continue
+        if _coerce_string(entry.get("session_id")) != session_id:
+            continue
+        if _coerce_string(entry.get("status")) not in {"active", "paused"}:
+            continue
+        return entry
+    return None
+
+
+def _synthesize_live_scope_session_entry(
+    repo_root: Path,
+    *,
+    live_scope: dict[str, Any],
+    existing_state: dict[str, Any],
+) -> dict[str, Any]:
+    session_id = _coerce_string(live_scope.get("session_id"))
+    goal = _coerce_string(live_scope.get("goal"), "Resumed session")
+    backlog_id = _coerce_string(live_scope.get("backlog_id"), "AD-HOC")
+    run_entry = _matching_resume_run(repo_root, session_id=session_id)
+    checkpoint = _checkpoint_from_run(run_entry)
+    selected_ide = _coerce_string(
+        run_entry.get("ide") if isinstance(run_entry, dict) else "",
+        _coerce_string(existing_state.get("last_ide"), "unknown"),
+    )
+    session_entry = {
+        "session_id": session_id,
+        "backlog_id": backlog_id,
+        "goal": goal,
+        "status": "active",
+        "ide": selected_ide,
+        "next_action": _resume_next_action(
+            goal=goal,
+            run_entry=run_entry,
+            checkpoint=checkpoint,
+        ),
+        "updated_at": utc_now_iso(),
+    }
+    active_run_id = _coerce_string(run_entry.get("run_id") if isinstance(run_entry, dict) else "")
+    if active_run_id:
+        session_entry["active_run_id"] = active_run_id
+    return session_entry
+
+
+def _matching_pipeline_gate(repo_root: Path, *, session_id: str) -> dict[str, Any]:
+    gate = load_json(repo_root / ".azoth" / "pipeline-gate.json")
+    if _coerce_string(gate.get("session_id")) != session_id:
+        return {}
+    return gate
 
 
 def _scope_shape_for_resume(
@@ -585,6 +654,10 @@ def resume_session(
         else []
     )
     run_entry = load_run(repo_root, active_run_id) if active_run_id else None
+    live_pipeline_gate = _matching_pipeline_gate(repo_root, session_id=resolved_session_id)
+    live_pipeline_command = _coerce_string(
+        live_pipeline_gate.get("pipeline_command") or live_pipeline_gate.get("pipeline")
+    )
     checkpoint = _merge_checkpoint(
         run_entry=run_entry,
         existing_state=existing_state,
@@ -621,20 +694,41 @@ def resume_session(
         delivery_pipeline=delivery_pipeline,
         target_layer=target_layer,
     )
+    if not pipeline and live_pipeline_command in {
+        "auto",
+        "autonomous-auto",
+        "dynamic-full-auto",
+        "deliver",
+        "deliver-full",
+    }:
+        pipeline = live_pipeline_command
     if pipeline:
         checkpoint["pipeline"] = pipeline
     structural_research_payload = _extract_structural_research_payload(
         checkpoint,
         session_id=resolved_session_id,
-        required=_governed_resume_requires_structural_research_payload(
+        source_name="parked checkpoint",
+    )
+    if (
+        not structural_research_payload
+        and pipeline
+        and _governed_resume_requires_structural_research_payload(
             run_entry=run_entry,
             pipeline=pipeline,
             delivery_pipeline=delivery_pipeline,
             target_layer=target_layer,
-        ),
-        source_name="parked checkpoint",
-    )
-    if run_entry and pipeline:
+        )
+    ):
+        structural_research_payload = _read_live_structural_research_payload(
+            repo_root,
+            session_id=resolved_session_id,
+        )
+        if not structural_research_payload:
+            raise ParkSessionError(
+                "Cannot recover structural research gate from parked checkpoint: "
+                "research_required is missing."
+            )
+    if pipeline:
         _restore_pipeline_gate(
             repo_root,
             session_id=resolved_session_id,
@@ -646,7 +740,12 @@ def resume_session(
         )
     else:
         pipeline_gate_path = repo_root / ".azoth" / "pipeline-gate.json"
-        if pipeline_gate_path.exists():
+        if pipeline_gate_path.exists() and live_pipeline_command not in {
+            "auto",
+            "dynamic-full-auto",
+            "deliver",
+            "deliver-full",
+        }:
             pipeline_gate_path.unlink()
 
     created, _ = upsert_session(
@@ -657,6 +756,7 @@ def resume_session(
         status="active",
         ide=selected_ide,
         next_action=next_action,
+        session_mode="delivery",
         updated_at=when,
         active_run_id=active_run_id,
     )
@@ -698,6 +798,7 @@ def resume_session(
                 status="active",
                 ide=selected_ide,
                 next_action=next_action,
+                session_mode="delivery",
                 updated_at=when,
                 active_run_id=active_run_id,
             )

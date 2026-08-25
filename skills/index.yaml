@@ -25,6 +25,13 @@ skills:
     depends_on:
       - subagent-router
 
+  - name: autonomous-auto
+    description: Standalone adaptive mode for branch-local Azoth self-development with async operator alignment, bounded replay, and scope/pipeline gate enforcement.
+    depends_on:
+      - auto-router
+      - subagent-router
+      - orientation
+
   - name: context-map
     description: Map blast radius and dependency graphs before multi-file or cross-cutting work; assess risk and pre-stage dependencies at the start of a pipeline stage or unfamiliar area.
     depends_on: []
@@ -67,6 +74,11 @@ skills:
       - auto-router
       - subagent-router
       - orientation
+
+  - name: karpathy-principles
+    description: Injectable discipline slot for coding, review, planning, or refactoring stages that need assumption surfacing, simplicity pressure, surgical diffs, and stage6-rubric-verifiable success criteria.
+    depends_on:
+      - stage6-rubric
 
   - name: orientation
     description: Load the v0.2.0 slice roadmap, backlog alignment, per-task specs, and expanded workflow when planning or editing `.azoth/roadmap.yaml` / backlog.

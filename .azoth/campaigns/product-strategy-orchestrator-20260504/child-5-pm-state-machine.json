@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "child_scope": "2026-05-04-autonomous-auto-initiative-discovery-pm-lane-5",
+  "lane": "initiative-discovery-pm-lane",
+  "authority": "campaign_local_non_authoritative",
+  "states": [
+    {
+      "state": "raw_or_ambiguous",
+      "safe_route": "research_initiative",
+      "blocked": ["hydrate_task", "ship_task"]
+    },
+    {
+      "state": "discovery_active",
+      "safe_route": "research_initiative_or_refine_proposal",
+      "blocked": ["roadmap_write", "backlog_write", "spec_write"]
+    },
+    {
+      "state": "candidate_ready_for_review",
+      "safe_route": "refine_proposal",
+      "blocked": ["roadmap_scaffold_execution"]
+    },
+    {
+      "state": "approved_for_hydration",
+      "safe_route": "stop_for_human_gate",
+      "blocked_until_approved": ["hydrate_task"]
+    },
+    {
+      "state": "delivery_ready",
+      "safe_route": "stop_for_human_gate",
+      "blocked_until_approved": ["delivery_campaign", "authoritative_code_change"]
+    },
+    {
+      "state": "fulfilled_or_stale",
+      "safe_route": "stop_or_research_fresh_seed",
+      "blocked": ["repeat_hydration", "duplicate_delivery"]
+    }
+  ],
+  "hydration_readiness_conditions": [
+    "stable_goal",
+    "first_slice_smaller_than_initiative",
+    "clear_target_layer",
+    "clear_delivery_pipeline",
+    "explicit_acceptance_criteria",
+    "explicit_non_goals",
+    "fresh_enough_evidence",
+    "contradictions_adjudicated",
+    "protected_boundaries_named",
+    "not_duplicate_completed_work",
+    "human_gate_names_exact_candidate_and_scaffold_path"
+  ],
+  "next_child": {
+    "action": "ship_task",
+    "candidate_id": "product-management-decision-capsule",
+    "title": "Product Management Decision Capsule",
+    "writes_allowed": [
+      ".azoth/campaigns/product-strategy-orchestrator-20260504/"
+    ]
+  }
+}

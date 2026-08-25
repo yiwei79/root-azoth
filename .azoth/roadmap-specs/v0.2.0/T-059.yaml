@@ -1,0 +1,83 @@
+id: T-059
+roadmap_version: v0.2.0
+title: Deployment readiness mode matrix and first-use map
+decision_ref: []
+intent: Define the first executable Azoth deployment-readiness contract for INI-DEP-001.
+problem: Azoth has proposal-level guidance for deployment ease, cockpit readback,
+  and multi-scale modes, but new or existing projects still lack one concrete task
+  that says which mode is being installed, what assets are expected, which surfaces
+  prove readiness, and which authority plane owns each action.
+scope:
+- Define the concrete mode matrix for guide, assisted, managed, and governed_autonomy.
+- Map first-use readiness checks across installer, release-profile, cockpit,
+  planning-bank, and autonomous-control surfaces.
+- Define the cockpit readback contract for selected mode, readiness state, project
+  pointer, write-claim visibility, and next safe action.
+- 'Preserve the four authority planes: root-azoth, public Azoth, personal cockpit,
+  and project-local.'
+non_goals:
+- No kernel or governance edits.
+- No public Azoth, personal cockpit, or project-local repo mutation.
+- No release publishing, dependency installation, credential handling, commit, push,
+  or broad productization gate.
+acceptance:
+- The mode matrix names installed asset classes and explicit exclusions for each
+  mode.
+- The readiness map identifies installer, release-profile, cockpit, planning-bank,
+  and autonomous-control evidence for first use.
+- The cockpit contract names read-only status fields and prevents silent project
+  repo mutation.
+- Root/public/cockpit/project-local authority remains explicit in the spec and any
+  implementation handoff.
+- Proposal, initiative bank, roadmap, backlog, and this spec validate after edits.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+  status: complete
+  completed_at: '2026-05-19T16:01:40Z'
+readiness_contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+mode_matrix_summary:
+  guide: Guidance, trust posture, orientation, and prompts only; fails closed if
+    any helper, planning-bank, or autonomy runtime is advertised as installed.
+  assisted: Skills, tier-1 agents, wrappers, and helper references; excludes roadmap
+    hydration, backlog ownership, autonomy, and unapproved project writes.
+  managed: Project-management substrate after local approval; requires valid roadmap,
+    backlog, planning-bank seeds, validators, and a project-local receipt.
+  governed_autonomy: Campaign-bounded supervised autonomy; requires managed-mode
+    receipts, run ledger, stage evidence, active budget, write-claim policy, and
+    stop conditions.
+first_use_surfaces:
+  installer: Mode receipt and installed assets must agree.
+  release_profile: Public profile must not imply root-private, cockpit-private, or
+    project-local state.
+  cockpit: Readback is pointer-only until the next action has matching authority.
+  planning_bank: Managed mode requires valid local planning seeds and matching approval.
+  autonomous_control: Governed autonomy requires current route state, ledger proof,
+    write claim, and stage evidence.
+cockpit_readback_contract:
+  field_policy: read_only_status_until_project_local_gate
+  required_fields:
+  - project_pointer
+  - authority_plane
+  - selected_mode
+  - readiness_state
+  - freshness_status
+  - installed_asset_classes
+  - missing_asset_classes
+  - approval_scope
+  - active_write_claim
+  - next_safe_action
+  - stop_reason
+  forbidden_behaviors:
+  - silently selecting a higher mode
+  - writing root decisions into public, cockpit, or project-local repos
+  - hiding missing assets behind a green status
+  - continuing an autonomy campaign after route state says stop
+validation_refs:
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml
+- python3 scripts/planning_bank_validate.py --check-roadmap-refs
+- python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+elasticity: Phase 1 delivered the root-local contract. Phase 2 should use a fresh
+  approval gate for release-profile compiler or cockpit readback runtime slices.

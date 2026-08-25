@@ -1,0 +1,74 @@
+id: T-045
+roadmap_version: v0.2.0
+title: Personal knowledge recall pilot and retrieval eval harness
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Add the first narrow root-side recall pilot for the five operator-approved
+  Batch 0 personal knowledge cards, with metadata filters, source-preserving
+  retrieval output, and focused eval cases before any vector, graph, or broad
+  personal knowledge indexing work.
+problem: >
+  T-044 deployed the approved Batch 0 cards and recorded receipt evidence, but
+  no recall surface or retrieval eval exists yet. The unsafe leap would be to
+  index raw memory, raw inbox rows, or the whole personal root. This slice keeps
+  recall bounded to approved card metadata and proves usefulness through evals
+  before larger retrieval infrastructure.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/roadmap-specs/v0.2.0/T-044.yaml
+- .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+scope:
+- Build or specify a root-side recall helper/harness that reads only approved
+  Batch 0 card metadata and source pointers.
+- Add eval cases for exact source/path lookup, semantic question answering,
+  freshness behavior, and access-boundary behavior.
+- Preserve source pointers and provenance in every retrieval result so recalled
+  cards cannot become hidden instruction authority.
+- Keep the first pilot file- and metadata-oriented; defer vector, graph,
+  external network, and production retrieval infrastructure.
+- Record validation evidence proving the recall pilot does not read raw inbox,
+  raw memory, unapproved cards, or personal-root data outside the approved card
+  set.
+non_goals:
+- Do not index raw `.azoth/memory/episodes.jsonl`, raw inbox rows, or unreviewed
+  source material.
+- Do not add GraphRAG, vector stores, broad semantic indexing, or production
+  retrieval infrastructure.
+- Do not mutate personal-root cards, deploy new cards, or broaden Batch 0.
+- Do not add source registry onboarding, public release work, governance/kernel
+  changes, or autonomous source mutation.
+- Do not treat retrieved personal knowledge as hidden policy or instruction
+  authority; output must stay cited and operator-auditable.
+acceptance:
+- Recall pilot uses only approved Batch 0 card metadata and source pointers.
+- Eval cases cover exact identifier/path lookup, one semantic question, freshness,
+  and access-boundary behavior.
+- Retrieval output preserves source pointers and clearly distinguishes recalled
+  context from governing instructions.
+- Validation or focused tests prove raw inbox, raw memory, unapproved cards,
+  vector/graph infrastructure, and personal-root mutation are untouched.
+- A final handoff states the supported recall command/surface, eval results,
+  remaining limits, and the next safe expansion boundary.
+dependencies:
+- T-044
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  If the approved Batch 0 card set is too small to answer useful eval cases, stop
+  with an evidence report instead of broadening the corpus. If retrieval design
+  pressure points toward vector, graph, or source-registry work, split that into
+  a later explicitly approved slice.

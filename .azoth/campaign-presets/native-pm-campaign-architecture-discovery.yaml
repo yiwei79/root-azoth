@@ -1,0 +1,57 @@
+schema_version: 1
+id: native-pm-campaign-architecture-discovery
+title: Native PM Campaign Architecture Discovery
+objective: Native PM Campaign Architecture Discovery
+summary: >
+  Use a PM orchestrator to coordinate architect, researcher, evaluator, and
+  reviewer stages for architecture discovery before any implementation approval.
+selected_seed_type: preset
+campaign_owner: PM orchestrator
+max_iterations: 3
+replay_threshold: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - capture_self_improvement
+blocked_actions:
+  - hydrate_task
+  - ship_task
+  - public_sync_or_release
+  - cockpit_or_project_writes
+  - private_root_backup_or_credentials
+  - kernel_governance_or_M1_mutation
+  - dependency_or_network_expansion
+  - destructive_actions
+  - commits
+  - pushes
+expected_stages:
+  - architect
+  - researcher
+  - evaluator
+  - reviewer
+queue_seed:
+  action: research_initiative
+  candidate_id: native-pm-campaign-architecture-discovery
+  source: campaign-preset
+  reason: >
+    Discover and compare architecture options, then stop at an approval-ready
+    declaration before any implementation.
+agentic_eval:
+  pattern: evaluator-optimizer
+  threshold: 0.90
+  max_iterations: 3
+  dimensions:
+    - native_simplicity
+    - architectural_fit
+    - governance_safety
+    - pm_orchestration_quality
+    - iterative_quality
+    - bounded_implementation
+    - operator_ux
+scope_notes: >
+  This preset is a declaration compiler only. It does not grant route authority,
+  replace lifecycle-route, or approve protected work.
+stop_condition: >
+  Present architecture options, evaluator score history, one recommended solution,
+  residual risks, and an approval-ready shipping declaration; do not implement until
+  the operator approves the selected solution.

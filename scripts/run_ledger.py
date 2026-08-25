@@ -18,11 +18,18 @@ Usage:
                                         --ide IDE --next-action TEXT
                                         [--active-run-id ID]
                                         [--ledger PATH]
+  python scripts/run_ledger.py record-inline-exception --run-id ID --stage-id STAGE ...
+                                        --exception-reason TEXT
+                                        [--ledger PATH]
+  python scripts/run_ledger.py require-completion-evidence --run-id ID
+                                        [--ledger PATH]
 """
 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import errno
 import hashlib
 import json
 import os
@@ -30,23 +37,45 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 from session_continuity import active_scope, session_registry_entry_is_resumable
+from yaml_helpers import safe_load_yaml_path
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - fcntl is available on supported Unix hosts.
+    fcntl = None
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER_PATH = ROOT / ".azoth" / "run-ledger.local.yaml"
 
 _STATUS_ENUM = {"active", "complete", "failed", "paused"}
 _SESSION_STATUS_ENUM = {"active", "parked", "closed"}
+_SESSION_MODE_ENUM = {"exploratory", "delivery"}
 _WAVE_STATUS_ENUM = {"pass", "fail", "partial"}
 _BRANCH_DISPOSITION_ENUM = {"merged", "discarded", "pending"}
 _PAUSE_REASON_ENUM = {"human-gate", "handoff", "retry"}
+_STAGE_EVIDENCE_POLICY_ENUM = {"spawn_required", "inline_allowed"}
+_SUMMARY_STATUS_ENUM = {"complete", "blocked", "needs-input"}
+_NONBLOCKING_SUMMARY_DISPOSITIONS = {
+    "approved",
+    "approve",
+    "accepted",
+    "complete",
+    "pass",
+    "passed",
+    "no-changes",
+}
+_GOVERNED_RUN_MODES = {"auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full"}
 _ISO8601_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 _STAGE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _UNSET = object()
+_LEDGER_LOCK_TIMEOUT_SECONDS = 10.0
+_LEDGER_LOCK_POLL_SECONDS = 0.05
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,8 +94,7 @@ def _load_ledger(path: Path) -> dict:
     if not path.exists():
         return {"schema_version": 1, "runs": []}
     try:
-        with path.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+        data = safe_load_yaml_path(path)
     except Exception as exc:
         _die(f"could not parse ledger YAML: {exc}")
     if not isinstance(data, dict):
@@ -78,8 +106,7 @@ def _load_yaml_mapping(path: Path) -> dict | None:
     if not path.exists():
         return None
     try:
-        with path.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+        data = safe_load_yaml_path(path)
     except Exception:
         return None
     return data if isinstance(data, dict) else None
@@ -97,9 +124,109 @@ def _write_ledger(path: Path, data: dict) -> None:
     _write_yaml_mapping(path, data)
 
 
+def _ledger_lock_path(path: Path) -> Path:
+    return path.with_name(f"{path.name}.lock")
+
+
+def _ledger_lock_failure_message(ledger_path: Path, lock_path: Path, exc: BaseException) -> str:
+    return (
+        f"could not acquire run ledger lock at {lock_path} for ledger {ledger_path}: {exc}. "
+        "Retry after the current writer finishes, or serialize record-spawn/record-summary "
+        "writers for this ledger."
+    )
+
+
+def _is_lock_contention_error(exc: OSError) -> bool:
+    return isinstance(exc, BlockingIOError) or exc.errno in {errno.EACCES, errno.EAGAIN}
+
+
+def _try_acquire_ledger_lock(lock_file: object) -> bool:
+    if fcntl is None:
+        raise OSError("fcntl file locking is unavailable on this platform")
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError as exc:
+        if _is_lock_contention_error(exc):
+            return False
+        raise
+
+
+def _acquire_ledger_lock(lock_file: object) -> None:
+    deadline = time.monotonic() + _LEDGER_LOCK_TIMEOUT_SECONDS
+    while True:
+        if _try_acquire_ledger_lock(lock_file):
+            return
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"timed out after {_LEDGER_LOCK_TIMEOUT_SECONDS:.2f}s waiting for ledger lock"
+            )
+        time.sleep(_LEDGER_LOCK_POLL_SECONDS)
+
+
+def _release_ledger_lock(lock_file: object) -> None:
+    if fcntl is not None:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+@contextmanager
+def _locked_ledger_update(ledger_path: Path):
+    lock_path = _ledger_lock_path(ledger_path)
+    lock_file = None
+    acquired = False
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise ValueError(_ledger_lock_failure_message(ledger_path, lock_path, exc)) from exc
+    try:
+        lock_file = lock_path.open("a+", encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(_ledger_lock_failure_message(ledger_path, lock_path, exc)) from exc
+    try:
+        try:
+            _acquire_ledger_lock(lock_file)
+            acquired = True
+        except OSError as exc:
+            message = _ledger_lock_failure_message(ledger_path, lock_path, exc)
+            raise ValueError(message) from exc
+        yield
+    finally:
+        try:
+            if acquired:
+                _release_ledger_lock(lock_file)
+        finally:
+            lock_file.close()
+
+
 def _load_ledger_for_helpers(root: Path) -> dict | None:
     ledger_path = root / ".azoth" / "run-ledger.local.yaml"
     return _load_yaml_mapping(ledger_path)
+
+
+def _load_optional_ledger_for_evidence(
+    root: Path,
+    ledger_path: Path | None = None,
+) -> dict | None:
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    if not resolved_ledger_path.exists():
+        return None
+    try:
+        data = safe_load_yaml_path(resolved_ledger_path)
+    except Exception as exc:
+        raise ValueError(
+            f"could not read/parse ledger YAML at {resolved_ledger_path}: {exc}"
+        ) from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"ledger root at {resolved_ledger_path} is not a YAML mapping")
+    return data
+
+
+def _require_valid_ledger_for_evidence(data: dict, *, ledger_path: Path) -> None:
+    errors = validate_ledger(data)
+    if errors:
+        raise ValueError(
+            f"malformed governed run evidence ledger at {ledger_path}: {'; '.join(errors)}"
+        )
 
 
 # ── Validator ─────────────────────────────────────────────────────────────────
@@ -153,6 +280,12 @@ def validate_ledger(data: dict) -> list[str]:
                 elif status not in _SESSION_STATUS_ENUM:
                     errors.append(
                         f"{prefix}: status {status!r} not in {sorted(_SESSION_STATUS_ENUM)}"
+                    )
+
+                session_mode = entry.get("session_mode")
+                if session_mode is not None and session_mode not in _SESSION_MODE_ENUM:
+                    errors.append(
+                        f"{prefix}: session_mode {session_mode!r} not in {sorted(_SESSION_MODE_ENUM)}"
                     )
 
                 updated_at = entry.get("updated_at")
@@ -256,11 +389,194 @@ def validate_ledger(data: dict) -> list[str]:
                             f"{prefix}.pending_stage_ids[{j}] must match stage id pattern, got {stage_id!r}"
                         )
 
+        stage_evidence_policy = entry.get("stage_evidence_policy")
+        if stage_evidence_policy is not None:
+            if not isinstance(stage_evidence_policy, dict):
+                errors.append(f"{prefix}: stage_evidence_policy must be a mapping")
+            else:
+                for policy_stage_id, policy in stage_evidence_policy.items():
+                    if not isinstance(policy_stage_id, str) or not _STAGE_ID_RE.match(
+                        policy_stage_id
+                    ):
+                        errors.append(
+                            f"{prefix}.stage_evidence_policy key must match stage id pattern, "
+                            f"got {policy_stage_id!r}"
+                        )
+                    if policy not in _STAGE_EVIDENCE_POLICY_ENUM:
+                        errors.append(
+                            f"{prefix}.stage_evidence_policy[{policy_stage_id!r}] "
+                            f"must be one of {sorted(_STAGE_EVIDENCE_POLICY_ENUM)}, got {policy!r}"
+                        )
+
         pause_reason = entry.get("pause_reason")
         if pause_reason is not None and pause_reason not in _PAUSE_REASON_ENUM:
             errors.append(
                 f"{prefix}: pause_reason {pause_reason!r} not in {sorted(_PAUSE_REASON_ENUM)}"
             )
+        if status in {"complete", "failed"}:
+            stale_fields = [
+                field
+                for field in ("active_stage_id", "pending_stage_ids", "pause_reason")
+                if field in entry
+            ]
+            if stale_fields:
+                errors.append(
+                    f"{prefix}: terminal status {status!r} must not keep resumable fields: "
+                    f"{', '.join(stale_fields)}"
+                )
+
+        for field_name, timestamp_field, extra_required in (
+            ("stage_spawns", "spawned_at", ()),
+            (
+                "stage_summaries",
+                "summary_recorded_at",
+                ("summary_status", "summary_disposition"),
+            ),
+            (
+                "stage_inline_exceptions",
+                "exception_recorded_at",
+                ("exception_reason",),
+            ),
+        ):
+            entries = entry.get(field_name)
+            if entries is None:
+                continue
+            if not isinstance(entries, list):
+                errors.append(f"{prefix}: {field_name} must be a list")
+                continue
+            for j, evidence in enumerate(entries):
+                ep = f"{prefix}.{field_name}[{j}]"
+                if not isinstance(evidence, dict):
+                    errors.append(f"{ep} must be a mapping")
+                    continue
+                required_fields = (
+                    "run_id",
+                    "stage_id",
+                    "subagent_type",
+                    "trigger",
+                    "role_hint",
+                    "dependency_summary_refs",
+                    timestamp_field,
+                    *extra_required,
+                )
+                allowed_fields = set(required_fields)
+                if field_name == "stage_spawns":
+                    allowed_fields.update(
+                        {
+                            "model",
+                            "reasoning_effort",
+                            "model_tier",
+                            "policy_ref",
+                            "selector_trace_ref",
+                        }
+                    )
+                if field_name == "stage_summaries":
+                    allowed_fields.update(
+                        {
+                            "evaluator_disposition",
+                            "score",
+                            "ux_anchor_scorecard",
+                            "verification_commands",
+                            "residual_risks",
+                        }
+                    )
+                for evidence_field in evidence:
+                    if evidence_field not in allowed_fields:
+                        errors.append(f"{ep}: unexpected field '{evidence_field}'")
+                for evidence_field in required_fields:
+                    val = evidence.get(evidence_field)
+                    if val is None:
+                        errors.append(f"{ep}: missing required field '{evidence_field}'")
+                    elif evidence_field == "dependency_summary_refs":
+                        if not isinstance(val, list):
+                            errors.append(f"{ep}: dependency_summary_refs must be a list")
+                        else:
+                            for k, ref in enumerate(val):
+                                if not isinstance(ref, str) or not ref.strip():
+                                    errors.append(
+                                        f"{ep}.dependency_summary_refs[{k}] must be a non-empty string"
+                                    )
+                    elif not isinstance(val, str) or not val.strip():
+                        errors.append(f"{ep}: '{evidence_field}' must be a non-empty string")
+
+                evidence_run_id = evidence.get("run_id")
+                if isinstance(evidence_run_id, str) and evidence_run_id != run_id:
+                    errors.append(
+                        f"{ep}: run_id {evidence_run_id!r} must match parent run_id {run_id!r}"
+                    )
+
+                evidence_stage_id = evidence.get("stage_id")
+                if isinstance(evidence_stage_id, str) and evidence_stage_id.strip():
+                    if not _STAGE_ID_RE.match(evidence_stage_id):
+                        errors.append(
+                            f"{ep}: stage_id must match stage id pattern, got {evidence_stage_id!r}"
+                        )
+
+                if field_name == "stage_spawns":
+                    for optional_field in (
+                        "model",
+                        "reasoning_effort",
+                        "model_tier",
+                        "policy_ref",
+                        "selector_trace_ref",
+                    ):
+                        optional_value = evidence.get(optional_field)
+                        if optional_value is not None and (
+                            not isinstance(optional_value, str) or not optional_value.strip()
+                        ):
+                            errors.append(f"{ep}: '{optional_field}' must be a non-empty string")
+                    reasoning_effort = evidence.get("reasoning_effort")
+                    if reasoning_effort is not None and reasoning_effort not in {
+                        "low",
+                        "medium",
+                        "high",
+                        "xhigh",
+                    }:
+                        errors.append(
+                            f"{ep}: reasoning_effort must be one of low, medium, high, xhigh"
+                        )
+
+                timestamp_value = evidence.get(timestamp_field)
+                if timestamp_value is not None and (
+                    not isinstance(timestamp_value, str) or not _ISO8601_RE.match(timestamp_value)
+                ):
+                    errors.append(
+                        f"{ep}: '{timestamp_field}' must match ISO-8601 "
+                        f"(YYYY-MM-DDTHH:MM:SS…), got {timestamp_value!r}"
+                    )
+
+                summary_status = evidence.get("summary_status")
+                if summary_status is not None and summary_status not in _SUMMARY_STATUS_ENUM:
+                    errors.append(
+                        f"{ep}: summary_status {summary_status!r} not in "
+                        f"{sorted(_SUMMARY_STATUS_ENUM)}"
+                    )
+
+                if field_name == "stage_summaries":
+                    evaluator_disposition = evidence.get("evaluator_disposition")
+                    if evaluator_disposition is not None and (
+                        not isinstance(evaluator_disposition, str)
+                        or not evaluator_disposition.strip()
+                    ):
+                        errors.append(f"{ep}: 'evaluator_disposition' must be a non-empty string")
+                    score = evidence.get("score")
+                    if score is not None and not isinstance(score, (int, float)):
+                        errors.append(f"{ep}: 'score' must be a number")
+                    ux_anchor_scorecard = evidence.get("ux_anchor_scorecard")
+                    if ux_anchor_scorecard is not None and not isinstance(
+                        ux_anchor_scorecard, dict
+                    ):
+                        errors.append(f"{ep}: 'ux_anchor_scorecard' must be a mapping")
+                    for list_field in ("verification_commands", "residual_risks"):
+                        list_value = evidence.get(list_field)
+                        if list_value is None:
+                            continue
+                        if not isinstance(list_value, list):
+                            errors.append(f"{ep}: '{list_field}' must be a list")
+                            continue
+                        for k, item in enumerate(list_value):
+                            if not isinstance(item, str) or not item.strip():
+                                errors.append(f"{ep}.{list_field}[{k}] must be a non-empty string")
 
         # waves
         waves = entry.get("waves")
@@ -601,6 +917,7 @@ def upsert_session(
     status: str,
     ide: str,
     next_action: str,
+    session_mode: str | None = "delivery",
     updated_at: str | None = None,
     active_run_id: str | None = None,
     closed_at: str | None = None,
@@ -648,6 +965,10 @@ def upsert_session(
     entry["ide"] = ide
     entry["next_action"] = next_action
     entry["updated_at"] = timestamp
+    if session_mode is not None:
+        if session_mode not in _SESSION_MODE_ENUM:
+            raise ValueError(f"session_mode {session_mode!r} not in {sorted(_SESSION_MODE_ENUM)}")
+        entry["session_mode"] = session_mode
 
     if active_run_id:
         entry["active_run_id"] = active_run_id
@@ -704,6 +1025,7 @@ def upsert_run(
     active_stage_id: str | None | object = _UNSET,
     pending_stage_ids: list[str] | object = _UNSET,
     pause_reason: str | None | object = _UNSET,
+    stage_evidence_policy: dict[str, str] | object = _UNSET,
     wave_entry: dict | object = _UNSET,
     ledger_path: Path | None = None,
 ) -> tuple[bool, dict]:
@@ -778,6 +1100,17 @@ def upsert_run(
         else:
             entry.pop("pause_reason", None)
 
+    if stage_evidence_policy is not _UNSET:
+        if stage_evidence_policy:
+            entry["stage_evidence_policy"] = dict(stage_evidence_policy)
+        else:
+            entry.pop("stage_evidence_policy", None)
+
+    if status in {"complete", "failed"}:
+        entry.pop("active_stage_id", None)
+        entry.pop("pending_stage_ids", None)
+        entry.pop("pause_reason", None)
+
     if wave_entry is not _UNSET:
         if wave_entry is not None:
             entry.setdefault("waves", []).append(wave_entry)
@@ -788,6 +1121,577 @@ def upsert_run(
 
     _write_ledger(resolved_ledger_path, data)
     return created, entry
+
+
+def _require_run_entry(
+    root: Path, run_id: str, *, ledger_path: Path | None
+) -> tuple[Path, dict, dict]:
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = (
+        _load_ledger(resolved_ledger_path)
+        if ledger_path is not None
+        else _load_ledger_for_helpers(root)
+    )
+    if data is None:
+        data = _load_ledger(resolved_ledger_path)
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        raise ValueError("ledger runs must be a list")
+    for entry in runs:
+        if isinstance(entry, dict) and str(entry.get("run_id") or "") == run_id:
+            return resolved_ledger_path, data, entry
+    raise ValueError(f"run {run_id!r} not found")
+
+
+def _stage_evidence_entry(
+    *,
+    run_id: str,
+    stage_id: str,
+    subagent_type: str,
+    trigger: str,
+    role_hint: str,
+    dependency_summary_refs: list[str] | None,
+    timestamp_field: str,
+    timestamp: str,
+    summary_status: str | None = None,
+    summary_disposition: str | None = None,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+    model_tier: str | None = None,
+    policy_ref: str | None = None,
+    selector_trace_ref: str | None = None,
+    evaluator_disposition: str | None = None,
+    score: float | None = None,
+    ux_anchor_scorecard: dict | None = None,
+    verification_commands: list[str] | None = None,
+    residual_risks: list[str] | None = None,
+) -> dict:
+    entry = {
+        "run_id": run_id,
+        "stage_id": stage_id,
+        "subagent_type": subagent_type,
+        "trigger": trigger,
+        "role_hint": role_hint,
+        "dependency_summary_refs": list(dependency_summary_refs or []),
+        timestamp_field: timestamp,
+    }
+    if summary_status is not None:
+        entry["summary_status"] = summary_status
+    if summary_disposition is not None:
+        entry["summary_disposition"] = summary_disposition
+    for key, value in (
+        ("model", model),
+        ("reasoning_effort", reasoning_effort),
+        ("model_tier", model_tier),
+        ("policy_ref", policy_ref),
+        ("selector_trace_ref", selector_trace_ref),
+        ("evaluator_disposition", evaluator_disposition),
+        ("score", score),
+        ("ux_anchor_scorecard", ux_anchor_scorecard),
+        ("verification_commands", verification_commands),
+        ("residual_risks", residual_risks),
+    ):
+        if value not in (None, [], {}):
+            entry[key] = value
+    return entry
+
+
+def record_stage_spawn(
+    root: Path,
+    *,
+    run_id: str,
+    stage_id: str,
+    subagent_type: str,
+    trigger: str,
+    role_hint: str,
+    dependency_summary_refs: list[str] | None = None,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+    model_tier: str | None = None,
+    policy_ref: str | None = None,
+    selector_trace_ref: str | None = None,
+    spawned_at: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Append durable evidence that a pipeline stage was delegated."""
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    with _locked_ledger_update(resolved_ledger_path):
+        resolved_ledger_path, data, run = _require_run_entry(
+            root,
+            run_id,
+            ledger_path=resolved_ledger_path,
+        )
+        evidence = _stage_evidence_entry(
+            run_id=run_id,
+            stage_id=stage_id,
+            subagent_type=subagent_type,
+            trigger=trigger,
+            role_hint=role_hint,
+            dependency_summary_refs=dependency_summary_refs,
+            timestamp_field="spawned_at",
+            timestamp=spawned_at or utc_now_iso(),
+            model=model,
+            reasoning_effort=reasoning_effort,
+            model_tier=model_tier,
+            policy_ref=policy_ref,
+            selector_trace_ref=selector_trace_ref,
+        )
+        run.setdefault("stage_spawns", []).append(evidence)
+        run["updated_at"] = utc_now_iso()
+        errors = validate_ledger(data)
+        if errors:
+            raise ValueError("; ".join(errors))
+        _write_ledger(resolved_ledger_path, data)
+        return evidence
+
+
+def record_stage_summary(
+    root: Path,
+    *,
+    run_id: str,
+    stage_id: str,
+    subagent_type: str,
+    trigger: str,
+    role_hint: str,
+    dependency_summary_refs: list[str] | None = None,
+    summary_status: str,
+    summary_disposition: str,
+    evaluator_disposition: str | None = None,
+    score: float | None = None,
+    ux_anchor_scorecard: dict | None = None,
+    verification_commands: list[str] | None = None,
+    residual_risks: list[str] | None = None,
+    summary_recorded_at: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Append durable evidence that a delegated stage returned a typed summary."""
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    with _locked_ledger_update(resolved_ledger_path):
+        resolved_ledger_path, data, run = _require_run_entry(
+            root,
+            run_id,
+            ledger_path=resolved_ledger_path,
+        )
+        evidence = _stage_evidence_entry(
+            run_id=run_id,
+            stage_id=stage_id,
+            subagent_type=subagent_type,
+            trigger=trigger,
+            role_hint=role_hint,
+            dependency_summary_refs=dependency_summary_refs,
+            timestamp_field="summary_recorded_at",
+            timestamp=summary_recorded_at or utc_now_iso(),
+            summary_status=summary_status,
+            summary_disposition=summary_disposition,
+            evaluator_disposition=evaluator_disposition,
+            score=score,
+            ux_anchor_scorecard=ux_anchor_scorecard,
+            verification_commands=verification_commands,
+            residual_risks=residual_risks,
+        )
+        run.setdefault("stage_summaries", []).append(evidence)
+        run["updated_at"] = utc_now_iso()
+        errors = validate_ledger(data)
+        if errors:
+            raise ValueError("; ".join(errors))
+        _write_ledger(resolved_ledger_path, data)
+        return evidence
+
+
+def record_stage_inline_exception(
+    root: Path,
+    *,
+    run_id: str,
+    stage_id: str,
+    subagent_type: str,
+    trigger: str,
+    role_hint: str,
+    exception_reason: str,
+    dependency_summary_refs: list[str] | None = None,
+    exception_recorded_at: str | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Append durable evidence that a stage was intentionally completed inline."""
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    with _locked_ledger_update(resolved_ledger_path):
+        resolved_ledger_path, data, run = _require_run_entry(
+            root,
+            run_id,
+            ledger_path=resolved_ledger_path,
+        )
+        evidence = _stage_evidence_entry(
+            run_id=run_id,
+            stage_id=stage_id,
+            subagent_type=subagent_type,
+            trigger=trigger,
+            role_hint=role_hint,
+            dependency_summary_refs=dependency_summary_refs,
+            timestamp_field="exception_recorded_at",
+            timestamp=exception_recorded_at or utc_now_iso(),
+        )
+        evidence["exception_reason"] = exception_reason
+        run.setdefault("stage_inline_exceptions", []).append(evidence)
+        run["updated_at"] = utc_now_iso()
+        errors = validate_ledger(data)
+        if errors:
+            raise ValueError("; ".join(errors))
+        _write_ledger(resolved_ledger_path, data)
+        return evidence
+
+
+def _latest_stage_evidence(run: dict, field_name: str, *, stage_id: str) -> dict | None:
+    entries = run.get(field_name)
+    if not isinstance(entries, list):
+        return None
+    for entry in reversed(entries):
+        if isinstance(entry, dict) and str(entry.get("stage_id") or "") == stage_id:
+            return entry
+    return None
+
+
+def _normalize_dependency_refs(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value]
+
+
+def _parse_ledger_timestamp(value: object) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        normalized = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        parsed = datetime.fromisoformat(normalized)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    except ValueError:
+        return None
+
+
+def _assert_field_match(
+    evidence: dict,
+    *,
+    field_name: str,
+    expected: str | list[str] | None,
+    evidence_label: str,
+) -> None:
+    if expected is None:
+        return
+    actual = (
+        _normalize_dependency_refs(evidence.get(field_name))
+        if field_name == "dependency_summary_refs"
+        else str(evidence.get(field_name) or "")
+    )
+    if actual != expected:
+        raise ValueError(
+            f"{evidence_label} {field_name} mismatch: expected {expected!r}, got {actual!r}"
+        )
+
+
+def require_stage_evidence(
+    root: Path,
+    *,
+    run_id: str,
+    stage_id: str,
+    subagent_type: str | None = None,
+    trigger: str | None = None,
+    role_hint: str | None = None,
+    dependency_summary_refs: list[str] | None = None,
+    ledger_path: Path | None = None,
+) -> dict[str, dict]:
+    """Return latest paired spawn/summary evidence, or fail closed with context."""
+    resolved_ledger_path, data, run = _require_run_entry(root, run_id, ledger_path=ledger_path)
+    _require_valid_ledger_for_evidence(data, ledger_path=resolved_ledger_path)
+    spawn = _latest_stage_evidence(run, "stage_spawns", stage_id=stage_id)
+    if spawn is None:
+        raise ValueError(f"missing stage spawn evidence for run {run_id!r} stage {stage_id!r}")
+    summary = _latest_stage_evidence(run, "stage_summaries", stage_id=stage_id)
+    if summary is None:
+        raise ValueError(f"missing stage summary evidence for run {run_id!r} stage {stage_id!r}")
+
+    spawn_dt = _parse_ledger_timestamp(spawn.get("spawned_at"))
+    summary_dt = _parse_ledger_timestamp(summary.get("summary_recorded_at"))
+    if spawn_dt is None or summary_dt is None:
+        raise ValueError(
+            f"malformed stage evidence timestamp for run {run_id!r} stage {stage_id!r}"
+        )
+    if summary_dt < spawn_dt:
+        raise ValueError(
+            f"stage summary is older than latest spawn for run {run_id!r} stage {stage_id!r}"
+        )
+
+    for field_name in ("subagent_type", "trigger", "role_hint", "dependency_summary_refs"):
+        spawn_value = (
+            _normalize_dependency_refs(spawn.get(field_name))
+            if field_name == "dependency_summary_refs"
+            else str(spawn.get(field_name) or "")
+        )
+        summary_value = (
+            _normalize_dependency_refs(summary.get(field_name))
+            if field_name == "dependency_summary_refs"
+            else str(summary.get(field_name) or "")
+        )
+        if summary_value != spawn_value:
+            raise ValueError(
+                f"stage summary does not match latest spawn for run {run_id!r} "
+                f"stage {stage_id!r}: {field_name}"
+            )
+
+    expected_dependency_refs = (
+        list(dependency_summary_refs) if dependency_summary_refs is not None else None
+    )
+    for evidence, label in ((spawn, "stage spawn"), (summary, "stage summary")):
+        _assert_field_match(
+            evidence,
+            field_name="subagent_type",
+            expected=subagent_type,
+            evidence_label=label,
+        )
+        _assert_field_match(
+            evidence,
+            field_name="trigger",
+            expected=trigger,
+            evidence_label=label,
+        )
+        _assert_field_match(
+            evidence,
+            field_name="role_hint",
+            expected=role_hint,
+            evidence_label=label,
+        )
+        _assert_field_match(
+            evidence,
+            field_name="dependency_summary_refs",
+            expected=expected_dependency_refs,
+            evidence_label=label,
+        )
+
+    summary_status = str(summary.get("summary_status") or "")
+    summary_disposition = str(summary.get("summary_disposition") or "")
+    if summary_status != "complete" or summary_disposition not in _NONBLOCKING_SUMMARY_DISPOSITIONS:
+        raise ValueError(
+            f"blocking stage summary for run {run_id!r} stage {stage_id!r}: "
+            f"status={summary_status!r}, disposition={summary_disposition!r}"
+        )
+    return {"spawn": spawn, "summary": summary}
+
+
+def _completed_stage_ids(run: dict) -> list[str]:
+    stages = run.get("stages_completed")
+    if stages is None:
+        return []
+    if not isinstance(stages, list):
+        raise ValueError("stages_completed must be a list")
+    completed: list[str] = []
+    for index, stage_id in enumerate(stages):
+        if not isinstance(stage_id, str) or not stage_id.strip():
+            raise ValueError(f"stages_completed[{index}] must be a non-empty string")
+        completed.append(stage_id)
+    return completed
+
+
+def _assert_inline_exception_pre_completion(run: dict, exception: dict, *, stage_id: str) -> None:
+    exception_dt = _parse_ledger_timestamp(exception.get("exception_recorded_at"))
+    if exception_dt is None:
+        raise ValueError(
+            f"malformed inline exception timestamp for run {run.get('run_id')!r} stage {stage_id!r}"
+        )
+
+    created_dt = _parse_ledger_timestamp(run.get("created_at"))
+    if created_dt is not None and exception_dt < created_dt:
+        raise ValueError(
+            f"inline exception predates run creation for run {run.get('run_id')!r} "
+            f"stage {stage_id!r}"
+        )
+
+    updated_dt = _parse_ledger_timestamp(run.get("updated_at"))
+    if updated_dt is not None and exception_dt > updated_dt:
+        raise ValueError(
+            f"inline exception is newer than run updated_at for run {run.get('run_id')!r} "
+            f"stage {stage_id!r}; record inline exceptions before declaring completion"
+        )
+
+
+def _stage_requires_spawn_evidence(run: dict, stage_id: str) -> bool:
+    """Return true when inline exceptions are audit-only, not completion evidence."""
+    stage_policy = run.get("stage_evidence_policy")
+    if isinstance(stage_policy, dict):
+        policy = str(stage_policy.get(stage_id) or "")
+        if policy == "spawn_required":
+            return True
+        if policy == "inline_allowed":
+            return False
+    if bool(run.get("requires_stage_spawn_evidence")):
+        return True
+    return str(run.get("mode") or "") == "autonomous-auto" and stage_id.startswith(
+        "autonomous_auto_"
+    )
+
+
+def require_completion_evidence(
+    root: Path,
+    *,
+    run_id: str,
+    ledger_path: Path | None = None,
+) -> dict[str, dict]:
+    """Validate every declared completed stage has paired or inline evidence."""
+    resolved_ledger_path, data, run = _require_run_entry(root, run_id, ledger_path=ledger_path)
+    _require_valid_ledger_for_evidence(data, ledger_path=resolved_ledger_path)
+    completion: dict[str, dict] = {}
+    for stage_id in _completed_stage_ids(run):
+        try:
+            completion[stage_id] = {
+                "paired_stage_evidence": require_stage_evidence(
+                    root,
+                    run_id=run_id,
+                    stage_id=stage_id,
+                    ledger_path=resolved_ledger_path,
+                )
+            }
+            continue
+        except ValueError as paired_error:
+            inline_exception = _latest_stage_evidence(
+                run,
+                "stage_inline_exceptions",
+                stage_id=stage_id,
+            )
+            if inline_exception is None:
+                raise ValueError(
+                    f"missing completion evidence for run {run_id!r} stage {stage_id!r}: "
+                    f"{paired_error}"
+                ) from paired_error
+            if _stage_requires_spawn_evidence(run, stage_id):
+                raise ValueError(
+                    f"inline exception is audit-only for run {run_id!r} stage {stage_id!r}; "
+                    f"paired stage spawn and summary evidence are required: {paired_error}"
+                ) from paired_error
+            has_paired_evidence = (
+                _latest_stage_evidence(run, "stage_spawns", stage_id=stage_id) is not None
+                or _latest_stage_evidence(run, "stage_summaries", stage_id=stage_id) is not None
+            )
+            if has_paired_evidence:
+                raise ValueError(
+                    f"inline exception cannot override invalid paired stage evidence for "
+                    f"run {run_id!r} stage {stage_id!r}: {paired_error}"
+                ) from paired_error
+            _assert_inline_exception_pre_completion(run, inline_exception, stage_id=stage_id)
+            completion[stage_id] = {"inline_exception": inline_exception}
+    return completion
+
+
+def assert_governed_run_completion_evidence(
+    root: Path,
+    *,
+    session_id: str,
+    governed_modes: set[str] | None = None,
+    ledger_path: Path | None = None,
+) -> None:
+    """Fail closed unless live governed runs have completion evidence for declared stages."""
+    assert_no_unresolved_governed_run_evidence(
+        root,
+        session_id=session_id,
+        governed_modes=governed_modes,
+        ledger_path=ledger_path,
+    )
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = _load_optional_ledger_for_evidence(root, resolved_ledger_path)
+    if data is None:
+        return
+    _require_valid_ledger_for_evidence(data, ledger_path=resolved_ledger_path)
+    modes = governed_modes or _GOVERNED_RUN_MODES
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        raise ValueError("malformed governed run ledger: runs must be a list")
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("session_id") or "") != session_id:
+            continue
+        if str(run.get("status") or "") not in {"active", "paused"}:
+            continue
+        if str(run.get("mode") or "") not in modes:
+            continue
+        run_id = str(run.get("run_id") or "")
+        active_stage_id = str(run.get("active_stage_id") or "").strip()
+        pending_stage_ids = run.get("pending_stage_ids") or []
+        if active_stage_id or pending_stage_ids:
+            raise ValueError(
+                "open governed run stages for "
+                f"session {session_id!r}, run {run_id!r}: "
+                f"active_stage_id={active_stage_id!r}, pending_stage_ids={pending_stage_ids!r}"
+            )
+        try:
+            require_completion_evidence(
+                root,
+                run_id=run_id,
+                ledger_path=resolved_ledger_path,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                "incomplete governed run completion evidence for "
+                f"session {session_id!r}, run {run_id!r}: {exc}"
+            ) from exc
+
+
+def assert_no_unresolved_governed_run_evidence(
+    root: Path,
+    *,
+    session_id: str,
+    governed_modes: set[str] | None = None,
+    ledger_path: Path | None = None,
+) -> None:
+    """Fail closed if a matching live/paused governed run has unresolved stage evidence."""
+    resolved_ledger_path = ledger_path or _ledger_path_from_root(root)
+    data = _load_optional_ledger_for_evidence(root, resolved_ledger_path)
+    if data is None:
+        return
+    _require_valid_ledger_for_evidence(data, ledger_path=resolved_ledger_path)
+    modes = governed_modes or _GOVERNED_RUN_MODES
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        raise ValueError("malformed governed run ledger: runs must be a list")
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("session_id") or "") != session_id:
+            continue
+        if str(run.get("status") or "") not in {"active", "paused"}:
+            continue
+        if str(run.get("mode") or "") not in modes:
+            continue
+        spawns = run.get("stage_spawns")
+        run_id = str(run.get("run_id") or "")
+        if not isinstance(spawns, list):
+            if "stage_spawns" in run:
+                raise ValueError(
+                    "malformed governed run evidence for "
+                    f"session {session_id!r}, run {run_id!r}: stage_spawns must be a list"
+                )
+            continue
+        for index, spawn in enumerate(spawns):
+            if not isinstance(spawn, dict):
+                raise ValueError(
+                    "malformed governed run evidence for "
+                    f"session {session_id!r}, run {run_id!r}: "
+                    f"stage_spawns[{index}] must be a mapping"
+                )
+            stage_id = str(spawn.get("stage_id") or "").strip()
+            if not stage_id:
+                raise ValueError(
+                    f"unresolved governed run evidence for run {run_id!r}: missing stage_id"
+                )
+            try:
+                require_stage_evidence(
+                    root,
+                    run_id=run_id,
+                    stage_id=stage_id,
+                    ledger_path=resolved_ledger_path,
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    "unresolved governed run evidence for "
+                    f"session {session_id!r}, run {run_id!r}, stage {stage_id!r}: {exc}"
+                ) from exc
 
 
 def consume_human_gate_approval(
@@ -1202,6 +2106,105 @@ def cmd_append(args: argparse.Namespace) -> None:
     print(f"run {args.run_id} {verb}")
 
 
+def cmd_record_spawn(args: argparse.Namespace) -> None:
+    root = _root_from_ledger_path(args.ledger)
+    evidence = record_stage_spawn(
+        root,
+        run_id=args.run_id,
+        stage_id=args.stage_id,
+        subagent_type=args.subagent_type,
+        trigger=args.trigger,
+        role_hint=args.role_hint,
+        dependency_summary_refs=args.dependency_summary_refs,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        model_tier=args.model_tier,
+        policy_ref=args.policy_ref,
+        selector_trace_ref=args.selector_trace_ref,
+        ledger_path=args.ledger,
+    )
+    print(f"stage spawn recorded: {evidence['run_id']} {evidence['stage_id']}")
+
+
+def cmd_record_summary(args: argparse.Namespace) -> None:
+    root = _root_from_ledger_path(args.ledger)
+    ux_anchor_scorecard = None
+    if args.ux_anchor_scorecard_json:
+        try:
+            ux_anchor_scorecard = json.loads(args.ux_anchor_scorecard_json)
+        except json.JSONDecodeError as exc:
+            _die(f"--ux-anchor-scorecard-json is not valid JSON: {exc}")
+        if not isinstance(ux_anchor_scorecard, dict):
+            _die("--ux-anchor-scorecard-json must decode to an object")
+    evidence = record_stage_summary(
+        root,
+        run_id=args.run_id,
+        stage_id=args.stage_id,
+        subagent_type=args.subagent_type,
+        trigger=args.trigger,
+        role_hint=args.role_hint,
+        dependency_summary_refs=args.dependency_summary_refs,
+        summary_status=args.summary_status,
+        summary_disposition=args.summary_disposition,
+        evaluator_disposition=args.evaluator_disposition,
+        score=args.quality_score,
+        ux_anchor_scorecard=ux_anchor_scorecard,
+        verification_commands=args.verification_commands,
+        residual_risks=args.residual_risks,
+        ledger_path=args.ledger,
+    )
+    print(f"stage summary recorded: {evidence['run_id']} {evidence['stage_id']}")
+
+
+def cmd_record_inline_exception(args: argparse.Namespace) -> None:
+    root = _root_from_ledger_path(args.ledger)
+    evidence = record_stage_inline_exception(
+        root,
+        run_id=args.run_id,
+        stage_id=args.stage_id,
+        subagent_type=args.subagent_type,
+        trigger=args.trigger,
+        role_hint=args.role_hint,
+        dependency_summary_refs=args.dependency_summary_refs,
+        exception_reason=args.exception_reason,
+        ledger_path=args.ledger,
+    )
+    print(f"stage inline exception recorded: {evidence['run_id']} {evidence['stage_id']}")
+
+
+def cmd_require_stage_evidence(args: argparse.Namespace) -> None:
+    root = _root_from_ledger_path(args.ledger)
+    try:
+        require_stage_evidence(
+            root,
+            run_id=args.run_id,
+            stage_id=args.stage_id,
+            subagent_type=args.subagent_type,
+            trigger=args.trigger,
+            role_hint=args.role_hint,
+            dependency_summary_refs=args.dependency_summary_refs,
+            ledger_path=args.ledger,
+        )
+    except ValueError as exc:
+        print(f"stage evidence blocked: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"stage evidence OK: {args.run_id} {args.stage_id}")
+
+
+def cmd_require_completion_evidence(args: argparse.Namespace) -> None:
+    root = _root_from_ledger_path(args.ledger)
+    try:
+        require_completion_evidence(
+            root,
+            run_id=args.run_id,
+            ledger_path=args.ledger,
+        )
+    except ValueError as exc:
+        print(f"completion evidence blocked: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"completion evidence OK: {args.run_id}")
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 
@@ -1308,6 +2311,146 @@ def main() -> None:
         help="Why the run is paused, when applicable.",
     )
 
+    rsp = subs.add_parser("record-spawn", help="Append subagent stage-spawn evidence.")
+    rsp.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
+    rsp.add_argument("--stage-id", required=True, metavar="STAGE_ID", help="Delegated stage id.")
+    rsp.add_argument(
+        "--subagent-type", required=True, metavar="TYPE", help="Spawned subagent type."
+    )
+    rsp.add_argument("--trigger", required=True, metavar="TRIGGER", help="Isolation trigger.")
+    rsp.add_argument("--role-hint", required=True, metavar="TEXT", help="Canonical role hint.")
+    rsp.add_argument("--model", metavar="MODEL", default=None, help="Resolved Codex model.")
+    rsp.add_argument(
+        "--reasoning-effort",
+        metavar="EFFORT",
+        choices=["low", "medium", "high", "xhigh"],
+        default=None,
+        help="Resolved Codex reasoning effort.",
+    )
+    rsp.add_argument("--model-tier", metavar="TIER", default=None, help="Portable model tier.")
+    rsp.add_argument("--policy-ref", metavar="REF", default=None, help="Selector policy ref.")
+    rsp.add_argument(
+        "--selector-trace-ref",
+        metavar="PATH",
+        default=None,
+        help="Selector trace artifact path or ref.",
+    )
+    rsp.add_argument(
+        "--dependency-summary-ref",
+        action="append",
+        dest="dependency_summary_refs",
+        default=[],
+        metavar="STAGE_ID",
+        help="Required upstream stage-summary ref (repeatable).",
+    )
+
+    rsu = subs.add_parser("record-summary", help="Append typed stage-summary evidence.")
+    rsu.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
+    rsu.add_argument("--stage-id", required=True, metavar="STAGE_ID", help="Completed stage id.")
+    rsu.add_argument("--subagent-type", required=True, metavar="TYPE", help="Stage subagent type.")
+    rsu.add_argument("--trigger", required=True, metavar="TRIGGER", help="Isolation trigger.")
+    rsu.add_argument("--role-hint", required=True, metavar="TEXT", help="Canonical role hint.")
+    rsu.add_argument(
+        "--dependency-summary-ref",
+        action="append",
+        dest="dependency_summary_refs",
+        default=[],
+        metavar="STAGE_ID",
+        help="Required upstream stage-summary ref (repeatable).",
+    )
+    rsu.add_argument(
+        "--summary-status",
+        required=True,
+        choices=sorted(_SUMMARY_STATUS_ENUM),
+        help="Typed stage summary status.",
+    )
+    rsu.add_argument(
+        "--summary-disposition",
+        required=True,
+        metavar="DISPOSITION",
+        help="Stage summary disposition, e.g. approved or request-changes.",
+    )
+    rsu.add_argument(
+        "--evaluator-disposition",
+        metavar="TEXT",
+        help="Optional evaluator outcome label, e.g. pass, conditional, fail, or advisory.",
+    )
+    rsu.add_argument(
+        "--quality-score",
+        type=float,
+        metavar="FLOAT",
+        help="Optional numeric quality/evaluator score for audit evidence.",
+    )
+    rsu.add_argument(
+        "--ux-anchor-scorecard-json",
+        metavar="JSON",
+        help="Optional JSON object with UX Anchor Scorecard fields.",
+    )
+    rsu.add_argument(
+        "--verification-command",
+        action="append",
+        dest="verification_commands",
+        default=[],
+        metavar="CMD",
+        help="Optional verification command recorded by the stage (repeatable).",
+    )
+    rsu.add_argument(
+        "--residual-risk",
+        action="append",
+        dest="residual_risks",
+        default=[],
+        metavar="TEXT",
+        help="Optional residual risk recorded by the stage (repeatable).",
+    )
+
+    rie = subs.add_parser(
+        "record-inline-exception",
+        help="Append evidence that a stage intentionally ran inline instead of delegated.",
+    )
+    rie.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
+    rie.add_argument("--stage-id", required=True, metavar="STAGE_ID", help="Inline stage id.")
+    rie.add_argument("--subagent-type", required=True, metavar="TYPE", help="Stage role type.")
+    rie.add_argument("--trigger", required=True, metavar="TRIGGER", help="Isolation trigger.")
+    rie.add_argument("--role-hint", required=True, metavar="TEXT", help="Canonical role hint.")
+    rie.add_argument(
+        "--dependency-summary-ref",
+        action="append",
+        dest="dependency_summary_refs",
+        default=[],
+        metavar="STAGE_ID",
+        help="Required upstream stage-summary ref (repeatable).",
+    )
+    rie.add_argument(
+        "--exception-reason",
+        required=True,
+        metavar="TEXT",
+        help="Why inline execution was justified before the work started.",
+    )
+
+    rse = subs.add_parser(
+        "require-stage-evidence",
+        help="Fail closed unless latest spawn and summary evidence are paired.",
+    )
+    rse.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
+    rse.add_argument("--stage-id", required=True, metavar="STAGE_ID", help="Stage id.")
+    rse.add_argument("--subagent-type", metavar="TYPE", help="Expected subagent type.")
+    rse.add_argument("--trigger", metavar="TRIGGER", help="Expected isolation trigger.")
+    rse.add_argument("--role-hint", metavar="TEXT", help="Expected canonical role hint.")
+    rse.add_argument(
+        "--dependency-summary-ref",
+        action="append",
+        dest="dependency_summary_refs",
+        default=None,
+        metavar="STAGE_ID",
+        help="Expected upstream stage-summary ref (repeatable).",
+    )
+
+    rce = subs.add_parser(
+        "require-completion-evidence",
+        help="Fail closed unless declared completed stages have paired or inline evidence.",
+    )
+    rce.add_argument("--run-id", required=True, metavar="ID", help="Run identifier.")
+
     args = parser.parse_args()
     {
         "validate": cmd_validate,
@@ -1317,6 +2460,11 @@ def main() -> None:
         "release-claim": cmd_release_claim,
         "resolve-stale": cmd_resolve_stale,
         "park-session": cmd_park_session,
+        "record-spawn": cmd_record_spawn,
+        "record-summary": cmd_record_summary,
+        "record-inline-exception": cmd_record_inline_exception,
+        "require-stage-evidence": cmd_require_stage_evidence,
+        "require-completion-evidence": cmd_require_completion_evidence,
     }[args.command](args)
 
 

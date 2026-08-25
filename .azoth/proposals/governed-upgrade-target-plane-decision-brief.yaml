@@ -1,0 +1,132 @@
+proposal_schema_version: 1
+created_at: "2026-05-20T05:46:04Z"
+session_id: "2026-05-20-governed-upgrade-objective-audit"
+backlog_id: "P6-003"
+title: "Governed upgrade target-plane decision brief"
+summary: >
+  Root-local Azoth upgrade work now has complete evidence for the deployment
+  readiness mode ladder, release-profile readiness compiler, cockpit readback
+  contract, project-local receipt authority, Project Genesis starter flow, and
+  external-plane adoption preflights. The next decision is not another
+  self-servable planning slice: actual public Azoth productization, personal
+  cockpit route registration, or project-local starter packet creation crosses
+  target-plane authority and requires fresh explicit approval.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D35
+  - D38
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  decision_context:
+    active_objective: >
+      Improve deployment ease, project readiness, and the central
+      cockpit/control-point mechanism across new and existing projects while
+      preserving the three-tier product flow and four-plane authority model.
+    current_authority: root_local_planning_and_validation_only
+    protected_boundaries:
+      - kernel/governance changes
+      - public Azoth repository mutation
+      - release publishing or installer/profile claim changes
+      - personal cockpit repository mutation
+      - project-local repository mutation or receipt creation
+      - roadmap/backlog/spec hydration outside a fresh approval gate
+      - dependencies, credentials, destructive actions, commits, pushes, or tags
+  completion_audit_summary:
+    root_local_design_and_slices:
+      status: complete
+      evidence_refs:
+        - .azoth/initiative-banks/INI-DEP-001.yaml
+        - .azoth/initiative-banks/INI-DEP-002.yaml
+        - .azoth/initiative-banks/INI-GEN-001.yaml
+        - .azoth/initiative-banks/INI-ADOPT-001.yaml
+        - .azoth/roadmap-specs/v0.2.0/T-059.yaml
+        - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+        - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+        - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+    target_plane_adoption:
+      status: blocked_on_fresh_human_decision
+      reason: >
+        INI-ADOPT-001 explicitly says no self-servable adoption-gate planning
+        slice remains; public, cockpit, project-local, release, or hydration
+        mutation still requires a fresh target-plane approval.
+  decision_options:
+    - option_id: approve_public_template_distribution
+      target_plane: public_azoth
+      operator_value: >
+        Makes Project Genesis starter packet assets available to installed Azoth
+        users through the public product path.
+      first_allowed_scope_after_approval:
+        - create or update public-template extraction artifacts
+        - run product release smoke and private-root exclusion checks
+        - prepare release-profile/install claim updates for review
+      still_forbidden_without_additional_gate:
+        - release publishing
+        - kernel/templates mutation
+        - project-local writes
+    - option_id: approve_cockpit_pointer_registration
+      target_plane: personal_cockpit
+      operator_value: >
+        Makes the personal cockpit visibly route to music, thesis, and
+        agent-context Project Genesis spaces as pointer-only control-point
+        entries.
+      first_allowed_scope_after_approval:
+        - register or rehearse cockpit pointer route files
+        - preserve no-write safe-open behavior
+        - validate cockpit readback fields against T-059/T-060/T-062
+      still_forbidden_without_additional_gate:
+        - project-local context loading
+        - cross-repo write authority
+        - managed or governed-autonomy execution
+    - option_id: approve_project_local_starter_packet_creation
+      target_plane: project_local
+      operator_value: >
+        Creates a real starter packet in one named project after that project
+        owns the path, receipt, and selected mode.
+      first_allowed_scope_after_approval:
+        - create the starter packet in the chosen project repository
+        - record a project-local receipt owner and selected mode
+        - validate receipt freshness and next safe action
+      still_forbidden_without_additional_gate:
+        - managed-mode hydration
+        - governed-autonomy budgets
+        - public release or cockpit mutation
+    - option_id: approve_fresh_improvement_campaign
+      target_plane: root_azoth
+      operator_value: >
+        Keeps work inside root-azoth by opening a new initiative or proposal for
+        a specific improvement not already completed by INI-DEP-001,
+        INI-DEP-002, INI-GEN-001, or INI-ADOPT-001.
+      first_allowed_scope_after_approval:
+        - seed a new proposal or initiative bank
+        - define acceptance criteria and stop conditions
+      still_forbidden_without_additional_gate:
+        - external-plane mutation
+        - broad productization
+        - kernel/governance changes
+    - option_id: defer
+      target_plane: none
+      operator_value: >
+        Stop after recording the audit and keep all external-plane mutations
+        blocked.
+      first_allowed_scope_after_approval: []
+      still_forbidden_without_additional_gate:
+        - public Azoth mutation
+        - personal cockpit mutation
+        - project-local mutation
+        - release publishing
+  recommended_next_decision:
+    option_id: approve_cockpit_pointer_registration
+    rationale: >
+      The active objective emphasizes the central cockpit/control point across
+      projects. The pointer-only cockpit route is the smallest visible adoption
+      move that preserves the four-plane authority model.
+  non_goals:
+    - Do not mark the active goal complete from this audit alone.
+    - Do not treat Goal-mode self-approval as authority for target-plane mutation.
+    - Do not silently productize Project Genesis from root-local preflights.

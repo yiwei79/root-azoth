@@ -1,0 +1,61 @@
+id: T-031
+roadmap_version: v0.2.0
+title: Approved write-mode hydration delegation
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: Implement the approved write-mode hydration delegation path for initiative-bank
+  candidates without turning initiative banks into a second roadmap writer.
+problem: >
+  INI-AUTO-001 now has mature read-only lifecycle, readiness, route, audit, wakeup,
+  and strategy-preflight surfaces, but approved candidate hydration still depends on
+  manually running the exact roadmap_scaffold.py command and then manually repairing
+  initiative-bank bookkeeping. The next capability needs a carefully gated helper
+  that consumes a green plan-only handoff, refuses unsafe inputs, delegates all
+  roadmap/backlog/spec writes to roadmap_scaffold.py, and records hydration history
+  only after the delegated write succeeds.
+scope:
+- Add a dedicated write-mode hydration delegation helper or command path for
+  initiative-bank candidates that already have green readiness, explicit
+  hydration-specific approval, and an exact scaffold command.
+- Refuse raw initiatives, proposal-only input, stale evidence, missing scaffold
+  commands, unresolved open questions, protected/governed/M1 expansion, and any
+  candidate that is already hydrated or complete.
+- Delegate roadmap/backlog/spec mutation to roadmap_scaffold.py instead of
+  writing a parallel roadmap format.
+- After successful delegation, update only initiative-bank bookkeeping needed for
+  traceability, including candidate status, hydrated task/spec refs, and
+  hydration_history.
+non_goals:
+- Do not support governed or M1 hydration in the same standard slice.
+- Do not allow automated hydration without approved readiness and approval_basis.
+- Do not replace roadmap_scaffold.py or create a second roadmap/backlog writer.
+- Do not implement unrelated campaign-audit, lifecycle-route, wakeup, or
+  strategy-preflight behavior.
+acceptance:
+- Write mode refuses proposal-only, raw-initiative, stale, missing-approval, and
+  already-hydrated candidate inputs.
+- The helper requires readiness_status ready_to_hydrate, human_decision approved,
+  hydration-specific approval_scope, approval_basis, and an exact scaffold command
+  naming the selected candidate.
+- Roadmap/backlog/spec writes are performed only by roadmap_scaffold.py or its
+  existing structured entrypoint.
+- Hydration history records candidate_slice_ref, task_ref, spec_ref, session_id,
+  approval_scope, approval_basis, scaffold_command, and result after success.
+- Tests cover refusal paths, successful delegation, and no parallel roadmap-format
+  writes.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.
+source_bank_ref: .azoth/initiative-banks/INI-AUTO-001.yaml
+source_candidate_slice_ref: slice-auto-001-c
+source_proposal_refs:
+- .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+- .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml

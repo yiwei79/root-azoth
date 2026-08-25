@@ -1,0 +1,77 @@
+schema_version: 1
+artifact_type: goal_mode_validation_receipt
+created_at: "2026-05-20T05:46:04Z"
+session_id: 2026-05-20-governed-upgrade-objective-audit
+run_id: 2026-05-20-governed-upgrade-objective-audit-auto
+status: pass
+scope:
+  opened_by: goal-mode-self-approval
+  scope_class: planning_seed
+  allowed_writes:
+    - .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+    - .azoth/research/2026-05-20-governed-upgrade-objective-audit.yaml
+    - .azoth/handoffs/goal-mode/2026-05-20-governed-upgrade-objective-audit-receipt.yaml
+  forbidden_outputs:
+    - kernel_governance_mutation
+    - kernel_template_mutation
+    - roadmap_backlog_spec_hydration
+    - release_publishing
+    - public_azoth_mutation
+    - personal_cockpit_mutation
+    - project_local_mutation
+    - dependency_or_credential_changes
+    - destructive_actions
+    - code_changes
+    - broad_productization_gate
+deliverables:
+  - path: .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+    purpose: Root-local target-plane decision brief for the next human approval.
+  - path: .azoth/research/2026-05-20-governed-upgrade-objective-audit.yaml
+    purpose: Requirement-by-requirement completion audit for the active goal.
+  - path: .azoth/handoffs/goal-mode/2026-05-20-governed-upgrade-objective-audit-receipt.yaml
+    purpose: Validation and mutation-boundary receipt for this planning seed.
+mutation_audit:
+  kernel_governance_mutated: false
+  kernel_templates_mutated: false
+  roadmap_backlog_spec_hydrated: false
+  release_published: false
+  public_azoth_mutated: false
+  personal_cockpit_mutated: false
+  project_local_mutated: false
+  dependencies_or_credentials_changed: false
+  destructive_actions_performed: false
+  code_changed: false
+validation:
+  status: pass
+  commands:
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/check_gates.py --session-id 2026-05-20-governed-upgrade-objective-audit --require-pipeline-gate
+      status: pass
+      evidence: Scope and pipeline gates valid.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/architecture_proposal_validate.py .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+      status: pass
+      evidence: "OK: proposal validates."
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml .azoth/initiative-banks/INI-DEP-002.yaml .azoth/initiative-banks/INI-GEN-001.yaml .azoth/initiative-banks/INI-ADOPT-001.yaml --check-roadmap-refs
+      status: pass
+      evidence: OK
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-ADOPT-001.yaml --candidate-id slice-adopt-001-d
+      status: pass
+      evidence: ready_to_hydrate false; no hydration action remains.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/autonomous_loop.py lifecycle-route --initiative .azoth/initiative-banks/INI-ADOPT-001.yaml --candidate-id slice-adopt-001-d --json
+      status: pass
+      evidence: selected_route stop; route_state completed_or_stale_campaign; approval_needed fresh initiative, proposal, or improvement campaign.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/azoth_release_profile.py --readiness --source .
+      status: pass
+      evidence: guide and assisted ready; managed and governed_autonomy require authority.
+    - command: git diff --check -- .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml .azoth/research/2026-05-20-governed-upgrade-objective-audit.yaml .azoth/handoffs/goal-mode/2026-05-20-governed-upgrade-objective-audit-receipt.yaml
+      status: pass
+      evidence: no whitespace errors.
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest -p no:cacheprovider tests/test_goal_mode_self_approval.py tests/test_planning_banks.py tests/test_planning_bank_surfacing.py tests/test_azoth_release_profile.py tests/test_project_genesis_starter.py -q
+      status: pass
+      evidence: 115 passed.
+next_route:
+  selected_route: stop_for_target_plane_decision
+  reason: >
+    No self-servable adoption-gate planning slice remains. Full objective
+    completion requires a fresh target-plane approval before public Azoth,
+    personal cockpit, project-local, release, or hydration mutation.
+  recommended_approval_option: approve_cockpit_pointer_registration

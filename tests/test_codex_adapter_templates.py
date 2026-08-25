@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,41 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 CODEX_DIR = REPO / "kernel" / "templates" / "platform-adapters" / "codex"
+CODEX_ONLY_STYLE_LINES = (
+    "Codex-only human-facing response style (BL-051 follow-on, not shared-platform canon):",
+    "For human-facing non-operational output in Codex, prefer short titled sections over large prose blocks when that improves scanability.",
+    "During longer reasoning or tool-use work, emit a brief public work-state cue before or between tool waves. Keep it to one short sentence naming the current action or decision; do not simulate hidden reasoning or narrate every micro-step.",
+    "For end-of-work human communication, prefer a scan-first finish: start with a direct outcome sentence, then use 2-4 short titled sections or labeled lines such as `Result`, `What changed`, `Why it matters`, and `Next` only when they improve reading speed.",
+    "Separate scoped task outcome from session or admin state. If the task is done but closeout, approval, or optional follow-up remains, say that explicitly in the first two lines.",
+    "Selective emojis are allowed as navigational markers for summaries, approvals, status framing, and next steps; do not use them decoratively.",
+    "Use tables for comparisons, options, gate state, pipeline declarations, and tradeoffs only when the table will stay narrow inside the chat column.",
+    "If a table would become wide, wrap awkwardly, or cause horizontal scrolling, do not use it; switch to bullets, short labeled lines, or a two-part comparison instead.",
+    "Do not paragraph-dump. Do not produce decorative verbosity. Do not let visual structure become clutter.",
+    "Keep machine-facing artifacts terse and plain: BL-011 spawn payloads, BL-012 stage summaries, gates, evaluator scorecards, and schema-bound YAML/JSON/TOML stay optimized for determinism, not presentation flourish.",
+)
+DELIVER_FULL_STAGE2_RULE = "deliver_full_s2_architect"
+DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage 2"
+DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
+    "Declaration, gate write, or status card does not count as Stage 2 execution"
+)
+AUTO_INLINE_JUSTIFICATION = "Within an approved `/auto`, `dynamic-full-auto`, or `autonomous-auto` run, the orchestrator may keep a bounded slice inline only when it explicitly justifies why inline is more beneficial than spawning"
+LEDGER_EVIDENCE_GUIDANCE = (
+    "Record every subagent spawn and typed summary in `.azoth/run-ledger.local.yaml`"
+)
+STAGE0_CHECKPOINT_MARKERS = (
+    "## Stage 0 Assumption Checkpoint",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+)
+ENTROPY_CONTINUATION_MARKERS = (
+    "Entropy ceilings bound the current scope, not the active Codex Goal.",
+    "checkpoint or commit the current slice, open a fresh linked scope, and continue the same active goal",
+    "Do not mark the goal complete, blocked, or stopped solely because the current scope hit an entropy checkpoint.",
+)
 
 
 def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
@@ -30,6 +66,8 @@ def _run_router(router: Path, prompt: str, *, cwd: Path) -> str:
     "name",
     [
         "config.toml.template",
+        "config.seamless.toml.template",
+        "azoth-seamless.star.template",
         "hooks.json.template",
         "hooks.verbose.json.template",
         "user_prompt_submit_router.py.template",
@@ -43,7 +81,10 @@ def test_codex_template_exists(name: str) -> None:
 def test_live_codex_adapter_mirrors_templates() -> None:
     mapping = {
         "config.toml.template": REPO / ".codex" / "config.toml",
+        "config.seamless.toml.template": REPO / ".codex" / "config.seamless.toml",
         "hooks.json.template": REPO / ".codex" / "hooks.json",
+        "hooks.verbose.json.template": REPO / ".codex" / "hooks.verbose.json",
+        "azoth-seamless.star.template": REPO / ".codex" / "rules" / "azoth-seamless.star",
         "user_prompt_submit_router.py.template": REPO
         / ".codex"
         / "hooks"
@@ -64,6 +105,28 @@ def test_codex_hook_template_keeps_only_user_prompt_submit() -> None:
     assert set(hooks.keys()) == {"UserPromptSubmit"}
 
 
+def test_codex_seamless_config_uses_untrusted_with_rules() -> None:
+    content = (CODEX_DIR / "config.seamless.toml.template").read_text(encoding="utf-8")
+    assert 'approval_policy = "untrusted"' in content
+    assert 'rules = [".codex/rules/azoth-seamless.star"]' in content
+    assert 'sandbox_mode = "workspace-write"' in content
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        CODEX_DIR / "config.toml.template",
+        CODEX_DIR / "config.seamless.toml.template",
+        REPO / ".codex" / "config.toml",
+        REPO / ".codex" / "config.seamless.toml",
+    ],
+)
+def test_codex_entropy_ceiling_preserves_active_goal_continuation(path: Path) -> None:
+    content = path.read_text(encoding="utf-8")
+    for marker in ENTROPY_CONTINUATION_MARKERS:
+        assert marker in content
+
+
 def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:
     hooks = json.loads((CODEX_DIR / "hooks.verbose.json.template").read_text(encoding="utf-8"))[
         "hooks"
@@ -77,6 +140,41 @@ def test_codex_verbose_hook_template_restores_extended_hook_set() -> None:
     }
 
 
+def test_codex_seamless_execpolicy_rules_cover_allow_prompt_and_forbidden() -> None:
+    rules = (CODEX_DIR / "azoth-seamless.star.template").read_text(encoding="utf-8")
+    assert 'prefix_rule(pattern=["git", "status"]' in rules
+    assert 'pattern=["git", "diff", "--no-index"]' in rules
+    assert 'decision="prompt"' in rules
+    assert 'decision="forbidden"' in rules
+
+
+def test_codex_seamless_execpolicy_check_examples() -> None:
+    codex = shutil.which("codex")
+    if not codex:
+        pytest.skip("codex binary not available")
+
+    rules_path = REPO / ".codex" / "rules" / "azoth-seamless.star"
+    assert rules_path.is_file(), (
+        "missing deployed .codex/rules/azoth-seamless.star — run: python3 scripts/azoth-deploy.py --platforms codex"
+    )
+
+    def _check(*command: str) -> dict[str, object]:
+        proc = subprocess.run(
+            [codex, "execpolicy", "check", "--rules", str(rules_path), *command],
+            text=True,
+            capture_output=True,
+            check=False,
+            cwd=REPO,
+        )
+        assert proc.returncode == 0, proc.stderr
+        return json.loads(proc.stdout.splitlines()[-1])
+
+    assert _check("git", "status")["decision"] == "allow"
+    assert _check("git", "diff", "--no-index", "a", "b")["decision"] == "prompt"
+    assert _check("git", "commit", "-m", "test")["decision"] == "prompt"
+    assert _check("rm", "-rf", "tmp")["decision"] == "forbidden"
+
+
 def test_codex_router_adds_context_for_auto_token() -> None:
     router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
     assert router.is_file(), "missing deployed Codex user prompt router"
@@ -85,9 +183,43 @@ def test_codex_router_adds_context_for_auto_token() -> None:
     assert "/auto" in ctx
     assert "commands/start/command.yaml" in ctx
     assert "pipeline_command=auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=auto investigate drift"
+    )
+
+
+def test_codex_router_adds_context_for_dynamic_full_auto_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/dynamic-full-auto investigate drift", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/dynamic-full-auto" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/dynamic-full-auto/command.yaml" in ctx
+    assert "pipeline_command=dynamic-full-auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=dynamic-full-auto investigate drift"
+    )
+
+
+def test_codex_router_adds_context_for_autonomous_auto_token() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/autonomous-auto improve Azoth", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/autonomous-auto" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/autonomous-auto/command.yaml" in ctx
+    assert "pipeline_command=autonomous-auto" in ctx
+    assert "alignment_mode: async" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=autonomous-auto improve Azoth"
     )
 
 
@@ -116,9 +248,28 @@ def test_codex_router_adds_context_from_non_root_cwd() -> None:
     ctx = payload["hookSpecificOutput"]["additionalContext"]
     assert "/auto" in ctx
     assert "commands/start/command.yaml" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=auto investigate drift"
+    )
+
+
+def test_codex_router_preserves_dynamic_full_auto_start_centered_route() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(
+        _run_router(router, "/start pipeline_command=dynamic-full-auto investigate drift", cwd=REPO)
+    )
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert "/start" in ctx
+    assert "commands/start/command.yaml" in ctx
+    assert "commands/dynamic-full-auto/command.yaml" in ctx
+    assert "pipeline_command=dynamic-full-auto" in ctx
+    assert AUTO_INLINE_JUSTIFICATION in ctx
+    assert (
+        payload["hookSpecificOutput"]["updatedInput"]
+        == "$azoth-start pipeline_command=dynamic-full-auto investigate drift"
     )
 
 
@@ -142,6 +293,9 @@ def test_codex_router_redirects_deliver_full_token_to_start_centered_route() -> 
     assert "commands/start/command.yaml" in ctx
     assert "commands/deliver-full/command.yaml" in ctx
     assert ".agents/skills/azoth-start/SKILL.md" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=deliver-full harden codex adapter"
@@ -156,6 +310,35 @@ def test_codex_router_warns_pipeline_tokens_need_staged_delegation_not_inline_fa
     assert "staged pipeline execution" in ctx
     assert "not permission to improvise the work inline" in ctx
     assert "STOP after the Declaration and ask the human" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
+
+
+def test_codex_router_guides_auto_to_ledger_backed_stage_evidence() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(_run_router(router, "/auto harden staged delegation", cwd=REPO))
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert LEDGER_EVIDENCE_GUIDANCE in ctx
+    assert "require-stage-evidence" in ctx
+    assert "stage_inline_exceptions" in ctx
+    assert "require-completion-evidence" in ctx
+    assert "fail closed" in ctx
+
+
+def test_codex_router_guides_dynamic_full_auto_to_ledger_backed_stage_evidence() -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    assert router.is_file(), "missing deployed Codex user prompt router"
+    payload = json.loads(
+        _run_router(router, "/dynamic-full-auto harden staged delegation", cwd=REPO)
+    )
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert LEDGER_EVIDENCE_GUIDANCE in ctx
+    assert "require-stage-evidence" in ctx
+    assert "stage_inline_exceptions" in ctx
+    assert "require-completion-evidence" in ctx
+    assert "fail closed" in ctx
 
 
 def _copy_router_fixture(tmp_path: Path) -> Path:
@@ -167,14 +350,16 @@ def _copy_router_fixture(tmp_path: Path) -> Path:
         (REPO / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(encoding="utf-8"),
         encoding="utf-8",
     )
-    (tmp_path / "scripts" / "codex_control_plane.py").write_text(
-        (REPO / "scripts" / "codex_control_plane.py").read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
-    (tmp_path / "scripts" / "session_continuity.py").write_text(
-        (REPO / "scripts" / "session_continuity.py").read_text(encoding="utf-8"),
-        encoding="utf-8",
-    )
+    for script_name in (
+        "azoth_lite.py",
+        "codex_control_plane.py",
+        "session_continuity.py",
+        "session_gate.py",
+    ):
+        (tmp_path / "scripts" / script_name).write_text(
+            (REPO / "scripts" / script_name).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
     return tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py"
 
 
@@ -222,6 +407,9 @@ def test_codex_router_canonical_start_fails_closed_when_staged_delegation_is_una
     assert "pipeline_command=deliver-full" in ctx
     assert "Staged delegation is unavailable in this runtime" in ctx
     assert "STOP after the Declaration and ask the human" in ctx
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
     assert (
         payload["hookSpecificOutput"]["updatedInput"]
         == "$azoth-start pipeline_command=deliver-full harden codex adapter"
@@ -233,13 +421,73 @@ def test_codex_config_fails_closed_when_staged_delegation_is_unavailable() -> No
     assert config.is_file(), "missing deployed Codex config"
     text = config.read_text(encoding="utf-8")
     assert "staged pipeline execution and staged delegation" in text
+    assert AUTO_INLINE_JUSTIFICATION in text
     assert "STOP after the Declaration and ask the human" in text
     assert "Never silently continue inline as a fallback" in text
+    assert DELIVER_FULL_STAGE2_RULE in text
+    assert DELIVER_FULL_STAGE2_NEGATIVE in text
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in text
+
+
+def test_codex_config_templates_and_orchestrator_projection_lock_deliver_full_stage2_rule() -> None:
+    paths = (
+        CODEX_DIR / "config.toml.template",
+        CODEX_DIR / "config.seamless.toml.template",
+        REPO / ".codex" / "config.toml",
+        REPO / ".codex" / "config.seamless.toml",
+        REPO / ".codex" / "agents" / "orchestrator.toml",
+    )
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        assert DELIVER_FULL_STAGE2_RULE in text, f"{path.name} missing Stage 2 rule"
+        assert DELIVER_FULL_STAGE2_NEGATIVE in text, f"{path.name} missing negative proof"
+        assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in text, (
+            f"{path.name} missing declaration-only proof"
+        )
+
+
+def test_codex_orchestrator_and_auto_wrapper_include_stage0_assumption_checkpoint() -> None:
+    text = (REPO / ".codex" / "agents" / "orchestrator.toml").read_text(encoding="utf-8")
+    for marker in STAGE0_CHECKPOINT_MARKERS:
+        assert marker in text, (
+            f".codex/agents/orchestrator.toml missing Stage 0 checkpoint marker: {marker!r}"
+        )
+
+    wrapper = (REPO / ".agents" / "skills" / "azoth-auto" / "SKILL.md").read_text(encoding="utf-8")
+    assert ".claude/commands/auto.md" in wrapper
+    assert "Read the body source referenced by that contract" in wrapper
 
 
 def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
     text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
-    assert "max_threads = 10" in text
-    assert "max_depth = 2" in text
+    assert "max_threads = 16" in text
+    assert "max_depth = 3" in text
     assert "Nested delegation is bounded" in text
     assert "`research-orchestrator`, and `architect` may spend depth > 1" in text
+
+
+def test_codex_config_requires_runtime_model_selector_for_spawns() -> None:
+    text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
+    assert "python3 scripts/codex_model_selector.py resolve" in text
+    assert "pass the returned `model` and `reasoning_effort`" in text
+    assert "Do not rely on parent-session model inheritance" in text
+
+
+def test_codex_config_template_and_deployed_output_include_codex_only_style_rubric() -> None:
+    for path in (CODEX_DIR / "config.toml.template", REPO / ".codex" / "config.toml"):
+        text = path.read_text(encoding="utf-8")
+        for line in CODEX_ONLY_STYLE_LINES:
+            assert line in text, f"{path.name} missing Codex-only style line: {line!r}"
+
+
+def test_codex_only_style_rubric_does_not_leak_into_shared_bl051_surfaces() -> None:
+    unique_line = CODEX_ONLY_STYLE_LINES[0]
+    for path in (
+        REPO / "CLAUDE.md",
+        REPO / "agents" / "tier1-core" / "orchestrator.agent.md",
+        REPO / ".claude" / "agents" / "orchestrator.md",
+    ):
+        text = path.read_text(encoding="utf-8")
+        assert unique_line not in text, (
+            f"{path.relative_to(REPO)} unexpectedly contains Codex-only style rubric"
+        )

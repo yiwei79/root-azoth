@@ -276,7 +276,7 @@ summaries inside governed pipelines.
 
 1. Codex's default Azoth adapter is **instruction-first**: the main control plane lives in `.codex/config.toml`, while `.codex/hooks.json` keeps only a narrow `UserPromptSubmit` compatibility hook for literal workflow tokens. Scope-gate and entropy enforcement for non-Bash `Write`/`Edit` still rely on `developer_instructions`.
 2. **Network is disabled** in `workspace-write` sandbox (`network_access = false`). **Wave A researcher tasks cannot fetch external URLs.** Research must use pre-seeded context, local files, or be delegated to a platform with network access (Claude Code, Copilot).
-3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 10, max_depth: 2`) enables bounded nested researcher/explore tasks within the sandbox, but without external fetches. Only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1; otherwise prefer flat fan-out.
+3. **Waves A/B** — Use `$azoth-dynamic-full-auto` or literal `/dynamic-full-auto` in prompt. Codex multi-agent (`max_threads: 16, max_depth: 3`) enables bounded nested researcher/explore tasks within the sandbox, but without external fetches. Only `orchestrator`, `research-orchestrator`, and `architect` may spend depth > 1; otherwise prefer flat fan-out.
 4. **Digest writes** — Same scope-gate contract: validate `.azoth/scope-gate.json` before any write, including `append-pack` to the digest.
 5. **Checkpoint Γ + delivery** — Same logical flow; `pipeline-gate.json` must match the delivery command.
 6. **Integrity checks** — `scripts/kernel-integrity.py` remains available as an explicit utility, but it is no longer wired into the default Codex hook path.

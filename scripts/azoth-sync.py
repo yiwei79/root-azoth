@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import yaml
+from yaml_helpers import safe_load_yaml_path
 
 # ── Constants ───────────────────────────────────────────────────
 
@@ -250,8 +250,7 @@ def load_sanitize_config(config_path: Path) -> dict[str, Any]:
         print(f"[sanitize] WARNING: Config not found at {config_path}, using defaults")
         return {"strip_patterns": [], "strip_paths": []}
 
-    with open(config_path, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    config = safe_load_yaml_path(config_path) or {}
 
     return config.get("sanitize", {"strip_patterns": [], "strip_paths": []})
 

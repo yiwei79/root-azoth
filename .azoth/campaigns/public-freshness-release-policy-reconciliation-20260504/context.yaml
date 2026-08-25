@@ -1,0 +1,150 @@
+schema_version: 1
+campaign_id: public-freshness-release-policy-reconciliation-20260504
+title: Public freshness and release-policy reconciliation
+status: research_complete
+created_at: "2026-05-04T19:58:08Z"
+completed_at: "2026-05-04T20:01:00Z"
+session_id: 2026-05-04-autonomous-auto-public-freshness-policy-reconciliation-1
+loop_id: public-freshness-release-policy-reconciliation-20260504
+mode: autonomous-auto
+scope_boundary: research_only_no_public_sync_no_release_no_network
+approval_basis: >
+  Operator approved the Public freshness and release-policy reconciliation
+  campaign on 2026-05-04 and asked to design the campaign then proceed. Scope
+  is research-only: reconcile local public release evidence, freshness policy,
+  rollout/postmortem references, and root-workshop drift language. Public
+  sync/release, public checkout mutation, cockpit/project writes, backup/private
+  remote, kernel/governance/M1, dependency/network/credential/destructive
+  actions remain blocked. Network freshness checks are not authorized; any
+  externally material freshness gap must be recorded as a stop/recommendation,
+  not inferred.
+budget:
+  max_child_scopes: 2
+  used_child_scopes: 1
+  replay_threshold: 1
+  replay_used: 0
+  allowed_actions:
+    - research_initiative
+  budget_rationale: >
+    One synthesis child was sufficient because the policy, release evidence,
+    local public checkout, and validation script agreed. The second child remains
+    unused because no reconciliation defect was found.
+protected_boundaries:
+  blocked:
+    - public sync or release
+    - public checkout mutation
+    - network or remote freshness checks
+    - cockpit or project writes
+    - backup/private remote or credential work
+    - kernel/governance/M1 mutation
+    - dependency expansion
+    - destructive actions
+campaign_design:
+  objective: >
+    Determine whether release-facing Azoth surfaces should continue to claim
+    public azoth v0.2.0 as the latest approved/installable release while root
+    workshop drift remains advisory, or whether evidence requires a fresh public
+    sync/release gate before such claims.
+  research_questions:
+    - What does the public freshness policy currently authorize?
+    - Does stable publication evidence mention the recorded public commit and version?
+    - Does the local public checkout match the recorded public commit and v0.2.0 tag target?
+    - Does the validator reject a fresh-with-root claim while policy status is intentionally_stale?
+    - What next safe action follows without authorizing public mutation?
+  stop_conditions:
+    - policy shape invalid or release evidence missing
+    - local public checkout not present or dirty
+    - local public checkout HEAD or v0.2.0 tag target differs from recorded public_commit
+    - release-facing fresh-with-root claim required without public sync approval
+    - external freshness becomes material and cannot be verified without network authorization
+evidence:
+  source_refs:
+    - .azoth/roadmap-specs/v0.2.0/PUBLIC-AZOTH-FRESHNESS-POLICY.yaml
+    - .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+    - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md
+    - .azoth/campaigns/post-p4-roadmap-reanchor-next-campaign-board-20260503/context.yaml
+    - scripts/public_release_freshness.py
+  policy_snapshot:
+    version: v0.2.0
+    tag: v0.2.0
+    status: intentionally_stale
+    public_repo: /Users/yiwei/GithubRepos/azoth
+    recorded_public_commit: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+    recorded_root_evidence_commit: 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7
+    published_release_is_authority: true
+    root_workshop_drift_is_advisory_only: true
+  observed_local_state:
+    root_head_at_research: 1ed2290aac770fb08dff9fdfc160800379df8c0b
+    local_public_checkout_head: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+    local_public_v0_2_0_tag_target: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+    local_public_checkout_status: clean_branch_main_tracking_origin_main
+    external_remote_freshness_checked: false
+    external_remote_freshness_reason: network_and_public_sync_authority_not_granted
+  command_results:
+    - command: python3 scripts/public_release_freshness.py
+      result: "passed: public release freshness OK: v0.2.0 status=intentionally_stale"
+    - command: python3 scripts/public_release_freshness.py --require-fresh
+      result: "failed as expected: fresh public release claim requires freshness.status=fresh"
+    - command: git -C /Users/yiwei/GithubRepos/azoth rev-parse HEAD
+      result: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+    - command: git -C /Users/yiwei/GithubRepos/azoth rev-parse v0.2.0^{}
+      result: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+    - command: git -C /Users/yiwei/GithubRepos/azoth status --short --branch
+      result: "## main...origin/main"
+findings:
+  - id: release_policy_truth
+    verdict: pass
+    summary: >
+      The current policy coherently marks public azoth v0.2.0 as the latest
+      approved/installable release while declaring root workshop drift advisory.
+      This is the correct release-facing truth until a separate public sync gate
+      is approved and completed.
+  - id: local_public_checkout_truth
+    verdict: pass
+    summary: >
+      The local public checkout HEAD and local v0.2.0 tag target both match the
+      recorded policy public_commit 499a4508836cf2d836ba97461bc9c9b94dc38aa6.
+  - id: fresh_with_root_claim
+    verdict: blocked_as_expected
+    summary: >
+      The validator rejects a fresh-with-root claim because freshness.status is
+      intentionally_stale. This is desirable: current root HEAD
+      1ed2290aac770fb08dff9fdfc160800379df8c0b includes post-public workshop
+      drift and must not be claimed as public release content.
+  - id: external_freshness_boundary
+    verdict: residual
+    summary: >
+      No network or remote freshness check was performed. This is a declared
+      authority boundary, not a failed check. Future public release/sync work must
+      verify remote refs as part of its own protected gate.
+reconciliation:
+  current_claim_rule: >
+    Release-facing surfaces may say public azoth v0.2.0 is the latest
+    approved/installable release. They must also say root workshop drift is
+    advisory only while the policy remains intentionally_stale.
+  disallowed_claims:
+    - Public azoth is fresh with current root HEAD.
+    - Current root workshop commits are public release content.
+    - A public sync, tag, or release can proceed from this research campaign.
+  future_public_sync_gate: >
+    Before claiming public azoth is current with root, open a separate protected
+    public sync/release campaign with explicit operator approval. That gate must
+    run fresh extraction, product smoke, clean public checkout sync, public
+    commit/tag/release approval, remote-ref verification, and then update
+    PUBLIC-AZOTH-FRESHNESS-POLICY.yaml to status=fresh with the current root
+    evidence commit.
+evaluation:
+  completeness: pass
+  hydration_or_implementation_justified: false
+  replay_needed: false
+  rationale: >
+    The local evidence set is internally consistent and the validator enforces
+    the intended boundary. No policy mutation, public sync, or implementation is
+    justified by this research-only campaign.
+next_safe_action:
+  action: stop_campaign_complete
+  recommendation: >
+    Close this campaign as research-complete. The next fresh campaign can return
+    to the candidate board, with INI-UX-001 phone-friendly output as the strongest
+    non-protected delivery candidate unless the operator explicitly opens a
+    protected public sync/release gate.

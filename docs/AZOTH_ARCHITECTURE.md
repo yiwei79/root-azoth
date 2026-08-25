@@ -289,7 +289,7 @@ orchestration commands ship in this scaffold (for example `/next`, `/intake`, `/
 | `/bootstrap` | Lifecycle | Day 0 guided kernel creation |
 | `/session-closeout` | Lifecycle | Unified eval + close + sync |
 | `/remember` | Lifecycle | Capture cross-session learning |
-| `/auto` | Pipeline | Auto-compose and execute pipeline (default) |
+| `/auto` | Pipeline | Auto-compose and execute an explicit governed delivery pipeline |
 | `/dynamic-full-auto` | Pipeline | DYNAMIC-FULL-AUTO+ discovery swarms, digest, Γ, then delivery handoff |
 | `/deliver` | Pipeline | Lean pipeline (pre-approved work) |
 | `/deliver-full` | Pipeline | Full pipeline with governance gates |
@@ -426,13 +426,15 @@ goal_clarification:
 
 ### Auto-Pipeline (D23)
 
-Default behavior when user doesn't specify a pipeline. The Orchestrator classifies the
-goal, reads the latest local context, and composes a pipeline from a shared stage-family
-vocabulary. Presets remain conservative reference compositions, not rigid output targets.
+Default governed delivery behavior when the user explicitly invokes `/auto` or a lite/default
+route escalates into azoth-full. Ordinary work starts in azoth-lite first. Once delivery is
+explicit, the Orchestrator classifies the goal, reads the latest local context, and composes
+a pipeline from a shared stage-family vocabulary. Presets remain conservative reference
+compositions, not rigid output targets.
 
 ```yaml
 auto_pipeline:
-  trigger: Any goal without explicit pipeline selection
+  trigger: Explicit /auto, $azoth-auto, or escalation from azoth-lite into azoth-full governed delivery
 
   classification:
     scope: kernel | skills | agents | pipelines | docs | mixed
@@ -505,7 +507,7 @@ continue end-to-end, but it is not a discovery wrapper or a forced handoff mode.
 | `research` | Architect(+research-swarm)→ArchReview | Investigation/analysis |
 | `review` | Architect→Governance→ArchReview | Code/governance review only |
 | `refactor` | Architect(+explore)→Planner→TestBuilder→SWE→ArchReview | Structural changes, TDD |
-| `auto` | *Composed dynamically via D23* | **Default — always** |
+| `auto` | *Composed dynamically via D23* | Explicit governed delivery default after `/auto`, `$azoth-auto`, scope approval, or lite escalation |
 
 ### Gate Typing (D24)
 
@@ -911,7 +913,7 @@ azoth/
 | D20 | No multi-platform layers in kernel | Kernel stays agnostic |
 | D21 | Full pipeline: 7 stages with typed gates | Research-validated canonical pattern |
 | D22 | Goal Clarification Protocol (Stage 0) | Adaptive questioning, no hard cap |
-| D23 | Auto-pipeline: LLM-as-router composition | Default behavior, 8 presets |
+| D23 | Auto-pipeline: LLM-as-router composition | Explicit governed delivery behavior, 8 presets |
 | D24 | Gate typing: human vs agent | Kernel/governance gates must be human |
 | D25 | Seed slash commands: documented minimum set + scaffold extensions | Essential lifecycle + pipeline + quality; see § Seed Commands (D25) |
 | D26 | Proactive Agent Posture: 3 tiers | always-do / ask-first / never-auto |
@@ -982,7 +984,7 @@ azoth/
 | Audience | The alchemist (you) | Any developer |
 | Mode | `scaffold` | `project` (Phase 4) |
 
-### 3-Tier Model
+### 3-Tier Product Flow
 
 ```
 Tier 1: Source Framework (SupplyGrowth Agentic Framework)
@@ -1000,6 +1002,22 @@ Consumer Projects
 - **Tier 1 → Tier 2**: `azoth-sync.py` extracts proven patterns, sanitizes org content
 - **Tier 2 → Tier 3**: Product extraction profiles strip scaffold-only artifacts
 - **Tier 3 → Consumer**: `install.sh` deploys kernel + skills + agents
+
+### 4-Plane Operating Model
+
+The 3-tier product flow is the release/update supply chain. Daily authority now
+uses a 4-plane operating model:
+
+| Plane | Authority | Owns | Must not own |
+| --- | --- | --- | --- |
+| `root-azoth` development workshop | Toolkit source, roadmap, validation, extraction | Source scripts, tests, governance, release evidence, generated adapters | Personal cockpit state or project-local write authority |
+| Public `azoth` product | Installable release authority | Clean extracted runtime, installers, public docs, tags, public CI | Private root history, cockpit memory, project secrets |
+| `yiwei-azoth-cockpit` personal control plane | Operator routing, global pointers, release ledger, personal memory | Project pointers, cockpit receipts, personal/global context, safe-open command surface | Project source, project instructions, project-local gates |
+| Controlled project repos | Project-local context and write authority | Code, project memory, project instructions, project gates, project receipts | Cockpit-global memory or public product release authority |
+
+Project switching from the cockpit is handoff execution: the cockpit may print
+the project path and a fresh project-session prompt, but project context becomes
+authoritative only inside the project repo/session.
 
 ### Insight Inbox Protocol (D29–D33)
 

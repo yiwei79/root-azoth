@@ -1,0 +1,1233 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-PKB-001
+title: Personal-control-plane distributed knowledge system
+status: planning_discovery_seed
+classification: planning_discovery_seed
+created_at: '2026-04-29T17:20:00+00:00'
+updated_at: '2026-05-01T10:02:44Z'
+owner: codex
+delivery_authorized: false
+source_sessions:
+- session_id: 2026-04-29-knowledge-deployment-dfa
+  kind: dynamic-full-auto-research-proposal-seed
+  artifact: .azoth/initiative-banks/INI-PKB-001.yaml
+  note: 'Seeded a stabilization-phase initiative bank after external research and
+    repo-local exploration. The seed does not authorize hydration, implementation,
+    personal-root mutation, or release work.
+
+    '
+contacts:
+- id: operator
+  role: human decision owner
+  contact_type: human
+  note: Approves Batch 0 review, deployment, recall integration, and any future hydration.
+- id: personal-knowledge-architecture
+  role: architecture anchor
+  contact_type: artifact
+  path: docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  note: Defines the federated source-pointer/card model and personal-root boundaries.
+- id: deployment-model
+  role: deployment anchor
+  contact_type: artifact
+  path: .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+  note: Defines root-azoth, public azoth, and personal-root deployment responsibilities.
+- id: p4-research-digest
+  role: external research digest
+  contact_type: artifact
+  path: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+  note: Captures current delivery, provenance, retrieval, and AI safety research.
+source_proposal_refs:
+- .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml
+research_questions:
+- question_id: rq-pkb-001-001
+  question: What is the smallest useful Batch 0 candidate-review artifact?
+  status: active
+  opened_at: '2026-04-29T17:20:00+00:00'
+  needed_for: slice-pkb-001-a
+  answer: 'Start with a root-side candidate review artifact only: 5-10 candidates,
+    explicit provenance, decision state, safety classification, and validator evidence.
+    Do not deploy cards to personal-root in the same slice.
+
+    '
+  evidence_refs:
+  - scripts/personal_knowledge_inventory.py
+  - scripts/personal_knowledge_validate.py
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- question_id: rq-pkb-001-002
+  question: Which retrieval/search practices should apply before adding recall surfaces?
+  status: active
+  opened_at: '2026-04-29T17:20:00+00:00'
+  needed_for: slice-pkb-001-c
+  answer: 'Retrieval should wait until the card schema proves useful. Future recall
+    should preserve source metadata, filters, contextualized chunks, exact identifier
+    search, and eval evidence before broad vector or graph indexing.
+
+    '
+  evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+- question_id: rq-pkb-001-003
+  question: What release-feedback gates prevent repeating the rushed stable-release
+    mistake?
+  status: active
+  opened_at: '2026-04-29T17:20:00+00:00'
+  needed_for: finalization_lifecycle
+  answer: 'Use staged reconcile, preflight, independent review/eval, explicit approval,
+    deploy/publish, verify, and closeout. Treat retrospective evidence as corrective
+    evidence, not retroactive compliance.
+
+    '
+  evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-RC-RETROSPECTIVE-EVAL.md
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+- question_id: rq-pkb-001-004
+  question: What cloud-native procedure should govern the final personal-control-plane
+    deployment stage?
+  status: active
+  opened_at: '2026-05-01T00:05:33+01:00'
+  needed_for: slice-pkb-001-d
+  answer: 'Treat the personal root as a declarative deployment target: write desired
+    state first, reconcile root/product/personal-root truth before applying, emit
+    provenance-rich receipts, preserve rollback references, and separate release approval,
+    personal-root deployment approval, and project-write approval.
+
+    '
+  evidence_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#control-plane-rules
+- question_id: rq-pkb-001-005
+  question: What is the first safe continuation after T-050 stable closeout?
+  status: active
+  opened_at: '2026-05-01T08:12:53Z'
+  needed_for: slice-pkb-001-h
+  answer: 'Start with a root-only release-readiness reconciliation/intake. It should
+    compare root, public product, personal-root, and project-consumer state; choose
+    the next operation lane; and stop before release publication, personal-root mutation,
+    project writes, storage backup, source onboarding, or retrieval expansion.
+
+    '
+  evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+research_refs:
+- .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+local_findings:
+- finding_id: lf-pkb-001-001
+  status: active
+  summary: T-038, T-040, and T-041 are complete; Batch 0 does not exist yet.
+  evidence_refs:
+  - .azoth/roadmap.yaml
+  - .azoth/backlog.yaml
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- finding_id: lf-pkb-001-002
+  status: active
+  summary: Personal-root validates as an approved empty knowledge skeleton and should
+    stay empty until approved cards exist.
+  evidence_refs:
+  - /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/releases/applied.yaml
+  - scripts/personal_knowledge_validate.py
+- finding_id: lf-pkb-001-003
+  status: active
+  summary: T-041 inventory is path-only and broad; Batch 0 must shortlist, not drain
+    inbox or memory surfaces.
+  evidence_refs:
+  - scripts/personal_knowledge_inventory.py
+- finding_id: lf-pkb-001-004
+  status: active
+  summary: T-050 is complete and packaged; all follow-on release/deployment work now
+    requires a fresh continuation instead of reusing T-050 approval.
+  evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - .azoth/roadmap.yaml
+external_findings:
+- finding_id: ef-pkb-001-001
+  status: active
+  summary: Delivery health requires speed and instability/recovery signals together,
+    not a single green check.
+  source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+- finding_id: ef-pkb-001-002
+  status: active
+  summary: GitOps and SLSA reinforce declarative desired state, immutable version
+    history, source provenance, and revision continuity.
+  source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+- finding_id: ef-pkb-001-003
+  status: active
+  summary: Current RAG practice favors metadata filters, hybrid retrieval, contextual
+    chunks, reranking, and evals before broad indexing.
+  source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+- finding_id: ef-pkb-001-004
+  status: active
+  summary: OWASP and NIST guidance treat vector stores and AI knowledge flows as governed
+    systems with access, validation, logging, and lifecycle risk controls.
+  source_ref: .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+assumptions:
+- assumption_id: as-pkb-001-001
+  status: active
+  statement: A proposal plus initiative-bank seed is the right p4 stabilization output
+    because direct roadmap hydration would cut across freeze posture.
+  validation_path: Revisit only after the operator explicitly approves a hydration
+    route.
+- assumption_id: as-pkb-001-002
+  status: active
+  statement: Batch 0 usefulness should be proven with a tiny reviewed candidate set
+    before recall or graph/index infrastructure.
+  validation_path: Run a root-side Batch 0 review artifact slice with validator evidence.
+contradictions:
+- contradiction_id: cx-pkb-001-001
+  status: monitored
+  summary: The personal control plane overlays the dev panel operationally, but it
+    must not supersede root-azoth as source authority.
+  resolution: Preserve source-plane pointers and keep mutation authority in root/public
+    release gates.
+challenge_log:
+- challenge_id: ch-pkb-001-001
+  status: active
+  prompt: What would make the next slice too broad?
+  answer: 'Combining candidate review, card creation, personal-root deployment, recall
+    integration, source registry onboarding, or public release in one slice.
+
+    '
+- challenge_id: ch-pkb-001-002
+  status: active
+  prompt: What would repeat the rushed-release mistake?
+  answer: 'Treating validator success as approval to publish/deploy, or using retrospective
+    evidence as if it were contemporaneous gated evidence.
+
+    '
+candidate_slices:
+- candidate_id: slice-pkb-001-a
+  proposed_task_id: T-042
+  title: Batch 0 candidate review artifact only
+  initiative_ref: INI-PKB-001
+  status: hydrated
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'Create a root-side candidate review artifact for 5-10 deferred personal
+    knowledge candidates with provenance, safety classification, decision state, and
+    validator evidence. Do not create cards or deploy to personal-root.
+
+    '
+  acceptance_criteria:
+  - Candidate artifact validates structurally.
+  - Every candidate has source pointer, rationale, safety classification, and decision
+    state.
+  - No personal-root files are mutated.
+  - No Batch 0 cards are created.
+  - Dashboard and deploy parity checks still pass.
+  research_evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  known_non_goals:
+  - No personal-root deployment.
+  - No source registry or project onboarding.
+  - No recall integration.
+  - No public azoth release.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Personal knowledge Batch 0 candidate review artifact
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Personal knowledge
+      Batch 0 candidate review artifact" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline standard
+
+      '
+    mode: executed
+    hydrated_task_ref: T-042
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
+    hydrated_at: '2026-04-29T19:45:53Z'
+- candidate_id: slice-pkb-001-b
+  proposed_task_id: T-044
+  title: Approved card deployment receipt and personal-root pointer index
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'After operator approval of candidate decisions, deploy only approved cards
+    to personal-root with a receipt, pointer index update, validation evidence, and
+    clean-git proof.
+
+    '
+  acceptance_criteria:
+  - Only approved candidate IDs are deployed.
+  - Personal-root validator passes after deployment.
+  - Deployment receipt names source revision, target paths, validation command, and
+    commit.
+  - Root and personal-root git states are clean after closeout.
+  research_evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-LIFECYCLE
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-PROVENANCE
+  known_non_goals:
+  - No broad import.
+  - No recall or retrieval index.
+  - No public release.
+  open_questions:
+  - None for slice-pkb-001-b; operator approved all five Batch 0 candidates on 2026-04-30
+    and the packaging replay is recorded in .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml.
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Approved personal knowledge card deployment receipt
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Approved personal
+      knowledge card deployment receipt" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline standard
+
+      '
+    mode: executed
+    hydrated_task_ref: T-044
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
+    hydrated_at: '2026-04-30T00:16:45Z'
+- candidate_id: slice-pkb-001-c
+  proposed_task_id: T-045
+  title: Personal knowledge recall pilot and retrieval eval harness
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'After cards prove useful, add a root-side recall pilot with metadata filters,
+    source-preserving context, exact identifier search, and eval cases before vector
+    or graph infrastructure.
+
+    '
+  acceptance_criteria:
+  - Recall pilot uses approved card metadata only.
+  - Eval cases cover exact source/path lookup, semantic question, freshness, and access-boundary
+    behavior.
+  - Retrieval output preserves source pointers and does not become hidden instruction
+    authority.
+  research_evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+  - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+  known_non_goals:
+  - No raw inbox or memory indexing.
+  - No GraphRAG production layer.
+  - No autonomous source mutation from retrieved cards.
+  open_questions: []
+  resolved_questions:
+  - question: Which card set is sufficient to evaluate recall usefulness?
+    decision: Use the five operator-approved Batch 0 cards deployed by T-044 as the
+      initial recall pilot corpus. Do not broaden into raw inbox, raw memory, or source
+      registry onboarding during this slice.
+    evidence_refs:
+    - .azoth/roadmap-specs/v0.2.0/T-044.yaml
+    - .azoth/handoffs/2026-04-30-t-044-packaging-replay.yaml
+    - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  - question: What latency/cost ceiling should apply to recall?
+    decision: Keep the first pilot root-side and bounded to exact identifiers, metadata
+      filters, and source-preserving eval cases. Do not add vector, graph, external
+      network, or production retrieval infrastructure in this hydration slice.
+    evidence_refs:
+    - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-RAG
+    - .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml#RP-PKB-AI-SAFETY
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Personal knowledge recall pilot and retrieval eval harness
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Personal knowledge
+      recall pilot and retrieval eval harness" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline standard
+
+      '
+    mode: executed
+    hydrated_task_ref: T-045
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+    hydrated_at: '2026-04-30T17:33:25Z'
+- candidate_id: slice-pkb-001-d
+  proposed_task_id: T-047
+  title: Personal control-plane cloud-native deployment procedure
+  initiative_ref: INI-PKB-001
+  status: hydrated
+  target_layer: planning
+  delivery_pipeline: standard
+  summary: 'Define the cloud-native/GitOps-style procedure for finishing personal
+    control-plane deployment before any new personal-root mutation: desired-state
+    manifest, reconciliation preflight, receipt/provenance contract, rollback, private
+    storage policy, approval boundaries, and staged follow-on tasks.
+
+    '
+  acceptance_criteria:
+  - The procedure names desired state, reconciliation, apply, verify, receipt, rollback,
+    and closeout stages.
+  - Release approval, personal-root deployment approval, and project-write approval
+    are separate gates.
+  - Follow-on roadmap candidates are staged after the procedure rather than bundled
+    into one deployment session.
+  - No personal-root files, credentials, source registries, project repos, or retrieval
+    indexes are mutated.
+  research_evidence_refs:
+  - .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml#feedback_loop
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#rollout-phases
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
+  known_non_goals:
+  - No personal-root mutation.
+  - No credential access or cloud account provisioning.
+  - No source registry onboarding.
+  - No project repo mutation.
+  - No retrieval or graph expansion.
+  - No public azoth release.
+  open_questions: []
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Personal control-plane cloud-native deployment procedure
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Personal control-plane
+      cloud-native deployment procedure" --initiative-ref INI-PKB-001 --target-layer
+      planning --delivery-pipeline standard --priority 1 --source INI-PKB-001-cloud-native-deployment-continuation
+      --blocked-by T-045 BL-077
+
+      '
+    mode: executed
+    hydrated_task_ref: T-047
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+    hydrated_at: '2026-04-30T23:05:33Z'
+- candidate_id: slice-pkb-001-e
+  proposed_task_id: T-048
+  title: Personal-root RC update rehearsal from desired state
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: 'After T-047 defines the procedure, rehearse applying an approved azoth
+    release candidate or release into the personal root from declarative desired state,
+    then validate and record a receipt. This is the first future slice that may mutate
+    personal-root state, and only after exact operator approval.
+
+    '
+  acceptance_criteria:
+  - Operator approves target path, product revision, desired-state manifest, and rollback
+    point before any write.
+  - Personal-root validator passes before and after rehearsal.
+  - Receipt records source revision, product revision, target paths, validation command/result,
+    rollback reference, and residual risk.
+  - Root and personal-root git states are clean or explicitly packaged.
+  research_evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0/T-047.yaml
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#stop-conditions
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-receipts
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-048-desired-state-manifest.yaml
+  - .azoth/handoffs/2026-05-01-t-048-validation-report.yaml
+  delivered_at: '2026-05-01T00:10:04Z'
+  known_non_goals:
+  - No source registry onboarding.
+  - No project repo mutation.
+  - No retrieval expansion.
+  - No public release.
+  open_questions: []
+  implementation_decision_points:
+  - question: Which exact azoth release or RC revision should seed the rehearsal?
+    disposition: Resolve during the T-048 delivery gate before any personal-root write;
+      hydration approval only creates the roadmap/backlog/spec scaffold.
+  - question: Should the personal root remain local-only for the rehearsal or use
+      a private remote/encrypted backup?
+    disposition: Resolve during the T-048 delivery gate before any storage, credential,
+      remote, or backup change; hydration approval keeps this scaffold local and planning-only.
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Personal-root RC update rehearsal from desired state
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Personal-root
+      RC update rehearsal from desired state" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-root-rc-rehearsal
+      --blocked-by T-047
+
+      '
+    mode: executed
+    hydrated_task_ref: T-048
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
+    hydrated_at: '2026-04-30T23:41:14Z'
+- candidate_id: slice-pkb-001-f
+  proposed_task_id: T-049
+  title: Project onboarding pilot through personal control plane
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: 'After the personal-root RC update rehearsal passes, onboard one or two
+    operator-approved project consumers through pointer-only project profiles, handoff
+    conventions, and receipt evidence. This tests the control plane as a coordinator
+    without turning it into a project-write daemon.
+
+    '
+  acceptance_criteria:
+  - Operator names one or two pilot project repos and allowed metadata fields.
+  - Project profiles are pointer-only unless a project-specific write scope is opened.
+  - Each project handoff records source, target, approval, validation, and rollback
+    information.
+  - The personal root does not bypass project-local gates.
+  research_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#panel-routing
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#project-onboarding-pilot
+  intake_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-049-intake.yaml
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-049-validation-report.yaml
+  personal_root_receipt_ref: /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/projects/handoffs/t-049-ras-or-ray-2026-05-01.yaml
+  personal_root_commit: aeac2fac1628623dc54bb2bb0e050f6135255280
+  delivered_at: '2026-05-01T01:04:00Z'
+  pilot_project_refs:
+  - project_id: ras-or-ray
+    path: /Users/yiwei/GithubRepos/ras or ray
+    profile_mode: pointer_only
+    head: 82770daadf6db5056efdb1ace38d9535ee082a46
+  project_state_convention:
+    convention_id: minimal_pointer_profile_v1
+    surfaced_at_session_start:
+    - project_id
+    - title
+    - repo_path
+    - default_branch
+    - profile_mode
+    - handoff_receipt_ref
+    excluded_fields:
+    - source_files
+    - code_summaries
+    - secrets
+    - dependency_inventory
+    - retrieval_index
+  known_non_goals:
+  - No automatic project scanning.
+  - No project code mutation without project-local scope.
+  - No bulk source import.
+  - No background daemon behavior.
+  open_questions: []
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Project onboarding pilot through personal control plane
+    mode: executed
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Project onboarding
+      pilot through personal control plane" --initiative-ref INI-PKB-001 --target-layer
+      infrastructure --delivery-pipeline governed --priority 1 --source INI-PKB-001-project-onboarding-pilot
+      --blocked-by T-048
+
+      '
+    pre_hydration_requirements:
+    - readiness.readiness_status must be ready_to_hydrate.
+    - readiness.human_decision must be approved for the T-049 planning scaffold.
+    - The hydrated task must preserve pointer-only project profile and receipt evidence
+      boundaries.
+    - Hydration approval does not authorize personal-root writes, project repo writes,
+      source onboarding, retrieval expansion, public release, credentials, cloud provisioning,
+      governance, kernel, or M1 changes.
+    hydrated_task_ref: T-049
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-049.yaml
+    hydrated_at: '2026-05-01T00:48:22Z'
+- candidate_id: slice-pkb-001-g
+  proposed_task_id: T-050
+  title: Stable personal-control-plane deployment closeout
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: planning
+  delivery_pipeline: governed
+  summary: 'After the project onboarding pilot, close the personal-control-plane deployment
+    loop by packaging receipt evidence, documenting release and update cadence, surfacing
+    residual risks, and deciding whether local-only storage, private remote, or encrypted
+    backup is appropriate.
+
+    '
+  acceptance_criteria:
+  - T-047, T-048, and T-049 receipt evidence is linked from the closeout.
+  - The update cadence from root-azoth to public azoth to personal root to project
+    consumers is documented.
+  - Residual risks and deferred boundaries are explicit.
+  - Storage policy is either accepted as local-only or moved to a separately approved
+    private remote/encrypted backup task.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-050-intake.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md#follow-on-route
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md#deployment-ux
+  known_non_goals:
+  - No new personal-root mutation.
+  - No automatic project updates.
+  - No broad source import.
+  - No retrieval or graph expansion.
+  - No public release without a release-specific gate.
+  open_questions: []
+  recommended_phase: final-personal-control-plane-deployment
+  hydration_plan:
+    proposed_title: Stable personal-control-plane deployment closeout
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-control-plane
+      deployment closeout" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+      governed --priority 1 --source INI-PKB-001-stable-personal-control-plane-deployment
+      --blocked-by T-049
+    hydrated_task_ref: T-050
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
+    hydrated_at: '2026-05-01T07:19:00Z'
+- candidate_id: slice-pkb-001-h
+  proposed_task_id: T-051
+  title: Post-T-050 release-readiness continuation intake
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: planning
+  delivery_pipeline: governed
+  summary: 'After T-050 stable closeout, run a root-only release-readiness continuation
+    intake that reconciles root, public product, personal-root, and project-consumer
+    state before choosing the next operation lane. The slice decides what to do next;
+    it does not publish, deploy, mutate, back up, index, or onboard sources.
+
+    '
+  acceptance_criteria:
+  - T-050 closeout evidence is treated as source evidence, not continuing authority.
+  - Root, public-product, personal-root, and pilot project states are checked read-only.
+  - The output names the next safe lane as release-readiness, public-product update,
+    personal-root update, private backup, project-consumer expansion, retrieval/source
+    onboarding, or stop/defer.
+  - Every protected follow-on action is mapped to a separate explicit approval gate.
+  - No roadmap/backlog/spec hydration, release publication, personal-root mutation,
+    project write, storage backup, source onboarding, or retrieval/indexing action
+    occurs during the intake itself.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-continuation-intake.yaml
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md#post-p4-continuation-model
+  known_non_goals:
+  - No public azoth release or tag.
+  - No public product mutation.
+  - No personal-root mutation.
+  - No project repo write or source scanning.
+  - No storage backup provisioning.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector index expansion.
+  - No credentials, cloud provisioning, governance, kernel, or M1 changes.
+  open_questions: []
+  recommended_phase: post-t050-release-readiness
+  hydration_plan:
+    proposed_title: Post-T-050 release-readiness continuation intake
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Post-T-050 release-readiness
+      continuation intake" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+      governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
+      --blocked-by T-050
+    pre_hydration_requirements:
+    - A fresh approved scope-gate must name hydration_specific_slice_pkb_001_h.
+    - The scope must include INI-PKB-001 and the T-051 intake artifact as source artifacts.
+    - Hydration must create only roadmap/backlog/spec scaffolding for T-051.
+    - Hydration approval must not authorize delivery, release publication, personal-root
+      mutation, project writes, backup provisioning, source onboarding, retrieval
+      expansion, credentials, cloud provisioning, governance, kernel, or M1 changes.
+    mode: executed
+    hydrated_task_ref: T-051
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
+    hydrated_at: '2026-05-01T08:25:09Z'
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  delivered_at: '2026-05-01T08:36:00Z'
+  selected_lane: stop_defer
+- candidate_id: slice-pkb-001-i
+  proposed_task_id: T-052
+  title: Stable personal-cockpit deployment and rename
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Rename the operator personal control-plane repository from
+    `/Users/yiwei/GithubRepos/personal-azoth-root` to
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, update cockpit identity and
+    receipt evidence, and keep all project writes, retrieval/source onboarding,
+    backup provisioning, credentials, release work, governance, kernel, and M1
+    changes deferred.
+  acceptance_criteria:
+  - The local cockpit repo is renamed to `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+    only after clean-source and absent-target preflight passes.
+  - The cockpit repo records T-052 receipt evidence and validates with
+    `personal_knowledge_validate.py`.
+  - Root-side roadmap/backlog/spec/initiative-bank truth names T-052 as the cockpit
+    deployment lane and records the rollback ref.
+  - Existing project profile remains pointer-only and no project source or code is
+    mutated.
+  - Future backup, retrieval/source onboarding, public-product, personal-root, and
+    project-write work remain behind separate operator-selected gates.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  - .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  known_non_goals:
+  - No project source or code mutation.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector indexing.
+  - No credential access, cloud account provisioning, or storage backup provisioning.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: stable-personal-cockpit-deployment
+  hydration_plan:
+    proposed_title: Stable personal-cockpit deployment and rename
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-cockpit
+      deployment and rename" --initiative-ref INI-PKB-001 --target-layer infrastructure
+      --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-cockpit-deployment
+      --blocked-by T-051
+    hydrated_task_ref: T-052
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-052.yaml
+    hydrated_at: '2026-05-01T09:08:00Z'
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  personal_cockpit_receipt_ref: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-052-personal-cockpit-deployment-2026-05-01.yaml
+  previous_personal_root_path: /Users/yiwei/GithubRepos/personal-azoth-root
+  personal_cockpit_path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+  rollback_ref: aeac2fac1628623dc54bb2bb0e050f6135255280
+  personal_cockpit_commit: 56dcb693cd24d4431a0ba89c37228264cf45285d
+  delivered_at: '2026-05-01T09:12:00Z'
+- candidate_id: slice-pkb-001-j
+  proposed_task_id: T-053
+  title: Private backup and recovery readiness for yiwei-azoth-cockpit
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: planning
+  delivery_pipeline: governed
+  summary: After T-052 established `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+    as the live personal cockpit, define the private backup and recovery lane before
+    adding more project consumers or broadening retrieval/source onboarding. This
+    seed captures desired backup/recovery procedures, recovery-test acceptance, and
+    approval boundaries without provisioning storage, reading credentials, or mutating
+    the cockpit.
+  acceptance_criteria:
+  - The lane defines local/private backup choices, restore verification, rollback
+    expectations, and recovery evidence for `yiwei-azoth-cockpit`.
+  - The task explicitly separates planning/readiness from backup provisioning,
+    credential access, cloud account setup, storage writes, and recovery execution.
+  - The output names what must be true before the cockpit can safely coordinate more
+    projects or retrieval/source onboarding.
+  - The lane preserves pointer-only project profile boundaries and does not mutate
+    any project repo.
+  - A future hydration must create only roadmap/backlog/spec artifacts until the operator
+    opens a separate backup implementation gate.
+  research_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-052.yaml
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md#rollback
+  - docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md#open-questions-and-deferred-work
+  known_non_goals:
+  - No backup provisioning or storage writes.
+  - No credential access or cloud account provisioning.
+  - No personal-cockpit mutation.
+  - No project repo write or source scanning.
+  - No source registry onboarding.
+  - No retrieval, graph, or vector index expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-resilience-readiness
+  hydration_plan:
+    proposed_title: Private backup and recovery readiness for yiwei-azoth-cockpit
+    mode: executed
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Private backup
+      and recovery readiness for yiwei-azoth-cockpit" --initiative-ref INI-PKB-001
+      --target-layer planning --delivery-pipeline governed --priority 1 --source
+      INI-PKB-001-private-backup-recovery-readiness --blocked-by T-052
+    pre_hydration_requirements:
+    - A fresh approved hydration scope must name `hydration_specific_slice_pkb_001_j`.
+    - Hydration must create only roadmap/backlog/spec artifacts for T-053.
+    - Hydration must not provision storage, access credentials, mutate the cockpit,
+      mutate project repos, onboard sources, expand retrieval, publish a release, or
+      change governance/kernel/M1 surfaces.
+    hydrated_task_ref: T-053
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-053.yaml
+    hydrated_at: '2026-05-01T09:54:33Z'
+  delivery_evidence_refs:
+  - .azoth/handoffs/2026-05-01-t-053-private-backup-recovery-readiness.yaml
+  operator_onboarding_ref: docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+  deployment_procedure_ref: docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  delivered_at: '2026-05-01T10:02:44Z'
+- candidate_id: slice-pkb-001-k
+  proposed_task_id: T-054
+  title: Cockpit main menu and context-firewall UX
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Completed the safe-open cockpit main menu and context-firewall UX for
+    `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`, including release sync visibility,
+    pointer-only `ras-or-ray` handoff, and a project-switching model that prints a
+    project-session prompt without importing project-owned context into the cockpit.
+  acceptance_criteria:
+  - The cockpit UX anchor describes the main menu, context firewall, cockpit-owned
+    state, project-owned state, handoff execution, and explicit future write lanes.
+  - The cockpit-local menu reads identity, repo status, release ledger, project pointer
+    metadata, and receipts without writing files or starting hidden work.
+  - Project ras-or-ray appears as pointer-only, and the handoff prompt says project-local
+    context is authoritative.
+  - Menu output excludes project source files, code summaries, dependency inventory,
+    secrets, retrieval indexes, and project instructions.
+  - Roadmap, backlog, task spec, and initiative-bank truth represent T-054 as completed
+    retrospective cockpit UX work.
+  research_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  - docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md
+  - scripts/cockpit_menu.py
+  - tests/test_cockpit_menu.py
+  known_non_goals:
+  - No cockpit writes from the menu.
+  - No current-project marker.
+  - No project repo mutation.
+  - No project source import or project instruction import.
+  - No source onboarding or retrieval expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-safe-open-ux
+  hydration_plan:
+    mode: retrospective_record
+    hydrated_task_ref: T-054
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-054.yaml
+    hydrated_at: '2026-05-01T14:12:23Z'
+  delivery_evidence_refs:
+  - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/scripts/cockpit_menu.py
+  - scripts/cockpit_bootstrap_verify.py
+  delivered_at: '2026-05-01T14:12:23Z'
+- candidate_id: slice-pkb-001-l
+  proposed_task_id: T-055
+  title: Cockpit first-use command surface and no-write UX simulation
+  initiative_ref: INI-PKB-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  summary: Completed the minimal cockpit command surface and no-write UX simulation
+    so the operator can start `yiwei-azoth-cockpit` from Codex without memorizing
+    complex prompts. The command surface remains safe-open and does not deploy the
+    full Azoth development command suite into the cockpit.
+  acceptance_criteria:
+  - Minimal cockpit wrappers exist for `/cockpit`, `/cockpit-check`,
+    `/cockpit-project`, `/cockpit-help`, and `/cockpit-ux-simulate`.
+  - The cockpit bootstrap verifier requires the command wrappers, display metadata,
+    startup docs, release ledger, pointer-only project shape, deployment receipt,
+    and T-055 first-use receipt.
+  - The no-write UX simulation covers orientation, cockpit menu, cockpit check,
+    `ras-or-ray` project handoff, help, and simulation output.
+  - Simulation output shows release sync and pointer-only `ras-or-ray` handoff while
+    excluding source files, code summaries, dependency inventories, secrets, retrieval
+    indexes, and project instructions.
+  - Roadmap, backlog, task spec, and initiative-bank truth represent T-055 as completed
+    retrospective first-use cockpit work.
+  research_evidence_refs:
+  - docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+  - scripts/cockpit_command_surface.py
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+  - tests/test_cockpit_command_surface.py
+  - tests/test_cockpit_ux_simulate.py
+  known_non_goals:
+  - No full Azoth development command suite in the cockpit.
+  - No cockpit writes from safe-open commands.
+  - No project repo writes.
+  - No project source import or project instruction import.
+  - No source onboarding or retrieval expansion.
+  - No public product mutation or release publication.
+  - No governance, kernel, or M1 change.
+  open_questions: []
+  recommended_phase: cockpit-first-use-command-surface
+  hydration_plan:
+    mode: retrospective_record
+    hydrated_task_ref: T-055
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-055.yaml
+    hydrated_at: '2026-05-01T14:12:23Z'
+  delivery_evidence_refs:
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/docs/ONBOARDING.md
+  - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-055-first-use-ras-or-ray-2026-05-01.yaml
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+  delivered_at: '2026-05-01T14:12:23Z'
+readiness:
+  evaluated_at: '2026-05-01T14:12:23Z'
+  readiness_status: complete
+  human_decision: approved
+  classification: cockpit_first_use_command_surface_complete
+  source_bank_ref: .azoth/initiative-banks/INI-PKB-001.yaml
+  candidate_first_slice: slice-pkb-001-l
+  next_candidate_ref: slice-pkb-001-l
+  freshness_status: current_as_of_2026_05_01_t055_cockpit_first_use_delivered
+  goal_clarity: safe_open_cockpit_menu_command_surface_and_no_write_ux_simulation_delivered
+  evidence_coverage: t052_cockpit_receipt_plus_t053_readiness_plus_t054_menu_plus_t055_first_use_simulation
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  approval_scope: t055_cockpit_command_surface_ux_simulation
+  approval_basis: 'Operator requested and approved a minimal cockpit command surface
+    and no-write UX simulation for the deployed personal cockpit on 2026-05-01. The
+    completed T-054/T-055 retrospective truth covers cockpit menu, context firewall,
+    safe-open command wrappers, handbook references, verifier coverage, and UX
+    simulation evidence only; it does not authorize backup provisioning, credential
+    access, cloud account provisioning, storage writes, personal-cockpit mutation
+    beyond the already delivered cockpit artifacts, project repo writes, retrieval/source
+    onboarding, public product mutation, release publication, governance, kernel,
+    or M1 changes.
+
+    '
+  acceptance_criteria_status: stable_for_slice_pkb_001_l
+  non_goals_status: stable_for_slice_pkb_001_l
+  hydration_recommendation: T-055 delivered the safe-open cockpit command surface
+    and no-write UX simulation. Do not repeat cockpit bootstrap work; open a separate
+    operator-selected gate for backup implementation, another project consumer,
+    retrieval/source onboarding, public-product update, post-stable repair, or
+    stop/defer.
+  allowed_outputs:
+  - root_side_backup_recovery_readiness_documentation
+  - operator_onboarding_guide
+  - cockpit_safe_open_command_surface
+  - cockpit_no_write_ux_simulation
+  - delivery_handoff
+  - planning_truth_closeout
+  - focused_validation
+  forbidden_outputs:
+  - credential_access
+  - personal_root_mutation
+  - cloud_account_provisioning
+  - source_registry_onboarding
+  - project_repo_write
+  - project_code_mutation
+  - storage_backup_provisioning
+  - retrieval_indexing
+  - graph_or_vector_indexing
+  - public_azoth_release
+  - public_product_mutation
+  - governance_change
+  - backup_provisioning
+  - storage_write
+  - hidden_background_work
+  - project_source_import
+  - kernel_change
+  - m1_change
+  blocked_actions:
+  - backup_provisioning
+  - storage_backup_provisioning
+  - credential_access
+  - cloud_account_provisioning
+  - personal_cockpit_mutation
+  - project_repo_write
+  - retrieval_indexing
+  - source_registry_onboarding
+  - public_product_mutation
+  delivery_authorized: false
+  hydrate_authorized: false
+  ship_authorized: false
+  next_readiness_gate: operator_selected_follow_on_gate
+hydration_history:
+- hydrated_at: '2026-04-29T19:45:53Z'
+  session_id: 2026-04-29-pkb-a-scope-card
+  candidate_slice_ref: slice-pkb-001-a
+  task_ref: T-042
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-042.yaml
+  backlog_ref: T-042
+  roadmap_ref: T-042
+  approval_scope: slice_pkb_001_a_hydration_only
+  approval_basis: 'Operator explicitly requested the repo-native readiness / next-work
+    path for INI-PKB-001 slice-pkb-001-a on 2026-04-29, with permission to hydrate
+    only the Batch 0 candidate-review task if appropriate and stop at the scope card
+    before implementation.
+
+    '
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal knowledge
+    Batch 0 candidate review artifact" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-042; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-04-30T00:16:45Z'
+  session_id: 2026-04-30-pkb-b-hydration
+  candidate_slice_ref: slice-pkb-001-b
+  task_ref: T-044
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-044.yaml
+  backlog_ref: T-044
+  roadmap_ref: T-044
+  approval_scope: slice_pkb_001_b_hydration_only
+  approval_basis: 'Operator approved hydration for this session on 2026-04-30 after
+    capturing the stale `/start` and `/next` personal-control-plane routing issue.
+    Approval covers only hydrating slice-pkb-001-b into a concrete roadmap/backlog/spec
+    boundary; it does not authorize implementation, card deployment, personal-root
+    mutation, recall integration, source onboarding, public release, or governance
+    changes.
+
+    '
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Approved personal
+    knowledge card deployment receipt" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-044; implementation and personal-root
+    deployment remain separate.
+- hydrated_at: '2026-04-30T17:33:25Z'
+  session_id: 2026-04-30-ini-pkb-001-recall-hydration
+  candidate_slice_ref: slice-pkb-001-c
+  task_ref: T-045
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-045.yaml
+  backlog_ref: T-045
+  roadmap_ref: T-045
+  approval_scope: hydration_specific_slice_pkb_001_c
+  approval_basis: 'Operator approved the best native next step on 2026-04-30 and invoked
+    $azoth-auto. Approval is scoped to hydrating INI-PKB-001 slice-pkb-001-c into
+    a concrete roadmap/backlog/spec boundary for a personal knowledge recall pilot
+    and retrieval eval harness. It does not authorize implementation, recall integration,
+    retrieval indexing, source onboarding, public release, governance/kernel/M1 changes,
+    broad import, or further personal-root mutation.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-c:T-045:2026-04-30T17:33:25Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal knowledge
+    recall pilot and retrieval eval harness" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-045; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-04-30T23:05:33Z'
+  session_id: 2026-05-01-pkb-cloud-native-roadmap
+  candidate_slice_ref: slice-pkb-001-d
+  task_ref: T-047
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-047.yaml
+  backlog_ref: T-047
+  roadmap_ref: T-047
+  approval_scope: roadmap_and_planning_procedure_updates_only
+  approval_basis: 'Operator asked on 2026-05-01 to focus on the last stage for personal
+    control-plane deployment and update the roadmap system with a cloud-native procedure
+    path. Approval covers roadmap/backlog/spec and initiative-bank procedure updates
+    only; it does not authorize personal-root mutation, source registry onboarding,
+    project repo mutation, retrieval expansion, public release, credentials, governance,
+    kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-d:T-047:2026-04-30T23:05:33Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal control-plane
+    cloud-native deployment procedure" --initiative-ref INI-PKB-001 --target-layer
+    planning --delivery-pipeline standard --priority 1 --source INI-PKB-001-cloud-native-deployment-continuation
+    --blocked-by T-045 BL-077
+  result: Created roadmap/backlog/spec artifacts for T-047; procedure delivery and
+    any personal-root mutation remain separate.
+- hydrated_at: '2026-04-30T23:41:14Z'
+  session_id: 2026-05-01-t-048-hydration
+  candidate_slice_ref: slice-pkb-001-e
+  task_ref: T-048
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-048.yaml
+  backlog_ref: T-048
+  roadmap_ref: T-048
+  approval_scope: hydration_specific_slice_pkb_001_e
+  approval_basis: 'Operator explicitly approved hydration/scaffold for INI-PKB-001
+    slice-pkb-001-e into T-048 via $azoth-dynamic-full-auto on 2026-05-01. Approval
+    covers only roadmap/backlog/spec hydration and initiative-bank readiness updates;
+    it does not authorize T-048 implementation, personal-root mutation, source registry
+    onboarding, project repo mutation, retrieval expansion, public release, credentials,
+    cloud account provisioning, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-e:T-048:2026-04-30T23:41:14Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Personal-root RC
+    update rehearsal from desired state" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-root-rc-rehearsal
+    --blocked-by T-047
+  result: Created roadmap/backlog/spec artifacts for T-048; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-01T00:48:22Z'
+  session_id: 2026-05-01-t-049-hydration
+  candidate_slice_ref: slice-pkb-001-f
+  task_ref: T-049
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-049.yaml
+  backlog_ref: T-049
+  roadmap_ref: T-049
+  approval_scope: hydration_specific_slice_pkb_001_f
+  approval_basis: 'Operator explicitly requested hydration of INI-PKB-001 slice-pkb-001-f
+    into T-049 via $azoth-dynamic-full-auto on 2026-05-01. Approval covers roadmap,
+    backlog, task-spec, and initiative-bank hydration-history writes only; it does
+    not authorize personal-root writes, project repo writes, source registry onboarding,
+    retrieval expansion, public release, credentials, cloud account provisioning,
+    governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-f:T-049:2026-05-01T00:48:22Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Project onboarding
+    pilot through personal control plane" --initiative-ref INI-PKB-001 --target-layer
+    infrastructure --delivery-pipeline governed --priority 1 --source INI-PKB-001-project-onboarding-pilot
+    --blocked-by T-048
+  result: Created roadmap/backlog/spec artifacts for T-049; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-01T07:19:00Z'
+  session_id: 2026-05-01-t-050-hydration
+  candidate_slice_ref: slice-pkb-001-g
+  task_ref: T-050
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-050.yaml
+  backlog_ref: T-050
+  roadmap_ref: T-050
+  approval_scope: hydration_specific_slice_pkb_001_g
+  approval_basis: 'Operator asked Codex on 2026-05-01 to proceed to T-050 stable personal-control-plane
+    deployment and to think architecturally before moving on. Approval covers roadmap/backlog/spec
+    hydration and initiative-bank readiness updates only; it does not authorize T-050
+    delivery, personal-root mutation, project repo writes, storage backup provisioning,
+    retrieval expansion, public release, credentials, cloud account provisioning,
+    governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-g:T-050:2026-05-01T07:19:00Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-control-plane
+    deployment closeout" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+    governed --priority 1 --source INI-PKB-001-stable-personal-control-plane-deployment
+    --blocked-by T-049
+  result: Created roadmap/backlog/spec artifacts for T-050; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-01T08:25:09Z'
+  session_id: 2026-05-01-t-051-hydration
+  candidate_slice_ref: slice-pkb-001-h
+  task_ref: T-051
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-051.yaml
+  backlog_ref: T-051
+  roadmap_ref: T-051
+  approval_scope: hydration_specific_slice_pkb_001_h
+  approval_basis: 'Operator asked Codex on 2026-05-01 to continue to a fresh continuation/intake
+    for release-readiness or post-T-050 deployment operations. Approval covers the
+    root-only continuation intake and readiness update for slice-pkb-001-h / T-051;
+    a future hydration write still requires a live matching scope gate and must remain
+    roadmap/backlog/spec-only. This does not authorize delivery, release publication,
+    public-product mutation, personal-root mutation, project repo writes, storage
+    backup provisioning, retrieval expansion, source onboarding, credentials, cloud
+    account provisioning, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-h:T-051:2026-05-01T08:25:09Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Post-T-050 release-readiness
+    continuation intake" --initiative-ref INI-PKB-001 --target-layer planning --delivery-pipeline
+    governed --priority 1 --source INI-PKB-001-post-t050-release-readiness-continuation
+    --blocked-by T-050
+  result: Created roadmap/backlog/spec artifacts for T-051; implementation and shipping
+    remain separate.
+- hydrated_at: '2026-05-01T09:08:00Z'
+  session_id: 2026-05-01-t-052-dynamic-cockpit-deployment
+  candidate_slice_ref: slice-pkb-001-i
+  task_ref: T-052
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-052.yaml
+  backlog_ref: T-052
+  roadmap_ref: T-052
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  approval_basis: 'Operator explicitly approved T-052 personal-cockpit deployment
+    and local rename through $azoth-dynamic-full-auto on 2026-05-01. Approval covers
+    root-side roadmap/backlog/spec hydration, the local personal cockpit rename,
+    cockpit receipt evidence, validation, and closeout; it does not authorize project
+    source mutation, retrieval/source onboarding, credentials, cloud/storage provisioning,
+    public product mutation, release publication, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-i:T-052:2026-05-01T09:08:00Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Stable personal-cockpit
+    deployment and rename" --initiative-ref INI-PKB-001 --target-layer infrastructure
+    --delivery-pipeline governed --priority 1 --source INI-PKB-001-personal-cockpit-deployment
+    --blocked-by T-051
+  result: Created roadmap/backlog/spec artifacts for T-052 and continued into the
+    approved local cockpit rename/deployment delivery.
+- hydrated_at: '2026-05-01T09:54:33Z'
+  session_id: 2026-05-01-t-053-hydration-cockpit-readiness
+  candidate_slice_ref: slice-pkb-001-j
+  task_ref: T-053
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-053.yaml
+  backlog_ref: T-053
+  roadmap_ref: T-053
+  approval_scope: hydration_specific_slice_pkb_001_j
+  approval_basis: 'Operator asked on 2026-05-01 to aim at proper deployment for the
+    personal cockpit, provide onboarding when everything is done, and proceed with
+    the proper steps. Repo route required `hydration_specific_slice_pkb_001_j`
+    before implementation. Approval covers roadmap/backlog/spec hydration for T-053
+    and focused validation only; it does not authorize backup provisioning, credential
+    access, cloud account provisioning, storage writes, personal-cockpit mutation,
+    project repo writes, retrieval/source onboarding, public product mutation, release
+    publication, governance, kernel, or M1 changes.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-pkb-001-j:T-053:2026-05-01T09:54:33Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Private backup
+    and recovery readiness for yiwei-azoth-cockpit" --initiative-ref INI-PKB-001
+    --target-layer planning --delivery-pipeline governed --priority 1 --source
+    INI-PKB-001-private-backup-recovery-readiness --blocked-by T-052
+  result: Created roadmap/backlog/spec artifacts for T-053; backup provisioning,
+    storage writes, credential access, cockpit mutation, project writes, retrieval/source
+    onboarding, release work, and shipping remain separate.
+closeout_history:
+- closed_at: '2026-05-01T07:37:05Z'
+  session_id: 2026-05-01-t-050-delivery
+  candidate_slice_ref: slice-pkb-001-g
+  task_ref: T-050
+  closeout_ref: .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+  approval_scope: t050_root_only_stable_deployment_closeout
+  result: Delivered root-only T-050 stable deployment closeout; planning truth is
+    complete and future personal-root, project, storage, retrieval, source-onboarding,
+    public-release, credential, cloud, governance, kernel, and M1 work remains deferred
+    to separate approvals.
+- closed_at: '2026-05-01T08:36:00Z'
+  session_id: 2026-05-01-t-051-delivery
+  candidate_slice_ref: slice-pkb-001-h
+  task_ref: T-051
+  closeout_ref: .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+  approval_scope: t051_root_only_release_readiness_decision
+  result: Delivered root-only T-051 release-readiness continuation decision; selected
+    stop/defer and kept future private backup, project-consumer expansion, retrieval/source-onboarding,
+    public-product update, personal-root update, credential, cloud, governance, kernel,
+    and M1 work behind separate operator-selected gates.
+- closed_at: '2026-05-01T09:12:00Z'
+  session_id: 2026-05-01-t-052-dynamic-cockpit-deployment
+  candidate_slice_ref: slice-pkb-001-i
+  task_ref: T-052
+  closeout_ref: .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+  approval_scope: t052_personal_cockpit_deployment_and_local_rename
+  result: Delivered the local personal cockpit rename from
+    /Users/yiwei/GithubRepos/personal-azoth-root to
+    /Users/yiwei/GithubRepos/yiwei-azoth-cockpit, recorded cockpit receipt evidence,
+    validated the renamed cockpit, and kept backup, retrieval/source onboarding,
+    project writes, credentials, cloud/storage provisioning, public-product mutation,
+    release publication, governance, kernel, and M1 work behind separate gates.
+- closed_at: '2026-05-01T10:02:44Z'
+  session_id: 2026-05-01-t-053-delivery-cockpit-onboarding
+  candidate_slice_ref: slice-pkb-001-j
+  task_ref: T-053
+  closeout_ref: .azoth/handoffs/2026-05-01-t-053-private-backup-recovery-readiness.yaml
+  approval_scope: t053_delivery_scope_private_backup_recovery_onboarding
+  result: Delivered root-side private backup/recovery readiness and operator onboarding
+    documentation for /Users/yiwei/GithubRepos/yiwei-azoth-cockpit; actual backup
+    provisioning, storage writes, credential access, cockpit mutation, project writes,
+    retrieval/source onboarding, public release, governance, kernel, and M1 work remain
+    behind separate operator-selected gates.
+- closed_at: '2026-05-01T14:12:23Z'
+  session_id: 2026-05-01-t-054-retrospective-cockpit-menu
+  candidate_slice_ref: slice-pkb-001-k
+  task_ref: T-054
+  closeout_ref: docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+  approval_scope: t054_retrospective_cockpit_menu_context_firewall
+  result: Retrospectively represented the completed safe-open cockpit main menu
+    and context-firewall UX in roadmap, backlog, task spec, and initiative-bank
+    truth; no new cockpit write, project write, source onboarding, retrieval
+    expansion, public release, governance, kernel, or M1 change is authorized by
+    this record.
+- closed_at: '2026-05-01T14:12:23Z'
+  session_id: 2026-05-01-t-055-retrospective-cockpit-command-surface
+  candidate_slice_ref: slice-pkb-001-l
+  task_ref: T-055
+  closeout_ref: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/t-055-first-use-ras-or-ray-2026-05-01.yaml
+  approval_scope: t055_cockpit_command_surface_ux_simulation
+  result: Retrospectively represented the completed minimal cockpit command surface,
+    bootstrap verifier contract, handbook updates, and no-write UX simulation in
+    roadmap, backlog, task spec, and initiative-bank truth; project source import,
+    project writes, retrieval expansion, full Azoth command-suite deployment, public
+    release, governance, kernel, and M1 remain outside this slice.
+raw_intake:
+  initiative_id: INI-PKB-001
+  operator_goal: 'Stabilize the personal knowledge architecture and Azoth deployment
+    model before any Batch 0 card creation, personal-root mutation, recall integration,
+    source registry onboarding, or public release work.
+
+    '
+  approval_scope: planning_seed_only_no_hydration
+  approval_basis: 'Operator invoked azoth-dynamic-full-auto on 2026-04-29 for comprehensive
+    exploration, external research, synthesis, proposal creation, and stabilization
+    roadmap seeds without implementation.
+
+    '

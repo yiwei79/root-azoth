@@ -1,0 +1,228 @@
+schema_version: 1
+campaign_id: pm-orchestrator-initiative-mobility-20260504
+title: PM Orchestrator Initiative Mobility
+status: approved_active
+prepared_at: "2026-05-04T21:45:00Z"
+approved_at: "2026-05-04T21:52:00Z"
+mode: autonomous-auto
+
+origin:
+  prior_campaign: product-strategy-orchestrator-20260504
+  prior_campaign_status: completed_green_packaged
+  triggering_feature: >
+    Turn the Product Strategy Orchestrator from advisory strategy artifacts into
+    a governed product-management capability that can choose initiatives, reason
+    about readiness, recommend exact next moves, and, after a fresh human gate,
+    hydrate selected items into canonical roadmap/backlog/spec state.
+  packaged_commits:
+    - 09b05a1 Add historical continuity phase boards
+    - ef3e7e5 Package product strategy orchestrator campaign
+    - b628019 Record campaign closeout bookkeeping
+
+purpose: >
+  Implement the first governed feature slice for a high-autonomy, highly aligned
+  PM orchestrator. The campaign should convert the advisory Product Strategy
+  Decision Surface and Initiative Discovery PM Lane into repo-native capability:
+  select a fresh initiative/product lane, assess readiness, emit a plan-only
+  hydration recommendation, and only with explicit human approval move one exact
+  item into roadmap/backlog/spec truth.
+
+success_anchor: >
+  Azoth can run a PM-orchestrated initiative mobility flow from current repo state:
+  discover candidate initiatives/proposals/banks, reject stale or fulfilled
+  lanes, select one fresh candidate, produce a clear plan-only hydration capsule,
+  stop for a named human gate before canonical writes, then, if approved, hydrate
+  exactly that candidate through existing scaffold machinery with validation,
+  audit evidence, and no broad rephasing.
+
+strategic_sources:
+  product_strategy_outputs:
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-3-product-strategy-decision-surface.md
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-3-route-table.json
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-5-initiative-discovery-pm-lane.md
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-5-pm-state-machine.json
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-6-product-management-decision-capsule.md
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-7-validation-and-replay-readiness.md
+  architecture_and_planning_sources:
+    - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+    - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+    - .azoth/proposals/azoth-harness-rethink-2026.yaml
+    - .azoth/design-banks/planning-banks-layer.yaml
+    - .azoth/initiative-banks/INI-EVI-002.yaml
+    - .azoth/initiative-banks/INI-MEM-003.yaml
+    - .azoth/roadmap.yaml
+    - .azoth/backlog.yaml
+  implementation_surfaces:
+    - scripts/autonomous_loop.py
+    - scripts/initiative_intake.py
+    - scripts/initiative_scaffold.py
+    - scripts/planning_bank_validate.py
+    - scripts/planning_bank_surfacing.py
+    - scripts/roadmap_scaffold.py
+    - scripts/roadmap_dashboard.py
+    - scripts/version-bump.py
+
+allowed_actions_before_hydration_gate:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+
+conditionally_allowed_after_fresh_human_gate:
+  hydrate_task:
+    allowed: true
+    required_gate: >
+      Operator approval must name the exact candidate id, target initiative,
+      scaffold command or helper path, and allowed write set.
+    allowed_write_sets:
+      - .azoth/roadmap.yaml
+      - .azoth/backlog.yaml
+      - .azoth/roadmap-specs/v0.2.0/
+      - .azoth/initiative-banks/
+      - .azoth/campaigns/pm-orchestrator-initiative-mobility-20260504/
+    required_validation:
+      - python3 scripts/roadmap_dashboard.py
+      - python3 scripts/azoth-deploy.py --check
+      - python3 scripts/run_ledger.py validate
+      - git diff -- .azoth/roadmap.yaml .azoth/backlog.yaml
+
+blocked_without_fresh_human_gate:
+  - hydrate_task
+  - roadmap/backlog/spec writes
+  - initiative-bank hydration_history writes
+  - phase advancement with scripts/version-bump.py --phase
+  - public sync or release
+  - public checkout mutation
+  - cockpit or project writes
+  - backup/private remote or credential work
+  - dependency or network expansion
+  - destructive actions
+  - kernel/governance/M1 mutation
+  - broad roadmap/backlog rephasing
+  - committing or pushing unless explicitly requested
+
+non_goals:
+  - Do not implement a generic autonomous product manager that can silently rephase the roadmap.
+  - Do not move multiple initiatives or broad phase blocks in one campaign.
+  - Do not use strategy artifacts as direct automation authority.
+  - Do not run public release, cockpit, project, dependency, credential, or destructive work.
+  - Do not advance the milestone phase; this campaign may hydrate a candidate into the active version only after approval.
+
+feature_contract:
+  user_visible_behavior:
+    - The orchestrator compares initiative/product lanes before choosing work.
+    - It can say research, refine, ship strategy, hydrate, deliver, or stop with evidence.
+    - It refuses stale/fulfilled candidates instead of repeating old work.
+    - It emits a plan-only hydration capsule when a candidate appears ready.
+    - It stops for exact approval before canonical roadmap/backlog/spec mutation.
+    - If approved, it delegates canonical writes to existing scaffold machinery and validates them.
+  canonical_boundary:
+    roadmap: .azoth/roadmap.yaml
+    backlog: .azoth/backlog.yaml
+    note: >
+      Product strategy surfaces and campaign artifacts recommend; canonical
+      movement happens only through governed roadmap/backlog/spec writes.
+  phase_mobility_definition: >
+    In this campaign, "move items from phase to phase" means moving one exact
+    candidate from discovery/planning evidence into the active roadmap version
+    as a hydrated task/slice, with initiative slice state updated consistently.
+    It does not mean broad roadmap rephasing or version phase advancement.
+
+budget_plan:
+  recommended_max_child_scopes: 12
+  recommended_bounded_replays: 3
+  intended_shape:
+    - child: 1
+      action: research_initiative
+      title: Capability and source inventory
+      goal: >
+        Map the current scaffold/router/planning-bank surfaces and choose the
+        smallest implementable capability slice.
+    - child: 2
+      action: refine_proposal
+      title: PM orchestrator mobility contract
+      goal: >
+        Define the precise command/helper behavior, state machine, acceptance
+        criteria, and protected gates for initiative mobility.
+    - child: 3
+      action: ship_task
+      title: Plan-only hydration capsule surface
+      goal: >
+        Ship a campaign-local or code-backed plan-only artifact path that can
+        recommend exact hydration without writing canonical roadmap state.
+    - child: 4
+      action: research_initiative
+      title: Candidate selection replay
+      goal: >
+        Run the PM lane against live candidates and select one fresh candidate
+        or explicitly stop if none are safe.
+    - child: 5
+      action: ship_task
+      title: Helper or validator implementation
+      goal: >
+        Implement the smallest repo-native helper/validator needed for plan-only
+        PM hydration recommendations, with tests.
+    - child: 6
+      action: ship_task
+      title: Human gate packet
+      goal: >
+        Emit the exact human approval packet for any canonical hydration write,
+        including candidate id, scaffold command, write set, and validation.
+    - child: 7
+      action: hydrate_task
+      title: Approved canonical hydration
+      gate: fresh_human_gate_required
+      goal: >
+        If and only if approved, hydrate one exact candidate through existing
+        scaffold machinery and update initiative slice state consistently.
+    - child: 8
+      action: ship_task
+      title: Delivery readiness or stop capsule
+      goal: >
+        After hydration, decide whether delivery can open under a fresh campaign
+        or whether to stop with the hydrated task ready for /next.
+    - child: 9
+      action: research_initiative
+      title: Validation and replay readiness
+      goal: >
+        Validate that the feature achieved high-autonomy aligned PM routing
+        without broad rephasing or protected-boundary leakage.
+    - child: 10
+      action: ship_task
+      title: Bounded replay 1 if needed
+      goal: Fix concrete review/validation defects only.
+    - child: 11
+      action: ship_task
+      title: Bounded replay 2 if needed
+      goal: Fix concrete review/validation defects only.
+    - child: 12
+      action: ship_task
+      title: Final closeout
+      goal: >
+        Close Green when the feature is implemented or stop truthfully at the
+        exact human gate if canonical movement is not approved.
+
+first_child:
+  action: research_initiative
+  candidate_id: pm-orchestrator-mobility-capability-inventory
+  title: PM orchestrator mobility capability inventory
+  source: pm-orchestrator-initiative-mobility-20260504
+  target_classification: research-first-implementation
+  protected: false
+  expected_outputs:
+    - .azoth/campaigns/pm-orchestrator-initiative-mobility-20260504/child-1-capability-inventory.md
+    - .azoth/campaigns/pm-orchestrator-initiative-mobility-20260504/child-1-implementation-slice-recommendation.json
+
+start_readiness:
+  verdict: ready_for_operator_approval
+  reason: >
+    The prior Product Strategy Orchestrator campaign is completed Green, packaged,
+    and has no active run or write claim. This campaign can start with
+    research/refinement/ship actions immediately after operator approval. Canonical
+    hydration remains blocked until a later exact human gate names the candidate
+    and write path.
+
+approval_prompt: >
+  Approve PM Orchestrator Initiative Mobility with 12 child scopes and 3 bounded
+  replays. Pre-hydration actions are research_initiative, refine_proposal, and
+  ship_task. hydrate_task is allowed only after a fresh gate naming the exact
+  candidate, scaffold/write path, and validation set.

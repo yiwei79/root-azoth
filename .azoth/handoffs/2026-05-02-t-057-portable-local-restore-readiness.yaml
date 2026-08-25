@@ -1,0 +1,93 @@
+schema_version: 1
+task_ref: T-057
+session_id: 2026-05-02-t-057-portable-local-restore-readiness
+delivery_mode: portable_local_restore_readiness_repair
+observed_at: '2026-05-02T00:19:01+02:00'
+source_gap_ref: .azoth/handoffs/2026-05-02-t-056-local-restore-drill.yaml
+approval_scope: portable_local_restore_readiness_repair_only
+mutation_authority:
+  root_tooling: true
+  root_tests: true
+  root_handoff: true
+  temp_restore_copy: true
+  live_cockpit_mutation: false
+  project_repo_write: false
+  credential_access: false
+  remote_creation: false
+  storage_write: false
+  backup_provisioning: false
+changes:
+- path: scripts/personal_knowledge_validate.py
+  summary: >
+    Added `--init-skeleton-dirs` and `ensure_required_skeleton_dirs()` so restore
+    drills can deterministically recreate required empty knowledge skeleton
+    directories in a temporary restored checkout before strict validation.
+- path: scripts/cockpit_bootstrap_verify.py
+  summary: >
+    Added `--restore-drill` / `allow_relocated_restore` so temporary relocated
+    restore roots may pass while preserving T-052 deployment id and
+    `yiwei-azoth-cockpit` target-panel checks.
+- path: tests/test_personal_knowledge_validate.py
+  summary: Covered deterministic recreation of missing required skeleton dirs.
+- path: tests/test_cockpit_bootstrap_verify.py
+  summary: Covered relocated restore-drill acceptance and continued rejection when
+    T-052 identity is missing.
+validation_results:
+- command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_cockpit_bootstrap_verify.py tests/test_personal_knowledge_validate.py -q
+  status: passed
+  result: 34 passed
+- command: git clone /Users/yiwei/GithubRepos/yiwei-azoth-cockpit /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02
+  status: passed
+  result: Fresh local-only restore clone created without credential, remote, storage, cockpit, or project mutation.
+- command: python3 scripts/personal_knowledge_validate.py --root /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02 --init-skeleton-dirs
+  status: passed
+  result: personal knowledge validation OK
+- command: python3 scripts/cockpit_bootstrap_verify.py --root /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02 --restore-drill
+  status: passed
+  result: cockpit bootstrap verify OK
+- command: python3 /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02/scripts/cockpit_menu.py --check
+  status: passed
+  result: cockpit menu check OK
+- command: python3 /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02/scripts/cockpit_menu.py --project ras-or-ray
+  status: passed
+  result: Restored cockpit rendered pointer-only ras-or-ray handoff without importing project context.
+- command: git -C /private/tmp/azoth-cockpit-restore-drill-t057-2026-05-02 status --short --branch
+  status: passed
+  result: '## main...origin/main'
+- command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+  status: passed
+  result: Live cockpit remained clean on main.
+- command: git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+  status: passed
+  result: Pilot project remained clean on main tracking origin/main.
+acceptance_results:
+  required_empty_skeleton_dirs_restored_without_live_cockpit_write: passed
+  relocated_restore_verifier: passed
+  personal_knowledge_validation_from_fresh_clone: passed
+  cockpit_menu_check_from_fresh_clone: passed
+  ras_or_ray_handoff_from_fresh_clone: passed
+  live_cockpit_unchanged: passed
+  pilot_project_unchanged: passed
+forbidden_outputs_confirmed:
+- credential_access
+- remote_creation
+- storage_write
+- backup_provisioning
+- cloud_account_provisioning
+- live_cockpit_mutation
+- project_repo_write
+- source_registry_onboarding
+- retrieval_indexing
+- public_product_mutation
+- release_publication
+decision:
+  portable_local_restore_readiness: passed
+  recommendation: >
+    Local-only restore readiness is now sufficient to consider the next explicit
+    operator-selected lane: private remote, encrypted backup, or stop/defer.
+    Private remote and encrypted backup still require fresh approval before any
+    credential, remote, or storage action.
+next_safe_action: >
+  Choose whether to open a private-remote design/provisioning gate, an encrypted
+  backup design/provisioning gate, or stop/defer. Do not create remotes, access
+  credentials, or write storage without that fresh approval.

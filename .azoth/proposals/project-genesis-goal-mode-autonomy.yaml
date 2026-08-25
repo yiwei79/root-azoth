@@ -1,0 +1,168 @@
+proposal_schema_version: 1
+created_at: "2026-05-10T13:56:00+00:00"
+session_id: "2026-05-10-codex-goal-project-genesis"
+backlog_id: "P6-003"
+title: "Project Genesis with Goal-mode autonomy"
+summary: >
+  Architecture proposal for making Azoth practical as a reusable personal
+  project-starting system. Project Genesis should let the operator start or
+  connect spaces such as music production, a bachelor thesis, or an
+  agent-context project through a low-friction four-plane flow. Because the
+  Codex Goal feature creates an autonomy expectation, this proposal also defines
+  Goal-mode as a bounded Azoth authority packet for planning-seed work: it may
+  create proposals, initiative banks, design notes, starter prompts, readiness
+  records, and validation receipts without repeated chat approvals, but it must
+  still stop before kernel/governance changes, public/cockpit/project mutations,
+  hydration, dependencies, credentials, destructive edits, or high-blast-radius
+  implementation.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D38
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    operator_need: >
+      After building Azoth for a while, the operator needs to start and connect
+      other real projects without losing Azoth's core soul: music production
+      exploration, bachelor thesis work, and a separate agent/context-management
+      project. Today the path from "I have a new project" to "Azoth is helping
+      me explore it safely" is too manual and too entangled with root-azoth.
+    current_gap: >
+      Azoth has strong internal control-plane surfaces, public extraction
+      validation, planning banks, and a personal cockpit safe-open flow. The
+      missing layer is a friendly Project Genesis path that creates local project
+      context, readiness state, cockpit routing, starter prompts, receipts, and
+      an upgrade path from public/installed Azoth without forcing every new idea
+      through root-azoth's development workflow.
+    goal_mode_gap: >
+      Codex Goal is expected to be autonomous, but Azoth's current gate model
+      only recognizes repo scope-gates and pipeline gates. A goal can preserve
+      intent but cannot yet authorize low-risk planning-seed writes, so the
+      system asks for approval in places where the operator reasonably expects
+      the active goal to keep moving.
+  proposed_model:
+    four_planes:
+      public_azoth:
+        role: "Reusable installed Azoth core and starter templates."
+        must_provide:
+          - "Project starter contract"
+          - "Safe local validation commands"
+          - "Upgrade/freshness guidance from the public release profile"
+      root_azoth:
+        role: "Authoring, governance, proposal, and initiative-development source."
+        must_provide:
+          - "Project Genesis proposal and initiative bank"
+          - "Readiness and hydration boundaries"
+          - "Validation receipts before productization"
+      personal_cockpit:
+        role: "Operator-facing index and safe-open router across personal spaces."
+        must_provide:
+          - "Pointer-only project routing"
+          - "Clear owned vs referenced project state"
+          - "No hidden writes to project repos from cockpit navigation"
+      project_local_space:
+        role: "Per-project context, discovery state, prompts, and receipts."
+        must_provide:
+          - "Project identity and scope note"
+          - "Local context map and open questions"
+          - "Readiness record and starter prompts"
+          - "Upgrade receipt tying local Azoth shape to public/root provenance"
+    goal_mode_authority_packet:
+      authority: "active_codex_goal_plus_operator_goal_mode_intent"
+      purpose: >
+        Convert an active Codex Goal from passive continuity into bounded Azoth
+        autonomy for low-risk planning-seed work.
+      allowed_outputs:
+        - "architecture proposals under .azoth/proposals/"
+        - "initiative banks under .azoth/initiative-banks/"
+        - "design-bank notes and readiness records"
+        - "starter prompt drafts"
+        - "validation receipts and local evidence summaries"
+      forbidden_outputs:
+        - "kernel or governance mutation"
+        - "scope-gate or pipeline-gate overwrite unless a later explicit Goal-mode opener exists"
+        - "roadmap/backlog/spec hydration"
+        - "public Azoth mutation"
+        - "personal cockpit mutation"
+        - "project repository mutation"
+        - "dependency, credential, network, destructive, or high-blast-radius action"
+      evidence_required:
+        - "active goal objective restated as concrete outputs"
+        - "scope-gate and run-ledger state inspected before writes"
+        - "changed-file list and validator output after writes"
+        - "completion audit before marking the Codex Goal complete"
+      stop_rules:
+        - "Stop before protected kernel/governance/M1 boundaries."
+        - "Stop before writing into cockpit, public release, or project repos."
+        - "Stop before hydration or executable delivery unless a later approval names the exact candidate."
+        - "Stop when the goal objective cannot be mapped to concrete artifacts."
+    project_genesis_starter_contract:
+      minimum_fields:
+        - "project_id"
+        - "project_name"
+        - "domain"
+        - "why_now"
+        - "success_signals"
+        - "local_context_paths"
+        - "open_questions"
+        - "safe_boundaries"
+        - "azoth_source_profile"
+        - "cockpit_route"
+        - "validation_receipt"
+      starter_examples:
+        music_production:
+          first_prompt: >
+            Help me shape this music-production space: capture my current sound,
+            reference tracks, tools, unfinished ideas, learning questions, and
+            next low-friction experiments without forcing it into software-task
+            language.
+          local_state: "creative context, references, sessions, experiments, decisions"
+        bachelor_thesis:
+          first_prompt: >
+            Help me continue my bachelor thesis: map research question, advisor
+            constraints, sources, deadlines, argument structure, writing gaps,
+            and the next focused work block.
+          local_state: "research question, literature notes, outline, deadlines, evidence"
+        agent_context_project:
+          first_prompt: >
+            Help me reconnect this agent/context-management project to Azoth:
+            identify its design intent, current code/artifact state, open risks,
+            compatibility with Azoth, and safe next experiments.
+          local_state: "architecture notes, repo pointers, context lifecycle, tests"
+  suggested_slices:
+    slice_gen_001_a:
+      title: "Goal-mode Project Genesis seed contract and UX rehearsal"
+      purpose: >
+        Define the Goal-mode authority packet and rehearse the first Project
+        Genesis flow across the three named personal domains without mutating
+        external repos.
+      acceptance:
+        - "Proposal and initiative bank exist and validate."
+        - "Goal-mode allowed/forbidden outputs are explicit."
+        - "Four-plane responsibilities are explicit."
+        - "Music, thesis, and agent-context starter prompts are present."
+        - "Completion audit proves no public/cockpit/project/kernel/governance mutation."
+    slice_gen_001_b:
+      title: "Project-local starter packet template"
+      purpose: >
+        Add a reusable template for a new project local state packet with
+        context, discovery/readiness, starter prompt, cockpit pointer, and
+        validation receipt.
+    slice_gen_001_c:
+      title: "Cockpit route rehearsal for external project spaces"
+      purpose: >
+        Rehearse pointer-only personal cockpit routing for the three example
+        domains after the starter packet template is stable.
+  risks:
+    - risk: "Goal-mode becomes a hidden bypass around Azoth governance."
+      mitigation: "Limit it to planning-seed artifacts until a later opener exists."
+    - risk: "Project Genesis overfits to root-azoth instead of public installs."
+      mitigation: "Require every starter packet to name its Azoth source profile and upgrade path."
+    - risk: "Personal creative or academic projects get forced into delivery-task language too early."
+      mitigation: "Keep discovery/readiness language domain-friendly and non-hydrating by default."

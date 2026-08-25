@@ -61,6 +61,29 @@ REQUIRED_SECTIONS = [
     "## Constraints",
 ]
 
+BUILDER_POSTURE_MARKERS = [
+    "State the approved goal, owned surfaces, expected changed files, and out-of-scope surfaces before editing.",
+    "Prefer existing repo helpers, patterns, and generated-source flows before adding new abstractions.",
+    "Avoid drive-by cleanup; preserve unrelated dirty state; keep every changed line traceable to the approved scope.",
+    "Choose the narrowest meaningful verification first, then run the relevant tests or parity checks.",
+    "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
+]
+
+ORCHESTRATOR_ASSUMPTION_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "assumptions",
+    "uncertainty_missing_facts",
+    "owned_surfaces",
+    "out_of_scope_deferrals",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+]
+
 
 def _agent_path(agent_name: str) -> Path:
     """Return the path to an agent's .agent.md file."""
@@ -251,6 +274,34 @@ class TestAgentContent:
         assert len(lines) >= 60, (
             f"{agent_name}.agent.md has {len(lines)} lines — minimum 60 expected for enriched agents"
         )
+
+    def test_orchestrator_has_stage0_assumption_checkpoint_contract(self) -> None:
+        content = _agent_path("orchestrator").read_text(encoding="utf-8")
+        for marker in ORCHESTRATOR_ASSUMPTION_CHECKPOINT_MARKERS:
+            assert marker in content, f"orchestrator missing Stage 0 checkpoint marker: {marker}"
+
+    def test_builder_enforces_surgical_simplicity_posture(self) -> None:
+        content = _agent_path("builder").read_text(encoding="utf-8")
+        for marker in BUILDER_POSTURE_MARKERS:
+            assert marker in content, f"builder.agent.md missing posture marker: {marker}"
+
+    def test_entropy_ceiling_is_checkpoint_not_active_goal_stop(self) -> None:
+        markers = (
+            "scope-gated session, not the higher-level active goal",
+            "checkpoint and open a fresh linked scope",
+            "must not mark a persistent goal complete, blocked, or stopped solely because an entropy checkpoint was reached",
+        )
+        trust_contract = (REPO_ROOT / "kernel" / "TRUST_CONTRACT.md").read_text(
+            encoding="utf-8"
+        )
+        agents_manifest = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        deploy_script = (REPO_ROOT / "scripts" / "azoth-deploy.py").read_text(
+            encoding="utf-8"
+        )
+        for marker in markers:
+            assert marker in trust_contract
+            assert marker in agents_manifest
+            assert marker in deploy_script
 
 
 # ---------------------------------------------------------------------------

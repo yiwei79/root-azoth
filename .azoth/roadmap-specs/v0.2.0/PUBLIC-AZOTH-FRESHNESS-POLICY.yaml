@@ -1,0 +1,39 @@
+schema_version: 1
+kind: public_product_freshness_policy
+decision_ref:
+- .azoth/campaigns/public-release-truth-artifact-repair-root-only-20260510/repair-report.md
+release:
+  version: v0.2.0
+  tag: v0.2.0
+  public_repo: /Users/yiwei/GithubRepos/azoth
+  public_commit: 499a4508836cf2d836ba97461bc9c9b94dc38aa6
+  root_evidence_commit: 46fee0bc3ee9d16bcc9638efd3d96f6723314528
+  release_evidence_ref: .azoth/roadmap-specs/v0.2.0/V0.2.0-STABLE-PUBLICATION-EVIDENCE.md
+freshness:
+  status: intentionally_stale
+  checked_at: '2026-05-04'
+  published_release_is_authority: true
+  root_workshop_drift_is_advisory_only: true
+  rationale: >-
+    Public azoth v0.2.0 remains the latest approved/installable release, now
+    retargeted to the 2026-05-04 full-profile patch commit. Verified root
+    evidence commit 46fee0bc3ee9d16bcc9638efd3d96f6723314528 was extracted,
+    recorded by d2a73a1322c805f137d069bea900793e66cf05d4, and published to
+    public commit 499a4508836cf2d836ba97461bc9c9b94dc38aa6. The previously
+    recorded full hash 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 was corrupt
+    evidence and is superseded by the repair report. Subsequent root-only
+    delivery approval, freshness policy, closeout evidence, and untagged public
+    origin/main drift remain advisory and are not approved installable release
+    content.
+  allowed_drift_since:
+  - Final delivery approval and closeout evidence for BL-082 after the public v0.2.0 patch sync
+  - Public origin/main 8e2b3283e8423a01fe64f131c92d52371f995954 is public-only untagged release-profile drift and is not part of the approved v0.2.0 tag.
+  next_public_sync_gate: >-
+    Before claiming public azoth is current with root, run a fresh extraction,
+    product smoke, public checkout sync, public commit/tag/release approval, and
+    update this policy to status=fresh with the current root evidence commit.
+claim_rule: >-
+  Release-facing surfaces must say public azoth v0.2.0 is the latest approved
+  installable release and root workshop drift is advisory, or run this check with
+  --require-fresh after a new public synchronization gate. Do not claim root
+  workshop HEAD is public release content while this policy is intentionally_stale.

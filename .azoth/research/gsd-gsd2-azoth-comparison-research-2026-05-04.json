@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "reusable-research",
+  "source_session_id": "2026-05-04-gsd-gsd2-azoth-comparison-research",
+  "goal": "Compare original GSD, GSD2, and Azoth for future Azoth architecture research",
+  "captured_at": "2026-05-03T22:20:48Z",
+  "refreshed_at": "2026-05-03T22:20:48Z",
+  "refresh_summary": "First durable capture of the GSD, GSD2, and Azoth comparison. This capsule preserves the static source-level findings, strategic judgment, source trail, and follow-up research threads so future sessions can refresh or deepen the comparison without rebuilding it from chat history.",
+  "volatility": "mixed-high",
+  "limitations": [
+    "GSD and GSD2 findings are based on primary GitHub source inspection and sidecar read-only analysis, not local clone execution or test runs.",
+    "GSD2 is under active development; package version, runtime state design, model routing, and extension surfaces should be refreshed before implementation decisions.",
+    "Popularity signals such as current stars or package downloads were not used as evidence because they were not fetched during this session.",
+    "Azoth findings reflect the local root-azoth checkout at capture time and may drift as gates, pipelines, and autonomous-auto work continue.",
+    "This capsule is research evidence only. It does not authorize implementation, migration, governance mutation, or adoption of GSD/GSD2 runtime patterns."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this GSD/GSD2/Azoth comparison capsule be reused for future architecture, proposal, or research sessions?",
+      "status": "answered",
+      "answered_at": "2026-05-03T22:20:48Z",
+      "fresh_until": "2026-06-03T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-goal-compare-original-gsd-gsd2-and-azoth-for-future-a",
+      "question": "What is the strongest source-backed comparison between original GSD, GSD2, and Azoth for future Azoth architecture research?",
+      "status": "answered",
+      "answered_at": "2026-05-03T22:20:48Z",
+      "fresh_until": "2026-06-03T00:00:00Z"
+    }
+  ],
+  "thesis": "Original GSD is a strong prompt/workflow kit and is better than Azoth at approachable app-building ergonomics, but weaker at mechanically governed truth. GSD2 is materially ahead of Azoth as a standalone autonomous coding runtime. Azoth remains stronger as a repo-native governance substrate with explicit gates, ledgers, planning banks, typed staged boundaries, and cross-tool generated manifests.",
+  "executive_judgment": {
+    "original_gsd": "Not better than Azoth overall. Better for low-friction project workflow, phase planning, wave execution, and UAT-style shipping momentum; weaker for fail-closed governance and auditable approval state.",
+    "gsd2": "Better than Azoth as a runtime execution engine. It owns sessions, DB-backed state, worker leases, dispatch claims, worktrees, metrics, crash recovery, extensions, and model routing.",
+    "azoth": "Better than both for governed repo-native truth: approval boundaries, run-ledger evidence, planning-bank readiness, staged subagent contracts, closeout discipline, and multi-platform generated surfaces.",
+    "strategic_recommendation": "Borrow GSD2 runtime primitives underneath Azoth, but keep Azoth gates, planning banks, route state, and ledgers as the authoritative governance layer."
+  },
+  "comparison_matrix": [
+    {
+      "dimension": "standalone_execution_runtime",
+      "original_gsd": "medium",
+      "gsd2": "very_strong",
+      "azoth": "medium",
+      "finding": "GSD2 owns execution as a TypeScript/Pi runtime. Original GSD and Azoth rely more on existing coding-tool runtimes."
+    },
+    {
+      "dimension": "workflow_ergonomics",
+      "original_gsd": "strong",
+      "gsd2": "strong",
+      "azoth": "medium",
+      "finding": "GSD provides smoother project-start, phase-plan, execute, and verify flows. Azoth is more explicit but more cognitively heavy."
+    },
+    {
+      "dimension": "governance_and_auditability",
+      "original_gsd": "medium_low",
+      "gsd2": "medium",
+      "azoth": "very_strong",
+      "finding": "Azoth's gates, run ledger, closeout, planning banks, and typed staged summaries are more naturally repo-auditable."
+    },
+    {
+      "dimension": "runtime_state",
+      "original_gsd": "planning_files_plus_sdk",
+      "gsd2": "db_authoritative",
+      "azoth": "repo_local_gates_and_ledgers",
+      "finding": "GSD2 has the strongest runtime state model, while Azoth has the stronger governance-state model."
+    },
+    {
+      "dimension": "context_isolation",
+      "original_gsd": "workflow_declared_runtime_dependent",
+      "gsd2": "fresh_session_per_unit",
+      "azoth": "typed_staged_boundaries",
+      "finding": "GSD2's fresh-session-per-dispatch model is the strongest runtime answer to context decay; Azoth's typed boundaries are stronger as audit artifacts."
+    }
+  ],
+  "original_gsd_findings": {
+    "package_identity": {
+      "repo": "gsd-build/get-shit-done",
+      "package_name": "get-shit-done-cc",
+      "observed_version": "1.39.0-rc.4",
+      "description": "Meta-prompting, context engineering, and spec-driven development system for Claude Code, OpenCode, Gemini, and Codex."
+    },
+    "strengths": [
+      "Clear .planning artifact model with PROJECT, config, research, requirements, roadmap, state, plans, summaries, and verification.",
+      "Strong practical workflow set: new-project, plan-phase, execute-phase, autonomous, execute-plan, verify-work, and map-codebase.",
+      "Wave execution doctrine and broad subagent catalog for executor, verifier, planner, researcher, plan-checker, debugger, codebase-mapper, integration-checker, UI, and audit roles.",
+      "Good context-engineering posture: phase-scoped context, truncation, state-driven loading, and command wrappers.",
+      "Real security utilities for path traversal, prompt injection, shell argument validation, JSON safety, prompt structure validation, and entropy anomaly checks."
+    ],
+    "weaknesses_vs_azoth": [
+      "Several controls are prompt-enforced, advisory, or soft rather than fail-closed.",
+      "Runtime fallbacks can collapse subagent boundaries into sequential or inline execution.",
+      "Code review and some gates are designed not to block execution, which preserves momentum but weakens governed assurance.",
+      "Human-gate and approval state are less durable and less mechanically auditable than Azoth's gate plus run-ledger model."
+    ]
+  },
+  "gsd2_findings": {
+    "package_identity": {
+      "repo": "gsd-build/gsd-2",
+      "package_name": "gsd-pi",
+      "observed_version": "2.79.0",
+      "description": "Standalone GSD coding agent built on Pi SDK with CLI, headless, MCP, extension, native-engine, and editor surfaces."
+    },
+    "strengths": [
+      "Standalone TypeScript/Pi agent runtime rather than a prompt-only layer.",
+      "DB-authoritative runtime state with workers, leases, unit dispatches, command queue, runtime KV, assessments, tasks, gates, evidence, memories, and artifacts.",
+      "Fresh agent session per dispatch to reduce context degradation.",
+      "Rule-driven auto-dispatch over planning, execution, validation, UAT, completion, escalation, and stop states.",
+      "First-class milestone worktrees with sync, squash merge, conflict handling, cleanup, and branch identity checks.",
+      "Crash recovery from DB workers, dispatches, runtime KV, stale heartbeats, and OS PID checks.",
+      "Per-unit token and cost metrics, model routing, budget pressure handling, provider/tool filtering, and fallback logic.",
+      "Broad extension system with component schemas for skills, agents, tool allow/deny lists, timeouts, isolation, merge strategy, and output schemas."
+    ],
+    "weaknesses_vs_azoth": [
+      "More runtime complexity: SQLite DB, migrations, locks, workers, leases, native packages, projections, extension installs, and recovery paths.",
+      "Less naturally audit-portable because important truth lives in local runtime DB and projections rather than versioned repo-native governance artifacts.",
+      "Single-host SQLite/WAL model is powerful locally but not a distributed coordination model.",
+      "Supply-chain and operational surface is larger due to extension installation and provider/runtime breadth.",
+      "Product culture favors shipping fast and fixing fast; Azoth is more conservative about explicit human gates and staged provenance."
+    ]
+  },
+  "azoth_findings": {
+    "local_repo": "/Users/yiwei/GithubRepos/root-azoth",
+    "strengths": [
+      "Repo-native governance kernel with session-gate, scope-gate, pipeline-gate, run-ledger, write claims, completion evidence, and closeout.",
+      "Planning banks separate evidence, design state, initiative readiness, and executable roadmap/spec hydration.",
+      "Generated multi-platform command, skill, agent, and IDE-rule surfaces through azoth-deploy.",
+      "Typed subagent routing and stage summaries make fresh-context and review-independence boundaries auditable.",
+      "Codex model selector records policy, tier, effort, fallback reason, confidence, and signal metadata.",
+      "Closeout is a governed lifecycle operation, not only a narrative summary."
+    ],
+    "weaknesses_vs_gsd_family": [
+      "Higher operator cognitive load and more ceremony for small implementation slices.",
+      "Less productized standalone runtime: no GSD2-equivalent DB worker/lease harness, TUI, extension marketplace, or built-in cost dashboard.",
+      "More local-state fragility around gitignored gates and ledgers across worktrees.",
+      "Dynamic-full-auto in Codex remains constrained by host runtime and network limitations."
+    ]
+  },
+  "candidate_azoth_followups": [
+    {
+      "id": "gsd2-runtime-ledger-borrowing",
+      "description": "Research whether Azoth should add a DB or structured execution-ledger layer for worker leases, dispatch claims, stale-heartbeat recovery, and per-unit metrics while keeping repo-native governance as authority.",
+      "priority": "high"
+    },
+    {
+      "id": "fresh-session-per-unit",
+      "description": "Prototype or design how Azoth could require fresh-context execution units for selected stages without losing run-ledger and stage-summary traceability.",
+      "priority": "high"
+    },
+    {
+      "id": "azoth-operator-ux-compression",
+      "description": "Compare GSD/GSD2 operator UX against Azoth's gate-heavy workflow and design a compact operator surface that preserves safety without exposing every mechanism every time.",
+      "priority": "medium"
+    },
+    {
+      "id": "gsd-original-workflow-import",
+      "description": "Evaluate whether original GSD's new-project, UAT, map-codebase, and verify-work ergonomics should inspire Azoth command or playbook improvements.",
+      "priority": "medium"
+    },
+    {
+      "id": "runtime-state-audit-portability",
+      "description": "Define which GSD2-style DB/runtime fields should be projected into repo-native Azoth artifacts for audit, replay, and cross-tool continuity.",
+      "priority": "high"
+    }
+  ],
+  "sources": [
+    {
+      "kind": "external-primary-source",
+      "title": "Original GSD package manifest",
+      "url": "https://github.com/gsd-build/get-shit-done/blob/main/package.json",
+      "finding": "Shows original GSD as a packaged workflow kit with commands, workflows, agents, hooks, scripts, SDK sources, and CLI bins."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "Original GSD plan-phase workflow",
+      "url": "https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/plan-phase.md",
+      "finding": "Documents research, planning, validation, plan-checker, coverage, and gap-analysis gates."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "Original GSD execute-phase workflow",
+      "url": "https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/workflows/execute-phase.md",
+      "finding": "Documents orchestrator-led wave execution, subagent catalogs, runtime fallbacks, worktree handling, and review/regression/UAT gates."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "Original GSD security utilities",
+      "url": "https://github.com/gsd-build/get-shit-done/blob/main/get-shit-done/bin/lib/security.cjs",
+      "finding": "Implements concrete validation for paths, prompts, shell args, JSON, field names, prompt structure, and entropy anomalies."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "GSD2 package manifest",
+      "url": "https://github.com/gsd-build/gsd-2/blob/main/package.json",
+      "finding": "Shows GSD2 as gsd-pi with CLI bins, workspaces, Pi SDK packages, provider SDKs, Playwright, MCP, and native engines."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "GSD2 architecture documentation",
+      "url": "https://github.com/gsd-build/gsd-2/blob/main/docs/dev/architecture.md",
+      "finding": "Frames GSD2 as an embedded Pi coding-agent runtime with workflow, auto mode, project primitives, and DB-first state."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "GSD2 DB schema/runtime state",
+      "url": "https://github.com/gsd-build/gsd-2/blob/main/src/resources/extensions/gsd/gsd-db.ts",
+      "finding": "Defines the DB as runtime source of truth with workers, leases, dispatches, command queue, runtime KV, tasks, gates, evidence, memories, and artifacts."
+    },
+    {
+      "kind": "external-primary-source",
+      "title": "GSD2 auto dispatch",
+      "url": "https://github.com/gsd-build/gsd-2/blob/main/src/resources/extensions/gsd/auto-dispatch.ts",
+      "finding": "Uses declarative ordered dispatch rules over planning, execution, validation, UAT, completion, escalation, and stop states."
+    },
+    {
+      "kind": "repo-local",
+      "path": "docs/GATE_PROTOCOL.md",
+      "finding": "Azoth gate protocol defines session, scope, pipeline, approval, and run-ledger evidence boundaries."
+    },
+    {
+      "kind": "repo-local",
+      "path": "scripts/run_ledger.py",
+      "finding": "Azoth run ledger records runs, sessions, waves, stage evidence, write claims, approvals, and completion evidence."
+    },
+    {
+      "kind": "repo-local",
+      "path": "scripts/planning_bank_validate.py",
+      "finding": "Azoth planning-bank validator enforces design-bank and initiative-bank structure, readiness, and hydration boundaries."
+    },
+    {
+      "kind": "repo-local",
+      "path": ".agents/skills/dynamic-full-auto/SKILL.md",
+      "finding": "Azoth dynamic-full-auto is a high-autonomy auto-family posture with explicit research/explore waves and gate-sensitive continuation."
+    }
+  ],
+  "research_session_evidence": {
+    "sidecar_agents": [
+      {
+        "agent_id": "019defe0-c742-71e0-90ca-cb06d6542675",
+        "topic": "original GSD",
+        "summary": "Found GSD to be a practical multi-runtime workflow kit with rich .planning artifacts, wave execution, broad subagent roles, SDK-backed context, and real security utilities; main gap is enforcement depth."
+      },
+      {
+        "agent_id": "019defe0-ca1a-7811-ae92-7859a36cb411",
+        "topic": "GSD2",
+        "summary": "Found GSD2 to be a standalone TypeScript/Pi runtime with DB-first state, worker leases, unit dispatches, worktrees, fresh sessions, model routing, metrics, crash recovery, and extensions."
+      },
+      {
+        "agent_id": "019defe0-cd4e-75f3-bf6e-cfcd4feb4d94",
+        "topic": "Azoth",
+        "summary": "Found Azoth to be a repo-native governance/workflow kernel with gates, ledgers, planning banks, generated multi-platform surfaces, typed subagent boundaries, model selector traces, and closeout discipline."
+      }
+    ],
+    "repo_status_at_capture": "No pre-existing git status output was observed before persistence; research session itself was read-only until this capsule was added."
+  },
+  "open_research_threads": [
+    "Refresh GSD2 source and current release state before designing any Azoth runtime borrowing, because the project is moving quickly.",
+    "Run GSD2 locally on a toy repo to compare actual behavior against static source conclusions.",
+    "Map GSD2 DB tables to possible Azoth run-ledger or execution-ledger projections.",
+    "Evaluate whether Azoth should introduce a runtime worker/lease layer while keeping gates and research/planning banks repo-native.",
+    "Compare original GSD's UAT and map-codebase workflows against Azoth playbooks for operator UX improvements."
+  ]
+}

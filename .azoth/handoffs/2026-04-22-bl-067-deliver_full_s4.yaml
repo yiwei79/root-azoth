@@ -1,0 +1,44 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s4
+agent: planner
+stage_kind: build
+status: complete
+entropy: YELLOW
+gate_outcome: "Agent gate: Stages 5 and 6 may proceed only within the four approved replay-bundle surfaces and this test-first sequence."
+session_id: 2026-04-22-bl-067
+done:
+  - "Defined Phase 1 in `tests/test_stage_summary_schema.py`: add a schema-layer assertion that loads `pipelines/stage-summary.schema.yaml` and proves the replay-bundle conditional names `replay_iteration`, `replay_target_stage`, `finding_class`, `threshold_limit`, and `lineage_artifacts`."
+  - "Defined Phase 2 in `.claude/hooks/stage_summary_validate.py`: reject any partial replay bundle and accept only zero replay fields or the full five-field bundle, failing closed before a handoff is written."
+  - "Defined Phase 3 in `pipelines/stage-summary.schema.yaml`: add the matching all-or-nothing replay-field co-presence rule so schema and hook enforcement stay aligned."
+  - "Defined Phase 4 in `.agents/skills/subagent-router/SKILL.md`: rewrite replay guidance so the five replay fields are documented as mandatory co-presence metadata, not optional advisory fields."
+  - "Set verification to targeted `pytest tests/test_stage_summary_schema.py` coverage proving both schema-layer structure and hook-layer partial-bundle rejection without expanding fixtures or other surfaces."
+decisions:
+  - "Keep writes bounded to `tests/test_stage_summary_schema.py`, `pipelines/stage-summary.schema.yaml`, `.claude/hooks/stage_summary_validate.py`, and `.agents/skills/subagent-router/SKILL.md`; do not edit deliver-full, gate-protocol, ledger, or queue surfaces."
+  - "Use a test-first sequence: land failing replay-bundle assertions in `tests/test_stage_summary_schema.py`, implement schema and hook enforcement to satisfy them, then tighten router wording and rerun the targeted pytest command."
+  - "Schema-layer evidence is load-bearing because the harness does not execute full `jsonschema`; the test must inspect the raw YAML conditional or dependency block directly rather than infer schema behavior from hook outcomes."
+  - "Hook-layer coverage must call `validate_stage_summary()` with one valid full replay bundle and one or more partial bundles, asserting partial forms raise `StageSummaryValidationError` while the complete bundle passes."
+  - "No fixture changes are required for BL-067 because focused test-local documents are sufficient if the updated test file proves schema parity and hook rejection directly."
+open:
+  - "If another producer still emits partial replay metadata outside this test slice, BL-067 will fail closed after landing and may need a follow-up remediation."
+artifact_refs:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s2_architect.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s3.yaml
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - tests/test_stage_summary_schema.py
+  - .agents/skills/subagent-router/SKILL.md
+replay_iteration: 1
+replay_target_stage: deliver_full_s2_architect
+finding_class: test-strategy
+threshold_limit: 3
+lineage_artifacts:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s2_architect.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s3.yaml
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - tests/test_stage_summary_schema.py
+  - .agents/skills/subagent-router/SKILL.md
+next: "Stage 5 should encode the replay-bundle regressions from this plan into tests first, then Stage 6 should implement the four-surface hardening and rerun `pytest tests/test_stage_summary_schema.py` before the next gate."

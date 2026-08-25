@@ -1,0 +1,23 @@
+schema_version: 1
+artifact_kind: governed-shared-state-approval
+session_id: 2026-04-19-phase-2-close
+backlog_id: AD-HOC
+goal: Close v0.2.0 phase 2, open v0.2.0-p3, and capture the phase-2 history board
+pipeline: standard
+approved_stage_id: manual_worktree_sync_followup
+actor_type: human
+decision: approved
+approved_at: '2026-04-19T21:45:00Z'
+allowlist_unit: task
+whole_initiative_approved: false
+shared_state_allowlist:
+  backlog_ids:
+  - BL-062
+  - BL-063
+  - BL-065
+  - BL-066
+  - P1-020
+  - P1-021
+  roadmap_task_refs: []
+  initiative_refs: []
+scope_fingerprint: fe251f73cef092443d4bba4a9f45573da0e4123cc47afea25d1161cc7afe14b6

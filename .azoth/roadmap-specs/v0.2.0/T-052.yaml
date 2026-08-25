@@ -1,0 +1,80 @@
+id: T-052
+roadmap_version: v0.2.0
+title: Stable personal-cockpit deployment and rename
+decision_ref:
+- D34
+- D48
+- D50
+intent: Deploy the operator-owned personal control plane as `yiwei-azoth-cockpit`
+  by renaming the local personal-root repository, recording cockpit desired-state
+  receipt evidence, and closing the root-side roadmap truth for this protected
+  operation.
+problem: T-051 proved release readiness and selected stop/defer until the operator
+  picked a protected follow-on lane. The operator selected the personal-root update
+  lane and clarified that the durable cockpit should be named `yiwei-azoth-cockpit`,
+  so the system needs one auditable mutation-capable slice that performs only that
+  rename/deployment and records receipts without expanding into project writes,
+  source onboarding, retrieval, storage backup, credentials, or release work.
+context_refs:
+- .azoth/handoffs/2026-05-01-t-051-release-readiness-decision.yaml
+- .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+scope:
+- Open a governed T-052 lane from INI-PKB-001 / slice-pkb-001-i with
+  `dynamic-full-auto` orchestration and deliver-full gates.
+- Rename the clean local personal cockpit repository from
+  `/Users/yiwei/GithubRepos/personal-azoth-root` to
+  `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` only when the target path is absent
+  and the source validator passes.
+- >-
+  Update the renamed cockpit's identity and receipt surfaces:
+  `README.md`, `azoth.yaml`, `.azoth/projects/index.yaml`,
+  `.azoth/releases/applied.yaml`, and a T-052 cockpit handoff receipt.
+- Record root-side T-052 handoff evidence, validation, rollback reference, and
+  deferred protected boundaries.
+- Update roadmap, backlog, initiative-bank, and focused tests so future `/next`
+  sees T-052 as the current cockpit deployment truth.
+non_goals:
+- No project source or project code mutation.
+- No source registry onboarding.
+- No retrieval, graph, or vector index expansion.
+- No credential access, cloud account provisioning, or storage backup provisioning.
+- No public product mutation or release publication.
+- No governance, kernel, or M1 change.
+- No rewrite of historical receipts that truthfully referenced
+  `/Users/yiwei/GithubRepos/personal-azoth-root` before the T-052 rename.
+acceptance:
+- The renamed cockpit exists at `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+  and the old local path no longer exists.
+- The cockpit repo is clean after a local commit that records the T-052 identity
+  and receipt changes.
+- Root-side handoff evidence records the old path, new path, rollback ref,
+  cockpit commit, validation commands, and forbidden boundaries.
+- The command `personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit`
+  passes after the rename.
+- Roadmap, backlog, and INI-PKB-001 agree that T-052 is the selected
+  personal-cockpit deployment lane.
+- Tests cover the T-052 cockpit path and the preserved pointer-only project
+  boundary.
+dependencies:
+- T-051
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+validation:
+- python3 scripts/check_gates.py --session-id 2026-05-01-t-052-dynamic-cockpit-deployment
+  --require-pipeline-gate
+- python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+- git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml
+  --check-roadmap-refs
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_control_plane_procedure.py
+  tests/test_post_t050_continuation_intake.py
+  tests/test_t050_stable_personal_control_plane.py tests/test_t049_project_onboarding_receipt.py
+  -q
+elasticity: Future cockpit work must open a separate operator-selected gate for private
+  backup/recovery, another project consumer pilot, retrieval/source onboarding, or
+  project-scoped writes.

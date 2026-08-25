@@ -1,0 +1,349 @@
+{
+  "decision_schema_version": 1,
+  "loop_id": "product-strategy-orchestrator-20260504",
+  "iteration": 2,
+  "action": "refine_proposal",
+  "candidate_id": "product-strategy-operating-model",
+  "source": "product-strategy-orchestrator-20260504",
+  "goal": "Product strategy operating model",
+  "backlog_id": "product-strategy-operating-model",
+  "target_layer": "infrastructure",
+  "delivery_pipeline": "standard",
+  "governance_mode": "standard",
+  "pipeline_command": "autonomous-auto",
+  "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+  "reason": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+  "stop_reason": null,
+  "route_decision": null,
+  "strategy_preflight": {
+    "packet_schema_version": 1,
+    "packet_type": "autonomous_auto_strategy_preflight",
+    "edge": "open_next",
+    "verdict": "allow_open",
+    "may_open_scope": true,
+    "selected_action": "refine_proposal",
+    "candidate_id": "product-strategy-operating-model",
+    "source": "product-strategy-orchestrator-20260504",
+    "target_classification": "live",
+    "selected_route": "refine_proposal",
+    "route_state": "candidate_ready_for_review",
+    "route_authority": "refine_proposal:candidate_ready_for_review",
+    "approval_scope": "",
+    "approval_basis_present": true,
+    "freshness_status": "current_route_gate_and_claim_state",
+    "fresh_campaign_authority": true,
+    "current_loop_authority": "active",
+    "source_artifacts": {},
+    "learning_harvester": {
+      "consumed": true,
+      "decision": {
+        "signal_id": "product-strategy-operating-model",
+        "source_refs": [
+          "product-strategy-orchestrator-20260504"
+        ],
+        "dedupe_key": "product strategy operating model",
+        "severity": "low",
+        "blast_radius": "internal",
+        "route": "capture_only",
+        "protected_gate_required": false,
+        "selected_action": "capture_only",
+        "rejected_alternatives": [
+          "auto_self_heal_now",
+          "defer_to_intake",
+          "human_gate_required",
+          "proposal_needed",
+          "stale_or_rejected"
+        ],
+        "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+        "verification_requirement": "capture visibility in campaign report",
+        "residual_risk": "Signal remains visible but does not justify immediate repair."
+      },
+      "campaign_recommendation": {
+        "schema_version": 1,
+        "decisions": [
+          {
+            "signal_id": "Verified inline stage evidence exception: no fake subagent stage evidence should be backfilled when host policy forbids spawning; require-completion-evidence is the truthful completion gate.",
+            "source_refs": [
+              ".azoth/inbox/session-reflection-2026-05-03-autonomous-auto-inline-stage-exception.jsonl"
+            ],
+            "dedupe_key": "verified inline stage evidence exception: no fake subagent stage evidence should be backfilled when host policy forbids spawning; require-completion-evidence is the truthful completion gate.",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "auto_self_heal_now",
+            "protected_gate_required": false,
+            "selected_action": "open_normal_child_scope",
+            "rejected_alternatives": [
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "normal scope-gate, run-ledger, write-claim, lifecycle-route, and strategy-preflight checks",
+            "residual_risk": ""
+          },
+          {
+            "signal_id": "Autonomous initiative lifecycle orchestration",
+            "source_refs": [
+              ".azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml"
+            ],
+            "dedupe_key": "autonomous initiative lifecycle orchestration",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal remains visible but does not justify immediate repair."
+          },
+          {
+            "signal_id": "residual-1",
+            "source_refs": [
+              "campaign-audit"
+            ],
+            "dedupe_key": "missing stage spawn for autonomous_auto_s1_architect",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Audit residual remains visible but is not itself a fresh self-heal candidate."
+          },
+          {
+            "signal_id": "residual-2",
+            "source_refs": [
+              "campaign-audit"
+            ],
+            "dedupe_key": "missing stage spawn for autonomous_auto_s2_researcher",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Audit residual remains visible but is not itself a fresh self-heal candidate."
+          },
+          {
+            "signal_id": "residual-3",
+            "source_refs": [
+              "campaign-audit"
+            ],
+            "dedupe_key": "missing stage spawn for autonomous_auto_s3_evaluator",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Audit residual remains visible but is not itself a fresh self-heal candidate."
+          },
+          {
+            "signal_id": "residual-4",
+            "source_refs": [
+              "campaign-audit"
+            ],
+            "dedupe_key": "next child should refine strategy model before any product lane delivery or hydration.",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Audit residual remains visible but is not itself a fresh self-heal candidate."
+          },
+          {
+            "signal_id": "Autonomous-auto campaign evaluation and learning closure spine",
+            "source_refs": [
+              ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml"
+            ],
+            "dedupe_key": "autonomous-auto campaign evaluation and learning closure spine",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "stale_or_rejected",
+            "protected_gate_required": false,
+            "selected_action": "none",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal is stale, duplicate, superseded, or intentionally rejected."
+          },
+          {
+            "signal_id": "Autonomous-auto learning harvester and self-heal router",
+            "source_refs": [
+              ".azoth/proposals/autonomous-auto-learning-harvester.yaml"
+            ],
+            "dedupe_key": "autonomous-auto learning harvester and self-heal router",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "stale_or_rejected",
+            "protected_gate_required": false,
+            "selected_action": "none",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed"
+            ],
+            "approval_basis": "Operator selects Option A: Product Strategy Orchestrator and approves a fresh autonomous-auto budget of 10 child scopes with 3 bounded replays. Allowed actions are research_initiative, refine_proposal, and ship_task for product-strategy, option-scoring, proposal-refinement, campaign-report, and non-authoritative strategy-board artifacts. Hydration, public sync/release, public checkout mutation, cockpit/project writes, backup/private remote, credentials, network/dependency expansion, destructive actions, kernel/governance/M1 mutation, broad roadmap/backlog rephasing, commits, and pushes remain blocked unless freshly approved.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal is stale, duplicate, superseded, or intentionally rejected."
+          }
+        ],
+        "route_counts": {
+          "auto_self_heal_now": 1,
+          "capture_only": 5,
+          "defer_to_intake": 0,
+          "human_gate_required": 0,
+          "proposal_needed": 0,
+          "stale_or_rejected": 2
+        },
+        "selected_learning_route": "auto_self_heal_now",
+        "rejected_alternatives": [
+          "capture_only",
+          "defer_to_intake",
+          "human_gate_required",
+          "proposal_needed",
+          "stale_or_rejected"
+        ],
+        "summary": "Harvester routed 8 deduplicated learning signal(s).",
+        "write_authority": "advisory_only_strategy_preflight_still_required"
+      },
+      "write_authority": "advisory_only_scope_gates_still_required"
+    },
+    "human_gate_acknowledgement": {
+      "required": false,
+      "accepted": false,
+      "reason": ""
+    },
+    "gate_status": {
+      "active_scope": false,
+      "active_scope_id": "",
+      "active_write_claim": false,
+      "write_claim_session_id": "",
+      "protected": false
+    },
+    "blocked_alternatives": [],
+    "mismatch_reason": "",
+    "next_safe_action": "refine_proposal",
+    "ux_anchor_fit": "Strategy preflight reconciles route authority, approval basis, gates, write claims, and candidate classification before opening work."
+  },
+  "architect_judgment": {
+    "decision": "refine_proposal",
+    "rationale": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+    "selected": {
+      "action": "refine_proposal",
+      "candidate_id": "product-strategy-operating-model",
+      "title": "Product strategy operating model",
+      "source": "product-strategy-orchestrator-20260504",
+      "scorecard": {
+        "readiness": 58,
+        "ux_anchor_value": 66,
+        "risk": 85,
+        "dependency_state": 70,
+        "priority_bias": 0,
+        "stop_cost": 65,
+        "total": 344
+      },
+      "protected": false
+    },
+    "rejected_alternatives": [
+      {
+        "action": "research_initiative",
+        "candidate_id": "INI-EVI-002",
+        "title": "Knowledge richness evaluation for project-management artifacts",
+        "source": "initiative-bank",
+        "scorecard": {
+          "readiness": 64,
+          "ux_anchor_value": 74,
+          "risk": 85,
+          "dependency_state": 70,
+          "priority_bias": 0,
+          "stop_cost": 65,
+          "total": 358
+        },
+        "protected": false
+      },
+      {
+        "action": "refine_proposal",
+        "candidate_id": "automation-audit-insight-harvest-refinement",
+        "title": "Nightly automation audit bundle and approval contract",
+        "source": "proposal",
+        "scorecard": {
+          "readiness": 58,
+          "ux_anchor_value": 66,
+          "risk": 85,
+          "dependency_state": 70,
+          "priority_bias": 0,
+          "stop_cost": 65,
+          "total": 344
+        },
+        "protected": false
+      }
+    ],
+    "selection_basis": [
+      "readiness",
+      "ux_anchor_value",
+      "risk",
+      "dependency_state",
+      "priority_bias",
+      "stop_cost"
+    ]
+  },
+  "alignment_checkpoint_summary": {
+    "packet_count": 1,
+    "pending_count": 0,
+    "latest_packet_id": "align-001",
+    "latest_packet_type": "approval_basis",
+    "latest_disposition": "applied",
+    "disposition_count": 1
+  }
+}

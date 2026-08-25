@@ -1,0 +1,340 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-DEP-001
+title: Deployment readiness, cockpit control point, and multi-scale modes
+status: complete
+classification: root_readiness_contract_complete
+created_at: '2026-05-19T14:39:38Z'
+updated_at: '2026-05-19T21:56:00Z'
+owner: codex
+delivery_authorized: false
+source_sessions:
+- session_id: 2026-05-19-azoth-deployment-readiness-cockpit-upgrade
+  kind: goal-mode-self-approved-planning-seed
+  artifact: .azoth/initiative-banks/INI-DEP-001.yaml
+  note: 'Seeded from the active Codex Goal after Goal-mode self-approval v1 opened
+    a planning-only scope. This does not authorize hydration, release work, cockpit
+    mutation, project-local mutation, or governance edits.
+
+    '
+contacts:
+- id: operator
+  role: human decision owner
+  contact_type: human
+  note: 'Asked for deployment ease, new/existing project readiness, a central cockpit/control-point
+    mechanism, and multi-scale Azoth modes.
+
+    '
+- id: release-profile-proposal
+  role: product release reference
+  contact_type: artifact
+  path: .azoth/proposals/public-release-root-feature-parity.yaml
+  note: Defines feature parity and consumer-safe release profile direction.
+- id: genesis-proposal
+  role: project adoption reference
+  contact_type: artifact
+  path: .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+  note: Defines four-plane Project Genesis and Goal-mode boundaries.
+source_proposal_refs:
+- .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+- .azoth/proposals/public-release-root-feature-parity.yaml
+- .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+research_questions:
+- question_id: rq-dep-001-001
+  question: What deployment modes should Azoth expose?
+  status: answered
+  opened_at: '2026-05-19T14:39:38Z'
+  needed_for: mode_matrix
+  answer: 'Use guide, assisted, managed, and governed_autonomy as the first scale
+    ladder. Each mode must name installed capability classes and exclusions.
+
+    '
+  evidence_refs:
+  - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml#details.mode_taxonomy
+- question_id: rq-dep-001-002
+  question: What should the central cockpit control point own?
+  status: answered
+  opened_at: '2026-05-19T14:39:38Z'
+  needed_for: cockpit_readiness_readback
+  answer: 'It should show project pointers, selected Azoth mode, readiness state,
+    freshness, installed/missing asset classes, active write claim, stop reason,
+    and next safe action. It should not silently mutate project repos.
+
+    '
+  evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+- question_id: rq-dep-001-003
+  question: Which readiness checks block unsafe first-use claims?
+  status: answered
+  opened_at: '2026-05-19T14:39:38Z'
+  needed_for: release_profile_matrix_compiler
+  answer: 'A mode is not ready unless advertised commands, skills, agents, scripts,
+    planning seeds, ledger/route evidence, and local-private runtime protections
+    all match the selected mode.
+
+    '
+  evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#first_use_evidence_map
+  - scripts/azoth_release_profile.py
+  - scripts/product_release_smoke.py
+research_refs:
+- .azoth/research/ini-dep-001-readiness-map.yaml
+- .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+local_findings:
+- finding_id: lf-dep-001-001
+  status: active
+  summary: Public release parity already names missing runtime bundle and seed gaps.
+  evidence_refs:
+  - .azoth/proposals/public-release-root-feature-parity.yaml
+- finding_id: lf-dep-001-002
+  status: answered
+  summary: Cockpit scripts are verification/readback surfaces, not broad write authority.
+  evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+  - scripts/cockpit_bootstrap_verify.py
+  - scripts/cockpit_ux_simulate.py
+external_findings: []
+assumptions:
+- assumption_id: asm-dep-001-001
+  status: resolved
+  statement: The first useful output is a mode/readiness contract, not installer mutation.
+  validation_path: Delivered as .azoth/research/t-059-deployment-readiness-mode-matrix.yaml.
+contradictions:
+- contradiction_id: cx-dep-001-001
+  status: monitored
+  summary: Ease of deployment pushes toward automation, while Azoth authority requires
+    explicit plane boundaries.
+  resolution: Make mode manifests explicit and require receipts before project-local
+    mutation.
+challenge_log:
+- challenge_id: ch-dep-001-001
+  status: answered
+  prompt: What would make multi-scale modes unsafe?
+  answer: Claiming managed or governed-autonomy readiness when the install only has
+    guide or assisted assets, or when cockpit/project-local handoff lacks an explicit
+    receipt, write claim, budget, or stop condition.
+candidate_slices:
+- candidate_id: slice-dep-001-a
+  proposed_task_id: T-059
+  title: Deployment readiness mode matrix and first-use map
+  initiative_ref: INI-DEP-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'Define the mode matrix, first-use readiness checks, and cockpit readback
+    contract without mutating release, cockpit, or project repos.
+
+    '
+  acceptance_criteria:
+  - Mode taxonomy names installed assets and exclusions for each mode.
+  - Four-plane authority remains explicit.
+  - Readiness map identifies installer, release-profile, cockpit, planning-bank, and
+    autonomous-control surfaces.
+  - Proposal and initiative bank validate.
+  research_evidence_refs:
+  - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+  - .azoth/research/ini-dep-001-readiness-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+  known_non_goals:
+  - No kernel/governance edits.
+  - No public Azoth, cockpit, or project repo mutation.
+  - No release publishing or runtime implementation beyond root planning/readiness
+    artifacts.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Deployment readiness mode matrix and first-use map
+    scaffold_command: 'python3 scripts/roadmap_scaffold.py --title "Deployment readiness
+      mode matrix and first-use map" --initiative-ref INI-DEP-001 --target-layer infrastructure
+      --delivery-pipeline standard
+
+      '
+    mode: executed
+    hydrated_task_ref: T-059
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-059.yaml
+  hydrated_at: '2026-05-19T15:02:01Z'
+  delivery_result:
+    delivered_at: '2026-05-19T16:01:40Z'
+    status: complete
+- candidate_id: slice-dep-001-c
+  proposed_task_id: T-060
+  title: Cockpit mode readiness readback checker and simulator
+  initiative_ref: INI-DEP-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'Extend the root-owned cockpit menu/checker and no-write UX simulator
+    so project pointers fail closed unless they expose the T-059 mode/readiness
+    readback contract.
+
+    '
+  acceptance_criteria:
+  - Cockpit project validation requires the T-059 readback fields and rejects missing
+    or badly typed values.
+  - Rendered cockpit handoff shows selected mode, readiness, freshness, authority,
+    installed/missing assets, approval scope, write claim, next safe action, and
+    stop reason without hiding missing assets.
+  - UX simulation checks for the richer readback fields while preserving no-write
+    cockpit/project behavior.
+  - No public Azoth, personal cockpit, project-local repo, release, kernel, or governance
+    mutation occurs.
+  research_evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+  - .azoth/roadmap-specs/v0.2.0/T-059.yaml#cockpit_readback_contract
+  - scripts/cockpit_menu.py
+  - scripts/cockpit_ux_simulate.py
+  known_non_goals:
+  - No kernel/governance edits.
+  - No release publishing.
+  - No public Azoth, personal cockpit, or project-local repo mutation.
+  - No project-local command execution beyond existing read-only git status simulation.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Cockpit mode readiness readback checker and simulator
+    mode: direct_approved_t060_delivery
+    hydrated_task_ref: T-060
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-060.yaml
+    hydrated_at: '2026-05-19T16:47:39Z'
+- candidate_id: slice-dep-001-b
+  proposed_task_id: T-061
+  title: Release profile matrix compiler
+  initiative_ref: INI-DEP-001
+  status: complete
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  summary: 'Add a root-local read-only compiler that turns the T-059 mode matrix
+    into release-profile readiness output without editing kernel templates,
+    publishing releases, or mutating public/cockpit/project repos.
+
+    '
+  acceptance_criteria:
+  - Compiler emits guide, assisted, managed, and governed_autonomy readiness states
+    with installed assets, missing assets, exclusions, authority notes, and next
+    safe action.
+  - Missing or malformed mode matrix data fails closed.
+  - Managed and governed_autonomy report requires_authority unless a fresh local
+    authority gate exists.
+  - Existing Full profile materialization behavior remains green.
+  research_evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#first_use_evidence_map
+  - scripts/azoth_release_profile.py
+  known_non_goals:
+  - No kernel/governance edits.
+  - No kernel/templates edits.
+  - No release publishing.
+  - No public Azoth, personal cockpit, or project-local repo mutation.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    proposed_title: Release profile matrix compiler
+    mode: direct_approved_t061_delivery
+    hydrated_task_ref: T-061
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-061.yaml
+    hydrated_at: '2026-05-19T18:37:10Z'
+readiness:
+  evaluated_at: '2026-05-19T18:37:10Z'
+  readiness_status: complete
+  human_decision: approved
+  approval_scope: delivery_specific_t_061
+  approval_basis: 'Operator approved delivery on 2026-05-19: Approve standard /auto
+    for T-061 "Release profile matrix compiler", limited to root-azoth release-profile
+    scripts/tests/planning-readiness artifacts, with no kernel/governance edits,
+    no kernel/templates edits, no release publishing, no public Azoth mutation,
+    no personal cockpit mutation, and no project-local repo mutation.
+
+    '
+  candidate_first_slice: slice-dep-001-b
+  freshness_status: current_as_of_2026_05_19_t_061_delivered
+  hydration_recommendation: T-061 has been delivered as a root-local release-profile
+    readiness compiler. Do not mutate kernel templates, publish public Azoth,
+    mutate the personal cockpit, or hydrate project-local repositories without a
+    fresh authority gate.
+delivery_history:
+- delivered_at: '2026-05-19T18:37:10Z'
+  session_id: 2026-05-19-t-061-release-profile-matrix-compiler-delivery
+  candidate_slice_ref: slice-dep-001-b
+  task_ref: T-061
+  contract_ref: .azoth/roadmap-specs/v0.2.0/T-061.yaml
+  approval_scope: delivery_specific_t_061
+  result: Delivered root-owned release-profile readiness compiler and tests for
+    the T-059 mode matrix, reporting ready, requires_authority, and blocked states.
+- delivered_at: '2026-05-19T16:47:39Z'
+  session_id: 2026-05-19-t-060-cockpit-mode-readiness-readback-delivery
+  candidate_slice_ref: slice-dep-001-c
+  task_ref: T-060
+  contract_ref: .azoth/roadmap-specs/v0.2.0/T-060.yaml
+  approval_scope: delivery_specific_t_060
+  result: Delivered root-owned cockpit project readback validation, rendering, and
+    UX simulation checks for the T-059 mode/readiness contract.
+- delivered_at: '2026-05-19T16:01:40Z'
+  session_id: 2026-05-19-t-059-deployment-readiness-mode-matrix-delivery
+  candidate_slice_ref: slice-dep-001-a
+  task_ref: T-059
+  contract_ref: .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+  approval_scope: delivery_specific_t_059
+  result: Delivered the mode matrix, first-use evidence map, and cockpit readback
+    contract as root-azoth planning/readiness artifacts only.
+hydration_history:
+- hydrated_at: '2026-05-19T18:37:10Z'
+  session_id: 2026-05-19-t-061-release-profile-matrix-compiler-delivery
+  candidate_slice_ref: slice-dep-001-b
+  task_ref: T-061
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-061.yaml
+  approval_scope: delivery_specific_t_061
+  approval_basis: 'Operator approved delivery on 2026-05-19: Approve standard /auto
+    for T-061 "Release profile matrix compiler", limited to root-azoth release-profile
+    scripts/tests/planning-readiness artifacts, with no kernel/governance edits,
+    no kernel/templates edits, no release publishing, no public Azoth mutation,
+    no personal cockpit mutation, and no project-local repo mutation.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: direct_t061_delivery_append
+  merge_key: slice-dep-001-b:T-061:2026-05-19T18:37:10Z
+  scaffold_command: direct T-061 delivery under approved /auto gate
+  result: Created T-061 roadmap/backlog/spec records and delivered the release-profile
+    matrix compiler as a root-local read-only readiness surface.
+- hydrated_at: '2026-05-19T16:47:39Z'
+  session_id: 2026-05-19-t-060-cockpit-mode-readiness-readback-delivery
+  candidate_slice_ref: slice-dep-001-c
+  task_ref: T-060
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-060.yaml
+  approval_scope: delivery_specific_t_060
+  approval_basis: 'Operator approved delivery on 2026-05-19: Approve standard /auto
+    for T-060 "Cockpit mode readiness readback checker and simulator", limited
+    to root-azoth scripts/tests/planning-readiness artifacts, with no kernel/governance
+    edits, no release publishing, no public Azoth mutation, no personal cockpit
+    mutation, and no project-local repo mutation.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: direct_t060_delivery_append
+  merge_key: slice-dep-001-c:T-060:2026-05-19T16:47:39Z
+  scaffold_command: direct T-060 delivery under approved /auto gate
+  result: Created T-060 roadmap/backlog/spec records and delivered root-local cockpit
+    readback checker/simulator behavior.
+- hydrated_at: '2026-05-19T15:02:01Z'
+  session_id: 2026-05-19-ini-dep-001-slice-dep-001-a-hydration
+  candidate_slice_ref: slice-dep-001-a
+  task_ref: T-059
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-059.yaml
+  backlog_ref: T-059
+  roadmap_ref: T-059
+  approval_scope: hydration_specific_slice_dep_001_a
+  approval_basis: 'Operator approved hydration on 2026-05-19: Approve hydration of
+    INI-DEP-001 slice-dep-001-a using the planned scaffold command for "Deployment
+    readiness mode matrix and first-use map".
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-dep-001-a:T-059:2026-05-19T15:02:01Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Deployment readiness
+    mode matrix and first-use map" --initiative-ref INI-DEP-001 --target-layer infrastructure
+    --delivery-pipeline standard
+  result: Created roadmap/backlog/spec artifacts for T-059; implementation and shipping
+    remain separate.

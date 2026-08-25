@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "source_session_id": "2026-04-20-adhoc-research-anthropic-s-official-coordination-and-c",
+  "goal": "Bounded continuation contract and pre-authorized merge policy for Azoth automations",
+  "captured_at": "2026-04-20T22:27:04Z",
+  "refreshed_at": "2026-04-20T22:27:04Z",
+  "refresh_summary": "Focused follow-on capsule to the governed-synthesis-bus research. This capture narrows the problem to two contract surfaces: how a wakeup-based automation may safely continue work, and how a future pre-authorized merge lane should be modeled without weakening Azoth's fail-closed posture.",
+  "volatility": "mixed",
+  "limitations": [
+    "OpenAI, Anthropic, and GitHub product surfaces can change; all platform claims here were checked against official documentation observed on 2026-04-21 local time.",
+    "This capsule proposes contract directions and control-plane boundaries only. It does not approve implementation or repository policy changes.",
+    "The merge policy section reasons from GitHub's documented mechanics plus current Azoth reflections; it is not yet validated against a production-grade Azoth publish workflow implementation."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this continuation-and-merge research capsule be reused for architecture, workflow, and merge-policy planning?",
+      "status": "answered",
+      "answered_at": "2026-04-20T22:27:04Z",
+      "fresh_until": "2026-05-21T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-goal-bounded-continuation-contract-and-pre-authorized",
+      "question": "What is the safest current contract for automation-driven continuation and pre-authorized merge in Azoth?",
+      "status": "answered",
+      "answered_at": "2026-04-20T22:27:04Z",
+      "fresh_until": "2026-05-21T00:00:00Z"
+    }
+  ],
+  "core_finding": "The safest near-term model is not agent-decides-and-merges. It is advance-by-contract: Codex thread automations wake an existing thread, evaluate durable predicates from Azoth state plus host state, and either continue a predeclared next stage, arm GitHub's own merge machinery, report findings, or stop. Direct autonomous merge should remain out of scope until the same predicates can be proven and enforced mechanically.",
+  "bounded_continuation_contract": {
+    "preferred_primitive": "Codex thread automations",
+    "why": [
+      "Thread automations explicitly preserve thread context and are described by OpenAI as heartbeat-style recurring wake-up calls.",
+      "They can poll GitHub or another connected source while keeping the results in the same thread, which matches Azoth's run-ledger and stage-aware continuity model.",
+      "They support durable prompts that can say what to do on wake, how to decide whether anything important happened, and when to stop or ask for input."
+    ],
+    "required_state_inputs": [
+      "active session_id and unexpired scope gate",
+      "current run_id when stage-aware continuation is active",
+      "active_stage_id and pending_stage_ids from the run ledger",
+      "pause_reason and prior review disposition when the run is paused",
+      "relevant external evidence snapshot such as CI, PR review, or deployment status",
+      "write-claim or equivalent lease discipline before any file mutation"
+    ],
+    "continue_only_if": [
+      "The scope gate is still approved and unexpired.",
+      "The automation is continuing the same approved goal or a narrower sub-goal already implied by the current run.",
+      "The next executable stage is already represented in durable state rather than inferred ad hoc.",
+      "No unresolved human gate, request-changes disposition, critical review finding, or stale research requirement blocks the run.",
+      "The evidence used for the continuation decision is fresh enough for the action being taken."
+    ],
+    "stop_or_escalate_if": [
+      "The scope or continuation lease is expired.",
+      "The wakeup finds ambiguous lineage, missing run state, or conflicting external signals.",
+      "The run is paused at a human gate and no explicit approval-consumption path is active.",
+      "The automation would need to expand scope, reinterpret policy, or invent a new stage.",
+      "The external platform state changed in a way that invalidates prior approval, such as new commits, new blocking reviews, or changed merge requirements."
+    ],
+    "allowed_actions": [
+      "Report-only updates into the same thread.",
+      "Advance to the next predeclared stage after explicit approval has already been recorded in the run ledger.",
+      "Set up or update a future wakeup.",
+      "Prepare or arm a host-native merge mechanism when all explicit predicates are satisfied."
+    ],
+    "disallowed_actions_for_v1": [
+      "Open-ended autonomous scope expansion.",
+      "Direct memory or governance mutation by the wakeup automation itself.",
+      "Continuing past review failure by narrative judgment alone.",
+      "Creating a new source of truth outside the shared Azoth state layer."
+    ]
+  },
+  "platform_mapping": {
+    "codex_thread_automations": {
+      "role": "default continuation lane",
+      "fit": [
+        "Preserve thread context",
+        "Fit long-running check, poll, and review-loop use cases",
+        "Can ask when to stop or for input",
+        "Can use skills and plugins from the same Codex environment"
+      ]
+    },
+    "codex_standalone_or_project_automations": {
+      "role": "independent producer lane",
+      "fit": [
+        "Fresh runs on a schedule",
+        "Findings land in Triage",
+        "Can run in background worktrees for isolation"
+      ]
+    },
+    "claude_loop_scheduled_tasks": {
+      "role": "closest Claude continuation analogue",
+      "fit": [
+        "Good for polling a PR, build, or deploy inside a session",
+        "Restorable on resume if not expired"
+      ],
+      "limits": [
+        "Session-scoped",
+        "Not independent durable continuation across arbitrary future events"
+      ]
+    },
+    "claude_routines": {
+      "role": "future experimental ingress lane",
+      "fit": [
+        "Strong for scheduled, API, and GitHub-triggered cloud ingress",
+        "Useful when external events need to start work without a local machine"
+      ],
+      "limits": [
+        "GitHub-triggered routines start new sessions for each event",
+        "Session reuse across events is not available",
+        "No approval prompts during a run increases autonomy risk for Azoth's current posture"
+      ]
+    }
+  },
+  "pre_authorized_merge_policy": {
+    "recommended_interpretation": "Pre-authorized merge should mean that the agent is permitted to arm GitHub's documented merge machinery once explicit predicates are met, not that the agent may directly merge whenever it judges the PR looks good.",
+    "recommended_host_actions": [
+      "Enable GitHub auto-merge when the repository supports it and the PR is otherwise waiting on required reviews or checks.",
+      "Add the PR to the merge queue when the branch protection rule requires merge queue.",
+      "If neither host mechanism is available, stop at ready-to-merge reporting rather than performing a custom direct merge path."
+    ],
+    "required_predicates": [
+      "All required reviews are met.",
+      "No active blocking request-changes review remains unresolved or undismissed.",
+      "All required status checks have passed.",
+      "Conversation resolution is complete when branch protection requires it.",
+      "Required deployments have succeeded when branch protection requires them.",
+      "Merge queue is used when branch protection requires it.",
+      "No stale-approval or most-recent-reviewable-push rule has been invalidated since the last approval checkpoint.",
+      "The PR head SHA and base branch state still match the verified snapshot used for the authorization decision.",
+      "The Azoth scope and any merge-specific approval grant are still active."
+    ],
+    "invalidators": [
+      "A new commit changes the reviewable diff or dismisses stale approvals.",
+      "A base-branch change or equivalent merge-base movement invalidates earlier approval assumptions.",
+      "A new blocking review, pending review on another PR with the same head commit, or unresolved required conversation appears.",
+      "Auto-merge is disabled by a non-write contributor push or by base-branch switching.",
+      "The continuation wakeup finds stale CI, stale review data, or an expired approval window."
+    ],
+    "posture": "fail-closed",
+    "human_gate_boundary": "The first pre-authorized merge lane should still require explicit up-front human authorization for this PR or class of PRs. The automation may satisfy and monitor predicates, but should not invent new policy or downgrade blockers."
+  },
+  "important_inference": "For Azoth, pre-authorized merge is more compatible with GitHub auto-merge or merge queue than with a custom direct-merge bot. Those host features already embody mechanical merge requirements and naturally absorb waiting time once the PR has been armed.",
+  "source_backed_findings": [
+    "OpenAI's Codex docs explicitly define thread automations as heartbeat-style recurring wake-up calls attached to the current thread and instruct authors to make the prompt durable, including when to stop or ask for input.",
+    "OpenAI also distinguishes standalone automations as fresh scheduled runs whose findings appear in Triage, which makes them a better producer lane than a continuation lane.",
+    "Anthropic's scheduled-task docs make clear that /loop is session-scoped and restored only on resume if still valid, while routines are the durable cloud surface.",
+    "Anthropic's routines docs make clear that GitHub events start new sessions and that routines have no approval prompts during a run.",
+    "GitHub's branch-protection docs provide a mechanical merge-policy vocabulary: required reviews, status checks, conversation resolution, merge queue, deployments, and no-bypass settings.",
+    "GitHub's auto-merge docs state that auto-merge merges when required reviews and checks pass, and that it is disabled in specific change scenarios such as certain new pushes or base-branch changes."
+  ],
+  "sources": [
+    {
+      "kind": "industry-official",
+      "title": "Codex automations documentation",
+      "url": "https://developers.openai.com/codex/app/automations",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Official OpenAI developer documentation observed on 2026-04-21",
+      "findings": [
+        "Thread automations are heartbeat-style recurring wake-up calls attached to the current thread.",
+        "Standalone automations start fresh runs on a schedule and findings show up in Triage.",
+        "Automations run unattended under the default sandbox settings, and approval behavior can use approval_policy=never when allowed by admin policy."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Codex for (almost) everything",
+      "url": "https://openai.com/index/codex-for-almost-everything/",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "OpenAI product post published 2026-04-16",
+      "findings": [
+        "OpenAI says automations can reuse existing conversation threads and wake automatically to continue long-term work across days or weeks."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Claude Code scheduled tasks",
+      "url": "https://code.claude.com/docs/en/scheduled-tasks",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Anthropic documentation observed on 2026-04-21",
+      "findings": [
+        "Scheduled tasks are session-scoped and restored on resume only if they have not expired.",
+        "The scheduling comparison explicitly distinguishes cloud tasks, desktop tasks, and /loop."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Claude Code routines",
+      "url": "https://code.claude.com/docs/en/web-scheduled-tasks",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Anthropic documentation observed on 2026-04-21",
+      "findings": [
+        "Routines run on Anthropic-managed cloud infrastructure and can be triggered by schedule, API, or GitHub events.",
+        "Each matching GitHub event starts a new session; session reuse across events is not available.",
+        "Routines have no approval prompts during a run."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "About protected branches",
+      "url": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Official GitHub documentation observed on 2026-04-21",
+      "findings": [
+        "GitHub branch protection can require pull request reviews, status checks, conversation resolution, merge queue, deployments, and no-bypass behavior.",
+        "Request-changes reviews can block merge until approved again or dismissed by someone with write permissions.",
+        "Stale approvals and the most-recent-reviewable-push rule are explicit merge invalidators."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Automatically merging a pull request",
+      "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Official GitHub documentation observed on 2026-04-21",
+      "findings": [
+        "Auto-merge merges when required reviews are met and required status checks have passed.",
+        "Auto-merge can be disabled by subsequent changes such as certain pushes to the head branch or base-branch switching."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Merging a pull request with a merge queue",
+      "url": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue",
+      "freshness_observed_at": "2026-04-21",
+      "published_context": "Official GitHub documentation observed on 2026-04-21",
+      "findings": [
+        "When merge queue is required, the correct host-native action is to add the PR to the queue so GitHub can merge it once required checks pass."
+      ]
+    }
+  ],
+  "repo_findings": [
+    "Azoth already requires fail-closed approval consumption through the run ledger before advancing a paused human-gate run.",
+    "Azoth already records that autonomous PR completion is a staged control-plane workflow with durable waiting, explicit merge policy, and cleanup needs.",
+    "Azoth's /auto workflow stops on request-changes, critical findings, or needs-input states and does not treat an already-started pipeline as permission to continue through a failed review gate.",
+    "Azoth resume semantics already distinguish scope restoration from stage-aware continuation, which aligns with a wakeup-based continuation contract.",
+    "Current local evidence supports a continuation lane and a merge-policy lane, but not yet a blanket direct autonomous merge lane."
+  ],
+  "repo_evidence": [
+    {
+      "path": "scripts/run_ledger.py",
+      "findings": [
+        "consume_human_gate_approval only advances a paused run with explicit active stage and pending stage lineage.",
+        "rewrite_request_changes_replay inserts the corrective stage fail-closed and stops on ambiguous lineage or threshold exhaustion."
+      ]
+    },
+    {
+      "path": ".agents/workflows/auto.md",
+      "findings": [
+        "The pipeline stops on request-changes, critical findings, or needs-input and requires explicit human continuation.",
+        "Approval continuation must be consumed in the same run rather than narrated."
+      ]
+    },
+    {
+      "path": "commands/resume/body.md",
+      "findings": [
+        "Explicit resume restores saved scope directly and continues from saved checkpoints when present."
+      ]
+    },
+    {
+      "path": ".azoth/inbox/processed/session-reflection-pr-autonomous-publish-2026-04-19.jsonl",
+      "findings": [
+        "The repo already recognizes durable waiting, explicit merge policy, and cleanup as distinct control-plane concerns for autonomous PR completion."
+      ]
+    }
+  ],
+  "open_research_threads": [
+    "Define the exact durable continuation record shape for wakeup-backed stage advancement, including dedupe and stale-evidence invalidation.",
+    "Determine whether Azoth should expose merge authorization as a per-PR grant, a per-workflow grant, or a reusable policy bundle.",
+    "Clarify how non-blocking review comments and outdated threads should be mechanically separated from true blockers in a future publish workflow.",
+    "Research whether GitHub auto-merge plus merge queue coverage is sufficient for Azoth's intended merge lane or whether any safe fallback is needed when those features are unavailable."
+  ],
+  "recommended_reuse_for": [
+    "continuation-contract design",
+    "publish workflow architecture",
+    "pre-authorized merge policy drafting",
+    "Codex automation prompt design"
+  ]
+}

@@ -18,6 +18,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import shutil
+import sys
 import uuid
 from pathlib import Path
 
@@ -31,6 +32,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 test env
 
 # Load the script as a module without executing main()
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "azoth-deploy.py"
+sys.path.insert(0, str(_SCRIPT.parent))
 _spec = importlib.util.spec_from_file_location("azoth_deploy", _SCRIPT)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
@@ -44,6 +46,7 @@ UNIVERSAL_NEVER_AUTO = _mod.UNIVERSAL_NEVER_AUTO
 transform_agent_claude = _mod.transform_agent_claude
 transform_agent_copilot = _mod.transform_agent_copilot
 transform_agent_codex = _mod.transform_agent_codex
+transform_agent_gemini = _mod.transform_agent_gemini
 transform_agent_opencode = _mod.transform_agent_opencode
 transform_command_claude = _mod.transform_command_claude
 transform_command_copilot = _mod.transform_command_copilot
@@ -205,6 +208,44 @@ _ARCHITECT = {
     "body": "# Architect\n\nYou are the Architect.\n",
 }
 
+BUILDER_DEPLOY_MARKERS = [
+    "## Scope Discipline",
+    "State the approved goal, owned surfaces, expected changed files, and out-of-scope surfaces before editing.",
+    "Prefer existing repo helpers, patterns, and generated-source flows before adding new abstractions.",
+    "Avoid drive-by cleanup; preserve unrelated dirty state; keep every changed line traceable to the approved scope.",
+    "Choose the narrowest meaningful verification first, then run the relevant tests or parity checks.",
+    "Final reports must name changed paths, goal mapping, validation commands and outcomes, residual risk, and deferred adjacent work.",
+]
+
+ORCHESTRATOR_STAGE0_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "routing_implications",
+    "Fail closed",
+]
+
+AUTO_STAGE0_CHECKPOINT_MARKERS = [
+    "## Stage 0 Assumption Checkpoint",
+    "before final classification, auto-router composition, and Declaration",
+    "interpreted_goal",
+    "inputs_and_scope_source",
+    "classification_rationale",
+    "gate_implications",
+    "routing_implications",
+    "Fail closed",
+]
+
+
+def _canonical_builder() -> dict:
+    agents = load_agents(Path(__file__).resolve().parent.parent)
+    for agent in agents:
+        if agent["meta"].get("name") == "builder":
+            return agent
+    raise AssertionError("canonical builder agent not found")
+
 
 def test_claude_agent_required_fields() -> None:
     out = transform_agent_claude(_ARCHITECT)
@@ -285,6 +326,37 @@ def test_codex_agent_model_optional() -> None:
     out_with_model = transform_agent_codex(agent_with_model)
     data_with_model = tomllib.loads(out_with_model)
     assert data_with_model["model"] == "gpt-5.4"
+
+
+def test_builder_posture_projects_to_agent_transforms() -> None:
+    builder = _canonical_builder()
+    outputs = {
+        "claude": transform_agent_claude(builder),
+        "copilot": transform_agent_copilot(builder),
+        "opencode": transform_agent_opencode(builder),
+        "codex": tomllib.loads(transform_agent_codex(builder))["developer_instructions"],
+        "gemini": transform_agent_gemini(builder),
+    }
+    for platform, output in outputs.items():
+        for marker in BUILDER_DEPLOY_MARKERS:
+            assert marker in output, f"{platform} builder output missing marker: {marker}"
+
+
+def test_orchestrator_stage0_checkpoint_projects_to_agent_transforms() -> None:
+    agents = load_agents(Path(__file__).resolve().parent.parent)
+    orchestrator = next(agent for agent in agents if agent["meta"].get("name") == "orchestrator")
+    outputs = {
+        "claude": transform_agent_claude(orchestrator),
+        "copilot": transform_agent_copilot(orchestrator),
+        "opencode": transform_agent_opencode(orchestrator),
+        "codex": tomllib.loads(transform_agent_codex(orchestrator))["developer_instructions"],
+        "gemini": transform_agent_gemini(orchestrator),
+    }
+    for platform, output in outputs.items():
+        for marker in ORCHESTRATOR_STAGE0_CHECKPOINT_MARKERS:
+            assert marker in output, (
+                f"{platform} orchestrator output missing Stage 0 checkpoint marker: {marker}"
+            )
 
 
 # ── transform_agent_opencode ─────────────────────────────────────────────────
@@ -502,7 +574,18 @@ def _write_codex_templates(root: Path) -> None:
         'approval_policy = "on-request"\n',
         encoding="utf-8",
     )
+    (adapter / "config.seamless.toml.template").write_text(
+        'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n',
+        encoding="utf-8",
+    )
     (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
+    (adapter / "hooks.verbose.json.template").write_text(
+        '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+    )
+    (adapter / "azoth-seamless.star.template").write_text(
+        'prefix_rule(pattern=["git", "status"])\n',
+        encoding="utf-8",
+    )
     (adapter / "user_prompt_submit_router.py.template").write_text(
         "#!/usr/bin/env python3\n",
         encoding="utf-8",
@@ -580,7 +663,10 @@ def test_main_codex_writes_agents_skills_and_adapter(tmp_path: Path) -> None:
     assert (tmp_path / ".codex" / "agents" / "architect.toml").is_file()
     assert (tmp_path / ".agents" / "skills" / "context-map" / "SKILL.md").is_file()
     assert (tmp_path / ".codex" / "config.toml").is_file()
+    assert (tmp_path / ".codex" / "config.seamless.toml").is_file()
     assert (tmp_path / ".codex" / "hooks.json").is_file()
+    assert (tmp_path / ".codex" / "hooks.verbose.json").is_file()
+    assert (tmp_path / ".codex" / "rules" / "azoth-seamless.star").is_file()
     assert (tmp_path / ".codex" / "hooks" / "user_prompt_submit_router.py").is_file()
 
 
@@ -596,18 +682,27 @@ def test_iter_codex_adapter_deployments_maps_templates() -> None:
         (adapter / "config.toml.template").write_text(
             'approval_policy = "on-request"\n', encoding="utf-8"
         )
+        (adapter / "config.seamless.toml.template").write_text(
+            'approval_policy = "untrusted"\n', encoding="utf-8"
+        )
         (adapter / "hooks.json.template").write_text('{"hooks": {}}\n', encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(
             '{"hooks": {"SessionStart": []}}\n', encoding="utf-8"
+        )
+        (adapter / "azoth-seamless.star.template").write_text(
+            'prefix_rule(pattern=["git", "status"])\n', encoding="utf-8"
         )
         (adapter / "user_prompt_submit_router.py.template").write_text(
             "#!/usr/bin/env python3\n", encoding="utf-8"
         )
         pairs = iter_codex_adapter_deployments(root)
-        assert len(pairs) == 3
+        assert len(pairs) == 6
         dests = {p[1].as_posix() for p in pairs}
         assert root.joinpath(".codex", "config.toml").as_posix() in dests
+        assert root.joinpath(".codex", "config.seamless.toml").as_posix() in dests
         assert root.joinpath(".codex", "hooks.json").as_posix() in dests
+        assert root.joinpath(".codex", "hooks.verbose.json").as_posix() in dests
+        assert root.joinpath(".codex", "rules", "azoth-seamless.star").as_posix() in dests
         assert root.joinpath(".codex", "hooks", "user_prompt_submit_router.py").as_posix() in dests
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -620,17 +715,28 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
+        seamless_config = 'approval_policy = "untrusted"\n'
         hooks = '{"hooks": {}}\n'
         verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         n, _ = deploy_codex_adapter(root, dry_run=False)
-        assert n == 3
+        assert n == 6
         assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "config.seamless.toml").read_text(
+            encoding="utf-8"
+        ) == seamless_config
         assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks.verbose.json").read_text(encoding="utf-8") == verbose_hooks
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
         assert (root / ".codex" / "hooks" / "user_prompt_submit_router.py").read_text(
             encoding="utf-8"
         ) == router
@@ -638,27 +744,74 @@ def test_deploy_codex_adapter_writes_matching_content() -> None:
         shutil.rmtree(root, ignore_errors=True)
 
 
-def test_deploy_codex_adapter_uses_verbose_template_when_local_marker_is_set() -> None:
+def test_deploy_codex_adapter_ignores_local_hook_marker_for_tracked_outputs() -> None:
     repo = Path(__file__).resolve().parent.parent
     root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
     adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
     adapter.mkdir(parents=True)
     try:
         config = 'approval_policy = "on-request"\n'
+        seamless_config = 'approval_policy = "untrusted"\n'
         hooks = '{"hooks": {}}\n'
         verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
         router = "#!/usr/bin/env python3\n"
         (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
         (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
         (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
         (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
         (root / ".codex").mkdir(parents=True, exist_ok=True)
         (root / ".codex" / "hooks.mode.local").write_text("verbose\n", encoding="utf-8")
 
         n, _ = deploy_codex_adapter(root, dry_run=False)
 
-        assert n == 3
-        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == verbose_hooks
+        assert n == 6
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "hooks.verbose.json").read_text(encoding="utf-8") == verbose_hooks
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_deploy_codex_adapter_ignores_local_permission_marker_for_tracked_outputs() -> None:
+    repo = Path(__file__).resolve().parent.parent
+    root = repo / "tests" / "_tmp_deploy" / uuid.uuid4().hex
+    adapter = root / "kernel" / "templates" / "platform-adapters" / "codex"
+    adapter.mkdir(parents=True)
+    try:
+        config = 'approval_policy = "on-request"\n'
+        seamless_config = (
+            'approval_policy = "untrusted"\nrules = [".codex/rules/azoth-seamless.star"]\n'
+        )
+        hooks = '{"hooks": {}}\n'
+        verbose_hooks = '{"hooks": {"SessionStart": []}}\n'
+        rules = 'prefix_rule(pattern=["git", "status"])\n'
+        router = "#!/usr/bin/env python3\n"
+        (adapter / "config.toml.template").write_text(config, encoding="utf-8")
+        (adapter / "config.seamless.toml.template").write_text(seamless_config, encoding="utf-8")
+        (adapter / "hooks.json.template").write_text(hooks, encoding="utf-8")
+        (adapter / "hooks.verbose.json.template").write_text(verbose_hooks, encoding="utf-8")
+        (adapter / "azoth-seamless.star.template").write_text(rules, encoding="utf-8")
+        (adapter / "user_prompt_submit_router.py.template").write_text(router, encoding="utf-8")
+        (root / ".codex").mkdir(parents=True, exist_ok=True)
+        (root / ".codex" / "permission_profile.local").write_text("seamless\n", encoding="utf-8")
+
+        n, _ = deploy_codex_adapter(root, dry_run=False)
+
+        assert n == 6
+        assert (root / ".codex" / "config.toml").read_text(encoding="utf-8") == config
+        assert (root / ".codex" / "config.seamless.toml").read_text(
+            encoding="utf-8"
+        ) == seamless_config
+        assert (root / ".codex" / "hooks.json").read_text(encoding="utf-8") == hooks
+        assert (root / ".codex" / "rules" / "azoth-seamless.star").read_text(
+            encoding="utf-8"
+        ) == rules
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
@@ -996,6 +1149,31 @@ def test_deployed_codex_skill_mirror_matches_canonical() -> None:
         )
 
 
+def test_deployed_skill_mirrors_match_canonical() -> None:
+    """Canonical skills must project to both shared and OpenCode mirrors."""
+    skills = load_skills(_REPO_ROOT)
+    assert skills, "expected skills/**/SKILL.md"
+
+    for skill in skills:
+        shared_dest = (
+            _REPO_ROOT / ".agents" / "skills" / shared_skill_name(skill["name"]) / "SKILL.md"
+        )
+        opencode_dest = _REPO_ROOT / ".opencode" / "skills" / skill["name"] / "SKILL.md"
+
+        assert shared_dest.is_file(), (
+            f"missing {shared_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert opencode_dest.is_file(), (
+            f"missing {opencode_dest.relative_to(_REPO_ROOT)} — run: python3 scripts/azoth-deploy.py"
+        )
+        assert shared_dest.read_text(encoding="utf-8") == transform_shared_skill(skill), (
+            f"Shared skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+        assert opencode_dest.read_text(encoding="utf-8") == skill["raw"], (
+            f"OpenCode skill drift for {skill['name']}: run python3 scripts/azoth-deploy.py"
+        )
+
+
 def test_deployed_gemini_uses_shared_agents_skill_surface() -> None:
     """Gemini CLI must use the shared `.agents/skills/` mirror and retire `.gemini/skills/`."""
     skills = load_skills(_REPO_ROOT)
@@ -1035,7 +1213,7 @@ def test_deployed_agents_skill_surface_has_no_stale_non_azoth_entries() -> None:
 
 # ── P1-013: Orchestrator binding tests ──────────────────────────────────────
 
-_PIPELINE_CMD_NAMES = ("auto", "dynamic-full-auto", "deliver", "deliver-full")
+_PIPELINE_CMD_NAMES = ("auto", "autonomous-auto", "dynamic-full-auto", "deliver", "deliver-full")
 
 _SESSION_ENTRY_CMD_NAMES = ("start", "next", "resume")
 
@@ -1194,7 +1372,73 @@ def test_dynamic_full_auto_requires_wave_a_for_latest_external_facts() -> None:
     content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
     assert "Wave A is mandatory" in content
     assert "official sources before Checkpoint" in content
-    assert "max_threads: 10, max_depth: 2" in content
+    assert "max_threads: 16, max_depth: 3" in content
+
+
+def test_dynamic_full_auto_does_not_define_autonomous_self_development_mode() -> None:
+    content = (_REPO_ROOT / "skills" / "dynamic-full-auto" / "SKILL.md").read_text(encoding="utf-8")
+    assert "## Autonomous Self-Development Mode" not in content
+    assert "operator lines are not sequential gates" not in content
+    assert "alignment packets" not in content
+
+
+def test_autonomous_auto_defines_standalone_async_self_development_mode() -> None:
+    content = (_REPO_ROOT / "skills" / "autonomous-auto" / "SKILL.md").read_text(encoding="utf-8")
+    for needle in (
+        "## Autonomous Auto Mode",
+        "selected mode = `autonomous-auto`",
+        "alignment_mode: async",
+        "operator lines are not sequential gates",
+        "alignment packets",
+        "approval_basis",
+        "next safe checkpoint",
+        "async_stop",
+        "branch-local autonomy budget",
+        "adaptive pipeline",
+        "pipeline_command=autonomous-auto",
+        "Vision Declaration",
+        "simple operator prompts",
+        "vision.declaration",
+        "--vision-declaration-json",
+        "UX Anchor Fit",
+        "UX Anchor Scorecard",
+        "status --operator-read",
+        "record-alignment",
+        "record-vision-score",
+        "materialize-self-capture",
+        "architect decision capsule",
+        "delegation_plan",
+        "stage_spawns",
+        "stage_summaries",
+        "inline_policy",
+    ):
+        assert needle in content, f"autonomous-auto skill missing {needle!r}"
+
+
+def test_autonomous_auto_reaches_entrypoint_and_skill_mirrors() -> None:
+    for rel in (
+        ".claude/commands/autonomous-auto.md",
+        ".github/prompts/autonomous-auto.prompt.md",
+        ".opencode/commands/autonomous-auto.md",
+        ".agents/workflows/autonomous-auto.md",
+        ".agents/skills/autonomous-auto/SKILL.md",
+        ".opencode/skills/autonomous-auto/SKILL.md",
+        ".agents/skills/azoth-autonomous-auto/SKILL.md",
+    ):
+        content = (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        assert "Autonomous Auto Mode" in content, f"{rel} missing mode marker"
+        assert "alignment_mode: async" in content, f"{rel} missing async alignment marker"
+
+
+def test_subagent_router_includes_autonomous_auto_in_bl011_bl012_contracts() -> None:
+    content = (_REPO_ROOT / "skills" / "subagent-router" / "SKILL.md").read_text(encoding="utf-8")
+    for needle in (
+        "pipeline: autonomous-auto | deliver-full | deliver | auto",
+        "approved pattern for `/auto`, `/autonomous-auto`, `/deliver`, and",
+        "Set `pipeline` to `auto`, `autonomous-auto`, `deliver`, or `deliver-full`",
+        "## Stage briefs: autonomous-auto",
+    ):
+        assert needle in content, f"subagent-router missing autonomous-auto contract: {needle!r}"
 
 
 def test_subagent_router_defines_execution_budget_for_bounded_nesting() -> None:
@@ -1362,6 +1606,22 @@ def test_t003_delivery_orchestration_family_is_canonicalized() -> None:
         assert "contract" in commands[command_name], (
             f"T-003 migration incomplete: expected canonical contract for {command_name}"
         )
+
+
+def test_auto_command_stage0_checkpoint_projects_to_command_transforms() -> None:
+    commands = {cmd["name"]: cmd for cmd in load_commands(_REPO_ROOT)}
+    auto = commands["auto"]
+    outputs = {
+        "claude": transform_command_claude(auto),
+        "copilot": transform_command_copilot(auto),
+        "opencode": transform_command_opencode(auto),
+        "gemini": transform_command_gemini(auto),
+    }
+    for platform, output in outputs.items():
+        for marker in AUTO_STAGE0_CHECKPOINT_MARKERS:
+            assert marker in output, (
+                f"{platform} auto command missing Stage 0 checkpoint marker: {marker}"
+            )
 
 
 @pytest.mark.parametrize(

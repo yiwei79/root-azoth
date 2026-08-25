@@ -27,7 +27,7 @@ Full design: `[docs/AZOTH_ARCHITECTURE.md](docs/AZOTH_ARCHITECTURE.md)` (decisio
 | Audience | You, maintainers, contributors                             | Anyone who clones the released artifact             |
 
 
-Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture **§18** three-tier model). Until you publish, treat **this** clone as the source of truth.
+Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture **§18** three-tier model). The latest approved/installable public release is **azoth v0.2.0**; current root-azoth HEAD may include workshop repairs that are advisory until the next public sync gate publishes them.
 
 ---
 
@@ -39,7 +39,7 @@ For people working **in this repo**:
 2. **Install Python deps** used by tooling (e.g. Rich for the welcome dashboard):
   `pip install -r requirements-dev.txt` (from repo root; or your project venv).
   This form satisfies **pip-install-guard** in Claude Code Bash.
-3. **Validate:** `python3 -m pytest` and `python3 -m ruff check .` / `ruff format --check .` (same gates as **GitHub Actions** `.github/workflows/ci.yml`).
+3. **Validate:** `python3 -m pytest` and `python3 -m ruff check .` / `ruff format --check .` (same gates as **GitHub Actions** `.github/workflows/ci.yml`). For parity-sensitive PR work, run the local fast-fail pack first: `python3 scripts/pre_pr_fast_fail.py`.
 4. **After changing** canonical `.claude/commands/*.md`, `skills/*`, `agents/**`, or Codex adapter bridge files, sync platform copies:
   `python3 scripts/azoth-deploy.py`
 5. **Public product extract (P4-004):** `python3 scripts/azoth_extract_product.py --validate-only` (CI smoke) or
@@ -54,7 +54,24 @@ Core contributor context lives in `**[CLAUDE.md](CLAUDE.md)`** — read it first
 
 You install **from** a checkout of this repo **into** a target project (not into the Azoth repo itself).
 
-**Interactive entry (recommended):** from the repo root, run `python3 scripts/azoth_init.py` — choose **project** to install into your current directory, or **scaffold** for workshop-only next steps. Non-interactive: `python3 scripts/azoth_init.py --project -y` or `--scaffold -y`.
+**Interactive entry (recommended):** from the repo root, run `python3 scripts/azoth_init.py` — choose **project** to install into your current directory, or **scaffold** for workshop-only next steps. `python3 scripts/azoth_init.py --project -y` skips the init mode prompt, then hands off to the installer setup-level prompt; `--scaffold -y` is fully non-interactive.
+
+**Fresh GitHub Copilot project:** start in an empty target repo and force the Copilot surface explicitly:
+
+```bash
+cd /path/to/your-new-app
+AZOTH_PLATFORMS=copilot bash /path/to/root-azoth/install.sh
+```
+
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\your-new-app
+$env:AZOTH_PLATFORMS = "copilot"
+pwsh -File C:\path\to\root-azoth\install.ps1
+```
+
+The installer prompts for Minimal, Standard, or Full setup, then creates `.github/copilot-instructions.md`, `.github/prompts/`, `.github/agents/`, `AGENTS.md`, `CLAUDE.md`, `azoth.yaml`, `.azoth/kernel/`, and the selected Azoth skills/agents. If no platform is detected and no `AZOTH_PLATFORMS` override is set, the direct installers now default to **Claude Code + GitHub Copilot** so a blank repo still receives Copilot onboarding.
 
 **Direct installers** (same behavior as project mode):
 
@@ -92,7 +109,7 @@ The installer detects your AI toolchain (Claude Code, Codex, OpenCode, Copilot, 
 
 Work happens under the Azoth trust contract: bounded changes, human approval for kernel promotion, and no scope creep past an approved goal. If you add skills, agents, command contracts, legacy command bodies, or Codex adapter files, run `**python3 scripts/azoth-deploy.py**` so Codex, OpenCode, Copilot, and Cursor stay aligned.
 
-**Pull requests:** Opening a PR loads [`.github/pull_request_template.md`](.github/pull_request_template.md) — including a **one-liner** to request **GitHub Copilot** review so findings land as **D32 inbox JSONL** (see [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) §7) for **`/intake`**, not ad-hoc drive-by edits. Repository Copilot context: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+**Pull requests:** Before opening or updating a parity-sensitive PR, run `python3 scripts/pre_pr_fast_fail.py`; it refreshes generated Azoth mirrors when source or mirror surfaces changed, then checks deploy parity, ruff format/lint, and focused roadmap/.gitignore contracts. Opening a PR loads [`.github/pull_request_template.md`](.github/pull_request_template.md) — including a **one-liner** to request **GitHub Copilot** review so findings land as **D32 inbox JSONL** (see [`kernel/GOVERNANCE.md`](kernel/GOVERNANCE.md) §7) for **`/intake`**, not ad-hoc drive-by edits. Repository Copilot context: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 **Cursor:** For IDE-side blindspot review that **writes the same D32 contract** to `.azoth/inbox/`, use **`/review-insights`** or follow **`skills/cursor-review-insights/SKILL.md`** (see [`.cursor/rules/code-review-insights.mdc`](.cursor/rules/code-review-insights.mdc) after `azoth-deploy`).
 

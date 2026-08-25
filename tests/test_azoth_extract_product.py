@@ -45,6 +45,45 @@ def test_copy_tree_always_skips_dot_git(tmp_path: Path) -> None:
     assert not (dest / ".git").exists()
 
 
+def test_copy_tree_always_skips_local_runtime_artifacts(tmp_path: Path) -> None:
+    """Ignored workstation artifacts must never leak into a public product extract."""
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    spec = spec_from_file_location("azoth_extract_product", SCRIPT)
+    mod = module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "visible.txt").write_text("ok\n", encoding="utf-8")
+    (src / ".DS_Store").write_text("finder\n", encoding="utf-8")
+    (src / ".venv" / "bin").mkdir(parents=True)
+    (src / ".venv" / "bin" / "python").write_text("binary-ish\n", encoding="utf-8")
+    (src / ".pytest_cache").mkdir()
+    (src / ".pytest_cache" / "lastfailed").write_text("{}\n", encoding="utf-8")
+    (src / ".ruff_cache" / "0.15").mkdir(parents=True)
+    (src / ".ruff_cache" / "0.15" / "cache").write_text("x\n", encoding="utf-8")
+    (src / "pkg" / "__pycache__").mkdir(parents=True)
+    (src / "pkg" / "__pycache__" / "mod.cpython-313.pyc").write_bytes(b"pyc")
+    (src / "nested").mkdir()
+    (src / "nested" / ".DS_Store").write_text("finder\n", encoding="utf-8")
+    (src / ".claude" / "worktrees" / "local").mkdir(parents=True)
+    (src / ".claude" / "worktrees" / "local" / "state.json").write_text("{}", encoding="utf-8")
+
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    n = mod.copy_tree_respecting_excludes(src, dest, exclude_paths=[], dry_run=False)
+    assert n == 1
+    assert (dest / "visible.txt").is_file()
+    assert not (dest / ".DS_Store").exists()
+    assert not (dest / ".venv").exists()
+    assert not (dest / ".pytest_cache").exists()
+    assert not (dest / ".ruff_cache").exists()
+    assert not (dest / "pkg").exists()
+    assert not (dest / "nested" / ".DS_Store").exists()
+    assert not (dest / ".claude" / "worktrees").exists()
+
+
 def test_path_is_excluded() -> None:
     from importlib.util import module_from_spec, spec_from_file_location
 
@@ -121,9 +160,9 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     assert not any(rp.startswith(".git/") for rp in rels)
     assert not any(rp.startswith("research_antigravity_parity/") for rp in rels)
     assert not any(rp.startswith("tests/") for rp in rels)
-    assert not any(rp.startswith("kernel/templates/") for rp in rels)
     assert "LICENSE" in rels
     assert "skills/probe.md" in rels
+    assert "kernel/templates/CLAUDE.md.template" in rels
 
     probe = (out / "skills" / "probe.md").read_text(encoding="utf-8")
     assert "SupplyGrowth" not in probe

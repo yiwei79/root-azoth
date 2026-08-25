@@ -1,0 +1,82 @@
+schema_version: 1
+intake_id: t051-post-t050-release-readiness-continuation-20260501
+session_id: 2026-05-01-post-t050-continuation-intake
+candidate_ref: INI-PKB-001#slice-pkb-001-h
+proposed_task_id: T-051
+title: Post-T-050 release-readiness continuation intake
+decision: ready_to_hydrate_planning_scaffold
+observed_at: '2026-05-01T08:12:53Z'
+approval_scope: hydration_specific_slice_pkb_001_h
+approval_basis: Operator asked Codex on 2026-05-01 to continue to a fresh
+  continuation/intake for release-readiness or post-T-050 deployment operations.
+  This approval authorizes only a root-side continuation intake, initiative-bank
+  candidate/readiness update, and later hydration of a T-051 planning scaffold
+  after a fresh live scope gate. It does not authorize release publication,
+  public-product mutation, personal-root mutation, project writes, storage backup,
+  source onboarding, retrieval expansion, credentials, cloud provisioning,
+  governance, kernel, or M1 changes.
+architectural_disposition:
+  route: root_only_release_readiness_reconciliation_before_any_operation
+  reason: T-050 closed the personal-control-plane deployment loop, but follow-on
+    operations still need one evaluator/orchestrator readiness pass to decide
+    whether the next safe action is public release/update, personal-root update,
+    storage backup, project-consumer expansion, retrieval/source onboarding, or
+    no-op closeout.
+  selected_next_candidate: slice-pkb-001-h
+  selected_next_task: T-051
+  storage_policy: local_only_until_separate_backup_gate
+  release_policy: no_public_release_or_tag_in_this_intake
+  personal_root_policy: no_personal_root_mutation_in_this_intake
+source_evidence_refs:
+- .azoth/handoffs/2026-05-01-t-050-stable-deployment-closeout.yaml
+- .azoth/roadmap-specs/v0.2.0/T-050.yaml
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- .azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md
+allowed_outputs:
+- continuation_intake_report
+- initiative_bank_candidate_update
+- initiative_bank_readiness_update
+- validation_report
+forbidden_outputs:
+- scope_gate
+- run_ledger_entry
+- backlog_row
+- roadmap_task
+- task_spec
+- hydration_write
+- implementation_work
+- ship_task
+- public_azoth_release
+- public_product_mutation
+- personal_root_mutation
+- project_repo_write
+- project_code_mutation
+- automatic_project_scanning
+- source_registry_onboarding
+- retrieval_indexing
+- graph_or_vector_indexing
+- private_remote_backup
+- encrypted_backup
+- credential_access
+- cloud_account_provisioning
+- governance_change
+- kernel_change
+- m1_change
+hydration_boundary:
+  can_hydrate_task_scaffold_now: false
+  can_recommend_hydration: true
+  required_before_hydration:
+  - fresh approved scope gate
+  - matching approval_scope hydration_specific_slice_pkb_001_h
+  - source_artifacts including .azoth/initiative-banks/INI-PKB-001.yaml
+  - pipeline_command on scope-gate.json
+  can_deliver_task: false
+  can_mutate_personal_root: false
+  can_mutate_project_repo: false
+  can_publish_public_azoth: false
+next_safe_action: Hydrate only T-051 as a root-only planning scaffold after a
+  fresh scope gate. T-051 should reconcile root/public/personal/project state and
+  decide the next operation lane without performing release, deployment, backup,
+  retrieval, source onboarding, or project mutation.

@@ -1,0 +1,86 @@
+schema_version: 1
+session_id: 2026-05-02-pr15-azoth-lite-intake
+delivery_mode: intake_triage_and_untrusted_source_audit
+observed_at: '2026-05-02T09:20:35Z'
+approval_scope: approved_selective_intake_then_untrusted_source_audit
+trusted_intake_processed:
+- source_file: .azoth/inbox/copilot-review-pr15-azoth-lite-2026-05-01.jsonl
+  processed_file: .azoth/inbox/processed/copilot-review-pr15-azoth-lite-2026-05-01.jsonl
+  decisions:
+  - insight_id: CPR-PR15-001
+    triage: integrate,candidate,backlog_yes
+    severity: medium_to_high
+    episode_id: ep-492
+    backlog_id: BL-078
+  - insight_id: CPR-PR15-002
+    triage: integrate,skip,backlog_no
+    severity: low_to_medium
+    episode_id: ep-493
+- source_file: .azoth/inbox/session-reflection-2026-05-01-derived-capsule-closeout-state-friction.jsonl
+  processed_file: .azoth/inbox/processed/session-reflection-2026-05-01-derived-capsule-closeout-state-friction.jsonl
+  decisions:
+  - insight_id: SRF-2026-05-01-DERIVED-CAPSULE-CLOSEOUT-STATE-001
+    triage: integrate,skip,backlog_no
+    severity: medium_to_medium
+    episode_id: ep-494
+    note: Reinforces existing ep-461 and BL-070 lifecycle-resolver surface.
+backlog_added:
+- id: BL-078
+  source: CPR-PR15-001
+  title: Azoth-lite governed path escalation for command and agent contract surfaces
+untrusted_source_audit:
+  finding: >
+    Remaining inbox JSONL entries are structurally valid but fail native intake
+    because their source ids are not present in .azoth/trusted-sources.yaml.
+    They appear to be internal Azoth/session-reflection aliases rather than
+    external untrusted material.
+  recommendation: >
+    Open a separate trusted-source registry lane to either register these source
+    ids as explicit internal-session aliases or repair the emitters to use the
+    existing `session-reflection` source id. Do not process the remaining files
+    until that registry decision is approved.
+  candidate_sources:
+  - id: operator-feedback
+    count: 2
+    disposition: likely_trust_after_human_approval
+    rationale: Human/operator feedback captured as session reflection should be intake-eligible.
+  - id: autonomous-auto-loop
+    count: 11
+    disposition: likely_trust_as_internal_agent_alias_after_human_approval
+    rationale: Autonomous-auto loop self-observations are intended repo-native feedback, but require human triage.
+  - id: autonomous-auto-closeout
+    count: 1
+    disposition: likely_trust_as_internal_agent_alias_after_human_approval
+    rationale: Closeout packet source is an internal Azoth process surface.
+  - id: autonomous-auto-route-stop
+    count: 1
+    disposition: likely_trust_as_internal_agent_alias_after_human_approval
+    rationale: Route-stop packet source is an internal Azoth process surface.
+  - id: dynamic-full-auto-retrospective
+    count: 5
+    disposition: likely_trust_as_internal_retrospective_alias_after_human_approval
+    rationale: Retrospective findings are internal Azoth self-improvement material.
+  - id: architect-retrospective
+    count: 6
+    disposition: likely_trust_as_internal_retrospective_alias_after_human_approval
+    rationale: Architect retrospective findings are internal review material.
+  - id: codex-session
+    count: 2
+    disposition: likely_trust_as_codex_internal_session_alias_after_human_approval
+    rationale: Codex session reflections are equivalent in intent to session-reflection but use a distinct source id.
+forbidden_outputs_confirmed:
+- trusted_sources_mutation
+- direct_processing_of_untrusted_source_files
+- direct_external_write_to_m3_without_intake
+- backlog_creation_for_untrusted_source_files
+validation_results:
+- command: python3 -c "import pathlib, yaml; yaml.safe_load(pathlib.Path('.azoth/backlog.yaml').read_text())"
+  status: passed
+  result: backlog YAML parses
+- command: python3 -c "parse .azoth/memory/episodes.jsonl as JSONL"
+  status: passed
+  result: episodes JSONL parses
+next_safe_action: >
+  Ask the operator whether to open a trusted-source registry repair lane for the
+  seven internal aliases. If approved, update .azoth/trusted-sources.yaml and
+  rerun intake on the remaining queued files.

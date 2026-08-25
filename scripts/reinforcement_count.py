@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from episode_store import load_episode_records, rewrite_episode_records
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,29 +30,18 @@ class ReinforcementResult:
 def load_episodes(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         raise ReinforcementError(f"episodes file not found: {path}")
-
-    episodes: list[dict[str, Any]] = []
-    with open(path, "r", encoding="utf-8") as handle:
-        for line_number, raw_line in enumerate(handle, start=1):
-            line = raw_line.strip()
-            if not line:
-                continue
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise ReinforcementError(
-                    f"invalid JSON in {path} line {line_number}: {exc.msg}"
-                ) from exc
-            if not isinstance(record, dict):
-                raise ReinforcementError(f"expected JSON object in {path} line {line_number}")
-            episodes.append(record)
-    return episodes
+    try:
+        return load_episode_records(path)
+    except RuntimeError as exc:
+        raise ReinforcementError(str(exc)) from exc
 
 
 def _episode_context(episode: dict[str, Any]) -> dict[str, Any]:
     context = episode.get("context")
     if isinstance(context, dict):
         return context
+    if context is not None:
+        raise ReinforcementError("episode context is malformed: expected a JSON object")
     context = {}
     episode["context"] = context
     return context
@@ -68,6 +58,11 @@ def increment_reinforcement_count(
 
     episodes_path = repo_root / EPISODES_PATH
     episodes = load_episodes(episodes_path)
+    matches = [episode for episode in episodes if str(episode.get("id") or "") == episode_id]
+    if len(matches) > 1:
+        raise ReinforcementError(
+            f"episode id is ambiguous: {episode_id} matches multiple stored episodes"
+        )
 
     for episode in episodes:
         if str(episode.get("id") or "") != episode_id:
@@ -75,9 +70,14 @@ def increment_reinforcement_count(
 
         context = _episode_context(episode)
         sessions = context.get("reinforced_by_sessions")
-        if not isinstance(sessions, list):
+        if sessions is None:
             sessions = []
             context["reinforced_by_sessions"] = sessions
+        elif not isinstance(sessions, list):
+            raise ReinforcementError(
+                "episode reinforcement audit metadata is malformed: "
+                "'reinforced_by_sessions' must be a list"
+            )
 
         if session_id in sessions:
             return ReinforcementResult(
@@ -93,9 +93,10 @@ def increment_reinforcement_count(
         context["last_reinforced_source"] = source
         context["last_reinforced_session"] = session_id
 
-        with open(episodes_path, "w", encoding="utf-8") as handle:
-            for record in episodes:
-                handle.write(json.dumps(record) + "\n")
+        try:
+            rewrite_episode_records(episodes_path, episodes)
+        except RuntimeError as exc:
+            raise ReinforcementError(str(exc)) from exc
 
         return ReinforcementResult(
             episode_id=episode_id,

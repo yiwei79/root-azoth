@@ -48,7 +48,9 @@ The agents below are available across all supported AI coding tools
 
 All agents operate under the Azoth Trust Contract:
 
-- **Entropy ceiling**: max 10 files changed per session
+- **Entropy ceiling**: max 10 files changed per scope-gated session; this
+  bounds the current scope-gated session, not the higher-level active goal.
+  If the ceiling is reached, checkpoint and open a fresh linked scope. Agents must not mark a persistent goal complete, blocked, or stopped solely because an entropy checkpoint was reached.
 - **Human gates**: kernel / governance changes always require human approval
 - **Posture tiers**: `always_do` / `ask_first` / `never_auto`
   (see `kernel/TRUST_CONTRACT.md`)
@@ -62,5 +64,5 @@ All agents operate under the Azoth Trust Contract:
 | Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |
 | GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |
 | OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |
-| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |
+| Codex | `.codex/agents/*.toml` | skills (`azoth-*`; app slash list, CLI `/skills`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |
 | Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |

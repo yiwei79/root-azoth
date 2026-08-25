@@ -1,0 +1,65 @@
+schema_version: 1
+campaign_id: public-product-update-policy-four-plane-boundary-20260505
+title: Public Product Update Policy and Four-Plane Release Boundary Strategy
+status: active_child_1_strategy_packet_ready
+prepared_at: "2026-05-05T19:48:00Z"
+prepared_by: codex
+mode: autonomous-auto
+operator_approval:
+  approved_at: "2026-05-05T19:46:00Z"
+  approval_basis: >
+    Operator approved autonomous-auto campaign on 2026-05-05: Public Product
+    Update Policy and Four-Plane Release Boundary Strategy. Goal: decide the
+    next public-product update strategy without mutating public azoth, cockpit,
+    or project repos. Budget up to 3 child scopes with 1 bounded replay. Allowed
+    actions: research_initiative, refine_proposal, capture_self_improvement.
+    Inventory root/public/cockpit/project boundary evidence, reconcile public
+    azoth v0.2.0 freshness with root workshop drift, distinguish the 3-tier
+    product flow from the 4-plane operating model, and stop with an
+    approval-ready release/update boundary packet.
+objective: >
+  Decide the next public-product update strategy without mutating public azoth,
+  cockpit, or project repos.
+success_anchor: >
+  Produce an evaluator-scored release/update boundary packet and one explicit
+  operator choice: approve a protected public-release preflight campaign,
+  approve a narrower internal language-alignment campaign, approve a protected
+  cockpit/private resilience campaign, or defer.
+budget:
+  max_child_scopes: 3
+  replay_threshold: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - capture_self_improvement
+blocked_actions:
+  - hydrate_task
+  - ship_task
+  - public_sync_or_release
+  - public_tags
+  - public_checkout_mutation
+  - cockpit_repo_writes
+  - controlled_project_repo_writes
+  - backup_private_remote_or_credentials
+  - dependency_or_network_expansion
+  - kernel_governance_or_m1_mutation
+  - destructive_actions
+  - commits
+  - pushes
+current_state_snapshot:
+  branch: codex/autonomous-roadmap-self-development
+  active_version: v0.2.0-p4
+  live_scope: 2026-05-05-autonomous-auto-public-product-update-policy-and-four-plane-release-boundary-1
+  live_write_claim: held_by_current_child
+  public_freshness: intentionally_stale
+  require_fresh_verdict: fails_as_expected
+  public_checkout: clean
+  cockpit_checkout: clean
+selected_strategy:
+  recommendation: two_gate_public_update_path
+  next_operator_choice: approve_public_release_preflight_campaign
+  next_campaign_candidate_id: public-release-readiness-preflight-no-public-mutation
+artifacts:
+  - .azoth/campaigns/public-product-update-policy-four-plane-boundary-20260505/child-1-boundary-evidence.md
+  - .azoth/campaigns/public-product-update-policy-four-plane-boundary-20260505/release-update-strategy-packet.md
+  - .azoth/campaigns/public-product-update-policy-four-plane-boundary-20260505/evaluator-scorecard.json

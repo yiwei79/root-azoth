@@ -1,0 +1,273 @@
+schema_version: 1
+artifact_type: readiness_contract
+task_ref: T-059
+initiative_ref: INI-DEP-001
+title: Deployment readiness mode matrix and first-use map
+status: delivered
+created_at: "2026-05-19T16:01:40Z"
+updated_at: "2026-05-19T16:01:40Z"
+session_id: 2026-05-19-t-059-deployment-readiness-mode-matrix-delivery
+owner: root_azoth
+purpose: >
+  Define the first executable root-local readiness contract for Azoth deployment
+  modes, first-use checks, and cockpit readback before any release, cockpit, or
+  project-local mutation work.
+scope_boundaries:
+  allowed_scope:
+    - root-azoth planning and readiness artifacts
+    - mode contract definition
+    - first-use evidence mapping
+    - read-only cockpit status contract
+  forbidden_outputs:
+    - kernel_governance_mutation
+    - release_publishing
+    - public_azoth_mutation
+    - personal_cockpit_mutation
+    - project_local_repo_mutation
+    - dependency_installation
+    - credential_handling
+authority_planes:
+  root_azoth:
+    owns:
+      - architecture source of truth
+      - mode/readiness contract
+      - validators and proposal/bank/spec artifacts
+    may_do:
+      - define readiness checks
+      - map mode exclusions
+      - author follow-on root-local task proposals
+    must_not_do:
+      - claim public release readiness without release evidence
+      - mutate consumer projects from this contract
+  public_azoth:
+    owns:
+      - consumer-safe install bundles
+      - release profiles and public templates
+    may_do:
+      - advertise only modes whose assets and smoke checks pass
+    must_not_do:
+      - inherit root-private state
+      - imply governed autonomy by default
+  personal_cockpit:
+    owns:
+      - operator-facing pointers
+      - selected project/readiness readback
+      - safe-open handoff affordances
+    may_do:
+      - show project pointer, selected mode, readiness state, and next safe action
+    must_not_do:
+      - write across repositories silently
+      - become hidden project-local authority
+  project_local:
+    owns:
+      - local goals and context
+      - selected mode receipt
+      - project-local write authority
+    may_do:
+      - opt in to assisted, managed, or governed autonomy after explicit approval
+    must_not_do:
+      - receive mode state from root or cockpit without a receipt
+mode_matrix:
+  guide:
+    operator_promise: >
+      Azoth is present as philosophy, trust posture, orientation, and prompts only.
+    installed_asset_classes:
+      - trust and governance reading surface
+      - orientation or first prompt guidance
+      - starter documentation/playbook
+    first_use_inputs:
+      - selected project pointer or current repository
+      - source/profile receipt
+    readiness_evidence:
+      installer: source/profile receipt exists and names guide mode
+      release_profile: guide assets are listed without agent or runtime claims
+      cockpit: cockpit can show pointer, mode, freshness, and next safe action
+      planning_bank: no roadmap/backlog/planning-bank seed is required
+      autonomous_control: not installed and not advertised
+    explicit_exclusions:
+      - agents
+      - project-management state
+      - autonomous loops
+      - cross-repo writes
+    fail_closed_when:
+      - source/profile receipt is missing
+      - cockpit cannot name the selected project pointer
+      - any command advertises agents, planning banks, or autonomy as installed
+    next_safe_action: read orientation and decide whether to request assisted mode
+  assisted:
+    operator_promise: >
+      Azoth can help with instructions, skills, wrappers, and selected agents, but
+      does not own project-management state.
+    installed_asset_classes:
+      - skills
+      - tier-1 agents or generated equivalents
+      - command wrappers
+      - runtime helper references
+      - starter receipts
+    first_use_inputs:
+      - guide-mode receipt
+      - installed skill/agent/command inventory
+      - explicit operator acceptance of assisted mode
+    readiness_evidence:
+      installer: advertised skills, agents, wrappers, and scripts are present
+      release_profile: assisted profile excludes roadmap hydration and autonomy
+      cockpit: readback shows assisted mode plus missing/installed helper classes
+      planning_bank: planning-bank references are read-only unless separately approved
+      autonomous_control: autonomous-auto is absent or clearly disabled
+    explicit_exclusions:
+      - roadmap hydration
+      - backlog ownership
+      - no-human-gate autonomy
+      - project repo mutation without local approval
+    fail_closed_when:
+      - prompts reference missing helpers
+      - generated agents/skills are out of sync with the profile
+      - cockpit next action would write to a project repo
+    next_safe_action: run read-only assisted checks or request managed-mode hydration
+  managed:
+    operator_promise: >
+      Azoth provides a project-management substrate after explicit local approval.
+    installed_asset_classes:
+      - roadmap seed
+      - backlog seed
+      - planning-bank seed
+      - validation helpers
+      - project-local receipt
+    first_use_inputs:
+      - assisted-mode readiness
+      - human approval for project-management state
+      - project-local target path and receipt owner
+    readiness_evidence:
+      installer: managed seed package is present but not applied silently
+      release_profile: managed mode names seed artifacts and validators
+      cockpit: readback shows seed status and asks before safe-open/write handoff
+      planning_bank: roadmap, backlog, and planning-bank seeds validate locally
+      autonomous_control: ledger/loop authority remains disabled
+    explicit_exclusions:
+      - branch-local no-human-gate autonomy
+      - hidden hydration
+      - cockpit-driven writes without project-local approval
+    fail_closed_when:
+      - roadmap/backlog/planning-bank seeds are missing or invalid
+      - approval scope does not name managed mode
+      - receipt owner is not project-local
+    next_safe_action: hydrate or repair project-local planning state under a fresh gate
+  governed_autonomy:
+    operator_promise: >
+      Azoth may run campaign-bounded supervised autonomy only after managed-mode
+      receipts, ledger proof, and explicit stop conditions exist.
+    installed_asset_classes:
+      - run ledger
+      - loop-state examples
+      - stage-evidence requirements
+      - stop-condition contract
+      - bounded replay budget
+    first_use_inputs:
+      - managed-mode readiness
+      - explicit autonomy budget
+      - write-claim policy
+      - stop/approval conditions
+    readiness_evidence:
+      installer: autonomy assets are present only in the governed profile
+      release_profile: no-human-gate behavior is excluded unless explicitly selected
+      cockpit: readback shows active budget, write claim, stop route, and next action
+      planning_bank: selected initiative/candidate/task route is current and non-stale
+      autonomous_control: run ledger, stage summaries, and route state pass
+    explicit_exclusions:
+      - root self-development authority leaking into consumer projects
+      - open-ended loops
+      - silent child-scope writes
+      - stale campaign continuation
+    fail_closed_when:
+      - no active approval/budget exists
+      - write claim is absent, stale, or conflicting
+      - route says stop
+      - stage evidence is missing
+    next_safe_action: open a bounded governed-autonomy campaign only with fresh authority
+first_use_evidence_map:
+  installer:
+    owner_plane: public_azoth
+    root_evidence_refs:
+      - scripts/azoth_release_profile.py
+      - install.sh
+      - install.ps1
+    readiness_question: Which mode is being installed, and which assets are actually present?
+    pass_signal: selected mode has a source/profile receipt and no advertised missing assets
+    stop_signal: installer claims a higher mode than the included assets support
+  release_profile:
+    owner_plane: root_azoth_to_public_azoth
+    root_evidence_refs:
+      - scripts/azoth_release_profile.py
+      - scripts/product_release_smoke.py
+      - .azoth/proposals/public-release-root-feature-parity.yaml
+    readiness_question: Does the public profile truthfully map commands, skills, agents, scripts, and seeds?
+    pass_signal: profile and smoke evidence agree for the selected mode
+    stop_signal: public profile implies root-private, cockpit-private, or project-local state
+  cockpit:
+    owner_plane: personal_cockpit
+    root_evidence_refs:
+      - scripts/cockpit_bootstrap_verify.py
+      - scripts/cockpit_ux_simulate.py
+    readiness_question: Can the cockpit show read-only mode/readiness status and the next safe action?
+    pass_signal: cockpit readback is pointer-only and names the authority plane for the next action
+    stop_signal: cockpit action would write to a project without project-local approval
+  planning_bank:
+    owner_plane: project_local
+    root_evidence_refs:
+      - .azoth/design-banks/planning-banks-layer.yaml
+      - scripts/planning_bank_validate.py
+    readiness_question: Are roadmap, backlog, design-bank, initiative-bank, and research seeds valid for managed use?
+    pass_signal: project-local planning seeds validate and approval scope matches managed mode
+    stop_signal: hydration is attempted from root or cockpit without a matching project-local receipt
+  autonomous_control:
+    owner_plane: project_local_with_governed_budget
+    root_evidence_refs:
+      - scripts/run_ledger.py
+      - scripts/autonomous_loop.py
+      - .azoth/initiative-banks/INI-AUTO-001.yaml
+    readiness_question: Is autonomy bounded by route state, write claim, stage evidence, and stop conditions?
+    pass_signal: active budget, selected route, write claim, and evidence summaries all agree
+    stop_signal: route says stop, write claim conflicts, or stage evidence is missing
+cockpit_readback_contract:
+  field_policy: read_only_status_until_project_local_gate
+  required_fields:
+    - project_pointer
+    - authority_plane
+    - selected_mode
+    - readiness_state
+    - freshness_status
+    - installed_asset_classes
+    - missing_asset_classes
+    - approval_scope
+    - active_write_claim
+    - next_safe_action
+    - stop_reason
+  next_safe_action_rules:
+    - guide may only route to read orientation or request assisted mode
+    - assisted may only route to read-only checks or request managed hydration
+    - managed may only hydrate project-local seeds after explicit local approval
+    - governed_autonomy may only open a campaign with fresh budget and ledger proof
+  forbidden_readback_behaviors:
+    - silently selecting a higher mode
+    - writing root decisions into public, cockpit, or project-local repos
+    - hiding missing assets behind a green status
+    - continuing an autonomy campaign after route state says stop
+validation_refs:
+  - python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-001.yaml
+  - python3 scripts/planning_bank_validate.py --check-roadmap-refs
+  - python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+delivery_evidence:
+  architect_stage_summary: auto_s1_architect
+  delivered_artifacts:
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-059.yaml
+    - .azoth/initiative-banks/INI-DEP-001.yaml
+follow_on_slices:
+  - candidate_id: slice-dep-001-b
+    title: Release profile matrix compiler
+    gate_required: fresh human approval
+    forbidden_in_t059: true
+  - candidate_id: slice-dep-001-c
+    title: Cockpit project readiness readback
+    gate_required: fresh human approval
+    forbidden_in_t059: true

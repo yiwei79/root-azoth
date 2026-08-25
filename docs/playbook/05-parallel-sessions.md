@@ -61,7 +61,8 @@ keeping a dedicated integrator session or worktree open between merges.
 
 1. Each session works on its own branch or worktree.
 2. When a handoff is ready to land, start a short-lived integrate run from the target branch.
-3. Producer sessions run `/worktree-sync`, which refreshes them against the local target branch before creating the sync commit and then records an append-only handoff with a deterministic `handoff_id`.
+3. Producer sessions run `/worktree-sync`, which refreshes them against the local target branch before creating the sync commit and then records an append-only handoff with a deterministic `handoff_id`. This is a queued handoff boundary, not delivery completion.
+   Detached producer worktrees auto-materialize a local branch first so the queued handoff is always recorded against a named branch.
 4. The integrate run resolves exactly one unresolved handoff, preferably by `handoff_id` whenever humans are coordinating explicitly.
 5. The integrate run merges that handoff's queued commit through a temporary sandbox worktree, runs deterministic shared-state reconciliation there, then runs the targeted verification, and only then promotes the tested merge onto the live target branch.
 6. Shared-state reconciliation in the sandbox is allowlist-gated: target-owned transient files stay target-owned, append-only logs union semantically, and backlog/roadmap reconcile only when the queued handoff carries tracked governed approval metadata.
@@ -116,6 +117,10 @@ After merging:
 - run any required parity/deploy regeneration
 - run the targeted tests for the merged slice
 - confirm the exact `handoff_id` was cleared from the unresolved queue
+- automatic cleanup after a successful integrate run covers queue state updates and temporary sandbox worktrees
+- automatic cleanup after a successful integrate run also covers safe local producer branch pruning, including removing an attached clean producer worktree before deleting its obsolete branch
+- manual cleanup is still required for any remote branches or local producer state that falls outside those safe automatic checks
+- remote branch cleanup remains out of scope; dirty producer worktrees or moved branch tips must be reported and left in place
 - close out the integration step
 - notify remaining producer sessions to refresh from the new target branch
 

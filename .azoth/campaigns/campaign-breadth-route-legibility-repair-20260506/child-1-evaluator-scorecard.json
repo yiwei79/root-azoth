@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "packet_type": "campaign_breadth_route_legibility_child_1_evaluator_scorecard",
+  "campaign_id": "campaign-breadth-route-legibility-repair-20260506",
+  "child_scope": "2026-05-06-autonomous-auto-campaign-breadth-route-legibility-audit-1",
+  "threshold": 0.9,
+  "score": 0.92,
+  "verdict": "pass",
+  "recommended_next_child": {
+    "action": "refine_proposal",
+    "candidate_id": "campaign-breadth-route-legibility-contract",
+    "title": "Route Readback and Campaign Report Legibility Repair Contract",
+    "reason": "Child 1 has enough evidence to define a bounded repair contract, but should not jump straight to implementation while multiple readback surfaces are implicated."
+  },
+  "dimensions": {
+    "campaign_envelope": {
+      "score": 0.95,
+      "verdict": "pass",
+      "evidence": "Broad campaign goal, budget, allowed actions, and protected boundaries are explicit in the approved campaign context."
+    },
+    "route_truth_diagnosis": {
+      "score": 0.91,
+      "verdict": "pass",
+      "evidence": "Scope and loop state carry research_initiative:discovery_active while operator read reports Route authority: not-evaluated."
+    },
+    "audit_evidence_coverage": {
+      "score": 0.92,
+      "verdict": "pass",
+      "evidence": "Research covers operator read, campaign report, campaign audit, roadmap dashboard, scope gate, loop state, run ledger, and recent artifacts."
+    },
+    "stage_evidence_integrity": {
+      "score": 0.9,
+      "verdict": "pass",
+      "evidence": "Architect, researcher, and evaluator stages used real subagent sessions with run-ledger evidence."
+    },
+    "governance_safety": {
+      "score": 0.98,
+      "verdict": "pass",
+      "evidence": "Public release/sync/freshness, hydration, cockpit/project mutation, network/dependencies, credentials, destructive actions, kernel/governance/M1, and commits remain blocked."
+    },
+    "ux_anchor_fit": {
+      "score": 0.9,
+      "verdict": "pass",
+      "evidence": "The audit explains why the campaign feels narrow: readback and report surfaces flatten current, stale, and residual truth."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 0,
+      "score": 0.84,
+      "result": "Campaign audit correctly saw missing evaluator evidence and recommended repair_evidence; not sufficient alone."
+    },
+    {
+      "iteration": 1,
+      "score": 0.92,
+      "result": "Threshold met with architect, researcher, and evaluator evidence. No bounded replay recommended."
+    }
+  ],
+  "ux_anchor_scorecard": {
+    "campaign_level_strategy": "green",
+    "strategy_preflight_route_authority": "yellow",
+    "auditability": "yellow",
+    "safety": "green",
+    "low_cognitive_load": "yellow",
+    "adaptive_pipeline": "green"
+  },
+  "rejected_alternatives": [
+    {
+      "alternative": "Treat child 1 as failed",
+      "reason": "Evidence is sufficient; the remaining gap was normal evaluator summary recording."
+    },
+    {
+      "alternative": "Continue old April 25 Green handoff",
+      "reason": "Stale/historical authority must not drive this active campaign."
+    },
+    {
+      "alternative": "Hydrate roadmap/backlog/specs now",
+      "reason": "Explicitly blocked by the campaign boundary."
+    },
+    {
+      "alternative": "Public sync/release/freshness work",
+      "reason": "Explicit protected boundary."
+    },
+    {
+      "alternative": "Broad control-plane rewrite",
+      "reason": "Audit points to bounded readback/report/taxonomy repairs."
+    },
+    {
+      "alternative": "Ignore Route authority: not-evaluated",
+      "reason": "That mismatch is the primary operator-facing defect."
+    }
+  ],
+  "residual_risks": [
+    {
+      "class": "live",
+      "risk": "Operator read hides route authority during active_scope_present even though loop/scope history has research_initiative:discovery_active."
+    },
+    {
+      "class": "live",
+      "risk": "Campaign report mixes active loop truth with the latest historical completed Green handoff."
+    },
+    {
+      "class": "stale",
+      "risk": "April 25 handoff residuals and recommendations are archive context, not current route authority."
+    },
+    {
+      "class": "superseded",
+      "risk": "Learning-harvester and campaign-evaluation proposal signals tied to completed T-032/T-033 should stay stale or rejected."
+    },
+    {
+      "class": "packaging-only",
+      "risk": "Dirty or untracked campaign artifacts must be separated before any later packaging or commit request."
+    }
+  ],
+  "protected_boundaries": [
+    "Public release/sync/freshness remains blocked unless separately requested.",
+    "Roadmap/backlog/spec hydration remains blocked unless separately requested.",
+    "Cockpit/project mutation remains blocked unless separately requested.",
+    "Network/dependency expansion, credentials/backups, destructive actions, and kernel/governance/M1 remain blocked."
+  ]
+}

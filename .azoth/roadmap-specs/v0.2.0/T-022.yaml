@@ -1,0 +1,45 @@
+id: T-022
+roadmap_version: v0.2.0
+title: Plan-only initiative hydration handoff helper
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+intent: Deliver a plan-only handoff helper for initiative-bank hydration candidates.
+problem: >
+  The planning-bank layer can validate banks and report readiness, but it still
+  lacks a safe handoff that turns one approved, non-complete candidate into a
+  reviewed scaffold payload without becoming a second roadmap writer.
+scope:
+- Extend the existing planning-bank validation/readiness path for plan-only handoff output.
+- Use INI-EVI-002 as the pilot bank and slice-evi-002-c as the complete-candidate refusal fixture.
+- Emit a machine-readable scaffold payload without writing roadmap/backlog/spec/history state.
+non_goals:
+- Do not add write-mode hydration.
+- Do not create scripts/initiative_hydrate.py or a new command surface.
+- Do not create a second roadmap/backlog writer.
+- Do not mutate initiative banks, design banks, proposal banks, or hydration_history.
+- Do not change M1/governance policy.
+acceptance:
+- Reads an initiative bank and selected candidate slice through the existing planning-bank validator/readiness path.
+- Fails closed when readiness_status is not ready_to_hydrate, human_decision is not approved, the candidate is complete/hydrated, required fields are missing, blocking questions exist, or freshness is stale.
+- Emits initiative_ref, source_bank_ref, candidate_slice_ref, proposed title, target_layer, delivery_pipeline, acceptance, non_goals, blocking_reasons, and scaffold_command.
+- Plan-only mode does not write .azoth/roadmap.yaml, .azoth/backlog.yaml, roadmap-spec files, proposal/design/initiative banks, or hydration_history.
+- Focused tests cover complete-slice refusal, pending-human-decision refusal, and approved plan-only output.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  explicit write-mode proposal only after plan-only behavior is stable and separately approved.
+source_proposal_ref: .azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml
+source_bank_ref: .azoth/initiative-banks/INI-EVI-002.yaml
+design_bank_ref: .azoth/design-banks/planning-banks-layer.yaml
+pilot_refusal_candidate_slice_ref: slice-evi-002-c
+related_specs:
+- T-018
+- T-019
+- T-020
+- T-021

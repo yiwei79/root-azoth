@@ -1,0 +1,109 @@
+id: T-KRP-D
+roadmap_version: v0.2.0
+title: 'Orchestrator: assumption-surfacing checkpoint at goal classification'
+decision_ref:
+- D21
+- D23
+- D26
+- D44
+- D51
+intent: >
+  Hydrate the governed Orchestrator posture slice for INI-KRP-001 so a later
+  approved M1 delivery can add an explicit assumption-surfacing checkpoint at
+  Stage 0 goal classification before Declaration and auto-router composition.
+  This planning hydration persists the research and explore evidence without
+  implementing the orchestrator behavior change in the same session.
+problem: >
+  T-KRP-A established the always-on root behavioral layer, T-KRP-B added the
+  injectable karpathy-principles skill, and T-KRP-C refined the Builder posture,
+  but the Orchestrator still lacks a scoped slice for naming hidden assumptions
+  before it locks classification and pipeline shape. Without a hydrated T-KRP-D
+  backlog/spec entry, /next cannot truthfully open the next Karpathy follow-on
+  even though roadmap.yaml shows it as planned phase-3 work.
+scope:
+- 'Refine canonical Orchestrator posture so Stage 0 names the interpreted goal,
+  assumptions, evidence basis, uncertainty, owned surfaces, out-of-scope surfaces,
+  and gate implications before composing the Declaration.'
+- 'Keep D23 auto-router as the routing table; improve the quality and auditability
+  of the classification inputs rather than replacing auto-router semantics.'
+- 'Make the checkpoint visible in the human-facing Declaration rationale when
+  uncertainty, latest-context needs, or scope/risk ambiguity affect routing.'
+- 'Require the checkpoint to preserve Karpathy slice boundaries: T-KRP-A root
+  layer, T-KRP-B injectable skill, T-KRP-C Builder posture, and T-KRP-E structured
+  success-criteria gate.'
+- 'If the future implementation changes canonical Orchestrator posture, regenerate
+  generated mirrors through `python3 scripts/azoth-deploy.py` and verify deploy
+  parity.'
+non_goals:
+- 'No implementation edits to orchestrator, command, router, or generated mirror
+  files in this planning-hydration session.'
+- 'No root `CLAUDE.md` expansion; T-KRP-A already owns the always-on root layer.'
+- 'No `karpathy-principles` skill rewrite; T-KRP-B owns the injectable discipline
+  slot.'
+- 'No Builder posture changes; T-KRP-C owns implementation-stage posture.'
+- 'No `structured-autonomy-plan` success-criteria gate; reserve that for T-KRP-E.'
+- 'No manual edits to generated mirrors such as `.claude/agents/orchestrator.md`
+  or `.codex/agents/orchestrator.toml`.'
+- 'No new Trust Contract or kernel governance rule unless a later scope explicitly
+  reclassifies the work and receives human approval.'
+acceptance:
+- 'The T-KRP-D backlog row exists with `target_layer: M1`, `delivery_pipeline:
+  governed`, `status: pending`, and `target_version: v0.2.0-p3` so `/next` can
+  select it truthfully.'
+- 'This spec names `.azoth/research/t-krp-d-orchestrator-assumption-surfacing-research-2026-04-23.json`
+  as planning evidence for the future governed Orchestrator posture delivery.'
+- 'The future implementation updates canonical Orchestrator posture first and
+  refreshes generated mirrors only through `scripts/azoth-deploy.py` if mirrors
+  are affected.'
+- 'The future checkpoint includes goal interpretation, assumptions, evidence basis,
+  uncertainty, classification rationale, gate implications, owned surfaces, and
+  explicit deferrals.'
+- 'The future delivery keeps T-KRP-E explicitly deferred and does not introduce
+  a structured success-criteria gate.'
+- 'The future delivery validates generated parity and targeted agent/router surfaces
+  with `python3 scripts/azoth-deploy.py --check` and focused tests.'
+- 'The future delivery adds concise source comments in authored surfaces and parity
+  tests explaining that the checkpoint is the T-KRP-D/D23 pre-routing handoff,
+  not an auto-router replacement, a new pipeline stage, or the T-KRP-E
+  success-criteria gate.'
+- 'Implementation does not begin unless a fresh T-KRP-D scope gate is approved and
+  the required governed pipeline gate is present.'
+dependencies:
+- T-KRP-A
+- T-KRP-B
+- T-KRP-C
+delivery:
+  target_layer: M1
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+elasticity: Phase 1 = hydrate backlog/spec/research state. Phase 2 = implement
+  canonical Orchestrator posture under a fresh governed M1 delivery scope.
+research_evidence:
+  kind: repo-local
+  path: .azoth/research/t-krp-d-orchestrator-assumption-surfacing-research-2026-04-23.json
+  outcome: research_sufficient
+readiness:
+  current_scope_gate: planning_hydration_only
+  current_pipeline_gate: dynamic_full_auto_context_engineering
+  implementation_authorized: false
+  implementation_boundary: >
+    This session authorizes planning hydration only. Orchestrator posture
+    implementation requires a later T-KRP-D governed scope and pipeline gate.
+expected_validation:
+  tests:
+  - tests/test_agents.py
+  - tests/test_azoth_deploy.py
+  - tests/test_codex_adapter_templates.py
+  commands:
+  - python3 scripts/azoth-deploy.py --check
+  - PYTHONPATH=scripts python3 -m pytest tests/test_agents.py tests/test_azoth_deploy.py tests/test_codex_adapter_templates.py -q
+  quality_gate:
+  - stage6-rubric or equivalent review of Orchestrator checkpoint clarity if the
+    future delivery changes agent instruction content
+handoff_comments:
+- 'Add comments only in canonical authored surfaces touched by the future T-KRP-D
+  implementation; do not hand-edit generated mirrors.'
+- 'Comment intent should clarify ownership and boundaries: T-KRP-D owns assumption
+  surfacing before D23 routing; T-KRP-E owns structured success criteria.'
+- 'Parity tests should explain why they lock marker presence, so future maintainers
+  do not treat the assertions as arbitrary string matching.'

@@ -6,15 +6,54 @@
 
 $ErrorActionPreference = "Stop"
 
-$AZOTH_VERSION = "0.1.0-dev"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TARGET_DIR = Get-Location
+
+function Get-AzothVersion {
+    $manifest = Join-Path $SCRIPT_DIR "azoth.yaml"
+    if (Test-Path $manifest) {
+        $line = Get-Content $manifest | Where-Object { $_ -match '^version:\s*(.+)$' } | Select-Object -First 1
+        if ($line -match '^version:\s*(.+)$') {
+            return $Matches[1].Trim()
+        }
+    }
+    return "0.1.0"
+}
+
+$AZOTH_VERSION = Get-AzothVersion
 
 # ── Helpers ─────────────────────────────────────────────────────
 function Info($msg)  { Write-Host "[azoth] $msg" -ForegroundColor Cyan }
 function Ok($msg)    { Write-Host "[azoth] $msg" -ForegroundColor Green }
 function Warn($msg)  { Write-Host "[azoth] $msg" -ForegroundColor Yellow }
 function Err($msg)   { Write-Host "[azoth] $msg" -ForegroundColor Red }
+
+function Invoke-FullReleaseProfileMaterializer {
+    $helper = Join-Path $SCRIPT_DIR "scripts\azoth_release_profile.py"
+    if (-not (Test-Path $helper)) {
+        Err "Full release profile helper not found at $helper"
+        exit 1
+    }
+
+    $python3 = Get-Command python3 -ErrorAction SilentlyContinue
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    $py = Get-Command py -ErrorAction SilentlyContinue
+
+    if ($python3) {
+        & $python3.Source $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } elseif ($python) {
+        & $python.Source $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } elseif ($py) {
+        & $py.Source -3 $helper --profile full --source $SCRIPT_DIR --target $TARGET_DIR
+    } else {
+        Err "python3, python, or py -3 is required to materialize the Full release profile."
+        exit 1
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Full release profile materializer failed with exit code $LASTEXITCODE"
+    }
+}
 
 # ── Pre-flight checks ──────────────────────────────────────────
 if ($SCRIPT_DIR -eq $TARGET_DIR) {
@@ -43,29 +82,53 @@ Write-Host ""
 # ── Detect platforms ────────────────────────────────────────────
 $PLATFORMS = @()
 
-if ((Test-Path ".claude") -or (Get-Command claude -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "claude"
+function Add-Platform($platform) {
+    if ($PLATFORMS -notcontains $platform) {
+        $script:PLATFORMS += $platform
+    }
+}
+
+if ($env:AZOTH_PLATFORMS) {
+    $env:AZOTH_PLATFORMS -split '[,\s]+' | Where-Object { $_ } | ForEach-Object {
+        switch ($_) {
+            { $_ -in @("claude", "opencode", "codex", "copilot", "gemini", "cursor") } {
+                Add-Platform $_
+                Info "Selected: $_ (AZOTH_PLATFORMS)"
+            }
+            "all" {
+                Add-Platform "claude"
+                Add-Platform "opencode"
+                Add-Platform "codex"
+                Add-Platform "copilot"
+            }
+            "none" {}
+            default { Warn "Ignoring unknown AZOTH_PLATFORMS entry: $_" }
+        }
+    }
+} elseif ((Test-Path ".claude") -or (Get-Command claude -ErrorAction SilentlyContinue)) {
+    Add-Platform "claude"
     Info "Detected: Claude Code"
 }
 
-if ((Test-Path "opencode.jsonc") -or (Test-Path ".opencode") -or (Get-Command opencode -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "opencode"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path "opencode.jsonc") -or (Test-Path ".opencode") -or (Get-Command opencode -ErrorAction SilentlyContinue))) {
+    Add-Platform "opencode"
     Info "Detected: OpenCode"
 }
 
-if ((Test-Path ".codex") -or (Get-Command codex -ErrorAction SilentlyContinue)) {
-    $PLATFORMS += "codex"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path ".codex") -or (Get-Command codex -ErrorAction SilentlyContinue))) {
+    Add-Platform "codex"
     Info "Detected: Codex"
 }
 
-if ((Test-Path ".github") -or (Test-Path ".github\copilot-instructions.md")) {
-    $PLATFORMS += "copilot"
+if (-not $env:AZOTH_PLATFORMS -and ((Test-Path ".github") -or (Test-Path ".github\copilot-instructions.md"))) {
+    Add-Platform "copilot"
     Info "Detected: GitHub Copilot"
 }
 
-if ($PLATFORMS.Count -eq 0) {
-    Info "No specific platform detected. Defaulting to Claude Code."
-    $PLATFORMS = @("claude")
+if ($PLATFORMS.Count -eq 0 -and -not $env:AZOTH_PLATFORMS) {
+    Info "No specific platform detected. Defaulting to Claude Code + GitHub Copilot."
+    Add-Platform "claude"
+    Add-Platform "copilot"
 }
 
 # ── Detect project ──────────────────────────────────────────────
@@ -230,6 +293,27 @@ if ($INSTALL_AGENTS -ne $false -and (Test-Path "$SCRIPT_DIR\agents")) {
     Warn "Agents directory not found in Azoth source (Phase 3 not yet built)"
 }
 
+# ── Step 5.5: Copilot generated surfaces ─────────────────────────
+if ($PLATFORMS -contains "copilot") {
+    Info "Installing GitHub Copilot prompts and agents..."
+    New-Item -ItemType Directory -Force -Path ".github\prompts" | Out-Null
+    New-Item -ItemType Directory -Force -Path ".github\agents" | Out-Null
+    if (Test-Path "$SCRIPT_DIR\.github\prompts") {
+        Copy-Item "$SCRIPT_DIR\.github\prompts\*" ".github\prompts\" -Recurse -ErrorAction SilentlyContinue
+    } else {
+        Warn "Copilot prompt surface not found in Azoth source (.github\prompts)"
+    }
+    if (Test-Path "$SCRIPT_DIR\.github\agents") {
+        Copy-Item "$SCRIPT_DIR\.github\agents\*" ".github\agents\" -Recurse -ErrorAction SilentlyContinue
+    } else {
+        Warn "Copilot agent surface not found in Azoth source (.github\agents)"
+    }
+    if (Test-Path "$SCRIPT_DIR\AGENTS.md") {
+        Copy-Item "$SCRIPT_DIR\AGENTS.md" "AGENTS.md" -Force
+    }
+    Ok "Copilot prompts/agents installed"
+}
+
 # ── Step 6: Initialize memory ──────────────────────────────────
 Info "Initializing memory system..."
 
@@ -297,6 +381,13 @@ platforms: [$($PLATFORMS -join ', ')]
 "@ | Set-Content "azoth.yaml"
 
 Ok "Manifest generated (azoth.yaml)"
+
+# ── Step 10: Full release runtime profile ──────────────────────
+if ($INSTALL_AGENTS -eq "all") {
+    Info "Materializing Full release profile..."
+    Invoke-FullReleaseProfileMaterializer
+    Ok "Full release profile materialized"
+}
 
 # ── Summary ─────────────────────────────────────────────────────
 Write-Host ""

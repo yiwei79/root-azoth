@@ -1,0 +1,76 @@
+id: T-057
+roadmap_version: v0.2.0
+title: M3 recall quality eval harness and deterministic default scorer
+decision_ref:
+- D11
+- D45
+intent: >
+  Build the first zero-dependency M3/M2 recall-quality spine for
+  context-recall, with deterministic query scoring and fixture evaluation before
+  any vector backend work.
+problem: >
+  Context-recall is instruction-level today. It can tell agents how to search
+  M3 and M2, but there is no executable scorer, no stable JSON recall packet,
+  and no replay fixture harness that can prove top-1/top-3 recall quality before
+  optional vector retrieval is considered.
+context_refs:
+- .azoth/initiative-banks/INI-MEM-003.yaml
+- .azoth/research/ini-mem-003-research-bank.yaml#pack-mem-003-fixture-contract-002
+- .agents/skills/context-recall/SKILL.md
+- scripts/episode_store.py
+- scripts/personal_knowledge_recall.py
+scope:
+- Add scripts/context_recall_quality.py as a zero-dependency importable
+  script/CLI with JSON query mode and fixture eval mode.
+- Add tests/fixtures/context_recall_quality.yaml with the eight repo-local
+  M3/M2 recall fixtures selected by INI-MEM-003 research.
+- Add focused tests for JSON query mode, fixture mode, M3 loading through
+  episode_store, read-only M2 pattern access, deterministic scoring, annotations,
+  and no mutation of memory surfaces.
+- Emit score components for tag overlap, token overlap, recency bonus,
+  reinforcement bonus, pattern-trigger bonus, and total score.
+- Annotate stale, archived, superseded, or conflicting candidates without
+  mutating or expiring M2 patterns.
+non_goals:
+- No vector backend, embedding generation, persistent index, or vector database
+  runtime.
+- No new dependencies or network access.
+- No M2 invalidation, rewrite, auto-expiry, or temporal-validity schema change.
+- No raw inbox, personal-root, or unreviewed source indexing.
+- No /start or /next integration in this slice.
+- No context-recall skill behavior replacement in this slice.
+- No stale, archived, or superseded candidate mutation; annotation only.
+acceptance:
+- scripts/context_recall_quality.py supports --json query mode and fixture eval
+  mode, loads M3 only through scripts/episode_store.py, reads M2 patterns
+  read-only, and never mutates memory surfaces.
+- JSON output includes schema_version, packet_type, query, query_tags, as_of,
+  top_k, corpus, results, warnings, no_match, and advisory_authority.
+- Each result includes rank, source_type, id, source_ref, summary, timestamp,
+  tags, score_total, score_components, match_reasons, freshness_status,
+  conflict_status, and advisory_authority.
+- Eval mode reports fixture_set_id, fixture_results, top1_pass_count,
+  top3_pass_count, failed_fixture_ids, and pass_fail.
+- Fixture coverage includes exact tag hit, keyword-only rescue, M2 trigger
+  match, recency tie-break, reinforcement boost, stale/supersede annotation,
+  mixed M3/M2 deterministic top-3, and no-match empty result.
+- Deterministic fixtures have 100 percent expected top-1 hits, ambiguous
+  fixtures have 100 percent expected top-3 hits, and failed_fixture_ids is empty
+  before the task is considered complete.
+- Tests prove no new dependency, vector runtime, network access, raw inbox
+  indexing, personal-root read, context-recall skill replacement, or M2
+  invalidation/expiry is introduced.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+validation:
+- python3 scripts/context_recall_quality.py --fixtures tests/fixtures/context_recall_quality.yaml --json
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_context_recall_quality.py -q
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-MEM-003.yaml --check-roadmap-refs
+elasticity: >
+  Keep this slice on the zero-dependency JSONL/default path. If implementation
+  pressure points toward vector backends, dependency installs, network access,
+  M2 invalidation, INI-MEM-002 temporal validity, or command-surface integration,
+  stop and split that into a separately approved later slice.

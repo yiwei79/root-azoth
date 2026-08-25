@@ -1,0 +1,48 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "azoth:design-bank:v1"
+title: Azoth design bank
+type: object
+additionalProperties: true
+required:
+  - schema_version
+  - bank_type
+  - id
+  - title
+  - status
+  - source_proposal_refs
+  - related_initiative_refs
+  - related_decision_refs
+  - problem
+  - design_thesis
+  - options
+  - tradeoffs
+  - open_questions
+  - research_refs
+  - challenge_log
+  - routing_candidates
+  - readiness
+  - history
+properties:
+  schema_version:
+    type: integer
+    const: 1
+  bank_type:
+    type: string
+    const: design
+  id:
+    type: string
+    minLength: 1
+  title:
+    type: string
+    minLength: 1
+  status:
+    type: string
+    enum: [active_refinement, ready_to_route, deferred, rejected, superseded]
+  readiness:
+    type: object
+    required:
+      - readiness_status
+      - human_decision
+properties_note: >
+  Runtime validation is implemented in scripts/planning_bank_validate.py so Azoth
+  does not need a jsonschema dependency for the first planning-banks slice.

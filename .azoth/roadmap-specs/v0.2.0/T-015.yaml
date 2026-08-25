@@ -1,0 +1,47 @@
+id: T-015
+roadmap_version: v0.2.0
+title: Codex intelligent model selection seed and proposal
+decision_ref:
+- D19
+- D21
+- D23
+- D46
+- D52
+intent: >
+  Completed historical seed slice for the Codex-first intelligent model-selection
+  direction. This task existed to create the initial roadmap/spec/proposal artifacts
+  so later slices could define and implement a real selector policy without hard-coding
+  today’s model names as the contract.
+problem: >
+  Azoth currently documents `model_tier: premium | standard | fast` as a portable
+  spawn contract and says Codex resolves that tier to a concrete model identifier,
+  but no real Codex resolution contract, policy artifact, or regression coverage
+  exists yet. That leaves three gaps: `model_tier` is too coarse to express actual
+  stage needs, the Codex resolver path is only implied rather than implemented, and
+  any naive hard-coded model mapping would create forward-compatibility and maintenance
+  drift as model families evolve.
+scope:
+  - ".azoth/backlog.yaml seed row for T-015"
+  - ".azoth/roadmap.yaml historical continuity entry for T-015"
+  - ".azoth/roadmap-specs/v0.2.0/T-015.yaml"
+  - ".azoth/proposals/codex-intelligent-model-selection.yaml"
+  - "Directional evidence from current OpenAI/Codex model families recorded in proposal details, without making them the normative long-term interface"
+non_goals:
+  - "Implementing runtime model selection or changing spawned model behavior in this slice"
+  - "Hard-coding specific model IDs or snapshot IDs as the architecture contract"
+  - "Running deploy updates, command projection changes, or agent-surface rewrites"
+  - "Generalizing the selector architecture beyond Codex before the co-primary proof is stable"
+acceptance:
+  - "T-015 exists as a completed historical seed under INI-PLT-006 with truthful roadmap/backlog continuity"
+  - "A draft L3 proposal exists under `.azoth/proposals/` and validates against `pipelines/architecture-proposal.schema.yaml` once the historical seed row is present"
+  - "The seed establishes the quality-first, inventory-aware direction without pretending to implement runtime selector behavior"
+  - "The live follow-on work is explicitly deferred to later slices such as `T-017` rather than being silently folded back into this seed"
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /deliver
+elasticity: >
+  Phase 1 = this completed seed created the initial roadmap/spec/proposal surfaces.
+  Phase 2 = follow-on policy/task-definition work such as `T-017`. Phase 3 = later
+  resolver plumbing and regression coverage once the policy slice is approved.

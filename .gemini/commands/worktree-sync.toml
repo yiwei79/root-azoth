@@ -22,6 +22,7 @@ the selected queued handoff carries tracked shared-state approval metadata.
    - If on the active integration branch (for example `phase/v0.2.0-pN`), treat this as
      an **integrate run**.
    - Otherwise treat this as a **producer sync**.
+   - If `HEAD` is detached, treat it as producer mode only; do not infer an integrate run from a detached checkout.
 
 2. **Fail closed on unsafe integration**
    - If the current branch is the integration branch and the worktree is dirty with unrelated
@@ -38,6 +39,7 @@ Use when this worktree is on a feature, patch, or detached producer branch.
 1. **Run backend preflight**:
    - Execute `python3 scripts/worktree_sync.py [--target-branch <branch>]`
    - Default target branch is the local active integration branch (normally `phase/v0.2.0-pN`)
+   - If the producer worktree is detached, the backend must auto-materialize a local branch named `codex/wt-<id>-<shortsha>` (or reuse the same branch when it already points at the detached commit) before the normal refresh flow continues
    - If target drift exists, the backend must stash tracked + untracked changes, rebase onto the local target branch, and restore the stash before commit creation
    - If rebase or stash-restore conflicts occur, STOP immediately, resolve them, and rerun `/worktree-sync`
 
@@ -56,6 +58,7 @@ Use when this worktree is on a feature, patch, or detached producer branch.
    - This must run only after the producer branch is clean at the intended handoff commit
    - The backend writes an append-only shared handoff record keyed by the git common dir
    - Each ready handoff carries a deterministic `handoff_id` derived from `{target_branch, producer_branch, queued_head_sha}`
+   - Ready handoffs may also carry local-only cleanup metadata for obsolete producer branches that should be pruned after a successful integrate run
    - Capture that `handoff_id` in the report whenever possible so later integrate runs can target the exact queued handoff
 
 8. **Report**:
@@ -119,6 +122,9 @@ short-lived and transactional rather than a permanently open session.
 8. **Promote the tested result**:
    - on successful verification, the backend fast-forwards the live target branch to the tested merge commit
    - push if needed
+   - safe local cleanup is part of success: prune obsolete local producer branches, and remove an attached clean producer worktree first when required for branch deletion
+   - if a producer worktree is dirty, a branch tip moved, or any cleanup target is otherwise unsafe, keep it and report the skipped cleanup reason instead of failing the already-successful integration
+   - remote branch cleanup remains out of scope for this command
    - clean up the temporary integration workspace only on success
    - preserve the sandbox worktree on any failure so the operator can inspect or recover it
 

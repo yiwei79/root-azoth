@@ -1,0 +1,57 @@
+schema_version: 1
+campaign_id: azoth-harness-operating-profile-decision-20260505
+name: Azoth Harness Operating Profile Decision
+mode: autonomous-auto
+branch: phase/v0.2.0-p4
+created_at: "2026-05-05"
+status: advisory_decision_active
+approval_basis: >-
+  Operator approved autonomous-auto campaign on 2026-05-05: Azoth Harness
+  Operating Profile Decision. Goal: refine the azoth-harness-rethink proposal
+  into an internal operating-profile decision for Azoth: which surfaces remain
+  full governed harness, which become lighter operator UX, and which
+  branch-local candidate should be selected next.
+budget:
+  max_child_scopes: 3
+  bounded_replays_per_child: 1
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - capture_self_improvement
+blocked_actions:
+  - hydrate_task
+  - ship_task
+  - implementation
+  - commit
+  - push
+  - public_azoth_mutation
+  - public_release_or_sync_or_freshness_work
+  - cockpit_or_project_repo_write
+  - network_or_dependency_expansion
+  - credential_or_backup_work
+  - kernel_governance_or_m1_mutation
+  - destructive_action
+child_scopes:
+  - session_id: 2026-05-05-autonomous-auto-azoth-harness-operating-profile-decision-1
+    action: refine_proposal
+    status: active
+    output_artifacts:
+      - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/child-1-evidence-inventory.md
+      - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/operating-profile-decision.md
+      - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/evaluator-scorecard.json
+      - .azoth/campaigns/azoth-harness-operating-profile-decision-20260505/child-1-decision.json
+source_surfaces:
+  - commands/autonomous-auto/command.yaml
+  - .claude/commands/autonomous-auto.md
+  - .agents/skills/azoth-autonomous-auto/SKILL.md
+  - .agents/skills/autonomous-auto/SKILL.md
+  - .azoth/proposals/azoth-harness-rethink-2026.yaml
+  - .azoth/campaigns/product-strategy-orchestrator-20260504/
+  - meta_session_research/architecture-update-proposal/
+  - scripts/azoth_lite.py
+  - tests/test_azoth_lite_classifier.py
+  - tests/fixtures/azoth_lite_phase2_cases.json
+  - docs/AZOTH_ARCHITECTURE.md
+protected_boundary_note: >-
+  Public release is an on-demand-only protected lane and is not a default
+  autonomous campaign candidate.

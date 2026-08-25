@@ -1,0 +1,604 @@
+proposal_schema_version: 1
+created_at: "2026-04-21T20:14:20+02:00"
+session_id: "2026-04-21-automation-integrator-audit"
+backlog_id: "P6-003"
+title: "Nightly automation architect audit and approval-to-handoff workflow"
+summary: >
+  Draft architecture proposal for a lower-friction automation control plane.
+  The 2026-04-21 automation audit showed that Azoth needs more than a
+  two-axis insight-harvest heuristic: the nightly automation itself should act
+  as the architect-audit layer, present one executive summary plus explicit
+  dispositions, and then hand approved items into a single apply step that
+  routes insights through governed intake semantics and materializes approved
+  code or proposal actions as fresh producer handoffs. This keeps inbox and
+  worktree-sync as the authoritative primitives while removing the current
+  architect-audit -> /intake -> local integration ritual as a required manual
+  sequence.
+status: draft
+decision_refs:
+  - D21
+  - D32
+  - D23
+  - D50
+scope_layers:
+  - mixed
+details:
+  problem: >
+    The current path from nightly automation findings to durable Azoth action is
+    too ceremony-heavy. In practice it tends to require a separate architect
+    audit conversation, then `/intake` for insights, then a local session to
+    create or integrate clean producer handoffs. That preserves safety, but it
+    creates enough friction that useful nightly audit output risks being delayed
+    or dropped. Azoth needs a workflow where the automation itself performs the
+    architect audit, the human gives one approval decision, and the follow-on
+    apply step uses existing governed primitives internally instead of requiring
+    the human to manually hop between them.
+  evidence_basis:
+    repo_local:
+      observed_on: "2026-04-21"
+      sources:
+        - path: ".azoth/memory/episodes.jsonl"
+          finding: >
+            `ep-308` records a concrete failure: the audit correctly rejected bulk
+            integration of automation worktrees but failed to proactively surface
+            that some non-mergeable automation sessions still carried durable
+            insight worth governed capture. The deeper lesson was not only
+            "remember the insight axis" but also that the current manual ritual
+            makes these transfers too easy to miss.
+        - path: ".azoth/inbox/session-reflection-automation-audit-2026-04-21.jsonl"
+          finding: >
+            The later synthesis recovered two legitimate insights from automation
+            evidence after the initial audit missed them, proving the gap was in
+            audit procedure rather than in the source material.
+        - path: ".azoth/handoffs/2026-04-21-automation-worktree-audit-architect-note.md"
+          finding: >
+            The architect note correctly separated stale detached worktrees from
+            the one salvageable code lane, but reaching that result still
+            required an extra explicit architect pass rather than a single
+            nightly audit control-plane output.
+        - path: ".agents/workflows/intake.md"
+          finding: >
+            Azoth already has a governed path for external insight triage through
+            `.azoth/inbox/`; the missing behavior is not the existence of intake,
+            but the lack of a low-friction workflow that can use intake semantics
+            as a substep after one approval.
+        - path: ".agents/workflows/worktree-sync.md"
+          finding: >
+            Azoth already has the clean producer-handoff and single-integrator
+            mechanics required for approved actions. The missing behavior is a
+            workflow that turns approved audit items into isolated producer
+            branches without the human manually orchestrating each intermediate
+            step.
+        - path: "docs/playbook/05-parallel-sessions.md"
+          finding: >
+            The single-integrator contract remains the correct landing model, so
+            any lower-friction automation design must still materialize fresh
+            producer handoffs and integrate one at a time.
+  desired_outcomes:
+    - >
+      A nightly 9 PM automation that performs the architect audit itself and
+      emits one executive audit summary with explicit per-item dispositions.
+    - >
+      One human approval surface that can approve, skip, defer, or cleanup
+      multiple audit items at once.
+    - >
+      An apply step that uses governed inbox semantics for insight items and
+      fresh producer branches for proposal/code items, without making the human
+      run separate architect, intake, and integration rituals by hand.
+    - >
+      A fail-closed default where nightly runs do not open producer worktrees or
+      queue merges unless and until the human approves a specific follow-on
+      action.
+  proposed_workflow:
+    audit_stage:
+      - >
+        Run nightly as a cron automation at 9 PM against the repo workspace.
+      - >
+        Scan current automation worktrees, trusted automation memory artifacts,
+        and any queued/open producer evidence relevant to the audit window.
+      - >
+        Apply the existing two-axis audit logic internally for each item:
+        integration readiness and insight harvest.
+      - >
+        Emit one executive audit summary plus structured item rows classified as
+        `insight-only`, `proposal`, `code-salvage`, `cleanup-only`, or
+        `no-action`.
+    approval_stage:
+      - >
+        Present one human-facing approval card or summary response surface so
+        the human can approve several items in one pass, for example
+        "approve 1 and 3, cleanup 4, skip 2".
+      - >
+        Treat this as the primary human gate; do not require a separate manual
+        architect audit session before approval.
+    apply_stage:
+      - >
+        For `insight-only` items, route the approved content through governed
+        intake semantics. The human should not need to manually run a separate
+        `/intake` ritual when the approval already occurred inside the audit
+        workflow.
+      - >
+        For `proposal` or `code-salvage` items, materialize fresh producer
+        branches from the current `phase/v0.2.0-p3` tip, commit only the
+        approved action, and record clean producer handoffs with
+        `/worktree-sync`.
+      - >
+        Default apply behavior should be queue-only: create inbox results or
+        producer handoffs, but do not auto-integrate unless the human explicitly
+        chooses a land-now mode.
+  lifecycle:
+    step_1_collect_evidence:
+      trigger: "Nightly automation audit window or explicit operator request."
+      output: >
+        Read-only scan of automation worktrees, automation memory, open
+        handoffs, prior audit notes, run-ledger state, and trusted inbox
+        artifacts relevant to the audit window.
+      gate: >
+        If the audit cannot prove freshness, branch identity, or source
+        provenance, mark the item `blocked` and do not recommend apply.
+    step_2_architect_disposition:
+      output: >
+        Produce one executive audit bundle with stable item ids, item classes,
+        evidence refs, recommended dispositions, risks, and the least powerful
+        safe next action.
+      rule: >
+        The audit bundle is advisory authority only. It cannot open producer
+        worktrees, write inbox entries, or run worktree-sync.
+    step_3_operator_approval:
+      output: >
+        Capture a compact approval statement that names item ids and selected
+        dispositions such as approve, skip, defer, or cleanup.
+      gate: >
+        Ambiguous approval, bulk approval without item ids, or approval that
+        crosses protected boundaries must fail closed.
+    step_4_apply_queue_only:
+      output: >
+        After explicit approval, transform approved items into governed inbox
+        entries or fresh producer handoff requests. The apply step may prepare
+        handoff artifacts, but it must not integrate them concurrently.
+      gate: >
+        Producer worktrees and worktree-sync are apply-stage concerns, never
+        audit-stage side effects.
+    step_5_integrate_separately:
+      output: >
+        If an approved producer handoff exists, a later integration run may land
+        exactly one handoff at a time through the normal worktree-sync contract.
+      gate: >
+        `land-now` is outside the first implementation slice and requires a
+        separate explicit operator approval that names the handoff.
+  artifact_contract:
+    audit_bundle:
+      purpose: >
+        Human-facing executive read that explains what the automation found,
+        which items are actionable, which are blocked, and why.
+      minimal_fields:
+        - "bundle_id"
+        - "audit_window"
+        - "generated_at"
+        - "target_branch"
+        - "branch_freshness"
+        - "source_summary"
+        - "items"
+        - "blocked_items"
+        - "recommended_operator_reply"
+        - "protected_boundary_hits"
+        - "verification_notes"
+    audit_item:
+      purpose: >
+        Stable approval unit. The operator should be able to approve,
+        skip, defer, or cleanup item ids without restating the whole audit.
+      minimal_fields:
+        - "item_id"
+        - "item_class"
+        - "source_refs"
+        - "freshness_status"
+        - "recommended_disposition"
+        - "least_powerful_action"
+        - "risk_level"
+        - "protected_boundary"
+        - "apply_target"
+        - "verification_hint"
+        - "blocked_until"
+      item_classes:
+        - "insight-only"
+        - "proposal"
+        - "code-salvage"
+        - "cleanup-only"
+        - "no-action"
+      disposition_values:
+        - "approve"
+        - "skip"
+        - "defer"
+        - "cleanup"
+        - "blocked"
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-05-03"
+      sources:
+        - title: "Google Cloud Architecture Decision Records overview"
+          url: "https://cloud.google.com/architecture/architecture-decision-records"
+          finding: >
+            Decision records should preserve context, options, requirements, and
+            rationale so future work can understand why a decision was made.
+        - title: "Atlassian Product Discovery"
+          url: "https://www.atlassian.com/agile/product-management/discovery"
+          finding: >
+            Discovery work should validate ideas before delivery commitment and
+            keep decision evidence visible instead of scattered across tools.
+        - title: "Jira Product Discovery delivery overview"
+          url: "https://www.atlassian.com/software/jira/product-discovery/guides/delivery/overview"
+          finding: >
+            Ideas can move from discovery into delivery only after validation
+            and commitment; delivery work should remain linked to the original
+            discovery rationale.
+        - title: "Product Talk Opportunity Solution Tree"
+          url: "https://www.producttalk.org/glossary-discovery-opportunity-solution-tree/"
+          finding: >
+            Separating outcomes, opportunities, solution choices, and assumption
+            tests helps teams avoid treating every interesting finding as an
+            immediate build commitment.
+      implications:
+        - >
+          Treat each nightly audit item as a decision candidate with its own
+          context, alternatives, rationale, and explicit approval disposition.
+        - >
+          Keep audit evidence linked to apply outputs so inbox entries and
+          producer handoffs can be traced back to the approved item id.
+        - >
+          Separate discovery-style audit judgment from delivery-style apply
+          work; a useful finding is not automatically a mergeable handoff.
+        - >
+          Preserve rejected and deferred alternatives in the bundle so future
+          audits do not rediscover the same stale or unsafe path.
+    initiative_candidate_criteria:
+      purpose: >
+        Define which audit items are eligible for the apply stage after the
+        executive bundle is approved.
+      criteria:
+        - "The item has current source refs and branch freshness evidence."
+        - "The item class is one of insight-only, proposal, code-salvage, or cleanup-only."
+        - "The recommended action stays within the operator-approved item disposition."
+        - "No existing active scope, write claim, or protected boundary blocks the action."
+        - "The apply output can be represented as an inbox entry or fresh producer handoff."
+      non_candidates:
+        - "Items that require kernel, governance, M1, credential, or network-policy mutation without a separate explicit approval."
+        - "Stale detached worktrees whose code cannot be cleanly replayed from the current target branch."
+        - "Bulk cleanup sweeps that are not tied to named approved item ids."
+        - "Any item whose apply path would require concurrent integration."
+    artifact_boundary:
+      audit_bundle_owns: >
+        Current evidence synthesis, executive recommendation, item ids, item
+        classes, blocked alternatives, and the proposed operator reply.
+      approval_record_owns: >
+        The human decision over item ids and dispositions. It does not authorize
+        implementation details that were not named in the bundle.
+      inbox_intake_owns: >
+        Governed handling for approved insight-only content. The audit may
+        prepare source metadata, but intake semantics remain the authority for
+        durable memory or backlog-facing capture.
+      producer_handoff_owns: >
+        Fresh branch creation, clean commits, verification, and handoff notes
+        for approved proposal or code-salvage items.
+      integration_owns: >
+        Landing exactly one approved producer handoff at a time through the
+        existing worktree-sync and single-integrator rules.
+    readiness_report_schema:
+      purpose: >
+        Decide whether the proposal is ready to hydrate into an implementation
+        task without collapsing audit, apply, and integration into one command.
+      minimal_fields:
+        - "proposal_id"
+        - "evaluated_at"
+        - "audit_window"
+        - "source_refs"
+        - "readiness_status"
+        - "freshness_status"
+        - "artifact_boundary"
+        - "operator_packet_shape"
+        - "approval_contract"
+        - "apply_boundary"
+        - "single_integrator_boundary"
+        - "protected_boundary_hits"
+        - "candidate_first_slice"
+        - "target_layer"
+        - "delivery_pipeline"
+        - "human_decision"
+      status_values:
+        - "continue_research"
+        - "ready_for_first_slice"
+        - "defer"
+        - "reject"
+      fail_closed_rules:
+        - "Stale source refs block `ready_for_first_slice` unless the slice is explicitly about stale-evidence reporting."
+        - "Unresolved contradictions between audit and apply ownership block implementation."
+        - "Ambiguous human approval syntax blocks apply."
+        - "Any path that opens producer worktrees during audit returns `defer`."
+        - "Any path that bypasses inbox/intake semantics for insight-only items returns `reject`."
+    command_policy:
+      nightly_audit: >
+        May run on a cron schedule and emit an audit bundle. It is read-only
+        with respect to producer worktrees, inbox writes, worktree-sync, and
+        roadmap/backlog mutation.
+      approval_surface: >
+        May accept compact item-disposition approvals only when the bundle
+        presents stable item ids and blocked alternatives.
+      apply_workflow: >
+        Should be a separate explicit command or automation step invoked after
+        approval. The first implementation should queue outputs, not integrate
+        them.
+      intake: >
+        Remains the governed semantics for insight-only capture. A future
+        trusted source id for `nightly-automation-audit` should be introduced
+        only through a separate approved governance update.
+      worktree_sync: >
+        Remains the single-integrator landing path. The audit and first apply
+        slice may prepare handoffs but must not call worktree-sync before an
+        explicit integration approval.
+    hydration_handoff:
+      first_slice: >
+        Hydrate a task for the nightly audit bundle and approval contract only:
+        generate a compact operator packet from repo evidence and validate that
+        no apply side effects occur.
+      second_slice: >
+        Hydrate a separate apply-router task that turns approved item ids into
+        governed inbox entries or fresh producer handoff requests.
+      later_slice: >
+        Evaluate whether `land-now` should exist only after queue-only apply has
+        replay evidence; even then, it should name one handoff and call the
+        normal integration contract.
+  approval_contract:
+    - >
+      The nightly audit must produce stable item identifiers so approval can be
+      expressed compactly and unambiguously.
+    - >
+      Approval decides disposition, not implementation shape: the apply stage
+      still owns fresh branch creation, clean commits, handoff recording, and
+      any governed write path.
+    - >
+      Items that touch shared Azoth control-plane state remain subject to the
+      existing governed and single-integrator rules even when approved.
+    - >
+      Approval must name item ids and dispositions. A broad statement such as
+      "approve the audit" is approval to discuss the bundle, not approval to
+      open producer worktrees or integrate code.
+  fail_closed_rules:
+    - "Do not let the nightly audit open producer worktrees by default."
+    - "Do not let the nightly audit run `/worktree-sync` before explicit human approval."
+    - "Do not treat approval of one item as permission to sweep all open automation worktrees."
+    - "Do not bypass inbox/intake governance semantics for insight-only items."
+    - "Do not integrate multiple approved producer handoffs concurrently."
+    - "Do not add or reuse a trusted source id without recording source metadata and an explicit governance decision."
+    - "Do not let `land-now` exist in the first slice."
+  expected_improvement:
+    - >
+      Preserve the producer contract while reducing the human choreography needed
+      to turn nightly audit results into durable Azoth action.
+    - >
+      Make the nightly automation itself the architect-audit layer instead of
+      requiring an extra explicit architect pass before the real workflow begins.
+    - >
+      Keep automation lanes narrow: evidence remains inbox-governed, code and
+      proposals become fresh producer handoffs, and integration stays
+      single-writer.
+  command_surface_options:
+    option_a_audit_bundle_only:
+      description: >
+        Implement the first slice as a read-only audit bundle generator and
+        approval packet contract.
+      benefit: "Smallest safe slice; proves the operator packet without write-side risk."
+      risk: "The operator still needs a later apply route before approved items become durable artifacts."
+    option_b_audit_plus_queue_only_apply:
+      description: >
+        Implement audit bundle generation plus a queue-only apply step that
+        prepares inbox entries or producer handoff requests after approval.
+      benefit: "Reduces manual choreography more quickly."
+      risk: "Higher blast radius because approval parsing, trust-source metadata, and handoff creation arrive together."
+    option_c_audit_with_land_now:
+      description: >
+        Let approved items immediately land through worktree-sync when the
+        operator chooses a land-now disposition.
+      benefit: "Fastest path for obviously safe cleanup or proposal updates."
+      risk: "Conflates audit, apply, and integration; this is not appropriate for the first slice."
+    recommended_starting_point: >
+      Start with option A. Only after replay proves the operator packet should
+      option B become the next task. Defer option C until queue-only apply has
+      real evidence and a separate integration approval contract.
+  governance:
+    human_gates:
+      - "Approve the campaign seed and allowed actions."
+      - "Approve the audit bundle item dispositions before apply."
+      - "Approve any trusted-source registry change before automated inbox writes rely on it."
+      - "Approve creation of producer worktrees for proposal or code-salvage items."
+      - "Approve each final integration run separately."
+    scope_boundaries:
+      - "Audit may read repo evidence broadly but writes only its bundle output."
+      - "Apply may write only approved inbox entries or handoff requests tied to named item ids."
+      - "Integration remains a separate single-writer workflow."
+      - "Kernel, governance, M1, credential, and network-policy changes remain ask-first or never-auto boundaries."
+    trusted_source_decision: >
+      Prefer a future dedicated `nightly-automation-audit` source id with
+      source refs, bundle id, generated_at, and approval metadata. Until that
+      governance update is explicitly approved, approved insight-only items
+      should be treated as operator-reviewed captures rather than automatically
+      trusted automation emissions.
+  readiness_rubric:
+    pass_conditions:
+      - "The first slice is audit-bundle and approval-contract only."
+      - "The operator packet has stable item ids and disposition vocabulary."
+      - "The artifact boundary separates audit, approval, apply, intake, producer handoff, and integration."
+      - "The fail-closed rules block stale evidence, ambiguous approval, producer worktrees during audit, and concurrent integration."
+      - "Replay against the 2026-04-21 audit preserves the original direct-integration rejection."
+      - "The proposal names a later queue-only apply slice without making it part of the first slice."
+    fail_or_continue_research_conditions:
+      - "The first slice still includes producer worktree creation or worktree-sync."
+      - "Approval syntax cannot unambiguously bind item ids to dispositions."
+      - "Trusted-source behavior depends on an unapproved registry change."
+      - "The bundle cannot explain blocked alternatives in the operator read."
+      - "The workflow treats insight capture as direct M3/backlog mutation."
+  candidate_surfaces:
+    - ".azoth/trusted-sources.yaml"
+    - ".agents/workflows/intake.md"
+    - ".agents/workflows/worktree-sync.md"
+    - "docs/playbook/05-parallel-sessions.md"
+    - "scripts/autonomous_campaign_audit.py"
+    - "scripts/run_ledger.py"
+    - ".azoth/handoffs/"
+    - ".azoth/inbox/"
+    - "new audit/apply workflow surface for nightly automation approval and action routing"
+  validation_replay:
+    - scenario: "2026-04-21 audit preserves direct-integration rejection"
+      input: >
+        Four automation worktrees, stale or detached evidence, and two durable
+        insight lanes discovered only after a later synthesis pass.
+      expected_path: "audit_bundle_only"
+      expected_disposition: >
+        Reject direct integration for all worktrees, preserve the useful
+        insight lanes as approved capture candidates, and explain why producer
+        code must be replayed from the current target branch.
+    - scenario: "Approved insight-only item routes through intake semantics"
+      input: >
+        Operator approves one item classified as `insight-only` with current
+        source refs and no code change.
+      expected_path: "approved_apply_queue"
+      expected_disposition: >
+        Produce an inbox/intake candidate with source metadata and approval
+        traceability. Do not write directly to M3, backlog, or roadmap state.
+    - scenario: "Approved code-salvage item becomes a fresh handoff request"
+      input: >
+        Operator approves a code-salvage item whose stale worktree cannot be
+        integrated directly.
+      expected_path: "fresh_producer_handoff"
+      expected_disposition: >
+        Queue or create a fresh producer branch from the current target branch,
+        replay only the approved action, verify it, and stop before final
+        integration.
+    - scenario: "Ambiguous approval fails closed"
+      input: "Operator says `approve the audit` without item ids or dispositions."
+      expected_path: "blocked"
+      expected_disposition: >
+        Ask for a specific item-disposition approval and do not run apply.
+  worked_examples:
+    - name: "Operator packet for a nightly automation audit"
+      steps:
+        - "Scan automation evidence and build stable item rows."
+        - "Classify each row as insight-only, proposal, code-salvage, cleanup-only, or no-action."
+        - "Attach freshness, protected-boundary, and least-powerful-action fields."
+        - "Present a concise approval prompt such as `approve A1 as insight-only, cleanup A4, defer A2`."
+        - "After approval, queue the apply outputs without opening integration."
+      expected_output: >
+        One compact audit bundle and a precise operator reply template, with
+        no producer worktree, inbox, roadmap, backlog, or integration side
+        effect during audit.
+  open_questions:
+    - >
+      Should the apply step be a new first-class command, a second automation,
+      or an internal reusable workflow invoked from multiple entrypoints?
+    - >
+      Should "land-now" integration be allowed as an explicit opt-in mode, or
+      should approved items always stop at inbox integration / producer handoff
+      creation and leave the final integrate run separate?
+    - >
+      Does this workflow merit a dedicated trusted source distinct from
+      `session-reflection`, or should the audit automation continue to emit under
+      an existing trusted source with stronger source metadata?
+  resolved_questions_for_first_slice:
+    apply_step_shape: >
+      Treat apply as a later explicit workflow or command. The first slice
+      should only define and generate the audit bundle plus approval contract.
+    land_now: >
+      Defer `land-now`. Queue-only apply is the next safe slice; final landing
+      remains a separate integration approval naming one handoff.
+    trusted_source: >
+      Recommend a dedicated `nightly-automation-audit` trusted source, but do
+      not depend on it until a separate governance update is approved. The first
+      slice can still preserve source metadata in the bundle.
+  non_goals:
+    - "Do not make nightly automation a freeform autonomous merge agent."
+    - "Do not open or queue producer worktrees for every scanned automation lane."
+    - "Do not replace the inbox or worktree-sync primitives; compose them."
+    - "Do not auto-promote all nightly findings directly into M3, backlog, or p3."
+    - "Do not implement trusted-source registry changes inside this proposal-refinement campaign."
+    - "Do not combine audit, apply, and integration into one autonomous action."
+  challenge_points:
+    - >
+      Lowering friction can accidentally hide the human gate; stable item ids
+      and explicit disposition vocabulary are the counterweight.
+    - >
+      A queue-only apply step still needs trusted-source and source-metadata
+      discipline, otherwise insight-only items become untraceable memory writes.
+    - >
+      Code-salvage output must be replayed from the current branch instead of
+      syncing stale detached worktrees, even when the original worktree contains
+      useful evidence.
+    - >
+      `land-now` is attractive but dangerous as a first slice because it makes
+      integration look like a disposition instead of a separate governed run.
+  suggested_future_research_session:
+    goal: >
+      Validate the first implementation slice against existing automation audit,
+      run-ledger, inbox, and worktree-sync tooling before hydrating code work.
+    questions:
+      - "Which existing script should own audit bundle generation?"
+      - "Should the operator packet live as JSON, Markdown, or both?"
+      - "What exact approval grammar is narrow enough for safe apply routing?"
+      - "Which trusted-source metadata fields are required for approved automation insights?"
+      - "How should an apply queue represent producer handoff requests without opening integration?"
+    likely_outputs:
+      - "Hydratable task for audit bundle plus approval contract."
+      - "Later task candidate for queue-only apply routing."
+      - "Explicit governance question for a dedicated nightly automation trusted source."
+  research_completion_assessment:
+    assessed_at: "2026-05-03"
+    evaluator: "scripts/proposal_knowledge_richness.py"
+    research_complete_for: >
+      Hydrating a first implementation slice that generates a read-only nightly
+      audit bundle and approval contract.
+    not_complete_for:
+      - "Implementing queue-only apply routing without a separate scoped task."
+      - "Adding a trusted-source registry entry without explicit governance approval."
+      - "Allowing land-now integration."
+    evidence_basis:
+      - "Repo-local replay against the 2026-04-21 automation audit."
+      - "Existing intake, worktree-sync, and single-integrator workflow contracts."
+      - "Structured artifact boundary and readiness schema in this proposal."
+  recommended_follow_up:
+    shape: >
+      If approved, implement in two slices. First define and verify the nightly
+      audit bundle plus approval contract as a read-only operator packet. Then,
+      in a separate approved task, add the queue-only apply workflow that routes
+      approved insight items through governed intake semantics and approved
+      code/proposal items into fresh producer handoffs from the current target
+      branch.
+    recommended_first_slice:
+      title: "Nightly automation audit bundle and approval contract"
+      route: "hydrate_task"
+      proposed_task_id: "T-056"
+      hydrated_task_ref: "T-056"
+      hydration_status: "hydrated"
+      target_layer: "pipelines"
+      delivery_pipeline: "standard"
+      placement:
+        title: "Nightly automation audit bundle and approval contract"
+        source: "proposal-automation-audit-insight-harvest-refinement"
+        target_layer: "pipelines"
+        delivery_pipeline: "standard"
+      scaffold_command: >
+        python3 scripts/roadmap_scaffold.py --title "Nightly automation audit
+        bundle and approval contract" --source
+        proposal-automation-audit-insight-harvest-refinement --target-layer
+        pipelines --delivery-pipeline standard --decision-ref D21 D23 D32 D50
+      acceptance_criteria:
+        - "Generate a compact audit bundle with stable item ids, item classes, evidence refs, and blocked alternatives."
+        - "Emit a recommended operator approval reply without applying side effects."
+        - "Validate that audit mode cannot open producer worktrees, write inbox entries, run worktree-sync, or integrate handoffs."
+        - "Replay the 2026-04-21 audit and preserve the direct-integration rejection while surfacing insight-harvest candidates."
+    later_slices:
+      - "Queue-only apply routing for approved item ids."
+      - "Dedicated trusted-source governance update, if approved."
+      - "Optional land-now research only after queue-only apply has replay evidence."
+    likely_verification:
+      - "Replay the workflow against the 2026-04-21 audit and confirm one approval can route all approved items correctly."
+      - "Confirm nightly audit runs never open producer worktrees before approval."
+      - "Confirm approved proposal/code items become fresh clean handoffs rather than stale worktree syncs."
+      - "Confirm single-integrator guarantees remain intact when several approved items are queued."
+      - "Confirm the first slice remains read-only apart from its bundle output."

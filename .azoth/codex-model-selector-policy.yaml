@@ -1,0 +1,142 @@
+schema_version: 1
+policy_ref: codex-model-selector-policy@2026-04-29
+source_observed_on: "2026-04-29"
+trace_path: .azoth/codex-model-selector-traces.local.jsonl
+default_model_tier: standard
+supported_reasoning_efforts:
+  - low
+  - medium
+  - high
+  - xhigh
+selection_notes:
+  - Official Codex docs treat medium as the balanced default, low as speed-sensitive,
+    and high as appropriate for complex logic, assumption checking, edge cases,
+    reviewer, or security-focused agents.
+  - Official model docs recommend gpt-5.5 for complex reasoning and coding, with
+    gpt-5.4-mini or nano for lower-latency and lower-cost workloads.
+  - xhigh remains explicit-override only in Azoth until local evidence proves a
+    bounded default escalation is consistently beneficial.
+tiers:
+  premium:
+    preferred_aliases:
+      - gpt-5.5
+      - gpt-5.4
+      - gpt-5.3-codex
+    default_reasoning_effort: high
+    reasoning_effort_by_subagent_type:
+      architect: high
+      reviewer: high
+      evaluator: high
+      planner: high
+      builder: medium
+  standard:
+    preferred_aliases:
+      - gpt-5.5
+      - gpt-5.4
+      - gpt-5.3-codex
+    default_reasoning_effort: medium
+    reasoning_effort_by_subagent_type:
+      architect: medium
+      reviewer: medium
+      evaluator: medium
+      planner: medium
+      builder: medium
+  fast:
+    preferred_aliases:
+      - gpt-5.4-mini
+      - gpt-5.4
+    default_reasoning_effort: low
+    reasoning_effort_by_subagent_type:
+      architect: medium
+      reviewer: medium
+      evaluator: medium
+      planner: medium
+      builder: low
+aliases:
+  gpt-5.5:
+    model: gpt-5.5
+    capability_class: frontier
+    quality_band: premium
+    reasoning_efforts:
+      - low
+      - medium
+      - high
+      - xhigh
+    supported_tools:
+      - apply_patch
+      - skills
+      - computer_use
+      - mcp
+      - tool_search
+    availability_state: current
+    deprecated: false
+  gpt-5.4:
+    model: gpt-5.4
+    capability_class: frontier
+    quality_band: standard
+    reasoning_efforts:
+      - low
+      - medium
+      - high
+      - xhigh
+    supported_tools:
+      - apply_patch
+      - skills
+      - mcp
+      - tool_search
+    availability_state: current
+    deprecated: false
+  gpt-5.4-mini:
+    model: gpt-5.4-mini
+    capability_class: mini
+    quality_band: fast
+    reasoning_efforts:
+      - low
+      - medium
+      - high
+    supported_tools:
+      - skills
+      - mcp
+      - tool_search
+    availability_state: current
+    deprecated: false
+  gpt-5.4-nano:
+    model: gpt-5.4-nano
+    capability_class: nano
+    quality_band: fast
+    reasoning_efforts:
+      - low
+      - medium
+    supported_tools:
+      - skills
+    availability_state: current
+    deprecated: false
+  gpt-5.3-codex:
+    model: gpt-5.3-codex
+    capability_class: coding-specialized
+    quality_band: standard
+    reasoning_efforts:
+      - low
+      - medium
+      - high
+      - xhigh
+    supported_tools:
+      - apply_patch
+      - skills
+      - mcp
+      - tool_search
+    availability_state: current
+    deprecated: false
+  legacy-codex:
+    model: gpt-5-codex
+    capability_class: legacy-coding
+    quality_band: legacy
+    reasoning_efforts:
+      - low
+      - medium
+      - high
+    supported_tools:
+      - apply_patch
+      - skills
+    availability_state: deprecated
+    deprecated: true

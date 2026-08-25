@@ -9,7 +9,7 @@ from typing import Any
 RECORD_SCHEMA_VERSION = 1
 SUMMARY_MAX_LEN = 4096
 
-VALID_PIPELINES = frozenset({"auto", "deliver", "deliver-full"})
+VALID_PIPELINES = frozenset({"auto", "autonomous-auto", "deliver", "deliver-full"})
 VALID_AGENTS = frozenset(
     {
         "architect",

@@ -73,7 +73,16 @@ def _mirror_paths(stem: str) -> tuple[str, str]:
 
 
 @pytest.mark.parametrize(
-    "stem", ["eval", "eval-swarm", "auto", "deliver", "deliver-full", "dynamic-full-auto"]
+    "stem",
+    [
+        "eval",
+        "eval-swarm",
+        "auto",
+        "autonomous-auto",
+        "deliver",
+        "deliver-full",
+        "dynamic-full-auto",
+    ],
 )
 def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
     """D46: Copilot + OpenCode deploy targets keep eval / eval-swarm routing (P1-010)."""
@@ -100,6 +109,12 @@ def test_deploy_mirrors_eval_pipeline_wiring(stem: str) -> None:
                 f"{rel}: missing eval-swarm reference"
             )
             assert "Evaluator stage" in text, f"{rel}: missing Evaluator stage wiring"
+        elif stem == "autonomous-auto":
+            assert "E1–E6" in text or "E1-E6" in text, f"{rel}: missing E1–E6 routing marker"
+            assert "eval-swarm" in text.lower() or "/eval-swarm" in text, (
+                f"{rel}: missing eval-swarm reference"
+            )
+            assert "adaptive pipeline" in text, f"{rel}: missing adaptive pipeline marker"
         elif stem in ("deliver", "deliver-full"):
             assert "Eval / swarm routing" in text, f"{rel}: missing Eval / swarm routing bullet"
             assert "E1" in text and "E6" in text, f"{rel}: missing E1–E6 span in routing bullet"

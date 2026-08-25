@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "packet_type": "native_pm_campaign_architecture_discovery_evaluator_scorecard",
+  "campaign_id": "native-pm-campaign-architecture-discovery-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-native-pm-campaign-architecture-discovery-1",
+  "threshold": 0.9,
+  "verdict": "pass",
+  "selected_candidate": "public-product-update-policy-and-four-plane-release-boundary",
+  "score": 0.93,
+  "dimensions": {
+    "native_simplicity": {
+      "score": 0.94,
+      "evidence": "Selects one research/refinement campaign and avoids hydration, implementation, commit, or release side effects."
+    },
+    "architectural_fit": {
+      "score": 0.95,
+      "evidence": "Directly uses the p4 distinction between 3-tier product flow and 4-plane operating model."
+    },
+    "governance_safety": {
+      "score": 0.96,
+      "evidence": "Blocks public sync/release, public checkout mutation, cockpit/project writes, credentials, dependencies, kernel/governance/M1, commits, pushes, and destructive actions."
+    },
+    "pm_orchestration_quality": {
+      "score": 0.94,
+      "evidence": "Compares public update, four-plane language, backup/private remote, cockpit cleanup, packaging, and hydration alternatives."
+    },
+    "iterative_quality": {
+      "score": 0.91,
+      "evidence": "Uses one selected strategy plus a bounded three-child plan and one replay."
+    },
+    "bounded_implementation": {
+      "score": 0.92,
+      "evidence": "Next campaign remains research/refinement only and explicitly stops before ship_task or hydrate_task."
+    },
+    "operator_ux": {
+      "score": 0.91,
+      "evidence": "Ends with a concrete operator approval prompt and clear next-choice menu."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.88,
+      "finding": "Initial option board treated four-plane vocabulary and public update policy as separate top-level campaigns, which risked selecting a shallow documentation lane before the product boundary was resolved.",
+      "disposition": "Recomposed selected lane to make four-plane vocabulary a sub-question of public-product update policy."
+    },
+    {
+      "iteration": 2,
+      "score": 0.93,
+      "finding": "Declaration now preserves protected boundaries and gives the operator an approval-ready next campaign.",
+      "disposition": "Pass."
+    }
+  ],
+  "rejected_alternatives": [
+    {
+      "candidate": "four-plane-vocabulary-and-operator-prompt-alignment",
+      "reason": "Useful but too narrow; should be inside the public/update boundary strategy."
+    },
+    {
+      "candidate": "backup-private-remote-decision-for-yiwei-azoth-cockpit",
+      "reason": "Important but protected and likely to involve private remote, backup, restore, or credential decisions."
+    },
+    {
+      "candidate": "cockpit-receipt-index-cleanup",
+      "reason": "Narrower UX cleanup and may require cockpit/project authority."
+    },
+    {
+      "candidate": "packaging-commit-completed-campaign-artifacts",
+      "reason": "Operational packaging is useful but outside the approved no-commit campaign and not a product strategy lane."
+    },
+    {
+      "candidate": "hydration-specific-initiative-campaign",
+      "reason": "Current PM mobility read reports zero safe hydration candidates."
+    }
+  ],
+  "residual_risks": [
+    "Public freshness must be reverified with release-specific commands before any future public sync or release claim.",
+    "A future campaign must not mutate public azoth, cockpit, or project repos unless the operator explicitly approves that protected boundary.",
+    "The selected campaign should avoid converting strategy artifacts into canonical roadmap/backlog authority."
+  ],
+  "next_required_operator_decision": "Approve or revise the selected next campaign declaration."
+}

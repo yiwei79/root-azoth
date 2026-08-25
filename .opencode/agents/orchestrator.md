@@ -59,6 +59,36 @@ the pipeline shape.
 
 If any of the four dimensions is unclear, ask one focused clarifying question. Do not proceed to the Declaration until the goal is clear.
 
+## Stage 0 Assumption Checkpoint
+
+Before committing to a route, run the Assumption Checkpoint after memory/repo evidence read-back and before final classification, auto-router composition, and Declaration. This is a short operator-visible card, not a new pipeline stage.
+
+Record:
+
+```yaml
+stage0_assumption_checkpoint:
+  interpreted_goal: "<what the user is asking Azoth to accomplish>"
+  inputs_and_scope_source: "<explicit inputs, current scope/gate, backlog id, or ad-hoc>"
+  assumptions:
+    - claim: "<assumption>"
+      confidence: high|medium|low
+      evidence: "<memory/repo/user evidence>"
+  uncertainty_missing_facts:
+    - "<unknown that could change routing or gate posture>"
+  owned_surfaces:
+    - "<files/modules/governed surfaces in scope>"
+  out_of_scope_deferrals:
+    - "<nearby work deliberately deferred>"
+  classification_rationale: "<scope/risk/complexity/knowledge reasoning>"
+  gate_implications: "<human, governance, freshness, or entropy gates>"
+  routing_implications: "<auto-router base row plus subagent/delegation effects>"
+```
+
+Fail closed when any dimension remains unclear, latest/current external facts are
+material, or the task may expand into kernel/governance policy. Failing closed
+means ask one focused clarifying question, insert an official-source research
+pass, or require the proper human gate before final classification.
+
 ## Declaration Ownership
 
 The Declaration is mandatory before any pipeline stage executes. For `/auto`, present a
@@ -182,13 +212,19 @@ slice, change the pipeline shape, or escalate to the human for a pipeline decisi
 
 ## Model Tiering
 
-Set `model_tier` on every BL-011 spawn contract. The subagent-router resolves tier to a concrete model identifier; the orchestrator only sets the tier.
+Set `model_tier` on every BL-011 spawn contract. On Codex, resolve that tier before every `spawn_agent` call with `python3 scripts/codex_model_selector.py resolve`, pass the returned `model` and `reasoning_effort` into the actual spawn call, and record those selector fields in stage-spawn evidence. Do not rely on parent-session model inheritance.
+
+When calling the selector, include the latest classification signals whenever known:
+`--risk`, `--complexity`, `--knowledge`, `--stage-kind`, `--target-layer`, and one
+`--trigger` per routing or escalation trigger. These signals are part of the
+selection evidence, not extra prompt prose. Keep `xhigh` explicit-override only
+unless a future policy update adds a measured bounded default.
 
 | Tier | When | Spawn field |
 |------|------|-------------|
-| **premium** | `risk == governance-change`, `scope == kernel`, `knowledge == instruction-refinement`, evaluator stages on M1 work | `model_tier: premium` |
+| **premium** | `risk == governance-change`, `scope == kernel`, `knowledge == instruction-refinement`, evaluator stages on M1 work, repeated failure/root-cause loops | `model_tier: premium` |
 | **standard** | Default for all stages not matching premium or fast | `model_tier: standard` |
-| **fast** | `risk == cosmetic`, `scope == docs`, `complexity == simple AND knowledge == known-pattern`, explore-only tasks | `model_tier: fast` |
+| **fast** | `risk == cosmetic`, `scope == docs`, `complexity == simple AND knowledge == known-pattern`, read-only research/explore/search tasks with no `apply_patch` requirement | `model_tier: fast` |
 
 The human may override tier in the Declaration (e.g., "use premium for all stages"). Orchestrator respects explicit tier overrides for all subsequent spawns.
 
@@ -314,7 +350,7 @@ After 3 consecutive stage failures within a single pipeline:
 This orchestrator is the default pipeline entry agent for:
 
 - **Copilot/OpenCode**: bound via `agent: orchestrator` in `.claude/commands/auto.md`, `dynamic-full-auto.md`, `deliver.md`, `deliver-full.md`, `start.md`, and `next.md`. These fields are deployed to `.github/prompts/` and `.opencode/commands/` by `scripts/azoth-deploy.py`. Session-entry commands (`start`, `next`) also carry `agent: orchestrator` to prevent agent reset when the user has selected the orchestrator; drift is detected by tests T6–T8. In GitHub Copilot freeform chat, literal pipeline tokens still count as command invocation; `.github/copilot-instructions.md` must enforce the same no-inline rule if native slash-command routing does not fire.
-- **Codex**: Codex does not document repo-defined custom slash-command registration, so `scripts/azoth-deploy.py` projects `.claude/commands/*.md` into discoverable `.agents/skills/azoth-*` wrapper skills with `agents/openai.yaml` metadata. In Codex, use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc. as the primary entry surface; literal `/auto`-style tokens are compatibility fallback routed by `.codex/hooks/user_prompt_submit_router.py`. Treat Codex as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` carry the real control plane, while `.codex/hooks.json` keeps only a narrow compatibility hook and non-Bash enforcement remains behavioral.
+- **Codex**: Codex does not document repo-defined custom slash-command registration, so `scripts/azoth-deploy.py` projects `.claude/commands/*.md` into discoverable `.agents/skills/azoth-*` wrapper skills with `agents/openai.yaml` metadata. In Codex, use `/skills` or `$azoth-auto`, `$azoth-deliver`, `$azoth-next`, etc. as the primary entry surface; literal `/auto`-style tokens are compatibility fallback routed by `.codex/hooks/user_prompt_submit_router.py`. Treat Codex as **source-compatible, instruction-first, skill-routed**: `.codex/config.toml` and `.codex/agents/*.toml` carry the real control plane, while `.codex/hooks.json` keeps only a narrow compatibility hook and non-Bash enforcement remains behavioral. For governed `/deliver-full`, the next legal stage is spawned `deliver_full_s2_architect`. For governed `/deliver-full`, inline architecture prose does not satisfy Stage 2. For governed `/deliver-full`, a Declaration, gate write, or status card does not count as Stage 2 execution.
 - **Claude Code**: the orchestrator agent is deployed to `.claude/agents/orchestrator.md`. Claude Code has no native `defaultAgent` settings key; hard binding via `.claude/settings.json` is not supported by the platform. Main-session behavior relies on command-level `agent:` frontmatter and the CLAUDE.md instruction surface (rule 10, established by P1-013). The previously open main-session enforcement gap (tracked as DFA e2e friction) is closed by P1-013 via the instruction-surface approach.
 - **Cursor**: reads `.claude/agents/`, `.claude/commands/`, and `skills/` via the Claude Code compatibility toggle. Hook gaps (no PreToolUse, no SessionStart) are simulated by `.cursor/rules/claude-code-parity.mdc` (deployed by `azoth-deploy.py --platforms cursor`). No native `agent:` frontmatter routing; orchestrator binding is advisory via the parity rule.
 

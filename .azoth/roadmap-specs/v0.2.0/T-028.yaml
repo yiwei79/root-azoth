@@ -1,0 +1,49 @@
+id: T-028
+roadmap_version: v0.2.0
+title: Run-ledger serialized stage evidence writes
+decision_ref:
+- D11
+- D21
+- D23
+- D46
+- D50
+- D52
+intent: Serialize or fail closed the run-ledger stage-evidence write path used
+  by autonomous-auto delegated stages.
+problem: record-spawn and record-summary protect only final file replacement, so
+  concurrent read/append/validate/write flows can silently clobber stage_spawns
+  or stage_summaries rows.
+scope:
+- Protect record_stage_spawn across the full load/append/validate/write critical
+  section.
+- Protect record_stage_summary across the full load/append/validate/write
+  critical section.
+- Preserve existing YAML schema, evidence fields, CLI success behavior, and
+  require_stage_evidence semantics.
+- Add focused regression coverage in tests/test_run_ledger.py.
+non_goals:
+- No kernel, governance, closeout, scope-gate, pipeline-gate, autonomous-loop
+  routing, or roadmap/backlog behavior changes.
+- No ledger schema migration, JSONL side log, daemon, scheduler, or broad
+  lock-manager rewrite.
+- No changes to append, claim, release-claim, park-session, or unrelated
+  run-ledger writers.
+acceptance:
+- Concurrent record_stage_spawn calls for distinct stage ids on one temp ledger
+  preserve both stage_spawns rows and validate_ledger reports no errors.
+- Concurrent record_stage_summary calls for distinct stage ids on one temp ledger
+  preserve both stage_summaries rows and validate_ledger reports no errors.
+- After protected spawn and summary writes for at least two stage ids,
+  require_stage_evidence succeeds for each stage id.
+- The protection covers the full read/append/validate/write sequence, not only
+  _write_ledger or Path.replace.
+- If the lock/protection cannot be acquired or detects unsafe stale state,
+  record-spawn and record-summary fail closed with an actionable error naming
+  the ledger path and retry/serialization expectation.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

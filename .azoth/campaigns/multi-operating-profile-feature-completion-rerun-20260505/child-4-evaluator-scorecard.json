@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "packet_type": "autonomous_auto_child_evaluator_scorecard",
+  "campaign_id": "multi-operating-profile-feature-completion-rerun-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-shadow-eval-proof-4",
+  "route": "research_initiative",
+  "threshold": 0.9,
+  "score": 0.95,
+  "verdict": "pass",
+  "dimensions": {
+    "matrix_contract": {
+      "score": 1.0,
+      "evidence": "Live direct probe matched all reported rows: read-only stays stock-lite/done, focused verification and local edit stay azoth-lite/done, governed/finality/autonomous cases escalate to azoth-full with handoff packets."
+    },
+    "feature_completion_scope": {
+      "score": 0.95,
+      "evidence": "Evidence is sufficient for branch-local internal helper/profile proof and does not claim public release, sync, freshness, packaging, or clean final delivery."
+    },
+    "verification": {
+      "score": 0.94,
+      "evidence": "Focused classifier verification passed with 26 tests."
+    },
+    "governance": {
+      "score": 0.93,
+      "evidence": "Dirty worktree is acknowledged as pre-existing; finality correctly escalates with dirty_state_blocks_finality; no files were edited by child-4 research/eval stages."
+    },
+    "orchestration_evidence": {
+      "score": 0.92,
+      "evidence": "Architect, researcher, and evaluator stages were real spawned stages with ledger summaries."
+    },
+    "residual_risk_control": {
+      "score": 0.94,
+      "evidence": "Remaining risks are packaging/public-readiness risks, not blockers for branch-local internal profile proof."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.92,
+      "disposition": "helper_proof_passed",
+      "finding": "Child 3 helper proof passed but explicitly remained short of full shadow/eval completion."
+    },
+    {
+      "iteration": 2,
+      "score": 0.95,
+      "disposition": "pass",
+      "finding": "Child 4 shadow/eval matrix passed with no bounded replay required."
+    }
+  ],
+  "bounded_replay_count": 0,
+  "rejected_alternatives": [
+    {
+      "candidate": "request_bounded_replay",
+      "reason": "Rejected because score exceeded threshold and no matrix row failed."
+    },
+    {
+      "candidate": "claim_public_completion",
+      "reason": "Rejected because public release, sync, freshness, and packaging are explicitly out of scope."
+    },
+    {
+      "candidate": "mark_dirty_state_clean",
+      "reason": "Rejected because git status is dirty and must remain visible."
+    },
+    {
+      "candidate": "hydrate_roadmap_or_backlog",
+      "reason": "Rejected as outside the child boundary."
+    }
+  ],
+  "residual_risks": [
+    "The campaign is green only for branch-local internal helper/profile proof.",
+    "Public release, sync/freshness, packaging, and clean final delivery remain unclaimed.",
+    "The worktree is dirty and must be handled by a separate packaging or closeout path before any final delivery claim."
+  ],
+  "final_disposition": "pass",
+  "vision_status": "green",
+  "green_scope": "branch-local internal helper/profile proof only"
+}

@@ -1,0 +1,36 @@
+schema_version: 1
+manifest_id: personal-root-update-20260501-t048
+task_ref: T-048
+release_ref: v0.2.0
+product_revision: 0e93832ea5a9caff499128a84e4b046b8d44ac34
+source_revision: 546191b5735d3137717f06bc7cafb5bc5be83b4a
+source_panel: root-azoth
+target_panel: personal_root
+target_path: /Users/yiwei/GithubRepos/personal-azoth-root
+storage_policy: local_only
+reconciliation_mode: no_op_product_already_applied
+enabled_surfaces:
+- installed_runtime
+approved_card_ids: []
+project_pilots: []
+source_registry_changes: []
+retrieval_changes: []
+credential_changes: []
+public_release_changes: []
+validation_commands:
+- python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root
+- git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short
+rollback_ref: 1744b3c45fd1762b5b917f00a9bbe8014d4b0e0e
+approval_basis: Operator approved the T-048 manifest values on 2026-05-01 and
+  requested continuation through $azoth-auto.
+apply_boundary:
+  runtime_overwrite_allowed: false
+  receipt_write_allowed: true
+  receipt_path: /Users/yiwei/GithubRepos/personal-azoth-root/.azoth/releases/applied.yaml
+  stop_conditions:
+  - product_revision differs from the installed personal-root release
+  - personal-root target path differs from the approved path
+  - personal-root git status is dirty before receipt write
+  - live scope or pipeline gate expires
+  - requested work expands into credentials, cloud provisioning, source registry,
+    project writes, retrieval, public release, governance, kernel, or M1 surfaces

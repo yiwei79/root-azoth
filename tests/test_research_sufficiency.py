@@ -57,6 +57,26 @@ def _evaluate(
     return result
 
 
+def _evaluate_capsule(
+    capsule: dict,
+    *,
+    goal: str | None = None,
+    backlog_id: str | None = None,
+    now: datetime | None = None,
+) -> dict:
+    module = _load_module()
+    evaluate = getattr(module, "evaluate_research_capsule", None)
+    assert callable(evaluate), (
+        "research_sufficiency.evaluate_research_capsule must exist for in-memory capsule checks"
+    )
+    result = evaluate(capsule, goal=goal, backlog_id=backlog_id, now=now)
+    assert isinstance(result, dict)
+    assert "outcome" in result
+    assert "reasons" in result
+    assert isinstance(result["reasons"], list)
+    return result
+
+
 def _reasons_text(result: dict) -> str:
     return " ".join(str(reason) for reason in result["reasons"]).lower()
 
@@ -109,6 +129,32 @@ def _write_research_capsule(
         capsule.update(capsule_overrides)
     capsule_path.write_text(json.dumps(capsule), encoding="utf-8")
     return capsule_path
+
+
+def _research_capsule(
+    *,
+    questions: list[dict] | None = None,
+    goal: str = "T-009: Local research capsule bank + sufficiency checker",
+) -> dict:
+    return {
+        "schema_version": 1,
+        "source_session_id": "test-session",
+        "goal": goal,
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "volatility": "bounded",
+        "limitations": [],
+        "questions": questions
+        if questions is not None
+        else [
+            {
+                "question_id": "phase-1-reuse",
+                "question": "Can this repo-local research capsule be reused?",
+                "status": "answered",
+                "answered_at": datetime.now(timezone.utc).isoformat(),
+                "fresh_until": _future_iso(),
+            }
+        ],
+    }
 
 
 @pytest.mark.parametrize(
@@ -296,3 +342,60 @@ def test_evaluate_research_sufficiency_returns_sufficient_for_reusable_capsule(
 
     assert result["outcome"] == "research_sufficient"
     assert result["reasons"] == []
+
+
+def test_evaluate_research_capsule_returns_sufficient_for_in_memory_capsule() -> None:
+    result = _evaluate_capsule(_research_capsule())
+
+    assert result["outcome"] == "research_sufficient"
+    assert result["reasons"] == []
+
+
+def test_evaluate_research_capsule_returns_refresh_needed_for_stale_question() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    capsule = _research_capsule(
+        questions=[
+            {
+                "question_id": "phase-1-reuse",
+                "question": "Can this repo-local research capsule be reused?",
+                "status": "answered",
+                "answered_at": "2026-04-30T00:00:00Z",
+                "fresh_until": "2026-04-30T12:00:00Z",
+            }
+        ]
+    )
+
+    result = _evaluate_capsule(capsule, now=now)
+
+    assert result["outcome"] == "research_refresh_needed"
+    assert "stale" in _reasons_text(result)
+
+
+def test_evaluate_research_capsule_returns_refresh_needed_for_conflicting_question() -> None:
+    capsule = _research_capsule(
+        questions=[
+            {
+                "question_id": "phase-1-reuse",
+                "question": "Can this repo-local research capsule be reused?",
+                "status": "conflicting",
+                "answered_at": datetime.now(timezone.utc).isoformat(),
+                "fresh_until": _future_iso(),
+            }
+        ]
+    )
+
+    result = _evaluate_capsule(capsule)
+
+    assert result["outcome"] == "research_refresh_needed"
+    assert "conflicting" in _reasons_text(result)
+
+
+def test_evaluate_research_capsule_returns_refresh_needed_for_missing_slice_question() -> None:
+    goal = "T-046: Task research capsule derivation from initiative-bank evidence"
+    backlog_id = "T-046"
+    required_question_ids = _derive_required_questions(goal, backlog_id)
+
+    result = _evaluate_capsule(_research_capsule(goal=goal), goal=goal, backlog_id=backlog_id)
+
+    assert result["outcome"] == "research_refresh_needed"
+    assert required_question_ids[-1] in _reasons_text(result)

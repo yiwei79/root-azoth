@@ -1,0 +1,157 @@
+schema_version: 1
+artifact_type: goal_pursuit_final_closeout
+created_at: "2026-05-31T11:48:00Z"
+session_id: 2026-05-31-goal-pursuit-final-closeout
+run_id: 2026-05-31-goal-pursuit-final-closeout-auto
+status: complete
+
+operator_request:
+  received_at: "2026-05-31"
+  request: >
+    Check the latest status, persist the progress, and end the Goal pursuit.
+  disposition: >
+    Final progress is persisted as this root-local receipt. The Goal pursuit is
+    ended with remaining target-plane follow-ons explicitly deferred rather than
+    treated as required work for this Goal.
+
+goal_summary:
+  objective: >
+    Design and execute a governed Azoth upgrade initiative that improves
+    deployment ease, project readiness, and the central cockpit/control-point
+    mechanism across new and existing projects.
+  completion_basis: >
+    The objective's design, mapping, taxonomy, repo-native artifacts, staged
+    delivery evidence, cockpit pointer adoption, and first project-local starter
+    packet have been delivered. Remaining public release, cockpit sync, managed
+    hydration, and project-source work are intentionally deferred as separate
+    future approvals.
+
+latest_status:
+  checked_at: "2026-05-31T11:45:38Z"
+  root_azoth:
+    path: /Users/yiwei/GithubRepos/root-azoth
+    branch_status: "phase/v0.2.0-p4...origin/phase/v0.2.0-p4 [ahead 4]"
+    dirty_status: clean
+    latest_commits:
+      - 981e14c chore: record music project starter receipt
+      - 7d33ffb chore: record goal mode continuation route
+      - 3574eb2 chore: record cockpit pointer registration receipt
+      - 2d6bf74 chore: record governed upgrade objective audit
+  personal_cockpit:
+    path: /Users/yiwei/GithubRepos/yiwei-azoth-cockpit
+    branch_status: "main...origin/main [ahead 2]"
+    dirty_status: clean
+    latest_commits:
+      - "12ae5ee feat(projects): register project genesis pointers"
+      - "8c37ce8 feat(projects): add thesis cockpit pointer"
+  project_local_music:
+    path: /Users/yiwei/GithubRepos/FunProjects/ChordLab
+    repo_root: /Users/yiwei/GithubRepos/FunProjects
+    branch_status: "main...origin/main [ahead 1]"
+    scoped_chordlab_azoth_status: clean
+    latest_commit: "16ee597 chore(chordlab): add project genesis starter receipt"
+    unrelated_dirty_state_preserved:
+      - AGENTS.md
+      - SESSION_CLOSEOUT.md
+      - Syntropy/docs/harness-engineering/MEMORY_BANK.jsonl
+      - WORKSPACES.md
+      - docs/project-ideas.md
+      - Games/Loving Away Remake/
+      - Resonance/
+      - Stratum/
+      - package.json
+  run_ledger:
+    active_run: none
+    write_claim: none
+  gates_before_final_closeout:
+    previous_scope_gate: closed
+    previous_pipeline_gate: closed
+
+progress_persisted:
+  root_local_design_and_mapping:
+    status: complete
+    evidence_refs:
+      - .azoth/research/2026-05-20-governed-upgrade-objective-audit.yaml
+      - .azoth/proposals/governed-upgrade-target-plane-decision-brief.yaml
+      - .azoth/research/2026-05-20-goal-mode-continuation-route.yaml
+  mode_taxonomy_and_readiness:
+    status: complete
+    evidence_refs:
+      - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-059.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+      - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  repo_native_artifacts:
+    status: complete
+    evidence_refs:
+      - .azoth/initiative-banks/INI-DEP-001.yaml
+      - .azoth/initiative-banks/INI-DEP-002.yaml
+      - .azoth/initiative-banks/INI-GEN-001.yaml
+      - .azoth/initiative-banks/INI-ADOPT-001.yaml
+  cockpit_control_point:
+    status: first_adoption_complete
+    evidence_refs:
+      - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/index.yaml
+      - /Users/yiwei/GithubRepos/yiwei-azoth-cockpit/.azoth/projects/handoffs/project-genesis-cockpit-route-registration-2026-05-20.yaml
+      - .azoth/handoffs/goal-mode/2026-05-20-cockpit-pointer-registration-receipt.yaml
+  project_local_readiness:
+    status: first_project_packet_complete
+    evidence_refs:
+      - /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/project-genesis-starter.yaml
+      - /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/project-local-mode-receipt.yaml
+      - /Users/yiwei/GithubRepos/FunProjects/ChordLab/.azoth/handoffs/project-local-mode.yaml
+      - .azoth/handoffs/goal-mode/2026-05-20-music-production-lab-project-local-starter-receipt.yaml
+
+validation_evidence:
+  latest_status_commands:
+    - command: git status --short --branch
+      result: "## phase/v0.2.0-p4...origin/phase/v0.2.0-p4 [ahead 4]"
+    - command: git -C /Users/yiwei/GithubRepos/yiwei-azoth-cockpit status --short --branch
+      result: "## main...origin/main [ahead 2]"
+    - command: git -C /Users/yiwei/GithubRepos/FunProjects status --short --branch
+      result: "## main...origin/main [ahead 1] plus unrelated dirty state listed above"
+    - command: python3 scripts/run_ledger.py status
+      result: no active run; Write claim none
+    - command: PYTHONPYCACHEPREFIX=/tmp/pycache python3 scripts/check_gates.py --session-id 2026-05-31-goal-pursuit-final-closeout --require-pipeline-gate
+      result: scope gate and pipeline gate valid
+  prior_lane_validation:
+    - cockpit menu checks and UX simulations passed for registered routes
+    - ChordLab starter packet validation passed
+    - project-local mode receipt validation passed
+    - focused project-genesis/release-profile/cockpit tests passed with 27 passed
+
+deferred_follow_ons:
+  - route_id: public_template_distribution
+    reason: Requires future public Azoth target-plane approval and possibly later release gate.
+  - route_id: cockpit_push_or_sync
+    reason: Requires future personal cockpit sync or push approval.
+  - route_id: cockpit_readback_refresh_from_project_local_receipt
+    reason: Requires future personal cockpit mutation gate.
+  - route_id: managed_mode_project_local_hydration
+    reason: Requires project-local managed-mode gate and readiness proof.
+  - route_id: governed_autonomy_budget
+    reason: Requires explicit autonomy budget, stop conditions, and staged governance.
+  - route_id: project_source_or_creative_work
+    reason: Requires a project-local source/work session separate from the starter packet.
+
+mutation_audit:
+  final_closeout_artifact_written: true
+  code_changed: false
+  kernel_governance_mutated: false
+  kernel_template_mutated: false
+  roadmap_backlog_spec_hydrated: false
+  public_azoth_mutated: false
+  personal_cockpit_mutated: false
+  project_local_mutated_by_this_final_closeout: false
+  dependencies_or_credentials_changed: false
+  destructive_action_taken: false
+  pushes_or_tags_created: false
+
+goal_completion_decision:
+  mark_codex_goal_complete: true
+  rationale: >
+    The requested Goal pursuit is ending now. Delivered work satisfies the Goal
+    as a governed initiative with first bounded implementation/adoption slices.
+    Remaining expansion paths are persisted as deferred future work rather than
+    obligations of this active Goal.

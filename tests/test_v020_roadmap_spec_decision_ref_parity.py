@@ -61,6 +61,10 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
         "P1-011",
         "P1-012",
         "P1-013",
+        "T-015",
+        "T-016",
+        "T-017",
+        "T-025",
         "T-005",
         "T-008",
         "T-009",
@@ -77,6 +81,77 @@ def test_v020_roadmap_tasks_match_spec_decision_ref() -> None:
             f"{tid}: spec decision_ref {spec['decision_ref']!r} != "
             f"roadmap {task.get('decision_ref')!r}"
         )
+
+
+def test_codex_model_selection_shipped_continuity() -> None:
+    road = yaml.safe_load(ROADMAP.read_text(encoding="utf-8"))
+    backlog = yaml.safe_load(BACKLOG.read_text(encoding="utf-8"))
+    proposal = yaml.safe_load(
+        (REPO / ".azoth" / "proposals" / "codex-intelligent-model-selection.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    p3 = next(block for block in road["versions"] if block.get("id") == "v0.2.0-p3")
+    active_tasks = {item["id"]: item for item in p3.get("tasks") or []}
+    completed_tasks = {item["id"]: item for item in p3.get("completed_tasks") or []}
+
+    assert "T-017" not in active_tasks, "Shipped T-017 must not remain in the live p3 task list."
+    assert "T-015" in completed_tasks, "v0.2.0-p3 should retain T-015 as completed history."
+    assert "T-016" in completed_tasks, "v0.2.0-p3 should retain T-016 as completed history."
+    assert "T-017" in completed_tasks, "v0.2.0-p3 should preserve T-017 as shipped history."
+    assert "T-025" in completed_tasks, "v0.2.0-p3 should preserve T-025 as shipped history."
+    assert completed_tasks["T-015"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
+    assert completed_tasks["T-016"].get("decision_ref") == ["D19", "D46", "D50", "D52"]
+    assert completed_tasks["T-017"].get("decision_ref") == ["D19", "D21", "D23", "D46", "D52"]
+
+    backlog_t015 = _find_backlog_item(backlog, "T-015")
+    backlog_t017 = _find_backlog_item(backlog, "T-017")
+    backlog_t025 = _find_backlog_item(backlog, "T-025")
+    assert backlog_t015 is not None, "T-015 must exist in backlog.yaml as the restored seed row."
+    assert backlog_t017 is not None, (
+        "T-017 must exist in backlog.yaml as the shipped selector-policy row."
+    )
+    assert backlog_t025 is not None, "T-025 must exist in backlog.yaml as the runtime resolver row."
+    assert backlog_t015.get("status") == "complete"
+    assert backlog_t015.get("roadmap_ref") == "T-015"
+    assert backlog_t017.get("status") == "complete"
+    assert backlog_t017.get("initiative_ref") == "INI-PLT-006"
+    assert backlog_t017.get("roadmap_ref") == "T-017"
+    assert backlog_t025.get("status") == "complete"
+    assert backlog_t025.get("initiative_ref") == "INI-PLT-006"
+    assert backlog_t025.get("roadmap_ref") == "T-025"
+
+    initiatives = {item["id"]: item for item in road.get("initiatives") or []}
+    plt006 = initiatives["INI-PLT-006"]
+    assert plt006.get("task_ref") is None, (
+        "INI-PLT-006 should not point at completed T-017 as if it were still live work."
+    )
+    t017_slice = next(
+        item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-017"
+    )
+    assert t017_slice.get("status") == "complete"
+    assert t017_slice.get("role") == "historical"
+    t025_slice = next(
+        item for item in plt006.get("slices") or [] if item.get("task_ref") == "T-025"
+    )
+    assert t025_slice.get("status") == "complete"
+    assert t025_slice.get("role") == "historical"
+
+    shipped_follow_on = proposal["details"]["shipped_follow_on"]
+    assert shipped_follow_on["backlog_id"] == "T-017"
+    assert "shipped the selector-policy and task-definition lane" in shipped_follow_on["note"]
+    next_follow_on = proposal["details"]["next_follow_on"]
+    assert next_follow_on["backlog_id"] == "T-025"
+    assert "runtime bridge follow-on" in next_follow_on["note"]
+
+
+def test_codex_permissions_follow_on_history_is_preserved() -> None:
+    backlog = yaml.safe_load(BACKLOG.read_text(encoding="utf-8"))
+
+    backlog_t016 = _find_backlog_item(backlog, "T-016")
+    assert backlog_t016 is not None, "T-016 must exist in backlog.yaml."
+    assert backlog_t016.get("status") == "complete"
 
 
 def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs() -> None:
@@ -97,13 +172,13 @@ def test_schedulable_pipeline_initiatives_do_not_point_at_completed_seed_specs()
     initiatives = {item["id"]: item for item in road.get("initiatives") or []}
 
     ppl001 = initiatives["INI-PPL-001"]
-    assert ppl001.get("task_ref") not in completed_ids, (
-        "INI-PPL-001 is schedulable follow-on work and must point at a live residual task, "
-        "not a completed seed task."
-    )
-    assert str(ppl001.get("spec_ref") or "").endswith("/T-005.yaml"), (
-        "INI-PPL-001 should point at the residual T-005 spec."
-    )
+    assert ppl001.get("phase") is None
+    assert ppl001.get("task_ref") is None
+    assert ppl001.get("spec_ref") is None
+    slices = ppl001.get("slices") or []
+    assert [item.get("task_ref") for item in slices] == ["T-005", "T-006"]
+    assert all(item.get("status") == "complete" for item in slices)
+    assert all(item.get("role") == "historical" for item in slices)
     backlog_t005 = _find_backlog_item(backlog, "T-005")
     assert backlog_t005 is not None, "T-005 must exist in backlog.yaml"
     assert backlog_t005.get("initiative_ref") == "INI-PPL-001", (
@@ -147,12 +222,17 @@ def test_evidence_grounding_initiative_is_multi_dimensional_and_slice_backed() -
     }
     slices = evi001.get("slices") or []
     assert [item.get("task_ref") for item in slices] == ["T-008", "T-009", "T-010"]
-    # T-008 is the historical seed slice (complete); T-009 is now the primary active slice.
+    # The evidence-grounding rollout is complete, so the initiative should now be
+    # historical-only rather than scheduled against a stale slice alias.
+    assert evi001.get("phase") is None
+    assert evi001.get("task_ref") is None
+    assert evi001.get("spec_ref") is None
     assert slices[0]["role"] == "historical"
     assert slices[0]["status"] == "complete"
-    assert slices[1]["role"] == "primary"
-    assert slices[1]["status"] == "active"
-    assert slices[2]["status"] == "planned"
+    assert slices[1]["role"] == "historical"
+    assert slices[1]["status"] == "complete"
+    assert slices[2]["role"] == "historical"
+    assert slices[2]["status"] == "complete"
 
 
 def test_all_initiatives_expose_dimensions_and_slices() -> None:

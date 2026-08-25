@@ -114,11 +114,20 @@ optional `Read` targets. Role behavior, routing tables, and stage briefs live in
 ### Required template
 
 ```yaml
-pipeline: deliver-full | deliver | auto
+pipeline: autonomous-auto | deliver-full | deliver | auto
 stage_id: <string>   # e.g. deliver_full_s3 — see §Stage briefs
 subagent_type: <architect|planner|builder|reviewer|evaluator|...>
 trigger: <review-independence|context-isolation|context-budget|parallel-execution>
 model_tier: premium | standard | fast  # optional — set by orchestrator, resolved by router
+model: <resolved-model>                 # Codex required after selector resolution
+reasoning_effort: <low|medium|high|xhigh> # Codex required after selector resolution
+selector_signals:              # Codex selector inputs; omit unknown fields
+  risk: <string>
+  complexity: <string>
+  knowledge: <string>
+  stage_kind: <string>
+  target_layer: <string>
+  triggers: []
 execution_budget:               # optional — omit for leaf-only execution
   child_fanout_cap: <int>       # only for designated queen agents
   depth_remaining: <int>        # decrement before spawning children
@@ -131,9 +140,37 @@ inputs:
 Optional: one line `role_hint:` repeating the canonical D21 audit string for that stage
 (see §Stage briefs) so logs stay grep-friendly.
 
-**`model_tier` resolution**: the orchestrator sets `model_tier` based on risk and complexity
-(see orchestrator agent `§ Model Tiering`). The subagent-router resolves tier to a concrete
-model identifier at spawn time. If omitted, defaults to `standard`.
+**`model_tier` resolution**: the orchestrator sets `model_tier` from the current
+classification and spawn purpose (see orchestrator agent `§ Model Tiering`). Codex
+spawns also forward `selector_signals` so the local selector can choose reasoning
+effort from task evidence rather than agent role alone. If `model_tier` is omitted,
+it defaults to `standard`.
+
+## Codex Model Selector Contract (T-025)
+
+For Codex-hosted spawns, `model_tier` is portable intent, not the final runtime
+payload. Before spawning a Codex subagent, the orchestrator must resolve the tier
+through `python3 scripts/codex_model_selector.py resolve`, using
+`.azoth/codex-model-selector-policy.yaml` as policy input and appending selector evidence to
+`.azoth/codex-model-selector-traces.local.jsonl`.
+
+The resolved spawn payload must include explicit runtime fields:
+
+```yaml
+model_tier: premium | standard | fast
+model: <resolved-model>
+reasoning_effort: <low|medium|high|xhigh>
+selector_signals:
+  risk: <classification.risk>
+  complexity: <classification.complexity>
+  knowledge: <classification.knowledge>
+  stage_kind: <planning|implementation|review|audit|research|...>
+  target_layer: <M0|M1|M2|M3|...>
+  triggers: [<review-independence|context-isolation|bounded-replay|...>]
+```
+
+Do not omit `model` or `reasoning_effort` on Codex subagent spawns. Parent `xhigh` reasoning must not leak into leaf workers by omission; `xhigh` is allowed only when
+there is an explicit selector override with an override reference and reason.
 
 **`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
 `orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
@@ -173,7 +210,8 @@ handoff is an **orchestrator failure**, not an evaluator failure.
 | **After (contract)**      | 120–400 tokens: YAML block above + `Read` of this skill + archetype file                         |
 
 
-**After** is the only approved pattern for `/auto`, `/deliver`, and `/deliver-full` execution.
+**After** is the only approved pattern for `/auto`, `/autonomous-auto`, `/deliver`, and
+`/deliver-full` execution.
 
 ### Static-prefix-friendly ordering (P1-011)
 
@@ -195,7 +233,7 @@ prefix stays stable for provider-side prompt caching.
 When the stage finishes (before returning control to the orchestrator), emit a **YAML**
 document that validates against `pipelines/stage-summary.schema.yaml`:
 
-- Set `pipeline` to `auto`, `deliver`, or `deliver-full` to match the active command.
+- Set `pipeline` to `auto`, `autonomous-auto`, `deliver`, or `deliver-full` to match the active command.
 - Set `stage_id` to the same value used in the spawn template for this stage.
 - Set `stage_kind` to one of `research` | `build` | `eval` | `audit` (semantic bucket for the handoff).
 - Keep `done`, `decisions`, and `open` within schema array limits (max 5 bullets each).
@@ -250,6 +288,14 @@ For `pipeline: auto`, set `stage_id` to a stable identifier per composed stage (
 `auto_s1_architect`, `auto_s2_reviewer`) and fill `subagent_type` + `trigger` from the
 routing table above. Full composition rules remain in `skills/auto-router/SKILL.md` and
 `pipelines/auto.pipeline.yaml`.
+
+## Stage briefs: autonomous-auto
+
+For `pipeline: autonomous-auto`, use the same stage-family routing as `auto`, with
+stable loop-aware stage ids (for example `autonomous_auto_s1_architect`,
+`autonomous_auto_s2_reviewer`, or `loop_governor_s5_planner`). The active loop budget and
+`approval_basis` are scope inputs; they do not replace BL-011 spawn payloads or BL-012
+typed summaries.
 
 ### Agent Crafter meta-loop (governed M1)
 

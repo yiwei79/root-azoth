@@ -1,0 +1,44 @@
+schema_version: 1
+name: autonomous-auto
+display_name: /autonomous-auto
+description: "Autonomous Auto Mode: standalone adaptive pipeline for branch-local Azoth self-development with alignment_mode: async, alignment packets, and approval_basis persistence"
+agent: orchestrator
+azoth_effect: write
+
+body:
+  mode: legacy_claude_markdown
+  source_path: .claude/commands/autonomous-auto.md
+
+projection:
+  claude:
+    kind: native_command_markdown
+    output_path: .claude/commands/autonomous-auto.md
+  cursor:
+    kind: claude_command_toggle_surface
+    output_path: .claude/commands/autonomous-auto.md
+  copilot:
+    kind: prompt_markdown
+    output_path: .github/prompts/autonomous-auto.prompt.md
+  opencode:
+    kind: native_command_markdown
+    output_path: .opencode/commands/autonomous-auto.md
+  codex:
+    kind: skill_wrapper
+    output_path: .agents/skills/azoth-autonomous-auto/SKILL.md
+    metadata_path: .agents/skills/azoth-autonomous-auto/agents/openai.yaml
+  gemini:
+    kind: native_command_toml
+    output_path: .gemini/commands/autonomous-auto.toml
+  antigravity:
+    kind: workflow_markdown
+    output_path: .agents/workflows/autonomous-auto.md
+
+migration:
+  phase: autonomous-self-development-mode
+  runtime_source_of_truth: commands/autonomous-auto/command.yaml
+  notes:
+    - Defines autonomous-auto as its own mode instead of a dynamic-full-auto submode.
+    - .claude/commands/autonomous-auto.md remains the authored semantic body during the bridge.
+
+references:
+  - skills/autonomous-auto/SKILL.md

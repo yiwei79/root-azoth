@@ -423,3 +423,178 @@ def test_scaffold_roadmap_task_promotes_alias_when_existing_primary_is_complete(
             "role": "primary",
         },
     ]
+
+
+def test_hydrate_task_creates_missing_backlog_row_and_spec_for_existing_planned_task(
+    tmp_path: Path,
+) -> None:
+    roadmap_path, backlog_path, specs_root = _write_repo(
+        tmp_path,
+        active_version="v0.2.0-p3",
+        milestone="v0.2.0",
+        versions_content=textwrap.dedent(
+            """\
+            - id: v0.2.0-p3
+              status: active
+              tasks:
+                - id: T-KRP-A
+                  title: CLAUDE.md kernel slice
+                  initiative_ref: INI-KRP-001
+                  target_layer: M1
+                  delivery_pipeline: governed
+            """
+        ).rstrip(),
+        initiatives_content=textwrap.dedent(
+            """\
+            - id: INI-KRP-001
+              title: Karpathy
+              category: efficiency
+              theme: E
+              phase: null
+              slices:
+                - task_ref: T-KRP-A
+                  phase: null
+                  status: planned
+                  role: primary
+            """
+        ).rstrip(),
+        backlog_items="[]",
+    )
+
+    before_roadmap = roadmap_path.read_text(encoding="utf-8")
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--hydrate-task",
+            "T-KRP-A",
+            "--initiative-ref",
+            "INI-KRP-001",
+            "--target-version",
+            "v0.2.0-p3",
+            "--target-layer",
+            "M1",
+            "--delivery-pipeline",
+            "governed",
+            "--priority",
+            "1",
+            "--source",
+            "BL-059-follow-on",
+            "--description",
+            "Hydrate the first Karpathy follow-on task from the planned roadmap stub.",
+            "--roadmap-yaml",
+            str(roadmap_path),
+            "--backlog-yaml",
+            str(backlog_path),
+            "--specs-root",
+            str(specs_root),
+            "--created-date",
+            "2026-04-22",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0] == "T-KRP-A"
+
+    backlog = yaml.safe_load(backlog_path.read_text(encoding="utf-8"))
+    created_item = backlog["items"][-1]
+    assert created_item["id"] == "T-KRP-A"
+    assert created_item["title"] == "CLAUDE.md kernel slice"
+    assert created_item["roadmap_ref"] == "T-KRP-A"
+    assert created_item["initiative_ref"] == "INI-KRP-001"
+    assert created_item["target_layer"] == "M1"
+    assert created_item["delivery_pipeline"] == "governed"
+    assert created_item["priority"] == 1
+    assert created_item["source"] == "BL-059-follow-on"
+
+    spec = yaml.safe_load((specs_root / "v0.2.0" / "T-KRP-A.yaml").read_text(encoding="utf-8"))
+    assert spec["id"] == "T-KRP-A"
+    assert spec["title"] == "CLAUDE.md kernel slice"
+    assert spec["delivery"]["target_layer"] == "M1"
+    assert spec["delivery"]["delivery_pipeline"] == "governed"
+    assert roadmap_path.read_text(encoding="utf-8") == before_roadmap
+
+
+def test_hydrate_task_refuses_when_backlog_row_already_exists(tmp_path: Path) -> None:
+    roadmap_path, backlog_path, specs_root = _write_repo(
+        tmp_path,
+        active_version="v0.2.0-p3",
+        milestone="v0.2.0",
+        versions_content=textwrap.dedent(
+            """\
+            - id: v0.2.0-p3
+              status: active
+              tasks:
+                - id: T-KRP-A
+                  title: CLAUDE.md kernel slice
+            """
+        ).rstrip(),
+        initiatives_content="[]",
+        backlog_items=textwrap.dedent(
+            """\
+            - id: T-KRP-A
+              roadmap_ref: T-KRP-A
+              status: pending
+            """
+        ).rstrip(),
+        spec_files=["T-KRP-A.yaml"],
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--hydrate-task",
+            "T-KRP-A",
+            "--roadmap-yaml",
+            str(roadmap_path),
+            "--backlog-yaml",
+            str(backlog_path),
+            "--specs-root",
+            str(specs_root),
+            "--created-date",
+            "2026-04-22",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "already exists" in result.stderr
+
+
+def test_hydrate_task_refuses_when_task_not_in_active_version_tasks(tmp_path: Path) -> None:
+    roadmap_path, backlog_path, specs_root = _write_repo(
+        tmp_path,
+        active_version="v0.2.0-p3",
+        milestone="v0.2.0",
+        versions_content=textwrap.dedent(
+            """\
+            - id: v0.2.0-p3
+              status: active
+              tasks: []
+            """
+        ).rstrip(),
+        initiatives_content="[]",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--hydrate-task",
+            "T-KRP-A",
+            "--roadmap-yaml",
+            str(roadmap_path),
+            "--backlog-yaml",
+            str(backlog_path),
+            "--specs-root",
+            str(specs_root),
+            "--created-date",
+            "2026-04-22",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "not present in v0.2.0-p3 tasks" in result.stderr

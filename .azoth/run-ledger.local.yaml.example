@@ -54,6 +54,17 @@ runs:
     stages_completed:
       - planning
       - architecture-brief
+    stage_inline_exceptions:
+      - run_id: "2026-04-10-p1-005-auto"
+        stage_id: planning
+        subagent_type: planner
+        trigger: context-budget
+        role_hint: "Agent(subagent_type=planner): Narrow plan completed inline before delivery handoff"
+        dependency_summary_refs: []
+        exception_recorded_at: "2026-04-10T09:30:00+00:00"
+        exception_reason: >
+          Staged delegation was unavailable in the runtime; the orchestrator recorded
+          the inline exception before completing the narrow planning stage.
     waves: []
     branches: []
 

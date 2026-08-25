@@ -800,6 +800,45 @@ def test_check_pipeline_gate_rejects_invalid_pipeline_command(tmp_path: Path) ->
     assert "must be one of" in message
 
 
+def test_check_pipeline_gate_accepts_autonomous_auto_pipeline_command(tmp_path: Path) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+    opened = datetime.now(timezone.utc).isoformat()
+    (azoth_dir / "scope-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "test-session",
+                "goal": "test goal",
+                "approved": True,
+                "approved_by": "human",
+                "expires_at": expires,
+                "backlog_id": "ad-hoc",
+                "governance_mode": "governed",
+                "target_layer": "M1",
+                "pipeline_command": "autonomous-auto",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "test-session",
+                "pipeline_command": "autonomous-auto",
+                "approved": True,
+                "expires_at": expires,
+                "opened_at": opened,
+                "research_required": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    valid, message = check_gates.check_pipeline_gate(require=True, root=tmp_path)
+    assert valid is True, message
+
+
 def test_check_pipeline_gate_requires_file_for_governed_scope(tmp_path: Path) -> None:
     azoth_dir = tmp_path / ".azoth"
     azoth_dir.mkdir()
@@ -899,6 +938,74 @@ def test_check_pipeline_gate_rejects_unapproved_gate(tmp_path: Path) -> None:
     valid, message = check_gates.check_pipeline_gate(root=tmp_path)
     assert valid is False
     assert "not approved" in message
+
+
+def test_check_pipeline_gate_treats_closed_residue_as_inert_when_not_required(
+    tmp_path: Path,
+) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+    opened = datetime.now(timezone.utc).isoformat()
+    _write_scope_gate(
+        azoth_dir,
+        session_id="new-standard-session",
+        governance_mode="standard",
+        target_layer="infrastructure",
+        expires_at=expires,
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "old-closed-session",
+                "pipeline_command": "auto",
+                "approved": False,
+                "expires_at": expires,
+                "opened_at": opened,
+                "closed_at": opened,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is True
+    assert "closed" in message
+    assert "not required" in message
+
+
+def test_check_pipeline_gate_rejects_closed_residue_when_required(tmp_path: Path) -> None:
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    expires = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+    opened = datetime.now(timezone.utc).isoformat()
+    _write_scope_gate(
+        azoth_dir,
+        session_id="new-governed-session",
+        governance_mode="governed",
+        target_layer="M1",
+        expires_at=expires,
+    )
+    (azoth_dir / "pipeline-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "old-closed-session",
+                "pipeline_command": "auto",
+                "approved": False,
+                "expires_at": expires,
+                "opened_at": opened,
+                "closed_at": opened,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    valid, message = check_gates.check_pipeline_gate(root=tmp_path)
+
+    assert valid is False
+    assert "required" in message
+    assert "closed" in message
 
 
 def test_check_pipeline_gate_rejects_invalid_expires_at(tmp_path: Path) -> None:

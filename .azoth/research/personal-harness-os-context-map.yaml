@@ -1,0 +1,112 @@
+schema_version: 1
+artifact_type: context_map
+title: Personal Harness OS context map
+status: active
+created_at: "2026-06-06T00:00:00Z"
+updated_at: "2026-06-06T00:00:00Z"
+session_id: 2026-06-06-personal-harness-os-s1
+owner: codex
+purpose: >
+  Map the first Personal Harness OS implementation slice so mode selection,
+  context packets, and authority boundaries stay small, testable, and aligned
+  with the operator's daily-use intent.
+inputs:
+  user_intent:
+    - reliable practical harness after the goal
+    - automatic and elegant management of light/heavy Azoth tiers
+    - user-friendly personal use through the three-circle model
+    - persistent state, memory, and auto context management
+    - one human alignment gate for true architecture decisions
+  repo_contracts:
+    - .azoth/proposals/azoth-harness-rethink-2026.yaml
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+    - docs/personal-control-plane/MULTI-CONTROL-PANEL-UX-ANCHOR.md
+authority_model:
+  daily_circles:
+    personal_cockpit:
+      purpose: Operator-facing central point for project pointers, selected mode, freshness, and next safe action.
+      mutation_boundary: Requires fresh cockpit-plane approval before repository writes.
+    project_spaces:
+      purpose: Actual user projects where goals, local receipts, and project context live.
+      mutation_boundary: Requires project-local receipt and approval for managed or governed-autonomy writes.
+    azoth_supply_chain:
+      purpose: Root/public Azoth source of harness contracts, templates, validators, and releases.
+      mutation_boundary: Root-local contracts are allowed here; public release mutation requires a fresh gate.
+  backing_authority_planes:
+    root_azoth:
+      owns:
+        - architecture source of truth
+        - validators
+        - harness contracts
+      first_slice_allowed:
+        - scripts/harness_profile.py
+        - scripts/context_view.py
+        - focused tests and planning artifacts
+    personal_cockpit:
+      owns:
+        - operator-facing readback
+        - project pointers
+      first_slice_allowed: []
+    project_local:
+      owns:
+        - local receipts
+        - project planning state
+      first_slice_allowed: []
+    public_azoth:
+      owns:
+        - consumer-safe release profiles
+        - public templates
+      first_slice_allowed: []
+surface_map:
+  harness_profile:
+    path: scripts/harness_profile.py
+    role: Maps azoth-lite side-effect decisions into guide, assisted, managed, and governed_autonomy.
+    risk: Misclassifying protected actions as daily guide or assisted use.
+    guard: Tests require protected/external requests to stop with explicit authority.
+  route_capsule:
+    path: scripts/harness_profile.py
+    role: Names route_state, authority_required, authority_plane, required_inputs, next_safe_action, and stop_reason.
+    risk: Hiding missing authority behind friendly UX.
+    guard: Managed and governed_autonomy cases require fresh authority.
+  context_view:
+    path: scripts/context_view.py
+    role: Combines compact route, memory, personal, and project summaries without raw dumping.
+    risk: Context bloat or leakage of raw memory/personal data.
+    guard: Tests filter raw memory items and include only summary fields.
+blast_radius:
+  files_planned:
+    - .azoth/proposals/azoth-personal-harness-os.yaml
+    - .azoth/initiative-banks/INI-HARNESS-001.yaml
+    - .azoth/design-banks/personal-harness-os.yaml
+    - .azoth/research/personal-harness-os-context-map.yaml
+    - .azoth/handoffs/goal-mode/2026-06-06-personal-harness-os-plan.md
+    - scripts/harness_profile.py
+    - scripts/context_view.py
+    - tests/test_harness_profile.py
+    - tests/test_context_view.py
+    - tests/fixtures/personal_harness_cases.yaml
+  excluded:
+    - kernel/
+    - scripts/codex_control_plane.py
+    - personal cockpit repository
+    - public Azoth repository
+    - project-local repositories
+    - release and deployment surfaces
+test_strategy:
+  focused:
+    - PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_harness_profile.py tests/test_context_view.py
+  adjacent_regression:
+    - PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider tests/test_azoth_lite_classifier.py
+  artifact_validation:
+    - python3 scripts/architecture_proposal_validate.py .azoth/proposals/azoth-personal-harness-os.yaml
+next_slices:
+  - id: harness-002
+    title: Codex control-plane advisory integration
+    approval_need: fresh root-local gate naming codex_control_plane files
+  - id: harness-003
+    title: Cockpit pointer-only readback rehearsal
+    approval_need: fresh cockpit authority if writing outside root
+  - id: harness-004
+    title: Practice rehearsal pack
+    approval_need: depends on target project/cockpit writes

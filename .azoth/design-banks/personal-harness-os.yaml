@@ -1,0 +1,142 @@
+schema_version: 1
+bank_type: design
+id: personal-harness-os
+title: Personal Harness OS
+status: active_refinement
+created_at: "2026-06-06T00:00:00Z"
+updated_at: "2026-06-06T00:00:00Z"
+source_proposal_refs:
+  - .azoth/proposals/azoth-personal-harness-os.yaml
+related_initiative_refs:
+  - INI-HARNESS-001
+related_decision_refs:
+  - D23
+  - D45
+  - D50
+  - D52
+problem: >
+  Azoth's safety and audit machinery is real, but the daily operator experience
+  can feel heavier than the original lightweight harness intent. The system
+  needs a small, automatic mode-selection layer that keeps guide-level use
+  light while preserving managed and governed-autonomy authority boundaries.
+design_thesis: >
+  Treat Azoth as a Personal Harness OS with stable interfaces instead of a
+  monolithic pipeline. HarnessProfile chooses the tier, RouteCapsule names the
+  authority and stop state, and ContextView pulls only the context needed for
+  the current move.
+options:
+  - option_id: keep_old_profile_names
+    status: rejected
+    summary: Continue exposing stock-lite, azoth-lite, and azoth-full to the operator.
+    rationale: Those names describe implementation posture, not daily user intent.
+  - option_id: replace_control_plane_immediately
+    status: rejected
+    summary: Wire the new router directly into the Codex control plane in the first slice.
+    rationale: The safer first move is a tested pure contract before behavior changes.
+  - option_id: stable_contract_then_integration
+    status: preferred
+    summary: Add HarnessProfile, RouteCapsule, and ContextView first, then integrate.
+    rationale: Preserves existing gates while making the new Personal Harness OS language executable.
+tradeoffs:
+  - tradeoff_id: extra_adapter_layer
+    summary: A new wrapper adds one more surface to maintain.
+    mitigation: Keep it pure, deterministic, and backed by existing T-059 contracts.
+  - tradeoff_id: authority_friction
+    summary: Managed and governed-autonomy modes still stop for authority.
+    mitigation: Stop reasons and next safe actions are explicit in the route capsule.
+open_questions:
+  - question_id: db-harness-001
+    status: answered
+    question: Should personal mode selection delete azoth-lite?
+    answer: No. Keep azoth-lite as the lower-level side-effect classifier and expose Personal Harness OS modes above it.
+  - question_id: db-harness-002
+    status: open
+    question: Should the Codex control-plane advisory become the first integration point?
+    answer: >
+      Recommended yes after slice-harness-001-a, because it is root-local and
+      already owns profile advisory text. A fresh narrow gate should include
+      scripts/codex_control_plane.py and its focused tests.
+research_refs:
+  - .azoth/research/personal-harness-os-context-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+challenge_log:
+  - challenge_id: ch-harness-design-001
+    challenged_at: "2026-06-06T00:00:00Z"
+    prompt: What would make this unsafe for personal AI use?
+    disposition: answered
+    result: >
+      Unsafe behavior would be silently crossing authority planes, hiding missing
+      receipts, or letting governed autonomy continue without fresh budget,
+      ledger, and stop-condition evidence.
+routing_candidates:
+  - route: root_local_contract
+    status: in_progress
+    target: slice-harness-001-a
+    rationale: Establish tested personal harness packets without changing runtime defaults.
+  - route: control_plane_integration
+    status: ready_after_root_local_contract
+    target: slice-harness-001-b
+    rationale: Surface the route capsule where Codex already reports profile posture.
+  - route: cockpit_readback
+    status: requires_fresh_gate
+    target: future_personal_cockpit_rehearsal
+    rationale: Cockpit mutation crosses into another authority plane.
+readiness:
+  evaluated_at: "2026-06-06T00:00:00Z"
+  readiness_status: continue_refinement
+  freshness_status: current
+  target_route: slice-harness-001-a
+  blocking_questions: []
+  contradiction_disposition: monitored_by_route_capsule_authority_plane
+  source_refs:
+    - .azoth/proposals/azoth-personal-harness-os.yaml
+    - .azoth/initiative-banks/INI-HARNESS-001.yaml
+    - .azoth/research/personal-harness-os-context-map.yaml
+  recommended_next_artifact: scripts/harness_profile.py
+  human_decision: approved_architecture_direction
+closeout_history_policy:
+  policy_id: planning_bank_closeout_history_merge_policy_v1
+  status: active
+  merge_strategy: append_only
+  routine_closeout:
+    planning_bank_write_mode: forbidden
+    allowed_effects:
+      - Read this design bank for route context, residual risk, and follow-on recommendations.
+      - Record ordinary session closure outside planning-bank directories.
+    blocked_effects:
+      - Do not rewrite .azoth/design-banks during routine closeout.
+      - Do not rewrite .azoth/initiative-banks during routine closeout.
+      - Do not append history without an explicit planning-bank update scope.
+    rationale: >
+      Personal Harness OS work is likely to continue across multiple sessions.
+      Routine closeout should not silently become planning authority or create
+      merge churn.
+  explicit_hydration_history:
+    append_path: hydration_history
+    append_position: append_tail
+    required_metadata:
+      - hydrated_at
+      - session_id
+      - candidate_slice_ref
+      - task_ref
+      - spec_ref
+      - approval_scope
+      - approval_basis
+      - append_policy_ref
+      - append_mode
+      - merge_key
+    allowed_when:
+      - A fresh root-local gate names this design bank.
+      - The update records a real design or delivery event.
+    merge_key_shape: timestamp:event
+    audit_rule: Existing entries are not rewritten for cosmetic normalization.
+  non_laundering_rule: >
+    historical planning truth may record a task that was hydrated through a bypassed
+    path, but the bank must label that event explicitly as non retroactive pipeline
+    compliance and must not describe it as retroactively pipeline-compliant.
+history:
+  - timestamp: "2026-06-06T00:00:00Z"
+    event: created_from_goal_design
+    summary: >
+      Seeded after the operator approved the Personal Harness OS design and
+      asked Codex to start pursuing the goal.

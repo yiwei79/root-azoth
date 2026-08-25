@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "campaign_id": "post-green-route-truth-repair-20260505",
+  "child_session_id": "2026-05-05-autonomous-auto-post-green-route-truth-audit-1",
+  "generated_at": "2026-05-05T17:20:00Z",
+  "verdict": "one_bounded_internal_readback_repair_candidate",
+  "selected_next_lane": {
+    "action": "ship_task",
+    "candidate_id": "ini-mem-003-dashboard-route-readback-repair",
+    "title": "Align INI-MEM-003 dashboard/readback route with hydrated T-058 truth",
+    "source": "route-truth-audit",
+    "protected": false,
+    "authority": "repo_internal_readback_repair_only",
+    "why": "Welcome and roadmap dashboard still surface INI-MEM-003 as slice-mem-003-b -> TBD-MEM-003-B, while the initiative bank and PM mobility helper identify the latest current candidate as slice-mem-003-d -> T-058 with candidate.status hydrated. The next safe campaign move is a bounded readback/report repair, not hydration."
+  },
+  "route_board": [
+    {
+      "id": "INI-MEM-003",
+      "title": "Vector retrieval layer for M3 context-recall",
+      "dashboard_route": "candidate slice-mem-003-b -> TBD-MEM-003-B (parked)",
+      "bank_or_helper_route": "slice-mem-003-d -> T-058; hydrated_not_delivered; do not repeat hydration",
+      "classification": "route_surface_mismatch",
+      "recommended_action": "ship_task",
+      "blocked_actions": [
+        "hydrate_task",
+        "implementation_delivery_without_fresh_gate",
+        "vector_backend_dependency_or_network_expansion"
+      ]
+    },
+    {
+      "id": "INI-AUTO-001",
+      "title": "Autonomous initiative lifecycle orchestration",
+      "dashboard_route": "slice-auto-001-i -> T-033 (hydrated)",
+      "bank_or_helper_route": "hydrated_not_delivered; do not repeat hydration",
+      "classification": "hydrated_not_delivered",
+      "recommended_action": "stop_or_delivery_gate",
+      "blocked_actions": [
+        "hydrate_task",
+        "delivery_outside_current_route-truth budget"
+      ]
+    },
+    {
+      "id": "INI-EVI-002",
+      "title": "Knowledge richness evaluation for project-management artifacts",
+      "dashboard_route": "slice-evi-002-f -> T-046 (complete)",
+      "bank_or_helper_route": "fulfilled_or_stale; fresh distinct seed required",
+      "classification": "complete_or_stale",
+      "recommended_action": "stop_unless_fresh_seed",
+      "blocked_actions": [
+        "hydrate_task",
+        "repeat_helper_implementation"
+      ]
+    },
+    {
+      "id": "INI-PKB-001",
+      "title": "Personal-control-plane distributed knowledge system",
+      "dashboard_route": "not in top planning-bank panel",
+      "bank_or_helper_route": "T-055 complete; future work needs operator-selected protected gate",
+      "classification": "complete_protected_follow_on",
+      "recommended_action": "stop_or_explicit_human_gate",
+      "blocked_actions": [
+        "cockpit_or_project_write",
+        "credential_or_backup_work",
+        "public_product_mutation"
+      ]
+    },
+    {
+      "id": "planning-banks-layer",
+      "title": "Planning banks layer",
+      "dashboard_route": "none_currently_fresh_distinct_seed_required",
+      "bank_or_helper_route": "defer",
+      "classification": "no_fresh_seed",
+      "recommended_action": "stop_until_fresh_seed",
+      "blocked_actions": [
+        "hydration_without_fresh_candidate",
+        "broad_roadmap_or_backlog_rephasing"
+      ]
+    }
+  ],
+  "global_blocked_actions": [
+    "hydrate_task",
+    "public sync or release",
+    "public checkout mutation",
+    "cockpit or project writes",
+    "backup/private remote or credential work",
+    "kernel/governance/M1 mutation",
+    "dependency or network expansion",
+    "destructive actions",
+    "broad roadmap/backlog rephasing",
+    "commits or pushes"
+  ],
+  "evidence_commands": [
+    "python3 scripts/welcome.py --plain",
+    "python3 scripts/roadmap_dashboard.py",
+    "python3 scripts/pm_orchestrator_mobility.py --json",
+    "python3 scripts/autonomous_loop.py campaign-report --json",
+    "python3 scripts/autonomous_loop.py status --operator-read",
+    "python3 scripts/run_ledger.py status"
+  ]
+}

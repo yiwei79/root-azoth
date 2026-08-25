@@ -1,0 +1,141 @@
+schema_version: 1
+campaign_id: product-strategy-orchestrator-20260504
+title: Product Strategy Orchestrator
+status: approved_pending_start
+prepared_at: "2026-05-04T21:02:00Z"
+mode: autonomous-auto
+operator_selection:
+  selected_option: A
+  selected_title: Product Strategy Orchestrator
+  approved_budget:
+    max_child_scopes: 10
+    bounded_replays: 3
+purpose: >
+  Run a long-running intelligent product-management campaign so the orchestrator
+  can compare initiatives, proposals, release/product directions, and harness
+  strategy, then make explicit product-management choices before any delivery
+  scope opens.
+success_anchor: >
+  Azoth has a repo-native product strategy operating loop: it can inventory the
+  current proposal/initiative portfolio, score candidate lanes, explain tradeoffs,
+  choose the next product-management move, and distinguish discovery,
+  refinement, hydration, delivery, packaging, and protected gates.
+strategic_sources:
+  recommended_seed_set:
+    - .azoth/proposals/azoth-harness-rethink-2026.yaml
+    - .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml
+    - .azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml
+    - .azoth/proposals/public-release-root-feature-parity.yaml
+    - .azoth/initiative-banks/INI-MEM-003.yaml
+    - .azoth/initiative-banks/INI-EVI-002.yaml
+    - .azoth/initiative-banks/INI-PKB-001.yaml
+    - .azoth/design-banks/planning-banks-layer.yaml
+  current_context:
+    prior_campaign: ini-rst-006-continuity-snapshots-20260504
+    prior_campaign_status: completed_green
+    packaging_note: >
+      Prior campaign artifacts and closeout bookkeeping are still uncommitted.
+      This campaign may reason about product strategy, but packaging/commit truth
+      must stay visible and should not be conflated with campaign completion.
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+blocked_without_fresh_human_gate:
+  - hydrate_task
+  - public sync or release
+  - public checkout mutation
+  - cockpit or project writes
+  - backup/private remote or credential work
+  - kernel/governance/M1 mutation
+  - dependency or network expansion
+  - destructive actions
+  - broad roadmap/backlog rephasing
+  - committing or pushing unless explicitly requested
+product_management_principles:
+  - Separate product strategy from implementation convenience.
+  - Compare options before opening a delivery child.
+  - Prefer discovery/refinement when readiness is weak or assumptions are material.
+  - Prefer delivery only when scope, authority, validation, and ownership are clear.
+  - Treat public release, cockpit, project, and root-workshop authority as distinct planes.
+  - Keep roadmap/backlog canonical; strategy artifacts may recommend but not silently rephase.
+  - Keep packaging state visible before claiming a campaign is actually done.
+budget_plan:
+  max_child_scopes: 10
+  bounded_replays: 3
+  intended_shape:
+    - child: 1
+      action: research_initiative
+      title: Portfolio inventory and product-management scorecard
+      goal: >
+        Build a compact options board from current proposals, initiative banks,
+        design banks, roadmap state, and campaign completion/packaging truth.
+    - child: 2
+      action: refine_proposal
+      title: Product strategy operating model
+      goal: >
+        Refine the chosen strategic model for how Azoth should make product
+        choices across discovery, hydration, delivery, release, and packaging.
+    - child: 3
+      action: ship_task
+      title: Orchestrator decision surface
+      goal: >
+        Ship a non-authoritative product-strategy board or report that the
+        orchestrator can use for option comparison without replacing roadmap truth.
+    - child: 4
+      action: research_initiative
+      title: Candidate lane deep dive
+      goal: >
+        Research the highest-value selected lane and challenge assumptions before
+        any hydration or delivery recommendation.
+    - child: 5
+      action: refine_proposal
+      title: Readiness and sequencing refinement
+      goal: >
+        Convert the selected lane into a staged product sequence with explicit
+        protected gates and acceptance criteria.
+    - child: 6
+      action: ship_task
+      title: Product-management decision capsule
+      goal: >
+        Ship an auditable decision capsule that names selected lane, rejected
+        alternatives, next safe action, and why.
+    - child: 7
+      action: research_initiative
+      title: Validation and replay readiness
+      goal: >
+        Check whether strategy decisions are still aligned with repo-native
+        state, campaign evidence, and operator constraints.
+    - child: 8
+      action: ship_task
+      title: Bounded improvement or packaging repair
+      goal: >
+        Use only if a non-protected, in-scope strategy artifact or packaging
+        visibility fix is necessary.
+    - child: 9
+      action: ship_task
+      title: Bounded replay 1/3 if needed
+      goal: Fix concrete review/validation issues only.
+    - child: 10
+      action: ship_task
+      title: Bounded replay 2-3/3 or final strategy closeout
+      goal: >
+        Use remaining replay capacity only for concrete validation failures;
+        otherwise close the campaign with the final product strategy read.
+first_child:
+  action: research_initiative
+  candidate_id: product-strategy-orchestrator-portfolio-inventory
+  title: Portfolio inventory and product-management scorecard
+  source: product-strategy-orchestrator-20260504
+  target_classification: research-first-strategy
+  protected: false
+  expected_outputs:
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-1-portfolio-inventory.md
+    - .azoth/campaigns/product-strategy-orchestrator-20260504/child-1-scorecard.json
+start_readiness:
+  verdict: ready_to_initialize
+  reason: >
+    The prior INI-RST-006 loop is completed Green with no active run or write
+    claim. The operator selected Option A and explicitly approved a 10-child
+    budget with 3 bounded replays. Dirty working tree state remains visible and
+    must be handled as packaging truth, not hidden or reverted.

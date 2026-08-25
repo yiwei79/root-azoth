@@ -1,0 +1,303 @@
+schema_version: 1
+artifact_type: research_evidence_index
+topic: INI-MEM-003 vector retrieval layer for M3 context-recall
+created_at: '2026-05-03T17:00:20Z'
+updated_at: '2026-05-03T17:16:14Z'
+planning_bank_ref: .azoth/initiative-banks/INI-MEM-003.yaml
+summary: >
+  Evidence index for the INI-MEM-003 initiative bank. Research artifacts own
+  source packs and recall-quality evidence; the initiative bank owns readiness,
+  candidate slices, contradictions, and hydration boundaries.
+research_packs:
+- pack_id: pack-mem-003-local-recall-surfaces-001
+  kind: local-discovery
+  status: active
+  captured_at: '2026-05-03T17:00:20Z'
+  source_session_id: 2026-05-03-autonomous-auto-ini-mem-003-1
+  goal: Define the first safe M3 recall-quality spine before hydration.
+  volatility: low
+  limitations:
+  - This pack uses repo-local evidence only; no network or dependency freshness
+    check was performed.
+  - It does not approve hydration, vector backend support, or new runtime
+    dependencies.
+  questions:
+  - What current context-recall behavior exists?
+  - What local precedent should shape a zero-dependency recall/eval harness?
+  - What blocks optional vector or temporal-validity lanes?
+  sources:
+  - path: .azoth/roadmap.yaml#INI-MEM-003
+    finding: >
+      INI-MEM-003 is a phase-null memory initiative with no slices. Its roadmap
+      summary keeps JSONL as the zero-dependency default and frames vector
+      retrieval as optional.
+  - path: .azoth/roadmap.yaml#INI-MEM-002
+    finding: >
+      INI-MEM-002 adds temporal metadata for M2 patterns but preserves
+      HITL-only invalidation; it is adjacent, not prerequisite.
+  - path: .azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml#INI-MEM-003
+    finding: >
+      The proposal replay classifies INI-MEM-003 with no slices/backlog task as
+      initiative_discovery and continue_research, not direct hydration.
+  - path: .agents/skills/context-recall/SKILL.md
+    finding: >
+      Context-recall is currently an instruction-level skill: it extracts tags,
+      scores M3 by tag overlap, recency, and reinforcement_count, scores M2 by
+      trigger/reinforcement, and surfaces top 1-3 advisory results.
+  - path: scripts/episode_store.py
+    finding: >
+      M3 episodes are append-only JSONL records validated through episode_store;
+      lossy context keys are rejected and verbatim source/payload fields must be
+      paired when used.
+  - path: scripts/personal_knowledge_recall.py
+    finding: >
+      T-045 provides a zero-dependency recall precedent: exact id/source lookup,
+      metadata-token fallback, source preservation, advisory authority, and
+      explicit denial of raw memory/inbox/body indexing.
+  - path: tests/test_personal_knowledge_recall.py
+    finding: >
+      Existing tests cover exact lookup, metadata lookup, freshness status,
+      fail-closed unapproved input, and raw memory/inbox access boundaries.
+  - path: requirements-dev.txt
+    finding: >
+      The repo currently carries no vector database dependency; dependency
+      expansion would require explicit approval and freshness review.
+  synthesis:
+    selected_direction: zero_dependency_m3_recall_quality_spine
+    first_spine_shape:
+    - Load M3 through scripts/episode_store.py and read M2 patterns read-only.
+    - Use deterministic query tags plus keyword/token overlap, recency, and
+      reinforcement_count as the default scorer.
+    - Emit top-1/top-3 JSON results with score reasons, source ids, timestamps,
+      and advisory-authority labels.
+    - Evaluate against repo-local fixtures before any vector backend.
+    rejected_or_deferred:
+    - direction: optional_vector_backend
+      disposition: stop_before_dependency
+      reason: >
+        Needs explicit backend choice, dependency approval, freshness evidence,
+        storage/privacy rules, index lifecycle, and measured eval delta over the
+        zero-dependency baseline.
+    - direction: INI-MEM-002_temporal_validity
+      disposition: adjacent_only_if_needed
+      reason: >
+        Only relevant if recall-quality evidence shows stale M2 or point-in-time
+        pattern selection is the correctness blocker.
+    - direction: raw_memory_or_inbox_indexing
+      disposition: rejected_for_this_campaign
+      reason: >
+        The first spine should use governed M3/M2 memory surfaces and preserve
+        advisory authority; broad raw-source ingestion widens privacy and
+        authority boundaries.
+    research_completion: >
+      Complete for discovery truth and first-slice definition. Not complete for
+      hydration until replay cases, pass/fail metrics, and exact implementation
+      surface are accepted.
+- pack_id: pack-mem-003-fixture-contract-002
+  kind: local-fixture-contract
+  status: active
+  captured_at: '2026-05-03T17:16:14Z'
+  source_session_id: 2026-05-03-autonomous-auto-ini-mem-003-2
+  goal: >
+    Convert INI-MEM-003 slice-mem-003-a from discovery seed into a hydratable
+    zero-dependency recall-quality planning slice.
+  volatility: low
+  limitations:
+  - This pack uses repo-local M3/M2 evidence only; no network or dependency
+    freshness check was performed.
+  - It does not approve implementation, vector backend support, new runtime
+    dependencies, network access, or M2 mutation.
+  executable_surface:
+    path: scripts/context_recall_quality.py
+    invocation_examples:
+    - 'python3 scripts/context_recall_quality.py --query "memory recall" --tags memory context-recall --top-k 3 --json'
+    - 'python3 scripts/context_recall_quality.py --fixtures tests/fixtures/context_recall_quality.yaml --json'
+    constraints:
+    - Requires --json for machine-readable output.
+    - Loads M3 through episode_store.load_episode_records.
+    - Reads .azoth/memory/patterns.yaml read-only for M2 pattern candidates.
+    - Uses no vector backend, embedding generation, new dependency, or network.
+    - Annotates stale, archived, superseded, or conflicting recall candidates
+      without mutating or expiring M2 patterns.
+  json_contract:
+    top_level_fields:
+    - schema_version
+    - packet_type
+    - query
+    - query_tags
+    - as_of
+    - top_k
+    - corpus
+    - results
+    - warnings
+    - no_match
+    - advisory_authority
+    result_fields:
+    - rank
+    - source_type
+    - id
+    - source_ref
+    - summary
+    - timestamp
+    - tags
+    - score_total
+    - score_components
+    - match_reasons
+    - freshness_status
+    - conflict_status
+    - advisory_authority
+    score_components:
+    - tag_overlap
+    - token_overlap
+    - recency_bonus
+    - reinforcement_bonus
+    - pattern_trigger_bonus
+    - total
+    eval_mode_fields:
+    - fixture_set_id
+    - fixture_results
+    - top1_pass_count
+    - top3_pass_count
+    - failed_fixture_ids
+    - pass_fail
+  pass_fail:
+    pass_when:
+    - Deterministic fixtures have 100 percent expected top-1 hits.
+    - Ambiguous fixtures have 100 percent expected top-3 hits.
+    - JSON fields remain stable for query and fixture modes.
+    - Tests prove no mutation of .azoth/memory/episodes.jsonl or
+      .azoth/memory/patterns.yaml.
+    fail_when:
+    - New dependencies, network access, vector runtime, raw-source indexing,
+      M2 invalidation/expiry, or context-recall skill replacement are required.
+    - slice-mem-003-a keeps unresolved open_questions.
+  fixtures:
+  - fixture_id: exact_context_recall_delivery
+    query_tags:
+    - context-recall
+    - D45
+    - memory-read-path
+    - P3-006
+    expected_top1:
+      source_type: m3_episode
+      id: ep-052
+    covers:
+    - exact durable M3 tag hit for the current context-recall contract.
+    evidence_refs:
+    - .azoth/memory/episodes.jsonl:52
+    - .agents/skills/context-recall/SKILL.md:69
+  - fixture_id: memory_architecture_origin
+    query_tags:
+    - memory-architecture
+    - progressive-disclosure
+    - dynamic-context-loading
+    - Layer1-gap
+    expected_top1:
+      source_type: m3_episode
+      id: ep-023
+    covers:
+    - Broad memory noise must not swamp the original architecture-gap episode.
+    evidence_refs:
+    - .azoth/memory/episodes.jsonl:23
+  - fixture_id: m2_read_back_pattern
+    query_tags:
+    - memory
+    - knowledge-accumulation
+    - read-back
+    - session-selection
+    expected_top1:
+      source_type: m2_pattern
+      id: memory-requires-read-back-mechanism
+    acceptable_top3:
+    - ep-032
+    - ep-046
+    covers:
+    - M2 pattern inclusion, trigger matching, and reinforcement scoring.
+    evidence_refs:
+    - .azoth/memory/patterns.yaml:88
+    - .azoth/memory/episodes.jsonl:32
+    - .azoth/memory/episodes.jsonl:46
+  - fixture_id: keyword_only_write_only_sink
+    query: M3 M2 write-only paths action-incomplete memory pipeline consumption session selection
+    query_tags: []
+    expected_top3:
+    - source_type: m3_episode
+      id: ep-032
+    - source_type: m2_pattern
+      id: memory-requires-read-back-mechanism
+    covers:
+    - Keyword/token rescue when exact tags do not carry the user's phrasing.
+    evidence_refs:
+    - .azoth/memory/episodes.jsonl:32
+    - .azoth/memory/patterns.yaml:93
+  - fixture_id: m2_reinforcement_boost_control_plane
+    query_tags:
+    - scope selection
+    - backlog claiming
+    - session lifecycle
+    - closeout status write-back
+    expected_top1:
+      source_type: m2_pattern
+      id: control-plane-needs-real-time-claims-and-durable-status
+    covers:
+    - Reinforced M2 pattern should outrank isolated same-topic M3 rows.
+    evidence_refs:
+    - .azoth/memory/patterns.yaml:451
+    - .azoth/memory/episodes.jsonl:215
+    - .azoth/memory/episodes.jsonl:334
+  - fixture_id: same_day_recency_tiebreak_closeout
+    query_tags:
+    - closeout
+    - session-closeout
+    expected_order_prefix:
+    - ep-532
+    - ep-531
+    - ep-530
+    covers:
+    - Deterministic timestamp tie-break among same-day, same-tag closeout rows.
+    evidence_refs:
+    - .azoth/memory/episodes.jsonl:530
+    - .azoth/memory/episodes.jsonl:531
+    - .azoth/memory/episodes.jsonl:532
+    - .agents/skills/context-recall/SKILL.md:90
+  - fixture_id: planning_bank_duplicate_supersede
+    query_tags:
+    - planning-bank
+    - duplicate-candidate
+    expected_top1:
+      source_type: m3_episode
+      id: ep-468
+    expected_annotations:
+    - ep-467 remains archive/context only.
+    - ep-478 may appear only when hydration terms are included.
+    covers:
+    - Stale, archived, or superseded notes are annotated instead of treated as
+      consensus.
+    evidence_refs:
+    - .azoth/memory/episodes.jsonl:467
+    - .azoth/memory/episodes.jsonl:468
+    - .azoth/memory/episodes.jsonl:478
+    - .agents/skills/context-recall/SKILL.md:93
+  - fixture_id: no_match_empty_result
+    query_tags:
+    - mars-colony
+    - espresso-index
+    - unrelated-test-needle
+    expected_results: []
+    expected_no_match: true
+    covers:
+    - Recall returns no forced output and does not invent weak matches.
+    evidence_refs:
+    - .agents/skills/context-recall/SKILL.md:108
+    - tests/test_personal_knowledge_recall.py:285
+  synthesis:
+    readiness_effect: >
+      This fixture contract plus the selected executable surface resolves the
+      open readiness blockers for slice-mem-003-a. Hydration is safe only for
+      planning artifacts that scaffold the zero-dependency recall-quality spine.
+    protected_boundaries:
+    - No dependency or vector backend work without explicit future approval.
+    - No network expansion.
+    - No M2 invalidation, rewrite, or auto-expiry.
+    - No raw inbox, personal-root, or unreviewed source indexing.
+    - No /start or /next integration in the first implementation slice.

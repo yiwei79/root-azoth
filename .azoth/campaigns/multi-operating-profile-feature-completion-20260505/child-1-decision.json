@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "campaign_id": "multi-operating-profile-feature-completion-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-reconciliation-1",
+  "status": "complete",
+  "evaluator_score": 0.93,
+  "threshold": 0.9,
+  "bounded_replay_count": 0,
+  "decision": "proceed_to_child_2_refine_proposal",
+  "selected_next_child": {
+    "route": "refine_proposal",
+    "candidate_id": "multi-operating-profile-contract",
+    "goal": "Lock the canonical internal profile contract for stock-lite, azoth-lite, azoth-full, and meta-harness-experimental, including side-effect classes, trace rules, context view, escalation handoff, source mapping, and proof plan."
+  },
+  "stop_conditions_checked": {
+    "public_release_or_freshness": "blocked_by_default",
+    "hydrate_task": "blocked",
+    "kernel_governance_m1": "not_requested",
+    "network_or_dependencies": "not_used",
+    "commit_push_packaging": "blocked",
+    "destructive_actions": "not_used"
+  },
+  "artifacts": [
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-1-reconciliation-inventory.md",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-1-phase-state-map.json",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-1-evaluator-scorecard.json",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-1-decision.json"
+  ]
+}

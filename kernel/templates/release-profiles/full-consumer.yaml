@@ -1,0 +1,26 @@
+profile: full
+description: Consumer-safe seeds for a Full Azoth runtime install.
+seeds:
+  .azoth/roadmap.yaml: |
+    roadmap_schema_version: 1
+    active_version: v0.2.0
+    current_phase: 0
+    lifecycle_phase: 0
+    project: consumer-project
+    items: []
+  .azoth/backlog.yaml: |
+    backlog_schema_version: 1
+    project: consumer-project
+    items: []
+  .azoth/roadmap-specs/v0.2.0/README.md: |
+    # Consumer Roadmap Specs
+
+    This directory is reserved for project-local Azoth roadmap specs.
+  .azoth/initiative-banks/.gitkeep: ""
+  .azoth/design-banks/.gitkeep: ""
+  .azoth/autonomous-loop-state.local.yaml.example: |
+    vision:
+      declaration: "Describe the consumer project autonomy target here."
+    current_child_scope: null
+    completed_child_scopes: []
+    stop_condition: null

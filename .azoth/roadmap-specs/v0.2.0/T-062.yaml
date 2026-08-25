@@ -1,0 +1,111 @@
+id: T-062
+roadmap_version: v0.2.0
+title: Project-local mode-selection receipt and cockpit handoff map
+decision_ref:
+- D11
+- D23
+- D38
+- D48
+- D50
+- D52
+intent: Define and root-validate the contract for project-local mode-selection receipts
+  and cockpit pointer/readback handoff.
+problem: INI-DEP-001/T-059/T-060/T-061 established the mode matrix, cockpit readback
+  fields, and release-profile readiness compiler. T-062 captures and validates how
+  a future project-local receipt becomes authoritative without letting root-azoth,
+  public Azoth, or the personal cockpit write project state.
+scope:
+- Capture the project-local receipt field contract.
+- Preserve canonical T-059/T-060 cockpit readback fields and avoid inventing a
+  competing vocabulary.
+- >
+  Map the source-of-truth order: project_local_receipt, cockpit_pointer_readback,
+  then next_safe_action.
+- Define cockpit handoff states for missing, stale, ready, and authority-required
+  receipts.
+- Add root-local validation so cockpit and release-profile readiness fail closed
+  for missing, stale, misowned, malformed, or overclaimed project-local receipts.
+- Keep release, public Azoth, cockpit deployment, project-local receipt creation,
+  project-local repo mutation, kernel, and template mutation behind separate approval
+  gates.
+non_goals:
+- No release publishing.
+- No public Azoth mutation.
+- No personal cockpit mutation.
+- No project-local repo mutation or receipt creation.
+- No kernel/governance edits.
+- No kernel/templates edits.
+acceptance:
+- T-062 is present in roadmap, backlog, and this spec with `initiative_ref: INI-DEP-002`.
+- INI-DEP-002 marks `slice-dep-002-a` as hydrated and records hydration history.
+- The spec names the authoritative receipt/readback order and preserves the T-059/T-060
+  field contract.
+- Readiness validation blocks repeat hydration after the candidate becomes hydrated.
+- Root-local cockpit/release-profile helpers reject missing, stale, misowned, malformed,
+  or overclaimed project-local receipts before managed/governed readiness is advertised.
+- Planning-bank validators, roadmap reference checks, focused tests, and evaluator replay
+  pass without release, public Azoth, cockpit, kernel, template, or project-local mutation.
+dependencies:
+- T-059
+- T-060
+- T-061
+delivery:
+  target_layer: project-local-readiness
+  delivery_pipeline: standard
+  suggested_command: /auto
+  status: complete
+  hydrated_at: '2026-05-19T20:08:10Z'
+  delivered_at: '2026-05-19T21:26:31Z'
+  commit_ref: 4fbd9b2
+initiative_ref: INI-DEP-002
+candidate_slice_ref: slice-dep-002-a
+planning_contract_ref: .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
+source_proposal_ref: .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+receipt_contract:
+  future_project_local_path: .azoth/project-local-mode-receipt.yaml
+  source_of_truth_order:
+  - project_local_receipt
+  - cockpit_pointer_readback
+  - next_safe_action
+  canonical_readback_fields:
+  - project_pointer
+  - authority_plane
+  - selected_mode
+  - readiness_state
+  - freshness_status
+  - installed_asset_classes
+  - missing_asset_classes
+  - approval_scope
+  - active_write_claim
+  - next_safe_action
+  - stop_reason
+handoff_states:
+- state: receipt_missing
+  stop_reason: project_local_receipt_missing
+  next_safe_action: ask project owner before creating or repairing any receipt
+- state: receipt_stale
+  stop_reason: project_local_receipt_stale
+  next_safe_action: refresh project-local receipt under a project-local gate
+- state: receipt_ready
+  stop_reason: none
+  next_safe_action: open project-local context with the receipt as authority
+- state: authority_required
+  stop_reason: managed_mode_requires_project_local_gate
+  next_safe_action: request a fresh project-local approval gate before managed or
+    governed work
+validation_refs:
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-002.yaml
+  .azoth/design-banks/project-readiness-cockpit-handoff.yaml --check-roadmap-refs
+- python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-DEP-002.yaml
+  --candidate-id slice-dep-002-a
+- python3 scripts/autonomous_loop.py lifecycle-route --initiative .azoth/initiative-banks/INI-DEP-002.yaml
+  --candidate-id slice-dep-002-a --json
+- python3 -m pytest -p no:cacheprovider tests/test_azoth_release_profile.py tests/test_cockpit_menu.py
+  tests/test_goal_mode_self_approval.py
+implementation_refs:
+- scripts/azoth_release_profile.py
+- scripts/cockpit_menu.py
+- scripts/goal_mode_self_approval.py
+elasticity: Future cockpit deployment, public Azoth templates, project-local receipt
+  creation, managed/governed-autonomy handoff, or signed receipt-authority capsules
+  require fresh approval gates.

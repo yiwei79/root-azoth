@@ -1,0 +1,217 @@
+proposal_schema_version: 1
+created_at: "2026-05-03T15:08:30Z"
+session_id: "2026-05-03-ini-evi-002-g-route-truth-refinement"
+backlog_id: "P6-003"
+title: "INI-EVI-002 post-T-046 route-truth reconciliation"
+summary: >
+  Planning/refinement artifact for the post-T-046 INI-EVI-002 route check.
+  The initiative bank and focused validators agree that slice-evi-002-f / T-046
+  is complete and that no repeat hydration, helper implementation, or standalone
+  task-capsule emission remains. The smallest safe follow-on is therefore not
+  delivery; it is a route-truth reconciliation slice that repairs or supersedes
+  stale operator-facing route language only after explicit approval.
+status: draft
+decision_refs:
+  - D23
+  - D45
+  - D48
+  - D50
+  - D51
+  - D52
+scope_layers:
+  - pipelines
+  - mixed
+details:
+  candidate_surfaces:
+    - ".azoth/initiative-banks/INI-EVI-002.yaml"
+    - ".azoth/research/ini-evi-002-research-bank.yaml"
+    - ".azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml"
+    - ".azoth/proposals/initiative-bank-tooling-and-hydration-helper.yaml"
+    - ".azoth/roadmap-specs/v0.2.0/T-046.yaml"
+    - ".azoth/backlog.yaml"
+    - ".azoth/roadmap.yaml"
+    - "scripts/planning_bank_validate.py"
+  route_truth_assessment:
+    assessed_at: "2026-05-03T15:08:30Z"
+    initiative_id: "INI-EVI-002"
+    provisional_candidate_id: "slice-evi-002-g"
+    provisional_candidate_title: "Post-T-046 fresh distinct seed recovery and route-truth reconciliation"
+    verdict: "go_for_route_truth_reconciliation_only"
+    no_go_for:
+      - "repeat T-046 hydration"
+      - "repeat task-capsule helper implementation"
+      - "standalone .azoth/research/*.json capsule emission"
+      - "roadmap/backlog/spec hydration"
+      - "kernel/M1/governance mutation"
+    rationale: >
+      Readiness output for INI-EVI-002 reports readiness_status complete,
+      candidate_status complete, ready_to_hydrate false, and no scaffold command.
+      The derived task-capsule preview refuses emission because no repeat derivation
+      or hydration action remains and research_sufficiency evidence is missing for
+      a standalone capsule. The remaining useful work is to reconcile stale or
+      ambiguous route text so future operators do not interpret needs_context_recovery
+      as delivery authority.
+  lifecycle:
+    step_1_read_authoritative_bank:
+      action: "Read INI-EVI-002 readiness, next_seed_assessment, and hydration_history."
+      output: "Authoritative bank verdict for post-T-046 route state."
+    step_2_compare_operator_surfaces:
+      action: "Compare welcome, roadmap dashboard, roadmap initiative text, backlog T-046, and T-046 spec."
+      output: "Route-truth mismatch table."
+    step_3_refuse_repeat_work:
+      action: "Run readiness and derived-capsule preview checks against slice-evi-002-f."
+      output: "Evidence that repeat hydration/helper/capsule emission is blocked."
+    step_4_select_least_powerful_follow_on:
+      action: "Choose no-op, route-text repair, bank readiness supersession, or a future seed declaration."
+      output: "Approval-ready next route."
+  command_surface_options:
+    option_noop:
+      disposition: "reject_for_operator_ux"
+      rationale: "Would preserve stale context-recovery wording that can be mistaken for delivery authority."
+    option_hydrate_next_task:
+      disposition: "reject"
+      rationale: "No fresh distinct candidate is evidenced and readiness is complete, not ready_to_hydrate."
+    option_route_truth_reconciliation:
+      disposition: "recommended"
+      rationale: "Least-powerful follow-on that repairs planning truth without creating delivery scope."
+  challenge_points:
+    - challenge: "Is this a hidden repeat of T-046?"
+      answer: "No delivery is allowed; the candidate only reconciles route language and seed truth."
+    - challenge: "Could a standalone capsule be emitted now?"
+      answer: "No; the preview refuses emission and the approval forbids .azoth/research/*.json output."
+    - challenge: "Could /next consume the planning-bank candidate as scope?"
+      answer: "No; planning banks remain seeds, not executable scope authority."
+  non_goals:
+    - "Do not hydrate roadmap, backlog, or roadmap-spec state."
+    - "Do not implement task-capsule emission or helper delivery."
+    - "Do not touch kernel, M1, governance, release, deployment, worktrees, or personal-root surfaces."
+  governance:
+    approval_boundary: "fresh /auto planning/refinement approval only"
+    entropy_ceiling: "narrow artifact plus route comparison; no broad cleanup"
+    stop_conditions:
+      - "fresh distinct seed not evidenced"
+      - "route repair would touch protected or M1 surfaces"
+      - "operator requests hydration or delivery without a new explicit approval"
+  evidence:
+    live_route_state:
+      worktree: "clean before scope open"
+      run_ledger_before_scope: "no active run; no write claim"
+      t056_campaign_route: "stop"
+      t056_continuation: "not required; vision_realized"
+    source_refs:
+      - ".azoth/initiative-banks/INI-EVI-002.yaml#readiness"
+      - ".azoth/initiative-banks/INI-EVI-002.yaml#next_seed_assessment"
+      - ".azoth/initiative-banks/INI-EVI-002.yaml#hydration_history"
+      - ".azoth/research/ini-evi-002-research-bank.yaml#lf-evi-002-010"
+      - ".azoth/roadmap-specs/v0.2.0/T-046.yaml"
+      - ".azoth/backlog.yaml#T-046"
+      - ".azoth/roadmap.yaml#INI-EVI-002"
+    focused_checks:
+      - command: "python3 scripts/planning_bank_validate.py --coverage-report"
+        result: "covered=3; missing_required=0; INI-EVI-002 covered"
+      - command: "python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-EVI-002.yaml --candidate-id slice-evi-002-f"
+        result: "ready_to_hydrate=false; blocking reasons include complete readiness and complete candidate"
+      - command: "python3 scripts/planning_bank_validate.py --derive-task-capsule .azoth/initiative-banks/INI-EVI-002.yaml --candidate-id slice-evi-002-f --source-question-id rq-evi-002-010"
+        result: "ready_to_emit=false; refuses repeat derivation/hydration and insufficient standalone capsule evidence"
+      - command: "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-EVI-002.yaml --check-roadmap-refs"
+        result: "OK"
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-05-03"
+      sources:
+        - title: "Atlassian Product Discovery delivery overview"
+          url: "https://www.atlassian.com/software/jira/product-discovery/guides/delivery/overview"
+          finding: "Discovery ideas should remain linked to delivery state and move toward delivery only after validation and commitment."
+        - title: "Google Cloud Architecture Decision Records overview"
+          url: "https://cloud.google.com/architecture/architecture-decision-records"
+          finding: "Architecture records preserve options, requirements, decisions, and context so future work can understand why a route was chosen."
+        - title: "GOV.UK Service Manual discovery phase"
+          url: "https://www.gov.uk/service-manual/agile-delivery/how-the-discovery-phase-works"
+          finding: "Discovery may correctly end with stop, more research, or movement toward testing; stop is a valid outcome."
+      implications:
+        - "INI-EVI-002 can validly stop after T-046 until new evidence exists."
+        - "Operator-facing route text should distinguish context recovery from delivery authority."
+        - "Future delivery must preserve traceability back to the initiative-bank evidence and explicit approval boundary."
+    artifact_boundary:
+      proposal_owns: "This draft owns route-truth assessment and next-route recommendation only."
+      initiative_bank_owns: "Authoritative readiness, candidate slices, and hydration history."
+      roadmap_owns: "Operator-visible initiative summary and historical task references."
+      backlog_owns: "Executable task status only after hydration."
+    readiness_report_schema:
+      minimal_fields:
+        - "initiative_id"
+        - "candidate_slice_ref"
+        - "readiness_status"
+        - "human_decision"
+        - "freshness_status"
+        - "blocking_reasons"
+        - "hydration_recommendation"
+        - "next_route"
+        - "approval_boundary"
+      fail_closed_rules:
+        - "A complete readiness_status cannot open hydration."
+        - "A complete candidate cannot open repeat helper delivery."
+        - "A standalone task capsule cannot emit without research_sufficiency evidence and explicit approval."
+    command_policy:
+      next: "May surface the seed as read-only planning context, but must not create a scope card from it."
+      auto: "May run planning/refinement after explicit approval, then stop with a go/no-go."
+      roadmap_dashboard: "Should avoid wording that implies completed planning-bank lanes are delivery-ready."
+    hydration_handoff:
+      plan_only_default: "This proposal authorizes no hydration."
+      future_write_path: "Any route-text or bank-readiness mutation needs a later explicit scope."
+  candidate_slice:
+    candidate_id: "slice-evi-002-g"
+    title: "Post-T-046 fresh distinct seed recovery and route-truth reconciliation"
+    initiative_ref: "INI-EVI-002"
+    target_layer: "planning"
+    delivery_pipeline: "auto"
+    status: "draft_refinement_candidate"
+    summary: >
+      Compare authoritative INI-EVI-002 readiness with operator-facing routing
+      surfaces after T-046, then produce the minimal change set or supersession
+      recommendation needed to prevent completed planning-bank lanes from being
+      mistaken for fresh delivery authority.
+    acceptance_criteria:
+      - "Identify every INI-EVI-002 route surface that still implies continuation after the bank says stop."
+      - "Classify each mismatch as stale dashboard text, stale roadmap text, intentional context-recovery prompt, or no-op."
+      - "Recommend either no write, a narrow planning-bank readiness update, or a narrow roadmap/dashboard route-text repair."
+      - "Preserve the rule that planning banks are seeds, not executable backlog scope."
+      - "Forbid hydration, helper delivery, and standalone capsule emission unless a later approval names a fresh distinct candidate."
+    non_goals:
+      - "Do not hydrate roadmap, backlog, or roadmap-spec state."
+      - "Do not implement task-capsule emission."
+      - "Do not modify kernel, M1, governance, release, deployment, or personal-root surfaces."
+      - "Do not continue the completed T-056 campaign."
+    open_questions:
+      - question_id: "rq-evi-002-g-001"
+        question: "Should operator-facing dashboards say stop/no-fresh-seed for INI-EVI-002 instead of context-recovery continuation?"
+        status: "requires_review"
+      - question_id: "rq-evi-002-g-002"
+        question: "Is there any independently evidenced post-T-046 work that is not a repeat of T-019, T-022, T-043, or T-046?"
+        status: "requires_review"
+  recommended_next_route:
+    route: "approve_slice_evi_002_g_route_truth_reconciliation"
+    reason: >
+      This is the least-powerful non-M1 follow-on. It can repair planning truth
+      without authorizing delivery, hydration, or standalone research capsule emission.
+    explicit_approval_needed_for:
+      - "any modification to .azoth/initiative-banks/INI-EVI-002.yaml"
+      - "any modification to .azoth/roadmap.yaml or dashboard route text"
+      - "any future task hydration"
+      - "any standalone .azoth/research/*.json capsule emission"
+  readiness_rubric:
+    pass_conditions:
+      - "Structural proposal validation passes."
+      - "Planning-bank validation passes with roadmap refs."
+      - "Readiness report blocks repeat T-046 hydration."
+      - "Derived task-capsule preview blocks standalone emission."
+  validation_replay:
+    - scenario: "Existing slice-evi-002-f"
+      command: "python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-EVI-002.yaml --candidate-id slice-evi-002-f"
+      expected: "ready_to_hydrate=false"
+    - scenario: "Derived task-capsule preview"
+      command: "python3 scripts/planning_bank_validate.py --derive-task-capsule .azoth/initiative-banks/INI-EVI-002.yaml --candidate-id slice-evi-002-f --source-question-id rq-evi-002-010"
+      expected: "ready_to_emit=false"
+    - scenario: "Roadmap reference validation"
+      command: "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-EVI-002.yaml --check-roadmap-refs"
+      expected: "OK"

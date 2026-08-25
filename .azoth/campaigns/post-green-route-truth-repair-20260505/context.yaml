@@ -1,0 +1,127 @@
+schema_version: 1
+campaign_id: post-green-route-truth-repair-20260505
+title: Post-Green Candidate Discovery and Route-Truth Repair
+status: stopped_at_child_2_human_gate
+prepared_at: "2026-05-05T17:15:00Z"
+prepared_by: codex
+mode: autonomous-auto
+operator_selection:
+  selected_option: 1
+  selected_title: Post-Green Candidate Discovery and Route-Truth Repair
+  approval_signal: "Yes let's do option 1"
+objective: >
+  Reconcile the completed Green PM-orchestrator campaign with live route truth,
+  initiative/design bank readiness, product-strategy outputs, and campaign
+  report recommendations so Azoth can name one exact next safe lane or stop
+  with an auditable no-safe-candidate decision.
+success_anchor: >
+  The repo has a current, evidence-backed next-campaign route read: completed or
+  stale lanes are blocked, hydrated-but-not-delivered lanes are distinguished
+  from fresh discovery, dashboard/helper disagreement is explained, and any next
+  action is named with its allowed action class and protected boundaries.
+current_state_snapshot:
+  branch: codex/autonomous-roadmap-self-development
+  active_version: v0.2.0-p4
+  previous_loop: pm-orchestrator-initiative-mobility-20260504
+  previous_loop_status: completed_green
+  previous_completion_reason: vision_realized
+  live_scope: none
+  live_write_claim: none
+  generated_surfaces: in_sync
+selected_seed:
+  action: research_initiative
+  candidate_id: post-green-route-truth-audit
+  title: Route-truth audit across live candidate surfaces
+  source: repo-best-next
+  target_classification: research-first-route-repair
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+  - capture_self_improvement
+blocked_without_fresh_human_gate:
+  - hydrate_task
+  - public sync or release
+  - public checkout mutation
+  - cockpit or project writes
+  - backup/private remote or credential work
+  - kernel/governance/M1 mutation
+  - dependency or network expansion
+  - destructive actions
+  - broad roadmap/backlog rephasing
+  - commits or pushes
+budget:
+  max_child_scopes: 4
+  replay_threshold: 1
+  stop_conditions:
+    - active_scope_present
+    - active_session_gate_conflict
+    - active_write_claim_present
+    - budget_exhausted
+    - protected_gate_required
+    - async_stop_packet
+    - no_safe_candidate
+intended_shape:
+  - child: 1
+    action: research_initiative
+    title: Route-truth audit across live candidate surfaces
+    goal: >
+      Compare welcome/roadmap dashboard routes, pm_orchestrator_mobility output,
+      campaign-report recommendations, initiative banks, design banks, and recent
+      product-strategy artifacts. Produce a ranked route board and identify
+      disagreement or stale truth without mutating canonical roadmap/backlog state.
+  - child: 2
+    action: refine_proposal
+    title: Fresh lane declaration or no-safe-candidate rationale
+    goal: >
+      If child 1 finds a legitimate fresh seed, refine the exact campaign
+      declaration. If not, produce a stop rationale and recommended external
+      human gate options.
+  - child: 3
+    action: ship_task
+    title: Bounded route-read helper or report repair
+    goal: >
+      Only if child 1 finds a non-protected internal readback/reporting mismatch,
+      ship a bounded helper/report repair that preserves canonical authority.
+  - child: 4
+    action: ship_task
+    title: Bounded replay only if validation fails
+    goal: >
+      Use only for concrete validation or review findings; otherwise leave unused.
+acceptance_criteria:
+  - Current completed Green campaign is not reused as continuation authority.
+  - Dashboard, campaign-report, PM mobility helper, initiative banks, and design banks are compared explicitly.
+  - Hydrated, complete, stale, and fresh-discovery states are separated.
+  - Any selected next lane names its allowed action class and blocked protected gates.
+  - No roadmap/backlog/initiative-bank hydration or delivery write happens in this campaign without a fresh exact gate.
+  - If no safe candidate exists, the campaign records a truthful stop instead of inventing work.
+validation_commands:
+  - python3 scripts/autonomous_loop.py status --operator-read
+  - python3 scripts/autonomous_loop.py campaign-report --json
+  - python3 scripts/pm_orchestrator_mobility.py --json
+  - python3 scripts/roadmap_dashboard.py
+  - python3 scripts/azoth-deploy.py --check
+child_scopes:
+  - session_id: 2026-05-05-autonomous-auto-post-green-route-truth-audit-1
+    iteration: 1
+    action: research_initiative
+    candidate_id: post-green-route-truth-audit
+    status: complete_pending_closeout
+    artifacts:
+      - .azoth/campaigns/post-green-route-truth-repair-20260505/child-1-route-truth-audit.md
+      - .azoth/campaigns/post-green-route-truth-repair-20260505/child-1-route-board.json
+latest_checkpoint:
+  at: "2026-05-05T17:30:00Z"
+  child_session_id: 2026-05-05-autonomous-auto-post-green-route-truth-audit-1
+  disposition: child_1_complete_child_2_blocked_by_strategy_preflight
+  next_safe_action: stop_for_human_gate
+  next_candidate_id: ini-mem-003-dashboard-route-readback-repair
+  residual_risk: >
+    Hydration, implementation delivery of T-058, vector backend work, protected
+    plane writes, dependency/network expansion, and commits/pushes remain blocked
+    without a fresh explicit gate.
+stop:
+  reason: protected_gate_required_for_child_2_readback_repair
+  evidence: >
+    `decide-next --json` selected the queued readback repair as `ship_task`, but
+    strategy preflight returned `stop_blocked` with `human_gate_required`.

@@ -11,8 +11,9 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p2 working slice**
-(Phase 8 in `azoth.yaml`), and the **expanded development workflow** so agents load it
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p4
+post-stable repair window** (lifecycle Phase 8 in `azoth.yaml`), and the
+**expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
 ## When to Use
@@ -91,24 +92,13 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 2) — memory · declarative swarm depth · platform strategy 🎯 CURRENT
+### Milestone v0.2.0 (milestone phase 4) — post-stable repairs · release truth · cockpit control plane 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `version: 0.1.<phase>.<patch>`, `phase: 2`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p2` for the phase-2 working slice, `current_phase: 2`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; research/explore swarm aggregate **`SWARM_RESEARCH_DIGEST.yaml`** (DYNAMIC-FULL-AUTO+ planning pass).
-- **Execution queue:** `.azoth/backlog.yaml` currently leaves **P1-020** (verbatim-first M3) and **P1-021** (memory operation parity) deferred in `v0.2.0-p2`, while **P1-022**, **P1-023**, and **P1-024** completed the co-primary blueprint, neutral command contract, and pilot D46 projection for **INI-PLT-006**. The initiative is now operationalized as concrete follow-on slices: **T-002** (scope/orientation command migration) is the active next batch, followed by **T-003** (delivery/orchestration commands) and **T-004** (closeout/memory/maintenance + initiative exit). High-priority initiatives now include **INI-RST-001**, **INI-MEM-004**, **INI-RST-003**, and **INI-PLT-006**; **P5-006** remains **deferred** (phone-friendly / narrow terminal UX).
-- **Workstreams (roadmap task ids / initiatives):**
-  - **P1-020 / INI-MEM-001** — verbatim-first M3 storage strategy; keep full signal before downstream indexing or compression policy.
-  - **P1-021 / INI-PLT-001** — memory operation parity across Claude Code, Cursor, and Copilot adapter paths.
-  - **P1-022 / INI-PLT-006** — completed: codified Claude Code + Codex as co-primary command surfaces and made the adapter contract explicit for the rest.
-  - **P1-023 / INI-PLT-006** — completed: defined the neutral canonical command contract, `commands/` source path, and initiative execution plan without refactoring D46 yet.
-  - **P1-024 / INI-PLT-006** — completed: refactored D46 to prove the pilot command projection path from `commands/next/command.yaml`.
-  - **T-002 / INI-PLT-006** — next active batch: migrate `/start`, `/next`, and `/resume` into the neutral command path and repair planning continuity.
-  - **T-003 / INI-PLT-006** — queued follow-on batch: migrate delivery and orchestration commands after the scope/orientation family is stable.
-  - **T-004 / INI-PLT-006** — queued initiative-exit batch: migrate closeout/memory/maintenance commands and certify the remaining adapter contract.
-  - **P1-015 / INI-RST-003** — true multi-writer safety remains staged behind the platform/bootstrap path.
-  - **P1-002 / INI-RST-001** — declarative swarm / eval-wave specification remains the run-state depth track after ledger foundations.
-  - **P1-009 / INI-PLT-002** — Cursor session-open parity remains a medium-priority adapter-hardening slice.
-  - **P1-011 / INI-EFF-001** — token and inference efficiency remains available once platform/memory triage settles.
-  - **P5-006 / INI-UX-001** — deferred narrow-terminal UX polish.
+- **Canonical state:** `azoth.yaml` `version: 0.1.4.0`, `phase: 4`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p4`, `current_phase: 4`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; rollout plan **`.azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md`**.
+- **Phase policy:** v0.2.0-p4 is no longer pre-stable rollout scope. It remains active only as a post-stable repair/reconciliation window. Do not schedule new feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until an operator-selected gate opens.
+- **Execution queue:** p3 carry-forward and autonomous-auto feature work are complete through **T-033**. p4 has completed T-034 through **T-055**, including stable public release evidence, personal cockpit deployment, safe-open cockpit menu, first-use command surface, and no-write UX simulation. Current work should be a named repair lane, not an implicit continuation of T-053.
+- **Product flow:** keep the 3-tier supply chain clear: `root-azoth` development workshop -> public/installable `azoth` release -> installed consumer/cockpit update.
+- **Operating model:** use the 4-plane authority model for daily work: `root-azoth` as private development workshop, public `azoth` as clean product, `yiwei-azoth-cockpit` as the operator personal control plane, and controlled project repos as project-local context/write-authority planes.
 
 ## Planning Sources
 

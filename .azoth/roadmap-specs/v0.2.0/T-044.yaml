@@ -1,0 +1,82 @@
+id: T-044
+roadmap_version: v0.2.0
+title: Approved personal knowledge card deployment receipt
+decision_ref:
+- D11
+- D30
+- D34
+- D35
+- D37
+- D38
+- D42
+- D48
+- D50
+- D52
+intent: >
+  Deliver the next personal control-plane deployment slice after the Batch 0
+  candidate review: deploy only operator-approved personal knowledge cards to
+  the personal root, record an explicit deployment receipt, update the
+  personal-root pointer/index surface, and prove validation plus clean-git
+  state.
+problem: >
+  T-040 created the empty personal-root knowledge skeleton, T-041 added
+  read-only root inventory, and T-042 produced the root-side Batch 0 candidate
+  review artifact. The next unsafe leap would be broad import, recall
+  integration, or implicit personal-root mutation. This slice narrows the
+  deployment edge to approved candidate IDs only, with receipt evidence and
+  validator proof.
+context_refs:
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- .azoth/roadmap-specs/v0.2.0/T-042.yaml
+- .azoth/knowledge-import-candidates/batch-000-root-azoth.yaml
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+- .azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+- .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml
+scope:
+- Confirm the operator-approved candidate IDs from the T-042 Batch 0 review
+  artifact before any personal-root write.
+- Deploy only approved Batch 0 card artifacts to the personal root knowledge
+  skeleton.
+- Update the personal-root pointer/index surface needed to make those cards
+  discoverable without adding recall, vector, graph, or session-start
+  integration.
+- Record a deployment receipt naming the source revision, candidate IDs, target
+  paths, validation command, validation result, and commit or clean-state proof.
+- Run the personal-root validator after deployment and capture the exact command
+  and result in the receipt or final handoff.
+- Check root and personal-root git states after the deployment slice and report
+  any residual dirty state explicitly.
+non_goals:
+- Do not deploy unapproved candidates.
+- Do not run a broad import, memory drain, inbox drain, or source registry
+  onboarding.
+- Do not add recall, retrieval, vector, graph, or session-start integration.
+- Do not publish public azoth artifacts or change release channels.
+- Do not mutate kernel, M1, governance, or instruction surfaces.
+- Do not treat this hydration approval as implementation approval; delivery
+  still requires a fresh `/next` scope and pipeline selection.
+acceptance:
+- A concrete list of operator-approved candidate IDs is recorded before
+  deployment work begins.
+- Only approved candidate IDs are deployed to personal-root card artifacts.
+- Personal-root pointer/index state references the deployed cards and preserves
+  source pointers/provenance.
+- A deployment receipt records source revision, target paths, validation command,
+  validation result, and commit or clean-state proof.
+- >
+  `python3 scripts/personal_knowledge_validate.py --root /Users/yiwei/GithubRepos/personal-azoth-root`
+  or the current validator-equivalent command passes after deployment.
+- Root and personal-root git states are clean after closeout, or all residual
+  dirty state is explicitly reported as pre-existing or follow-up work.
+- Public release, recall integration, source onboarding, and broad import remain
+  untouched.
+dependencies:
+- T-042
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: >
+  Keep this to approved-card deployment evidence. If candidate approval is
+  unclear, stop at review/handoff. If pointer/index or receipt format expands,
+  split recall and registry behavior into later explicit slices.

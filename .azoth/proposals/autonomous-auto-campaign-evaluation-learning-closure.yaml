@@ -1,0 +1,411 @@
+proposal_schema_version: 1
+created_at: "2026-04-25T21:30:00Z"
+session_id: "2026-04-25-autonomous-auto-campaign-evaluation-seed"
+backlog_id: "P6-003"
+title: "Autonomous-auto campaign evaluation and learning closure spine"
+summary: >
+  Architecture seed for turning past and future autonomous-auto campaigns into
+  analysis-ready evidence. The desired system should join loop state, scope
+  gates, run-ledger stage evidence, subagent summaries, evaluator scores,
+  closeout episodes, changed artifacts, lessons, and follow-on roadmap/code
+  changes into one campaign audit report. The goal is to verify that the
+  self-improvement loop is genuinely closed: lessons are observed, captured,
+  triaged, planned, implemented, verified, and later reinforced by behavior.
+status: draft
+decision_refs:
+  - D11
+  - D21
+  - D23
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - pipelines
+  - docs
+  - mixed
+details:
+  problem:
+    current_gap: >
+      Autonomous-auto now leaves many useful traces, but the traces are spread
+      across `.azoth/autonomous-loop-state.local.yaml`, `.azoth/scope-gate.json`,
+      `.azoth/run-ledger.local.yaml`, closeout episodes, inbox reflections,
+      proposals, roadmap/backlog/specs, commits, tests, and chat/subagent
+      transcripts. A human can reconstruct a campaign, but the repo does not yet
+      have a single campaign-evaluation spine that can reliably answer whether
+      the mode learned, whether lessons were applied, and which future fixes are
+      highest leverage.
+    risk_without_spine: >
+      Without a durable evaluator, autonomous-auto can look successful while
+      important lessons remain as untriaged inbox rows, evaluator scores remain
+      unnormalized, subagent reasoning stays outside repo-native artifacts, and
+      cross-campaign patterns require manual synthesis. That weakens the core
+      design goal of traceable agent decision-making and makes automatic
+      self-improvement harder to trust.
+  desired_outcomes:
+    - "One read-only campaign audit report per selected autonomous-auto campaign."
+    - "A normalized learning-closure ledger for lessons: observed, captured, triaged, planned, implemented, verified, reinforced, or stale."
+    - "A traceability scorecard for agent decisions, stage evidence, route choices, evaluator scores, artifacts changed, tests, residual risks, and operator alignment packets."
+    - "A machine-readable defect/opportunity list that can route to capture_self_improvement, refine_proposal, hydrate_task, ship_task, or stop."
+    - "A human-facing executive read that explains what worked, what failed, what improved, and what should be fixed next."
+  proposed_model:
+    read_only_campaign_auditor:
+      purpose: >
+        Build a deterministic report over existing artifacts before adding any
+        new writer. The first slice should inspect a named campaign or the latest
+        completed autonomous-auto loop and emit structured JSON plus compact
+        operator text.
+      candidate_inputs:
+        - ".azoth/autonomous-loop-state.local.yaml"
+        - ".azoth/scope-gate.json and historical scope-gate payloads embedded in closeout episodes"
+        - ".azoth/run-ledger.local.yaml when present"
+        - ".azoth/memory/episodes.jsonl"
+        - ".azoth/inbox/session-reflection-*.jsonl"
+        - ".azoth/proposals/*.yaml"
+        - ".azoth/roadmap.yaml, .azoth/backlog.yaml, and .azoth/roadmap-specs/v0.2.0/*.yaml"
+        - "git commits for delivered campaign artifacts"
+      outputs:
+        - "campaign declaration and budget"
+        - "iteration timeline"
+        - "route decisions and rejected alternatives"
+        - "delegation plan versus observed stage evidence"
+        - "subagent summary availability and gaps"
+        - "evaluator score and UX Anchor Scorecard availability"
+        - "changed artifacts and verification commands"
+        - "lesson closure status"
+        - "residual risks and recommended next routes"
+    learning_closure_ladder:
+      states:
+        - id: observed
+          meaning: "A failure, friction, or opportunity was noticed in a campaign."
+        - id: captured
+          meaning: "The issue exists as a repo-native inbox/reflection/proposal/initiative/backlog artifact."
+        - id: triaged
+          meaning: "A route decision classified severity, auto_applicable status, and protected-gate needs."
+        - id: planned
+          meaning: "A proposal or candidate slice defines acceptance, non-goals, and validation."
+        - id: implemented
+          meaning: "A code, spec, skill, or command change landed."
+        - id: verified
+          meaning: "Tests/evaluator evidence demonstrate the change meets acceptance."
+        - id: reinforced
+          meaning: "A later campaign shows changed behavior or fewer repeats of the same failure."
+        - id: stale_or_rejected
+          meaning: "The item is no longer relevant or was explicitly rejected."
+    traceability_scorecard:
+      dimensions:
+        - "campaign declaration durability"
+        - "approval_basis and protected-boundary clarity"
+        - "route decision completeness"
+        - "subagent spawn/summary evidence completeness"
+        - "evaluator score and UX-anchor evidence completeness"
+        - "artifact provenance from lesson to proposal/task/code"
+        - "verification and residual-risk clarity"
+        - "commit/closeout linkage"
+    source_of_truth_precedence:
+      purpose: >
+        Make campaign audit results reconstructable without relying on chat
+        memory or whichever artifact happened to be read first.
+      precedence_order:
+        - rank: 1
+          source: ".azoth/scope-gate.json plus .azoth/autonomous-loop-state.local.yaml"
+          authority: "current campaign authority, approval_basis, autonomy budget, selected seed, alignment mode, stop conditions, and live child scope"
+          caveat: "scope-gate is overwritten by the active scope; historical scope-gate payloads must come from closeout episodes or handoffs."
+        - rank: 2
+          source: ".azoth/run-ledger.local.yaml"
+          authority: "stage_spawns, stage_summaries, active/closed run state, session status, write-claim state, and delegated-stage evidence"
+          caveat: "a delegation_plan is only planned evidence; paired spawn and summary rows are required before a stage counts as executed."
+        - rank: 3
+          source: "closeout episodes, handoff reports, and campaign-report output"
+          authority: "completed-campaign observation, historical scope payloads, known residuals, closeout ids, and safe continuation notes"
+          caveat: "completed or stale campaign evidence must not authorize continuation without a fresh budget."
+        - rank: 4
+          source: "initiative banks, proposals, roadmap, backlog, and task specs"
+          authority: "planning intent, task hydration, implementation linkage, acceptance criteria, non-goals, and follow-on routing"
+          caveat: "planning intent is not execution evidence."
+        - rank: 5
+          source: "git commits, verification commands, tests, and evaluator artifacts"
+          authority: "implementation and verification evidence"
+          caveat: "a verified implementation is not automatically reinforced until a later campaign shows changed behavior or reduced recurrence."
+      conflict_rules:
+        - "If two repo-native artifacts disagree on authority, emit `conflict` with both refs instead of selecting a silent winner."
+        - "If expected evidence is absent, emit `missing_evidence` and carry the item as residual risk."
+        - "If evidence exists only in chat or a non-repo transcript, label it `chat_only` and do not count it as durable proof."
+        - "Do not infer stage execution from delegation_plan alone."
+    final_audit_json_schema:
+      schema_version: 1
+      required_top_level_fields:
+        - schema_version
+        - generated_at
+        - campaign
+        - source_artifacts
+        - child_scopes
+        - stage_evidence
+        - evaluator_evidence
+        - learning_closure_rows
+        - traceability_scorecard
+        - next_route_recommendation
+        - residual_risks
+        - validation
+      provenance_labels:
+        - repo_native
+        - chat_only
+        - missing
+        - conflict
+      required_shapes:
+        campaign:
+          fields:
+            - loop_id
+            - objective
+            - status
+            - completion_reason
+            - vision_band
+            - approval_basis
+            - autonomy_budget
+            - stop_conditions
+        child_scopes:
+          fields:
+            - session_id
+            - iteration
+            - action
+            - candidate_id
+            - goal
+            - status
+            - route_rationale
+            - delegation_plan_ref
+            - closeout_episode_id
+            - evidence_gaps
+        stage_evidence:
+          fields:
+            - stage_id
+            - expected_subagent_type
+            - spawn_present
+            - summary_present
+            - summary_disposition
+            - dependency_summary_refs
+            - provenance
+        learning_closure_rows:
+          states:
+            - observed
+            - captured
+            - triaged
+            - planned
+            - implemented
+            - verified
+            - reinforced
+            - stale_or_rejected
+            - missing_evidence
+          rule: "reinforced requires later-campaign behavior evidence; do not infer it from implementation or verification alone."
+    command_contract:
+      candidate_command: "python3 scripts/autonomous_loop.py campaign-audit --loop-id <id> --json"
+      plain_text_command: "python3 scripts/autonomous_loop.py campaign-audit --loop-id <id>"
+      default_behavior: "read_only_stdout_first"
+      read_only_guarantees:
+        - "Must not open a scope, mutate loop state, acquire a write claim, or write roadmap/backlog/spec/memory artifacts."
+        - "Must not treat stale completed-campaign evidence as continuation authority."
+        - "Must label missing, conflicting, or chat-only evidence explicitly."
+      exit_behavior:
+        success: "Exit 0 when the report is generated, even if residual risks are present."
+        blocked: "Exit non-zero only for unreadable required inputs, malformed state, or unsupported arguments."
+        partial: "Emit a valid report with `missing_evidence` rows when optional historical evidence is absent."
+    implementation_boundary:
+      cli_owner: "scripts/autonomous_loop.py may own the thin operator-facing subcommand for discoverability."
+      join_logic_owner: "A later dedicated helper/module should own heavy joining across run-ledger, memory, inbox, proposals, roadmap/backlog/specs, and git evidence."
+      non_goals:
+        - "Do not turn autonomous_loop.py into the full reporting monolith."
+        - "Do not replace campaign-report, lifecycle-report, closeout, or planning_bank_validate.py."
+        - "Do not add a writer in the first implementation slice."
+    sample_case_expectations:
+      required_samples:
+        - campaign: "Initiative Lifecycle Discoverability Spine"
+          expected_findings:
+            - "rich staged evidence exists"
+            - "ledger ordering, duplicate-summary, or replay complexity must be visible when present"
+            - "completed or stale campaign state must remain non-continuation authority"
+        - campaign: "Run-Ledger Atomic Stage Evidence"
+          expected_findings:
+            - "capture/refine/hydrate/ship progression is reconstructable"
+            - "run-ledger stage evidence is cleaner after serialization work"
+            - "evaluator scores, UX scorecards, and exact verification details are still not uniformly typed"
+      minimum_sample_output:
+        - "campaign declaration and budget"
+        - "child-scope table"
+        - "stage evidence completeness"
+        - "learning-closure rows"
+        - "missing/conflict/chat-only residuals"
+        - "next-route recommendation without opening work"
+    hydration_readiness_criteria:
+      current_readiness: "initiative_bank_hydrated_to_t_029_after_hydration_child"
+      readiness_note: >
+        The proposal names the audit contract, the initiative bank was
+        readiness-reviewed, and slice-auto-001-f is now hydrated as T-029. T-029
+        is intentionally pending/active for a separate implementation campaign,
+        not complete from the hydration child.
+      ready_to_hydrate_requires:
+        - "source_of_truth_precedence is accepted by reviewer/evaluator"
+        - "final_audit_json_schema is stable enough for implementation tests"
+        - "command_contract is read-only and stdout-first"
+        - "sample_case_expectations cover the two recent campaigns"
+        - "known non-goals remain explicit"
+        - "initiative-bank open_questions are resolved or converted to implementation assumptions"
+        - "hydration plan includes an exact roadmap_scaffold.py command"
+  recommended_first_slice:
+    title: "Autonomous-auto campaign audit report"
+    route: "hydrated_to_t_029_then_separate_delivery"
+    target_layer: "infrastructure"
+    delivery_pipeline: "standard"
+    purpose: >
+      Implement a read-only report that can evaluate one completed autonomous-auto
+      campaign and classify trace completeness plus learning-closure status.
+    candidate_command: "python3 scripts/autonomous_loop.py campaign-audit --loop-id <id> --json"
+    acceptance:
+      - "The report identifies campaign objective, budget, iteration count, completion reason, vision band, and approval basis."
+      - "The report lists child scopes with action, candidate, route rationale, stage plan, stage evidence presence, evaluator score, verification, and closeout episode id."
+      - "The report computes lesson closure rows for captured lessons and shows whether each led to proposal, roadmap/backlog/spec, code/test, or instruction changes."
+      - "The report distinguishes reliable repo-native evidence from chat-only or missing evidence."
+      - "The report emits recommended next routes with confidence and residual risks."
+      - "The report labels each field with repo_native, chat_only, missing, or conflict provenance where ambiguity matters."
+      - "The report refuses to mark a lesson as reinforced unless a later campaign shows changed behavior or reduced recurrence."
+      - "The command remains read-only and does not open follow-on work or mutate planning state."
+    non_goals:
+      - "Do not mutate campaign, roadmap, backlog, or memory state in the first slice."
+      - "Do not mine external services or chat transcripts that are not available in repo-native artifacts."
+      - "Do not replace closeout, lifecycle-report, campaign-report, or planning_bank_validate.py."
+      - "Do not auto-open follow-on work from the audit report."
+  readiness_notes:
+    current_status: "t029_complete_audit_v1_revealed_retrospective_evidence_gap"
+    why_not_ready_to_hydrate: >
+      Hydration and delivery for T-029 have already happened. The next safe
+      edge is not repeated hydration or another broad campaign-audit build; it
+      is a narrow refinement that normalizes completed-campaign retrospective
+      evidence so learning-closure rows can move from observed/captured signals
+      toward planned, implemented, verified, and later reinforced states.
+    next_research_questions:
+      - "How should repo-native architect/evaluator retrospective entries identify the campaign loop they evaluate?"
+      - "Which fields should campaign-audit treat as learning-state evidence instead of defaulting to missing_evidence?"
+      - "How should audit reports distinguish async-capable from async-tested, external freshness not-material from not-researched, and true staged delegation from inline exceptions?"
+  campaign_quality_evidence_normalization_20260503:
+    observed_at: "2026-05-03T19:55:00Z"
+    source_artifacts:
+      - path: "python3 scripts/autonomous_loop.py campaign-audit --loop-id memory-recall-adoption-layer-20260503 --json"
+        note: "Historical completed Green campaign sample still truthfully reports absent structured score, UX Anchor Scorecard, and evaluator verification command fields; no fake backfill is allowed."
+      - path: ".azoth/run-ledger.local.yaml"
+        note: "Stage summaries are the least-powerful durable writer for future evaluator quality evidence because they already sit behind scope gates, write claims, and completion checks."
+      - path: "tests/test_autonomous_campaign_audit.py"
+        note: "Fixture coverage proves both structured future evidence and missing-evidence samples remain read-only and auditable."
+    current_truth:
+      - "T-029 campaign-audit v1 already reads `score`, `scores`, `evaluator_scores`, `ux_anchor_scorecard`, and `verification_commands` when those fields exist."
+      - "The missing layer was the governed run-ledger summary contract: `record-summary` could not write quality score, UX scorecard, verification commands, or evaluator residual risks without failing ledger validation."
+      - "Historical Memory Recall Adoption Layer evidence remains unscored in repo-native artifacts; this campaign records the gap without manufacturing evidence."
+      - "Evaluator scores are advisory audit evidence only; they do not authorize continuation, override gates, or bypass protected stops."
+    selected_next_slice:
+      title: "Run-ledger evaluator quality evidence fields"
+      route: "ship_task"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      purpose: >
+        Add optional machine-readable evaluator quality fields to run-ledger
+        stage summaries, then surface evaluator disposition and residual risks
+        in campaign-audit operator packets while preserving read-only audit
+        semantics and advisory authority.
+      include:
+        - "Allow `record-summary` to persist `evaluator_disposition`, numeric `score`, `ux_anchor_scorecard`, `verification_commands`, and `residual_risks`."
+        - "Keep all new fields optional so historical ledgers remain valid and missing evidence remains explicit."
+        - "Teach campaign-audit to report evaluator disposition and evaluator residual risks in machine-readable output."
+        - "Verify one structured Green-style sample and one missing-evidence sample."
+      exclude:
+        - "No historical evaluator score backfill."
+        - "No command-contract rewrite."
+        - "No new continuation authority from audit evidence."
+        - "No kernel, governance, M1, dependency, credential, network, or destructive work."
+      evidence_contract:
+        writer: "python3 scripts/run_ledger.py record-summary"
+        reader: "python3 scripts/autonomous_loop.py campaign-audit --loop-id <id> --json"
+        advisory_authority: "Evaluator quality evidence informs audit, replay, and operator-read surfaces only; scope gates, human decisions, command contracts, and protected stops remain authoritative."
+  post_t029_retrospective_refinement:
+    observed_at: "2026-04-26T13:54:08Z"
+    source_artifacts:
+      - path: ".azoth/inbox/session-reflection-2026-04-26-autonomous-auto-initiative-achievement-retro.jsonl"
+        note: "Six architect-retrospective improvement signals from the completed INI-AUTO-001 Initiative Achievement Campaign."
+      - path: ".azoth/autonomous-loop-state.local.yaml"
+        note: "Fresh Learning Closure & Audit Fidelity campaign approval and first refine_proposal child."
+      - path: "scripts/autonomous_loop.py campaign-audit --loop-id ini-auto-001-initiative-achievement-20260426 --json"
+        note: "Audit now observes one learning-closure row but still classifies it as missing_evidence because the retrospective signal is not normalized."
+    current_truth:
+      - "T-029 campaign-audit v1 is complete and should not be rehydrated."
+      - "T-030 strategy-preflight and T-031 write-mode hydration delegation are complete."
+      - "The completed INI-AUTO-001 campaign reached Green, but the audit layer still reports learning_closure as conflict when retrospective evidence lacks normalized state fields."
+      - "The first child in the new campaign is proposal refinement; hydration and implementation must wait for an exact scaffold command and readiness."
+    improvement_points:
+      - id: run_id_auditability
+        severity: medium
+        summary: "Campaign audits need campaign-instance or child-session uniqueness evidence so old closed child runs do not mingle with fresh campaign evidence."
+      - id: post_completion_readiness_refresh
+        severity: medium
+        summary: "Completed candidate readiness should surface terminal/completed truth and select a next live slice or require fresh campaign authority."
+      - id: external_freshness_materiality
+        severity: low
+        summary: "Strategy-preflight should record external_freshness or external_research_materiality, including not_material when repo-local work does not require external research."
+      - id: async_tested_status
+        severity: low
+        summary: "UX scorecards should distinguish async-capable approval-basis support from a run that actually exercised advisory, override, or stop packets."
+      - id: stage_execution_mode
+        severity: medium
+        summary: "Stage evidence should expose execution_mode, optional agent/transcript references, and inline_exception_reason instead of treating ledger rows alone as full delegation proof."
+      - id: retrospective_evaluator_normalization
+        severity: low
+        summary: "Architect/evaluator retrospectives should become normalized evaluator or learning-closure evidence so lifecycle and campaign reports do not treat them as chat-only or missing."
+    selected_next_slice:
+      title: "Proposal refinement to hydration readiness bridge"
+      route: "hydrate_task_after_refinement"
+      target_layer: "infrastructure"
+      delivery_pipeline: "standard"
+      purpose: >
+        Remove the root-cause disruption where a refine_proposal child can
+        produce an exact next hydration plan but the next autonomous-auto route
+        still falls back to a stale initiative-bank readiness pointer. The
+        bridge should make proposal-refinement outputs route-visible when they
+        contain an exact scaffold command, approval scope, validation evidence,
+        and explicit non-goals, while preserving fail-closed behavior for stale
+        completed initiative candidates.
+      include:
+        - "Let proposal-backed hydration recommendations be selected from a refined proposal when the proposal names an exact scaffold command and hydration-specific approval scope."
+        - "Do not let stale initiative readiness, such as completed slice-auto-001-c/T-031, mask a fresh proposal-backed hydration candidate."
+        - "Teach campaign-audit and lifecycle-report outputs to surface the proposal-backed candidate and the stale readiness conflict explicitly."
+        - "Keep retrospective evidence normalization as the first concrete use case: inbox retrospective rows should become captured or triaged learning rows once the bridge makes the proposed task route-visible."
+        - "Add focused tests around queued proposal hydration, stale initiative readiness conflict, and the 2026-04-26 INI-AUTO-001 retrospective shape."
+      exclude:
+        - "Do not add a new writer or mutate campaign state from campaign-audit."
+        - "Do not rehydrate or reopen T-029, T-030, or T-031."
+        - "Do not require external services or chat transcripts."
+        - "Do not claim reinforcement until a later campaign demonstrates changed behavior."
+      proposed_hydration_plan:
+        mode: executed
+        proposed_title: "Proposal refinement to hydration readiness bridge"
+        proposed_task_kind: roadmap_backed_task
+        approval_scope_required: hydration_specific_proposal_hydration_bridge
+        approval_basis_required: >
+          Must name the Proposal Refinement to Hydration Readiness Bridge
+          campaign, the autonomous-auto-campaign-evaluation-learning-closure
+          proposal, stale slice-auto-001-c/T-031 readiness as the root-cause
+          blocker, and the exact scaffold command before any roadmap/backlog/spec
+          write.
+        scaffold_command: >
+          python3 scripts/roadmap_scaffold.py --title "Proposal refinement to hydration readiness bridge" --namespace roadmap --initiative-ref INI-AUTO-001 --decision-ref D11 D21 D23 D48 D50 D52 --source proposal-autonomous-auto-campaign-evaluation-learning-closure-hydration-bridge --description "Teach autonomous-auto strategy-preflight and lifecycle discovery to route exact proposal-backed hydration plans after refine_proposal children, so stale completed initiative readiness cannot mask a fresh proposal-backed hydration candidate; use retrospective evidence normalization as the first validation case without mutating campaign state from audit reports." --target-layer infrastructure --delivery-pipeline standard
+        do_not_run_until:
+          - "This proposal validates with `scripts/architecture_proposal_validate.py`."
+          - "The current refine_proposal child records lifecycle/audit evidence and closes or checkpoints cleanly."
+          - "No active write claim or protected gate blocks roadmap/backlog/spec hydration."
+          - "Strategy-preflight selects hydrate_task with fresh approval for this exact scaffold command."
+        hydrated_task_ref: T-032
+        hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-032.yaml
+        hydrated_at: "2026-04-26T14:08:20Z"
+        hydration_session_id: 2026-04-26-autonomous-auto-proposal-hydration-bridge-2
+        result: "Created roadmap/backlog/spec artifacts for T-032 and kept implementation for a separate ship_task child."
+  validation_plan:
+    - "Validate this proposal with `scripts/architecture_proposal_validate.py`."
+    - "Run `scripts/autonomous_loop.py campaign-audit --loop-id ini-auto-001-initiative-achievement-20260426 --json` and confirm current learning-closure gaps are visible."
+    - "Run `scripts/autonomous_loop.py lifecycle-route --initiative .azoth/initiative-banks/INI-AUTO-001.yaml --reflection .azoth/inbox/session-reflection-2026-04-26-autonomous-auto-initiative-achievement-retro.jsonl --json` and confirm the reflection is observable but does not authorize hidden continuation."
+    - "Run `scripts/autonomous_loop.py lifecycle-report --initiative .azoth/initiative-banks/INI-AUTO-001.yaml --candidate-id slice-auto-001-f --json` and confirm hydration remains blocked until readiness is updated intentionally."
+    - "Run a manual sample audit over the Initiative Lifecycle Discoverability Spine Campaign and Run-Ledger Atomic Stage Evidence Campaign."
+    - "Run `scripts/run_ledger.py validate` and require-stage-evidence for the proposal-refinement child."
+    - "Only after the current proposal refinement is closed, hydrate the narrow proposal-hydration bridge task if strategy-preflight selects it."

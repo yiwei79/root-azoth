@@ -1,0 +1,157 @@
+# SWARM_RESEARCH_DIGEST — see skills/dynamic-full-auto/SKILL.md
+schema_version: 1
+roadmap_version: v0.2.0-p4
+meta:
+  session_id: 2026-04-29-knowledge-deployment-dfa
+  wave_a: "External research across delivery metrics, GitOps, provenance, RAG, GraphRAG, and AI knowledge safety."
+  wave_b: "Repo-local explorer wave across proposal conventions, personal knowledge/deployment surfaces, and lifecycle safeguards."
+  checkpoint_gamma: "Proposal plus initiative-bank seed only; no implementation, personal-root mutation, roadmap hydration, or release action."
+consensus_themes:
+- id: governed_small_batches
+  contributing_packs:
+  - RP-PKB-LIFECYCLE
+  - RP-PKB-AI-SAFETY
+  summary: >
+    Finalization should move in small governed increments with approval, validation,
+    deployment receipt, recovery/residual notes, and feedback metrics. A green check
+    is not publication authority.
+- id: source_provenance_over_raw_warehouse
+  contributing_packs:
+  - RP-PKB-PROVENANCE
+  - RP-PKB-AI-SAFETY
+  summary: >
+    Root-azoth remains the source/provenance plane. Personal-root stores curated
+    cards, pointers, indexes, and receipts; it must not become a raw evidence
+    warehouse or independent source of authority.
+- id: retrieval_after_card_contract
+  contributing_packs:
+  - RP-PKB-RAG
+  - RP-PKB-AI-SAFETY
+  summary: >
+    Retrieval should come after the card/batch contract proves useful. Future recall
+    needs source metadata, filters, contextual chunks, hybrid search/reranking evals,
+    and permission-aware stores before broad semantic indexing.
+research_packs:
+- id: RP-PKB-LIFECYCLE
+  topic: Healthy release and deployment feedback loops for personal control-plane finalization
+  sources:
+  - title: DORA software delivery performance metrics
+    url: https://dora.dev/guides/dora-metrics/
+  - title: OpenGitOps principles
+    url: https://opengitops.dev/
+  - title: Google Cloud Deploy canary strategy
+    url: https://docs.cloud.google.com/deploy/docs/deployment-strategies/canary
+  - title: Argo Rollouts canary strategy
+    url: https://argo-rollouts.readthedocs.io/en/stable/features/canary/
+  - title: OpenFeature
+    url: https://openfeature.dev/
+  implications_for_azoth:
+  - 'Use DORA-style feedback as release health evidence: throughput is useful only when paired
+    with instability and recovery signals.'
+  - Keep the three-plane deployment model declarative, versioned, pulled/applied, and continuously
+    reconciled rather than manually narrating state.
+  - 'Treat personal-root updates like progressive deployment: candidate review, explicit approval,
+    narrow apply, validation, receipt, and rollback/residual notes.'
+  - Feature/release toggles should be modeled as governed flags or staged gates, not as hidden
+    source or instruction mutations.
+  risks:
+  - A green validation run can be mistaken for publication approval unless approval, publish/deploy,
+    verify, and closeout remain separate stages.
+  - Dashboards can incentivize rushing if they measure only speed and not failed-deployment
+    recovery, rework, or residual risk.
+- id: RP-PKB-PROVENANCE
+  topic: Source continuity and provenance for knowledge and deployment artifacts
+  sources:
+  - title: SLSA provenance
+    url: https://slsa.dev/spec/v1.2/provenance
+  - title: SLSA source requirements
+    url: https://slsa.dev/spec/v1.2/source-requirements
+  - title: T-038 personal-root deployment model
+    url: file:///Users/yiwei/GithubRepos/root-azoth/.azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md
+  - title: Personal knowledge architecture
+    url: file:///Users/yiwei/GithubRepos/root-azoth/docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+  implications_for_azoth:
+  - Cards and deployment receipts need source pointers, source-plane identity, created-by/session
+    evidence, and validation receipts.
+  - Root-azoth remains the source/provenance plane; personal-root should consume curated revisions
+    and pointers, not absorb raw source evidence.
+  - Continuity claims should begin at a named revision/task and not be retroactively claimed
+    for rushed or off-pipeline work.
+  - Irreversible public or personal deployments require a receipt that names subject, source
+    revision, validation command, and target.
+  risks:
+  - Moving or deleting source history can break downstream card provenance and make personal
+    knowledge impossible to audit.
+  - Personal-root overlays can accidentally become authority if their cards do not preserve
+    upstream source references and freshness state.
+- id: RP-PKB-RAG
+  topic: Scalable retrieval architecture for curated personal knowledge
+  sources:
+  - title: OpenAI file search guide
+    url: https://developers.openai.com/api/docs/guides/tools-file-search
+  - title: OpenAI retrieval guide
+    url: https://developers.openai.com/api/docs/guides/retrieval
+  - title: OpenAI vector store search reference
+    url: https://developers.openai.com/api/reference/resources/vector_stores/methods/search
+  - title: Anthropic contextual retrieval
+    url: https://www.anthropic.com/engineering/contextual-retrieval
+  - title: Microsoft Research GraphRAG
+    url: https://www.microsoft.com/en-us/research/project/graphrag/
+  implications_for_azoth:
+  - Start with structured cards, file attributes, source-plane metadata, and filters before
+    adding broad semantic recall.
+  - Use hybrid retrieval and reranking as later evaluated capabilities; exact identifiers
+    and source paths need keyword/BM25-style support, not embeddings alone.
+  - Contextualize future chunks with source, task, decision, and time context before indexing
+    so cards do not lose provenance when retrieved.
+  - GraphRAG-style relationships are a future option for cross-card discovery, but Batch 0
+    should validate usefulness before building graph infrastructure.
+  risks:
+  - Indexing raw inbox or memory content would recreate the forbidden raw-evidence warehouse
+    inside personal-root.
+  - Chunking without context can lose source identity; retrieval can become plausible but
+    unauditable.
+  - Graph or vector infrastructure adds cost and governance surface before the card contract
+    proves useful.
+- id: RP-PKB-AI-SAFETY
+  topic: AI knowledge safety, access control, and lifecycle risk management
+  sources:
+  - title: OWASP Top 10 for LLM Applications 2025
+    url: https://genai.owasp.org/llm-top-10/
+  - title: OWASP LLM08 vector and embedding weaknesses
+    url: https://genai.owasp.org/llmrisk/llm082025-vector-and-embedding-weaknesses/
+  - title: NIST AI Risk Management Framework
+    url: https://www.nist.gov/itl/ai-risk-management-framework
+  - title: NIST AI RMF Core
+    url: https://airc.nist.gov/airmf-resources/airmf/5-sec-core/
+  implications_for_azoth:
+  - 'Treat retrieval stores as governed data stores: permission, classification, source authentication,
+    validation, and immutable retrieval logs matter.'
+  - 'Separate govern/map/measure/manage: map knowledge flows, measure validator/eval evidence,
+    manage approved deployments, and keep governance cross-cutting.'
+  - Batch 0 needs manual review and source authentication before cards are deployable.
+  - Retrieved cards must remain advisory knowledge, not hidden instructions or agent authority.
+  risks:
+  - Vector stores can leak cross-context data or retrieve unauthorized content if access boundaries
+    are not modeled from the start.
+  - Poisoned or unreviewed candidate data can alter agent behavior after retrieval.
+  - Excessive agency risk increases if personal overlay knowledge can mutate source, governance,
+    or public release state.
+explore_swarm_summary:
+  wave: "B + synthesis"
+  findings:
+  - "T-038, T-040, and T-041 are complete; the next natural slice is Batch 0 review evidence, not another skeleton pass."
+  - "Personal-root validates as an empty knowledge skeleton and should remain empty until approved cards exist."
+  - "The p4 freeze posture favors proposal and initiative-bank evidence over immediate roadmap/backlog hydration."
+  - "The previous rushed-release lesson requires staged reconcile, preflight, independent review/eval, explicit approval, publish/deploy, verify, and closeout evidence."
+  - "The new p4 digest intentionally lives under .azoth/roadmap-specs/v0.2.0-p4/ to match the active roadmap version while leaving the historical v0.2.0 digest unchanged."
+mapped_roadmap_tasks:
+- INI-PKB-001
+- T-PKB-A
+- T-PKB-B
+- T-PKB-C
+mapping_notes:
+  INI-PKB-001: "Phase-free stabilization initiative seed for personal knowledge Batch 0 and deployment finalization."
+  T-PKB-A: "Future candidate: Batch 0 candidate review artifact only; no personal-root mutation."
+  T-PKB-B: "Future candidate: approved card deployment receipt and personal-root pointer/index update."
+  T-PKB-C: "Future candidate: recall/retrieval pilot with filters, provenance, and evals after the card contract proves useful."

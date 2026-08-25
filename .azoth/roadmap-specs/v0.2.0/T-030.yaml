@@ -1,0 +1,72 @@
+id: T-030
+roadmap_version: v0.2.0
+title: Autonomous campaign strategy budget repair
+decision_ref:
+- D11
+- D23
+- D48
+- D50
+- D52
+intent: Implement a mandatory autonomous-auto strategy preflight before campaign
+  init/open-next so recommendation packets cannot become open authority until they
+  are reconciled with lifecycle-route, readiness, approval scope, active gates,
+  write claims, and UX-anchor fit.
+problem: Recent autonomous-auto campaigns exposed a control-plane gap where a
+  completed or advisory recommendation could be treated as enough strategy to
+  open the next child scope. That under-budgets the campaign strategy layer and
+  risks narrow, stale, or route-conflicted work instead of the relaxed
+  goal-driven autonomous experience described by the UX anchor.
+scope:
+- Add a Stage -1 strategy preflight surface to autonomous-auto campaign
+  selection, either as a dedicated helper path or an embedded command path in
+  `scripts/autonomous_loop.py`.
+- Reconcile advisory next-campaign recommendation packets with
+  `lifecycle-route`, initiative readiness, approval basis, scope-gate state,
+  run-ledger/write-claim state, and async alignment packets before `init` or
+  `open-next`.
+- Emit a strategy-preflight/declaration packet with verdict, selected route,
+  route state, approval scope, approval-basis presence, source artifacts,
+  blocked alternatives, freshness, and mismatch reason when present.
+- Refuse `init` and `open-next` when recommendation and lifecycle-route
+  conflict, when the target is stale/completed without fresh budget, or when
+  gate/claim/protected boundaries block the edge.
+- 'Preserve staged-subagent execution semantics: after architect/planner/reviewer
+  or research/evaluator waves return, the orchestrator records summaries, requires
+  evidence, synthesizes the result, and makes the next repo-native route decision
+  without treating the checkpoint as a user handoff.'
+non_goals:
+- Do not create a daemon, scheduler, hidden continuation path, or unbounded
+  wakeup loop.
+- Do not make recommendation packets continuation authority.
+- Do not bypass lifecycle-route, planning-bank readiness, scope-gate,
+  run-ledger, write-claim, or protected-boundary checks.
+- Do not expand into kernel, governance, M1, destructive, credential, network,
+  or cross-branch work.
+- Do not implement unrelated campaign-audit, hydration-helper, or durable-wakeup
+  behavior in this slice.
+acceptance:
+- A completed Green recommendation packet cannot be used as open authority until
+  a strategy preflight records fresh approval, active gate/claim status,
+  lifecycle-route state, and readiness evidence.
+- Strategy preflight classifies the selected target as live, stale,
+  research-only, hydration-ready, delivery-ready, protected, or
+  route-conflicted before `init` or `open-next`.
+- If recommendation and lifecycle-route disagree, the system stops before
+  opening work and emits the mismatch plus the next safe repair action.
+- Campaign declaration text includes the strategy-preflight verdict, selected
+  route, blocked alternatives, and why the campaign shape is broad or narrow
+  enough for the UX anchor.
+- Staged subagent completion requires orchestrator synthesis, run-ledger summary
+  evidence, async alignment disposition when present, and the next repo-native
+  route decision; it does not require a new user command unless a real stop
+  condition fires.
+- Tests prove `init`/`open-next` cannot proceed from advisory recommendation
+  alone and that initiative candidates carry lifecycle-route evidence in the
+  declaration/preflight packet.
+dependencies: []
+delivery:
+  target_layer: infrastructure
+  delivery_pipeline: standard
+  suggested_command: /auto
+elasticity: Phase 1 = replace placeholder sections with concrete scope. Phase 2 =
+  refine acceptance and follow-on slices once the task is approved.

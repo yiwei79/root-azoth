@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "reusable-research",
+  "source_session_id": "2026-04-22-adhoc-codex-model-tiering-research",
+  "source_backlog_id": "T-015",
+  "initiative_ref": "INI-PLT-006",
+  "goal": "Codex intelligent model selection research refresh",
+  "captured_at": "2026-04-22T20:07:56Z",
+  "refreshed_at": "2026-04-22T20:07:56Z",
+  "refresh_summary": "First durable research-bank capture for Codex model tiering. This refresh resolves the roadmap gap around T-015, preserves the current OpenAI model-family evidence, and sharpens the architecture direction toward alias- and capability-based selection with separate reasoning-effort policy rather than hard-coded tier mappings.",
+  "volatility": "mixed",
+  "limitations": [
+    "OpenAI model availability, alias behavior, pricing, and product positioning are temporally unstable; the external findings were refreshed against official sources observed on 2026-04-22.",
+    "Repo-local findings describe the current root-azoth snapshot only and may age as selector plumbing, deploy surfaces, or Codex host behavior change.",
+    "This capsule is planning-grade evidence for T-015. It does not authorize runtime selector implementation or automatic changes to spawned model behavior."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this Codex model-tiering research capsule be reused for the next T-015 planning or proposal pass?",
+      "status": "answered",
+      "answered_at": "2026-04-22T20:07:56Z",
+      "fresh_until": "2026-05-22T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-slice-t-015-codex-intelligent-model-selection-research-refre",
+      "question": "What is the lowest-friction forward-compatible architecture for Codex model tiering in Azoth?",
+      "status": "answered",
+      "answered_at": "2026-04-22T20:07:56Z",
+      "fresh_until": "2026-05-22T00:00:00Z"
+    }
+  ],
+  "thesis": "Azoth should hard-code the selector contract, not the chosen models. The stable surface remains portable `model_tier` plus a small set of selector hints; Codex then resolves those hints through one host-local inventory/policy artifact that maps capability classes to preferred aliases and fallback aliases, while resolving `reasoning_effort` separately from model choice.",
+  "decisions_locked": {
+    "contract_shape": "portable intent plus host-local selector policy",
+    "forward_compatibility_strategy": "aliases and capability classes, not pinned snapshots or one tier-to-one-model mapping",
+    "reasoning_policy_shape": "resolve reasoning_effort separately from model alias",
+    "queue_position": "planned phase-3 follow-on under INI-PLT-006, not current active implementation work"
+  },
+  "repo_findings": [
+    "T-015 already existed as a spec and draft architecture proposal, but this worktree was missing the live backlog row and INI-PLT-006 roadmap slice needed to make that planning seed valid.",
+    "The current orchestrator and subagent-router contracts say the orchestrator sets `model_tier` and a resolver chooses a concrete model later, but the resolver is not actually implemented in repo-local Codex surfaces.",
+    "The current Codex deploy path only projects an optional static `model` field into `.codex/agents/*.toml`; it does not project a selector policy artifact or a separate `reasoning_effort` contract.",
+    "The active `v0.2.0-p3` queue intentionally contains only the Karpathy slices, so T-015 should be represented as a planned INI-PLT-006 follow-on rather than forced into the live implementation queue."
+  ],
+  "sources": [
+    {
+      "kind": "industry-official",
+      "title": "Models guide",
+      "url": "https://developers.openai.com/api/docs/models",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official OpenAI API models guide observed on 2026-04-22",
+      "findings": [
+        "OpenAI currently recommends `gpt-5.4` as the default starting point for complex reasoning and coding.",
+        "`gpt-5.4-mini` is positioned as a lower-latency frontier variant and supports the same reasoning-effort ladder as `gpt-5.4`.",
+        "The current model catalog already favors alias-based references over snapshot-specific contracts for general use."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "GPT-5.4 mini model docs",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official OpenAI model page observed on 2026-04-22",
+      "findings": [
+        "OpenAI currently describes `gpt-5.4-mini` as its strongest mini for coding, computer use, and subagents.",
+        "That positioning makes `gpt-5.4-mini` a strong default leaf-worker candidate without making the model name itself the long-term contract."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "GPT-5.3-Codex model docs",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.3-codex",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official OpenAI model page observed on 2026-04-22",
+      "findings": [
+        "OpenAI currently describes `gpt-5.3-codex` as the most capable agentic coding model.",
+        "The page explicitly documents `low`, `medium`, `high`, and `xhigh` reasoning-effort settings, which supports a selector that chooses model alias and reasoning effort separately."
+      ]
+    },
+    {
+      "kind": "industry-official",
+      "title": "Introducing GPT-5.3-Codex-Spark",
+      "url": "https://openai.com/index/introducing-gpt-5-3-codex-spark/",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "OpenAI product post published 2026-02-12 and observed on 2026-04-22",
+      "findings": [
+        "Codex-Spark is currently framed as a real-time coding lane optimized for latency-sensitive iteration.",
+        "OpenAI explicitly says its default working style stays lightweight and targeted, including not automatically running tests unless asked.",
+        "That makes Codex-Spark a bounded latency-first leaf option rather than a good default for the main Azoth control plane."
+      ]
+    }
+  ],
+  "recommended_reuse_for": [
+    "T-015 proposal refreshes",
+    "future Codex selector policy design",
+    "BL-011 spawn metadata design",
+    "forward-compatible model and reasoning policy discussions"
+  ]
+}

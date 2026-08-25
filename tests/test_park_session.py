@@ -351,6 +351,102 @@ def test_resume_session_uses_explicit_session_or_parked_session_state(tmp_path: 
     assert result["session_id"] == "2026-04-16-branch-hygiene"
 
 
+def test_resume_session_prefers_live_scope_over_stale_session_state_and_repairs_registry(
+    tmp_path: Path,
+) -> None:
+    repo_root = _build_repo(tmp_path, with_resumable_run=True)
+    (repo_root / ".azoth" / "session-state.md").write_text(
+        yaml.safe_dump(
+            {
+                "session_id": "2026-04-23-bl-071",
+                "state": "closed",
+                "last_ide": "codex",
+                "timestamp": "2026-04-23T17:53:00+00:00",
+                "active_task": "Closed previous session",
+                "active_files": [],
+                "pending_decisions": [],
+                "approved_scope": "BL-071",
+                "next_action": "Run /next",
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    result = park_session.resume_session(
+        repo_root,
+        timestamp="2026-04-16T18:12:00+00:00",
+    )
+
+    assert result["session_id"] == "2026-04-16-branch-hygiene"
+    assert result["resume_type"] == "scope-only"
+    ledger = yaml.safe_load(
+        (repo_root / ".azoth" / "run-ledger.local.yaml").read_text(encoding="utf-8")
+    )
+    assert ledger["sessions"][0]["session_id"] == "2026-04-16-branch-hygiene"
+    assert ledger["sessions"][0]["status"] == "active"
+    assert ledger["sessions"][0]["active_run_id"] == "run-001"
+
+
+def test_resume_session_preserves_governed_pipeline_gate_when_live_scope_repairs_registry(
+    tmp_path: Path,
+) -> None:
+    research_evidence = {
+        "kind": "repo-local",
+        "session_id": "2026-04-16-branch-hygiene",
+        "path": ".azoth/research/2026-04-16-branch-hygiene.json",
+    }
+    repo_root = _build_repo(
+        tmp_path,
+        with_resumable_run=True,
+        run_status="paused",
+        run_pause_reason="human-gate",
+        delivery_pipeline="governed",
+        target_layer="M1",
+        checkpoint_research_required=True,
+        checkpoint_research_evidence=research_evidence,
+    )
+    (repo_root / ".azoth" / "session-state.md").write_text(
+        yaml.safe_dump(
+            {
+                "session_id": "2026-04-23-bl-071",
+                "state": "closed",
+                "last_ide": "codex",
+                "timestamp": "2026-04-23T17:53:00+00:00",
+                "active_task": "Closed previous session",
+                "active_files": [],
+                "pending_decisions": [],
+                "approved_scope": "BL-071",
+                "next_action": "Run /next",
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    _write_pipeline_gate(
+        repo_root,
+        research_required=True,
+        research_evidence=research_evidence,
+    )
+
+    result = park_session.resume_session(
+        repo_root,
+        timestamp="2099-04-16T18:10:00+00:00",
+    )
+
+    assert result["resume_type"] == "stage-aware"
+    assert result["human_gate"] is True
+    assert result["pause_reason"] == "human-gate"
+    assert result["pipeline"] == "deliver-full"
+    pipeline_gate = json.loads(
+        (repo_root / ".azoth" / "pipeline-gate.json").read_text(encoding="utf-8")
+    )
+    assert pipeline_gate["session_id"] == "2026-04-16-branch-hygiene"
+    assert pipeline_gate["pipeline"] == "deliver-full"
+    assert pipeline_gate["research_required"] is True
+    assert pipeline_gate["research_evidence"] == research_evidence
+
+
 def test_park_session_snapshots_stage_checkpoint_into_run_and_session_state(tmp_path: Path) -> None:
     repo_root = _build_repo(
         tmp_path,

@@ -1,0 +1,332 @@
+proposal_schema_version: 1
+created_at: "2026-04-20T01:15:00+02:00"
+session_id: "2026-04-20-codex-model-selection-seed"
+backlog_id: "T-015"
+title: "Codex intelligent model selection"
+summary: >
+  Azoth's current `model_tier` contract preserves portable intent, but Codex co-primary
+  parity now needs a real host-aware selection architecture rather than an implied
+  or hard-coded tier-to-model mapping. This proposal defines a forward-compatible
+  selector design for Codex: the orchestrator and BL-011 spawn contract continue
+  to express intent, a Codex-specific inventory/policy layer resolves against the
+  models and capabilities currently available, and the selector chooses the best
+  viable model plus `reasoning_effort` per agent instance with quality first and
+  latency/cost as bounded tie-breakers. Current model-family observations are included
+  as directional evidence only; they are not the long-term interface.
+status: draft
+decision_refs:
+  - D19
+  - D21
+  - D23
+  - D46
+  - D52
+scope_layers:
+  - agents
+  - pipelines
+  - docs
+details:
+  evidence_basis:
+    repo_local:
+      observed_on: "2026-04-22"
+      sources:
+        - path: ".codex/agents/orchestrator.toml"
+          finding: >
+            Codex currently states that the orchestrator sets `model_tier` and that
+            subagent-router resolves it to a concrete model identifier, but no concrete
+            Codex-side policy or capability contract exists yet.
+        - path: "agents/tier1-core/orchestrator.agent.md"
+          finding: >
+            The canonical orchestration contract applies `model_tier` to every spawn,
+            but the tier remains too coarse to capture task-specific reasoning depth,
+            context pressure, tool needs, or autonomy horizon.
+        - path: ".agents/skills/subagent-router/SKILL.md"
+          finding: >
+            BL-011 already has a stable spawn contract and can carry richer selector
+            inputs later without abandoning the portable `model_tier` field.
+        - path: ".codex/config.toml"
+          finding: >
+            Codex is instruction-first, calm-by-default, bounded by workspace-write,
+            and network-disabled in this repo. That makes model judgment quality and
+            reliable tool-stage behavior more important than raw token speed alone.
+        - path: "scripts/azoth-deploy.py"
+          finding: >
+            The current Codex projection only emits a static optional `model` field into
+            `.codex/agents/*.toml`; it does not project a selector policy artifact or a
+            separate `reasoning_effort` contract.
+        - path: "docs/platform-guides/codex-guide.md"
+          finding: >
+            Codex is a co-primary Azoth host with a calm-flow orientation rather than
+            a degraded Claude adapter, so Codex-specific execution-quality policy is
+            architecturally justified.
+        - path: ".azoth/roadmap.yaml"
+          finding: >
+            The active `v0.2.0-p3` queue is intentionally focused on the Karpathy slices,
+            so intelligent model selection should be wired back in as a planned follow-on
+            under `INI-PLT-006`, not forced into the live implementation queue.
+    external_directional:
+      observed_on: "2026-04-22"
+      sources:
+        - title: "Models guide"
+          url: "https://developers.openai.com/api/docs/models"
+          finding: >
+            OpenAI currently recommends `gpt-5.4` as the default starting point for
+            complex reasoning and coding, while `gpt-5.4-mini` is positioned as the
+            lower-latency frontier mini and supports the same reasoning-effort ladder.
+        - title: "GPT-5.4 mini model docs"
+          url: "https://developers.openai.com/api/docs/models/gpt-5.4-mini"
+          finding: >
+            OpenAI currently positions `gpt-5.4-mini` as the strongest mini for coding,
+            computer use, and subagents, which makes it a strong default leaf-worker lane
+            without turning that model name into the normative long-term contract.
+        - title: "GPT-5.3-Codex model docs"
+          url: "https://developers.openai.com/api/docs/models/gpt-5.3-codex"
+          finding: >
+            OpenAI currently positions `gpt-5.3-codex` as the most capable agentic coding
+            model and explicitly exposes `low`, `medium`, `high`, and `xhigh` reasoning-effort
+            settings, which supports a selector that resolves model and reasoning separately.
+        - title: "Introducing GPT-5.3-Codex-Spark"
+          url: "https://openai.com/index/introducing-gpt-5-3-codex-spark/"
+          finding: >
+            Codex-Spark is framed as a latency-first real-time coding lane whose default
+            working style stays lightweight and targeted, which makes it useful as a
+            bounded leaf option rather than the main Azoth control-plane default.
+    official_refresh_2026_04_25:
+      seed_ref: ".azoth/research/codex-model-tiering-gpt55-refresh-2026-04-25.json"
+      observed_on: "2026-04-25"
+      sources:
+        - title: "Models"
+          url: "https://developers.openai.com/api/docs/models"
+          finding: >
+            OpenAI now recommends `gpt-5.5` as the starting point for complex
+            reasoning and coding, with `gpt-5.4-mini` and `gpt-5.4-nano` as
+            lower-latency, lower-cost options.
+        - title: "GPT-5.5 model docs"
+          url: "https://developers.openai.com/api/docs/models/gpt-5.5"
+          finding: >
+            `gpt-5.5` supports `reasoning.effort` values `none`, `low`, `medium`,
+            `high`, and `xhigh`; its default reasoning effort is `medium`.
+        - title: "Using GPT-5.5"
+          url: "https://developers.openai.com/api/docs/guides/latest-model"
+          finding: >
+            GPT-5.5 should be treated as a new model family to tune for, not as
+            a drop-in replacement for GPT-5.2 or GPT-5.4. The guide recommends
+            benchmarking accuracy, token consumption, and end-to-end latency.
+        - title: "Reasoning models"
+          url: "https://developers.openai.com/api/docs/guides/reasoning"
+          finding: >
+            Reasoning effort is model-dependent. `xhigh` is for deep asynchronous
+            or very long rollout tasks only when evals show a clear benefit.
+        - title: "All models"
+          url: "https://developers.openai.com/api/docs/models/all"
+          finding: >
+            The current catalog marks most older Codex-family models as deprecated.
+            `gpt-5.3-codex` remains listed as a coding-specialized option, but it
+            should be measured against GPT-5.5 rather than assumed to be the default.
+  problem:
+    intent_gap: >
+      `model_tier` currently signals only coarse quality/cost intent and cannot
+      distinguish stage-specific needs such as deep planning, tool-heavy verification,
+      long-horizon orchestration, or narrow latency-sensitive leaves.
+    resolution_gap: >
+      Azoth documentation implies that Codex resolves tier to a concrete model, but
+      there is no real Codex policy artifact, no explicit capability inventory, and
+      no tested deterministic resolver behavior.
+    spawn_effort_leak_gap: >
+      Codex sessions can run the root orchestrator with high or extra-high reasoning
+      while spawned subagents default to the parent setting unless the spawn path passes
+      explicit `model` and `reasoning_effort` fields. This turns `xhigh` into an
+      accidental leaf-worker default rather than an intentional stage escalation.
+    forward_compatibility_gap: >
+      Hard-coding today’s model names or snapshots would force recurring manual
+      retuning as aliases, availability, model families, and capability trade-offs
+      change over time.
+  design:
+    objective_order:
+      primary: "quality / reliability"
+      secondary: "latency"
+      tertiary: "cost"
+      note: >
+        Lower latency and lower cost are optimization goals only after capability
+        and quality fit are satisfied for the current stage and risk profile.
+    layers:
+      intent_layer:
+        statement: >
+          Keep `model_tier` as a backward-compatible portable intent signal, but
+          enrich BL-011 spawn metadata with selector-relevant inputs.
+        future_inputs:
+          - "agent_role"
+          - "stage_kind"
+          - "reasoning_depth_needed"
+          - "autonomy_horizon"
+          - "context_size_pressure"
+          - "tool_or_computer_use_need"
+          - "verification_strictness"
+          - "latency_sensitivity"
+      host_inventory_layer:
+        statement: >
+          Codex maintains a host-local inventory of available model aliases and
+          capabilities rather than treating a small set of hand-picked model IDs
+          as the stable contract.
+        requirements:
+          - "Prefer aliases or capability classes over pinned snapshots"
+          - "Record context-window, reasoning ladder, tool, and latency-class features"
+          - "Permit graceful fallback when inventory data is partial or stale"
+      reasoning_policy_layer:
+        statement: >
+          Resolve `reasoning_effort` separately from model alias selection so Codex can
+          keep one stable portable intent surface while still choosing lighter or deeper
+          reasoning per stage.
+        requirements:
+          - "Default reasoning by stage family, risk, and latency sensitivity"
+          - "Do not inherit the main-chat reasoning setting blindly into every subagent"
+          - "Reserve `xhigh` as an explicit escalation path, not the default worker setting"
+      selector_layer:
+        statement: >
+          Score candidate models per agent instance and choose the best viable fit
+          for that specific stage, not one model for the entire pipeline.
+        scoring_dimensions:
+          - "capability fit"
+          - "quality / reliability fit"
+          - "latency fit"
+          - "cost fit"
+          - "context-window fit"
+          - "tool / computer-use fit"
+          - "reasoning-effort fit"
+      policy_surface:
+        statement: >
+          Keep the forward-compatible policy in one Codex-local artifact that maps stable
+          capability classes to preferred aliases and fallback aliases, instead of encoding
+          those choices separately in every agent or skill mirror.
+        requirements:
+          - "One edit should retune future model choices without touching canonical agent text"
+          - "Fallback order should degrade by capability class, not by ad hoc name substitution"
+          - "Refreshes should update the policy artifact and research capsule, not every spawn site"
+      task_definition_lane:
+        statement: >
+          The selector policy lane should define the normalized task contract that sits
+          between portable BL-011 spawn intent and any future Codex resolver implementation.
+          `model_tier` stays portable, but Codex can only select deterministically once
+          the richer selector inputs and inventory fields are named explicitly.
+        selector_inputs_contract:
+          required:
+            - "model_tier"
+            - "agent_role"
+            - "stage_kind"
+            - "reasoning_depth_needed"
+            - "autonomy_horizon"
+            - "context_size_pressure"
+            - "tool_or_computer_use_need"
+            - "verification_strictness"
+            - "latency_sensitivity"
+          optional:
+            - "quality_bar"
+            - "cost_sensitivity"
+            - "interactive_vs_batch"
+            - "expected_child_fanout"
+        inventory_metadata_expectations:
+          required:
+            - "alias"
+            - "capability_class"
+            - "quality_band"
+            - "reasoning_effort_levels"
+            - "supports_tools"
+            - "supports_computer_use"
+            - "context_window_class"
+            - "latency_class"
+            - "availability_state"
+          optional:
+            - "preferred_reasoning_defaults"
+            - "fallback_aliases"
+            - "provider_notes"
+      deterministic_resolution:
+        selection_order:
+          - "1. Normalize the spawn/task input into the selector input contract."
+          - "2. Filter out aliases that are unavailable or missing any mandatory capability for the stage."
+          - "3. Choose the lowest capability class that still satisfies the stage's required quality/reliability bar."
+          - "4. Within that capability class, rank by capability fit and quality fit first."
+          - "5. Use latency fit and then cost fit only as bounded tie-breakers among otherwise acceptable candidates."
+          - "6. Resolve `reasoning_effort` after alias selection using stage-family defaults and explicit escalation rules."
+        fallback_policy:
+          - "Fallback degrades by declared capability class and policy order, not by ad hoc model-name substitution."
+          - "If inventory metadata is partial, use only the documented fields that remain trustworthy and record the degraded confidence."
+          - "If no alias satisfies mandatory stage requirements, fail closed and escalate instead of silently selecting a weaker lane."
+        tie_break_rule:
+          primary: "capability and quality fit"
+          secondary: "latency"
+          tertiary: "cost"
+          note: >
+            This preserves the quality-first policy while still allowing deterministic
+            leaf-worker downshifts when multiple candidates satisfy the same quality bar.
+      feedback_layer:
+        statement: >
+          Capture selector outcomes, fallback events, and observed failure modes into
+          M3/M2 so the policy improves with evidence instead of ad hoc human retuning.
+  directional_current_policy:
+    statement: >
+      Current official evidence from 2026-04-25 suggests a quality-first Codex policy
+      should start with `gpt-5.5` for complex orchestration, architecture, review,
+      evaluation, and hard implementation work; evaluate `gpt-5.4-mini` at `low` or
+      `medium` for bounded leaf subagents; reserve `gpt-5.4-nano` for simple
+      non-mutating latency/cost-sensitive tasks; and treat `gpt-5.3-codex` as a
+      still-listed coding-specialized alternative or fallback to measure rather than
+      the default assumption. `xhigh` must be explicit stage policy backed by eval
+      evidence, never inherited from the parent orchestrator by omission. These names
+      are current policy defaults/fallbacks, not the future-proof normative interface.
+  follow_on_slices:
+    - id: "Slice A"
+      title: "Codex policy artifact + research bank"
+      deliverables:
+        - "Add a Codex-specific selector policy/config surface"
+        - "Record the bounded local research capsule that justifies the current policy"
+        - "Define candidate capability fields and fallback rules"
+    - id: "Slice B"
+      title: "Spawn contract + resolver plumbing"
+      deliverables:
+        - "Extend BL-011 spawn metadata with explicit selector inputs"
+        - "Implement resolver path from orchestrator/subagent-router into concrete model choice"
+        - "Resolve `reasoning_effort` independently from the chosen model alias"
+    - id: "Slice C"
+      title: "Evaluation and regression"
+      deliverables:
+        - "Add deterministic selection and fallback tests"
+        - "Prevent hard-coded snapshot/model drift from becoming the main contract"
+        - "Capture selector evidence for future policy tuning"
+    - id: "Slice D"
+      title: "Optional portability follow-on"
+      deliverables:
+        - "Generalize beyond Codex only after the Codex co-primary proof is stable"
+    - id: "T-025"
+      title: "Codex runtime model resolver and spawn-effort isolation"
+      deliverables:
+        - "Refresh official model inventory from OpenAI docs before locking policy defaults"
+        - "Add a Codex-local policy artifact that separates capability classes, availability state, and alias preferences"
+        - "Implement resolver output with `model`, `reasoning_effort`, `model_tier`, `policy_ref`, `confidence`, `fallback_reason`, and `source_observed_on`"
+        - "Ensure every spawned subagent receives explicit `model` and `reasoning_effort` fields"
+        - "Prevent parent `xhigh` reasoning from leaking into leaf subagents by omission"
+        - "Record selector decisions in run-ledger spawn evidence, BL-012 stage summaries, or a dedicated selector trace artifact"
+        - "Fail closed or require explicit override for deprecated, unavailable, unsupported-effort, or mandatory-tool-mismatched aliases"
+        - "Add anti-leak, fallback, explicit override, deprecated-model, and spawn-payload regression tests"
+  non_goals:
+    - "No runtime selector implementation in this proposal slice"
+    - "No deploy changes or command/agent mirror rewrites"
+    - "No normative future contract that depends on a fixed set of named current models"
+    - "No automatic promotion into AZOTH_ARCHITECTURE.md or DECISIONS_INDEX.md"
+  shipped_follow_on:
+    backlog_id: "T-017"
+    title: "Codex selector policy + task-definition lane"
+    note: >
+      `T-015` remains the historical seed/proposal anchor. `T-017` shipped the
+      selector-policy and task-definition lane before any runtime resolver work.
+  next_follow_on:
+    backlog_id: "T-025"
+    title: "Codex runtime model resolver and spawn-effort isolation"
+    status: "campaign-seeded"
+    seed_ref: ".azoth/research/codex-model-tiering-gpt55-refresh-2026-04-25.json"
+    predecessors:
+      - "T-015"
+      - "T-017"
+    note: >
+      `T-025` is the runtime bridge follow-on. It must hydrate separately before
+      implementation, explicitly naming canonical source surfaces, projection/deploy
+      expectations, fallback semantics, selector audit location, Codex spawn API
+      capability, and anti-leak acceptance tests.

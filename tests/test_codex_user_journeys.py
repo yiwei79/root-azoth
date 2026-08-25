@@ -9,7 +9,7 @@ import pytest
 from codex_journey_harness import (
     REPO,
     capture_plain_welcome,
-    copy_codex_router_fixture,
+    copy_codex_router_fixture as _copy_codex_router_fixture_base,
     extract_start_block,
     future_timestamp,
     run_router,
@@ -21,6 +21,21 @@ sys.path.insert(0, str(REPO / "scripts"))
 import do_closeout  # noqa: E402
 import park_session  # noqa: E402
 from codex_control_plane import directive_for_prompt  # noqa: E402
+
+DELIVER_FULL_STAGE2_RULE = "deliver_full_s2_architect"
+DELIVER_FULL_STAGE2_NEGATIVE = "inline architecture prose does not satisfy Stage 2"
+DELIVER_FULL_STAGE2_DECLARATION_ONLY = (
+    "Declaration, gate write, or status card does not count as Stage 2 execution"
+)
+
+
+def copy_codex_router_fixture(tmp_path: Path, *, with_agents: bool = False) -> Path:
+    router = _copy_codex_router_fixture_base(tmp_path, with_agents=with_agents)
+    (tmp_path / "scripts" / "harness_profile.py").write_text(
+        (REPO / "scripts" / "harness_profile.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return router
 
 
 def test_pipeline_aliases_normalize_to_the_same_start_centered_route() -> None:
@@ -37,6 +52,26 @@ def test_pipeline_aliases_normalize_to_the_same_start_centered_route() -> None:
         hook = payload["hookSpecificOutput"]
         assert hook["updatedInput"] == canonical
         assert "pipeline_command=deliver-full" in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_RULE in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_NEGATIVE in hook["additionalContext"]
+        assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in hook["additionalContext"]
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "/deliver-full harden codex adapter",
+        "$azoth-deliver-full harden codex adapter",
+        "$azoth-start pipeline_command=deliver-full harden codex adapter",
+    ),
+)
+def test_governed_deliver_full_aliases_share_stage2_invariant(prompt: str) -> None:
+    router = REPO / ".codex" / "hooks" / "user_prompt_submit_router.py"
+    payload = run_router(router, prompt, cwd=REPO)
+    ctx = payload["hookSpecificOutput"]["additionalContext"]
+    assert DELIVER_FULL_STAGE2_RULE in ctx
+    assert DELIVER_FULL_STAGE2_NEGATIVE in ctx
+    assert DELIVER_FULL_STAGE2_DECLARATION_ONLY in ctx
 
 
 def test_freeform_continue_and_new_goal_receive_continuity_guidance(tmp_path: Path) -> None:
@@ -74,6 +109,263 @@ def test_freeform_continue_and_new_goal_receive_continuity_guidance(tmp_path: Pa
     assert "resume/continue decision" in continue_directive.additional_context
     assert new_goal_directive is not None
     assert "replace decision" in new_goal_directive.additional_context
+
+
+def test_freeform_continue_without_live_session_stays_noop(tmp_path: Path) -> None:
+    directive = directive_for_prompt(tmp_path, "continue this task")
+
+    assert directive is None
+    assert not (tmp_path / ".azoth" / "session-gate.json").exists()
+
+
+def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, "explore the closeout UX architecture", cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+
+    assert hook["updatedInput"] == "$azoth-start explore the closeout UX architecture"
+    assert "Exploratory intent detected" in hook["additionalContext"]
+
+    session_gate = json.loads(
+        (tmp_path / ".azoth" / "session-gate.json").read_text(encoding="utf-8")
+    )
+    assert session_gate["status"] == "active"
+    assert session_gate["session_mode"] == "exploratory"
+    assert session_gate["goal"] == "explore the closeout UX architecture"
+
+    scope_gate = json.loads((tmp_path / ".azoth" / "scope-gate.json").read_text(encoding="utf-8"))
+    assert scope_gate == {}
+
+
+def test_profile_advisory_surfaces_read_only_without_changing_start_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, "explain current repo status", cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == "$azoth-start explain current repo status"
+    assert "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: guide" in ctx
+    assert "route_state: answer" in ctx
+    assert "authority_plane: personal_cockpit" in ctx
+    assert "side_effect_class: read_only" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_advisory_surfaces_focused_verification_without_changing_start_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "diagnose by running focused verification for tests/test_azoth_lite_classifier.py"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start {prompt}"
+    assert "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: assisted" in ctx
+    assert "route_state: assist" in ctx
+    assert "authority_required: false" in ctx
+    assert "side_effect_class: read_only" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_default_routes_local_edit_to_lite_without_auto_pipeline(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "fix typo in scripts/example_helper.py"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start {prompt}"
+    assert "Azoth-lite default posture detected" in ctx
+    assert "pipeline_command=auto" not in hook["updatedInput"]
+    assert "profile_suggestion: azoth-lite" in ctx
+    assert "harness_profile: assisted" in ctx
+    assert "route_state: assist" in ctx
+    assert "side_effect_class: local_edit" in ctx
+    assert "stop_state: done" in ctx
+
+
+def test_profile_default_escalates_governed_state_to_auto_delivery_route(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "update .azoth/roadmap.yaml task state"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "harness_profile: managed" in ctx
+    assert "route_state: authority_required" in ctx
+    assert "authority_plane: project_local" in ctx
+    assert "side_effect_class: governed_state" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "escalation_reasons: governed_state_change" in ctx
+    assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "update commands/start/body.md routing text",
+        "update .azoth/roadmap.yaml task state",
+        "edit agents/tier1-core/builder.agent.md contract",
+        "patch skills/context-recall/SKILL.md guidance",
+        "update .claude/skills/context-recall/SKILL.md skill guidance",
+        "change pipelines/auto.pipeline.yaml routing row",
+    ),
+)
+def test_profile_default_escalates_contract_surface_edits_to_auto_delivery_route(
+    tmp_path: Path,
+    prompt: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: governed_state" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "escalation_reasons: governed_state_change" in ctx
+
+
+def test_profile_advisory_escalates_finality_without_changing_routed_command(
+    tmp_path: Path,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    prompt = "update final delivery package status"
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "harness_profile: governed_autonomy" in ctx
+    assert "route_state: stop" in ctx
+    assert "side_effect_class: external_or_destructive" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "finality_or_packaging_requested" in ctx
+    assert "handoff_note: stop before mutation; recommended_route: azoth-full" in ctx
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    (
+        "finalize release notes",
+        "publish release artifacts",
+    ),
+)
+def test_profile_default_escalates_direct_finality_verbs_to_auto_delivery_route(
+    tmp_path: Path,
+    prompt: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    ctx = hook["additionalContext"]
+
+    assert hook["updatedInput"] == f"$azoth-start pipeline_command=auto {prompt}"
+    assert "Governed delivery escalation detected" in ctx
+    assert "profile_suggestion: azoth-full" in ctx
+    assert "side_effect_class: external_or_destructive" in ctx
+    assert "stop_state: escalate" in ctx
+    assert "finality_or_packaging_requested" in ctx
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected_input"),
+    [
+        ("/auto investigate drift", "$azoth-start pipeline_command=auto investigate drift"),
+        ("/start next", "$azoth-start next"),
+        ("/session-closeout", "$azoth-session-closeout"),
+    ],
+)
+def test_profile_advisory_keeps_existing_command_routes_unchanged(
+    tmp_path: Path,
+    prompt: str,
+    expected_input: str,
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    payload = run_router(router, prompt, cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+
+    assert hook["updatedInput"] == expected_input
+    assert "profile_suggestion:" in hook["additionalContext"]
+
+
+def test_delivery_route_carries_matching_exploratory_session_id_in_routed_input(
+    tmp_path: Path,
+) -> None:
+    seed_azoth_repo(
+        tmp_path,
+        session_gate={
+            "session_id": "sess-explore",
+            "goal": "fix closeout control plane",
+            "session_mode": "exploratory",
+            "opened_at": "2026-04-20T10:00:00+00:00",
+            "updated_at": "2026-04-20T10:00:00+00:00",
+            "status": "active",
+            "approved_by": "system",
+        },
+    )
+
+    directive = directive_for_prompt(tmp_path, "fix closeout control plane")
+    assert directive is not None
+    assert (
+        directive.updated_input
+        == "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane"
+    )
+    assert "Carry its `session_id` forward" in directive.additional_context
+
+
+def test_start_route_preserves_explicit_session_id_in_canonical_input() -> None:
+    directive = directive_for_prompt(
+        REPO,
+        "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane",
+    )
+
+    assert directive is not None
+    assert (
+        directive.updated_input
+        == "$azoth-start pipeline_command=auto session_id=sess-explore fix closeout control plane"
+    )
+
+
+def test_start_route_respects_explicit_session_id_for_continuity_conflicts(tmp_path: Path) -> None:
+    seed_azoth_repo(
+        tmp_path,
+        scope={
+            "approved": True,
+            "expires_at": future_timestamp(hours=2),
+            "goal": "BL-123: Continue calm flow work",
+            "session_id": "sess-live",
+            "backlog_id": "BL-123",
+            "governance_mode": "standard",
+            "pipeline_command": "auto",
+        },
+    )
+
+    directive = directive_for_prompt(
+        tmp_path,
+        "$azoth-start pipeline_command=auto session_id=sess-other BL-123: Continue calm flow work",
+    )
+
+    assert directive is not None
+    assert "Do not silently retarget it" in directive.additional_context
 
 
 def test_normalized_governed_state_renders_pipeline_gate_and_start_snapshot(
@@ -119,7 +411,7 @@ def test_normalized_governed_state_renders_pipeline_gate_and_start_snapshot(
     assert "codex    → primary: /skills or $azoth-resume / $azoth-next / $azoth-auto" in start_block
 
 
-def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
+def test_resume_closeout_loop_reports_truthful_handoff_when_stage_evidence_complete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -154,10 +446,9 @@ def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
             "next_action": "Finish closeout",
             "pipeline": "deliver-full",
             "pipeline_position": 4,
-            "current_stage_id": "reviewer_gate",
-            "completed_stages": ["planner", "builder"],
-            "pending_stages": ["closeout"],
-            "pause_reason": "human-gate",
+            "current_stage_id": "closeout_ready",
+            "completed_stages": ["planner", "builder", "reviewer_gate"],
+            "pending_stages": [],
             "active_run_id": "run-654",
         },
         run_ledger={
@@ -186,10 +477,89 @@ def test_resume_closeout_loop_reports_truthful_handoff_and_no_false_mismatch(
                     "created_at": "2099-04-18T09:00:00+00:00",
                     "updated_at": "2099-04-18T09:00:00+00:00",
                     "next_action": "Finish closeout",
-                    "stages_completed": ["planner", "builder"],
-                    "active_stage_id": "reviewer_gate",
-                    "pending_stage_ids": ["closeout"],
-                    "pause_reason": "human-gate",
+                    "stages_completed": ["planner", "builder", "reviewer_gate"],
+                    "stage_spawns": [
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "planner",
+                            "subagent_type": "planner",
+                            "trigger": "context-isolation",
+                            "role_hint": (
+                                "Agent(subagent_type=planner): Plan governed closeout "
+                                "journey - trigger: context-isolation"
+                            ),
+                            "dependency_summary_refs": [],
+                            "spawned_at": "2099-04-18T09:01:00+00:00",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "builder",
+                            "subagent_type": "builder",
+                            "trigger": "context-budget",
+                            "role_hint": (
+                                "Agent(subagent_type=builder): Implement governed "
+                                "closeout journey - trigger: context-budget"
+                            ),
+                            "dependency_summary_refs": ["planner"],
+                            "spawned_at": "2099-04-18T09:02:00+00:00",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "reviewer_gate",
+                            "subagent_type": "reviewer",
+                            "trigger": "review-independence",
+                            "role_hint": (
+                                "Agent(subagent_type=reviewer): Review governed "
+                                "closeout journey - trigger: review-independence"
+                            ),
+                            "dependency_summary_refs": ["planner", "builder"],
+                            "spawned_at": "2099-04-18T09:03:00+00:00",
+                        },
+                    ],
+                    "stage_summaries": [
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "planner",
+                            "subagent_type": "planner",
+                            "trigger": "context-isolation",
+                            "role_hint": (
+                                "Agent(subagent_type=planner): Plan governed closeout "
+                                "journey - trigger: context-isolation"
+                            ),
+                            "dependency_summary_refs": [],
+                            "summary_recorded_at": "2099-04-18T09:04:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "builder",
+                            "subagent_type": "builder",
+                            "trigger": "context-budget",
+                            "role_hint": (
+                                "Agent(subagent_type=builder): Implement governed "
+                                "closeout journey - trigger: context-budget"
+                            ),
+                            "dependency_summary_refs": ["planner"],
+                            "summary_recorded_at": "2099-04-18T09:05:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                        {
+                            "run_id": "run-654",
+                            "stage_id": "reviewer_gate",
+                            "subagent_type": "reviewer",
+                            "trigger": "review-independence",
+                            "role_hint": (
+                                "Agent(subagent_type=reviewer): Review governed "
+                                "closeout journey - trigger: review-independence"
+                            ),
+                            "dependency_summary_refs": ["planner", "builder"],
+                            "summary_recorded_at": "2099-04-18T09:06:00+00:00",
+                            "summary_status": "complete",
+                            "summary_disposition": "approved",
+                        },
+                    ],
                     "waves": [],
                     "branches": [],
                 }

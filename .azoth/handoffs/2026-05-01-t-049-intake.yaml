@@ -1,0 +1,89 @@
+schema_version: 1
+intake_id: t049-project-onboarding-pilot-20260501
+session_id: 2026-05-01-t-049-intake
+candidate_ref: INI-PKB-001#slice-pkb-001-f
+proposed_task_id: T-049
+title: Project onboarding pilot through personal control plane
+decision: ready_to_hydrate_planning_scaffold
+approved_at: '2026-05-01T00:38:32Z'
+approval_basis: Operator requested T-049 intake with a pointer-only project profile
+  and receipt-evidence scope, naming the personal root and pilot project repo.
+personal_root:
+  path: /Users/yiwei/GithubRepos/personal-azoth-root
+  status_command: git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short --branch
+  status: clean
+  head: 074748a950eefa9c5a69d63f4631a332fd899b9d
+pilot_projects:
+- project_id: ras-or-ray
+  title: ras or ray
+  path: /Users/yiwei/GithubRepos/ras or ray
+  git_toplevel: /Users/yiwei/GithubRepos/ras or ray
+  default_branch: main
+  tracking: origin/main
+  status_command: git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+  status: clean
+  head: 82770daadf6db5056efdb1ace38d9535ee082a46
+  profile_mode: pointer_only
+allowed_metadata_fields:
+- project_id
+- title
+- repo_path
+- default_branch
+- tracking_ref
+- privacy_class
+- profile_mode
+- handoff_receipt_ref
+- validation_commands
+project_state_convention:
+  convention_id: minimal_pointer_profile_v1
+  surfaced_at_session_start:
+  - project_id
+  - title
+  - repo_path
+  - default_branch
+  - profile_mode
+  - handoff_receipt_ref
+  excluded_fields:
+  - source_files
+  - code_summaries
+  - secrets
+  - dependency_inventory
+  - retrieval_index
+allowed_outputs:
+- hydrated_t049_roadmap_task
+- hydrated_t049_backlog_row
+- hydrated_t049_task_spec
+- pointer_only_project_profile_manifest
+- personal_root_project_profile_receipt
+- validation_report
+forbidden_outputs:
+- project_repo_write
+- project_code_mutation
+- source_registry_onboarding
+- retrieval_indexing
+- automatic_project_scanning
+- background_daemon_behavior
+- public_azoth_release
+- credential_access
+- cloud_account_provisioning
+- governance_change
+- kernel_change
+- m1_change
+validation_commands:
+- python3 scripts/check_gates.py --session-id 2026-05-01-t-049-intake
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml --check-roadmap-refs
+- python3 scripts/roadmap_dashboard.py --theme E
+- git -C /Users/yiwei/GithubRepos/personal-azoth-root status --short --branch
+- git -C '/Users/yiwei/GithubRepos/ras or ray' status --short --branch
+hydration_boundary:
+  can_hydrate_task_scaffold: true
+  can_mutate_personal_root: false
+  can_mutate_project_repo: false
+  requires_fresh_delivery_gate_before:
+  - writing pointer profile data into personal-root
+  - writing any receipt into personal-root
+  - changing any project repo file
+  - onboarding source registries
+  - expanding retrieval or indexes
+next_safe_action: Hydrate T-049 as roadmap/backlog/spec only, then run delivery only
+  after a fresh governed project-onboarding gate confirms the same project boundary.

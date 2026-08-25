@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "reusable-research",
+  "source_session_id": "2026-04-23-adhoc-research-t-krp-b-karpathy-principles-skill",
+  "source_backlog_id": "T-KRP-B",
+  "initiative_ref": "INI-KRP-001",
+  "goal": "T-KRP-B: New skill: karpathy-principles SKILL.md for injectable discipline slot",
+  "captured_at": "2026-04-23T18:45:00Z",
+  "volatility": "mixed",
+  "limitations": [
+    "External upstream repository shape, stars, plugin packaging, and vendor instruction surfaces are time-sensitive and were checked on 2026-04-23.",
+    "This capsule is planning evidence for hydrating T-KRP-B into backlog/spec state. It does not authorize implementing the skill without a later governed M1 delivery scope.",
+    "T-KRP-B should introduce an injectable skill surface, not duplicate the T-KRP-A root CLAUDE.md layer or harden builder/orchestrator behavior reserved for T-KRP-C, T-KRP-D, and T-KRP-E.",
+    "The upstream karpathy-guidelines skill can inform content shape, but Azoth must keep repo-native skill metadata, governance anchors, stage6-rubric depth expectations, and deploy mirror mechanics.",
+    "As of this corrective replay, the repo is not implementation-ready for T-KRP-B: the live scope gate is closed and not approved, the pipeline gate is absent, and `.codex/config.toml` remains unrelated dirty state."
+  ],
+  "questions": [
+    {
+      "question_id": "phase-1-reuse",
+      "question": "Can this capsule be reused for the next T-KRP-B planning or delivery pass?",
+      "status": "answered",
+      "answered_at": "2026-04-23T18:45:00Z",
+      "fresh_until": "2026-05-23T00:00:00Z"
+    },
+    {
+      "question_id": "phase-1-slice-t-krp-b-t-krp-b-new-skill-karpathy-principles-skill-md-f",
+      "question": "What should the T-KRP-B skill slice include, and what stays deferred to adjacent Karpathy follow-ons?",
+      "status": "answered",
+      "answered_at": "2026-04-23T18:45:00Z",
+      "fresh_until": "2026-05-23T00:00:00Z"
+    }
+  ],
+  "execution_audit": {
+    "pipeline": "dynamic-full-auto",
+    "stage_id": "t_krp_b_builder_replay_1",
+    "model_tiers": [
+      {
+        "wave": "Wave A online research",
+        "model_tier": "premium",
+        "purpose": "External upstream and vendor-context research."
+      },
+      {
+        "wave": "Wave B repo exploration",
+        "model_tier": "standard",
+        "purpose": "Repo-local blast-radius and existing-contract exploration."
+      },
+      {
+        "wave": "review/eval",
+        "model_tier": "premium",
+        "purpose": "Quality review and evaluator findings that triggered this corrective replay."
+      },
+      {
+        "wave": "bounded corrective replay",
+        "model_tier": "standard",
+        "purpose": "Hydration artifact revision only; no implementation."
+      }
+    ],
+    "spawn_contract": {
+      "initial_defect": "The initial Wave B spawn contract did not carry enough explicit tier/readiness/test-surface audit requirements into the hydration artifacts.",
+      "correction": "This replay records tier usage, gate readiness, implementation boundaries, and concrete regression surfaces directly in the research capsule and T-KRP-B spec."
+    }
+  },
+  "readiness_state": {
+    "observed_at": "2026-04-23",
+    "dirty_state": {
+      "summary": "The unrelated dirty state is no longer broad BL-072 delivery work, but `.codex/config.toml` remains unrelated to T-KRP-B and must be preserved.",
+      "unrelated_dirty_files_observed": [
+        ".codex/config.toml"
+      ]
+    },
+    "gates": {
+      "scope_gate": {
+        "path": ".azoth/scope-gate.json",
+        "session_id": "2026-04-23-bl-072",
+        "approved": false,
+        "closed_at": "2026-04-23T18:17:16Z",
+        "status": "closed_not_approved_for_t_krp_b"
+      },
+      "pipeline_gate": {
+        "path": ".azoth/pipeline-gate.json",
+        "status": "absent"
+      }
+    },
+    "authorization": "No T-KRP-B implementation is authorized by the current gate state; this capsule supports later governed scope creation only."
+  },
+  "thesis": "T-KRP-B should add a dedicated Azoth `karpathy-principles` skill as an injectable discipline slot that agents and pipelines can deliberately load when coding, reviewing, planning, or refactoring work needs extra assumption surfacing, simplicity pressure, surgical-change discipline, and verification criteria. The skill should be authored in canonical `skills/karpathy-principles/SKILL.md`, registered in `skills/index.yaml`, and deployed to generated shared skill surfaces with `scripts/azoth-deploy.py`; it should not become an always-on root instruction expansion or a builder/orchestrator posture rewrite.",
+  "source_resolution": {
+    "observed_at": "2026-04-23",
+    "upstream_repo": {
+      "canonical_url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "canonical_skill_url": "https://github.com/forrestchang/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md",
+      "legacy_aliases": [
+        {
+          "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+          "status": "redirect",
+          "note": "Observed redirect to forrestchang/andrej-karpathy-skills when opening the upstream skill path on 2026-04-23."
+        }
+      ],
+      "current_observations": [
+        "Repository page reports public status, skills/karpathy-guidelines, .claude-plugin, Cursor rules, CLAUDE.md, CURSOR.md, README, and README.zh.md.",
+        "Repository page reported 28 commits, 79.3k stars, 7.5k forks, and 41 pull requests during the 2026-04-23 refresh.",
+        "Upstream README frames the system around four principles: Think Before Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution.",
+        "Upstream SKILL.md is a 67-line skill with metadata name `karpathy-guidelines`, a falsifiable behavioral description, and concise sections for the four principles."
+      ]
+    },
+    "vendor_context": {
+      "openai_codex": "OpenAI's Codex AGENTS.md appendix describes instruction files as scoped repo guidance and says checks named in AGENTS.md should be run after changes, which supports keeping Azoth skill guidance testable and verification-oriented.",
+      "repo_native_resolution": "Azoth shared skills are authored under `skills/`, indexed in `skills/index.yaml`, and deployed to `.agents/skills/` for Codex/Gemini/Antigravity and `.opencode/skills/` for OpenCode by `scripts/azoth-deploy.py`."
+    }
+  },
+  "repo_evidence": {
+    "planned_task": {
+      "roadmap_ref": ".azoth/roadmap.yaml",
+      "task_id": "T-KRP-B",
+      "title": "New skill: karpathy-principles SKILL.md for injectable discipline slot",
+      "target_layer": "M1",
+      "delivery_pipeline": "governed",
+      "initiative_ref": "INI-KRP-001"
+    },
+    "existing_skill_contracts": [
+      "Current skills use YAML frontmatter with `name` and a falsifiable `description`, followed by Overview and When to Use sections.",
+      "`skills/index.yaml` is the dependency registry replacing per-skill prose Integration sections.",
+      "`stage6-rubric` requires M1 skills to include governance anchors and enough depth for structured-content review.",
+      "`scripts/azoth-deploy.py` treats canonical `skills/**/SKILL.md` files as source and projects them into shared generated skill surfaces."
+    ],
+    "t_krp_a_boundary": [
+      "T-KRP-A already chose the root CLAUDE.md layer as the lowest-effort always-on instruction slice.",
+      "T-KRP-B should be a separate on-demand skill so the Karpathy discipline can be injected without increasing root instruction weight.",
+      "T-KRP-C, T-KRP-D, and T-KRP-E remain separate follow-ons for builder posture, orchestrator assumption surfacing, and structured-autonomy success-criteria gating."
+    ]
+  },
+  "spec_direction": {
+    "intent": "Hydrate a governed M1 spec for adding a dedicated `karpathy-principles` skill as an on-demand behavioral discipline slot.",
+    "scope": [
+      "Create canonical `skills/karpathy-principles/SKILL.md` with Azoth-native frontmatter, governance anchor, Overview, When to Use, principle guidance, and a concrete usage pattern.",
+      "Register the skill in `skills/index.yaml` with a one-line description and explicit dependency list.",
+      "Run `python3 scripts/azoth-deploy.py` after source skill changes and verify `python3 scripts/azoth-deploy.py --check` so `.agents/skills/karpathy-principles/SKILL.md` and other enabled mirrors stay generated.",
+      "Keep the skill load-triggered: use it for coding, review, planning, refactoring, or high-autonomy execution where the four principles materially reduce risk.",
+      "Add an Integration section or equivalent usage surface that names how pipelines/skills should invoke the discipline slot, including the expectation that stage6-rubric can evaluate it when invoked by skill or pipeline review paths."
+    ],
+    "non_goals": [
+      "No root CLAUDE.md expansion in T-KRP-B.",
+      "No manual edits to generated AGENTS.md or generated skill mirrors.",
+      "No builder agent posture rewrite; reserve that for T-KRP-C.",
+      "No orchestrator goal-classification policy rewrite; reserve that for T-KRP-D.",
+      "No structured-autonomy-plan success-criteria gate implementation; reserve that for T-KRP-E."
+    ],
+    "acceptance": [
+      "The hydrated T-KRP-B spec names the research capsule as planning evidence and keeps implementation behind a later governed M1 scope.",
+      "The future implementation scope creates exactly one canonical new source skill plus the index entry, then regenerates mirrors rather than editing generated surfaces by hand.",
+      "The skill satisfies stage6-rubric expectations for M1 skills: falsifiable invocation cue, governance anchor, Overview, When to Use, and at least one concrete usage pattern.",
+      "The skill adapts the upstream four-principle shape to Azoth's existing workflow instead of copying external text wholesale or duplicating T-KRP-A root guidance.",
+      "The future delivery verifies skill projection and targeted tests for deployment or skill indexing behavior.",
+      "The future delivery records model-tier auditability for any routed Wave A/Wave B/review/eval stages instead of hiding tier choices in chat history.",
+      "The future delivery preserves gate/readiness boundaries: no implementation without a fresh approved T-KRP-B scope gate and required governed pipeline gate."
+    ]
+  },
+  "expected_regression_surfaces": {
+    "tests": [
+      "tests/test_skills.py",
+      "tests/test_agents.py",
+      "tests/test_azoth_deploy.py"
+    ],
+    "commands": [
+      "python3 scripts/azoth-deploy.py --check"
+    ],
+    "integration_expectations": [
+      "If the skill is invoked by pipelines or other skills, stage6-rubric review should cover the Integration section or equivalent invocation guidance.",
+      "Generated mirrors must be refreshed through azoth-deploy rather than manually edited."
+    ]
+  },
+  "decision_ref_ready": {
+    "decision_refs": [
+      "D21",
+      "D23",
+      "D44",
+      "D51"
+    ],
+    "rationale": [
+      "D21 governs the staged, governed delivery path and typed gates for M1 work.",
+      "D23 governs auto routing and goal classification when the later delivery pipeline is selected.",
+      "D44 governs the structured-content quality rubric for skill definitions.",
+      "D51 governs M1 promotion and human-gated governance expectations."
+    ]
+  },
+  "sources": [
+    {
+      "kind": "external",
+      "label": "forrestchang/andrej-karpathy-skills repository",
+      "url": "https://github.com/forrestchang/andrej-karpathy-skills",
+      "accessed_at": "2026-04-23T18:45:00Z",
+      "use": "Current upstream repository identity, packaging shape, four-principle framing, and popularity/fork metadata."
+    },
+    {
+      "kind": "external",
+      "label": "upstream karpathy-guidelines SKILL.md",
+      "url": "https://github.com/forrestchang/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md",
+      "accessed_at": "2026-04-23T18:45:00Z",
+      "use": "Reference shape for a concise skill wrapping the four Karpathy-inspired principles."
+    },
+    {
+      "kind": "external",
+      "label": "OpenAI Codex AGENTS.md appendix",
+      "url": "https://openai.com/index/introducing-codex/",
+      "accessed_at": "2026-04-23T18:45:00Z",
+      "use": "Codex instruction-file behavior and verification emphasis."
+    },
+    {
+      "kind": "repo-local",
+      "label": "Azoth skill index",
+      "path": "skills/index.yaml",
+      "use": "Canonical dependency registry for skill entries."
+    },
+    {
+      "kind": "repo-local",
+      "label": "Azoth deploy script",
+      "path": "scripts/azoth-deploy.py",
+      "use": "Canonical projection path for source skills into generated skill surfaces."
+    },
+    {
+      "kind": "repo-local",
+      "label": "Stage 6 rubric",
+      "path": "skills/stage6-rubric/SKILL.md",
+      "use": "Quality expectations for M1 skill definitions."
+    }
+  ],
+  "next_step": "Hydrate T-KRP-B into backlog/spec state with this capsule as planning evidence, then rerun /next so the governed M1 scope card can be approved separately."
+}

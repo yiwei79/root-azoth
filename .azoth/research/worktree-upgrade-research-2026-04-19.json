@@ -3,9 +3,11 @@
   "source_session_id": "2026-04-19-worktree-upgrade-research",
   "goal": "T-011: Worktree contract parity + proposal refresh",
   "captured_at": "2026-04-19T16:30:00+00:00",
+  "refreshed_at": "2026-04-22T14:23:07+00:00",
+  "refresh_summary": "Revalidated the bounded external evidence set for BL-065. The stored worktree conclusions still hold: the official git-worktree manual now shows its last update in 2.54.0 on 2026-04-20, while git-sparse-checkout remains last updated in 2.52.0 with 2.53.0 reporting no changes.",
   "volatility": "mixed",
   "limitations": [
-    "Official Git documentation is treated as normative for worktree behavior as observed on 2026-04-19.",
+    "Official Git documentation is treated as normative for worktree behavior as observed on 2026-04-22.",
     "Academic multi-agent sources are directional architecture input, not hard product requirements.",
     "Repo-local findings describe current Azoth behavior in this repository snapshot and may age as implementation lands."
   ],
@@ -14,15 +16,15 @@
       "question_id": "phase-1-reuse",
       "question": "Can this worktree-upgrade research capsule be reused for the next worktree planning slice?",
       "status": "answered",
-      "answered_at": "2026-04-19T16:30:00+00:00",
-      "fresh_until": "2026-05-19T16:30:00+00:00"
+      "answered_at": "2026-04-22T14:23:07+00:00",
+      "fresh_until": "2026-05-22T14:23:07+00:00"
     },
     {
       "question_id": "phase-1-slice-t-011-t-011-worktree-contract-parity-proposal-refresh",
       "question": "What is implemented now versus planned next for the T-011 worktree contract parity slice?",
       "status": "answered",
-      "answered_at": "2026-04-19T16:30:00+00:00",
-      "fresh_until": "2026-05-19T16:30:00+00:00"
+      "answered_at": "2026-04-22T14:23:07+00:00",
+      "fresh_until": "2026-05-22T14:23:07+00:00"
     }
   ],
   "sources": [
@@ -30,21 +32,21 @@
       "kind": "industry-official",
       "title": "git-worktree manual",
       "url": "https://git-scm.com/docs/git-worktree.html",
-      "freshness_observed_at": "2026-04-19",
-      "published_context": "Official Git documentation",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official Git documentation (manual last updated in 2.54.0 on 2026-04-20 as observed on 2026-04-22)",
       "findings": [
-        "Worktree add/remove/lock/prune semantics should anchor Azoth's factual integration lifecycle.",
+        "The current git-worktree manual still frames linked worktrees as explicit lifecycle objects created with `git worktree add` and cleaned up with `git worktree remove`.",
         "Per-worktree configuration support (`extensions.worktreeConfig`) reinforces keeping temporary integration state isolated."
       ]
     },
     {
       "kind": "industry-official",
       "title": "git-sparse-checkout manual",
-      "url": "https://git-scm.com/docs/git-sparse-checkout/2.36.0",
-      "freshness_observed_at": "2026-04-19",
-      "published_context": "Official Git documentation",
+      "url": "https://git-scm.com/docs/git-sparse-checkout",
+      "freshness_observed_at": "2026-04-22",
+      "published_context": "Official Git documentation (manual last updated in 2.52.0 on 2025-11-17; 2.53.0 reports no changes, as observed on 2026-04-22)",
       "findings": [
-        "Git already distinguishes worktree-local configuration from shared repository state.",
+        "The current sparse-checkout manual explicitly says the `set` subcommand upgrades the repository to worktree-specific config when needed so one worktree's sparsity changes do not alter another's.",
         "Azoth can safely model sandbox integration state as ephemeral per-worktree state instead of canonical repo truth."
       ]
     },
@@ -64,7 +66,7 @@
       "title": "Rethinking the Value of Multi-Agent Workflow: A Strong Single Agent Baseline",
       "url": "https://openreview.net/forum?id=i95lcR2GN5",
       "freshness_observed_at": "2026-04-19",
-      "published_context": "OpenReview submission",
+      "published_context": "ICLR 2026 submission on OpenReview (modified 2026-02-11)",
       "findings": [
         "Multi-agent workflow should be justified against strong single-agent baselines.",
         "Extra lanes should exist only when they add distinct evidence or independence."
@@ -75,7 +77,7 @@
       "title": "Understanding Agent Scaling in LLM-Based Multi-Agent Systems via Diversity",
       "url": "https://openreview.net/forum?id=9BN2W5BCfE",
       "freshness_observed_at": "2026-04-19",
-      "published_context": "OpenReview workshop paper",
+      "published_context": "ICLR 2026 AIMS workshop paper on OpenReview (modified 2026-03-30)",
       "findings": [
         "Agent diversity matters more than raw agent count.",
         "Bounded specialized lanes are preferable to unstructured swarm expansion."
@@ -86,7 +88,7 @@
       "title": "AEMA: Verifiable Evaluation Framework for Trustworthy and Controlled Agentic LLM Systems",
       "url": "https://openreview.net/forum?id=DXIEHiZx3i",
       "freshness_observed_at": "2026-04-19",
-      "published_context": "OpenReview workshop paper",
+      "published_context": "AAAI 2026 TrustAgent workshop poster on OpenReview (modified 2026-03-09)",
       "findings": [
         "Evidence-backed evaluation and explicit reviewer independence improve trustworthiness.",
         "Audit trails should survive beyond a single agent run."
@@ -97,7 +99,8 @@
     "scripts/worktree_sync.py currently implements producer refresh, dirty-target preflight, ready handoff queueing, and integrated marking.",
     "The current command/playbook surface claims more integration behavior than the backend executes today.",
     "Detached HEAD handling is inconsistent: command copy is permissive, backend validation is not.",
-    "Shared Azoth state files remain the main reconciliation risk for future integrate-run work."
+    "Shared Azoth state files remain the main reconciliation risk for future integrate-run work.",
+    "The BL-065 refresh pass did not uncover a new external fact that changes the T-012/T-013/T-014 phased split; the existing staged follow-on remains the right decomposition."
   ],
   "recommended_reuse_for": [
     "T-012",

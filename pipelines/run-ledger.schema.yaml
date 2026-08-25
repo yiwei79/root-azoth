@@ -122,6 +122,11 @@ $defs:
         minLength: 1
         description: "Human-readable goal for this session."
 
+      session_mode:
+        type: string
+        enum: [exploratory, delivery]
+        description: "exploratory = no write scope yet; delivery = pipeline-owned work session."
+
       status:
         type: string
         enum: [active, parked, closed]
@@ -251,6 +256,21 @@ $defs:
         enum: [human-gate, handoff, retry]
         description: "Why the run is paused when status=paused."
 
+      stage_spawns:
+        type: array
+        items:
+          $ref: "#/$defs/stage_spawn_entry"
+
+      stage_summaries:
+        type: array
+        items:
+          $ref: "#/$defs/stage_summary_evidence_entry"
+
+      stage_inline_exceptions:
+        type: array
+        items:
+          $ref: "#/$defs/stage_inline_exception_entry"
+
       waves:
         type: array
         items:
@@ -265,6 +285,142 @@ $defs:
 
   # Cross-reference: wave_entry.stage_id + wave_label link to swarm-eval-wave.schema.yaml wave_def.stage_id
   # and wave_def.wave respectively. These fields are optional (F3: advisory, not enforcement — BL-034).
+  stage_spawn_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, spawned_at]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      spawned_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      model:
+        type: string
+        minLength: 1
+      reasoning_effort:
+        type: string
+        enum: [low, medium, high, xhigh]
+      model_tier:
+        type: string
+        minLength: 1
+      policy_ref:
+        type: string
+        minLength: 1
+      selector_trace_ref:
+        type: string
+        minLength: 1
+
+  stage_summary_evidence_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, summary_recorded_at, summary_status, summary_disposition]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      summary_recorded_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      summary_status:
+        type: string
+        enum: [complete, blocked, needs-input]
+      summary_disposition:
+        type: string
+        minLength: 1
+      evaluator_disposition:
+        type: string
+        minLength: 1
+        description: "Optional advisory evaluator outcome label; not continuation authority."
+      score:
+        type: number
+        description: "Optional numeric quality/evaluator score for audit/report surfaces."
+      ux_anchor_scorecard:
+        type: object
+        description: "Optional UX Anchor Scorecard emitted by an evaluator stage."
+      verification_commands:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "Optional verification commands run or recommended by this stage."
+      residual_risks:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "Optional advisory residual risks; never override gates or stops."
+
+  stage_inline_exception_entry:
+    type: object
+    additionalProperties: false
+    required: [run_id, stage_id, subagent_type, trigger, role_hint, dependency_summary_refs, exception_recorded_at, exception_reason]
+    properties:
+      run_id:
+        type: string
+        minLength: 1
+      stage_id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+      subagent_type:
+        type: string
+        minLength: 1
+      trigger:
+        type: string
+        minLength: 1
+      role_hint:
+        type: string
+        minLength: 1
+      dependency_summary_refs:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      exception_recorded_at:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+      exception_reason:
+        type: string
+        minLength: 1
+        description: >
+          Why this stage intentionally ran inline. This evidence authorizes
+          completion checks only; require-stage-evidence remains pair-only.
+
   wave_entry:
     type: object
     additionalProperties: false

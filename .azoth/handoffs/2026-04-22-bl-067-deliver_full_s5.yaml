@@ -1,0 +1,46 @@
+stage_summary_version: 1
+pipeline: deliver-full
+stage_id: deliver_full_s5
+agent: builder
+stage_kind: build
+status: complete
+entropy: YELLOW
+gate_outcome: "Agent gate: Stage 6 may proceed only within the four approved surfaces and must satisfy every replay-bundle acceptance case before rerunning `pytest tests/test_stage_summary_schema.py`."
+session_id: 2026-04-22-bl-067
+done:
+  - "Converted the planner's replay-bundle strategy into Stage 6 acceptance criteria for `tests/test_stage_summary_schema.py`: the updated test must inspect `pipelines/stage-summary.schema.yaml` directly and prove the schema names all five replay fields together in one all-or-nothing co-presence rule."
+  - "Specified hook-level regressions for `.claude/hooks/stage_summary_validate.py`: `validate_stage_summary()` must accept a document with no replay metadata and a document with the full replay bundle, while rejecting representative partial bundles including a one-field replay payload, a leading-pair payload, and a four-of-five payload missing `lineage_artifacts`."
+  - "Specified schema parity expectations for `pipelines/stage-summary.schema.yaml`: the replay rule must fail closed by requiring `replay_iteration`, `replay_target_stage`, `finding_class`, `threshold_limit`, and `lineage_artifacts` to co-occur, so the raw schema structure matches hook enforcement."
+  - "Specified documentation acceptance for `.agents/skills/subagent-router/SKILL.md`: replay metadata guidance must describe the five fields as mandatory co-presence metadata for bounded replay stages and instruct non-replay stages to omit the bundle entirely."
+  - "Bounded final verification to `pytest tests/test_stage_summary_schema.py`, with passing evidence required only after the test-first replay regressions, schema parity update, hook hardening, and router wording change are all complete."
+decisions:
+  - "Stage 6 remains limited to `tests/test_stage_summary_schema.py`, `pipelines/stage-summary.schema.yaml`, `.claude/hooks/stage_summary_validate.py`, and `.agents/skills/subagent-router/SKILL.md`; any fix outside those surfaces requires a new gate."
+  - "The test file is the acceptance anchor: it must fail before the implementation changes land, then pass only after both the hook and schema enforce the same all-or-nothing replay bundle."
+  - "Representative partial-bundle coverage must include at least one minimal partial case and at least one near-complete partial case so Stage 6 proves the validator does not allow either accidental under-population or single-field omission."
+  - "Schema assertions must read the raw YAML structure rather than infer success from hook behavior, because BL-067 requires direct evidence that the declarative contract matches the procedural validator."
+  - "Stage 6 should report any producer still emitting partial replay metadata as a deferred follow-up, not expand the implementation beyond the bounded replay-bundle hardening slice."
+open:
+  - "If an unseen producer emits a partial replay bundle after Stage 6 lands, the new fail-closed validation will block that handoff and may require a separate remediation."
+artifact_refs:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s2_architect.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s3.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+replay_iteration: 1
+replay_target_stage: deliver_full_s2_architect
+finding_class: test-strategy
+threshold_limit: 3
+lineage_artifacts:
+  - .azoth/handoffs/2026-04-22-bl-067-architecture-brief.md
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s2_architect.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s3.yaml
+  - .azoth/handoffs/2026-04-22-bl-067-deliver_full_s4.yaml
+  - tests/test_stage_summary_schema.py
+  - pipelines/stage-summary.schema.yaml
+  - .claude/hooks/stage_summary_validate.py
+  - .agents/skills/subagent-router/SKILL.md
+next: "Stage 6 should implement the four-surface replay-bundle hardening in the planned order, prove partial bundles are rejected while zero-field and full-field documents pass, and rerun `pytest tests/test_stage_summary_schema.py` before the next architect gate."

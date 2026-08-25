@@ -1,0 +1,323 @@
+proposal_schema_version: 1
+created_at: "2026-04-29T17:20:00+00:00"
+session_id: "2026-04-29-knowledge-deployment-dfa"
+backlog_id: "P6-003"
+title: "Personal knowledge Batch 0 and deployment finalization"
+summary: >
+  Draft architecture proposal for stabilizing the personal knowledge architecture
+  and Azoth deployment model after v0.2.0 without rushing into content import,
+  recall, source registry onboarding, personal-root mutation, or public release
+  work. The proposal preserves the three-plane model: root-azoth is the private
+  development/source plane, public azoth is the deployable product plane, and
+  personal-root is the operator control-plane overlay that consumes curated
+  knowledge and deployment receipts. The recommended next move is proposal and
+  initiative-bank evidence only, followed by a later explicitly approved Batch 0
+  candidate-review slice.
+status: draft
+decision_refs:
+  - D11
+  - D23
+  - D34
+  - D35
+  - D37
+  - D38
+  - D42
+  - D48
+  - D50
+  - D52
+scope_layers:
+  - mixed
+details:
+  problem:
+    current_gap: >
+      T-038 defined the personal-root deployment model, T-040 created the empty
+      knowledge skeleton and validator, and T-041 added read-only inventory. The
+      system is ready to plan Batch 0, but not to import, deploy, index, or publish.
+    rushed_release_lesson: >
+      The v0.2.0 retrospective shows that corrective evidence is not the same as
+      contemporaneous gated compliance. Future finalization needs staged feedback:
+      reconcile, preflight, independent review/eval, explicit approval, deploy or
+      publish, verify, and closeout.
+    operator_need: >
+      The operator needs a clear, scalable model for how the dev panel, public
+      product, and personal control plane relate before any knowledge content is
+      allowed to move.
+  three_plane_model:
+    root_source_plane:
+      repo: /Users/yiwei/GithubRepos/root-azoth
+      role: >
+        Private development panel and source/provenance authority. It owns schemas,
+        validators, inventory, roadmap truth, governance gates, and deployment
+        generation.
+      cannot_delegate:
+        - governance authority
+        - release approval
+        - source provenance
+        - raw private evidence custody
+    public_product_plane:
+      repo: azoth
+      role: >
+        Public deployable product derived from the approved source plane. It should
+        receive only release-approved artifacts and must not expose private personal
+        evidence or root-only planning state.
+      finalization_rule: >
+        Public release remains manually gated and separate from personal-root
+        knowledge work.
+    personal_overlay_plane:
+      repo: /Users/yiwei/GithubRepos/personal-azoth-root
+      role: >
+        Personal control-plane deployment and operator overlay. It may hold curated
+        cards, pointers, indexes, and receipts, but raw evidence stays at origin.
+      overlay_boundary: >
+        Personal-root may guide routing and surface context, but it does not
+        override root-azoth gates or mutate public/product authority.
+  proposed_model:
+    name: "federated personal knowledge with governed deployment receipts"
+    central_rule: >
+      Knowledge moves from source evidence to candidate review, then to approved
+      cards, then to personal-root deployment only through explicit receipts. No
+      broad extraction/import, no hidden instruction mutation, and no raw memory
+      warehouse.
+    lifecycle:
+      step_1_reconcile:
+        output: >
+          Confirm roadmap/backlog/session/run-ledger truth and record any prior
+          process deviation as deviation evidence, not retroactive compliance.
+      step_2_candidate_review:
+        output: >
+          Create a root-side Batch 0 candidate review artifact with 5-10 candidates,
+          source pointers, safety classification, decision state, and validator
+          evidence. Stop for approval.
+      step_3_approved_card_deploy:
+        output: >
+          Deploy only approved cards to personal-root, update pointers/indexes, run
+          personal-root validation, and issue an explicit deployment receipt.
+      step_4_recall_pilot:
+        output: >
+          After cards prove useful, add source-preserving recall with metadata
+          filters, exact lookup, contextual chunks, and evals before any broad vector
+          or graph infrastructure.
+      step_5_source_registry_pilot:
+        output: >
+          Only after Batch 0 and recall boundaries prove safe, pilot source/project
+          onboarding as a separate approval-gated slice.
+    feedback_loop:
+      - "Use DORA-style throughput and instability/recovery evidence for release/process health."
+      - "Keep GitOps-like declarative desired state and reconciliation for deployments."
+      - "Preserve SLSA-like source/provenance evidence for cards and receipts."
+      - "Use OWASP/NIST safety framing for vector/retrieval stores and agent authority."
+  lifecycle:
+    reconcile: "Confirm roadmap/backlog/session/run-ledger truth before any next slice."
+    candidate_review: "Write only a root-side Batch 0 candidate review artifact and stop."
+    approval: "Require explicit operator approval before card deployment or roadmap hydration."
+    deploy: "Deploy only approved cards with personal-root validation and receipt evidence."
+    verify: "Check root and personal-root cleanliness, validator output, and residual risks."
+    closeout: "Release claims, preserve stage evidence, and surface next questions without processing them."
+  artifact_contract:
+    required_receipt_fields:
+      - source_revision
+      - source_plane
+      - candidate_ids
+      - target_paths
+      - validator_command
+      - validator_result
+      - deployed_at
+      - operator_approval_ref
+    card_boundary: >
+      A card is a curated, source-pointing knowledge object. It is not raw
+      evidence, a hidden instruction, a release approval, or a governance rule.
+  readiness_rubric:
+    pass_conditions:
+      - "Candidate source pointers are complete and auditable."
+      - "Known non-goals are explicit."
+      - "Open questions are empty or intentionally deferred."
+      - "Freshness status is current and non-stale."
+      - "Human decision is approved for the exact next action."
+    fail_closed_conditions:
+      - "Any candidate lacks provenance."
+      - "Any source contains raw private evidence that has not been manually excerpted."
+      - "The slice combines review, deployment, recall, onboarding, or release."
+      - "The target action exceeds the current approval scope."
+  validation_replay:
+    - command: "python3 scripts/architecture_proposal_validate.py .azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml"
+      expected: "proposal schema OK"
+    - command: "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml"
+      expected: "initiative bank OK and not ready to hydrate"
+    - command: "python3 scripts/swarm_research_digest.py validate .azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml"
+      expected: "research digest OK"
+  refined_contract:
+    external_source_alignment:
+      observed_at: "2026-04-29"
+      sources:
+        - title: "DORA software delivery performance metrics"
+          url: "https://dora.dev/guides/dora-metrics/"
+          finding: >
+            Current DORA guidance uses five delivery metrics split between
+            throughput and instability; speed and stability should be read
+            together.
+        - title: "OpenGitOps principles"
+          url: "https://opengitops.dev/"
+          finding: >
+            Desired state should be declarative, versioned and immutable, pulled
+            automatically, and continuously reconciled.
+        - title: "SLSA provenance"
+          url: "https://slsa.dev/spec/v1.2/provenance"
+          finding: >
+            Provenance tracks artifacts back through where, when, and how they
+            were produced.
+        - title: "SLSA source requirements"
+          url: "https://slsa.dev/spec/v1.2/source-requirements"
+          finding: >
+            Source continuity and attestations begin at named revisions and should
+            not be retroactively claimed for earlier work.
+        - title: "OpenAI file search"
+          url: "https://developers.openai.com/api/docs/guides/tools-file-search"
+          finding: >
+            File search relies on vector stores and supports metadata filtering
+            for knowledge-base retrieval.
+        - title: "OpenAI vector store search"
+          url: "https://developers.openai.com/api/reference/resources/vector_stores/methods/search"
+          finding: >
+            Vector-store search supports file-attribute filters, result limits,
+            ranking options, and query rewriting.
+        - title: "Anthropic contextual retrieval"
+          url: "https://www.anthropic.com/engineering/contextual-retrieval"
+          finding: >
+            Contextual chunks, hybrid exact/semantic retrieval, and reranking can
+            reduce failed retrievals, but evals and cost/latency tradeoffs matter.
+        - title: "Microsoft Research GraphRAG"
+          url: "https://www.microsoft.com/en-us/research/project/graphrag/"
+          finding: >
+            GraphRAG combines text extraction, graph/network analysis, prompting,
+            and summarization for richer discovery over private data.
+        - title: "OWASP Top 10 for LLM Applications 2025"
+          url: "https://genai.owasp.org/llm-top-10/"
+          finding: >
+            LLM risk guidance now explicitly covers sensitive disclosure, supply
+            chain, data/model poisoning, excessive agency, and vector/embedding
+            weaknesses.
+        - title: "OWASP LLM08 vector and embedding weaknesses"
+          url: "https://genai.owasp.org/llmrisk/llm082025-vector-and-embedding-weaknesses/"
+          finding: >
+            RAG/vector stores need permission-aware access, data validation,
+            classification, monitoring, and immutable logs.
+        - title: "NIST AI Risk Management Framework"
+          url: "https://www.nist.gov/itl/ai-risk-management-framework"
+          finding: >
+            AI systems should manage risk across the lifecycle with trustworthiness
+            considerations.
+        - title: "NIST AI RMF Core"
+          url: "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/"
+          finding: >
+            Govern, map, measure, and manage are continuous risk-management
+            functions rather than a one-time checklist.
+      implications:
+        - "Batch size should shrink: candidate review first, card deployment later, recall after usefulness evidence."
+        - "Every personal-root mutation needs a deployment receipt with source revision and validation evidence."
+        - "Retrieval infrastructure must be permission-aware and source-preserving before broad indexing."
+        - "GraphRAG is a later discovery option, not a Batch 0 prerequisite."
+    artifact_boundary:
+      proposal: ".azoth/proposals/personal-knowledge-batch-zero-and-deployment-finalization.yaml"
+      initiative_bank_seed: ".azoth/initiative-banks/INI-PKB-001.yaml"
+      research_digest: ".azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml"
+      no_current_hydration: >
+        This proposal intentionally does not write roadmap/backlog/spec tasks.
+        Candidate IDs are planning seeds only until a later human hydration approval.
+    initiative_candidate_criteria:
+      candidate_ids:
+        - slice-pkb-001-a
+        - slice-pkb-001-b
+        - slice-pkb-001-c
+      non_candidates:
+        - "Bulk inbox import"
+        - "Raw memory indexing"
+        - "Public azoth release"
+        - "Governance/instruction mutation"
+        - "Source registry onboarding before Batch 0 proves useful"
+    hydration_handoff:
+      allowed_next_route: >
+        If the operator approves, hydrate only slice-pkb-001-a first using
+        roadmap_scaffold.py and stop at a scope card before implementation.
+      blocked_until_approved:
+        - "roadmap_task"
+        - "backlog_row"
+        - "task_spec"
+        - "implementation_work"
+        - "personal_root_mutation"
+    readiness_report_schema:
+      minimal_fields:
+        - initiative_id
+        - candidate_id
+        - readiness_status
+        - human_decision
+        - approval_scope
+        - approval_basis
+        - freshness_status
+        - acceptance_criteria_status
+        - non_goals_status
+        - blocking_reasons
+        - scaffold_command
+        - hydration_recommendation
+      fail_closed_rules:
+        - "stale freshness_status blocks hydration"
+        - "planning_seed_only_no_hydration blocks hydration"
+        - "open candidate questions block hydration"
+        - "missing scaffold_command blocks hydration"
+  candidate_surfaces:
+    - ".azoth/initiative-banks/INI-PKB-001.yaml"
+    - ".azoth/roadmap-specs/v0.2.0-p4/SWARM_RESEARCH_DIGEST.yaml"
+    - "scripts/personal_knowledge_inventory.py"
+    - "scripts/personal_knowledge_validate.py"
+    - "docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md"
+    - ".azoth/roadmap-specs/v0.2.0/PERSONAL-ROOT-DEPLOYMENT-MODEL.md"
+  command_surface_options:
+    option_a_proposal_only:
+      disposition: selected_now
+      rationale: >
+        Safest under p4 freeze: preserve research, proposal, and seed evidence
+        without scheduling implementation.
+    option_b_direct_hydration:
+      disposition: rejected_now
+      rationale: >
+        Would skip the feedback loop the operator explicitly wants and conflicts
+        with the freeze posture unless separately approved.
+    option_c_batch_zero_and_deploy:
+      disposition: rejected_now
+      rationale: >
+        Couples review and deployment, making rollback and approval evidence too
+        fuzzy.
+  challenge_points:
+    - "Does the personal overlay accidentally become authority over root-azoth?"
+    - "Can each card be audited back to source, task, decision, and deployment receipt?"
+    - "Are retrieval and graph features delayed until cards prove useful?"
+    - "Is approval separated from validation and publication/deployment?"
+  non_goals:
+    - "No implementation in this session."
+    - "No Batch 0 cards or candidate imports."
+    - "No personal-root mutation or deployment."
+    - "No roadmap/backlog/spec hydration."
+    - "No source registry/project onboarding."
+    - "No public azoth release."
+    - "No governance or instruction mutation."
+  governance:
+    gates:
+      - "Scope/write gate before planning artifact writes."
+      - "Checkpoint Gamma before choosing proposal/seed versus hydration."
+      - "Separate approval for roadmap hydration."
+      - "Separate approval for any personal-root deployment."
+      - "Separate approval for public release/publish."
+    eval_escalation: >
+      Release, governance, or broad personal-data blast radius requires independent
+      review/eval before delivery.
+  suggested_future_research_session:
+    questions:
+      - "Which 5-10 source candidates should enter Batch 0 review?"
+      - "What minimal card usefulness rubric should decide whether recall is worth building?"
+      - "Which metadata fields are mandatory before retrieval filters or contextual indexing?"
+      - "Should personal-root remain local-only, private remote, or encrypted backup first?"
+  acceptance_for_this_proposal:
+    - "Architecture proposal validates."
+    - "Initiative seed validates and remains blocked from hydration."
+    - "Swarm research digest validates."
+    - "Roadmap dashboard and azoth-deploy parity checks pass."
+    - "No implementation, personal-root mutation, roadmap hydration, or release action occurs."

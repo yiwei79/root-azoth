@@ -1,0 +1,95 @@
+{
+  "decision_schema_version": 1,
+  "loop_id": "multi-operating-profile-feature-completion-20260505",
+  "iteration": 2,
+  "action": "refine_proposal",
+  "candidate_id": "multi-operating-profile-contract",
+  "source": "locked-campaign-declaration",
+  "goal": "Lock the canonical internal profile contract for stock-lite, azoth-lite, azoth-full, and meta-harness-experimental, including side-effect classes, trace rules, context view, escalation handoff, source mapping, and proof plan.",
+  "backlog_id": "multi-operating-profile-contract",
+  "target_layer": "planning",
+  "delivery_pipeline": "standard",
+  "governance_mode": "standard",
+  "pipeline_command": "autonomous-auto",
+  "approval_basis": "Operator locked and approved autonomous-auto campaign on 2026-05-05: Multi-Operating Profile Feature Completion. Goal: complete the internal multi-operating-profile feature for Azoth end-to-end: reconcile accepted profile-split research with implemented classifier/routing/docs/tests, define the canonical profile contract, implement the smallest safe internal slice if route evidence proves one is needed, run shadow-trial/eval cases, and stop with evaluator-scored proof that stock-lite, azoth-lite, azoth-full, and meta-harness-experimental are coherent and escalation-safe. Budget up to 6 child scopes with 1 bounded replay per child. Allowed actions: research_initiative, refine_proposal, ship_task, capture_self_improvement. Blocked without fresh gate: hydrate_task, roadmap/backlog/spec hydration, public azoth mutation, public release/sync/freshness work, cockpit/project repo writes, network/dependencies, credentials/backups, kernel/governance/M1 mutation, destructive actions, commits, pushes.",
+  "reason": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+  "stop_reason": null,
+  "route_decision": null,
+  "strategy_preflight": {
+    "packet_schema_version": 1,
+    "packet_type": "autonomous_auto_strategy_preflight",
+    "edge": "open_next",
+    "verdict": "allow_open",
+    "may_open_scope": true,
+    "selected_action": "refine_proposal",
+    "candidate_id": "multi-operating-profile-contract",
+    "source": "locked-campaign-declaration",
+    "target_classification": "live",
+    "selected_route": "refine_proposal",
+    "route_state": "candidate_ready_for_review",
+    "route_authority": "refine_proposal:candidate_ready_for_review",
+    "approval_scope": "",
+    "approval_basis_present": true,
+    "freshness_status": "current_route_gate_and_claim_state",
+    "fresh_campaign_authority": true,
+    "current_loop_authority": "active",
+    "source_artifacts": {},
+    "human_gate_acknowledgement": {
+      "required": false,
+      "accepted": false,
+      "reason": ""
+    },
+    "gate_status": {
+      "active_scope": false,
+      "active_scope_id": "",
+      "active_write_claim": false,
+      "write_claim_session_id": "",
+      "protected": false
+    },
+    "blocked_alternatives": [],
+    "mismatch_reason": "",
+    "next_safe_action": "refine_proposal",
+    "ux_anchor_fit": "Strategy preflight reconciles route authority, approval basis, gates, write claims, and candidate classification before opening work."
+  },
+  "architect_judgment": {
+    "decision": "refine_proposal",
+    "rationale": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+    "selected": {
+      "action": "refine_proposal",
+      "candidate_id": "multi-operating-profile-contract",
+      "title": "Multi-operating profile canonical contract",
+      "source": "locked-campaign-declaration",
+      "protected": false
+    },
+    "rejected_alternatives": [
+      {
+        "action": "research_initiative",
+        "candidate_id": "INI-EVI-002",
+        "title": "Knowledge richness evaluation for project-management artifacts",
+        "source": "initiative-bank",
+        "reason": "Rejected because campaign-local child 2 has direct continuity from child 1 and INI-EVI-002 is stale/completed for this route."
+      },
+      {
+        "action": "refine_proposal",
+        "candidate_id": "automation-audit-insight-harvest-refinement",
+        "title": "Nightly automation audit bundle and approval contract",
+        "source": "proposal",
+        "reason": "Rejected because it is unrelated to the approved multi-operating-profile campaign."
+      }
+    ],
+    "selection_basis": [
+      "locked_campaign_sequence",
+      "child_1_decision",
+      "boundary_safety",
+      "operator_alignment"
+    ]
+  },
+  "alignment_checkpoint_summary": {
+    "packet_count": 2,
+    "pending_count": 0,
+    "latest_packet_id": "align-child-session-pipeline-evaluator-20260505",
+    "latest_packet_type": "async_override",
+    "latest_disposition": "applied",
+    "disposition_count": 2
+  }
+}

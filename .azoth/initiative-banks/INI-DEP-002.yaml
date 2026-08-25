@@ -1,0 +1,274 @@
+schema_version: 1
+bank_type: initiative
+initiative_id: INI-DEP-002
+title: Project-local mode receipts and cockpit handoff
+status: complete
+classification: planning_readiness_seed
+created_at: '2026-05-19T19:36:00Z'
+updated_at: '2026-05-19T21:26:31Z'
+owner: codex
+delivery_authorized: true
+source_sessions:
+- session_id: 2026-05-19-deployment-project-readiness-handoff-planning
+  kind: fresh_standard_auto_planning_only
+  artifact: .azoth/initiative-banks/INI-DEP-002.yaml
+  note: 'Opened after INI-DEP-001/T-061 reached terminal readiness. This authorizes
+    planning artifacts only, not hydration, code implementation, release work, public
+    Azoth mutation, cockpit mutation, or project-local repo mutation.
+
+    '
+contacts:
+- id: operator
+  role: human decision owner
+  contact_type: human
+  note: 'Approved a fresh standard /auto campaign for the next deployment-readiness/cockpit/project-readiness
+    slice, limited to root-azoth proposal/initiative/planning-readiness artifacts.
+
+    '
+- id: predecessor-initiative
+  role: completed readiness predecessor
+  contact_type: artifact
+  path: .azoth/initiative-banks/INI-DEP-001.yaml
+  note: Terminal source initiative containing completed T-059, T-060, and T-061 slices.
+- id: project-genesis-proposal
+  role: four-plane project adoption reference
+  contact_type: artifact
+  path: .azoth/proposals/project-genesis-goal-mode-autonomy.yaml
+  note: Defines root, public, cockpit, and project-local responsibility split.
+source_proposal_refs:
+- .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+- .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml
+research_questions:
+- question_id: rq-dep-002-001
+  question: What is the minimum project-local mode receipt schema?
+  status: answered_for_planning
+  opened_at: '2026-05-19T19:36:00Z'
+  needed_for: project_local_mode_receipt_contract
+  answer: 'The receipt must bridge to canonical cockpit readback fields while adding
+    project-local ownership fields: project_id, repo_path, receipt_owner, selected_mode,
+    release_profile_ref, readiness_state, freshness_status, installed_asset_classes,
+    missing_asset_classes, approval_scope, active_write_claim, next_safe_action, stop_reason,
+    and handoff_receipt_ref.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml#project_local_receipt_contract
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+- question_id: rq-dep-002-002
+  question: What should the cockpit own in this handoff?
+  status: answered_for_planning
+  opened_at: '2026-05-19T19:36:00Z'
+  needed_for: cockpit_pointer_handoff
+  answer: 'The cockpit owns pointer-only display and next-safe-action readback. It
+    does not create receipts, hydrate managed state, publish releases, or write into
+    project-local repositories.
+
+    '
+  evidence_refs:
+  - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml#cockpit_handoff_states
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+- question_id: rq-dep-002-003
+  question: When can T-062 be hydrated?
+  status: answered
+  opened_at: '2026-05-19T19:36:00Z'
+  answered_at: '2026-05-19T19:50:20Z'
+  needed_for: future_hydration_gate
+  answer: 'T-062 can be hydrated in the 2026-05-19 hydration-readiness campaign because
+    the operator approved the exact hydration-specific scope for INI-DEP-002 slice-dep-002-a.
+    This approval still excludes code, release, public Azoth, personal cockpit, project-local,
+    kernel, and kernel/templates mutation.
+
+    '
+  evidence_refs:
+  - .azoth/scope-gate.json#approval_scope
+research_refs:
+- .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
+- .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+- .azoth/research/ini-dep-001-readiness-map.yaml
+local_findings:
+- finding_id: lf-dep-002-001
+  status: active
+  summary: T-059/T-060 readback fields are canonical and must not be replaced by a
+    new receipt vocabulary.
+  evidence_refs:
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+  - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+- finding_id: lf-dep-002-002
+  status: answered
+  summary: T-062 now extends T-061 release profile readiness with root-local receipt
+    validation, while preserving the no public/cockpit/project-local mutation boundary.
+  evidence_refs:
+  - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+  - .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  - scripts/azoth_release_profile.py
+- finding_id: lf-dep-002-003
+  status: active
+  summary: The next safe root-local artifact is a bridge contract, not a public release,
+    cockpit write hub, or project-local receipt.
+  evidence_refs:
+  - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+external_findings:
+- finding_id: ef-dep-002-001
+  status: carried_forward
+  summary: Deployment readiness should include failure and freshness signals, not
+    only install success.
+  evidence_refs:
+  - .azoth/proposals/azoth-deployment-readiness-cockpit-upgrade.yaml#details.refined_contract.external_source_alignment
+assumptions:
+- assumption_id: asm-dep-002-001
+  status: active
+  statement: A project-local receipt path can be specified as a future schema without
+    creating that file in any project repository.
+  validation_path: Keep this campaign to root-azoth planning artifacts only.
+- assumption_id: asm-dep-002-002
+  status: active
+  statement: The source-of-truth order should be project_local_receipt, then cockpit_pointer_readback,
+    then next_safe_action.
+  validation_path: .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml#source_of_truth_order
+contradictions:
+- contradiction_id: cx-dep-002-001
+  status: monitored
+  summary: Cockpit should feel like a central control point, but authority must remain
+    project-local for receipts and writes.
+  resolution: Make cockpit pointer/readback advisory until a project-local receipt
+    exists.
+challenge_log:
+- challenge_id: ch-dep-002-001
+  status: answered_for_planning
+  prompt: What would make INI-DEP-002 drift outside the approved campaign?
+  answer: Before the hydration-specific gate, hydrating T-062 or editing roadmap/backlog/specs
+    was out of scope. After the 2026-05-19 T-062 delivery gate, drift means release
+    publishing, public Azoth mutation, personal cockpit mutation, project-local repo
+    mutation, actual project-local receipt creation, kernel/governance edits, or kernel/templates
+    edits.
+- challenge_id: ch-dep-002-002
+  status: answered_for_planning
+  prompt: What would make the receipt contract misleading?
+  answer: Replacing canonical cockpit readback fields or claiming managed/governed
+    autonomy without receipt, budget, write-claim, and stop-condition evidence.
+candidate_slices:
+- candidate_id: slice-dep-002-a
+  proposed_task_id: T-062
+  title: Project-local mode-selection receipt and cockpit handoff map
+  initiative_ref: INI-DEP-002
+  status: complete
+  target_layer: project-local-readiness
+  delivery_pipeline: standard
+  summary: 'Define and deliver the root-owned validation contract for project-local
+    mode-selection receipts and cockpit pointer/readback handoff after completed deployment
+    readiness work. This slice keeps validation in root-local helpers and does not
+    create project-local receipts or mutate public/cockpit/project repositories.
+
+    '
+  acceptance_criteria:
+  - INI-DEP-002 references completed INI-DEP-001, T-059, T-060, and T-061 as predecessors.
+  - Receipt schema bridges to canonical T-059/T-060 cockpit readback fields.
+  - Source-of-truth order is project_local_receipt, cockpit_pointer_readback, next_safe_action.
+  - Readiness report blocks repeat hydration after the fresh hydration-specific gate.
+  - Root-local cockpit/release-profile helpers fail closed for missing, stale, misowned,
+    malformed, or overclaimed project-local receipts.
+  - T-062 is delivered with no public, cockpit, release, kernel, template, or project-local
+    artifacts mutated.
+  research_evidence_refs:
+  - .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml
+  - .azoth/research/ini-dep-002-project-readiness-handoff-map.yaml
+  - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml#cockpit_readback_contract
+  - .azoth/initiative-banks/INI-DEP-001.yaml
+  known_non_goals:
+  - No release publishing.
+  - No public Azoth mutation.
+  - No personal cockpit mutation.
+  - No project-local repo mutation.
+  - No actual project-local receipt creation.
+  - No kernel/governance or kernel/templates edits.
+  open_questions: []
+  recommended_phase: post-v0.2.0-stabilization
+  hydration_plan:
+    mode: executed
+    proposed_title: Project-local mode-selection receipt and cockpit handoff map
+    scaffold_command: python3 scripts/roadmap_scaffold.py --title "Project-local mode-selection
+      receipt and cockpit handoff map" --initiative-ref INI-DEP-002 --decision-ref
+      D11 D23 D38 D48 D50 D52 --target-layer project-local-readiness --delivery-pipeline
+      standard --priority 3 --source ini-dep-002-t-062-hydration-2026-05-19 --description
+      "Hydrate the root-owned planning task for project-local mode-selection receipts
+      and cockpit pointer/readback handoff. This task is roadmap/backlog/spec planning
+      only; code, release, public Azoth, personal cockpit, project-local, kernel,
+      and kernel/templates mutation remain out of scope."
+    hydrated_task_ref: T-062
+    hydrated_spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+    hydrated_at: '2026-05-19T20:08:10Z'
+  delivery_result:
+    delivered_at: '2026-05-19T21:26:31Z'
+    session_id: 2026-05-19-t-062-delivery-goal-mode-receipts
+    status: complete
+    commit_ref: 4fbd9b2
+    evaluator_score: 0.92
+    summary: Root-local receipt-authority validation now fails closed in cockpit and
+      release-profile readiness helpers; Goal-mode same-active-goal continuation avoids
+      a repeat manual approval wall without expanding protected authority.
+readiness:
+  evaluated_at: '2026-05-19T21:26:31Z'
+  readiness_status: complete
+  human_decision: approved
+  approval_scope: t_062_delivery_goal_mode_receipt_validation
+  approval_basis: 'Operator approved on 2026-05-19: approve the fresh standard /auto
+    T-062 delivery campaign and solve the Goal-mode repeated manual approval issue
+    once and for all, limited to root-azoth receipt/readback validation helpers and
+    focused tests. This scope did not authorize kernel/governance edits, kernel/templates
+    edits, release publishing, public Azoth mutation, personal cockpit mutation, project-local
+    repo mutation, or actual project-local receipt creation.
+
+    '
+  candidate_first_slice: slice-dep-002-a
+  freshness_status: current_as_of_2026_05_19_t_062_delivered
+  acceptance_criteria_status: present
+  non_goals_status: present
+  delivery_authorized: true
+  hydrate_authorized: false
+  hydration_recommendation: slice-dep-002-a has been hydrated and delivered as T-062.
+    Do not repeat hydration or delivery; route future public/cockpit/project-local
+    receipt adoption through separate gated follow-ons.
+hydration_history:
+- hydrated_at: '2026-05-19T20:08:10Z'
+  session_id: 2026-05-19-ini-dep-002-t-062-hydration-readiness
+  candidate_slice_ref: slice-dep-002-a
+  task_ref: T-062
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  backlog_ref: T-062
+  roadmap_ref: T-062
+  approval_scope: hydration_specific_ini_dep_002_slice_dep_002_a_t_062
+  approval_basis: 'Operator approved on 2026-05-19: Approve a fresh standard /auto
+    hydration-readiness campaign for INI-DEP-002 slice-dep-002-a / proposed T-062,
+    limited to root-azoth roadmap/backlog/spec hydration and planning-readiness artifacts
+    only, with no kernel/governance edits, no kernel/templates edits, no release publishing,
+    no public Azoth mutation, no personal cockpit mutation, no project-local repo
+    mutation, and no code implementation.
+
+    '
+  append_policy_ref: planning_bank_closeout_history_merge_policy_v1
+  append_mode: explicit_hydration_append
+  merge_key: slice-dep-002-a:T-062:2026-05-19T20:08:10Z
+  scaffold_command: python3 scripts/roadmap_scaffold.py --title "Project-local mode-selection
+    receipt and cockpit handoff map" --initiative-ref INI-DEP-002 --decision-ref D11
+    D23 D38 D48 D50 D52 --target-layer project-local-readiness --delivery-pipeline
+    standard --priority 3 --source ini-dep-002-t-062-hydration-2026-05-19 --description
+    "Hydrate the root-owned planning task for project-local mode-selection receipts
+    and cockpit pointer/readback handoff. This task is roadmap/backlog/spec planning
+    only; code, release, public Azoth, personal cockpit, project-local, kernel, and
+    kernel/templates mutation remain out of scope."
+  result: Created roadmap/backlog/spec artifacts for T-062; implementation and shipping
+    remain separate.
+delivery_history:
+- delivered_at: '2026-05-19T21:26:31Z'
+  session_id: 2026-05-19-t-062-delivery-goal-mode-receipts
+  candidate_slice_ref: slice-dep-002-a
+  task_ref: T-062
+  spec_ref: .azoth/roadmap-specs/v0.2.0/T-062.yaml
+  backlog_ref: T-062
+  roadmap_ref: T-062
+  approval_scope: t_062_delivery_goal_mode_receipt_validation
+  commit_ref: 4fbd9b2
+  evaluator_score: 0.92
+  result: Delivered root-local receipt-authority validation and Goal-mode same-active-goal
+    continuation repair without public, cockpit, project-local, release, kernel, or template
+    mutation.

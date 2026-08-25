@@ -43,6 +43,12 @@ def _fixed_now() -> datetime:
     return datetime(2030, 4, 11, 12, 0, tzinfo=timezone.utc)
 
 
+def _section_between(text: str, start_heading: str, end_heading: str) -> str:
+    start = text.index(start_heading)
+    end = text.index(end_heading, start)
+    return text[start:end]
+
+
 # ── filter_unblocked_items ────────────────────────────────────────────────────
 
 
@@ -133,6 +139,45 @@ def test_scope_inactive_bad_date_string() -> None:
 
 def test_scope_inactive_missing_expires_at() -> None:
     assert welcome.is_scope_active({"approved": True}) is False
+
+
+def test_welcome_plain_surfaces_active_exploratory_session_without_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n", encoding="utf-8")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n", encoding="utf-8")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "memory" / "episodes.jsonl").write_text("", encoding="utf-8")
+    (azoth_dir / "scope-gate.json").write_text("{}", encoding="utf-8")
+    (azoth_dir / "session-gate.json").write_text(
+        json.dumps(
+            {
+                "session_id": "sess-explore",
+                "goal": "Explore closeout UX",
+                "session_mode": "exploratory",
+                "opened_at": "2026-04-20T10:00:00+00:00",
+                "updated_at": "2026-04-20T10:00:00+00:00",
+                "status": "active",
+                "approved_by": "system",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\nruns: []\n", encoding="utf-8"
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Session: ACTIVE  (exploratory, sess-explore)" in out
+    assert "light closeout for exploratory session" in out
 
 
 def test_scope_active_naive_future_datetime() -> None:
@@ -484,6 +529,67 @@ def test_plain_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.Mo
     assert "Finish stage 4 handoff" in out
 
 
+def test_plain_dashboard_surfaces_tracked_planning_banks_without_claimable_backlog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 0.2.0\nphase: 8\n", encoding="utf-8")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n", encoding="utf-8")
+    (azoth_dir / "roadmap.yaml").write_text("schema_version: 2\nversions: []\n", encoding="utf-8")
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "design-banks").mkdir()
+    (azoth_dir / "initiative-banks").mkdir()
+    (azoth_dir / "design-banks" / "planning-banks-layer.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: design\n"
+        "id: planning-banks-layer\n"
+        "title: Planning banks layer\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/local-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_refinement\n"
+        "  target_route: dashboard_routing_surfacing\n"
+        "  human_decision: approved\n",
+        encoding="utf-8",
+    )
+    (azoth_dir / "initiative-banks" / "INI-TEST.yaml").write_text(
+        "schema_version: 1\n"
+        "bank_type: initiative\n"
+        "initiative_id: INI-TEST\n"
+        "title: Initiative test bank\n"
+        "status: active_refinement\n"
+        "source_proposal_refs:\n"
+        "  - .azoth/proposals/ignored-draft.yaml\n"
+        "readiness:\n"
+        "  readiness_status: continue_research\n"
+        "  human_decision: approved\n"
+        "  hydration_recommendation: refine candidate before hydration\n"
+        "  candidate_first_slice: slice-test\n"
+        "candidate_slices:\n"
+        "  - candidate_id: slice-test\n"
+        "    proposed_task_id: TBD-TEST\n"
+        "    status: candidate\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+    assert "Tracked planning banks (read-only planning/readiness state)" in out
+    assert "planning-banks-layer" in out
+    assert "INI-TEST" in out
+    assert "human: approved" in out
+    assert "Proposal drafts are source history only" in out
+    assert ".azoth/proposals/local-draft.yaml" not in out
+    assert ".azoth/proposals/ignored-draft.yaml" not in out
+    assert "No claimable backlog item is required before refining a planning bank." in out
+
+
 def test_rich_dashboard_shows_active_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Rich layout shows the optional active-run summary when ledger state exists."""
     (tmp_path / "azoth.yaml").write_text("version: 0.1.0\nphase: 3\n")
@@ -804,6 +910,8 @@ def test_plain_dashboard_includes_all_sections(
     assert "── Top Backlog" in out
     assert "── Last Session" in out
     assert "── START" in out
+    assert "azoth-lite default" in out
+    assert "explicit /auto" in out
     assert "AZOTH" in out
     assert "AZOTH_SESSION_ORIENTATION_BEGIN" in out
     assert "AZOTH_SESSION_ORIENTATION_END" in out
@@ -855,6 +963,83 @@ def test_gather_unphased_initiatives_skips_non_dict() -> None:
     result = welcome.gather_unphased_initiatives(data)
     assert len(result) == 1
     assert result[0]["id"] == "INI-MEM-001"
+
+
+def test_gather_unphased_initiatives_skips_phase_null_history_only_items() -> None:
+    data = {
+        "initiatives": [
+            {
+                "id": "INI-HIST-001",
+                "title": "Historical only",
+                "priority": "high",
+                "phase": None,
+                "slices": [{"task_ref": "P1-020", "status": "complete", "role": "historical"}],
+            },
+            {
+                "id": "INI-LIVE-001",
+                "title": "Live",
+                "priority": "medium",
+                "phase": None,
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            },
+        ]
+    }
+    result = welcome.gather_unphased_initiatives(data)
+    assert [item["id"] for item in result] == ["INI-LIVE-001"]
+
+
+def test_repaired_planning_state_keeps_p3_upcoming_clean_and_makes_t_krp_a_next() -> None:
+    import roadmap_dashboard
+
+    roadmap = {
+        "active_version": "v0.2.0-p3",
+        "versions": [
+            {
+                "id": "v0.2.0-p2",
+                "status": "complete",
+                "tasks": [],
+                "completed_tasks": [{"id": "P1-017", "title": "Reinforcement automation"}],
+                "deferred_tasks": [{"id": "T-KRP-A", "title": "Karpathy kernel slice"}],
+            },
+            {
+                "id": "v0.2.0-p3",
+                "status": "active",
+                "completed_tasks": [{"id": "P1-020", "title": "Verbatim-first M3"}],
+                "tasks": [{"id": "T-KRP-A", "title": "Karpathy kernel slice"}],
+            },
+        ],
+        "initiatives": [
+            {
+                "id": "INI-KRP-001",
+                "title": "Karpathy",
+                "category": "efficiency",
+                "phase": None,
+                "priority": "high",
+                "slices": [{"task_ref": "T-KRP-A", "status": "planned", "role": "primary"}],
+            }
+        ],
+    }
+    backlog_items = [
+        {"id": "BL-059", "status": "complete", "priority": 3},
+        {
+            "id": "T-KRP-A",
+            "status": "pending",
+            "priority": 1,
+            "target_layer": "M1",
+            "delivery_pipeline": "governed",
+            "roadmap_ref": "T-KRP-A",
+        },
+    ]
+
+    complete_ids = {item["id"] for item in backlog_items if item.get("status") == "complete"}
+    candidates = welcome.filter_unblocked_items(backlog_items, complete_ids)
+    assert candidates[0]["id"] == "T-KRP-A"
+
+    body = roadmap_dashboard.build_version_body(roadmap["versions"][1], roadmap=roadmap)
+    assert "P1-020" in body
+    assert "T-KRP-A" in body
+    upcoming = body.split("[bold]Upcoming[/bold]", 1)[1]
+    assert "P1-020" not in upcoming
 
 
 # ── welcome backlog-panel fallback to initiatives ─────────────────────────────
@@ -1006,6 +1191,42 @@ def test_welcome_plain_hides_stale_active_session_from_resume_options(
     assert "resume sid-stale" not in out
 
 
+def test_welcome_plain_hides_stale_parked_session_state_without_resumable_registry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "azoth.yaml").write_text("version: 1\nphase: 1\nmilestone: v0.2.0\n")
+    azoth_dir = tmp_path / ".azoth"
+    azoth_dir.mkdir()
+    (azoth_dir / "memory").mkdir()
+    (azoth_dir / "backlog.yaml").write_text("schema_version: 1\nitems: []\n")
+    (azoth_dir / "session-state.md").write_text(
+        "session_id: sid-finalized\n"
+        "state: parked\n"
+        "last_ide: codex\n"
+        "timestamp: 2026-04-19T10:00:00+00:00\n"
+        'active_task: "Parked handoff"\n'
+        "active_files: []\n"
+        "pending_decisions: []\n"
+        'approved_scope: "Completed: finalized session"\n'
+        'next_action: "This should not be resumable"\n',
+        encoding="utf-8",
+    )
+    (azoth_dir / "run-ledger.local.yaml").write_text(
+        "schema_version: 1\nsessions: []\nruns: []\n",
+        encoding="utf-8",
+    )
+
+    buf = io.StringIO()
+    monkeypatch.setattr(welcome, "ROOT", tmp_path)
+    monkeypatch.setattr(welcome, "console", Console(file=buf, force_terminal=False))
+    monkeypatch.setattr(welcome, "git_info", lambda: ("test-repo", "main"))
+    welcome.render_dashboard_plain(welcome.gather_dashboard_state())
+    out = buf.getvalue()
+
+    assert "resume   → /resume — reopen parked session" not in out
+    assert "sid-finalized" not in out
+
+
 def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirror(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1060,3 +1281,34 @@ def test_welcome_plain_shows_continuity_ok_for_matching_registry_scope_and_mirro
     assert "Continuity: OK  (sid-match)" in out
     assert "Sessions" in out
     assert "sid-match" in out
+
+
+def test_session_lifecycle_doc_marks_closed_and_administratively_finalized_sessions_non_resumable() -> (
+    None
+):
+    doc = Path(__file__).resolve().parent.parent / "docs" / "playbook" / "03-session-lifecycle.md"
+    text = doc.read_text(encoding="utf-8")
+    resume_section = _section_between(text, "### Stage-aware resume", "### Entropy Tracking")
+    closeout_section = _section_between(text, "## Phase 3: Close", "### Why closeout matters")
+
+    assert "closed or administratively finalized" in resume_section
+    assert "non-resumable" in resume_section
+    assert "clears the saved checkpoint" in closeout_section
+    assert "parked handoff" in closeout_section
+
+
+def test_parallel_sessions_doc_separates_queued_handoff_from_cleanup_responsibilities() -> None:
+    doc = Path(__file__).resolve().parent.parent / "docs" / "playbook" / "05-parallel-sessions.md"
+    text = doc.read_text(encoding="utf-8")
+    workflow_section = _section_between(text, "## Safe Workflow", "## Recommended Boundaries")
+    checklist_section = _section_between(
+        text,
+        "## Merge Checklist For The Integrator",
+        "## Operational Rule Of Thumb",
+    )
+
+    assert "/worktree-sync" in workflow_section
+    assert "queued handoff boundary" in workflow_section
+    assert "not delivery completion" in workflow_section
+    assert "automatic cleanup" in checklist_section
+    assert "manual cleanup" in checklist_section

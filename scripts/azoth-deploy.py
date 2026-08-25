@@ -47,10 +47,13 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from yaml_helpers import safe_load_yaml
 
-CODEX_HOOKS_MODE_MARKER = Path(".codex/hooks.mode.local")
 CODEX_HOOKS_DEFAULT_TEMPLATE = "hooks.json.template"
 CODEX_HOOKS_VERBOSE_TEMPLATE = "hooks.verbose.json.template"
+CODEX_CONFIG_DEFAULT_TEMPLATE = "config.toml.template"
+CODEX_CONFIG_SEAMLESS_TEMPLATE = "config.seamless.toml.template"
+CODEX_RULES_TEMPLATE = "azoth-seamless.star.template"
 
 
 # ── Frontmatter helpers ──────────────────────────────────────────────────────
@@ -65,7 +68,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
         end = text.index("\n---", 3)
     except ValueError:
         return {}, text
-    meta = yaml.safe_load(text[3:end]) or {}
+    meta = safe_load_yaml(text[3:end]) or {}
     body = text[end + 4 :].lstrip("\n")
     return meta, body
 
@@ -220,7 +223,7 @@ def _normalize_command_meta(
 
 def _load_command_contract(root: Path, path: Path) -> dict[str, Any]:
     """Load one canonical command contract plus its resolved markdown body."""
-    contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    contract = safe_load_yaml(path.read_text(encoding="utf-8")) or {}
     if not isinstance(contract, dict):
         raise ValueError(f"{path}: command contract root must be a mapping")
 
@@ -699,7 +702,9 @@ def transform_command_codex_skill(command: dict[str, Any]) -> str:
     lines = [
         f"Use this skill as the Codex-visible entrypoint for Azoth's `/{name}` workflow.",
         "",
-        "Codex does not register repository-defined slash commands in its built-in `/` command picker.",
+        "Codex uses skills as the custom command surface for Azoth workflows.",
+        "In the Codex app, enabled skills may appear in the slash command list.",
+        f"In Codex CLI/IDE, use `/skills` or `${skill_name}`.",
         f"This skill is the explicit Codex-native equivalent of typing `/{name}`.",
         "",
         "Execution contract:",
@@ -815,7 +820,9 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "",
         "All agents operate under the Azoth Trust Contract:",
         "",
-        "- **Entropy ceiling**: max 10 files changed per session",
+        "- **Entropy ceiling**: max 10 files changed per scope-gated session; this",
+        "  bounds the current scope-gated session, not the higher-level active goal.",
+        "  If the ceiling is reached, checkpoint and open a fresh linked scope. Agents must not mark a persistent goal complete, blocked, or stopped solely because an entropy checkpoint was reached.",
         "- **Human gates**: kernel / governance changes always require human approval",
         "- **Posture tiers**: `always_do` / `ask_first` / `never_auto`",
         "  (see `kernel/TRUST_CONTRACT.md`)",
@@ -829,7 +836,7 @@ def generate_agents_md(agents: list[dict[str, Any]]) -> str:
         "| Gemini CLI | `.gemini/agents/` | `.gemini/commands/` (TOML) | `.agents/skills/` | `GEMINI.md` + `.gemini/settings.json` |",
         "| GitHub Copilot | `.claude/agents/` default, `.github/agents/` optional mirror | `.github/prompts/` | `.github/skills/` | — |",
         "| OpenCode | `.opencode/agents/` | `.opencode/commands/` | `.opencode/skills/` | — |",
-        "| Codex | `.codex/agents/*.toml` | `/skills` wrappers (`azoth-*`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
+        "| Codex | `.codex/agents/*.toml` | skills (`azoth-*`; app slash list, CLI `/skills`) + literal Azoth tokens | `.agents/skills/` | `.codex/config.toml`, `.codex/hooks.json` |",
         "| Cursor | `.claude/agents/` (toggle) | `.claude/commands/` (toggle) | `skills/` (toggle) | `.cursor/rules/*.mdc` ← `azoth-deploy --platforms cursor` |",
         "",
     ]
@@ -894,10 +901,15 @@ def deploy_cursor_rules(root: Path, dry_run: bool, *, check: bool = False) -> tu
 def iter_codex_adapter_deployments(root: Path) -> list[tuple[Path, Path]]:
     """Map Codex adapter templates to their deployed .codex destinations."""
     adapter = root / CODEX_ADAPTER_DIR
-    hooks_template_name = _codex_hooks_template_name(root)
     return [
-        (adapter / "config.toml.template", root / ".codex" / "config.toml"),
-        (adapter / hooks_template_name, root / ".codex" / "hooks.json"),
+        (adapter / CODEX_CONFIG_DEFAULT_TEMPLATE, root / ".codex" / "config.toml"),
+        (adapter / CODEX_CONFIG_SEAMLESS_TEMPLATE, root / ".codex" / "config.seamless.toml"),
+        (adapter / CODEX_HOOKS_DEFAULT_TEMPLATE, root / ".codex" / "hooks.json"),
+        (adapter / CODEX_HOOKS_VERBOSE_TEMPLATE, root / ".codex" / "hooks.verbose.json"),
+        (
+            adapter / CODEX_RULES_TEMPLATE,
+            root / ".codex" / "rules" / "azoth-seamless.star",
+        ),
         (
             adapter / "user_prompt_submit_router.py.template",
             root / ".codex" / "hooks" / "user_prompt_submit_router.py",
@@ -917,16 +929,6 @@ def deploy_codex_adapter(root: Path, dry_run: bool, *, check: bool = False) -> t
             stale += 1
         count += 1
     return count, stale
-
-
-def _codex_hooks_template_name(root: Path) -> str:
-    """Choose the deployed Codex hooks template based on the local mode marker."""
-    marker = root / CODEX_HOOKS_MODE_MARKER
-    if not marker.is_file():
-        return CODEX_HOOKS_DEFAULT_TEMPLATE
-    if marker.read_text(encoding="utf-8").strip() == "verbose":
-        return CODEX_HOOKS_VERBOSE_TEMPLATE
-    return CODEX_HOOKS_DEFAULT_TEMPLATE
 
 
 # ── Codex hook compatibility lint ────────────────────────────────────────────

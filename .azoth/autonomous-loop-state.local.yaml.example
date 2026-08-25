@@ -1,0 +1,60 @@
+schema_version: 1
+loop_id: autonomous-auto-demo
+status: active
+branch: codex/autonomous-roadmap-self-development
+autonomy_budget:
+  approval_basis: User approved a branch-local autonomous Azoth self-development test.
+  max_iterations: 3
+  replay_threshold: 2
+  allowed_actions:
+    - ship_task
+    - hydrate_task
+    - research_initiative
+    - refine_proposal
+    - capture_self_improvement
+  stop_conditions:
+    - active_scope_present
+    - active_session_gate_conflict
+    - active_write_claim_present
+    - budget_exhausted
+    - protected_gate_required
+    - async_stop_packet
+    - no_safe_candidate
+iteration: 0
+last_session_id: null
+parent_session_id: null
+queue: []
+self_capture_queue: []
+alignment_packets: []
+alignment_dispositions: []
+vision:
+  anchor: .azoth/roadmap-specs/v0.2.0/AUTONOMOUS-AUTO-UX-EXPERIENCE.md
+  target_band: green
+  current_band: unevaluated
+  realized: false
+  updated_at: null
+  note: Vision score is unevaluated until an autonomous-auto closeout records it.
+  declaration:
+    status: approved
+    summary: Concise campaign vision approved after the in-session declaration discussion.
+    selected_seed: repo-best-next
+    selected_seed_type: operator-approved
+    scope_notes: Keep the campaign vision-bounded and branch-local.
+    allowed_actions:
+      - research_initiative
+      - refine_proposal
+      - hydrate_task
+      - ship_task
+      - capture_self_improvement
+    approval_basis: Operator approved the campaign vision declaration.
+    locked_at: null
+history: []
+next_candidate:
+  status: empty
+  note: Optional preview/hold field for the next architect decision; status reads it but decide-next remains authoritative.
+completion_reason: null
+stop_reason: null
+automation:
+  recommended_driver: codex-cron
+  run_policy: one_bounded_iteration_per_wakeup
+  heartbeat_policy: short_same_thread_experiments_only

@@ -1,0 +1,283 @@
+{
+  "decision_schema_version": 1,
+  "loop_id": "public-release-truth-internal-repair-no-public-mutation-20260506",
+  "iteration": 1,
+  "action": "research_initiative",
+  "candidate_id": "public-release-truth-internal-repair-no-public-mutation",
+  "source": ".azoth/campaigns/public-release-readiness-preflight-no-public-mutation-20260506/evidence-bundle.md",
+  "goal": "public-release-truth-internal-repair-no-public-mutation",
+  "backlog_id": "public-release-truth-internal-repair-no-public-mutation",
+  "target_layer": "infrastructure",
+  "delivery_pipeline": "standard",
+  "governance_mode": "standard",
+  "pipeline_command": "autonomous-auto",
+  "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+  "reason": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+  "stop_reason": null,
+  "route_decision": null,
+  "strategy_preflight": {
+    "packet_schema_version": 1,
+    "packet_type": "autonomous_auto_strategy_preflight",
+    "edge": "open_next",
+    "verdict": "allow_open",
+    "may_open_scope": true,
+    "selected_action": "research_initiative",
+    "candidate_id": "public-release-truth-internal-repair-no-public-mutation",
+    "source": ".azoth/campaigns/public-release-readiness-preflight-no-public-mutation-20260506/evidence-bundle.md",
+    "target_classification": "research-only",
+    "selected_route": "research_initiative",
+    "route_state": "discovery_active",
+    "route_authority": "research_initiative:discovery_active",
+    "approval_scope": "",
+    "approval_basis_present": true,
+    "freshness_status": "current_route_gate_and_claim_state",
+    "fresh_campaign_authority": true,
+    "current_loop_authority": "active",
+    "source_artifacts": {},
+    "learning_harvester": {
+      "consumed": true,
+      "decision": {
+        "signal_id": "public-release-truth-internal-repair-no-public-mutation",
+        "source_refs": [
+          ".azoth/campaigns/public-release-readiness-preflight-no-public-mutation-20260506/evidence-bundle.md"
+        ],
+        "dedupe_key": "public-release-truth-internal-repair-no-public-mutation",
+        "severity": "low",
+        "blast_radius": "internal",
+        "route": "auto_self_heal_now",
+        "protected_gate_required": false,
+        "selected_action": "research_initiative",
+        "rejected_alternatives": [
+          "capture_only",
+          "defer_to_intake",
+          "human_gate_required",
+          "proposal_needed",
+          "stale_or_rejected"
+        ],
+        "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+        "verification_requirement": "normal scope-gate, run-ledger, write-claim, lifecycle-route, and strategy-preflight checks",
+        "residual_risk": ""
+      },
+      "campaign_recommendation": {
+        "schema_version": 1,
+        "decisions": [
+          {
+            "signal_id": "Verified inline stage evidence exception: no fake subagent stage evidence should be backfilled when host policy forbids spawning; require-completion-evidence is the truthful completion gate.",
+            "source_refs": [
+              ".azoth/inbox/session-reflection-2026-05-03-autonomous-auto-inline-stage-exception.jsonl"
+            ],
+            "dedupe_key": "verified inline stage evidence exception: no fake subagent stage evidence should be backfilled when host policy forbids spawning; require-completion-evidence is the truthful completion gate.",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "auto_self_heal_now",
+            "protected_gate_required": false,
+            "selected_action": "open_normal_child_scope",
+            "rejected_alternatives": [
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+            "verification_requirement": "normal scope-gate, run-ledger, write-claim, lifecycle-route, and strategy-preflight checks",
+            "residual_risk": ""
+          },
+          {
+            "signal_id": "Autonomous initiative lifecycle orchestration",
+            "source_refs": [
+              ".azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml"
+            ],
+            "dedupe_key": "autonomous initiative lifecycle orchestration",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal remains visible but does not justify immediate repair."
+          },
+          {
+            "signal_id": "residual-1",
+            "source_refs": [
+              "campaign-audit"
+            ],
+            "dedupe_key": "missing run ledger entry for campaign",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "capture_only",
+            "protected_gate_required": false,
+            "selected_action": "capture_only",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed",
+              "stale_or_rejected"
+            ],
+            "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Audit residual remains visible but is not itself a fresh self-heal candidate."
+          },
+          {
+            "signal_id": "Autonomous-auto campaign evaluation and learning closure spine",
+            "source_refs": [
+              ".azoth/proposals/autonomous-auto-campaign-evaluation-learning-closure.yaml"
+            ],
+            "dedupe_key": "autonomous-auto campaign evaluation and learning closure spine",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "stale_or_rejected",
+            "protected_gate_required": false,
+            "selected_action": "none",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed"
+            ],
+            "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal is stale, duplicate, superseded, or intentionally rejected."
+          },
+          {
+            "signal_id": "Autonomous-auto learning harvester and self-heal router",
+            "source_refs": [
+              ".azoth/proposals/autonomous-auto-learning-harvester.yaml"
+            ],
+            "dedupe_key": "autonomous-auto learning harvester and self-heal router",
+            "severity": "low",
+            "blast_radius": "internal",
+            "route": "stale_or_rejected",
+            "protected_gate_required": false,
+            "selected_action": "none",
+            "rejected_alternatives": [
+              "auto_self_heal_now",
+              "capture_only",
+              "defer_to_intake",
+              "human_gate_required",
+              "proposal_needed"
+            ],
+            "approval_basis": "Operator approved autonomous-auto campaign on 2026-05-06: Public Release Truth Internal Repair, No Public Mutation. Goal: classify public origin/main drift 8e2b3283e8423a01fe64f131c92d52371f995954 and repair or supersede the unresolvable recorded root evidence commit 46fee0b3771b20f8d020ed441d2ad8f44e17a2f7 before any public freshness or release recommendation. Budget up to 2 child scopes with 1 bounded replay. Allowed actions: research_initiative, refine_proposal, capture_self_improvement. Public azoth, cockpit, and project repos are not authorized for mutation. Commits, tags, pushes, releases, dependency changes, credential access, task hydration, code implementation, and controlled release gates are blocked. Stop with a release-truth repair packet and one recommendation: keep stale, open guarded public sync gate, or open a narrower internal repair.",
+            "verification_requirement": "capture visibility in campaign report",
+            "residual_risk": "Signal is stale, duplicate, superseded, or intentionally rejected."
+          }
+        ],
+        "route_counts": {
+          "auto_self_heal_now": 1,
+          "capture_only": 2,
+          "defer_to_intake": 0,
+          "human_gate_required": 0,
+          "proposal_needed": 0,
+          "stale_or_rejected": 2
+        },
+        "selected_learning_route": "auto_self_heal_now",
+        "rejected_alternatives": [
+          "capture_only",
+          "defer_to_intake",
+          "human_gate_required",
+          "proposal_needed",
+          "stale_or_rejected"
+        ],
+        "summary": "Harvester routed 5 deduplicated learning signal(s).",
+        "write_authority": "advisory_only_strategy_preflight_still_required"
+      },
+      "write_authority": "advisory_only_scope_gates_still_required"
+    },
+    "human_gate_acknowledgement": {
+      "required": false,
+      "accepted": false,
+      "reason": ""
+    },
+    "gate_status": {
+      "active_scope": false,
+      "active_scope_id": "",
+      "active_write_claim": false,
+      "write_claim_session_id": "",
+      "protected": false
+    },
+    "blocked_alternatives": [],
+    "mismatch_reason": "",
+    "next_safe_action": "research_initiative",
+    "ux_anchor_fit": "Strategy preflight reconciles route authority, approval basis, gates, write claims, and candidate classification before opening work."
+  },
+  "architect_judgment": {
+    "decision": "research_initiative",
+    "rationale": "Selected first queued autonomous-auto candidate inside the autonomy budget.",
+    "selected": {
+      "action": "research_initiative",
+      "candidate_id": "public-release-truth-internal-repair-no-public-mutation",
+      "title": "public-release-truth-internal-repair-no-public-mutation",
+      "source": ".azoth/campaigns/public-release-readiness-preflight-no-public-mutation-20260506/evidence-bundle.md",
+      "scorecard": {
+        "readiness": 64,
+        "ux_anchor_value": 74,
+        "risk": 85,
+        "dependency_state": 70,
+        "priority_bias": 0,
+        "stop_cost": 65,
+        "total": 358
+      },
+      "protected": false
+    },
+    "rejected_alternatives": [
+      {
+        "action": "research_initiative",
+        "candidate_id": "INI-EVI-002",
+        "title": "Knowledge richness evaluation for project-management artifacts",
+        "source": "initiative-bank",
+        "scorecard": {
+          "readiness": 64,
+          "ux_anchor_value": 74,
+          "risk": 85,
+          "dependency_state": 70,
+          "priority_bias": 0,
+          "stop_cost": 65,
+          "total": 358
+        },
+        "protected": false
+      },
+      {
+        "action": "refine_proposal",
+        "candidate_id": "automation-audit-insight-harvest-refinement",
+        "title": "Nightly automation audit bundle and approval contract",
+        "source": "proposal",
+        "scorecard": {
+          "readiness": 58,
+          "ux_anchor_value": 66,
+          "risk": 85,
+          "dependency_state": 70,
+          "priority_bias": 0,
+          "stop_cost": 65,
+          "total": 344
+        },
+        "protected": false
+      }
+    ],
+    "selection_basis": [
+      "readiness",
+      "ux_anchor_value",
+      "risk",
+      "dependency_state",
+      "priority_bias",
+      "stop_cost"
+    ]
+  },
+  "alignment_checkpoint_summary": {
+    "packet_count": 1,
+    "pending_count": 0,
+    "latest_packet_id": "align-001",
+    "latest_packet_type": "approval_basis",
+    "latest_disposition": "applied",
+    "disposition_count": 1
+  }
+}

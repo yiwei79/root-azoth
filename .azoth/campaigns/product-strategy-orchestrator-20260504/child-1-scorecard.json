@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "campaign_id": "product-strategy-orchestrator-20260504",
+  "generated_at": "2026-05-04T21:08:00Z",
+  "authority": "advisory_product_strategy_only",
+  "canonical_state_boundary": {
+    "roadmap_backlog_mutation_authorized": false,
+    "hydration_authorized": false,
+    "public_release_authorized": false,
+    "commit_or_push_authorized": false
+  },
+  "candidates": [
+    {
+      "id": "azoth-harness-rethink-2026",
+      "title": "Azoth harness rethink: brain, hands, session, skills",
+      "source": ".azoth/proposals/azoth-harness-rethink-2026.yaml",
+      "strategic_leverage": 10,
+      "readiness": 6,
+      "pm_fit": 9,
+      "protected_risk": 6,
+      "recommended_route": "refine_as_strategic_frame",
+      "rationale": "Sets the high-level product and harness philosophy before adding more control-plane machinery."
+    },
+    {
+      "id": "initiative-discovery-to-roadmap-hydration",
+      "title": "Initiative discovery lane to roadmap hydration",
+      "source": ".azoth/proposals/initiative-discovery-to-roadmap-hydration.yaml",
+      "strategic_leverage": 9,
+      "readiness": 8,
+      "pm_fit": 10,
+      "protected_risk": 4,
+      "recommended_route": "refine_as_operating_model",
+      "rationale": "Best existing product-management workflow for comparing uncertain initiatives before delivery."
+    },
+    {
+      "id": "autonomous-initiative-lifecycle-orchestration",
+      "title": "Autonomous initiative lifecycle orchestration",
+      "source": ".azoth/proposals/autonomous-initiative-lifecycle-orchestration.yaml",
+      "strategic_leverage": 8,
+      "readiness": 8,
+      "pm_fit": 8,
+      "protected_risk": 5,
+      "recommended_route": "consume_as_routing_substrate",
+      "rationale": "Provides the route grammar for autonomous choices but should serve the product strategy model."
+    },
+    {
+      "id": "public-release-root-feature-parity",
+      "title": "Public release root feature parity",
+      "source": ".azoth/proposals/public-release-root-feature-parity.yaml",
+      "strategic_leverage": 9,
+      "readiness": 6,
+      "pm_fit": 8,
+      "protected_risk": 8,
+      "recommended_route": "defer_implementation_keep_as_product_lane",
+      "rationale": "High product value but close to protected public release and installer work."
+    },
+    {
+      "id": "INI-MEM-003",
+      "title": "Vector retrieval layer for M3 context-recall",
+      "source": ".azoth/initiative-banks/INI-MEM-003.yaml",
+      "strategic_leverage": 6,
+      "readiness": 8,
+      "pm_fit": 5,
+      "protected_risk": 5,
+      "recommended_route": "later_focused_quality_lane",
+      "rationale": "Useful bounded quality lane, but not the central product-management orchestrator capability."
+    }
+  ],
+  "selected_next_child": {
+    "action": "refine_proposal",
+    "candidate_id": "product-strategy-operating-model",
+    "title": "Product strategy operating model",
+    "reason": "The campaign needs a decision model before choosing a product lane to hydrate or deliver."
+  }
+}

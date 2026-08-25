@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "campaign_id": "multi-operating-profile-feature-completion-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-multi-operating-profile-contract-2",
+  "status": "complete",
+  "evaluator_score": 0.92,
+  "threshold": 0.9,
+  "bounded_replay_count": 0,
+  "decision": "proceed_to_child_3_ship_task",
+  "selected_next_child": {
+    "route": "ship_task",
+    "candidate_id": "multi-operating-profile-helper-proof-slice",
+    "goal": "Implement the smallest internal helper/test proof slice: add autonomous-continuation fixture coverage and align or intentionally preserve the helper handoff packet schema with tests."
+  },
+  "stop_conditions_checked": {
+    "public_release_or_freshness": "blocked_by_default",
+    "hydrate_task": "blocked",
+    "kernel_governance_m1": "not_requested",
+    "network_or_dependencies": "not_used",
+    "commit_push_packaging": "blocked",
+    "destructive_actions": "not_used"
+  },
+  "artifacts": [
+    "meta_session_research/architecture-update-proposal/profile-contract.md",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-2-contract-decision.md",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-2-reviewer-gate.json",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-2-evaluator-scorecard.json",
+    ".azoth/campaigns/multi-operating-profile-feature-completion-20260505/child-2-decision.json"
+  ]
+}

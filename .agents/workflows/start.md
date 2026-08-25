@@ -46,8 +46,8 @@ Run at the beginning of any session to get a full project snapshot before decidi
 
    | Input | Action |
    |-------|--------|
-   | `resume` | Run `/resume` — continue the active approved scope, or reopen the parked same-thread session without a second scope-approval wall. If no checkpoint exists, `/auto` remains the default and must start at Stage 0 |
-   | `resume <session_id>` | Run `/resume <session_id>` — reopen that parked session directly and restore its saved pipeline checkpoint when present. If no checkpoint exists, `/auto` remains the default and must start at Stage 0 |
+   | `resume` | Run `/resume` — continue the active approved scope, or reopen the parked same-thread session without a second scope-approval wall. If no checkpoint exists, ordinary work resumes in azoth-lite; use explicit `/auto` only when governed delivery is still needed, starting at Stage 0 |
+   | `resume <session_id>` | Run `/resume <session_id>` — reopen that parked session directly and restore its saved pipeline checkpoint when present. If no checkpoint exists, ordinary work resumes in azoth-lite; use explicit `/auto` only when governed delivery is still needed, starting at Stage 0 |
    | `next` | Run `/next` to open a scope card for the next priority task. If another live scope exists, stop and route to `/resume`, `/park`, or `/session-closeout` instead |
    | `intake` | Run `/intake` to process queued insights from `.azoth/inbox/` |
    | `promote` | Run `/promote` to review M2→M1 promotion candidates |
@@ -55,22 +55,24 @@ Run at the beginning of any session to get a full project snapshot before decidi
    | `roadmap` | Run `/roadmap` — D48 versioned roadmap dashboard (`scripts/roadmap_dashboard.py`) |
    | `plan` | Run `/plan` — structured autonomy / planning |
    | `remember` | Run `/remember` — quick M3 episode capture without full closeout |
-   | `closeout` | Run `/session-closeout` — W1–W4 batch, always-fire patch bump, `.azoth/session-state.md` handoff. In Codex calm flow, the equivalent daily route is `$azoth-start closeout` or `$azoth-session-closeout` |
-   | `<custom goal>` | Pass the goal to `/auto` — the auto-pipeline router selects the right preset. In Codex calm flow, the canonical start-centered equivalent is `$azoth-start pipeline_command=auto <goal>` |
+   | `closeout` | Run `/session-closeout` — full W1–W4 for delivery scopes, or light closeout for an exploratory session with no scope gate. In Codex calm flow, the equivalent daily route is `$azoth-start closeout` or `$azoth-session-closeout` |
+   | `<custom goal>` | Let the Codex control plane classify profile and intent first: ordinary read, verification, and local-edit goals start in azoth-lite (or stock-lite when the classifier allows it), while governed state, kernel/governance, finality, closeout, external, or destructive triggers escalate into explicit `/auto` / azoth-full. When delivery escalates from a matching exploratory session, carry that identity forward explicitly as `session_id=<existing-session>` in the routed start input. In Codex calm flow, the canonical routed forms are `$azoth-start <goal>` for lite/default sessions and `$azoth-start pipeline_command=auto [session_id=<existing-session>] <goal>` for governed delivery |
 
-   **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.
+   **More commands:** `.claude/commands/*.md` — e.g. `/deliver`, `/deliver-full`, `/dynamic-full-auto`, `/autonomous-auto`, `/bootstrap`, `/sync`, `/test`, `/context-architect`, `/arch-proposal`, `/review-insights`, `/worktree-sync`, `/eval-swarm`.
 
 3. **If the dashboard script is missing or errors**, fall back to manual orientation:
    - Read `azoth.yaml` for version/phase/layer status
    - Read `.azoth/backlog.yaml` for pending work
-   - Check `.azoth/scope-gate.json` for active scope
+   - Check `.azoth/session-gate.json` for an active exploratory session
+   - Check `.azoth/scope-gate.json` for active delivery scope
    - Then offer the same routing options above
 
 ## Notes
 
 - `/start` is orientation only — it does not write files or open a scope gate
+- In Codex, the prompt router may open `.azoth/session-gate.json` before `/start` is rendered when a freeform goal is classified as exploratory chat/research/planning work. That session is real and closable even without a scope gate.
 - **Claude Code:** When `hooks.SessionStart` is configured in `.claude/settings.json` (P5-007), the welcome script runs on session `startup` and `resume`. Output is injected once into context **and** mirrored to **`.azoth/session-orientation.txt`**. Use **`Read`** on that file only when showing **verbatim plain** orientation in chat; avoid redundant reads otherwise. **Bash** `welcome.py` (Rich) is fine for the designed UI — output may be **collapsed** in the IDE; **expand** to see the full menu. **See `CLAUDE.md` core rule 9.**
-- **Codex:** `$azoth-start` is the canonical daily entry surface. Use `$azoth-start`, `$azoth-start next`, `$azoth-start closeout`, or `$azoth-start pipeline_command=<auto|deliver|deliver-full> <goal>`. Literal `/start`, `/next`, `/auto`, and `/deliver-full` text remains compatibility fallback and should normalize back through the same calm-flow path.
+- **Codex:** `$azoth-start` is the canonical daily entry surface. Ordinary work defaults to azoth-lite through `$azoth-start <goal>`; use explicit `/auto`, `$azoth-auto`, or `$azoth-start pipeline_command=<auto|autonomous-auto|dynamic-full-auto|deliver|deliver-full> <goal>` for governed delivery. `$azoth-start next`, `$azoth-start closeout`, and `$azoth-session-closeout` keep their explicit lifecycle meanings. Literal `/start`, `/next`, `/auto`, `/autonomous-auto`, and `/deliver-full` text remains compatibility fallback and should normalize back through the same calm-flow path.
 - **Cursor:** SessionStart hooks do not run. For the **full Rich UI**, run `python3 scripts/welcome.py` in the **integrated terminal** (Terminal panel). **Bash** in chat also works—**expand** output if collapsed. Plain text: **`Read`** `.azoth/session-orientation.txt` or `welcome.py --plain`. See `CLAUDE.md` rules 8–9.
 - The `resume` option appears when a non-expired scope gate exists or the current thread has a parked `session-state.md` handoff
-- If no scope gate exists, `/next` is the normal first step
+- If no scope gate exists, azoth-lite is the normal posture for ordinary work, `/next` opens a scope card for backlog delivery, and explicit `/auto` enters governed delivery; exploratory sessions may still already be open via `.azoth/session-gate.json`

@@ -9,6 +9,8 @@ Covers: schema, validate subcommand, status subcommand, append subcommand,
 from __future__ import annotations
 
 import json
+import multiprocessing
+import queue
 import subprocess
 import sys
 from pathlib import Path
@@ -24,11 +26,17 @@ SCHEMA = ROOT / "pipelines" / "run-ledger.schema.yaml"
 sys.path.insert(0, str(ROOT / "scripts"))
 import run_ledger as run_ledger_module  # noqa: E402
 from run_ledger import (  # noqa: E402
+    assert_no_unresolved_governed_run_evidence,
     consume_human_gate_approval,
     load_active_run,
     load_open_sessions,
     load_resumable_sessions,
     load_session,
+    record_stage_spawn,
+    record_stage_inline_exception,
+    record_stage_summary,
+    require_completion_evidence,
+    require_stage_evidence,
     upsert_session,
     validate_ledger,
 )
@@ -236,6 +244,60 @@ def test_validate_rejects_invalid_pause_reason() -> None:
 
     errors = validate_ledger(data)
     assert any("pause_reason" in error for error in errors)
+
+
+def test_validate_rejects_terminal_run_with_resumable_checkpoint_fields() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                "run_id": "run-terminal-stale",
+                "mode": "autonomous-auto",
+                "goal": "Test terminal cleanup",
+                "status": "complete",
+                "created_at": "2026-04-10T10:00:00+00:00",
+                "updated_at": "2026-04-10T10:30:00+00:00",
+                "next_action": "done",
+                "active_stage_id": "builder_apply",
+                "pending_stage_ids": ["reviewer_gate"],
+                "pause_reason": "human-gate",
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+
+    assert any("terminal status 'complete'" in error for error in errors)
+    assert any("active_stage_id" in error for error in errors)
+    assert any("pending_stage_ids" in error for error in errors)
+    assert any("pause_reason" in error for error in errors)
+
+
+def test_append_failed_status_clears_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    _append(
+        ledger,
+        run_id="run-terminal-failed-clear",
+        status="active",
+        active_stage_id="builder_apply",
+        pending_stage_ids=["reviewer_gate"],
+        pause_reason="retry",
+    )
+
+    result = _append(
+        ledger,
+        run_id="run-terminal-failed-clear",
+        status="failed",
+        next_action="stopped",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["status"] == "failed"
+    assert "active_stage_id" not in run
+    assert "pending_stage_ids" not in run
+    assert "pause_reason" not in run
 
 
 # ── 7–9. status subcommand ─────────────────────────────────────────────────────
@@ -449,6 +511,33 @@ def test_append_writes_stage_checkpoint_metadata(tmp_path: Path) -> None:
     assert run["pending_stage_ids"] == ["builder_apply", "reviewer_gate"]
     assert run["pause_reason"] == "human-gate"
     assert run["stages_completed"] == ["planner_stage0"]
+
+
+def test_append_terminal_status_clears_stage_checkpoint_metadata(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    _append(
+        ledger,
+        run_id="run-terminal-clear",
+        status="active",
+        active_stage_id="architect_brief",
+        pending_stage_ids=["builder_apply", "reviewer_gate"],
+        pause_reason="human-gate",
+    )
+
+    result = _append(
+        ledger,
+        run_id="run-terminal-clear",
+        status="complete",
+        next_action="done",
+    )
+
+    assert result.returncode == 0
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    run = data["runs"][0]
+    assert run["status"] == "complete"
+    assert "active_stage_id" not in run
+    assert "pending_stage_ids" not in run
+    assert "pause_reason" not in run
 
 
 def test_consume_human_gate_approval_promotes_next_stage(tmp_path: Path) -> None:
@@ -770,6 +859,1032 @@ def test_rewrite_request_changes_replay_honors_ledger_path_override(tmp_path: Pa
         "auto_s4_evaluator",
         "auto_s5_builder",
     ]
+
+
+def _stage_evidence_run() -> dict[str, object]:
+    return {
+        "run_id": "run-stage-evidence",
+        "mode": "auto",
+        "goal": "BL-073",
+        "status": "active",
+        "created_at": "2026-04-23T10:00:00+00:00",
+        "updated_at": "2026-04-23T10:05:00+00:00",
+        "next_action": "Require evidence before downstream stages.",
+        "session_id": "sess-stage-evidence",
+        "backlog_id": "BL-073",
+        "ide": "codex",
+    }
+
+
+def _stage_evidence_kwargs(ledger: Path | None = None) -> dict[str, object]:
+    kwargs: dict[str, object] = {
+        "run_id": "run-stage-evidence",
+        "stage_id": "auto_s4_builder",
+        "subagent_type": "builder",
+        "trigger": "context-budget",
+        "role_hint": "Agent(subagent_type=builder): Implement — trigger: context-budget",
+        "dependency_summary_refs": ["auto_s3_planner"],
+    }
+    if ledger is not None:
+        kwargs["ledger_path"] = ledger
+    return kwargs
+
+
+def _stage_evidence_ledger(tmp_path: Path) -> Path:
+    ledger = tmp_path / "ledger.yaml"
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [_stage_evidence_run()]}, sort_keys=False),
+        encoding="utf-8",
+    )
+    return ledger
+
+
+def _record_stage_evidence_worker(
+    ledger_path: str,
+    stage_id: str,
+    evidence_kind: str,
+    ready_queue: multiprocessing.Queue,
+    start_event: multiprocessing.Event,
+    error_queue: multiprocessing.Queue,
+) -> None:
+    ledger = Path(ledger_path)
+    kwargs = {
+        "run_id": "run-stage-evidence",
+        "stage_id": stage_id,
+        "subagent_type": "builder",
+        "trigger": "concurrent-test",
+        "role_hint": "Agent(subagent_type=builder): Implement - trigger: concurrent-test",
+        "dependency_summary_refs": [],
+        "ledger_path": ledger,
+    }
+    try:
+        ready_queue.put(stage_id)
+        if not start_event.wait(10):
+            raise RuntimeError("timed out waiting for concurrent start")
+        if evidence_kind == "spawn":
+            record_stage_spawn(ledger.parent, **kwargs)
+        elif evidence_kind == "summary":
+            record_stage_summary(
+                ledger.parent,
+                summary_status="complete",
+                summary_disposition="approved",
+                **kwargs,
+            )
+        else:
+            raise RuntimeError(f"unknown evidence kind {evidence_kind!r}")
+    except BaseException as exc:
+        error_queue.put(f"{stage_id}: {type(exc).__name__}: {exc}")
+
+
+def _run_concurrent_stage_evidence_records(
+    ledger: Path,
+    *,
+    evidence_kind: str,
+    count: int = 8,
+) -> None:
+    ctx = multiprocessing.get_context("spawn")
+    ready_queue = ctx.Queue()
+    error_queue = ctx.Queue()
+    start_event = ctx.Event()
+    processes = [
+        ctx.Process(
+            target=_record_stage_evidence_worker,
+            args=(
+                str(ledger),
+                f"stage_{index}",
+                evidence_kind,
+                ready_queue,
+                start_event,
+                error_queue,
+            ),
+        )
+        for index in range(count)
+    ]
+    for process in processes:
+        process.start()
+    try:
+        for _ in processes:
+            ready_queue.get(timeout=10)
+        start_event.set()
+        for process in processes:
+            process.join(20)
+    finally:
+        for process in processes:
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    errors: list[str] = []
+    while True:
+        try:
+            errors.append(error_queue.get_nowait())
+        except queue.Empty:
+            break
+    exitcodes = [process.exitcode for process in processes]
+    assert errors == []
+    assert exitcodes == [0] * count
+
+
+def _spawn_evidence(**overrides: object) -> dict[str, object]:
+    evidence = {
+        **_stage_evidence_kwargs(),
+        "spawned_at": "2026-04-23T10:01:00+00:00",
+    }
+    evidence.update(overrides)
+    return evidence
+
+
+def _summary_evidence(**overrides: object) -> dict[str, object]:
+    evidence = {
+        **_stage_evidence_kwargs(),
+        "summary_recorded_at": "2026-04-23T10:04:00+00:00",
+        "summary_status": "complete",
+        "summary_disposition": "approved",
+    }
+    evidence.update(overrides)
+    return evidence
+
+
+def _inline_exception(**overrides: object) -> dict[str, object]:
+    evidence = {
+        **_stage_evidence_kwargs(),
+        "exception_recorded_at": "2026-04-23T10:00:00+00:00",
+        "exception_reason": "Codex runtime had no safe staged delegation tool for this narrow slice.",
+    }
+    evidence.update(overrides)
+    return evidence
+
+
+def test_validate_accepts_stage_spawn_and_summary_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_spawns": [_spawn_evidence()],
+                "stage_summaries": [_summary_evidence()],
+            }
+        ],
+    }
+
+    assert validate_ledger(data) == []
+
+
+def test_validate_accepts_stage_inline_exception_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_inline_exceptions": [_inline_exception()],
+            }
+        ],
+    }
+
+    assert validate_ledger(data) == []
+
+
+def test_validate_rejects_malformed_stage_inline_exception_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_inline_exceptions": [
+                    {
+                        key: value
+                        for key, value in _inline_exception(
+                            run_id="wrong-run",
+                            exception_recorded_at="not-a-date",
+                            unexpected_field="nope",
+                        ).items()
+                        if key != "exception_reason"
+                    }
+                ],
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("stage_inline_exceptions[0]: run_id" in error for error in errors)
+    assert any("stage_inline_exceptions[0]: 'exception_recorded_at'" in error for error in errors)
+    assert any(
+        "stage_inline_exceptions[0]: missing required field 'exception_reason'" in error
+        for error in errors
+    )
+    assert any(
+        "stage_inline_exceptions[0]: unexpected field 'unexpected_field'" in error
+        for error in errors
+    )
+
+
+def test_validate_rejects_malformed_stage_evidence() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_spawns": [_spawn_evidence(run_id="wrong-run", spawned_at="not-a-date")],
+                "stage_summaries": [
+                    {
+                        key: value
+                        for key, value in _summary_evidence(summary_status="blocked").items()
+                        if key != "summary_disposition"
+                    }
+                ],
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("stage_spawns[0]: run_id" in error for error in errors)
+    assert any("stage_spawns[0]: 'spawned_at'" in error for error in errors)
+    assert any(
+        "stage_summaries[0]: missing required field 'summary_disposition'" in error
+        for error in errors
+    )
+
+
+def test_validate_rejects_extra_stage_evidence_keys() -> None:
+    data = {
+        "schema_version": 1,
+        "runs": [
+            {
+                **_stage_evidence_run(),
+                "stage_spawns": [_spawn_evidence(extra_spawn_field="not allowed")],
+                "stage_summaries": [_summary_evidence(extra_summary_field="not allowed")],
+            }
+        ],
+    }
+
+    errors = validate_ledger(data)
+    assert any("stage_spawns[0]: unexpected field 'extra_spawn_field'" in error for error in errors)
+    assert any(
+        "stage_summaries[0]: unexpected field 'extra_summary_field'" in error for error in errors
+    )
+
+
+def test_record_stage_spawn_and_summary_require_stage_evidence(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+
+    spawn = record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        model="gpt-5.5",
+        reasoning_effort="medium",
+        model_tier="standard",
+        policy_ref="codex-model-selector-policy@2026-04-29",
+        selector_trace_ref=".azoth/codex-model-selector-traces.local.jsonl",
+        **kwargs,
+    )
+    summary = record_stage_summary(
+        tmp_path,
+        summary_status="complete",
+        summary_disposition="approved",
+        evaluator_disposition="pass",
+        score=0.92,
+        ux_anchor_scorecard={"operator_read": "green", "traceability": "green"},
+        verification_commands=["python3 -m pytest tests/test_run_ledger.py -q"],
+        residual_risks=["advisory score does not override gates"],
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+
+    evidence = require_stage_evidence(
+        tmp_path,
+        **kwargs,
+    )
+
+    assert spawn["stage_id"] == "auto_s4_builder"
+    assert spawn["model"] == "gpt-5.5"
+    assert spawn["reasoning_effort"] == "medium"
+    assert spawn["policy_ref"] == "codex-model-selector-policy@2026-04-29"
+    assert summary["summary_status"] == "complete"
+    assert summary["evaluator_disposition"] == "pass"
+    assert summary["score"] == 0.92
+    assert summary["ux_anchor_scorecard"] == {"operator_read": "green", "traceability": "green"}
+    assert summary["verification_commands"] == ["python3 -m pytest tests/test_run_ledger.py -q"]
+    assert summary["residual_risks"] == ["advisory score does not override gates"]
+    assert evidence["spawn"]["spawned_at"] == "2026-04-23T10:01:00+00:00"
+    assert evidence["summary"]["summary_disposition"] == "approved"
+    assert evidence["summary"]["score"] == 0.92
+
+
+def test_require_completion_evidence_accepts_completed_stage_with_valid_pair(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="complete",
+        summary_disposition="approved",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    paired = completion["auto_s4_builder"]["paired_stage_evidence"]
+    assert paired["spawn"]["stage_id"] == "auto_s4_builder"
+    assert paired["summary"]["summary_disposition"] == "approved"
+
+
+def test_record_inline_exception_satisfies_completion_but_not_pair_only_stage_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+
+    exception = record_stage_inline_exception(
+        tmp_path,
+        exception_recorded_at="2026-04-23T10:00:00+00:00",
+        exception_reason="Codex context-budget slice was intentionally executed inline.",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    data["runs"][0]["updated_at"] = "2026-04-23T10:05:00+00:00"
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    assert exception["stage_id"] == "auto_s4_builder"
+    with pytest.raises(ValueError, match="missing stage spawn"):
+        require_stage_evidence(tmp_path, **kwargs)
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+    assert completion["auto_s4_builder"]["inline_exception"]["exception_reason"].startswith(
+        "Codex context-budget"
+    )
+
+
+def test_autonomous_auto_completion_requires_real_stage_spawn(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["mode"] = "autonomous-auto"
+    data["runs"][0]["stages_completed"] = ["autonomous_auto_s1_architect"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    record_stage_inline_exception(
+        tmp_path,
+        stage_id="autonomous_auto_s1_architect",
+        subagent_type="architect",
+        trigger="context-isolation",
+        role_hint="Agent(subagent_type=architect): Architect - trigger: context-isolation",
+        dependency_summary_refs=[],
+        exception_recorded_at="2026-04-23T10:00:30+00:00",
+        exception_reason="Host policy fallback was recorded before work.",
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    with pytest.raises(ValueError, match="inline exception is audit-only"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
+
+
+def test_inline_allowed_policy_can_satisfy_autonomous_auto_completion(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["mode"] = "autonomous-auto"
+    data["runs"][0]["stages_completed"] = ["autonomous_auto_s1_architect"]
+    data["runs"][0]["stage_evidence_policy"] = {
+        "autonomous_auto_s1_architect": "inline_allowed"
+    }
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    record_stage_inline_exception(
+        tmp_path,
+        stage_id="autonomous_auto_s1_architect",
+        subagent_type="architect",
+        trigger="context-isolation",
+        role_hint="Agent(subagent_type=architect): Architect - trigger: context-isolation",
+        dependency_summary_refs=[],
+        exception_recorded_at="2026-04-23T10:00:30+00:00",
+        exception_reason="Explicit inline eligibility was approved before work.",
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    completion = require_completion_evidence(
+        tmp_path,
+        run_id="run-stage-evidence",
+        ledger_path=ledger,
+    )
+
+    assert "inline_exception" in completion["autonomous_auto_s1_architect"]
+
+
+def test_record_inline_exception_cli_and_require_completion_cli(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    record_result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "record-inline-exception",
+            "--run-id",
+            "run-stage-evidence",
+            "--stage-id",
+            "auto_s4_builder",
+            "--subagent-type",
+            "builder",
+            "--trigger",
+            "context-budget",
+            "--role-hint",
+            "Agent(subagent_type=builder): Implement - trigger: context-budget",
+            "--exception-reason",
+            "Codex staged delegation was unavailable before work started.",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    completion_result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "require-completion-evidence",
+            "--run-id",
+            "run-stage-evidence",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "stage inline exception recorded" in record_result.stdout
+    assert "completion evidence OK" in completion_result.stdout
+
+
+def test_require_completion_evidence_fails_closed_for_declared_stage_without_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing completion evidence"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
+
+
+def test_require_completion_evidence_does_not_let_inline_exception_override_blocking_summary(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="needs-input",
+        summary_disposition="request-changes",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    record_stage_inline_exception(
+        tmp_path,
+        exception_recorded_at="2026-04-23T10:00:00+00:00",
+        exception_reason="Inline exception cannot erase a blocking delegated summary.",
+        **kwargs,
+    )
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    data["runs"][0]["stages_completed"] = ["auto_s4_builder"]
+    ledger.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="cannot override invalid paired stage evidence"):
+        require_completion_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            ledger_path=ledger,
+        )
+
+
+def test_record_spawn_cli_accepts_selector_evidence(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--ledger",
+            str(ledger),
+            "record-spawn",
+            "--run-id",
+            "run-stage-evidence",
+            "--stage-id",
+            "auto_s4_builder",
+            "--subagent-type",
+            "builder",
+            "--trigger",
+            "context-budget",
+            "--role-hint",
+            "Agent(subagent_type=builder): Implement - trigger: context-budget",
+            "--model",
+            "gpt-5.5",
+            "--reasoning-effort",
+            "medium",
+            "--model-tier",
+            "standard",
+            "--policy-ref",
+            "codex-model-selector-policy@2026-04-29",
+            "--selector-trace-ref",
+            ".azoth/codex-model-selector-traces.local.jsonl",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "stage spawn recorded" in result.stdout
+    data = yaml.safe_load(ledger.read_text(encoding="utf-8"))
+    spawn = data["runs"][0]["stage_spawns"][0]
+    assert spawn["model"] == "gpt-5.5"
+    assert spawn["reasoning_effort"] == "medium"
+
+
+def test_record_stage_spawn_preserves_concurrent_appends(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    _run_concurrent_stage_evidence_records(ledger, evidence_kind="spawn")
+
+    run = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert sorted(entry["stage_id"] for entry in run["stage_spawns"]) == [
+        f"stage_{index}" for index in range(8)
+    ]
+
+
+def test_record_stage_summary_preserves_concurrent_appends(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    _run_concurrent_stage_evidence_records(ledger, evidence_kind="summary")
+
+    run = yaml.safe_load(ledger.read_text(encoding="utf-8"))["runs"][0]
+    assert sorted(entry["stage_id"] for entry in run["stage_summaries"]) == [
+        f"stage_{index}" for index in range(8)
+    ]
+
+
+def test_require_stage_evidence_accepts_two_paired_stage_ids(tmp_path: Path) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+
+    for stage_id in ("auto_s4_builder", "auto_s5_reviewer"):
+        kwargs = {**_stage_evidence_kwargs(ledger), "stage_id": stage_id}
+        record_stage_spawn(
+            tmp_path,
+            spawned_at="2026-04-23T10:01:00+00:00",
+            **kwargs,
+        )
+        record_stage_summary(
+            tmp_path,
+            summary_status="complete",
+            summary_disposition="approved",
+            summary_recorded_at="2026-04-23T10:04:00+00:00",
+            **kwargs,
+        )
+
+    for stage_id in ("auto_s4_builder", "auto_s5_reviewer"):
+        evidence = require_stage_evidence(
+            tmp_path,
+            **{**_stage_evidence_kwargs(ledger), "stage_id": stage_id},
+        )
+        assert evidence["spawn"]["stage_id"] == stage_id
+        assert evidence["summary"]["stage_id"] == stage_id
+
+
+@pytest.mark.parametrize("evidence_kind", ["spawn", "summary"])
+def test_record_stage_evidence_lock_timeout_names_path_and_retry_action(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    evidence_kind: str,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    attempts = 0
+
+    def contend_for_lock(_lock_file: object) -> bool:
+        nonlocal attempts
+        attempts += 1
+        return False
+
+    monkeypatch.setattr(run_ledger_module, "_try_acquire_ledger_lock", contend_for_lock)
+    monkeypatch.setattr(run_ledger_module, "_LEDGER_LOCK_TIMEOUT_SECONDS", 0.001)
+    monkeypatch.setattr(run_ledger_module, "_LEDGER_LOCK_POLL_SECONDS", 0)
+
+    with pytest.raises(ValueError) as excinfo:
+        if evidence_kind == "spawn":
+            record_stage_spawn(
+                tmp_path,
+                spawned_at="2026-04-23T10:01:00+00:00",
+                **_stage_evidence_kwargs(ledger),
+            )
+        else:
+            record_stage_summary(
+                tmp_path,
+                summary_status="complete",
+                summary_disposition="approved",
+                summary_recorded_at="2026-04-23T10:04:00+00:00",
+                **_stage_evidence_kwargs(ledger),
+            )
+
+    message = str(excinfo.value)
+    assert attempts > 1
+    assert str(ledger.with_name(f"{ledger.name}.lock")) in message
+    assert str(ledger) in message
+    assert "timed out" in message.lower()
+    assert "retry" in message.lower()
+    assert "serialize" in message.lower()
+
+
+def test_require_stage_evidence_fails_closed_on_missing_or_mismatched_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+
+    with pytest.raises(ValueError, match="missing stage spawn"):
+        require_stage_evidence(
+            tmp_path,
+            **kwargs,
+        )
+
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+
+    with pytest.raises(ValueError, match="missing stage summary"):
+        require_stage_evidence(
+            tmp_path,
+            **kwargs,
+        )
+
+    record_stage_summary(
+        tmp_path,
+        run_id="run-stage-evidence",
+        stage_id="auto_s4_builder",
+        subagent_type="planner",
+        trigger="context-isolation",
+        role_hint="Agent(subagent_type=planner): Plan — trigger: context-isolation",
+        dependency_summary_refs=[],
+        summary_status="complete",
+        summary_disposition="approved",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        ledger_path=ledger,
+    )
+
+    with pytest.raises(ValueError, match="does not match latest spawn"):
+        require_stage_evidence(
+            tmp_path,
+            run_id="run-stage-evidence",
+            stage_id="auto_s4_builder",
+            ledger_path=ledger,
+        )
+
+
+def test_require_stage_evidence_uses_latest_summary_and_blocks_bad_disposition(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="complete",
+        summary_disposition="approved",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="blocked",
+        summary_disposition="request-changes",
+        summary_recorded_at="2026-04-23T10:05:00+00:00",
+        **kwargs,
+    )
+
+    with pytest.raises(ValueError, match="blocking stage summary"):
+        require_stage_evidence(
+            tmp_path,
+            **kwargs,
+        )
+
+
+def test_require_stage_evidence_rejects_older_summary_after_newer_identical_spawn(
+    tmp_path: Path,
+) -> None:
+    ledger = _stage_evidence_ledger(tmp_path)
+    kwargs = _stage_evidence_kwargs(ledger)
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:01:00+00:00",
+        **kwargs,
+    )
+    record_stage_summary(
+        tmp_path,
+        summary_status="complete",
+        summary_disposition="approved",
+        summary_recorded_at="2026-04-23T10:04:00+00:00",
+        **kwargs,
+    )
+    record_stage_spawn(
+        tmp_path,
+        spawned_at="2026-04-23T10:05:00+00:00",
+        **kwargs,
+    )
+
+    with pytest.raises(ValueError, match="older than latest spawn"):
+        require_stage_evidence(
+            tmp_path,
+            **kwargs,
+        )
+
+
+def test_require_stage_evidence_rejects_paired_malformed_stage_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    run = _stage_evidence_run()
+    run["stage_spawns"] = [_spawn_evidence()]
+    run["stage_summaries"] = [
+        {key: value for key, value in _summary_evidence().items() if key != "summary_disposition"}
+    ]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="malformed governed run evidence ledger.*stage_summaries\\[0\\]",
+    ):
+        require_stage_evidence(
+            tmp_path,
+            **_stage_evidence_kwargs(ledger),
+        )
+
+
+def test_require_stage_evidence_rejects_paired_wrong_run_id_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    run = _stage_evidence_run()
+    run["stage_spawns"] = [_spawn_evidence(run_id="wrong-run")]
+    run["stage_summaries"] = [_summary_evidence(run_id="wrong-run")]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="malformed governed run evidence ledger.*stage_spawns\\[0\\]: run_id",
+    ):
+        require_stage_evidence(
+            tmp_path,
+            **_stage_evidence_kwargs(ledger),
+        )
+
+
+@pytest.mark.parametrize(
+    ("dependency_summary_refs", "expected_message"),
+    [
+        ("auto_s3_planner", "dependency_summary_refs must be a list"),
+        (["auto_s3_planner", 123], "dependency_summary_refs\\[1\\] must be a non-empty string"),
+    ],
+)
+def test_require_stage_evidence_rejects_paired_malformed_dependency_refs(
+    tmp_path: Path,
+    dependency_summary_refs: object,
+    expected_message: str,
+) -> None:
+    ledger = tmp_path / "ledger.yaml"
+    run = _stage_evidence_run()
+    run["stage_spawns"] = [_spawn_evidence(dependency_summary_refs=dependency_summary_refs)]
+    run["stage_summaries"] = [_summary_evidence(dependency_summary_refs=dependency_summary_refs)]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=f"malformed governed run evidence ledger.*{expected_message}",
+    ):
+        require_stage_evidence(
+            tmp_path,
+            **_stage_evidence_kwargs(ledger),
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_blocks_matching_open_run(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    run = _stage_evidence_run()
+    run["status"] = "paused"
+    run["stage_spawns"] = [_spawn_evidence()]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="unresolved governed run evidence"):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_rejects_paired_malformed_stage_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    run = _stage_evidence_run()
+    run["status"] = "paused"
+    run["stage_spawns"] = [_spawn_evidence()]
+    run["stage_summaries"] = [
+        {key: value for key, value in _summary_evidence().items() if key != "summary_disposition"}
+    ]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="malformed governed run evidence ledger.*stage_summaries\\[0\\]",
+    ):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_rejects_paired_wrong_run_id_evidence(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    run = _stage_evidence_run()
+    run["status"] = "paused"
+    run["stage_spawns"] = [_spawn_evidence(run_id="wrong-run")]
+    run["stage_summaries"] = [_summary_evidence(run_id="wrong-run")]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="malformed governed run evidence ledger.*stage_spawns\\[0\\]: run_id",
+    ):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+@pytest.mark.parametrize(
+    ("dependency_summary_refs", "expected_message"),
+    [
+        ("auto_s3_planner", "dependency_summary_refs must be a list"),
+        (["auto_s3_planner", 123], "dependency_summary_refs\\[1\\] must be a non-empty string"),
+    ],
+)
+def test_assert_no_unresolved_governed_run_evidence_rejects_paired_malformed_dependency_refs(
+    tmp_path: Path,
+    dependency_summary_refs: object,
+    expected_message: str,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    run = _stage_evidence_run()
+    run["status"] = "paused"
+    run["stage_spawns"] = [_spawn_evidence(dependency_summary_refs=dependency_summary_refs)]
+    run["stage_summaries"] = [_summary_evidence(dependency_summary_refs=dependency_summary_refs)]
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=f"malformed governed run evidence ledger.*{expected_message}",
+    ):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_rejects_malformed_ledger(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    ledger.write_text("schema_version: 1\nruns: [\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="could not read/parse ledger YAML"):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_rejects_non_list_runs(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": {"run_id": "run-stage-evidence"}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="runs must be a list"):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_rejects_malformed_stage_spawns(
+    tmp_path: Path,
+) -> None:
+    ledger = tmp_path / ".azoth" / "run-ledger.local.yaml"
+    ledger.parent.mkdir()
+    run = _stage_evidence_run()
+    run["status"] = "paused"
+    run["stage_spawns"] = {"stage_id": "auto_s4_builder"}
+    ledger.write_text(
+        yaml.safe_dump({"schema_version": 1, "runs": [run]}, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="stage_spawns must be a list"):
+        assert_no_unresolved_governed_run_evidence(
+            tmp_path,
+            session_id="sess-stage-evidence",
+            governed_modes={"auto"},
+        )
+
+
+def test_assert_no_unresolved_governed_run_evidence_allows_missing_ledger(
+    tmp_path: Path,
+) -> None:
+    assert_no_unresolved_governed_run_evidence(
+        tmp_path,
+        session_id="sess-stage-evidence",
+        governed_modes={"auto"},
+    )
 
 
 # ── 17–19. load_active_run unit tests ─────────────────────────────────────────

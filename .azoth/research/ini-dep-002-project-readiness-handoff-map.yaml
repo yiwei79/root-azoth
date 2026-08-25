@@ -1,0 +1,131 @@
+schema_version: 1
+artifact_type: readiness_handoff_map
+initiative_ref: INI-DEP-002
+task_candidate_ref: T-062
+title: Project-local mode receipts and cockpit handoff map
+status: planning_only
+created_at: "2026-05-19T19:36:00Z"
+updated_at: "2026-05-19T19:36:00Z"
+session_id: 2026-05-19-deployment-project-readiness-handoff-planning
+owner: root_azoth
+purpose: >
+  Define the planning-only bridge between root-owned deployment readiness,
+  cockpit pointer/readback, and future project-local Azoth mode receipts.
+  This artifact does not create a receipt in any project repository.
+predecessors:
+  initiative_ref: INI-DEP-001
+  task_refs:
+    - T-059
+    - T-060
+    - T-061
+  evidence_refs:
+    - .azoth/research/t-059-deployment-readiness-mode-matrix.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-060.yaml
+    - .azoth/roadmap-specs/v0.2.0/T-061.yaml
+authority_boundary:
+  root_azoth: "Defines contract, validators, planning banks, and readiness language."
+  public_azoth: "May later ship receipt templates after a public release gate."
+  personal_cockpit: "Displays pointer-only readback and next safe action."
+  project_local: "Owns receipt, selected mode, local context, and write authority."
+source_of_truth_order:
+  - project_local_receipt
+  - cockpit_pointer_readback
+  - next_safe_action
+canonical_cockpit_readback_fields:
+  - project_pointer
+  - authority_plane
+  - selected_mode
+  - readiness_state
+  - freshness_status
+  - installed_asset_classes
+  - missing_asset_classes
+  - approval_scope
+  - active_write_claim
+  - next_safe_action
+  - stop_reason
+project_local_receipt_contract:
+  future_project_local_path: .azoth/project-local-mode-receipt.yaml
+  status: schema_only_not_created
+  minimum_fields:
+    - project_id
+    - repo_path
+    - receipt_owner
+    - selected_mode
+    - release_profile_ref
+    - readiness_state
+    - freshness_status
+    - installed_asset_classes
+    - missing_asset_classes
+    - approval_scope
+    - active_write_claim
+    - next_safe_action
+    - stop_reason
+    - handoff_receipt_ref
+  ownership_rules:
+    - "receipt_owner must be project_local for authoritative project state"
+    - "root_azoth may define the schema but must not write project-local receipts from this campaign"
+    - "personal_cockpit may display receipt status but must not silently repair or create receipts"
+    - "public_azoth may later include a template only after a release-specific gate"
+cockpit_handoff_states:
+  missing_receipt:
+    readiness_state: blocked
+    stop_reason: project_local_receipt_missing
+    next_safe_action: "show orientation or request a fresh project-local receipt gate"
+  stale_receipt:
+    readiness_state: blocked
+    stop_reason: project_local_receipt_stale
+    next_safe_action: "refresh receipt under project-local authority"
+  guide_ready:
+    readiness_state: ready_for_read_only_guidance
+    stop_reason: none
+    next_safe_action: "open orientation or request assisted mode"
+  assisted_ready:
+    readiness_state: ready_for_read_only_assistance
+    stop_reason: none
+    next_safe_action: "run read-only checks or request managed hydration"
+  managed_requested:
+    readiness_state: requires_authority
+    stop_reason: managed_mode_requires_project_local_gate
+    next_safe_action: "open a project-local managed-mode gate"
+  governed_autonomy_requested:
+    readiness_state: requires_authority
+    stop_reason: autonomy_requires_budget_ledger_and_stop_conditions
+    next_safe_action: "open a bounded governed-autonomy campaign only after managed readiness"
+mode_pass_stop_signals:
+  guide:
+    pass_signal: "project pointer and guide receipt are non-stale"
+    stop_signal: "receipt missing or cockpit cannot name project_pointer"
+  assisted:
+    pass_signal: "guide receipt plus skills/agents/wrappers inventory are present"
+    stop_signal: "advertised helper class is missing or next action would write"
+  managed:
+    pass_signal: "project-local receipt approves planning seeds and validators"
+    stop_signal: "approval scope does not name managed mode"
+  governed_autonomy:
+    pass_signal: "managed readiness, ledger proof, budget, write claim, and stop conditions agree"
+    stop_signal: "route says stop, claim conflicts, budget missing, or stage evidence missing"
+freshness_policy:
+  current_status: current_as_of_2026_05_19_planning_only_gate
+  stale_when:
+    - "receipt freshness_status is stale or absent"
+    - "release_profile_ref points to a superseded profile"
+    - "cockpit readback omits canonical fields"
+    - "approval_scope does not match the requested mode"
+t062_state:
+  status: proposed_only
+  allowed_now:
+    - "planning contract definition"
+    - "proposal validation"
+    - "initiative and design bank validation"
+  blocked_now:
+    - "roadmap/backlog/spec hydration"
+    - "code implementation"
+    - "release publishing"
+    - "public Azoth mutation"
+    - "personal cockpit mutation"
+    - "project-local repo mutation"
+validation_refs:
+  - "python3 scripts/architecture_proposal_validate.py .azoth/proposals/project-local-mode-receipts-and-cockpit-handoff.yaml"
+  - "python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-DEP-002.yaml"
+  - "python3 scripts/planning_bank_validate.py .azoth/design-banks/project-readiness-cockpit-handoff.yaml"
+  - "python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-DEP-002.yaml --candidate-id slice-dep-002-a"

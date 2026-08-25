@@ -1,0 +1,79 @@
+id: T-056
+roadmap_version: v0.2.0
+title: Nightly automation audit bundle and approval contract
+decision_ref:
+- D21
+- D23
+- D32
+- D50
+intent: >
+  Implement the first delivery slice from the refined automation-audit proposal:
+  a read-only nightly automation audit bundle plus a compact approval contract
+  that lets the operator approve, skip, defer, or cleanup named audit items
+  without opening apply, producer, or integration side effects.
+problem: >
+  Nightly automation findings currently require too much manual choreography:
+  an architect audit, possible intake, and then separate handoff or integration
+  work. The refined proposal concluded that the first safe implementation slice
+  should reduce operator friction only at the audit and approval surface while
+  preserving Azoth's existing inbox, producer-handoff, worktree-sync, and
+  single-integrator boundaries.
+context_refs:
+- .azoth/proposals/automation-audit-insight-harvest-refinement.yaml
+- .agents/workflows/intake.md
+- .agents/workflows/worktree-sync.md
+- docs/playbook/05-parallel-sessions.md
+- scripts/autonomous_campaign_audit.py
+- scripts/autonomous_loop.py
+scope:
+- Generate or expose a compact audit bundle for nightly automation review with
+  stable item ids, audit window, generated_at, target branch, branch freshness,
+  evidence refs, source summary, blocked alternatives, protected-boundary hits,
+  and verification notes.
+- Classify each audit item as `insight-only`, `proposal`, `code-salvage`,
+  `cleanup-only`, or `no-action`, and attach freshness status, recommended
+  disposition, least-powerful safe action, risk level, protected boundary,
+  apply target, verification hint, and blocked_until.
+- Emit a recommended operator approval reply that can bind item ids to
+  dispositions without applying the selected actions.
+- Add validation that audit mode remains read-only with respect to inbox writes,
+  roadmap/backlog mutation beyond explicit task lifecycle, producer worktrees,
+  worktree-sync, apply routing, and integration.
+- Replay the 2026-04-21 automation-worktree audit shape and preserve the direct
+  integration rejection while surfacing approved insight-harvest candidates.
+non_goals:
+- No queue-only apply router in this slice.
+- No direct inbox/intake writes from the audit bundle.
+- No producer worktree creation.
+- No worktree-sync invocation.
+- No trusted-source registry change.
+- No land-now or integration behavior.
+- No kernel, governance, M1, credential, or network-policy mutation.
+- No direct promotion of audit findings into M3, backlog, roadmap, or release
+  state.
+acceptance:
+- The audit bundle has stable item ids, item classes, evidence refs, blocked
+  alternatives, freshness status, protected-boundary fields, and verification
+  notes.
+- The operator packet includes a compact approval reply template and does not
+  treat broad wording such as "approve the audit" as apply authorization.
+- Tests or validators prove audit mode cannot open producer worktrees, write
+  inbox entries, run worktree-sync, invoke apply routing, or integrate handoffs.
+- Replay against the 2026-04-21 automation audit rejects direct integration,
+  preserves useful insight candidates, and explains why code-salvage must be
+  replayed from the current target branch.
+- The task leaves queue-only apply routing, trusted-source registry changes, and
+  land-now integration as explicit later slices.
+dependencies: []
+delivery:
+  target_layer: pipelines
+  delivery_pipeline: standard
+  suggested_command: /auto
+validation:
+- python3 scripts/autonomous_loop.py campaign-audit --loop-id automation-audit-insight-harvest-refinement-20260503
+- python3 scripts/architecture_proposal_validate.py .azoth/proposals/automation-audit-insight-harvest-refinement.yaml
+- python3 scripts/proposal_knowledge_richness.py .azoth/proposals/automation-audit-insight-harvest-refinement.yaml
+elasticity: >
+  Keep this slice read-only and operator-packet focused. If delivery discovers
+  apply-routing requirements, split them into the proposal's later queue-only
+  apply slice rather than expanding T-056.

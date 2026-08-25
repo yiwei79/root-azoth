@@ -1,0 +1,81 @@
+id: T-053
+roadmap_version: v0.2.0
+title: Private backup and recovery readiness for yiwei-azoth-cockpit
+decision_ref:
+- D11
+- D30
+- D34
+- D42
+- D48
+- D50
+- D52
+intent: Make the deployed personal cockpit operationally safe by defining the
+  private backup/recovery readiness lane and the operator onboarding path that
+  should exist before the cockpit coordinates more project consumers or expands
+  retrieval/source onboarding.
+problem: T-052 established `/Users/yiwei/GithubRepos/yiwei-azoth-cockpit` as the
+  live local cockpit, but the deployment is not yet ready to become the durable
+  control point for more projects until the operator has an auditable backup model,
+  a restore/rollback verification checklist, clear deferred implementation gates,
+  and a practical onboarding guide for daily use.
+context_refs:
+- .azoth/handoffs/2026-05-01-t-053-private-backup-recovery-seed.yaml
+- .azoth/handoffs/2026-05-01-t-052-personal-cockpit-deployment.yaml
+- .azoth/initiative-banks/INI-PKB-001.yaml
+- docs/personal-control-plane/PERSONAL-CONTROL-PLANE-DEPLOYMENT-PROCEDURE.md
+- docs/personal-control-plane/PERSONAL-KNOWLEDGE-ARCHITECTURE.md
+scope:
+- Hydrate INI-PKB-001 / slice-pkb-001-j into the active T-053 roadmap, backlog,
+  and task-spec surfaces.
+- Define the delivery boundary for a root-side private backup/recovery readiness
+  package for `yiwei-azoth-cockpit`, including backup choices, restore-test
+  expectations, rollback evidence, and residual risks.
+- Deliver a human-facing operator onboarding guide that explains how to use the
+  cockpit after deployment without expanding into source onboarding or retrieval
+  indexing.
+- Preserve the T-049 pointer-only project boundary and keep all project repos
+  outside this task's mutation surface.
+- Record that actual backup provisioning, credential access, cloud/storage writes,
+  personal-cockpit mutation, project writes, source onboarding, retrieval expansion,
+  public release, governance, kernel, and M1 changes remain separate gates.
+non_goals:
+- No backup provisioning or storage writes.
+- No credential access or cloud account provisioning.
+- No personal-cockpit mutation.
+- No project repo write or source scanning.
+- No source registry onboarding.
+- No retrieval, graph, or vector index expansion.
+- No public product mutation or release publication.
+- No governance, kernel, or M1 change.
+acceptance:
+- Roadmap, backlog, and INI-PKB-001 agree that T-053 is the completed
+  historical private backup/recovery readiness task, not an active delivery
+  lane.
+- The operator onboarding guide exists at
+  `docs/personal-control-plane/YIWEI-AZOTH-COCKPIT-OPERATOR-ONBOARDING.md` and
+  keeps daily use separate from project source onboarding or retrieval expansion.
+- Hydration history records slice-pkb-001-j -> T-053 with the fresh
+  `hydration_specific_slice_pkb_001_j` approval scope.
+- The delivery handoff records that root-side readiness and onboarding documentation
+  closed, while storage/credential/cockpit/project mutation remains forbidden.
+- Focused planning-bank, roadmap, and personal-control-plane tests pass.
+dependencies:
+- T-052
+delivery:
+  target_layer: planning
+  delivery_pipeline: governed
+  suggested_command: /deliver-full
+validation:
+- python3 scripts/check_gates.py --session-id 2026-05-01-t-053-hydration-cockpit-readiness
+  --require-pipeline-gate
+- python3 scripts/planning_bank_validate.py .azoth/initiative-banks/INI-PKB-001.yaml
+  --check-roadmap-refs
+- python3 scripts/planning_bank_validate.py --readiness-report .azoth/initiative-banks/INI-PKB-001.yaml
+- PYTHONPYCACHEPREFIX=/tmp/pycache python3 -m pytest tests/test_personal_control_plane_procedure.py
+  tests/test_post_t050_continuation_intake.py tests/test_t050_stable_personal_control_plane.py
+  tests/test_t049_project_onboarding_receipt.py -q
+elasticity: After this documentation closeout, open a separate operator-selected
+  gate for backup implementation, another project consumer, retrieval/source onboarding,
+  public-product update, or stop/defer. Do not treat T-053 delivery as permission
+  to provision backups, read credentials, mutate the cockpit, mutate project repos,
+  onboard sources, expand retrieval, or publish a release.

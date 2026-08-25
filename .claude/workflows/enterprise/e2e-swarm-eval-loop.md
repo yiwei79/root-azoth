@@ -52,7 +52,7 @@ Wave D — targeted fix (sequential per failed branch, or parallel if fixes inde
 → repeat Wave C–D until all ≥ 0.9 or max rounds
 ```
 
-- **Fan-out cap:** default to **`≤ 7 Tasks per wave`** for stable cost and predictability, and never exceed the active platform execution budget. On Codex, the default is `10` threads at depth `2`; evaluator waves are normally leaf-only, so treat that budget as a hard upper bound and keep the working cap at `7` unless the human explicitly authorizes a larger wave.
+- **Fan-out cap:** default to **`≤ 7 Tasks per wave`** for stable cost and predictability, and never exceed the active platform execution budget. On Codex, the default is `16` threads at depth `3`; evaluator waves are normally leaf-only, so keep the working cap at `7` unless the human explicitly authorizes a larger wave.
 - **Dependencies:** If branch B needs branch A’s output, **do not** parallelize A and B in Wave A; sequence them and run parallel eval only when artifacts exist.
 
 ---

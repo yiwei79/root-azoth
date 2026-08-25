@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "packet_type": "public_product_update_policy_four_plane_boundary_scorecard",
+  "campaign_id": "public-product-update-policy-four-plane-boundary-20260505",
+  "child_scope": "2026-05-05-autonomous-auto-public-product-update-policy-and-four-plane-release-boundary-1",
+  "threshold": 0.9,
+  "verdict": "pass",
+  "score": 0.94,
+  "selected_strategy": "two_gate_public_update_path",
+  "recommended_next_campaign": "public-release-readiness-preflight-no-public-mutation",
+  "dimensions": {
+    "public_freshness_truth": {
+      "score": 0.96,
+      "evidence": "Normal freshness check passes as intentionally_stale; require-fresh fails as expected."
+    },
+    "four_plane_boundary_fit": {
+      "score": 0.95,
+      "evidence": "Packet distinguishes 3-tier product flow from 4-plane authority and keeps project repos as authority-owning planes."
+    },
+    "governance_safety": {
+      "score": 0.97,
+      "evidence": "Blocks public mutation, cockpit/project writes, credentials, dependencies, kernel/governance/M1, destructive actions, commits, and pushes."
+    },
+    "product_strategy_quality": {
+      "score": 0.93,
+      "evidence": "Recommends a two-gate model that separates evidence refresh from protected public sync/release."
+    },
+    "operator_ux": {
+      "score": 0.92,
+      "evidence": "Ends with one copy-paste approval prompt and four explicit decision outcomes."
+    },
+    "bounded_scope": {
+      "score": 0.93,
+      "evidence": "Next campaign remains research/refinement only and uses /private/tmp for smoke output."
+    }
+  },
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "score": 0.87,
+      "finding": "Direct public-sync recommendation would overstep the current intentionally_stale freshness policy.",
+      "disposition": "Recomposed into Gate A preflight without public mutation and Gate B protected sync only after later approval."
+    },
+    {
+      "iteration": 2,
+      "score": 0.94,
+      "finding": "Two-gate strategy preserves release truth and gives the operator a concrete next campaign.",
+      "disposition": "Pass."
+    }
+  ],
+  "rejected_alternatives": [
+    {
+      "candidate": "direct-public-sync-and-release-now",
+      "reason": "Rejected because current policy is intentionally_stale and this campaign blocks public mutation, commits, tags, pushes, and release actions."
+    },
+    {
+      "candidate": "keep-public-azoth-stale-with-no-next-action",
+      "reason": "Safe but too passive; a read-only preflight can produce useful evidence without crossing protected gates."
+    },
+    {
+      "candidate": "four-plane-language-only-cleanup",
+      "reason": "Useful but narrower than the public update boundary question."
+    },
+    {
+      "candidate": "cockpit-private-backup-decision",
+      "reason": "Protected and likely to involve private remote, backup, restore, or credentials."
+    },
+    {
+      "candidate": "initiative-hydration-campaign",
+      "reason": "PM mobility reports zero safe hydration candidates."
+    }
+  ],
+  "residual_risks": [
+    "A preflight evidence bundle can become stale and must not authorize public mutation by itself.",
+    "Future release sync must name exact source commit, validation bundle, public checkout state, tag/release behavior, and freshness policy update.",
+    "Consumer-safe full-profile parity must avoid copying root runtime state, private memory, campaign history, gates, claims, cockpit receipts, or project-owned context."
+  ],
+  "next_required_operator_decision": "Approve the Public Release Readiness Preflight, No Public Mutation campaign; choose a narrower internal language-alignment lane; choose a protected cockpit/private resilience lane; or defer."
+}

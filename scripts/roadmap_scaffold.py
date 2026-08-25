@@ -327,6 +327,119 @@ def _build_spec_stub(
     }
 
 
+def _find_task_in_version(version: dict[str, Any], task_id: str) -> dict[str, Any] | None:
+    tasks = version.get("tasks")
+    if not isinstance(tasks, list):
+        return None
+    for item in tasks:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == task_id:
+            return item
+    return None
+
+
+def _backlog_row_exists(backlog: dict[str, Any], task_id: str) -> bool:
+    items = backlog.get("items")
+    if not isinstance(items, list):
+        return False
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("id") or "").strip() == task_id:
+            return True
+        if str(item.get("roadmap_ref") or "").strip() == task_id:
+            return True
+    return False
+
+
+def _hydrate_existing_task(
+    *,
+    args: argparse.Namespace,
+    roadmap: dict[str, Any],
+    backlog: dict[str, Any],
+    active_version: str,
+    active_entry: dict[str, Any],
+    milestone: str,
+    created_date: str,
+) -> tuple[str, list[Path]]:
+    task_id = str(args.hydrate_task or "").strip()
+    if not task_id:
+        _die("--hydrate-task requires a non-empty task id")
+
+    task = _find_task_in_version(active_entry, task_id)
+    if task is None:
+        _die(f"--hydrate-task refused: {task_id!r} is not present in {active_version} tasks")
+
+    if _backlog_row_exists(backlog, task_id):
+        _die(f"--hydrate-task refused: backlog row already exists for {task_id}")
+
+    title = str(task.get("title") or "").strip()
+    if not title:
+        _die(f"--hydrate-task refused: roadmap task {task_id!r} is missing a title")
+
+    task_initiative_ref = str(task.get("initiative_ref") or "").strip() or None
+    if args.initiative_ref and task_initiative_ref and args.initiative_ref != task_initiative_ref:
+        _die(
+            f"--hydrate-task refused: initiative_ref mismatch for {task_id} "
+            f"({args.initiative_ref!r} != {task_initiative_ref!r})"
+        )
+
+    initiative_ref = args.initiative_ref or task_initiative_ref
+    decision_ref = _normalize_decision_refs(args.decision_ref) or _normalize_decision_refs(
+        task.get("decision_ref")
+    )
+    blocked_by = _normalize_blocked_by(args.blocked_by) or _normalize_blocked_by(
+        task.get("blocked_by")
+    )
+    target_layer = args.target_layer or str(task.get("target_layer") or "infrastructure")
+    delivery_pipeline = args.delivery_pipeline or str(task.get("delivery_pipeline") or "standard")
+    target_version = args.target_version or active_version
+    priority = args.priority if args.priority is not None else 3
+    source = args.source or _default_source(f"roadmap-hydrate-{task_id.lower()}", created_date)
+    description = (
+        args.description
+        or f'TODO: flesh out backlog description for hydrated roadmap task "{title}".'
+    )
+
+    backlog["items"].append(
+        _build_backlog_item(
+            item_id=task_id,
+            title=title,
+            source=source,
+            target_layer=target_layer,
+            delivery_pipeline=delivery_pipeline,
+            target_version=target_version,
+            priority=priority,
+            created_date=created_date,
+            description=description,
+            decision_ref=decision_ref,
+            blocked_by=blocked_by,
+            initiative_ref=initiative_ref,
+            roadmap_backed=True,
+        )
+    )
+
+    spec_path = args.specs_root / milestone / f"{task_id}.yaml"
+    written = [args.backlog_yaml]
+    if not spec_path.exists():
+        spec_path.parent.mkdir(parents=True, exist_ok=True)
+        _dump_yaml(
+            spec_path,
+            _build_spec_stub(
+                item_id=task_id,
+                roadmap_version=milestone,
+                title=title,
+                decision_ref=decision_ref,
+                target_layer=target_layer,
+                delivery_pipeline=delivery_pipeline,
+                blocked_by=blocked_by,
+            ),
+        )
+        written.append(spec_path)
+
+    _dump_yaml(args.backlog_yaml, backlog)
+    return task_id, written
+
+
 def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
     roadmap = _load_yaml(args.roadmap_yaml)
     backlog = _load_yaml(args.backlog_yaml)
@@ -339,10 +452,28 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
     target_version = args.target_version or active_version
     decision_ref = _normalize_decision_refs(args.decision_ref)
     blocked_by = _normalize_blocked_by(args.blocked_by)
+    target_layer = args.target_layer or "infrastructure"
+    delivery_pipeline = args.delivery_pipeline or "standard"
+    priority = args.priority if args.priority is not None else 3
     initiative = _find_initiative(roadmap, args.initiative_ref)
     completed_ids = _completed_task_ids(roadmap, backlog)
 
+    if args.hydrate_task:
+        if args.namespace != "roadmap":
+            _die("--hydrate-task only supports the roadmap namespace")
+        return _hydrate_existing_task(
+            args=args,
+            roadmap=roadmap,
+            backlog=backlog,
+            active_version=active_version,
+            active_entry=active_entry,
+            milestone=milestone,
+            created_date=created_date,
+        )
+
     if args.namespace == "backlog":
+        if not args.title:
+            _die("--title is required unless --hydrate-task is used")
         item_id = roadmap_task_id.next_backlog_id(roadmap, backlog, args.specs_root)
         source = args.source or _default_source("backlog-scaffold", created_date)
         description = (
@@ -353,10 +484,10 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
                 item_id=item_id,
                 title=args.title,
                 source=source,
-                target_layer=args.target_layer,
-                delivery_pipeline=args.delivery_pipeline,
+                target_layer=target_layer,
+                delivery_pipeline=delivery_pipeline,
                 target_version=target_version,
-                priority=args.priority,
+                priority=priority,
                 created_date=created_date,
                 description=description,
                 decision_ref=decision_ref,
@@ -367,6 +498,9 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
         )
         _dump_yaml(args.backlog_yaml, backlog)
         return item_id, [args.backlog_yaml]
+
+    if not args.title:
+        _die("--title is required unless --hydrate-task is used")
 
     item_id = roadmap_task_id.next_task_id(
         roadmap,
@@ -383,10 +517,10 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
             item_id=item_id,
             title=args.title,
             source=source,
-            target_layer=args.target_layer,
-            delivery_pipeline=args.delivery_pipeline,
+            target_layer=target_layer,
+            delivery_pipeline=delivery_pipeline,
             target_version=target_version,
-            priority=args.priority,
+            priority=priority,
             created_date=created_date,
             description=description,
             decision_ref=decision_ref,
@@ -413,8 +547,8 @@ def scaffold(args: argparse.Namespace) -> tuple[str, list[Path]]:
         roadmap_version=milestone,
         title=args.title,
         decision_ref=decision_ref,
-        target_layer=args.target_layer,
-        delivery_pipeline=args.delivery_pipeline,
+        target_layer=target_layer,
+        delivery_pipeline=delivery_pipeline,
         blocked_by=blocked_by,
     )
     _dump_yaml(spec_path, spec_stub)
@@ -437,7 +571,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Create a coherent roadmap/backlog/spec scaffold for a new task.",
     )
-    parser.add_argument("--title", required=True, help="Task title to scaffold.")
+    parser.add_argument("--title", help="Task title to scaffold.")
+    parser.add_argument(
+        "--hydrate-task",
+        help="Hydrate backlog/spec state for an existing active-version roadmap task.",
+    )
     parser.add_argument(
         "--namespace",
         choices=("roadmap", "backlog"),
@@ -455,15 +593,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--blocked-by", nargs="*", default=[])
     parser.add_argument("--source", type=str, default=None)
     parser.add_argument("--description", type=str, default=None)
-    parser.add_argument("--target-layer", type=str, default="infrastructure")
-    parser.add_argument("--delivery-pipeline", type=str, default="standard")
-    parser.add_argument("--priority", type=int, default=3)
+    parser.add_argument("--target-layer", type=str, default=None)
+    parser.add_argument("--delivery-pipeline", type=str, default=None)
+    parser.add_argument("--priority", type=int, default=None)
     parser.add_argument("--created-date", type=str, default=None)
     return parser
 
 
 def main() -> None:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+    if not args.title and not args.hydrate_task:
+        parser.error("either --title or --hydrate-task is required")
     item_id, written = scaffold(args)
     print(item_id)
     for path in written:

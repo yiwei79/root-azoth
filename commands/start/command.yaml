@@ -20,6 +20,7 @@ state:
   reads:
     - azoth.yaml
     - .azoth/backlog.yaml
+    - .azoth/session-gate.json
     - .azoth/scope-gate.json
     - .azoth/session-state.md
     - .azoth/memory/episodes.jsonl

@@ -1,0 +1,42 @@
+schema_version: 1
+campaign_id: campaign-breadth-route-legibility-repair-20260506
+title: Campaign Breadth and Route-Legibility Repair
+mode: autonomous-auto
+created_at: '2026-05-06T00:00:00Z'
+branch: phase/v0.2.0-p4
+status: approved
+approval_basis: Operator approved proceeding after declaring the campaign on 2026-05-06.
+goal: >-
+  Resolve why autonomous-auto campaigns feel too narrowly scoped even when route truth
+  is correct. Make the system reliably distinguish healthy narrowness from unhealthy
+  operator-legibility gaps.
+design_intent: >-
+  Improve autonomous-auto as an operating system: ambitious campaign envelope,
+  narrow safe child edges, explicit route authority, visible stage evidence, fresh
+  approval boundaries, and no hidden public-release drift.
+allowed_actions:
+  - research_initiative
+  - refine_proposal
+  - ship_task
+  - capture_self_improvement
+budget:
+  max_child_scopes: 4
+  bounded_replay_per_child: 1
+blocked_boundaries:
+  - public_release
+  - public_sync_or_freshness
+  - tag_push_publish
+  - cockpit_or_project_mutation
+  - roadmap_backlog_spec_hydration
+  - dependency_or_network_expansion
+  - credentials_or_backups
+  - destructive_actions
+  - kernel_governance_m1_changes
+  - commits_unless_separately_requested
+acceptance_criteria:
+  - Completed green loops no longer show confusing route-authority language when richer route truth exists.
+  - Operator read separates current loop truth, next-campaign recommendation, stale or complete route blocks, and fresh-approval requirement.
+  - Campaign report separates current truth from historical handoff/archive noise.
+  - Residual risks can be classified as live, superseded, stale, or packaging-only.
+  - Route truth remains fail-closed with no stale hydration, old-budget continuation, or public-release drift.
+  - Evaluator score is at least 0.90 with rejected alternatives and residual risks.
