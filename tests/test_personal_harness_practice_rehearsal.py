@@ -41,6 +41,7 @@ def test_practice_rehearsal_covers_daily_domains_and_modes(tmp_path: Path) -> No
     }
     for case in report["cases"]:
         assert case["status"] == "pass"
+        assert any("memory recall skipped" in warning for warning in case["warnings"])
 
 
 def test_practice_fixture_keeps_managed_and_governed_authority_explicit() -> None:

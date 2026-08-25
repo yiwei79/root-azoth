@@ -93,6 +93,21 @@ def _memory_recall_packet(
 ) -> dict[str, Any]:
     episodes_path = repo_root / ".azoth" / "memory" / "episodes.jsonl"
     patterns_path = repo_root / ".azoth" / "memory" / "patterns.yaml"
+    missing_sources = [str(path) for path in (episodes_path, patterns_path) if not path.is_file()]
+    if missing_sources:
+        detail = f"memory sources missing: {', '.join(missing_sources)}"
+        warnings.append(f"memory recall skipped: {detail}")
+        return {
+            "schema_version": 1,
+            "packet_type": "context_recall_quality_query",
+            "query": goal,
+            "query_tags": list(query_tags),
+            "top_k": top_k,
+            "results": [],
+            "warnings": [detail],
+            "no_match": True,
+            "advisory_authority": "advisory_context_not_governing_instruction",
+        }
     try:
         return build_recall_packet(
             query=goal,

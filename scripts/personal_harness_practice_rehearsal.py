@@ -11,8 +11,8 @@ from typing import Any, Mapping
 
 import yaml
 
-from context_view import build_context_view
-from harness_profile import HarnessRequest, classify_harness_request
+from harness_profile import HarnessRequest
+from personal_harness_context import build_personal_harness_context
 
 
 DEFAULT_CASES = Path("examples/personal-harness/rehearsal-cases.yaml")
@@ -27,7 +27,7 @@ def run_practice_rehearsal(
     root = repo_root.resolve()
     tree_before = _tree_fingerprint(root)
     cases = _load_cases(cases_path)
-    results = [_run_case(case) for case in cases]
+    results = [_run_case(case, root) for case in cases]
     tree_after = _tree_fingerprint(root)
     return {
         "schema_version": 1,
@@ -55,29 +55,40 @@ def _load_cases(path: Path) -> list[dict[str, Any]]:
 
 def _run_case(
     case: Mapping[str, Any],
+    repo_root: Path,
 ) -> dict[str, Any]:
     request = HarnessRequest.from_mapping(case)
-    decision = classify_harness_request(request)
-    context = build_context_view(
+    packet = build_personal_harness_context(
         goal=request.goal,
-        harness_decision=decision,
-        project_receipt=_mapping(case.get("project_readback")),
+        requested_actions=request.requested_actions,
+        planned_paths=request.planned_paths,
+        query_tags=_strings(case.get("query_tags")),
+        repo_root=repo_root,
+        project_readback=_mapping(case.get("project_readback")),
     )
-    checks = _checks(case, context)
+    context = _mapping(packet.get("context_view")) or {}
+    warnings = _strings(packet.get("warnings"))
+    checks = _checks(case, context, warnings)
+    route = _mapping(context.get("route_capsule")) or {}
     return {
         "id": str(case.get("id") or "unknown"),
         "domain": str(case.get("domain") or "unknown"),
         "status": "pass" if all(check["status"] == "pass" for check in checks) else "fail",
         "checks": checks,
         "profile": context.get("harness_profile"),
-        "side_effect_class": decision.side_effect_class,
-        "route_state": context.get("route_capsule", {}).get("route_state"),
-        "authority_plane": context.get("route_capsule", {}).get("authority_plane"),
-        "authority_required": context.get("route_capsule", {}).get("authority_required"),
+        "side_effect_class": route.get("side_effect_class"),
+        "route_state": route.get("route_state"),
+        "authority_plane": route.get("authority_plane"),
+        "authority_required": route.get("authority_required"),
+        "warnings": warnings,
     }
 
 
-def _checks(case: Mapping[str, Any], context: Mapping[str, Any]) -> list[dict[str, str]]:
+def _checks(
+    case: Mapping[str, Any],
+    context: Mapping[str, Any],
+    warnings: list[str],
+) -> list[dict[str, str]]:
     expected = _mapping(case.get("expected")) or {}
     route = _mapping(context.get("route_capsule")) or {}
     project = _mapping(context.get("project_context")) or {}
@@ -96,6 +107,13 @@ def _checks(case: Mapping[str, Any], context: Mapping[str, Any]) -> list[dict[st
         _check(
             "project_context",
             not expected.get("project") or project.get("project") == expected.get("project"),
+        ),
+        _check(
+            "warnings",
+            all(
+                any(expected_warning in actual for actual in warnings)
+                for expected_warning in _strings(expected.get("warning_contains"))
+            ),
         ),
     ]
 

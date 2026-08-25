@@ -11,6 +11,8 @@ cases:
       route_state: answer
       authority_required: false
       authority_plane: operator
+      warning_contains:
+        - memory recall skipped
 
   - id: assisted-verification
     domain: software-delivery
@@ -30,6 +32,8 @@ cases:
       authority_required: false
       authority_plane: toolkit
       project: example-service
+      warning_contains:
+        - memory recall skipped
 
   - id: managed-state
     domain: project-management
@@ -44,6 +48,8 @@ cases:
       route_state: authority_required
       authority_required: true
       authority_plane: project_local
+      warning_contains:
+        - memory recall skipped
 
   - id: governed-campaign
     domain: governed-automation
@@ -58,3 +64,5 @@ cases:
       route_state: authority_required
       authority_required: true
       authority_plane: toolkit_governance
+      warning_contains:
+        - memory recall skipped

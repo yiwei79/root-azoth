@@ -91,6 +91,17 @@ def test_missing_optional_personal_root_adds_warning_without_blocking(tmp_path: 
     assert any("personal knowledge recall skipped" in warning for warning in packet["warnings"])
 
 
+def test_missing_memory_sources_add_warning_without_blocking(tmp_path: Path) -> None:
+    packet = build_personal_harness_context(
+        goal="Explain the available operating modes",
+        repo_root=tmp_path,
+    )
+
+    assert packet["context_view"]["harness_profile"] == "guide"
+    assert packet["memory_recall"]["no_match"] is True
+    assert any("memory recall skipped" in warning for warning in packet["warnings"])
+
+
 def test_build_personal_harness_context_includes_project_readback(tmp_path: Path) -> None:
     _write_memory_fixture(tmp_path)
 
