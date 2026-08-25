@@ -1265,7 +1265,7 @@ any insight                 reinforced >=2x                         governance-g
 m2_candidate=true flag      set at intake                           target_layer: M1
 ```
 
-### Architecture Decisions (D47–D54)
+### Architecture Decisions (D47–D55)
 
 | # | Decision | Rationale |
 |---|----------|-----------|
@@ -1277,6 +1277,7 @@ m2_candidate=true flag      set at intake                           target_layer
 | D52 | Session Welcome UX: `/start` + `scripts/welcome.py` | Single entry point for session orientation — routes to /next, /intake, /promote, or custom goal; in **Codex**, `$azoth-start` is the calm-flow daily entry surface and raw slash tokens are compatibility fallback. **Claude Code** may also inject plain orientation via **SessionStart** (P5-007) and mirror to `.azoth/session-orientation.txt` (`CLAUDE.md` rule 9) |
 | D53 | Auto-versioning policy | Version increments are delivery-triggered — 0.0.PHASE.PATCH pre-release, then 0.1.MILESTONE_PHASE.PATCH while shipping toward v0.2.0 |
 | D54 | Branch model + worktree policy | Two permanent branches (`main`, `phase/vN-pN`); short-lived feature/patch branches deleted on merge; zero-worktree default to avoid scope-gate + run-ledger conflicts |
+| D55 | Successor-milestone delivery-line policy | Preserve D53's four-part workshop time series across public milestones: work toward pre-1.0 `v0.N.0` uses `0.(N-1).MILESTONE_PHASE.PATCH`, with manifest/roadmap compatibility validated before every bump |
 
 ---
 
@@ -1477,3 +1478,46 @@ branches. Canonical resolution:
 - `.claude/worktrees/` registry + `/worktree-sync` skill — worktree lifecycle tracking.
 - `scripts/run_ledger.py claim / release-claim` — write claim enforcement for parallel
   worktrees (BL-011 compliant).
+
+---
+
+## 22. Successor-Milestone Delivery Lines (D55)
+
+### Context
+
+D53 established the historical transition from the pre-release roadmap into work toward
+`v0.2.0`: the public target remained a semantic-version milestone while the private
+workshop used `0.1.MILESTONE_PHASE.PATCH` as its delivery time series. D55 preserves that
+separation for successor milestones without rewriting D53's historical `v0.2.0` rule.
+
+### Decision
+
+For pre-1.0 public targets `v0.N.0` where `N >= 2`, the private root workshop records work
+on this four-part line:
+
+```
+0.(N-1).MILESTONE_PHASE.PATCH
+```
+
+Therefore the active `v0.3.0-p1` slice maps to `azoth.yaml` version `0.2.1.PATCH`:
+
+- `0.2` identifies the latest completed public minor line while `v0.3.0` remains a target.
+- `1` is the milestone-local phase and must match both `phase: 1` and the `-p1` suffix.
+- `PATCH` is the delivery counter mirrored by the active roadmap block's `current_patch`.
+
+The mapping is a compatibility contract, not a second public version. The public extracted
+product advertises its release-candidate or release version independently; root-only phase,
+roadmap, and workshop metadata do not cross the product boundary.
+
+### Enforcement
+
+Before `--patch` or `--phase`, `scripts/version-bump.py` validates all of the following:
+
+1. `azoth.yaml` `milestone` equals the milestone prefix of roadmap `active_version`.
+2. The first two workshop version components match the target's predecessor delivery line.
+3. The workshop phase component matches the active working-slice suffix.
+4. The roadmap patch cursor and workshop patch component remain consistent.
+
+Unsupported milestone shapes fail closed until a later architecture decision defines their
+mapping. The legacy human-gated `--release` operation remains specifically scoped to the
+historical v0.1.0-to-v0.2.0 transition.
