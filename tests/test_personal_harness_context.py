@@ -70,8 +70,11 @@ def test_build_personal_harness_context_combines_route_and_memory(tmp_path: Path
         "kind": "m3_episode",
         "summary": "Run-ledger clobber taught fail-closed write claims.",
         "score": packet["context_view"]["memory_context"][0]["score"],
-        "source_ref": str(tmp_path / ".azoth" / "memory" / "episodes.jsonl") + "#ep-463",
+        "source_ref": ".azoth/memory/episodes.jsonl#ep-463",
     }
+    assert packet["memory_recall"]["corpus"]["episodes_path"] == ".azoth/memory/episodes.jsonl"
+    assert packet["memory_recall"]["corpus"]["patterns_path"] == ".azoth/memory/patterns.yaml"
+    assert str(tmp_path) not in json.dumps(packet)
     assert packet["memory_recall"]["packet_type"] == "context_recall_quality_query"
     assert packet["warnings"] == []
 
@@ -89,6 +92,7 @@ def test_missing_optional_personal_root_adds_warning_without_blocking(tmp_path: 
     assert packet["context_view"]["harness_profile"] == "guide"
     assert packet["context_view"]["personal_context"] == []
     assert any("personal knowledge recall skipped" in warning for warning in packet["warnings"])
+    assert str(tmp_path) not in json.dumps(packet)
 
 
 def test_missing_memory_sources_add_warning_without_blocking(tmp_path: Path) -> None:
@@ -100,6 +104,7 @@ def test_missing_memory_sources_add_warning_without_blocking(tmp_path: Path) -> 
     assert packet["context_view"]["harness_profile"] == "guide"
     assert packet["memory_recall"]["no_match"] is True
     assert any("memory recall skipped" in warning for warning in packet["warnings"])
+    assert str(tmp_path) not in json.dumps(packet)
 
 
 def test_build_personal_harness_context_includes_project_readback(tmp_path: Path) -> None:
@@ -114,7 +119,7 @@ def test_build_personal_harness_context_includes_project_readback(tmp_path: Path
             "project": "example-service",
             "selected_mode": "assisted",
             "freshness": "current",
-            "receipt_ref": ".azoth/project-mode-receipt.yaml",
+            "receipt_ref": str(tmp_path / ".azoth" / "project-mode-receipt.yaml"),
         },
         as_of="2026-05-03T00:00:00Z",
     )
@@ -125,6 +130,25 @@ def test_build_personal_harness_context_includes_project_readback(tmp_path: Path
         "freshness": "current",
         "receipt_ref": ".azoth/project-mode-receipt.yaml",
     }
+    assert str(tmp_path) not in json.dumps(packet)
+
+
+def test_nested_recall_warnings_use_logical_repo_identifiers(tmp_path: Path) -> None:
+    _write_memory_fixture(tmp_path)
+    patterns = tmp_path / ".azoth" / "memory" / "patterns.yaml"
+    patterns.write_text("patterns:\n  - not-a-mapping\n", encoding="utf-8")
+
+    packet = build_personal_harness_context(
+        goal="Verify context warning privacy",
+        query_tags=("context",),
+        repo_root=tmp_path,
+        as_of="2026-05-03T00:00:00Z",
+    )
+
+    assert packet["memory_recall"]["warnings"] == [
+        "skipped non-mapping pattern at index 1: repo-root/.azoth/memory/patterns.yaml"
+    ]
+    assert str(tmp_path) not in json.dumps(packet)
 
 
 def test_cli_outputs_json_packet(tmp_path: Path) -> None:

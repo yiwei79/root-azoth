@@ -19,11 +19,15 @@ Not azoth-sync.py (Tier 1→2 only).
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
-from typing import Any
+import tarfile
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path, PurePosixPath
+from typing import Any, Iterator
 
 import yaml
 
@@ -178,6 +182,135 @@ def load_config(config_path: Path) -> dict[str, Any]:
     return data
 
 
+def _validated_repo_path(
+    value: str,
+    *,
+    label: str,
+    allow_git_metadata: bool = False,
+) -> str:
+    """Return a normalized repository-relative POSIX path or fail closed."""
+    raw = value.strip().replace("\\", "/")
+    if not raw or raw.startswith("/"):
+        raise RuntimeError(f"{label} must be a non-empty repository-relative path")
+    normalized = raw.rstrip("/")
+    path = PurePosixPath(normalized)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise RuntimeError(f"{label} must not contain absolute or traversal components")
+    if path.parts[0] == ".git" and not allow_git_metadata:
+        raise RuntimeError(f"{label} must not address Git metadata")
+    return path.as_posix()
+
+
+def _config_repo_path(source_root: Path, config_path: Path) -> Path:
+    """Map a caller-supplied config path to the same logical path in a snapshot."""
+    candidate = config_path if config_path.is_absolute() else source_root / config_path
+    # abspath is intentionally lexical: following a worktree symlink here would let
+    # an external live file choose which committed path is read later.
+    candidate = Path(os.path.abspath(candidate))
+    try:
+        rel = candidate.relative_to(source_root)
+    except ValueError as exc:
+        raise RuntimeError("--config must identify a path inside --source") from exc
+    return Path(_validated_repo_path(rel.as_posix(), label="--config"))
+
+
+def _source_revision(source_root: Path) -> str:
+    """Resolve one immutable commit and require ``source_root`` to be its Git root."""
+    top_level = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=source_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if top_level.returncode != 0:
+        detail = (top_level.stderr or top_level.stdout or "Git repository unavailable").strip()
+        raise RuntimeError(f"public extraction requires a Git repository: {detail}")
+    if Path(top_level.stdout.strip()).resolve() != source_root:
+        raise RuntimeError("--source must be the Git repository root")
+
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "HEAD^{commit}"],
+        cwd=source_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    revision = result.stdout.strip()
+    if result.returncode != 0 or not re_full_sha(revision):
+        detail = (result.stderr or result.stdout or "Git revision unavailable").strip()
+        raise RuntimeError(f"public extraction requires an exact source commit SHA: {detail}")
+    return revision
+
+
+def _archive_member_path(name: str) -> Path:
+    """Validate a Git archive member before it is materialized."""
+    raw = name.rstrip("/")
+    if not raw or "\\" in raw:
+        raise RuntimeError("Git archive contains an unsafe empty or backslash path")
+    normalized = _validated_repo_path(raw, label="Git archive member")
+    return Path(*PurePosixPath(normalized).parts)
+
+
+def _materialize_commit(source_root: Path, revision: str, snapshot_root: Path) -> None:
+    """Materialize regular files from one commit without using tar extraction APIs."""
+    process = subprocess.Popen(
+        ["git", "archive", "--format=tar", revision],
+        cwd=source_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert process.stdout is not None
+    assert process.stderr is not None
+    seen: set[str] = set()
+    try:
+        with tarfile.open(fileobj=process.stdout, mode="r|") as archive:
+            for member in archive:
+                rel = _archive_member_path(member.name)
+                rel_posix = rel.as_posix()
+                if rel_posix in seen:
+                    raise RuntimeError(f"Git archive contains duplicate path: {rel_posix}")
+                seen.add(rel_posix)
+                if member.isdir():
+                    continue
+                if member.issym() or member.islnk():
+                    raise RuntimeError(f"Git archive contains unsupported link entry: {rel_posix}")
+                if not member.isfile():
+                    raise RuntimeError(
+                        f"Git archive contains unsupported special entry: {rel_posix}"
+                    )
+                target = snapshot_root / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                source_file = archive.extractfile(member)
+                if source_file is None:
+                    raise RuntimeError(f"Git archive member has no blob content: {rel_posix}")
+                with source_file, target.open("xb") as output_file:
+                    shutil.copyfileobj(source_file, output_file)
+                target.chmod(member.mode & 0o777)
+    except Exception:
+        process.kill()
+        process.wait()
+        raise
+    finally:
+        process.stdout.close()
+
+    stderr = process.stderr.read().decode("utf-8", errors="replace").strip()
+    returncode = process.wait()
+    process.stderr.close()
+    if returncode != 0:
+        raise RuntimeError(f"could not materialize committed source snapshot: {stderr}")
+
+
+@contextmanager
+def _committed_snapshot(source_root: Path, revision: str) -> Iterator[Path]:
+    """Yield a temporary tree containing only blobs from ``revision``."""
+    with tempfile.TemporaryDirectory(prefix="azoth-public-snapshot-") as temp_dir:
+        snapshot_root = Path(temp_dir) / "tree"
+        snapshot_root.mkdir()
+        _materialize_commit(source_root, revision, snapshot_root)
+        yield snapshot_root
+
+
 def get_product_extraction(cfg: dict[str, Any]) -> dict[str, Any]:
     pe = cfg.get("product_extraction")
     if not isinstance(pe, dict):
@@ -308,6 +441,7 @@ def apply_set_public_manifest(
     dest_root: Path,
     public_version: str,
     release_channel: str,
+    source_revision: str,
     *,
     dry_run: bool,
 ) -> None:
@@ -329,7 +463,7 @@ def apply_set_public_manifest(
         "release_channel": release_channel,
         "provenance": {
             "source_delivery_version": str(source_manifest.get("version") or "unknown"),
-            "source_revision": _source_revision(source_root),
+            "source_revision": source_revision,
         },
         "scope": {
             "mode": "product",
@@ -350,21 +484,6 @@ def apply_set_public_manifest(
     )
 
 
-def _source_revision(source_root: Path) -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=source_root,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    revision = result.stdout.strip()
-    if result.returncode != 0 or not re_full_sha(revision):
-        detail = (result.stderr or result.stdout or "git revision unavailable").strip()
-        raise RuntimeError(f"public extraction requires an exact source commit SHA: {detail}")
-    return revision
-
-
 def re_full_sha(value: str) -> bool:
     return len(value) == 40 and all(char in "0123456789abcdef" for char in value.lower())
 
@@ -375,6 +494,7 @@ def apply_transforms(
     transforms: list[dict[str, Any]],
     public_version: str,
     release_channel: str,
+    source_revision: str,
     *,
     dry_run: bool,
 ) -> None:
@@ -393,6 +513,7 @@ def apply_transforms(
                 raise RuntimeError("regenerate-from-template requires template: str")
             if src_name != "CLAUDE.md":
                 raise RuntimeError(f"unsupported regenerate-from-template source: {src_name!r}")
+            tpl = _validated_repo_path(tpl, label="regenerate-from-template template")
             subs = _build_claude_substitutions(source_root, public_version)
             apply_regenerate_claude(
                 source_root,
@@ -409,6 +530,7 @@ def apply_transforms(
                 dest_root,
                 public_version,
                 release_channel,
+                source_revision,
                 dry_run=dry_run,
             )
         else:
@@ -532,8 +654,8 @@ def _public_manifest_value(dest_root: Path, key: str) -> str:
     return str(manifest[key])
 
 
-def validate_only(source: Path, config_path: Path) -> int:
-    """Load config, pipeline, and required templates — no writes (CI smoke)."""
+def _validate_snapshot(source: Path, config_path: Path) -> int:
+    """Validate one already-materialized committed source tree."""
     cfg = load_config(config_path)
     pe = get_product_extraction(cfg)
     validate_pipeline(pe)
@@ -543,7 +665,7 @@ def validate_only(source: Path, config_path: Path) -> int:
     for rel in (PUBLIC_CI_TEMPLATE, PUBLIC_README_TEMPLATE, *PUBLIC_SCRIPT_TEMPLATES):
         p = source / rel
         if not p.is_file():
-            _die(f"required template missing: {p}")
+            _die(f"required template missing: {rel.as_posix()}")
     tpl = pe.get("transform")
     if isinstance(tpl, list):
         for spec in tpl:
@@ -551,10 +673,26 @@ def validate_only(source: Path, config_path: Path) -> int:
                 continue
             if spec.get("action") == "regenerate-from-template":
                 tr = spec.get("template")
-                if isinstance(tr, str) and not (source / tr).is_file():
-                    _die(f"transform template not found: {source / tr}")
+                if isinstance(tr, str):
+                    try:
+                        template_rel = _validated_repo_path(tr, label="transform template")
+                    except RuntimeError as exc:
+                        _die(str(exc))
+                    if not (source / template_rel).is_file():
+                        _die(f"transform template not found: {template_rel}")
     print("validate-only: OK (config, public surface, pipeline, templates)")
     return 0
+
+
+def validate_only(source: Path, config_path: Path) -> int:
+    """Validate config and templates from one committed snapshot; write no output."""
+    source_root = source.resolve()
+    if not source_root.is_dir():
+        _die("--source is not a directory")
+    config_rel = _config_repo_path(source_root, config_path)
+    revision = _source_revision(source_root)
+    with _committed_snapshot(source_root, revision) as snapshot_root:
+        return _validate_snapshot(snapshot_root, snapshot_root / config_rel)
 
 
 def _public_identity(pe: dict[str, Any]) -> tuple[str, str]:
@@ -575,7 +713,13 @@ def _public_include_paths(pe: dict[str, Any]) -> list[str]:
         or not all(isinstance(item, str) and item.strip() for item in include_paths)
     ):
         _die("product_extraction.include_paths must be a non-empty list of strings")
-    return [str(item) for item in include_paths]
+    try:
+        return [
+            _validated_repo_path(str(item), label="product_extraction.include_paths entry")
+            for item in include_paths
+        ]
+    except RuntimeError as exc:
+        _die(str(exc))
 
 
 def _public_test_paths(pe: dict[str, Any], source_root: Path) -> list[str]:
@@ -586,10 +730,19 @@ def _public_test_paths(pe: dict[str, Any], source_root: Path) -> list[str]:
         or not all(isinstance(item, str) and item.startswith("tests/") for item in test_paths)
     ):
         _die("product_extraction.public_test_paths must be a non-empty list of tests/* paths")
-    missing = [path for path in test_paths if not (source_root / path).is_file()]
+    try:
+        normalized = [
+            _validated_repo_path(str(path), label="product_extraction.public_test_paths entry")
+            for path in test_paths
+        ]
+    except RuntimeError as exc:
+        _die(str(exc))
+    if not all(path.startswith("tests/") for path in normalized):
+        _die("product_extraction.public_test_paths must contain only tests/* paths")
+    missing = [path for path in normalized if not (source_root / path).is_file()]
     if missing:
         _die(f"public test paths do not exist: {missing}")
-    return [str(item) for item in test_paths]
+    return normalized
 
 
 def extract_product(
@@ -597,6 +750,29 @@ def extract_product(
     source: Path,
     dest: Path,
     config_path: Path,
+    dry_run: bool,
+) -> int:
+    source_root = source.resolve()
+    if not source_root.is_dir():
+        _die("--source is not a directory")
+    config_rel = _config_repo_path(source_root, config_path)
+    revision = _source_revision(source_root)
+    with _committed_snapshot(source_root, revision) as snapshot_root:
+        return _extract_product_snapshot(
+            source=snapshot_root,
+            dest=dest,
+            config_path=snapshot_root / config_rel,
+            source_revision=revision,
+            dry_run=dry_run,
+        )
+
+
+def _extract_product_snapshot(
+    *,
+    source: Path,
+    dest: Path,
+    config_path: Path,
+    source_revision: str,
     dry_run: bool,
 ) -> int:
     cfg = load_config(config_path)
@@ -608,6 +784,17 @@ def extract_product(
     exclude_paths = pe.get("exclude_paths")
     if not isinstance(exclude_paths, list) or not all(isinstance(x, str) for x in exclude_paths):
         _die("product_extraction.exclude_paths must be a list of strings")
+    try:
+        exclude_paths = [
+            _validated_repo_path(
+                path,
+                label="product_extraction.exclude_paths entry",
+                allow_git_metadata=True,
+            )
+            for path in exclude_paths
+        ]
+    except RuntimeError as exc:
+        _die(str(exc))
 
     sanitize_cfg = cfg.get("sanitize", {})
     strip_patterns = sanitize_cfg.get("strip_patterns", [])
@@ -624,9 +811,6 @@ def extract_product(
         _die("product_extraction.transform is required")
     if not isinstance(transforms, list):
         _die("product_extraction.transform must be a list")
-
-    if not source.is_dir():
-        _die(f"--source is not a directory: {source}")
 
     if dry_run:
         print(
@@ -664,6 +848,7 @@ def extract_product(
         transforms,
         public_version,
         release_channel,
+        source_revision,
         dry_run=False,
     )
 
@@ -708,7 +893,10 @@ def main() -> int:
         "--config",
         type=Path,
         default=None,
-        help="Path to sync-config.yaml (default: <source>/sync-config.yaml)",
+        help=(
+            "Repository-relative path to committed sync-config.yaml "
+            "(default: <source>/sync-config.yaml)"
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -722,21 +910,24 @@ def main() -> int:
     )
     args = parser.parse_args()
     source = args.source.resolve()
-    config_path = (args.config or (source / "sync-config.yaml")).resolve()
+    config_path = args.config or Path("sync-config.yaml")
 
-    if args.validate_only:
-        return validate_only(source, config_path)
+    try:
+        if args.validate_only:
+            return validate_only(source, config_path)
 
-    if args.out is None:
-        parser.error("--out is required unless --validate-only")
+        if args.out is None:
+            parser.error("--out is required unless --validate-only")
 
-    dest = args.out.resolve()
-    return extract_product(
-        source=source,
-        dest=dest,
-        config_path=config_path,
-        dry_run=args.dry_run,
-    )
+        dest = args.out.resolve()
+        return extract_product(
+            source=source,
+            dest=dest,
+            config_path=config_path,
+            dry_run=args.dry_run,
+        )
+    except RuntimeError as exc:
+        _die(str(exc))
 
 
 if __name__ == "__main__":

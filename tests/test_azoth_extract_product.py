@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 REPO = Path(__file__).resolve().parent.parent
@@ -49,6 +50,37 @@ def _commit_fixture_repo(source: Path) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _write_extract_fixture(source: Path) -> str:
+    source.mkdir()
+    (source / "sync-config.yaml").write_text(
+        (REPO / "sync-config.yaml").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    shutil.copytree(REPO / "kernel" / "templates", source / "kernel" / "templates")
+    (source / "skills").mkdir()
+    for name in ("probe.md", "staged.md", "unstaged.md"):
+        (source / "skills" / name).write_text(f"committed {name}\n", encoding="utf-8")
+    (source / ".gitignore").write_text("skills/ignored.md\n", encoding="utf-8")
+    _write_public_test_fixtures(source)
+    (source / "LICENSE").write_text("PolyForm Noncommercial 1.0.0\n", encoding="utf-8")
+    (source / "CLAUDE.md").write_text("# old\n", encoding="utf-8")
+    (source / "azoth.yaml").write_text(
+        "name: root-azoth\nversion: 0.2.1.9\nscope:\n  mode: scaffold\n"
+        "  is_development_workshop: true\n",
+        encoding="utf-8",
+    )
+    return _commit_fixture_repo(source)
+
+
+def _load_extractor():
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    spec = spec_from_file_location("azoth_extract_product", SCRIPT)
+    mod = module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def test_expected_pipeline_constant_matches_sync_config() -> None:
@@ -274,7 +306,10 @@ def test_extract_removes_pre_existing_out_directory(tmp_path: Path) -> None:
 
 
 def test_bad_pipeline_rejected(tmp_path: Path) -> None:
-    cfg_path = tmp_path / "sync-config.yaml"
+    src = tmp_path / "src"
+    src.mkdir()
+    cfg_path = src / "configs" / "bad-sync-config.yaml"
+    cfg_path.parent.mkdir()
     cfg_path.write_text(
         "sanitize:\n  strip_patterns: []\n"
         "product_extraction:\n"
@@ -290,22 +325,196 @@ def test_bad_pipeline_rejected(tmp_path: Path) -> None:
         "      value: project\n",
         encoding="utf-8",
     )
+    _commit_fixture_repo(src)
     r = subprocess.run(
         [
             sys.executable,
             str(SCRIPT),
             "--source",
-            str(REPO),
+            str(src),
             "--out",
             str(tmp_path / "o"),
             "--config",
-            str(cfg_path),
+            "configs/bad-sync-config.yaml",
         ],
         capture_output=True,
         text=True,
     )
     assert r.returncode != 0
     assert "extraction_pipeline" in r.stderr
+
+
+def test_external_config_override_is_rejected(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    _write_extract_fixture(src)
+    external = tmp_path / "external.yaml"
+    external.write_text("product_extraction: {}\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--source",
+            str(src),
+            "--out",
+            str(tmp_path / "out"),
+            "--config",
+            str(external),
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert result.stderr.strip() == "--config must identify a path inside --source"
+
+
+def test_extract_ignores_all_live_and_index_only_states(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    source_revision = _write_extract_fixture(src)
+    (src / "sync-config.yaml").write_text("product_extraction: staged-only\n", encoding="utf-8")
+    (src / "skills" / "staged.md").write_text("staged-only\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "add", "sync-config.yaml", "skills/staged.md"],
+        cwd=src,
+        check=True,
+    )
+    (src / "skills" / "unstaged.md").write_text("unstaged-only\n", encoding="utf-8")
+    (src / "skills" / "untracked.md").write_text("untracked-only\n", encoding="utf-8")
+    (src / "skills" / "ignored.md").write_text("ignored-only\n", encoding="utf-8")
+    readme_template = src / "kernel" / "templates" / "README.public.azoth.md"
+    readme_template.write_text("WORKTREE_ONLY_TEMPLATE\n", encoding="utf-8")
+
+    dry_dest = tmp_path / "dry-out"
+    dry_run = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--source",
+            str(src),
+            "--out",
+            str(dry_dest),
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert dry_run.returncode == 0, dry_run.stderr + dry_run.stdout
+    assert "skills/staged.md" in dry_run.stdout
+    assert "skills/untracked.md" not in dry_run.stdout
+    assert "skills/ignored.md" not in dry_run.stdout
+    assert not dry_dest.exists()
+
+    out = tmp_path / "out"
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--source", str(src), "--out", str(out)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert (out / "skills" / "staged.md").read_text(encoding="utf-8") == ("committed staged.md\n")
+    assert (out / "skills" / "unstaged.md").read_text(encoding="utf-8") == (
+        "committed unstaged.md\n"
+    )
+    assert not (out / "skills" / "untracked.md").exists()
+    assert not (out / "skills" / "ignored.md").exists()
+    assert "WORKTREE_ONLY_TEMPLATE" not in (out / "README.md").read_text(encoding="utf-8")
+    manifest = yaml.safe_load((out / "azoth.yaml").read_text(encoding="utf-8"))
+    assert manifest["provenance"]["source_revision"] == source_revision
+
+
+def test_resolved_sha_survives_concurrent_worktree_change(tmp_path: Path, monkeypatch) -> None:
+    mod = _load_extractor()
+    src = tmp_path / "src"
+    source_revision = _write_extract_fixture(src)
+    original_source_revision = mod._source_revision
+
+    def resolve_then_mutate(source_root: Path) -> str:
+        resolved = original_source_revision(source_root)
+        (src / "skills" / "probe.md").write_text("concurrent live mutation\n", encoding="utf-8")
+        (src / "kernel" / "templates" / "README.public.azoth.md").write_text(
+            "CONCURRENT_TEMPLATE\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "add", "skills/probe.md", "kernel/templates/README.public.azoth.md"],
+            cwd=src,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Azoth Test",
+                "-c",
+                "user.email=azoth-test@example.invalid",
+                "commit",
+                "-qm",
+                "concurrent head advance",
+            ],
+            cwd=src,
+            check=True,
+        )
+        return resolved
+
+    monkeypatch.setattr(mod, "_source_revision", resolve_then_mutate)
+    out = tmp_path / "out"
+
+    assert (
+        mod.extract_product(
+            source=src,
+            dest=out,
+            config_path=Path("sync-config.yaml"),
+            dry_run=False,
+        )
+        == 0
+    )
+    assert (out / "skills" / "probe.md").read_text(encoding="utf-8") == "committed probe.md\n"
+    assert "CONCURRENT_TEMPLATE" not in (out / "README.md").read_text(encoding="utf-8")
+    manifest = yaml.safe_load((out / "azoth.yaml").read_text(encoding="utf-8"))
+    assert manifest["provenance"]["source_revision"] == source_revision
+
+
+@pytest.mark.parametrize("path", ["../escape", "/absolute", "safe/../../escape", "safe\\escape"])
+def test_archive_member_path_rejects_traversal_and_platform_aliases(path: str) -> None:
+    mod = _load_extractor()
+
+    with pytest.raises(RuntimeError):
+        mod._archive_member_path(path)
+
+
+def test_committed_symlink_is_never_materialized_or_followed(tmp_path: Path) -> None:
+    src = tmp_path / "src"
+    _write_extract_fixture(src)
+    outside = tmp_path / "private.txt"
+    outside.write_text("must never be read\n", encoding="utf-8")
+    (src / "skills" / "escape.md").symlink_to(outside)
+    subprocess.run(["git", "add", "skills/escape.md"], cwd=src, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Azoth Test",
+            "-c",
+            "user.email=azoth-test@example.invalid",
+            "commit",
+            "-qm",
+            "add symlink",
+        ],
+        cwd=src,
+        check=True,
+    )
+    out = tmp_path / "out"
+
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--source", str(src), "--out", str(out)],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert result.stderr.strip() == "Git archive contains unsupported link entry: skills/escape.md"
+    assert not out.exists()
 
 
 def test_dry_run_banner_states_step1_only(tmp_path: Path) -> None:
