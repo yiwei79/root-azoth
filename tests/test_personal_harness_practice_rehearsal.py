@@ -14,28 +14,24 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from personal_harness_practice_rehearsal import run_practice_rehearsal  # noqa: E402
-from test_personal_harness_context import _write_memory_fixture  # noqa: E402
 
-
-CASES = ROOT / "tests" / "fixtures" / "personal_harness_practice_cases.yaml"
+CASES = ROOT / "examples" / "personal-harness" / "rehearsal-cases.yaml"
 
 
 def test_practice_rehearsal_covers_daily_domains_and_modes(tmp_path: Path) -> None:
-    _write_memory_fixture(tmp_path)
-
     report = run_practice_rehearsal(
         repo_root=tmp_path,
         cases_path=CASES,
-        as_of="2026-06-07T00:00:00Z",
     )
 
     assert report["ok"] is True
     assert report["case_count"] == 4
     assert report["no_write_contract"]["repo_mutated"] is False
     assert {case["domain"] for case in report["cases"]} == {
-        "agent-context",
-        "music",
-        "thesis",
+        "governed-automation",
+        "product-discovery",
+        "project-management",
+        "software-delivery",
     }
     assert {case["profile"] for case in report["cases"]} == {
         "assisted",
@@ -52,18 +48,16 @@ def test_practice_fixture_keeps_managed_and_governed_authority_explicit() -> Non
     doc = yaml.safe_load(CASES.read_text(encoding="utf-8"))
     cases = {case["id"]: case for case in doc["cases"]}
 
-    managed = cases["music-managed-planning-hydration"]["expected"]
-    governed = cases["agent-context-governed-autonomy"]["expected"]
+    managed = cases["managed-state"]["expected"]
+    governed = cases["governed-campaign"]["expected"]
 
     assert managed["authority_required"] is True
     assert managed["authority_plane"] == "project_local"
     assert governed["authority_required"] is True
-    assert governed["authority_plane"] == "root_azoth"
+    assert governed["authority_plane"] == "toolkit_governance"
 
 
 def test_practice_rehearsal_cli_outputs_json(tmp_path: Path) -> None:
-    _write_memory_fixture(tmp_path)
-
     result = subprocess.run(
         [
             sys.executable,
@@ -72,8 +66,6 @@ def test_practice_rehearsal_cli_outputs_json(tmp_path: Path) -> None:
             str(tmp_path),
             "--cases",
             str(CASES),
-            "--as-of",
-            "2026-06-07T00:00:00Z",
             "--json",
         ],
         text=True,

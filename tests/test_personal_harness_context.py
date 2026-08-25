@@ -14,7 +14,6 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from personal_harness_context import build_personal_harness_context  # noqa: E402
-from test_personal_knowledge_recall import _write_personal_root  # noqa: E402
 
 
 def _write_memory_fixture(repo: Path) -> None:
@@ -101,70 +100,20 @@ def test_build_personal_harness_context_includes_project_readback(tmp_path: Path
         query_tags=("context",),
         repo_root=tmp_path,
         project_readback={
-            "project": "ras-or-ray",
+            "project": "example-service",
             "selected_mode": "assisted",
             "freshness": "current",
-            "receipt_ref": ".azoth/projects/handoffs/t-049.yaml",
+            "receipt_ref": ".azoth/project-mode-receipt.yaml",
         },
         as_of="2026-05-03T00:00:00Z",
     )
 
     assert packet["context_view"]["project_context"] == {
-        "project": "ras-or-ray",
+        "project": "example-service",
         "selected_mode": "assisted",
         "freshness": "current",
-        "receipt_ref": ".azoth/projects/handoffs/t-049.yaml",
+        "receipt_ref": ".azoth/project-mode-receipt.yaml",
     }
-
-
-def test_build_personal_harness_context_includes_session_start_personal_cards(
-    tmp_path: Path,
-) -> None:
-    _write_memory_fixture(tmp_path)
-    personal_root = _write_personal_root(tmp_path)
-
-    packet = build_personal_harness_context(
-        goal="Verify context before project work",
-        requested_actions=("focused_verification",),
-        query_tags=("context",),
-        repo_root=tmp_path,
-        personal_root=personal_root,
-        as_of="2026-05-03T00:00:00Z",
-    )
-
-    personal_context = packet["context_view"]["personal_context"]
-
-    assert [item["card_id"] for item in personal_context] == [
-        "kb-root-azoth-001",
-        "kb-root-azoth-002",
-        "kb-root-azoth-003",
-    ]
-    assert personal_context[0]["summary"] == "Green campaign completion is not release readiness"
-    assert {item["freshness"] for item in personal_context} == {"current"}
-    assert all("body" not in item for item in personal_context)
-    assert packet["warnings"] == []
-
-
-def test_build_personal_harness_context_warns_when_personal_cards_need_review(
-    tmp_path: Path,
-) -> None:
-    _write_memory_fixture(tmp_path)
-    personal_root = _write_personal_root(tmp_path)
-
-    packet = build_personal_harness_context(
-        goal="Verify context before project work",
-        requested_actions=("focused_verification",),
-        query_tags=("context",),
-        repo_root=tmp_path,
-        personal_root=personal_root,
-        as_of="2026-06-01T00:00:00Z",
-    )
-
-    assert packet["context_view"]["personal_context"][0]["freshness"] == "review_due"
-    assert packet["warnings"] == [
-        "personal knowledge review due: kb-root-azoth-001, kb-root-azoth-002, "
-        "kb-root-azoth-003, kb-root-azoth-004"
-    ]
 
 
 def test_cli_outputs_json_packet(tmp_path: Path) -> None:

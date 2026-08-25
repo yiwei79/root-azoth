@@ -17,7 +17,7 @@ from harness_profile import (  # noqa: E402
 )
 
 
-FIXTURE_PATH = REPO_ROOT / "tests" / "fixtures" / "personal_harness_cases.yaml"
+FIXTURE_PATH = REPO_ROOT / "examples" / "personal-harness" / "rehearsal-cases.yaml"
 
 
 def _fixture_cases() -> list[dict[str, object]]:
@@ -88,7 +88,10 @@ def test_kernel_or_external_request_stops_without_disguising_as_daily_mode() -> 
     assert decision.profile == "governed_autonomy"
     assert decision.route.route_state == "stop"
     assert decision.route.authority_required is True
-    assert decision.route.stop_reason == "protected or external action requires explicit human authority"
+    assert (
+        decision.route.stop_reason
+        == "protected or external action requires explicit human authority"
+    )
 
 
 def test_route_capsule_is_deterministic_json_ready() -> None:
@@ -105,7 +108,7 @@ def test_route_capsule_is_deterministic_json_ready() -> None:
         "side_effect_class": "read_only",
         "route_state": "assist",
         "authority_required": False,
-        "authority_plane": "root_azoth",
+        "authority_plane": "toolkit",
         "required_inputs": [
             "guide-mode receipt",
             "installed skill/agent/command inventory",
@@ -122,7 +125,7 @@ def test_route_capsule_for_profile_exposes_cockpit_readback_without_reclassifyin
         "side_effect_class": "read_only",
         "route_state": "assist",
         "authority_required": False,
-        "authority_plane": "root_azoth",
+        "authority_plane": "toolkit",
         "required_inputs": [
             "guide-mode receipt",
             "installed skill/agent/command inventory",

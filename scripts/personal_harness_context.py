@@ -12,7 +12,12 @@ from typing import Any, Mapping, Sequence
 from context_recall_quality import RecallQualityError, build_recall_packet
 from context_view import build_context_view
 from harness_profile import HarnessRequest, classify_harness_request
-from personal_knowledge_recall import PersonalKnowledgeRecallError, recall_cards
+
+try:
+    from personal_knowledge_recall import PersonalKnowledgeRecallError, recall_cards
+except ImportError:  # Optional root-only adapter is not part of the public toolkit.
+    PersonalKnowledgeRecallError = RuntimeError
+    recall_cards = None
 
 
 def build_personal_harness_context(
@@ -143,6 +148,11 @@ def _personal_recall_results(
     warnings: list[str],
 ) -> list[dict[str, Any]]:
     if personal_root is None:
+        return []
+    if recall_cards is None:
+        warnings.append(
+            "personal knowledge recall skipped: optional personal adapter is not installed"
+        )
         return []
     try:
         results = recall_cards(

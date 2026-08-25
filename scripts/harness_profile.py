@@ -120,10 +120,18 @@ class HarnessDecision:
 
 def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> HarnessDecision:
     """Classify a request into an operator-facing personal harness mode."""
-    active_request = request if isinstance(request, HarnessRequest) else HarnessRequest.from_mapping(request)
+    active_request = (
+        request if isinstance(request, HarnessRequest) else HarnessRequest.from_mapping(request)
+    )
     lite_decision = classify_request(active_request.to_azoth_lite_request())
-    profile = _profile_for_lite_decision(lite_decision.selected_profile, lite_decision.side_effect_class, lite_decision.escalation_reasons)
-    route = _route_for_profile(profile, lite_decision.side_effect_class, lite_decision.escalation_reasons)
+    profile = _profile_for_lite_decision(
+        lite_decision.selected_profile,
+        lite_decision.side_effect_class,
+        lite_decision.escalation_reasons,
+    )
+    route = _route_for_profile(
+        profile, lite_decision.side_effect_class, lite_decision.escalation_reasons
+    )
     mode = _MODE_CONTRACTS[profile]
 
     return HarnessDecision(
@@ -133,7 +141,7 @@ def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> Har
         route=route,
         operator_promise=mode["operator_promise"],
         explicit_exclusions=tuple(mode["explicit_exclusions"]),
-        source_refs=(f".azoth/research/t-059-deployment-readiness-mode-matrix.yaml#mode_matrix.{profile}",),
+        source_refs=(f"docs/PERSONAL_HARNESS_OS.md#mode-{profile.replace('_', '-')}",),
         azoth_lite_profile=lite_decision.selected_profile,
         escalation_reasons=lite_decision.escalation_reasons,
     )
@@ -215,7 +223,7 @@ _MODE_CONTRACTS: dict[str, dict[str, Any]] = {
         "operator_promise": "Azoth is present as philosophy, trust posture, orientation, and prompts only.",
         "route_state": "answer",
         "authority_required": False,
-        "authority_plane": "personal_cockpit",
+        "authority_plane": "operator",
         "required_inputs": (
             "selected project pointer or current repository",
             "source/profile receipt",
@@ -235,7 +243,7 @@ _MODE_CONTRACTS: dict[str, dict[str, Any]] = {
         ),
         "route_state": "assist",
         "authority_required": False,
-        "authority_plane": "root_azoth",
+        "authority_plane": "toolkit",
         "required_inputs": (
             "guide-mode receipt",
             "installed skill/agent/command inventory",
@@ -274,7 +282,7 @@ _MODE_CONTRACTS: dict[str, dict[str, Any]] = {
         ),
         "route_state": "authority_required",
         "authority_required": True,
-        "authority_plane": "root_azoth",
+        "authority_plane": "toolkit_governance",
         "required_inputs": (
             "managed-mode readiness",
             "explicit autonomy budget",
@@ -284,7 +292,7 @@ _MODE_CONTRACTS: dict[str, dict[str, Any]] = {
         "next_safe_action": "open a bounded governed-autonomy campaign only with fresh authority",
         "stop_reason": "fresh governed-autonomy authority required",
         "explicit_exclusions": (
-            "do not leak root self-development authority into consumer projects",
+            "do not leak toolkit governance authority into consumer projects",
             "do not run open-ended loops",
             "do not continue stale campaign state",
         ),

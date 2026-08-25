@@ -1,0 +1,64 @@
+schema_version: 1
+cases:
+  - id: guide-orientation
+    domain: product-discovery
+    goal: Explain the available Azoth operating modes before I choose one.
+    requested_actions:
+      - read
+    expected:
+      profile: guide
+      side_effect_class: read_only
+      route_state: answer
+      authority_required: false
+      authority_plane: operator
+      warnings: []
+
+  - id: assisted-verification
+    domain: software-delivery
+    goal: Verify the project context before a focused work session.
+    requested_actions:
+      - focused_verification
+    trace_required: true
+    project_readback:
+      project: example-service
+      selected_mode: assisted
+      freshness: current
+      receipt_ref: .azoth/project-mode-receipt.yaml
+    expected:
+      profile: assisted
+      side_effect_class: read_only
+      route_state: assist
+      authority_required: false
+      authority_plane: toolkit
+      project: example-service
+      warnings: []
+
+  - id: managed-state
+    domain: project-management
+    goal: Hydrate managed planning state for this project.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/project-local-mode-receipt.yaml
+    expected:
+      profile: managed
+      side_effect_class: governed_state
+      route_state: authority_required
+      authority_required: true
+      authority_plane: project_local
+      warnings: []
+
+  - id: governed-campaign
+    domain: governed-automation
+    goal: Continue the autonomous campaign with a fresh budget and stop conditions.
+    requested_actions:
+      - update
+    planned_paths:
+      - .azoth/run-ledger.local.yaml
+    expected:
+      profile: governed_autonomy
+      side_effect_class: governed_state
+      route_state: authority_required
+      authority_required: true
+      authority_plane: toolkit_governance
+      warnings: []
