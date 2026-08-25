@@ -31,7 +31,7 @@ design decisions:
 
 ## Personal Harness OS preview
 
-Azoth's next architecture profile keeps ordinary work lightweight while making
+This preview profile keeps ordinary work lightweight while making
 authority, context, stopping, and recovery explicit when the work becomes
 consequential.
 
@@ -49,9 +49,10 @@ context, deterministic tools, evidence, human authority, and recovery the task
 actually needs. Retrieval, durable memory, or multi-agent coordination are
 added when a demonstrated failure mode justifies their cost.
 
-This remains a preview: the portable contracts and focused tests are included,
-while private operator state and environment-specific cockpit adapters are not.
-A generic no-write runner rehearses the public contracts against
+In the `v0.3.0-rc.1` candidate, the selected portable contracts, generic
+rehearsal surface, and focused tests are implemented and included, while private
+operator state and environment-specific cockpit adapters are not. A generic
+no-write runner rehearses the public contracts against
 `examples/personal-harness/rehearsal-cases.yaml`; a CLI may wrap it later, but
 the command name is intentionally not fixed here.
 
@@ -169,9 +170,11 @@ pip install -r requirements-dev.txt
 bash install.sh
 ```
 
-On Windows, use `install.ps1`. The installer projects the appropriate Azoth
-surfaces into the target project. Then open `CLAUDE.md` or the generated
-host-specific entrypoint and follow the bootloader.
+The Bash installer projects the appropriate Azoth surfaces into the target
+project. Then open `CLAUDE.md` or the generated host-specific entrypoint and
+follow the bootloader. `install.ps1` is provided for Windows, but PowerShell was
+unavailable in the `v0.3.0-rc.1` validation environment, so this candidate makes
+no PowerShell parity claim.
 
 For a fresh GitHub Copilot project, explicitly select the Copilot surface:
 

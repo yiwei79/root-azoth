@@ -217,9 +217,12 @@ More orchestration creates more transitions that can lose intent, omit evidence,
 or stop for the wrong reason. More instructions can reduce guidance when every
 rule competes for attention.
 
-The response was architectural contraction, not indiscriminate deletion. One
-project-local redesign removed roughly 4,800 lines of redundant orchestration,
-state, and documentation while preserving domain-specific validation, release
+The response was architectural contraction, not indiscriminate deletion. The
+documented change is SupplyGrowth commit `e02db574` over
+`BQ-Migration-SupplyOps`: 88 files changed, with 464 insertions and 4,835
+deletions (net -4,371). The diff size is evidence of a substantial contraction,
+not a claim that every deleted line was redundant or that line count alone
+proves quality. The redesign preserved domain-specific validation, release
 controls, live truth, and human authorisation. The principle was to keep the
 control that earned its operating cost and remove machinery whose state burden
 had become a new source of noise.
@@ -354,8 +357,10 @@ The boundaries matter as much as the thesis:
   prove that every business has the same adoption problem.
 - The Agentic Framework demonstrates an evidence-led evolution, including
   complexity that was later reduced; it was not minimal from the beginning.
-- Personal Harness OS is an implemented and tested architectural direction that
-  remains under development, not a finished universal harness.
+- The selected Personal Harness routing, context, and rehearsal contracts are
+  implemented and tested in the `v0.3.0-rc.1` executable candidate. The wider
+  operating profile remains under development; it is not a finished universal
+  harness.
 - Role-based agents, RAG, memory, and multi-agent graphs remain valid when their
   boundaries and value are demonstrated.
 - No claim is made here of external Azoth adoption, causal business lift, or

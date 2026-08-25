@@ -1,10 +1,10 @@
 # Personal Harness OS
 
-> Status: proposed public preview for `v0.3.0-rc.1`. The routing and context
-> contracts described here are implemented and tested in the selected June 2026
-> snapshot. The portable rehearsal surface described below is the approved
-> release-candidate projection and must be verified in the extracted public
-> tree; the wider operating surface remains under development.
+> Status: public preview candidate for `v0.3.0-rc.1`. The routing, context, and
+> portable rehearsal contracts described here are implemented and tested in the
+> executable candidate `26d24e9e34691b9b2d6bc51e5fd18c122f5b6929`. The final
+> extracted manifest records the exact release-bearing root revision; the wider
+> operating surface remains under development.
 
 Personal Harness OS is Azoth's lightweight default path for agent-assisted work.
 It keeps ordinary work small while preserving explicit authority, evidence,
@@ -31,7 +31,7 @@ For the longer engineering argument, see
 - Preserve evidence and recovery without making every task enter the heaviest
   path.
 
-## Stable interfaces
+## Preview interfaces
 
 ### `HarnessRequest` and `classify_harness_request`
 
@@ -158,8 +158,10 @@ the preferred recovery mechanisms for file-backed work.
 
 ## Public preview boundary
 
-The proposed public preview contains the portable routing and context contracts,
-neutral examples, focused tests, and this design document.
+The public preview candidate contains the portable routing and context contracts,
+neutral examples, focused tests, and this design document. These selected
+interfaces define the `v0.3.0-rc.1` preview boundary; they are not a general
+backward-compatibility promise for later previews.
 
 It intentionally excludes:
 
@@ -176,8 +178,8 @@ not part of a consumer-safe product surface.
 
 ## Portable rehearsal surface
 
-The release candidate should make the contracts inspectable through three
-portable pieces:
+The release candidate makes the contracts inspectable through three portable
+pieces:
 
 1. A generic rehearsal runner that accepts a case file and returns a
    JSON-serialisable report.
@@ -185,12 +187,12 @@ portable pieces:
    `examples/personal-harness/rehearsal-cases.yaml`.
 3. A focused no-write rehearsal test wired into public CI.
 
-Each case should declare its goal, intended actions, relevant paths or context,
+Each case declares its goal, intended actions, relevant paths or context,
 and expected profile, route state, authority requirement, authority plane, and
-warnings. The runner should execute the same public request, classifier,
-decision, route, and context builders described above; compare repository state
-before and after; and fail if a case violates its expected contract or mutates
-the target repository.
+warnings. The runner executes the same public request, classifier, decision,
+route, and context builders described above; compares repository state before
+and after; and fails if a case violates its expected contract or mutates the
+target repository.
 
 This is a behavioural rehearsal surface, not a second orchestration layer. A
 CLI wrapper may call the runner, but this preview intentionally does not lock a
@@ -198,7 +200,7 @@ final command name before the public implementation settles it.
 
 ## Validation contract
 
-The release candidate should run the portable tests in public CI:
+The release candidate ships the portable tests for public CI:
 
 ```bash
 python3 -m pytest \
@@ -237,6 +239,8 @@ private-artifact preflight must also pass before publication.
   agent traces. That remains a research hypothesis, not an implemented product
   claim.
 
-Personal Harness OS is therefore best understood as a tested architectural
-direction: a small route-aware surface that keeps daily work light and makes
-consequential work visibly governed.
+Personal Harness OS is therefore best understood as an implemented and tested
+preview of selected routing, context, and rehearsal contracts: a small
+route-aware surface that keeps daily work light and makes consequential work
+visibly governed. It is not a claim that the wider operating profile is complete
+or universally validated.

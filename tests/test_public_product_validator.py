@@ -62,3 +62,45 @@ def test_public_validator_scans_extensionless_and_dotfiles(tmp_path: Path) -> No
 
     with pytest.raises(validator.ProductBoundaryError, match="forbidden public content"):
         validator.validate_content()
+
+
+def test_public_validator_rejects_unresolved_release_evidence_placeholder(
+    tmp_path: Path,
+) -> None:
+    validator = _validator()
+    validator.ROOT = tmp_path
+    release_notes = tmp_path / validator.RELEASE_EVIDENCE_PATH
+    release_notes.parent.mkdir(parents=True)
+    release_notes.write_text(
+        "## Validation evidence\n\n| Check | Observed result |\n"
+        "|---|---|\n| Root suite | <pass count and environment> |\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        validator.ProductBoundaryError,
+        match="unresolved release-evidence placeholders",
+    ):
+        validator.validate_release_evidence()
+
+
+def test_public_validator_allows_markdown_html_outside_release_notes(
+    tmp_path: Path,
+) -> None:
+    validator = _validator()
+    validator.ROOT = tmp_path
+    release_notes = tmp_path / validator.RELEASE_EVIDENCE_PATH
+    release_notes.parent.mkdir(parents=True)
+    release_notes.write_text(
+        "## Validation evidence\n\nAll observed results are recorded.\n",
+        encoding="utf-8",
+    )
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "example.md").write_text(
+        "<details><summary>Normal HTML</summary></details>\nSee <https://example.com>.\n",
+        encoding="utf-8",
+    )
+
+    validator.validate_content()
+    validator.validate_release_evidence()

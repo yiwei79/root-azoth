@@ -83,6 +83,8 @@ TOKEN_ASSIGNMENT = re.compile(
 )
 PLACEHOLDER_MARKERS = ("example", "placeholder", "redacted", "your_", "${", "{{", "<")
 REDACTION_SENTINEL = "{{" + "REDACTED}}"
+RELEASE_EVIDENCE_PATH = Path("release-notes/v0.3.0-rc.1.md")
+ANGLE_BRACKET_EVIDENCE_PLACEHOLDER = re.compile(r"<[^<>\r\n]+>")
 
 
 class ProductBoundaryError(RuntimeError):
@@ -192,6 +194,18 @@ def validate_content() -> None:
         raise ProductBoundaryError(f"forbidden public content: {hits[:20]}")
 
 
+def validate_release_evidence() -> None:
+    """Reject unresolved angle-bracket evidence placeholders in release notes."""
+    path = ROOT / RELEASE_EVIDENCE_PATH
+    text = path.read_text(encoding="utf-8")
+    placeholders = ANGLE_BRACKET_EVIDENCE_PLACEHOLDER.findall(text)
+    if placeholders:
+        raise ProductBoundaryError(
+            "unresolved release-evidence placeholders: "
+            f"{[placeholder[:120] for placeholder in placeholders[:20]]}"
+        )
+
+
 def _heading_anchors(path: Path) -> set[str]:
     anchors: set[str] = set()
     counts: dict[str, int] = {}
@@ -276,6 +290,7 @@ def main() -> int:
         validate_manifest()
         validate_public_tests()
         validate_content()
+        validate_release_evidence()
         validate_references()
     except ProductBoundaryError as exc:
         print(f"public product validation failed: {exc}", file=sys.stderr)
