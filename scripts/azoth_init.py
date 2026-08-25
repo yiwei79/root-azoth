@@ -77,10 +77,10 @@ def _run_project_install(azoth_root: Path, cwd: Path) -> int:
 def _scaffold_guidance(azoth_root: Path, cwd: Path) -> None:
     if cwd.resolve() != azoth_root.resolve():
         print(
-            "Note: Scaffold mode is for the root-azoth repository. "
+            "Note: Scaffold mode is for the Azoth development workshop. "
             "Your current directory is not this checkout's root.\n"
         )
-    print("Root-azoth workshop — suggested next steps:\n")
+    print("Azoth development workshop — suggested next steps:\n")
     print("  • Read CLAUDE.md and docs/AZOTH_ARCHITECTURE.md")
     print("  • pip install -r requirements-dev.txt   # from repo root; dev deps")
     print("  • python3 -m pytest tests/")

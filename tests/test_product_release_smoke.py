@@ -26,7 +26,7 @@ FULL_CONSUMER_RUNTIME_PATHS = (
     ".agents/skills/azoth-autonomous-auto/SKILL.md",
     ".azoth/roadmap.yaml",
     ".azoth/backlog.yaml",
-    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/roadmap-specs/v0.1.0/README.md",
     ".azoth/initiative-banks/.gitkeep",
     ".azoth/design-banks/.gitkeep",
     ".azoth/autonomous-loop-state.local.yaml.example",

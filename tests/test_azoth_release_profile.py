@@ -30,7 +30,7 @@ REQUIRED_PROFILE_PATHS = (
     ".claude/commands/roadmap.md",
     ".azoth/roadmap.yaml",
     ".azoth/backlog.yaml",
-    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/roadmap-specs/v0.1.0/README.md",
     ".azoth/initiative-banks/.gitkeep",
     ".azoth/design-banks/.gitkeep",
     ".azoth/autonomous-loop-state.local.yaml.example",
@@ -89,14 +89,16 @@ def _make_release_source(tmp_path: Path) -> Path:
 
     _write(
         template_root / ".azoth" / "roadmap.yaml",
-        "roadmap_schema_version: 1\nproject: consumer-project\nitems: []\n",
+        "roadmap_schema_version: 1\nactive_version: v0.1.0-p1\ncurrent_phase: 1\n"
+        'project: "{{PROJECT_ID}}"\nversions:\n  - id: v0.1.0-p1\n'
+        "    status: active\n    milestone: v0.1.0\n    phase: 1\n    tasks: []\n",
     )
     _write(
         template_root / ".azoth" / "backlog.yaml",
-        "backlog_schema_version: 1\nitems: []\n",
+        'backlog_schema_version: 1\nproject: "{{PROJECT_ID}}"\nitems: []\n',
     )
     _write(
-        template_root / ".azoth" / "roadmap-specs" / "v0.2.0" / "README.md",
+        template_root / ".azoth" / "roadmap-specs" / "v0.1.0" / "README.md",
         "# Consumer roadmap specs\n",
     )
     _write(template_root / ".azoth" / "initiative-banks" / ".gitkeep", "")
@@ -121,7 +123,7 @@ def _write_release_readiness_assets(source: Path) -> None:
     _write(source / "kernel" / "GOVERNANCE.md", "# Governance\n")
     _write(source / "docs" / "playbook" / "README.md", "# Playbook\n")
     _write(source / "agents" / "tier1-core" / "architect.agent.md", "# Architect\n")
-    _write(source / ".codex" / "agents" / "architect.toml", "name = \"architect\"\n")
+    _write(source / ".codex" / "agents" / "architect.toml", 'name = "architect"\n')
     _write(source / ".azoth" / "run-ledger.local.yaml.example", "schema_version: 1\n")
     _write(source / "pipelines" / "stage-summary.schema.yaml", "type: object\n")
     _write(source / "scripts" / "planning_bank_validate.py", "print('validate')\n")
@@ -254,7 +256,9 @@ def test_materialize_full_profile_generates_consumer_safe_runtime_state(
     roadmap = (target / ".azoth" / "roadmap.yaml").read_text(encoding="utf-8")
     backlog = (target / ".azoth" / "backlog.yaml").read_text(encoding="utf-8")
     command_body = (target / ".claude" / "commands" / "roadmap.md").read_text(encoding="utf-8")
-    assert "consumer-project" in roadmap
+    assert 'project: "target"' in roadmap
+    assert "active_version: v0.1.0-p1" in roadmap
+    assert "{{PROJECT_ID}}" not in roadmap
     assert "root-azoth-private" not in roadmap
     assert "private: root backlog" not in backlog
     assert "commands/roadmap/command.yaml" in command_body
@@ -280,6 +284,57 @@ def test_materialize_full_profile_errors_when_runtime_bundle_source_is_missing(
 
     with pytest.raises((FileNotFoundError, RuntimeError, ValueError), match="commands|runtime"):
         materialize_full_profile(source, tmp_path / "target")
+
+
+def test_materialize_full_profile_quotes_colons_in_command_frontmatter(tmp_path: Path) -> None:
+    materialize_full_profile = _load_materializer()
+    source = _make_release_source(tmp_path)
+    contract = {
+        "name": "roadmap",
+        "description": "Roadmap: inspect the current delivery slice",
+        "azoth_effect": "read",
+        "agent": "orchestrator",
+        "body": {"source_path": ".claude/commands/roadmap.md"},
+    }
+    _write(
+        source / "commands" / "roadmap" / "command.yaml",
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+
+    target = tmp_path / "target"
+    materialize_full_profile(source, target)
+
+    text = (target / ".claude" / "commands" / "roadmap.md").read_text(encoding="utf-8")
+    frontmatter = text.split("---", 2)[1]
+    assert yaml.safe_load(frontmatter)["description"] == contract["description"]
+
+
+def test_materialize_full_profile_replaces_invalid_target_frontmatter(tmp_path: Path) -> None:
+    materialize_full_profile = _load_materializer()
+    source = _make_release_source(tmp_path)
+    _write(
+        source / "commands" / "roadmap" / "command.yaml",
+        yaml.safe_dump(
+            {
+                "name": "roadmap",
+                "description": "Inspect the delivery roadmap",
+                "body": {"source_path": ".claude/commands/roadmap.md"},
+            },
+            sort_keys=False,
+        ),
+    )
+    target = tmp_path / "target"
+    _write(
+        target / ".claude" / "commands" / "roadmap.md",
+        "---\ndescription: Roadmap: invalid unquoted colon\n---\n# stale\n",
+    )
+
+    materialize_full_profile(source, target)
+
+    text = (target / ".claude" / "commands" / "roadmap.md").read_text(encoding="utf-8")
+    frontmatter = text.split("---", 2)[1]
+    assert yaml.safe_load(frontmatter)["description"]
+    assert "# stale" not in text
 
 
 def test_compile_release_profile_readiness_reports_truthful_mode_states(

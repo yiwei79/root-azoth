@@ -17,7 +17,7 @@ milestone: v0.3.0
 lifecycle_phase: 8  # historical 1–7 + Next marker for shipped pre-1.0 roadmap + v0.1.0 gate
 
 # Architecture decisions count
-decisions: 54
+decisions: 55
 
 # Layer status
 layers:

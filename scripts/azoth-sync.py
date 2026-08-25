@@ -257,8 +257,9 @@ def load_sanitize_config(config_path: Path) -> dict[str, Any]:
 
 def sanitize_content(content: str, config: dict[str, Any]) -> str:
     """Strip org-specific references from content."""
+    redaction_sentinel = "{{" + "REDACTED}}"
     for pattern in config.get("strip_patterns", []):
-        content = content.replace(pattern, "{{REDACTED}}")
+        content = content.replace(pattern, redaction_sentinel)
     return content
 
 

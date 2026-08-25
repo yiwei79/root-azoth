@@ -1,0 +1,56 @@
+schema_version: 1
+artifact_type: deployment_mode_matrix
+title: Azoth deployment modes and first-use evidence
+mode_matrix:
+  guide:
+    installed_asset_classes:
+      - trust and governance reading surface
+      - orientation or first prompt guidance
+      - starter documentation/playbook
+    explicit_exclusions:
+      - agents
+      - project-management state
+      - autonomous loops
+      - cross-repository writes
+    next_safe_action: read orientation and decide whether to request assisted mode
+  assisted:
+    installed_asset_classes:
+      - skills
+      - tier-1 agents or generated equivalents
+      - command wrappers
+      - runtime helper references
+      - starter receipts
+    explicit_exclusions:
+      - roadmap hydration
+      - backlog ownership
+      - no-human-gate autonomy
+      - project repository mutation without local approval
+    next_safe_action: run read-only assisted checks or request managed-mode hydration
+  managed:
+    installed_asset_classes:
+      - roadmap seed
+      - backlog seed
+      - planning-bank seed
+      - validation helpers
+      - project-local receipt
+    explicit_exclusions:
+      - branch-local no-human-gate autonomy
+      - hidden hydration
+      - control-plane writes without project-local approval
+    next_safe_action: hydrate or repair project-local planning state under a fresh gate
+  governed_autonomy:
+    installed_asset_classes:
+      - run ledger
+      - loop-state examples
+      - stage-evidence requirements
+      - stop-condition contract
+      - bounded replay budget
+    explicit_exclusions:
+      - development-workshop authority leaking into consumer projects
+      - open-ended loops
+      - silent child-scope writes
+      - stale campaign continuation
+    next_safe_action: open a bounded governed-autonomy campaign only with fresh authority
+first_use_evidence_map:
+  release_profile:
+    pass_signal: profile and smoke evidence agree for the selected mode

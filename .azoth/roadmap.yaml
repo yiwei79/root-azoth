@@ -2547,5 +2547,64 @@ versions:
   status: active
   current_patch: 0
   goal: Integrate the selected Personal Harness OS snapshot and repair its public release boundary.
-  pending_task_refs: []
-  tasks: []
+  phase_scope:
+  - 1
+  themes:
+  - personal-harness
+  - portability
+  - public-product-boundary
+  - release-validation
+  freeze_policy:
+    no_unrelated_features: true
+    allowed_work:
+    - selected_snapshot_integration
+    - portability_and_version_repairs
+    - public_extraction_and_privacy_validation
+    - bounded_public_documentation
+    - release_candidate_validation
+    deferred_work_rule: New autonomy, memory, planning-bank, platform, or product ideas
+      remain proposal or initiative-bank evidence until the release boundary closes.
+  pending_task_refs:
+  - T-063
+  - T-064
+  - T-065
+  - T-066
+  - T-067
+  tasks:
+  - id: T-063
+    title: Integrate selected Personal Harness OS snapshot without rewriting its history
+    status: complete
+    acceptance:
+    - codex/personal-harness-os remains unchanged at 8f89204
+    - selected snapshot is integrated through an explicit no-fast-forward merge
+    - excluded experimental branches remain outside phase ancestry
+  - id: T-064
+    title: Repair portable Personal Harness and workshop version contracts
+    status: complete
+    acceptance:
+    - portable context, routing, rehearsal, and cockpit commands pass focused tests
+    - v0.3.0-p1 maps to the private 0.2.1.PATCH delivery line under D55
+    - generated commands remain shell-safe across paths containing spaces
+  - id: T-065
+    title: Enforce the public extraction, privacy, and product boundary
+    status: active
+    acceptance:
+    - public identity is azoth 0.3.0-rc.1 on the preview channel
+    - exact source revision and public-test allowlist are machine-readable
+    - root-only paths, identifiers, credentials, and unapproved runtime state fail closed
+    - generic personal-knowledge recall and review remain default-deny
+  - id: T-066
+    title: Publish bounded Personal Harness OS evidence and release notes
+    status: active
+    acceptance:
+    - public claims distinguish implemented preview contracts from broader philosophy
+    - case-study measurements retain private immutable provenance
+    - all shipped Markdown references and anchors resolve
+  - id: T-067
+    title: Validate the exact release candidate and consumer boundary
+    status: active
+    acceptance:
+    - focused and full root suites pass at the tested feature commit
+    - exact extraction passes validator, public tests, Ruff, and consumer smoke
+    - PowerShell availability or result is reported without an unsupported parity claim
+    - no tag, push, public-repository mutation, or main promotion occurs before review

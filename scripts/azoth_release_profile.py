@@ -34,7 +34,7 @@ REQUIRED_RUNTIME_PATHS: tuple[str, ...] = (
 REQUIRED_SEED_PATHS: tuple[str, ...] = (
     ".azoth/roadmap.yaml",
     ".azoth/backlog.yaml",
-    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/roadmap-specs/v0.1.0/README.md",
     ".azoth/initiative-banks/.gitkeep",
     ".azoth/design-banks/.gitkeep",
     ".azoth/autonomous-loop-state.local.yaml.example",
@@ -42,12 +42,10 @@ REQUIRED_SEED_PATHS: tuple[str, ...] = (
 
 MODE_ORDER: tuple[str, ...] = ("guide", "assisted", "managed", "governed_autonomy")
 
-DEFAULT_MODE_MATRIX = Path(".azoth/research/t-059-deployment-readiness-mode-matrix.yaml")
+DEFAULT_MODE_MATRIX = Path("kernel/templates/release-profiles/deployment-mode-matrix.yaml")
 
 MODE_AUTHORITY_NOTES: dict[str, tuple[str, ...]] = {
-    "managed": (
-        "project-local approval is required before applying planning-bank seeds",
-    ),
+    "managed": ("project-local approval is required before applying planning-bank seeds",),
     "governed_autonomy": (
         "fresh autonomy budget, ledger/write-claim proof, and stop conditions are required",
     ),
@@ -293,7 +291,9 @@ def validate_project_local_mode_receipt(
 ) -> list[str]:
     """Validate the T-062 project-local mode receipt contract."""
     errors: list[str] = []
-    missing = sorted(field for field in PROJECT_LOCAL_RECEIPT_REQUIRED_FIELDS if field not in receipt)
+    missing = sorted(
+        field for field in PROJECT_LOCAL_RECEIPT_REQUIRED_FIELDS if field not in receipt
+    )
     for field in missing:
         errors.append(f"missing required field {field}")
 
@@ -329,13 +329,19 @@ def validate_project_local_mode_receipt(
         errors.append("freshness_status must be current")
 
     approval_scope = str(receipt.get("approval_scope") or "").strip()
-    if selected_mode and approval_scope and not _scope_authorizes_mode(approval_scope, selected_mode):
+    if (
+        selected_mode
+        and approval_scope
+        and not _scope_authorizes_mode(approval_scope, selected_mode)
+    ):
         errors.append(f"approval_scope must authorize {selected_mode}")
 
     if expected_project_id:
         project_id = str(receipt.get("project_id") or "").strip()
         if project_id and project_id != expected_project_id:
-            errors.append(f"project_id {project_id} must match cockpit project_id {expected_project_id}")
+            errors.append(
+                f"project_id {project_id} must match selected project_id {expected_project_id}"
+            )
 
     if expected_repo_path is not None:
         repo_path = str(receipt.get("repo_path") or "").strip()
@@ -343,7 +349,9 @@ def validate_project_local_mode_receipt(
             expected_path = Path(expected_repo_path).expanduser().resolve()
             actual_path = Path(repo_path).expanduser().resolve()
             if actual_path != expected_path:
-                errors.append(f"repo_path {actual_path} must match cockpit repo_path {expected_path}")
+                errors.append(
+                    f"repo_path {actual_path} must match selected project repo_path {expected_path}"
+                )
 
     handoff_ref = str(receipt.get("handoff_receipt_ref") or "").strip()
     if handoff_ref:
@@ -354,7 +362,7 @@ def validate_project_local_mode_receipt(
             errors.append("handoff_receipt_ref must resolve to an existing file")
     if expected_handoff_receipt_ref and handoff_ref and handoff_ref != expected_handoff_receipt_ref:
         errors.append(
-            f"handoff_receipt_ref {handoff_ref} must match cockpit handoff_receipt_ref "
+            f"handoff_receipt_ref {handoff_ref} must match selected handoff_receipt_ref "
             f"{expected_handoff_receipt_ref}"
         )
 
@@ -408,7 +416,9 @@ def _has_command_wrapper(source_root: Path) -> bool:
     commands_root = source_root / "commands"
     if not commands_root.is_dir():
         return False
-    return any((path / "command.yaml").is_file() for path in commands_root.iterdir() if path.is_dir())
+    return any(
+        (path / "command.yaml").is_file() for path in commands_root.iterdir() if path.is_dir()
+    )
 
 
 def _full_profile_seeds(source_root: Path) -> dict[str, str]:
@@ -458,7 +468,9 @@ def _asset_class_present(
     if asset_class == "backlog seed":
         return ".azoth/backlog.yaml" in seeds
     if asset_class == "planning-bank seed":
-        return ".azoth/initiative-banks/.gitkeep" in seeds and ".azoth/design-banks/.gitkeep" in seeds
+        return (
+            ".azoth/initiative-banks/.gitkeep" in seeds and ".azoth/design-banks/.gitkeep" in seeds
+        )
     if asset_class == "validation helpers":
         return _has_any_path(
             source_root,
@@ -627,12 +639,35 @@ def _command_frontmatter(contract: Mapping[str, Any]) -> str:
         "azoth_effect": contract.get("azoth_effect"),
         "agent": contract.get("agent"),
     }
-    lines = ["---"]
-    for key, value in fields.items():
-        if value:
-            lines.append(f"{key}: {value}")
-    lines.extend(["---", ""])
-    return "\n".join(lines)
+    frontmatter = {key: value for key, value in fields.items() if value}
+    return (
+        "---\n"
+        + yaml.safe_dump(
+            frontmatter,
+            allow_unicode=True,
+            default_flow_style=False,
+            sort_keys=False,
+        )
+        + "---\n"
+    )
+
+
+def _has_valid_frontmatter(path: Path) -> bool:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return True
+    try:
+        end_index = next(
+            index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---"
+        )
+    except StopIteration:
+        return True
+    try:
+        yaml.safe_load("\n".join(lines[1:end_index]))
+    except yaml.YAMLError:
+        return False
+    return True
 
 
 def _load_command_contract(command_yaml: Path) -> dict[str, Any]:
@@ -690,7 +725,7 @@ def _synthesize_claude_body_from_skill_wrapper(source_root: Path, command_name: 
 def _materialize_claude_command_bodies(source_root: Path, target_root: Path) -> None:
     for rel_path in _referenced_claude_command_bodies(target_root):
         target = target_root / rel_path
-        if target.is_file():
+        if target.is_file() and _has_valid_frontmatter(target):
             continue
         source = source_root / rel_path
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -705,10 +740,11 @@ def _materialize_claude_command_bodies(source_root: Path, target_root: Path) -> 
 
 
 def _write_profile_seeds(seeds: Mapping[str, str], target_root: Path) -> None:
+    project_id = target_root.name
     for rel_path, content in seeds.items():
         target = _safe_target_path(target_root, rel_path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+        target.write_text(content.replace("{{PROJECT_ID}}", project_id), encoding="utf-8")
 
 
 def _append_gitignore_rules(target_root: Path) -> None:

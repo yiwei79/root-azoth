@@ -11,6 +11,44 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPT = REPO / "scripts" / "azoth_extract_product.py"
+PUBLIC_TEST_PATHS = tuple(
+    yaml.safe_load((REPO / "sync-config.yaml").read_text(encoding="utf-8"))["product_extraction"][
+        "public_test_paths"
+    ]
+)
+
+
+def _write_public_test_fixtures(source: Path) -> None:
+    for rel_path in PUBLIC_TEST_PATHS:
+        target = source / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("def test_public_fixture():\n    assert True\n", encoding="utf-8")
+
+
+def _commit_fixture_repo(source: Path) -> str:
+    subprocess.run(["git", "init", "-q"], cwd=source, check=True)
+    subprocess.run(["git", "add", "."], cwd=source, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Azoth Test",
+            "-c",
+            "user.email=azoth-test@example.invalid",
+            "commit",
+            "-qm",
+            "fixture",
+        ],
+        cwd=source,
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 def test_expected_pipeline_constant_matches_sync_config() -> None:
@@ -33,8 +71,6 @@ def test_copy_tree_always_skips_dot_git(tmp_path: Path) -> None:
 
     src = tmp_path / "src"
     src.mkdir()
-    (src / ".git").mkdir()
-    (src / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
     (src / "visible.txt").write_text("ok\n", encoding="utf-8")
 
     dest = tmp_path / "dest"
@@ -124,20 +160,21 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     (src / ".azoth" / "secret.yaml").write_text("nope", encoding="utf-8")
     (src / ".claude" / "hooks").mkdir(parents=True)
     (src / ".claude" / "hooks" / "secret_hook.py").write_text("print('nope')\n", encoding="utf-8")
-    (src / ".git").mkdir()
-    (src / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
     (src / "research_antigravity_parity").mkdir()
     (src / "research_antigravity_parity" / "notes.md").write_text(
         "internal research\n", encoding="utf-8"
     )
     (src / "tests").mkdir()
     (src / "tests" / "t.py").write_text("# t", encoding="utf-8")
+    _write_public_test_fixtures(src)
     (src / "LICENSE").write_text("PolyForm Noncommercial 1.0.0\n", encoding="utf-8")
     (src / "CLAUDE.md").write_text("# old", encoding="utf-8")
     (src / "azoth.yaml").write_text(
-        "name: x\nscope:\n  mode: scaffold\n  is_development_workshop: true\n",
+        "name: root-azoth\nversion: 0.2.1.7\nscope:\n  mode: scaffold\n"
+        "  is_development_workshop: true\n",
         encoding="utf-8",
     )
+    source_revision = _commit_fixture_repo(src)
 
     out = tmp_path / "out"
     r = subprocess.run(
@@ -159,18 +196,24 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     assert not any(rp.startswith(".claude/hooks/") for rp in rels)
     assert not any(rp.startswith(".git/") for rp in rels)
     assert not any(rp.startswith("research_antigravity_parity/") for rp in rels)
-    assert not any(rp.startswith("tests/") for rp in rels)
+    assert "tests/t.py" not in rels
+    assert set(PUBLIC_TEST_PATHS).issubset(rels)
     assert "LICENSE" in rels
     assert "skills/probe.md" in rels
     assert "kernel/templates/CLAUDE.md.template" in rels
 
     probe = (out / "skills" / "probe.md").read_text(encoding="utf-8")
     assert "SupplyGrowth" not in probe
-    assert "{{REDACTED}}" in probe
+    assert "source operations framework" in probe
 
     az = yaml.safe_load((out / "azoth.yaml").read_text(encoding="utf-8"))
-    assert az["scope"]["mode"] == "project"
+    assert az["name"] == "azoth"
+    assert az["version"] == "0.3.0-rc.1"
+    assert az["release_channel"] == "preview"
+    assert az["scope"]["mode"] == "product"
     assert az["scope"]["is_development_workshop"] is False
+    assert az["provenance"]["source_revision"] == source_revision
+    assert "milestone" not in az
 
     claude = (out / "CLAUDE.md").read_text(encoding="utf-8")
     assert "{{" not in claude
@@ -195,11 +238,14 @@ def test_extract_removes_pre_existing_out_directory(tmp_path: Path) -> None:
     (src / ".azoth" / "secret.yaml").write_text("nope", encoding="utf-8")
     (src / "tests").mkdir()
     (src / "tests" / "t.py").write_text("# t", encoding="utf-8")
+    _write_public_test_fixtures(src)
     (src / "CLAUDE.md").write_text("# old", encoding="utf-8")
     (src / "azoth.yaml").write_text(
-        "name: x\nscope:\n  mode: scaffold\n  is_development_workshop: true\n",
+        "name: root-azoth\nversion: 0.2.1.8\nscope:\n  mode: scaffold\n"
+        "  is_development_workshop: true\n",
         encoding="utf-8",
     )
+    _commit_fixture_repo(src)
 
     out = tmp_path / "out"
     out.mkdir(parents=True)

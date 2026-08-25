@@ -20,7 +20,8 @@ development. You clone it, run the installer, and any project gets: disciplined
 agents, auto-improving memory, trusted autonomous pipelines, and a single human
 alignment point.
 
-**Version**: v0.1.4.0
+**Workshop delivery version**: 0.2.1.0
+**Target public milestone**: v0.3.0
 **Primary platform**: Claude Code (CLI + VS Code extension)
 **Also compatible**: Codex (skill-routed via `.codex/` + `.agents/skills/azoth-*` adapters), OpenCode (reads CLAUDE.md natively), GitHub Copilot (via adapter)
 **License**: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — source-available; commercial use requires a separate written license from the copyright holder (see `LICENSE`).

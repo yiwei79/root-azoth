@@ -1,4 +1,4 @@
-# Development dependencies for root-azoth (CLI UX, YAML, tests, lint).
+# Development dependencies for Azoth (CLI UX, YAML, tests, lint).
 # Install: pip install -r requirements-dev.txt
 # Version floors keep installs compatible across environments; pin in CI if needed.
 

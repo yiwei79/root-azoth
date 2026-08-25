@@ -41,15 +41,34 @@ ABSENT_PREFIXES = (
     "build/",
     "dist/",
     "docs/DAY0_TUTORIAL.md",
+    "docs/personal-control-plane/",
+    "docs/superpowers/",
+    "meta_session_research/",
     "research_antigravity_parity/",
     "root-azoth.code-workspace",
-    "tests/",
+    "skills/orientation/",
+    ".agents/skills/orientation/",
+    ".opencode/skills/orientation/",
+    ".vscode/",
+    "sync-config.yaml",
+    "scripts/azoth_extract_product.py",
+    "scripts/product_release_smoke.py",
+    "scripts/public_release_freshness.py",
+    "scripts/cockpit_backup_verify.py",
+    "scripts/cockpit_bootstrap_verify.py",
+    "scripts/cockpit_command_surface.py",
+    "scripts/cockpit_menu.py",
+    "scripts/cockpit_ux_simulate.py",
+    "scripts/personal_harness_daily_flow.py",
+    "scripts/personal_knowledge_inventory.py",
+    "scripts/personal_knowledge_validate.py",
     "venv/",
     "workspace/",
 )
 
 REQUIRED_PRODUCT_PATHS = (
     "README.md",
+    "public-test-paths.txt",
     ".github/workflows/ci.yml",
     ".github/copilot-instructions.md",
     ".github/prompts/auto.prompt.md",
@@ -57,9 +76,21 @@ REQUIRED_PRODUCT_PATHS = (
     "install.sh",
     "install.ps1",
     "scripts/azoth_release_profile.py",
+    "scripts/validate_public_product.py",
+    "scripts/harness_profile.py",
+    "scripts/context_view.py",
+    "scripts/personal_harness_context.py",
+    "scripts/personal_harness_practice_rehearsal.py",
+    "scripts/personal_knowledge_recall.py",
+    "scripts/personal_knowledge_review.py",
+    "docs/PERSONAL_HARNESS_OS.md",
+    "docs/case-studies/narrow-success-broad-failure.md",
+    "examples/personal-harness/rehearsal-cases.yaml",
+    "release-notes/v0.3.0-rc.1.md",
     "kernel/templates/CLAUDE.md.template",
     "kernel/templates/bootloader-state.md.template",
     "kernel/templates/release-profiles/full-consumer.yaml",
+    "kernel/templates/release-profiles/deployment-mode-matrix.yaml",
     "kernel/BOOTLOADER.md",
     "kernel/GOVERNANCE.md",
     "kernel/PROMOTION_RUBRIC.md",
@@ -110,7 +141,7 @@ FULL_CONSUMER_RUNTIME_PATHS = (
     ".agents/skills/azoth-autonomous-auto/SKILL.md",
     ".azoth/roadmap.yaml",
     ".azoth/backlog.yaml",
-    ".azoth/roadmap-specs/v0.2.0/README.md",
+    ".azoth/roadmap-specs/v0.1.0/README.md",
     ".azoth/initiative-banks/.gitkeep",
     ".azoth/design-banks/.gitkeep",
     ".azoth/autonomous-loop-state.local.yaml.example",
@@ -216,6 +247,16 @@ def rel_files(root: Path) -> list[str]:
     return sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
 
 
+def _read_utf8_text(path: Path) -> str | None:
+    data = path.read_bytes()
+    if b"\x00" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
 def assert_required_paths(root: Path, paths: tuple[str, ...]) -> None:
     missing = [path for path in paths if not (root / path).exists()]
     if missing:
@@ -308,9 +349,11 @@ def assert_sanitized(root: Path, strip_patterns: list[str]) -> None:
     ]
     hits: list[str] = []
     for path in root.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+        if not path.is_file():
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
+        text = _read_utf8_text(path)
+        if text is None:
+            continue
         for pattern in effective_patterns:
             if pattern in text:
                 hits.append(f"{path.relative_to(root).as_posix()}:{pattern}")
@@ -400,10 +443,15 @@ def main() -> int:
     if args.setup_level == "3":
         assert_full_release_references(out)
 
-    run([sys.executable, "scripts/azoth_extract_product.py", "--validate-only"], cwd=out)
-    run([sys.executable, "-c", "import yaml; yaml.safe_load(open('sync-config.yaml'))"], cwd=out)
+    run([sys.executable, "scripts/validate_public_product.py"], cwd=out)
+    public_tests = [
+        line.strip()
+        for line in (out / "public-test-paths.txt").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    run([sys.executable, "-m", "pytest", "-q", *public_tests], cwd=out)
     if not args.skip_ruff:
-        run([sys.executable, "-m", "ruff", "check", "scripts/"], cwd=out)
+        run([sys.executable, "-m", "ruff", "check", "scripts/", "tests/"], cwd=out)
 
     bash_consumer: Path | None = None
     pwsh_status = "skipped: --skip-install"

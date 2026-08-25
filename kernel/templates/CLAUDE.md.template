@@ -22,7 +22,7 @@ This project uses the Azoth bootloader. Every session:
 Run `/start` at the beginning of each session for a visual project snapshot
 and routing options (next task, intake, promote, eval, or custom goal).
 
-**Claude Code:** `hooks.SessionStart` runs `.claude/hooks/session_start_welcome.py`, which invokes `welcome.py --plain` and mirrors stdout to `.azoth/session-orientation.txt`. Default: use injected context (efficient). **Read** and paste the file verbatim only when the user asks for the full plain snapshot. **Bash** to run `welcome.py` for the **Rich** UI is allowed — the IDE may collapse output; expand for the full dashboard. **Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** for the full Rich layout; **Bash** in chat works with expand. **Full policy:** match `CLAUDE.md` **core rules 8–9** in this repo (or root-azoth scaffold).
+**Claude Code:** `hooks.SessionStart` runs `.claude/hooks/session_start_welcome.py`, which invokes `welcome.py --plain` and mirrors stdout to `.azoth/session-orientation.txt`. Default: use injected context (efficient). **Read** and paste the file verbatim only when the user asks for the full plain snapshot. **Bash** to run `welcome.py` for the **Rich** UI is allowed — the IDE may collapse output; expand for the full dashboard. **Cursor:** run `python3 scripts/welcome.py` in the **integrated terminal** for the full Rich layout; **Bash** in chat works with expand. **Full policy:** match `CLAUDE.md` **core rules 8–9** in the installed toolkit.
 
 ## Project Routing
 

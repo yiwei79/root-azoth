@@ -29,7 +29,7 @@ PIPELINE_OVERRIDE_RE = re.compile(
 )
 PATH_HINT_RE = re.compile(
     r"(?P<path>(?:\.azoth|\.claude|\.codex|\.cursor|\.gemini|\.github|\.opencode|"
-    r"agents|commands|docs|kernel|meta_session_research|pipelines|scaffold|scripts|skills|tests|"
+    r"agents|commands|docs|kernel|pipelines|scaffold|scripts|skills|tests|"
     r"AGENTS\.md|CLAUDE\.md|GEMINI\.md)[A-Za-z0-9_./-]*)"
 )
 

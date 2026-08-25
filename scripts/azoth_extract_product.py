@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,11 @@ ALWAYS_EXCLUDE_PREFIXES = (".claude/worktrees/",)
 
 PUBLIC_CI_TEMPLATE = Path("kernel/templates/github/workflows/ci-public-azoth.yml")
 PUBLIC_README_TEMPLATE = Path("kernel/templates/README.public.azoth.md")
+PUBLIC_SCRIPT_TEMPLATES = (
+    Path("kernel/templates/public-scripts/personal_knowledge_recall.py"),
+    Path("kernel/templates/public-scripts/personal_knowledge_review.py"),
+    Path("kernel/templates/public-scripts/validate_public_product.py"),
+)
 
 DEFAULT_CLAUDE_SUBSTITUTIONS: dict[str, str] = {
     "PROJECT_NAME": "Azoth",
@@ -82,10 +88,13 @@ def _read_azoth_version(source_root: Path) -> str:
     return DEFAULT_CLAUDE_SUBSTITUTIONS["AZOTH_VERSION"]
 
 
-def _build_claude_substitutions(source_root: Path) -> dict[str, str]:
-    """Build CLAUDE.md substitutions with AZOTH_VERSION read from azoth.yaml."""
+def _build_claude_substitutions(
+    source_root: Path,
+    public_version: str | None = None,
+) -> dict[str, str]:
+    """Build CLAUDE.md substitutions for the public product identity."""
     subs = dict(DEFAULT_CLAUDE_SUBSTITUTIONS)
-    subs["AZOTH_VERSION"] = _read_azoth_version(source_root)
+    subs["AZOTH_VERSION"] = public_version or _read_azoth_version(source_root)
     return subs
 
 
@@ -203,17 +212,46 @@ def path_is_excluded(rel_posix: str, exclude_paths: list[str]) -> bool:
     return False
 
 
-def sanitize_content(content: str, strip_patterns: list[str]) -> str:
+def path_is_included(rel_posix: str, include_paths: list[str] | None) -> bool:
+    """Return true when a path is inside the explicit public extraction surface."""
+    if include_paths is None:
+        return True
+    for raw in include_paths:
+        pattern = raw.replace("\\", "/").rstrip("/")
+        if rel_posix == pattern or rel_posix.startswith(pattern + "/"):
+            return True
+    return False
+
+
+def sanitize_content(
+    content: str,
+    strip_patterns: list[str],
+    rewrite_patterns: dict[str, str] | None = None,
+) -> str:
     """Same substitution contract as scripts/azoth-sync.py sanitize_content."""
+    for source, replacement in (rewrite_patterns or {}).items():
+        content = content.replace(source, replacement)
     for pattern in strip_patterns:
         content = content.replace(pattern, "{{REDACTED}}")
     return content
+
+
+def _read_utf8_text(path: Path) -> str | None:
+    """Read a public-tree file only when it is ordinary UTF-8 text."""
+    data = path.read_bytes()
+    if b"\x00" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
 
 
 def copy_tree_respecting_excludes(
     source: Path,
     dest: Path,
     exclude_paths: list[str],
+    include_paths: list[str] | None = None,
     *,
     dry_run: bool,
 ) -> int:
@@ -224,6 +262,8 @@ def copy_tree_respecting_excludes(
         rel = path.relative_to(source).as_posix()
         # Defense-in-depth: never copy VCS metadata even if exclude_paths is misconfigured.
         if rel == ".git" or rel.startswith(".git/"):
+            continue
+        if not path_is_included(rel, include_paths):
             continue
         if path_is_excluded(rel, exclude_paths):
             continue
@@ -263,25 +303,46 @@ def apply_regenerate_claude(
     out.write_text(text, encoding="utf-8")
 
 
-def apply_set_scope_mode(
+def apply_set_public_manifest(
+    source_root: Path,
     dest_root: Path,
-    value: str,
+    public_version: str,
+    release_channel: str,
     *,
     dry_run: bool,
 ) -> None:
     azoth_path = dest_root / "azoth.yaml"
     if not azoth_path.is_file():
         raise RuntimeError(f"azoth.yaml missing in output after copy: {azoth_path}")
-    data = yaml.safe_load(azoth_path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise RuntimeError("azoth.yaml must be a mapping")
-    scope = data.setdefault("scope", {})
-    if not isinstance(scope, dict):
-        raise RuntimeError("azoth.yaml scope must be a mapping")
-    scope["mode"] = value
-    scope["is_development_workshop"] = False
+    source_manifest_path = source_root / "azoth.yaml"
+    source_manifest = yaml.safe_load(source_manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(source_manifest, dict):
+        raise RuntimeError("source azoth.yaml must be a mapping")
+    pipeline_presets = source_manifest.get("pipeline_presets")
+    if not isinstance(pipeline_presets, list):
+        pipeline_presets = []
+    data = {
+        "schema_version": 1,
+        "name": "azoth",
+        "version": public_version,
+        "description": source_manifest.get("description") or "The Universal Agentic Toolkit",
+        "release_channel": release_channel,
+        "provenance": {
+            "source_delivery_version": str(source_manifest.get("version") or "unknown"),
+            "source_revision": _source_revision(source_root),
+        },
+        "scope": {
+            "mode": "product",
+            "is_development_workshop": False,
+        },
+        "platforms": ["claude_code", "opencode", "copilot", "codex"],
+        "pipeline_presets": [str(item) for item in pipeline_presets],
+    }
     if dry_run:
-        print(f"  [dry-run] set azoth.yaml scope.mode={value!r}, is_development_workshop=false")
+        print(
+            "  [dry-run] set public azoth.yaml "
+            f"version={public_version!r}, release_channel={release_channel!r}"
+        )
         return
     azoth_path.write_text(
         yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False),
@@ -289,10 +350,31 @@ def apply_set_scope_mode(
     )
 
 
+def _source_revision(source_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=source_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    revision = result.stdout.strip()
+    if result.returncode != 0 or not re_full_sha(revision):
+        detail = (result.stderr or result.stdout or "git revision unavailable").strip()
+        raise RuntimeError(f"public extraction requires an exact source commit SHA: {detail}")
+    return revision
+
+
+def re_full_sha(value: str) -> bool:
+    return len(value) == 40 and all(char in "0123456789abcdef" for char in value.lower())
+
+
 def apply_transforms(
     source_root: Path,
     dest_root: Path,
     transforms: list[dict[str, Any]],
+    public_version: str,
+    release_channel: str,
     *,
     dry_run: bool,
 ) -> None:
@@ -311,7 +393,7 @@ def apply_transforms(
                 raise RuntimeError("regenerate-from-template requires template: str")
             if src_name != "CLAUDE.md":
                 raise RuntimeError(f"unsupported regenerate-from-template source: {src_name!r}")
-            subs = _build_claude_substitutions(source_root)
+            subs = _build_claude_substitutions(source_root, public_version)
             apply_regenerate_claude(
                 source_root,
                 dest_root,
@@ -319,13 +401,16 @@ def apply_transforms(
                 subs,
                 dry_run=dry_run,
             )
-        elif action == "set-scope-mode":
-            val = spec.get("value")
-            if not isinstance(val, str):
-                raise RuntimeError("set-scope-mode requires value: str")
+        elif action == "set-public-manifest":
             if src_name != "azoth.yaml":
-                raise RuntimeError(f"unsupported set-scope-mode source: {src_name!r}")
-            apply_set_scope_mode(dest_root, val, dry_run=dry_run)
+                raise RuntimeError(f"unsupported set-public-manifest source: {src_name!r}")
+            apply_set_public_manifest(
+                source_root,
+                dest_root,
+                public_version,
+                release_channel,
+                dry_run=dry_run,
+            )
         else:
             raise RuntimeError(f"unknown transform action: {action!r}")
 
@@ -333,19 +418,20 @@ def apply_transforms(
 def apply_sanitize_strip_patterns(
     dest_root: Path,
     strip_patterns: list[str],
+    rewrite_patterns: dict[str, str] | None = None,
     *,
     dry_run: bool,
 ) -> int:
-    if not strip_patterns:
+    if not strip_patterns and not rewrite_patterns:
         return 0
     touched = 0
     for path in sorted(dest_root.rglob("*")):
         if not path.is_file():
             continue
-        if path.suffix.lower() not in TEXT_SUFFIXES:
+        text = _read_utf8_text(path)
+        if text is None:
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        new_text = sanitize_content(text, strip_patterns)
+        new_text = sanitize_content(text, strip_patterns, rewrite_patterns)
         if new_text != text:
             touched += 1
             if dry_run:
@@ -355,7 +441,13 @@ def apply_sanitize_strip_patterns(
     return touched
 
 
-def emit_public_assets(source_root: Path, dest_root: Path, *, dry_run: bool) -> None:
+def emit_public_assets(
+    source_root: Path,
+    dest_root: Path,
+    public_test_paths: list[str],
+    *,
+    dry_run: bool,
+) -> None:
     ci_tpl = source_root / PUBLIC_CI_TEMPLATE
     if not ci_tpl.is_file():
         raise RuntimeError(f"public CI template missing: {ci_tpl}")
@@ -372,10 +464,31 @@ def emit_public_assets(source_root: Path, dest_root: Path, *, dry_run: bool) -> 
         print("  [dry-run] emit .github/copilot-instructions.md")
         print("  [dry-run] copy .github/prompts/ when present")
         print("  [dry-run] emit .github/agents/ from canonical agents/**/*.agent.md")
+        print("  [dry-run] emit public script templates and public-test-paths.txt")
         return
 
     ci_dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ci_tpl, ci_dest)
+    (dest_root / "public-test-paths.txt").write_text(
+        "".join(f"{path}\n" for path in public_test_paths),
+        encoding="utf-8",
+    )
+
+    scripts_dest = dest_root / "scripts"
+    scripts_dest.mkdir(parents=True, exist_ok=True)
+    public_version = _public_manifest_value(dest_root, "version")
+    release_channel = _public_manifest_value(dest_root, "release_channel")
+    for template_rel in PUBLIC_SCRIPT_TEMPLATES:
+        template_path = source_root / template_rel
+        if not template_path.is_file():
+            raise RuntimeError(f"public script template missing: {template_path}")
+        text = template_path.read_text(encoding="utf-8")
+        text = text.replace("{{PUBLIC_VERSION}}", public_version)
+        text = text.replace("{{RELEASE_CHANNEL}}", release_channel)
+        text = text.replace("{{PUBLIC_TEST_PATHS_LINES}}", "\n".join(public_test_paths))
+        if "{{PUBLIC_" in text:
+            raise RuntimeError(f"unresolved public-script template placeholder: {template_path}")
+        (scripts_dest / template_path.name).write_text(text, encoding="utf-8")
 
     rtext = readme_tpl.read_text(encoding="utf-8")
     for k, v in README_SUBSTITUTIONS.items():
@@ -412,12 +525,22 @@ def emit_public_assets(source_root: Path, dest_root: Path, *, dry_run: bool) -> 
             (agents_dst / f"{name}.agent.md").write_text(content, encoding="utf-8")
 
 
+def _public_manifest_value(dest_root: Path, key: str) -> str:
+    manifest = yaml.safe_load((dest_root / "azoth.yaml").read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or not isinstance(manifest.get(key), str):
+        raise RuntimeError(f"public manifest missing string field: {key}")
+    return str(manifest[key])
+
+
 def validate_only(source: Path, config_path: Path) -> int:
     """Load config, pipeline, and required templates — no writes (CI smoke)."""
     cfg = load_config(config_path)
     pe = get_product_extraction(cfg)
     validate_pipeline(pe)
-    for rel in (PUBLIC_CI_TEMPLATE, PUBLIC_README_TEMPLATE):
+    _public_identity(pe)
+    _public_include_paths(pe)
+    _public_test_paths(pe, source)
+    for rel in (PUBLIC_CI_TEMPLATE, PUBLIC_README_TEMPLATE, *PUBLIC_SCRIPT_TEMPLATES):
         p = source / rel
         if not p.is_file():
             _die(f"required template missing: {p}")
@@ -430,8 +553,43 @@ def validate_only(source: Path, config_path: Path) -> int:
                 tr = spec.get("template")
                 if isinstance(tr, str) and not (source / tr).is_file():
                     _die(f"transform template not found: {source / tr}")
-    print("validate-only: OK (config, pipeline, templates)")
+    print("validate-only: OK (config, public surface, pipeline, templates)")
     return 0
+
+
+def _public_identity(pe: dict[str, Any]) -> tuple[str, str]:
+    public_version = pe.get("public_version")
+    release_channel = pe.get("release_channel")
+    if not isinstance(public_version, str) or not public_version.strip():
+        _die("product_extraction.public_version must be a non-empty string")
+    if release_channel not in {"preview", "stable"}:
+        _die("product_extraction.release_channel must be preview or stable")
+    return public_version.strip(), str(release_channel)
+
+
+def _public_include_paths(pe: dict[str, Any]) -> list[str]:
+    include_paths = pe.get("include_paths")
+    if (
+        not isinstance(include_paths, list)
+        or not include_paths
+        or not all(isinstance(item, str) and item.strip() for item in include_paths)
+    ):
+        _die("product_extraction.include_paths must be a non-empty list of strings")
+    return [str(item) for item in include_paths]
+
+
+def _public_test_paths(pe: dict[str, Any], source_root: Path) -> list[str]:
+    test_paths = pe.get("public_test_paths")
+    if (
+        not isinstance(test_paths, list)
+        or not test_paths
+        or not all(isinstance(item, str) and item.startswith("tests/") for item in test_paths)
+    ):
+        _die("product_extraction.public_test_paths must be a non-empty list of tests/* paths")
+    missing = [path for path in test_paths if not (source_root / path).is_file()]
+    if missing:
+        _die(f"public test paths do not exist: {missing}")
+    return [str(item) for item in test_paths]
 
 
 def extract_product(
@@ -444,6 +602,9 @@ def extract_product(
     cfg = load_config(config_path)
     pe = get_product_extraction(cfg)
     validate_pipeline(pe)
+    public_version, release_channel = _public_identity(pe)
+    include_paths = _public_include_paths(pe)
+    public_test_paths = _public_test_paths(pe, source)
     exclude_paths = pe.get("exclude_paths")
     if not isinstance(exclude_paths, list) or not all(isinstance(x, str) for x in exclude_paths):
         _die("product_extraction.exclude_paths must be a list of strings")
@@ -452,6 +613,11 @@ def extract_product(
     strip_patterns = sanitize_cfg.get("strip_patterns", [])
     if not isinstance(strip_patterns, list) or not all(isinstance(x, str) for x in strip_patterns):
         _die("sanitize.strip_patterns must be a list of strings")
+    rewrite_patterns = sanitize_cfg.get("rewrite_patterns", {})
+    if not isinstance(rewrite_patterns, dict) or not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in rewrite_patterns.items()
+    ):
+        _die("sanitize.rewrite_patterns must be a string-to-string mapping")
 
     transforms = pe.get("transform")
     if transforms is None:
@@ -466,7 +632,13 @@ def extract_product(
         print(
             "dry-run: step 1 only (listing copies); transforms need a real tree — use full extract or --validate-only"
         )
-        n = copy_tree_respecting_excludes(source, dest, exclude_paths, dry_run=True)
+        n = copy_tree_respecting_excludes(
+            source,
+            dest,
+            exclude_paths,
+            include_paths,
+            dry_run=True,
+        )
         print(f"   would copy {n} files")
         print("done (dry-run).")
         return 0
@@ -476,18 +648,36 @@ def extract_product(
     dest.mkdir(parents=True)
 
     print("1. copy_tree_respecting_excludes …")
-    n = copy_tree_respecting_excludes(source, dest, exclude_paths, dry_run=False)
+    n = copy_tree_respecting_excludes(
+        source,
+        dest,
+        exclude_paths,
+        include_paths,
+        dry_run=False,
+    )
     print(f"   copied {n} files")
 
     print("2. apply_transforms …")
-    apply_transforms(source, dest, transforms, dry_run=False)
+    apply_transforms(
+        source,
+        dest,
+        transforms,
+        public_version,
+        release_channel,
+        dry_run=False,
+    )
 
     print("3. apply_sanitize_strip_patterns …")
-    sn = apply_sanitize_strip_patterns(dest, strip_patterns, dry_run=False)
+    sn = apply_sanitize_strip_patterns(
+        dest,
+        strip_patterns,
+        rewrite_patterns,
+        dry_run=False,
+    )
     print(f"   sanitized {sn} files (content changed)")
 
     print("4. emit public CI + README …")
-    emit_public_assets(source, dest, dry_run=False)
+    emit_public_assets(source, dest, public_test_paths, dry_run=False)
 
     print("done.")
     return 0

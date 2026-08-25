@@ -2,14 +2,18 @@
 # Sanitization rules for pattern extraction from source frameworks.
 
 sanitize:
+  # Public-safe terminology rewrites applied before forbidden identifier stripping.
+  rewrite_patterns:
+    "root-azoth": "Azoth development workshop"
+    "yiwei-azoth-cockpit": "operator cockpit"
+    "personal-azoth-root": "operator knowledge root"
+    "SupplyGrowth": "source operations framework"
+    "supply-growth": "source-operations"
+    "supply-ops": "operations-system"
+
   # String patterns to replace with {{REDACTED}} in synced files.
   # Add your org-specific names, URLs, and identifiers here.
   strip_patterns:
-    - "Glovo"
-    - "SupplyGrowth"
-    - "SupplyOps"
-    - "supply-growth"
-    - "supply-ops"
     - "dhub-glovo"
     - "fulfillment-dwh"
     - "glovo.com"
@@ -56,11 +60,115 @@ scan_extensions:
 product_extraction:
   target_repo: azoth
   mode: scaffold-to-product
+  public_version: 0.3.0-rc.1
+  release_channel: preview
 
   extraction_pipeline:
     - copy_tree_respecting_excludes
     - apply_transforms
     - apply_sanitize_strip_patterns
+
+  # Explicit public surface. A new root path does not ship unless it is added here.
+  include_paths:
+    - ".agents/rules/"
+    - ".agents/workflows/"
+    - ".agents/skills/"
+    - ".claude/agents/"
+    - ".codex/agents/"
+    - ".codex/rules/"
+    - ".cursor/rules/"
+    - ".gemini/agents/"
+    - ".gemini/commands/"
+    - ".opencode/agents/"
+    - ".opencode/commands/"
+    - ".opencode/skills/"
+    - "agents/"
+    - "commands/"
+    - "docs/"
+    - "examples/"
+    - "kernel/"
+    - "pipelines/"
+    - "release-notes/v0.3.0-rc.1.md"
+    - "scripts/architecture_proposal_validate.py"
+    - "scripts/autonomous_campaign_audit.py"
+    - "scripts/autonomous_campaign_presets.py"
+    - "scripts/autonomous_loop.py"
+    - "scripts/azoth-deploy.py"
+    - "scripts/azoth-sync.py"
+    - "scripts/azoth_checkpoint.py"
+    - "scripts/azoth_init.py"
+    - "scripts/azoth_install_git_hooks.py"
+    - "scripts/azoth_lite.py"
+    - "scripts/azoth_release_profile.py"
+    - "scripts/check_gates.py"
+    - "scripts/codex_control_plane.py"
+    - "scripts/codex_model_selector.py"
+    - "scripts/codex_hooks_mode.py"
+    - "scripts/context_recall_quality.py"
+    - "scripts/context_view.py"
+    - "scripts/do_closeout.py"
+    - "scripts/episode_store.py"
+    - "scripts/git-hooks/"
+    - "scripts/git_commit_policy.py"
+    - "scripts/goal_mode_self_approval.py"
+    - "scripts/harness_profile.py"
+    - "scripts/initiative_intake.py"
+    - "scripts/initiative_scaffold.py"
+    - "scripts/kernel-integrity.py"
+    - "scripts/l2_evidence_append.py"
+    - "scripts/l2_evidence_validate.py"
+    - "scripts/notify.py"
+    - "scripts/park_session.py"
+    - "scripts/personal_harness_context.py"
+    - "scripts/personal_harness_practice_rehearsal.py"
+    - "scripts/pipeline_lint.py"
+    - "scripts/planning_bank_surfacing.py"
+    - "scripts/planning_bank_validate.py"
+    - "scripts/pm_orchestrator_mobility.py"
+    - "scripts/pre_pr_fast_fail.py"
+    - "scripts/proposal_knowledge_richness.py"
+    - "scripts/reinforcement_count.py"
+    - "scripts/research_sufficiency.py"
+    - "scripts/roadmap_dashboard.py"
+    - "scripts/roadmap_scaffold.py"
+    - "scripts/roadmap_task_id.py"
+    - "scripts/run_ledger.py"
+    - "scripts/scope_gate_check.py"
+    - "scripts/session_continuity.py"
+    - "scripts/session_gate.py"
+    - "scripts/swarm_research_digest.py"
+    - "scripts/sync_claude_memory.py"
+    - "scripts/version-bump.py"
+    - "scripts/welcome.py"
+    - "scripts/worktree_sync.py"
+    - "scripts/yaml_helpers.py"
+    - "skills/"
+    - "tests/test_context_view.py"
+    - "tests/test_harness_profile.py"
+    - "tests/test_personal_harness_context.py"
+    - "tests/test_personal_harness_practice_rehearsal.py"
+    - "tests/public/test_public_personal_knowledge_recall.py"
+    - "tests/public/test_public_personal_knowledge_review.py"
+    - ".gitattributes"
+    - ".gitignore"
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "GEMINI.md"
+    - "LICENSE"
+    - "azoth.yaml"
+    - "install.ps1"
+    - "install.sh"
+    - "pyproject.toml"
+    - "requirements-dev.txt"
+
+  # The extractor materializes this exact list as public-test-paths.txt.
+  public_test_paths:
+    - tests/test_harness_profile.py
+    - tests/test_context_view.py
+    - tests/test_personal_harness_context.py
+    - tests/test_personal_harness_practice_rehearsal.py
+    - tests/public/test_public_personal_knowledge_recall.py
+    - tests/public/test_public_personal_knowledge_review.py
 
   # Paths to EXCLUDE from the public product
   # (scaffold-only artifacts that don't ship to consumers)
@@ -91,10 +199,18 @@ product_extraction:
     - ".codex/hooks.mode.local"
     - ".codex/permission_profile.local"
     - ".github/"                   # Scaffold CI/CD; public repo gets its own minimal CI (P4-004)
+    - ".agents/skills/orientation/" # Root workshop routing, not a consumer skill
+    - ".opencode/skills/orientation/"
+    - "skills/orientation/"
     # Keep kernel/templates/: install.sh/install.ps1 render consumer boot files from these templates.
     - "research_antigravity_parity/"  # Scaffold research workspace, not public product content
+    - "docs/personal-control-plane/"
+    - "docs/superpowers/"
+    - "docs/playbook/PROJECT-GENESIS-STARTER-PACKET.md"
+    - "kernel/templates/README.public.azoth.md" # Materialized as the public root README
+    - "kernel/templates/github/workflows/ci-public-azoth.yml" # Materialized as public CI
+    - "kernel/templates/public-scripts/" # Materialized into scripts/ by the extractor
     - "docs/DAY0_TUTORIAL.md"      # Scaffold-specific tutorial
-    - "tests/"                     # Scaffold tests (product gets its own)
     - "workspace/"
     - "root-azoth.code-workspace"
 
@@ -106,5 +222,4 @@ product_extraction:
       action: "regenerate-from-template"
       template: "kernel/templates/CLAUDE.md.template"
     - source: "azoth.yaml"
-      action: "set-scope-mode"
-      value: "project"
+      action: "set-public-manifest"
