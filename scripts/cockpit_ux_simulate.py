@@ -12,12 +12,24 @@ from pathlib import Path
 
 try:
     from cockpit_bootstrap_verify import format_report, verify_cockpit_bootstrap
-    from cockpit_menu import check_cockpit, load_cockpit, render_menu
+    from cockpit_menu import (
+        _daily_context_command,
+        check_cockpit,
+        load_cockpit,
+        render_menu,
+        resolve_project_id,
+    )
     from personal_harness_daily_flow import run_daily_flow
 except ModuleNotFoundError:  # pragma: no cover - defensive direct execution path.
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from cockpit_bootstrap_verify import format_report, verify_cockpit_bootstrap
-    from cockpit_menu import check_cockpit, load_cockpit, render_menu
+    from cockpit_menu import (
+        _daily_context_command,
+        check_cockpit,
+        load_cockpit,
+        render_menu,
+        resolve_project_id,
+    )
     from personal_harness_daily_flow import run_daily_flow
 
 
@@ -128,14 +140,21 @@ def simulate_cockpit_ux(
 ) -> SimulationResult:
     cockpit_root = root.resolve()
     toolkit_root = (repo_root or DEFAULT_TOOLKIT_ROOT).resolve()
-    selected_project_id = project_id or _first_project_id(cockpit_root)
-    if not selected_project_id:
-        return SimulationResult(output="", errors=["cockpit has no project pointer to simulate"])
+    state = load_cockpit(cockpit_root, include_status=True)
+    try:
+        selected_project_id = resolve_project_id(state, project_id)
+    except ValueError as exc:
+        return SimulationResult(output="", errors=[str(exc)])
+    daily_script = toolkit_root / "scripts" / "personal_harness_daily_flow.py"
+    if not daily_script.is_file():
+        return SimulationResult(
+            output="",
+            errors=[f"daily harness runtime is unavailable: {daily_script}"],
+        )
     project_path = _project_path(cockpit_root, selected_project_id)
     project_status_before = _git_status(project_path) if project_path else "missing project"
     cockpit_status_before = _git_status(cockpit_root)
 
-    state = load_cockpit(cockpit_root, include_status=True)
     menu = render_menu(state, repo_root=toolkit_root)
     project_handoff = render_menu(
         state,
@@ -180,16 +199,18 @@ def simulate_cockpit_ux(
         "",
         "## /cockpit-daily",
         "Command: $azoth-cockpit-daily Verify context before project work",
-        (
-            f"python3 {toolkit_root / 'scripts' / 'personal_harness_daily_flow.py'} "
-            f"--cockpit-root {cockpit_root} --repo-root {toolkit_root} "
-            f"--project {selected_project_id} --goal \"Verify context before project work\" "
-            "--action focused_verification --tag context --summary"
+        _daily_context_command(
+            cockpit_root,
+            repo_root=toolkit_root,
+            project_id=selected_project_id,
+            goal="Verify context before project work",
         ),
         json.dumps(
             {
                 "ok": daily_report["ok"],
-                "harness_profile": daily_report["context_packet"]["context_view"].get("harness_profile"),
+                "harness_profile": daily_report["context_packet"]["context_view"].get(
+                    "harness_profile"
+                ),
                 "personal_context_count": len(
                     daily_report["context_packet"]["context_view"].get("personal_context", [])
                 ),
@@ -242,17 +263,6 @@ def format_result(result: SimulationResult) -> str:
         + "\n\ncockpit UX simulation FAILED\n"
         + "\n".join(f"- {error}" for error in result.errors)
     )
-
-
-def _first_project_id(root: Path) -> str | None:
-    state = load_cockpit(root, include_status=False)
-    for project in state.get("projects", []):
-        if not isinstance(project, dict):
-            continue
-        project_id = str(project.get("project_id") or "").strip()
-        if project_id:
-            return project_id
-    return None
 
 
 def main(argv: list[str] | None = None) -> int:

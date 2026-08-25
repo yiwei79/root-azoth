@@ -54,6 +54,7 @@ def test_guide_context_view_is_lightweight_and_user_facing() -> None:
         "do not claim agents, planning state, or autonomy are installed",
         "do not open cross-repo writes",
     ]
+    assert context_view["source_refs"] == ["docs/PERSONAL_HARNESS_OS.md#mode-ladder"]
 
 
 def test_governed_autonomy_requires_budget_ledger_and_stop_conditions() -> None:

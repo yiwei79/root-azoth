@@ -10,7 +10,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Sequence
 
-from cockpit_menu import check_cockpit, load_cockpit, render_menu
+from cockpit_menu import check_cockpit, load_cockpit, render_menu, resolve_project_id
 from personal_harness_context import build_personal_harness_context
 from personal_knowledge_recall import PersonalKnowledgeRecallError
 from personal_knowledge_review import build_review_packet
@@ -31,7 +31,9 @@ def run_daily_flow(
     """Run a no-write daily flow verification and return a JSON-ready report."""
     cockpit_path = cockpit_root.resolve()
     repo_path = repo_root.resolve()
-    personal_path = personal_root if personal_root is not None else _default_personal_root(cockpit_path)
+    personal_path = (
+        personal_root if personal_root is not None else _default_personal_root(cockpit_path)
+    )
     cockpit_status_before = _git_status(cockpit_path)
     state = load_cockpit(cockpit_path, include_status=True)
     project = _selected_project(state, project_id)
@@ -155,17 +157,6 @@ def _selected_project(state: dict[str, Any], project_id: str) -> dict[str, Any] 
     return None
 
 
-def _first_project_id(cockpit_root: Path) -> str | None:
-    state = load_cockpit(cockpit_root.resolve(), include_status=False)
-    for project in state.get("projects", []):
-        if not isinstance(project, dict):
-            continue
-        project_id = str(project.get("project_id") or "").strip()
-        if project_id:
-            return project_id
-    return None
-
-
 def _project_readback(project: dict[str, Any] | None) -> dict[str, str] | None:
     if project is None:
         return None
@@ -197,8 +188,14 @@ def _checks(
     context_profile = str(context_packet["context_view"].get("harness_profile") or "")
     cockpit_mode = str(project.get("selected_mode") or "") if project else ""
     checks = [
-        _check("cockpit_metadata", not cockpit_errors, "; ".join(cockpit_errors) or "cockpit check OK"),
-        _check("project_pointer", project is not None, "project pointer found" if project else "missing project pointer"),
+        _check(
+            "cockpit_metadata", not cockpit_errors, "; ".join(cockpit_errors) or "cockpit check OK"
+        ),
+        _check(
+            "project_pointer",
+            project is not None,
+            "project pointer found" if project else "missing project pointer",
+        ),
         _check(
             "context_command_visible",
             _menu_has_context_command(menu),
@@ -283,8 +280,7 @@ def _personal_review_due_summary(context_packet: dict[str, Any]) -> str:
 
 def _menu_has_context_command(menu: str) -> bool:
     return all(
-        snippet in menu
-        for snippet in ("personal_harness_daily_flow.py", "--goal", "--summary")
+        snippet in menu for snippet in ("personal_harness_daily_flow.py", "--goal", "--summary")
     )
 
 
@@ -412,9 +408,11 @@ def main(argv: list[str] | None = None) -> int:
     if not args.json and not args.summary:
         parser.error("personal harness daily flow output requires --json or --summary")
 
-    project_id = args.project or _first_project_id(args.cockpit_root)
-    if not project_id:
-        parser.error("--project is required when the cockpit has no registered project pointer")
+    state = load_cockpit(args.cockpit_root.resolve(), include_status=False)
+    try:
+        project_id = resolve_project_id(state, args.project)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     report = run_daily_flow(
         cockpit_root=args.cockpit_root,

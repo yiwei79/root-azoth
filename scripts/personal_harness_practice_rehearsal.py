@@ -74,7 +74,6 @@ def _run_case(
         "route_state": context.get("route_capsule", {}).get("route_state"),
         "authority_plane": context.get("route_capsule", {}).get("authority_plane"),
         "authority_required": context.get("route_capsule", {}).get("authority_required"),
-        "warnings": [],
     }
 
 
@@ -94,7 +93,6 @@ def _checks(case: Mapping[str, Any], context: Mapping[str, Any]) -> list[dict[st
             route.get("authority_required") is expected.get("authority_required"),
         ),
         _check("authority_plane", route.get("authority_plane") == expected.get("authority_plane")),
-        _check("warnings_empty", expected.get("warnings", []) == []),
         _check(
             "project_context",
             not expected.get("project") or project.get("project") == expected.get("project"),

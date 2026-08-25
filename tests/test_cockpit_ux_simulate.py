@@ -44,7 +44,7 @@ def test_simulation_runs_all_cockpit_commands_without_writes(tmp_path: Path) -> 
     assert '"ok": true' in result.output
     assert str(ROOT / "scripts" / "personal_harness_daily_flow.py") in result.output
     assert f"--repo-root {ROOT}" in result.output
-    assert "--goal \"<today's intent>\"" in result.output
+    assert "Verify context before project work" in result.output
     assert "--summary" in result.output
 
 
@@ -64,3 +64,22 @@ def test_simulation_rejects_forbidden_context_leak(tmp_path: Path) -> None:
     )
 
     assert any("source_files" in error for error in result.errors)
+
+
+def test_simulation_fails_clearly_when_daily_runtime_is_missing(tmp_path: Path) -> None:
+    root = _write_cockpit_bootstrap_fixture(tmp_path / "yiwei-azoth-cockpit")
+    incomplete_toolkit = tmp_path / "toolkit without runtime"
+    incomplete_toolkit.mkdir()
+
+    result = simulate_cockpit_ux(
+        root,
+        project_id="ras-or-ray",
+        repo_root=incomplete_toolkit,
+        include_bootstrap_verify=False,
+    )
+
+    assert result.output == ""
+    assert result.errors == [
+        "daily harness runtime is unavailable: "
+        + str(incomplete_toolkit / "scripts" / "personal_harness_daily_flow.py")
+    ]

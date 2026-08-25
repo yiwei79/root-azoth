@@ -11,7 +11,6 @@ cases:
       route_state: answer
       authority_required: false
       authority_plane: operator
-      warnings: []
 
   - id: assisted-verification
     domain: software-delivery
@@ -31,7 +30,6 @@ cases:
       authority_required: false
       authority_plane: toolkit
       project: example-service
-      warnings: []
 
   - id: managed-state
     domain: project-management
@@ -46,7 +44,6 @@ cases:
       route_state: authority_required
       authority_required: true
       authority_plane: project_local
-      warnings: []
 
   - id: governed-campaign
     domain: governed-automation
@@ -61,4 +58,3 @@ cases:
       route_state: authority_required
       authority_required: true
       authority_plane: toolkit_governance
-      warnings: []

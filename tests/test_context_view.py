@@ -96,4 +96,4 @@ def test_context_view_surfaces_authority_stop_for_managed_mode() -> None:
     assert view["harness_profile"] == "managed"
     assert view["route_capsule"]["authority_required"] is True
     assert view["route_capsule"]["stop_reason"] == "fresh managed-mode authority required"
-    assert view["source_refs"] == ["docs/PERSONAL_HARNESS_OS.md#mode-managed"]
+    assert view["source_refs"] == ["docs/PERSONAL_HARNESS_OS.md#mode-ladder"]

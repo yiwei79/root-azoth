@@ -15,7 +15,9 @@ from harness_profile import HarnessRequest, classify_harness_request
 
 try:
     from personal_knowledge_recall import PersonalKnowledgeRecallError, recall_cards
-except ImportError:  # Optional root-only adapter is not part of the public toolkit.
+except ModuleNotFoundError as exc:  # Optional root-only adapter is not public.
+    if exc.name != "personal_knowledge_recall":
+        raise
     PersonalKnowledgeRecallError = RuntimeError
     recall_cards = None
 

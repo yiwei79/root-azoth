@@ -48,6 +48,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by deployability tes
             errors.append("handoff_receipt_ref must match project pointer")
         return errors
 
+
 try:
     from harness_profile import route_capsule_for_profile  # noqa: E402
 except ModuleNotFoundError:  # pragma: no cover - exercised by deployability tests.
@@ -151,6 +152,7 @@ REQUIRED_PROJECT_FIELDS = {
     "validation_commands",
 } | READBACK_PROJECT_FIELDS
 
+
 def _default_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
@@ -160,16 +162,22 @@ def _daily_context_command(
     *,
     repo_root: Path | None = None,
     project_id: str | None = None,
+    goal: str = "<today's intent>",
 ) -> str:
     """Return a portable command for the selected cockpit and toolkit checkout."""
     active_repo_root = (repo_root or _default_root()).resolve()
     daily_script = active_repo_root / "scripts" / "personal_harness_daily_flow.py"
+    if not daily_script.is_file():
+        return (
+            "Daily harness unavailable: runtime not found at "
+            f"{daily_script}. Supply --repo-root for a complete Azoth checkout."
+        )
     selected_project = str(project_id or "<project-id>").strip() or "<project-id>"
     return (
         f"python3 {shlex.quote(str(daily_script))} "
         f"--cockpit-root {shlex.quote(str(cockpit_root))} "
         f"--repo-root {shlex.quote(str(active_repo_root))} "
-        f"--project {shlex.quote(selected_project)} --goal \"<today's intent>\" "
+        f"--project {shlex.quote(selected_project)} --goal {shlex.quote(goal)} "
         "--action focused_verification --tag context --summary"
     )
 
@@ -307,7 +315,8 @@ def render_menu(
 ) -> str:
     root = Path(state["root"])
     manifest = state.get("manifest") if isinstance(state.get("manifest"), dict) else {}
-    projects = [item for item in state.get("projects", []) if isinstance(item, dict)]
+    all_projects = [item for item in state.get("projects", []) if isinstance(item, dict)]
+    projects = list(all_projects)
     if project_id:
         projects = [item for item in projects if item.get("project_id") == project_id]
 
@@ -359,9 +368,12 @@ def render_menu(
         )
         lines.extend(_project_handoff(project))
 
-    daily_project_id = project_id
-    if not daily_project_id and projects:
-        daily_project_id = str(projects[0].get("project_id") or "").strip() or None
+    try:
+        daily_project_id = resolve_project_id(state, project_id)
+        daily_project_error = ""
+    except ValueError as exc:
+        daily_project_id = None
+        daily_project_error = str(exc)
 
     lines.extend(
         [
@@ -369,7 +381,11 @@ def render_menu(
             "## Safe Actions",
             "- Validate cockpit: python3 scripts/cockpit_menu.py --check",
             "- Build daily harness summary: "
-            f"{_daily_context_command(root, repo_root=repo_root, project_id=daily_project_id)}",
+            + (
+                _daily_context_command(root, repo_root=repo_root, project_id=daily_project_id)
+                if not daily_project_error
+                else f"unavailable ({daily_project_error})"
+            ),
             "- Open project session: use the switch command and project-session prompt above.",
             "- Add project pointer: open an explicit cockpit-owned project-pointer lane.",
             "- Project code/source work: switch to that project repo and open a project-scoped gate.",
@@ -382,6 +398,45 @@ def render_menu(
         ]
     )
     return "\n".join(lines)
+
+
+def resolve_project_id(state: dict[str, Any], explicit_project_id: str | None = None) -> str:
+    """Resolve an explicit, configured-default, or sole project without guessing."""
+    projects = [item for item in state.get("projects", []) if isinstance(item, dict)]
+    project_ids = [
+        str(item.get("project_id") or "").strip()
+        for item in projects
+        if str(item.get("project_id") or "").strip()
+    ]
+    if explicit_project_id:
+        selected = str(explicit_project_id).strip()
+        if selected not in project_ids:
+            raise ValueError(
+                f"unknown project {selected!r}; choose one of: {', '.join(project_ids)}"
+            )
+        return selected
+
+    projects_index = state.get("projects_index")
+    default_project_id = (
+        str(projects_index.get("default_project_id") or "").strip()
+        if isinstance(projects_index, dict)
+        else ""
+    )
+    if default_project_id:
+        if default_project_id not in project_ids:
+            raise ValueError(
+                "projects_index.default_project_id does not match a registered project: "
+                f"{default_project_id!r}"
+            )
+        return default_project_id
+    if len(project_ids) == 1:
+        return project_ids[0]
+    if not project_ids:
+        raise ValueError("--project is required because the cockpit has no registered project")
+    raise ValueError(
+        "--project is required because the cockpit has multiple registered projects: "
+        + ", ".join(project_ids)
+    )
 
 
 def check_cockpit(state: dict[str, Any]) -> list[str]:
@@ -417,7 +472,9 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
             if not str(project.get(field) or "").strip():
                 errors.append(f"{label}: {field} must be a non-empty string")
         if project.get("authority_plane") not in ALLOWED_AUTHORITY_PLANES:
-            errors.append(f"{label}: authority_plane must be one of {sorted(ALLOWED_AUTHORITY_PLANES)}")
+            errors.append(
+                f"{label}: authority_plane must be one of {sorted(ALLOWED_AUTHORITY_PLANES)}"
+            )
         if project.get("selected_mode") not in ALLOWED_SELECTED_MODES:
             errors.append(f"{label}: selected_mode must be one of {sorted(ALLOWED_SELECTED_MODES)}")
         if (
@@ -457,10 +514,9 @@ def check_cockpit(state: dict[str, Any]) -> list[str]:
                 errors.append(f"{label}: failed to parse handoff receipt {receipt_ref}: {exc}")
             else:
                 receipt_doc = loaded if isinstance(loaded, dict) else {}
-                if (
-                    project.get("authority_plane") == "project_local"
-                    or is_project_local_mode_receipt(receipt_doc)
-                ):
+                if project.get(
+                    "authority_plane"
+                ) == "project_local" or is_project_local_mode_receipt(receipt_doc):
                     for error in validate_project_local_mode_receipt(
                         receipt_doc,
                         expected_project_id=str(project.get("project_id") or ""),

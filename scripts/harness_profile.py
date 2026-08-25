@@ -141,7 +141,7 @@ def classify_harness_request(request: HarnessRequest | Mapping[str, Any]) -> Har
         route=route,
         operator_promise=mode["operator_promise"],
         explicit_exclusions=tuple(mode["explicit_exclusions"]),
-        source_refs=(f"docs/PERSONAL_HARNESS_OS.md#mode-{profile.replace('_', '-')}",),
+        source_refs=("docs/PERSONAL_HARNESS_OS.md#mode-ladder",),
         azoth_lite_profile=lite_decision.selected_profile,
         escalation_reasons=lite_decision.escalation_reasons,
     )

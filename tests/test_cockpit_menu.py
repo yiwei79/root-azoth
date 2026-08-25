@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import sys
+import shlex
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
+import pytest
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,7 +15,14 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from cockpit_menu import READBACK_PROJECT_FIELDS, check_cockpit, load_cockpit, render_menu  # noqa: E402
+from cockpit_menu import (  # noqa: E402
+    READBACK_PROJECT_FIELDS,
+    _daily_context_command,
+    check_cockpit,
+    load_cockpit,
+    render_menu,
+    resolve_project_id,
+)
 
 
 DAILY_FLOW_SCRIPT = str(ROOT / "scripts" / "personal_harness_daily_flow.py")
@@ -173,7 +182,7 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     assert "Harness profile: assisted" in text
     assert "Route state: assist" in text
     assert "Authority required: false" in text
-    assert "Harness authority: root_azoth" in text
+    assert "Harness authority: toolkit" in text
     assert (
         "Harness next action: run read-only assisted checks or request managed-mode hydration"
         in text
@@ -182,7 +191,9 @@ def test_render_menu_lists_release_sync_project_and_safe_handoff(tmp_path: Path)
     assert "Build daily harness summary:" in text
     assert DAILY_FLOW_SCRIPT in text
     assert f"--repo-root {ROOT}" in text
-    assert "--goal \"<today's intent>\"" in text
+    daily_line = next(line for line in text.splitlines() if "Build daily harness summary:" in line)
+    daily_argv = shlex.split(daily_line.split(": ", 1)[1])
+    assert daily_argv[daily_argv.index("--goal") + 1] == "<today's intent>"
     assert "--summary" in text
     assert "cd " in text
     assert "ras or ray" in text
@@ -260,7 +271,9 @@ def test_check_cockpit_rejects_invalid_asset_and_write_claim_types(tmp_path: Pat
     errors = check_cockpit(load_cockpit(root, include_status=False))
 
     assert any("installed_asset_classes must be a list" in error for error in errors)
-    assert any("missing_asset_classes must contain only non-empty values" in error for error in errors)
+    assert any(
+        "missing_asset_classes must contain only non-empty values" in error for error in errors
+    )
     assert any("active_write_claim must be a boolean" in error for error in errors)
 
 
@@ -316,7 +329,9 @@ def test_check_cockpit_requires_receipt_for_project_local_managed_readback(
 
     errors = check_cockpit(load_cockpit(root, include_status=False))
 
-    assert any("handoff_receipt_ref is required for project-local authority" in error for error in errors)
+    assert any(
+        "handoff_receipt_ref is required for project-local authority" in error for error in errors
+    )
 
 
 def test_check_cockpit_reports_malformed_project_local_receipt(tmp_path: Path) -> None:
@@ -347,7 +362,9 @@ def test_check_cockpit_rejects_managed_mode_without_project_local_authority(
 
     errors = check_cockpit(load_cockpit(root, include_status=False))
 
-    assert any("selected_mode managed requires authority_plane project_local" in error for error in errors)
+    assert any(
+        "selected_mode managed requires authority_plane project_local" in error for error in errors
+    )
 
 
 def test_project_filter_renders_only_selected_handoff(tmp_path: Path) -> None:
@@ -382,7 +399,9 @@ def test_cockpit_menu_runs_as_single_file_in_cockpit_repo(tmp_path: Path) -> Non
     root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
     deployed = root / "scripts" / "cockpit_menu.py"
     deployed.parent.mkdir(parents=True)
-    deployed.write_text((SCRIPTS_DIR / "cockpit_menu.py").read_text(encoding="utf-8"), encoding="utf-8")
+    deployed.write_text(
+        (SCRIPTS_DIR / "cockpit_menu.py").read_text(encoding="utf-8"), encoding="utf-8"
+    )
 
     check = subprocess.run(
         [sys.executable, str(deployed), "--check"],
@@ -404,5 +423,72 @@ def test_cockpit_menu_runs_as_single_file_in_cockpit_repo(tmp_path: Path) -> Non
     assert render.returncode == 0, render.stderr
     assert "Harness profile: assisted" in render.stdout
     assert "Build daily harness summary:" in render.stdout
-    assert str(root / "scripts" / "personal_harness_daily_flow.py") in render.stdout
-    assert f"--repo-root {root}" in render.stdout
+    assert "Daily harness unavailable: runtime not found" in render.stdout
+    assert "Supply --repo-root for a complete Azoth checkout" in render.stdout
+
+
+def test_resolve_project_id_uses_only_explicit_default_or_sole_project(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="no registered project"):
+        resolve_project_id({"projects": [], "projects_index": {}})
+
+    root = _write_cockpit_fixture(tmp_path / "yiwei-azoth-cockpit")
+    state = load_cockpit(root, include_status=False)
+    assert resolve_project_id(state) == "ras-or-ray"
+
+    projects_index = root / ".azoth" / "projects" / "index.yaml"
+    doc = yaml.safe_load(projects_index.read_text(encoding="utf-8"))
+    doc["projects"].append(
+        {
+            "project_id": "other-project",
+            "title": "Other project",
+            "repo_path": str(root.parent / "other project"),
+            "default_branch": "main",
+            "tracking_ref": "origin/main",
+            "privacy_class": "local-only",
+            "profile_mode": "pointer_only",
+            **READBACK_FIELDS,
+            "handoff_receipt_ref": ".azoth/projects/handoffs/t-other.yaml",
+            "validation_commands": [],
+        }
+    )
+    _write_yaml(projects_index, doc)
+    state = load_cockpit(root, include_status=False)
+
+    with pytest.raises(ValueError, match="multiple registered projects"):
+        resolve_project_id(state)
+    assert resolve_project_id(state, "other-project") == "other-project"
+
+    doc["default_project_id"] = "ras-or-ray"
+    _write_yaml(projects_index, doc)
+    assert resolve_project_id(load_cockpit(root, include_status=False)) == "ras-or-ray"
+
+
+def test_daily_context_command_quotes_paths_with_spaces(tmp_path: Path) -> None:
+    cockpit_root = tmp_path / "cockpit with spaces"
+    toolkit_root = tmp_path / "toolkit with spaces"
+    daily_script = toolkit_root / "scripts" / "personal_harness_daily_flow.py"
+    daily_script.parent.mkdir(parents=True)
+    daily_script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+
+    command = _daily_context_command(
+        cockpit_root,
+        repo_root=toolkit_root,
+        project_id="project with spaces",
+        goal="verify context safely",
+    )
+    argv = shlex.split(command)
+
+    assert argv[1] == str(daily_script.resolve())
+    assert argv[argv.index("--cockpit-root") + 1] == str(cockpit_root)
+    assert argv[argv.index("--repo-root") + 1] == str(toolkit_root.resolve())
+    assert argv[argv.index("--project") + 1] == "project with spaces"
+    assert argv[argv.index("--goal") + 1] == "verify context safely"
+
+    executed = subprocess.run(
+        ["/bin/sh", "-c", command],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert executed.returncode == 0, executed.stderr
