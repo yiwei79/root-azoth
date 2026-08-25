@@ -104,7 +104,7 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 1. Read this file, then `docs/AZOTH_ARCHITECTURE.md` for structural work (including **Long-running sessions (P1-005)** when scope may span waves or TTL).
 2. For **phase / roadmap / sprint alignment**, read `skills/orientation/SKILL.md` (lazy-loaded).
-3. Work within approved scope; validate against D1–D53; capture durable lessons in `.azoth/memory/episodes.jsonl`.
+3. Work within approved scope; validate against D1–D55; capture durable lessons in `.azoth/memory/episodes.jsonl`.
 
 ### Skill index (drift checks)
 
@@ -138,7 +138,7 @@ Two permanent branches; all other branches are short-lived:
 
 ```
 main                  ← stable releases only (tagged on squash-merge from phase branch)
-phase/v0.2.0-p4       ← active integration branch; receives all merges for current phase
+phase/v0.3.0-p1       ← active integration branch; receives all merges for current phase
   └── patch/<bl-id>   ← one branch per backlog item; deleted immediately after merge
   └── feat/<slug>     ← ad-hoc feature work; deleted immediately after merge
 ```
@@ -186,7 +186,7 @@ multiple worktrees create mechanical conflicts. Default: **zero worktrees**.
 
 ## Orientation & roadmap
 
-**Current phase:** Phase 4 (milestone **v0.2.0**); **v0.1.0** shipped (historical Phases 1–7 on the pre-1.0 roadmap). Roadmap `active_version: v0.2.0-p4` for the stabilization, rollout, product extraction, and personal control-plane deployment slice under the `v0.2.0` milestone. Phase 3 is closed after the autonomous-auto campaign reached Green with T-033. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
+**Current phase:** Phase 1 of milestone **v0.3.0**; public **v0.2.0** remains the latest stable release until the v0.3.0 publication gate completes. Roadmap `active_version: v0.3.0-p1` covers the selected Personal Harness OS integration, portability repairs, public extraction boundary, and release validation. See **`skills/orientation/SKILL.md`** for expanded workflow (load on demand).
 
 ## Origin
 

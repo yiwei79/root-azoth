@@ -1,7 +1,7 @@
 ---
 name: orientation
 description: |
-  Load the v0.2.0 slice roadmap, backlog alignment, per-task specs under
+  Load the active v0.3.0 slice, historical v0.2.0 roadmap, backlog alignment, and specs under
   `.azoth/roadmap-specs/v0.2.0/`, and expanded workflow when planning or editing
   `.azoth/roadmap.yaml` / backlog — not for routine implementation work.
 ---
@@ -11,8 +11,8 @@ description: |
 ## Overview
 
 Root `CLAUDE.md` stays small: identity, routing, core rules, and pointers. This skill
-holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.2.0-p4
-post-stable repair window** (lifecycle Phase 8 in `azoth.yaml`), and the
+holds the **historical phase roadmap** (Phases 1–7 → v0.1.0), the **active v0.3.0-p1
+Personal Harness OS release boundary** (lifecycle Phase 8 in `azoth.yaml`), and the
 **expanded development workflow** so agents load it
 only when planning, roadmap edits, or phase alignment—not on every session.
 
@@ -30,7 +30,7 @@ used before BL-013.
 2. Read `docs/AZOTH_ARCHITECTURE.md` for full context before structural changes.
 3. Check current phase and roadmap **in this skill** (section below) and `.azoth/bootloader-state.md` if present.
 4. Work within the approved scope (`.azoth/scope-gate.json` when active).
-5. Validate changes against architecture decisions (D1–D53) as applicable.
+5. Validate changes against architecture decisions (D1–D55) as applicable.
 6. Capture lessons in `.azoth/memory/episodes.jsonl` when the session produces durable insight.
 
 ## v0.1.0 Phase Roadmap
@@ -92,11 +92,11 @@ used before BL-013.
 - P4-003: CI for drift detection — **shipped** (Phase 7)
 - P4-004: Publish to GitHub (public azoth) — **shipped**; **D35**, **D37**; v0.1.0 release gate met
 
-### Milestone v0.2.0 (milestone phase 4) — post-stable repairs · release truth · cockpit control plane 🎯 CURRENT
+### Milestone v0.3.0 (milestone phase 1) — Personal Harness OS release boundary 🎯 CURRENT
 
-- **Canonical state:** `azoth.yaml` `version: 0.1.4.0`, `phase: 4`, `milestone: v0.2.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.2.0-p4`, `current_phase: 4`, `lifecycle_phase: 8`; per-task specs `.azoth/roadmap-specs/v0.2.0/<id>.yaml`; rollout plan **`.azoth/roadmap-specs/v0.2.0/V0.2.0-P4-ROLLOUT-PLAN.md`**.
-- **Phase policy:** v0.2.0-p4 is no longer pre-stable rollout scope. It remains active only as a post-stable repair/reconciliation window. Do not schedule new feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until an operator-selected gate opens.
-- **Execution queue:** p3 carry-forward and autonomous-auto feature work are complete through **T-033**. p4 has completed T-034 through **T-055**, including stable public release evidence, personal cockpit deployment, safe-open cockpit menu, first-use command surface, and no-write UX simulation. Current work should be a named repair lane, not an implicit continuation of T-053.
+- **Canonical state:** `azoth.yaml` `version: 0.2.1.0`, `phase: 1`, `milestone: v0.3.0`, `lifecycle_phase: 8` (welcome strip); `.azoth/roadmap.yaml` `active_version: v0.3.0-p1`, `current_phase: 1`, `lifecycle_phase: 8`. The v0.3.0-p1 lane integrates the selected Personal Harness OS snapshot, portable product boundary, and release validation; v0.2.0 roadmap specs remain historical evidence.
+- **Phase policy:** v0.3.0-p1 is a bounded integration and release-validation lane. Do not schedule unrelated feature initiatives. New autonomy, memory, planning-bank, platform, or product ideas stay as proposal, inbox, or initiative-bank evidence until an operator-selected gate opens.
+- **Execution queue:** v0.2.0-p4 is complete through **T-055**. v0.3.0-p1 integrates the selected Personal Harness OS snapshot, repairs portability and public extraction boundaries, and proves the release candidate before any tag or promotion.
 - **Product flow:** keep the 3-tier supply chain clear: `root-azoth` development workshop -> public/installable `azoth` release -> installed consumer/cockpit update.
 - **Operating model:** use the 4-plane authority model for daily work: `root-azoth` as private development workshop, public `azoth` as clean product, `yiwei-azoth-cockpit` as the operator personal control plane, and controlled project repos as project-local context/write-authority planes.
 

@@ -1,7 +1,7 @@
 # Azoth Bootloader State
 
 ## Current Phase
-0.1.4.34 · Phase 4 · active_version: v0.2.0-p4 · current_patch: unknown
+0.2.1.0 · Phase 1 · active_version: v0.3.0-p1 · current_patch: 0
 
 ## Last Session
 - **Session**: 2026-05-10-adhoc-autonomous-lifecycle-truth-stabilization

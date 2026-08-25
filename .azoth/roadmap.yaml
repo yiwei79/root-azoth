@@ -1,6 +1,5 @@
-current_phase: 4
-current_phase_title: v0.2.0 — stabilization · release · control plane (milestone phase
-  4)
+current_phase: 1
+current_phase_title: v0.3.0 — personal harness release boundary (milestone phase 1)
 lifecycle_phase: 8
 tasks:
 - id: BL-002
@@ -126,7 +125,7 @@ tasks:
     entries.'
   blocked_by: null
 schema_version: 2
-active_version: v0.2.0-p4
+active_version: v0.3.0-p1
 task_id_policy:
   legacy_milestones:
   - milestone: v0.2.0
@@ -2540,3 +2539,13 @@ versions:
     decision_ref:
     - D11
     - D45
+- id: v0.3.0
+  status: target
+  goal: Publish the portable Personal Harness OS implementation and its bounded evidence.
+  note: v0.3.0 is the public-product milestone; working slices use v0.3.0-pN.
+- id: v0.3.0-p1
+  status: active
+  current_patch: 0
+  goal: Integrate the selected Personal Harness OS snapshot and repair its public release boundary.
+  pending_task_refs: []
+  tasks: []

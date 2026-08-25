@@ -17,8 +17,8 @@
     ]
   },
   "env": {
-"AZOTH_VERSION": "0.1.4.34",
-"AZOTH_PHASE": "4",
+"AZOTH_VERSION": "0.2.1.0",
+"AZOTH_PHASE": "1",
     "CLAUDE_CODE_EFFORT_LEVEL": "auto"
   },
   "hooks": {

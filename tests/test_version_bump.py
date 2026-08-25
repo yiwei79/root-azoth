@@ -532,7 +532,10 @@ def test_patch_post_release_phased_version(tmp_path: Path) -> None:
     base.mkdir(parents=True)
     azoth_p = base / "azoth.yaml"
     roadmap_p = base / "roadmap.yaml"
-    azoth_p.write_text("version: 0.1.1.0\n", encoding="utf-8")
+    azoth_p.write_text(
+        "version: 0.1.1.0\nphase: 1\nmilestone: v0.2.0\n",
+        encoding="utf-8",
+    )
     roadmap_p.write_text(
         textwrap.dedent(
             """\
@@ -736,3 +739,112 @@ def test_deliver_full_does_not_reference_release() -> None:
     assert "--release" not in text, (
         "deliver-full.md must NOT reference '--release' (release is a human-gated manual step)"
     )
+
+
+def test_patch_supports_v030_working_slice(tmp_path: Path) -> None:
+    azoth_p = tmp_path / "azoth.yaml"
+    roadmap_p = tmp_path / "roadmap.yaml"
+    azoth_p.write_text("version: 0.2.1.0\nphase: 1\nmilestone: v0.3.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        "active_version: v0.3.0-p1\n"
+        "versions:\n"
+        "  - id: v0.3.0-p1\n"
+        "    status: active\n"
+        "    current_patch: 0\n"
+        "    pending_task_refs: []\n"
+        "    tasks: []\n",
+        encoding="utf-8",
+    )
+
+    result = _run("--patch", azoth_p, roadmap_p)
+
+    assert result.returncode == 0, result.stderr
+    assert yaml.safe_load(azoth_p.read_text(encoding="utf-8"))["version"] == "0.2.1.1"
+    roadmap = yaml.safe_load(roadmap_p.read_text(encoding="utf-8"))
+    assert roadmap["versions"][0]["current_patch"] == 1
+
+
+def test_phase_advance_preserves_v030_milestone(tmp_path: Path) -> None:
+    azoth_p = tmp_path / "azoth.yaml"
+    roadmap_p = tmp_path / "roadmap.yaml"
+    azoth_p.write_text("version: 0.2.1.4\nphase: 1\nmilestone: v0.3.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        'current_phase: 1\ncurrent_phase_title: "v0.3.0 — milestone phase 1"\n'
+        "active_version: v0.3.0-p1\n"
+        "versions:\n"
+        "  - id: v0.3.0-p1\n"
+        "    status: active\n"
+        "    current_patch: 4\n"
+        "    pending_task_refs: []\n"
+        "    tasks: []\n"
+        "  - id: v0.3.0-p2\n"
+        "    status: planned\n"
+        "    pending_task_refs: []\n"
+        "    tasks: []\n",
+        encoding="utf-8",
+    )
+
+    result = _run("--phase", azoth_p, roadmap_p)
+
+    assert result.returncode == 0, result.stderr
+    assert yaml.safe_load(azoth_p.read_text(encoding="utf-8"))["version"] == "0.2.2.0"
+    roadmap = yaml.safe_load(roadmap_p.read_text(encoding="utf-8"))
+    assert roadmap["active_version"] == "v0.3.0-p2"
+    assert roadmap["current_phase_title"] == "v0.3.0 — milestone phase 2"
+
+
+def test_patch_rejects_delivery_line_that_does_not_match_milestone(tmp_path: Path) -> None:
+    azoth_p = tmp_path / "azoth.yaml"
+    roadmap_p = tmp_path / "roadmap.yaml"
+    azoth_p.write_text("version: 0.1.1.0\nphase: 1\nmilestone: v0.3.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        "active_version: v0.3.0-p1\n"
+        "versions:\n"
+        "  - id: v0.3.0-p1\n"
+        "    status: active\n"
+        "    current_patch: 0\n",
+        encoding="utf-8",
+    )
+
+    result = _run("--patch", azoth_p, roadmap_p)
+
+    assert result.returncode == 1
+    assert "must use delivery line 0.2.1.N" in result.stderr
+
+
+def test_patch_rejects_manifest_and_roadmap_milestone_drift(tmp_path: Path) -> None:
+    azoth_p = tmp_path / "azoth.yaml"
+    roadmap_p = tmp_path / "roadmap.yaml"
+    azoth_p.write_text("version: 0.2.1.0\nphase: 1\nmilestone: v0.2.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        "active_version: v0.3.0-p1\n"
+        "versions:\n"
+        "  - id: v0.3.0-p1\n"
+        "    status: active\n"
+        "    current_patch: 0\n",
+        encoding="utf-8",
+    )
+
+    result = _run("--patch", azoth_p, roadmap_p)
+
+    assert result.returncode == 1
+    assert "does not match active_version milestone 'v0.3.0'" in result.stderr
+
+
+def test_patch_rejects_workshop_and_roadmap_patch_drift(tmp_path: Path) -> None:
+    azoth_p = tmp_path / "azoth.yaml"
+    roadmap_p = tmp_path / "roadmap.yaml"
+    azoth_p.write_text("version: 0.2.1.3\nphase: 1\nmilestone: v0.3.0\n", encoding="utf-8")
+    roadmap_p.write_text(
+        "active_version: v0.3.0-p1\n"
+        "versions:\n"
+        "  - id: v0.3.0-p1\n"
+        "    status: active\n"
+        "    current_patch: 2\n",
+        encoding="utf-8",
+    )
+
+    result = _run("--patch", azoth_p, roadmap_p)
+
+    assert result.returncode == 1
+    assert "patch component does not match roadmap current_patch 2" in result.stderr

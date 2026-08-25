@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-version-bump.py — D53 version bump automation.
+version-bump.py — D53/D55 version bump automation.
 
 Maintains Azoth's delivery version across azoth.yaml and .azoth/roadmap.yaml
 using regex-based line replacement throughout. YAML comments and formatting are
@@ -8,7 +8,8 @@ fully preserved.
 
 Version eras:
   - Pre-release roadmap phases: 0.0.PHASE.PATCH
-  - Post-v0.1.0 milestone work toward v0.2.0: 0.1.MILESTONE_PHASE.PATCH
+  - Pre-1.0 milestone working slices (for example v0.3.0-p1):
+    0.(TARGET_MINOR-1).MILESTONE_PHASE.PATCH
 
 Usage:
   python scripts/version-bump.py --patch   [--azoth-yaml PATH] [--roadmap-yaml PATH]
@@ -16,11 +17,11 @@ Usage:
   python scripts/version-bump.py --release [--azoth-yaml PATH] [--roadmap-yaml PATH]
 
 Flags:
-  --patch    0.0.N.M → 0.0.N.M+1  or  0.1.P.M → 0.1.P.M+1  (every session delivery)
-  --phase    0.0.N.M → 0.0.N+1.1  or  0.1.P.M → 0.1.P+1.0
+  --patch    A.B.P.M → A.B.P.M+1  (every session delivery)
+  --phase    0.0.N.M → 0.0.N+1.1  or  A.B.P.M → A.B.P+1.0
               (phase completion — empty pending_task_refs; next slice status planned
               or backlog → active + current_patch reset)
-  --release  v0.0.7 active → close v0.0.7 + v0.1.0 in roadmap, tag public release
+  --release  legacy v0.1.0 gate: v0.0.7 active → close v0.0.7 + v0.1.0, tag
               v0.1.0, then move the repo onto milestone phase 1 as azoth 0.1.1.0
               with active roadmap slice v0.2.0-p1
 
@@ -41,7 +42,12 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 
 _VERSION4_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)\.(\d+)$")
-_ACTIVE_POST_RELEASE_RE = re.compile(r"^v0\.2\.0-p(\d+)$")
+_MILESTONE_RE = re.compile(
+    r"^v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$"
+)
+_ACTIVE_WORKING_SLICE_RE = re.compile(
+    r"^(?P<milestone>v\d+\.\d+\.\d+)-p(?P<phase>\d+)$"
+)
 _TASK_ID_POLICY_BLOCK = (
     "task_id_policy:\n"
     "  legacy_milestones:\n"
@@ -109,13 +115,36 @@ def _parse_version(v: str) -> tuple[int, int, int, int]:
     return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
 
 
-def _extract_post_release_phase(active_version: str) -> int | None:
-    """Return the milestone-local phase number when active_version is a v0.2.0-pN working slice."""
-    match = _ACTIVE_POST_RELEASE_RE.match(active_version.strip())
+def _extract_working_slice(active_version: str) -> tuple[str, int] | None:
+    """Return ``(milestone, phase)`` for any ``vX.Y.Z-pN`` working slice."""
+    match = _ACTIVE_WORKING_SLICE_RE.match(active_version.strip())
     if not match:
         return None
-    phase = int(match.group(1))
-    return phase if phase >= 1 else None
+    phase = int(match.group("phase"))
+    if phase < 1:
+        return None
+    return match.group("milestone"), phase
+
+
+def _expected_delivery_line(milestone: str) -> tuple[int, int]:
+    """Return the private workshop delivery line for a pre-1.0 target milestone.
+
+    D55 preserves D53's separation between public targets and the four-part
+    workshop time series: work toward ``v0.N.0`` is recorded on
+    ``0.(N-1).PHASE.PATCH``.
+    """
+    match = _MILESTONE_RE.match(milestone.strip())
+    if not match:
+        _die(f"milestone '{milestone}' does not match required format vMAJOR.MINOR.PATCH")
+    major = int(match.group("major"))
+    minor = int(match.group("minor"))
+    patch = int(match.group("patch"))
+    if major != 0 or minor < 2 or patch != 0:
+        _die(
+            f"milestone '{milestone}' is outside the supported pre-1.0 v0.N.0 "
+            "working-slice convention"
+        )
+    return major, minor - 1
 
 
 # ── Regex helpers ─────────────────────────────────────────────────────────────
@@ -127,6 +156,43 @@ def _extract_azoth_version(text: str) -> str:
     if not m:
         _die("could not find 'version:' field in azoth.yaml")
     return m.group(1)
+
+
+def _extract_azoth_milestone(text: str) -> str:
+    """Return the target milestone from azoth.yaml text."""
+    match = re.search(r"^milestone:\s*(\S+)", text, re.MULTILINE)
+    if not match:
+        _die("could not find 'milestone:' field in azoth.yaml for active working slice")
+    return match.group(1)
+
+
+def _validate_working_slice_version(
+    azoth_text: str,
+    raw_version: str,
+    active_version: str,
+) -> tuple[str, int] | None:
+    """Validate manifest, delivery line, phase, and roadmap slice as one contract."""
+    working_slice = _extract_working_slice(active_version)
+    if working_slice is None:
+        return None
+
+    roadmap_milestone, active_phase = working_slice
+    manifest_milestone = _extract_azoth_milestone(azoth_text)
+    if manifest_milestone != roadmap_milestone:
+        _die(
+            f"azoth.yaml milestone '{manifest_milestone}' does not match active_version "
+            f"milestone '{roadmap_milestone}'"
+        )
+
+    expected_major, expected_minor = _expected_delivery_line(roadmap_milestone)
+    major, minor, phase, _patch = _parse_version(raw_version)
+    if (major, minor, phase) != (expected_major, expected_minor, active_phase):
+        _die(
+            f"version '{raw_version}' must use delivery line "
+            f"{expected_major}.{expected_minor}.{active_phase}.N while active_version is "
+            f"{active_version}"
+        )
+    return working_slice
 
 
 def _set_azoth_version(text: str, new_version: str) -> str:
@@ -158,7 +224,7 @@ def _set_roadmap_current_phase(text: str, new_phase: int) -> str:
     )
 
 
-def _set_roadmap_current_phase_title(text: str, new_phase: int) -> str:
+def _set_roadmap_current_phase_title(text: str, milestone: str, new_phase: int) -> str:
     """Update current_phase_title while preserving existing wording when possible."""
     if re.search(r"\(milestone phase \d+\)", text):
         return re.sub(
@@ -169,7 +235,7 @@ def _set_roadmap_current_phase_title(text: str, new_phase: int) -> str:
         )
     return re.sub(
         r'^current_phase_title:\s*".*"\s*$',
-        f'current_phase_title: "v0.2.0 — milestone phase {new_phase}"',
+        f'current_phase_title: "{milestone} — milestone phase {new_phase}"',
         text,
         count=1,
         flags=re.MULTILINE,
@@ -461,25 +527,22 @@ def do_patch(azoth_path: Path, roadmap_path: Path) -> None:
 
     raw_version = _extract_azoth_version(azoth_text)
     active_version = _extract_active_version(roadmap_text)
-    active_phase = _extract_post_release_phase(active_version)
+    _validate_working_slice_version(
+        azoth_text,
+        raw_version,
+        active_version,
+    )
     major, minor, phase, patch = _parse_version(raw_version)
-    if active_phase is not None:
-        if (major, minor, phase) != (0, 1, active_phase):
-            _die(
-                f"version '{raw_version}' must match post-release phased format 0.1.{active_phase}.N "
-                f"while active_version is {active_version}"
-            )
-        new_version = f"0.1.{phase}.{patch + 1}"
-    else:
-        new_version = f"{major}.{minor}.{phase}.{patch + 1}"
+    new_version = f"{major}.{minor}.{phase}.{patch + 1}"
 
     current_patch, closed_version = _get_patch_cursor_from_block(roadmap_text, active_version)
+    if patch != current_patch:
+        cursor_name = "final_patch" if closed_version else "current_patch"
+        _die(
+            f"version '{raw_version}' patch component does not match roadmap "
+            f"{cursor_name} {current_patch} for {active_version}"
+        )
     if closed_version:
-        if patch != current_patch:
-            _die(
-                f"version '{raw_version}' does not match closed roadmap final_patch "
-                f"{current_patch} for {active_version}"
-            )
         print(
             f"version {raw_version} already at closed roadmap final_patch "
             f"{current_patch} for {active_version}; no patch bump"
@@ -511,7 +574,12 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
     a, b, c, d = _parse_version(raw_version)
 
     active_version = _extract_active_version(roadmap_text)
-    active_post_release_phase = _extract_post_release_phase(active_version)
+    active_working_slice = _validate_working_slice_version(
+        azoth_text,
+        raw_version,
+        active_version,
+    )
+    active_post_release_phase = active_working_slice[1] if active_working_slice else None
 
     # Guard: v0.0.7 is the last 0.0.x slice — use --release for 0.1.0
     if active_version == "v0.0.7":
@@ -537,14 +605,10 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
         )
 
     if active_post_release_phase is not None:
-        if (a, b, c) != (0, 1, active_post_release_phase):
-            _die(
-                f"version '{raw_version}' must match post-release phased format 0.1.{active_post_release_phase}.N "
-                f"while active_version is {active_version}"
-            )
+        milestone = active_working_slice[0]
         new_phase_num = active_post_release_phase + 1
-        next_active_id = f"v0.2.0-p{new_phase_num}"
-        new_azoth_version = f"0.1.{new_phase_num}.0"
+        next_active_id = f"{milestone}-p{new_phase_num}"
+        new_azoth_version = f"{a}.{b}.{new_phase_num}.0"
         next_current_patch = 0
     else:
         new_phase_num = c + 1
@@ -582,7 +646,11 @@ def do_phase(azoth_path: Path, roadmap_path: Path) -> None:
 
     if active_post_release_phase is not None:
         roadmap_text = _set_roadmap_current_phase(roadmap_text, new_phase_num)
-        roadmap_text = _set_roadmap_current_phase_title(roadmap_text, new_phase_num)
+        roadmap_text = _set_roadmap_current_phase_title(
+            roadmap_text,
+            milestone,
+            new_phase_num,
+        )
         azoth_text = _set_azoth_phase_line(azoth_text, new_phase_num)
         roadmap_text = _ensure_task_id_policy(roadmap_text)
 
@@ -700,7 +768,7 @@ def do_release(azoth_path: Path, roadmap_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Azoth D53 version bump automation.",
+        description="Azoth D53/D55 version bump automation.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     group = parser.add_mutually_exclusive_group(required=True)
@@ -709,7 +777,7 @@ def main() -> None:
     group.add_argument(
         "--release",
         action="store_true",
-        help="Tag v0.1.0, then move the repo onto 0.1.1.0 / v0.2.0-p1",
+        help="Complete the legacy v0.1.0 gate and open 0.1.1.0 / v0.2.0-p1",
     )
 
     parser.add_argument(
