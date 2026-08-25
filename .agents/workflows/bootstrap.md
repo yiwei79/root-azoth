@@ -1,6 +1,6 @@
 # Azoth Day 0 Bootstrap
 
-You are bootstrapping the Azoth Universal Agentic Toolkit from its architecture plan.
+You are bootstrapping the broader Azoth governed-agentic toolkit from its architecture plan.
 This is a guided process — you implement, the human reviews each phase.
 
 ## Pre-Flight
