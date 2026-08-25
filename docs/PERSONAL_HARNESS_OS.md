@@ -1,14 +1,22 @@
 # Personal Harness OS
 
-> Status: public preview candidate for `v0.3.0-rc.1`. The routing, context, and
-> portable rehearsal contracts described here are implemented and tested in the
-> executable candidate `26d24e9e34691b9b2d6bc51e5fd18c122f5b6929`. The final
-> extracted manifest records the exact release-bearing root revision; the wider
-> operating surface remains under development.
+> Status: implemented and tested public preview candidate for `v0.3.0-rc.1`.
+> It ships selected routing, context, and no-write rehearsal contracts; the wider
+> operating profile remains under development, and no external adoption is
+> claimed. Exact source provenance is recorded in the extracted manifest and
+> publication record.
 
-Personal Harness OS is Azoth's lightweight default path for agent-assisted work.
-It keeps ordinary work small while preserving explicit authority, evidence,
-stopping, and recovery boundaries for consequential work.
+Here, **OS** means an operating contract: the small set of routing, context,
+authority, evidence, stopping, and recovery rules that govern how agents,
+deterministic tools, and humans participate. It is not a standalone operating
+system or a universal agent runtime.
+
+Personal Harness OS is Azoth's lightweight path for agent-assisted work. It
+keeps ordinary work small while making consequential work visibly governed.
+
+The extracted candidate includes the request classifier, typed route capsule,
+bounded context builders, generic no-write rehearsal runner and fixture, and
+30 portable public tests.
 
 The design emerged after using a more comprehensive agentic framework across
 real delivery. Some orchestration layers improved control; others duplicated
@@ -159,9 +167,9 @@ the preferred recovery mechanisms for file-backed work.
 ## Public preview boundary
 
 The public preview candidate contains the portable routing and context contracts,
-neutral examples, focused tests, and this design document. These selected
-interfaces define the `v0.3.0-rc.1` preview boundary; they are not a general
-backward-compatibility promise for later previews.
+generic no-write rehearsal runner and fixture, focused tests, and this design
+document. These selected interfaces define the `v0.3.0-rc.1` preview boundary;
+they are not a general backward-compatibility promise for later previews.
 
 It intentionally excludes:
 
@@ -225,8 +233,9 @@ Public CI must also run the focused rehearsal test against
 `examples/personal-harness/rehearsal-cases.yaml` and verify both the declared
 route expectations and the no-write contract.
 
-The wider Azoth product extraction, installer smoke, link/reference checks, and
-private-artifact preflight must also pass before publication.
+The wider Azoth product extraction, link/reference checks, and private-artifact
+preflight must also pass before publication. Installer surfaces remain under
+development and are not a supported or validated entrypoint for this preview.
 
 ## What this preview does not settle
 

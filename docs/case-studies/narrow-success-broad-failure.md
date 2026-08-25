@@ -21,6 +21,22 @@ components inside an engineered system. Define success outside the model, make
 state and authority legible, observe real outcomes, and design the feedback path
 that makes useful trajectories more likely.
 
+The portable implementation is documented in
+[Personal Harness OS](../PERSONAL_HARNESS_OS.md).
+
+## Proof at a glance
+
+- **GloBuddy:** in my official AI Data Analyst role, I own a production
+  conversational-AI Rider CRM that has handled 41,000+ conversations; the figure
+  establishes operating scale, not causal business lift.
+- **SupplyOps:** in the same role, I independently rebuilt fragmented reporting
+  into an operational-intelligence backbone used by Supply Operations across 22
+  countries, from daily operations to leadership reporting.
+- **Azoth:** I built this independent public preview of selected routing,
+  context, and no-write rehearsal contracts. It is distinct from the employer
+  framework and production systems; no production deployment of Azoth, external
+  adoption, or finished universal harness is claimed.
+
 ## 1. The narrow success envelope and broad failure surface
 
 For a real workflow, “the model produced a good-looking response” is rarely the
@@ -217,17 +233,16 @@ More orchestration creates more transitions that can lose intent, omit evidence,
 or stop for the wrong reason. More instructions can reduce guidance when every
 rule competes for attention.
 
-The response was architectural contraction, not indiscriminate deletion. The
-documented change is SupplyGrowth commit `e02db574` over
-`BQ-Migration-SupplyOps`: 88 files changed, with 464 insertions and 4,835
-deletions (net -4,371). The diff size is evidence of a substantial contraction,
-not a claim that every deleted line was redundant or that line count alone
-proves quality. The redesign preserved domain-specific validation, release
-controls, live truth, and human authorisation. The principle was to keep the
-control that earned its operating cost and remove machinery whose state burden
-had become a new source of noise.
+The response was architectural contraction, not indiscriminate deletion. In one
+scoped operational-data redesign, 88 files changed, with 464 insertions and
+4,835 deletions (net -4,371). The diff size is evidence of a substantial
+contraction, not a claim that every deleted line was redundant or that line
+count alone proves quality. The redesign preserved domain-specific validation,
+release controls, live truth, and human authorisation. The principle was to keep
+the control that earned its operating cost and remove machinery whose state
+burden had become a new source of noise.
 
-This conclusion now has strong external analogues. OpenAI describes replacing a
+This conclusion has useful external calibration. OpenAI describes replacing a
 large instruction manual with a short map into repository-owned knowledge
 ([OpenAI, *Harness engineering*](https://openai.com/index/harness-engineering/)).
 Anthropic describes context as finite and recommends progressive disclosure,
