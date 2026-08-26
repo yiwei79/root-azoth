@@ -63,8 +63,8 @@ candidate:
 | Effect- and risk-aware routing | Implemented and covered by focused tests | `HarnessRequest`, `HarnessDecision`, `RouteCapsule` |
 | Compact context with source pointers and missing-source warnings | Implemented and covered by focused tests | `build_context_view`, `build_personal_harness_context` |
 | Read-only route rehearsal with repository mutation detection | Implemented and covered by focused tests | rehearsal runner, four-case fixture, no-write check |
-| Research sufficiency and knowledge-richness assessment | Inspectable supporting machinery; not validated here as one end-to-end product journey | `research_sufficiency.py`, `proposal_knowledge_richness.py` |
-| Stage-aware handoffs and delivery pipeline | Present in the wider project lineage; not part of the selected executable candidate contract | pipeline and session-lifecycle documents |
+| Research sufficiency and knowledge-richness assessment | Inspectable supporting machinery; not validated here as one end-to-end product journey | [`research_sufficiency.py`](../scripts/research_sufficiency.py), [`proposal_knowledge_richness.py`](../scripts/proposal_knowledge_richness.py) |
+| Stage-aware handoffs and delivery pipeline | Present in the wider project lineage; not part of the selected executable candidate contract | [pipeline overview](playbook/01-pipeline-overview.md), [session lifecycle](playbook/03-session-lifecycle.md) |
 | Durable outcome graph spanning many threads | Architectural direction; not claimed as fully implemented in this candidate | [case-study design argument](case-studies/narrow-success-broad-failure.md#from-conversation-centred-to-outcome-centred-work) |
 
 That distinction matters: the candidate demonstrates the portable contracts at
