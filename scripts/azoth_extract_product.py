@@ -591,6 +591,8 @@ def emit_public_assets(
     rtext = readme_tpl.read_text(encoding="utf-8")
     for k, v in README_SUBSTITUTIONS.items():
         rtext = rtext.replace("{{" + k + "}}", v)
+    rtext = rtext.replace("{{PUBLIC_VERSION}}", public_version)
+    rtext = rtext.replace("{{RELEASE_CHANNEL}}", release_channel)
     if "{{" in rtext:
         raise RuntimeError("README template has unresolved placeholders")
     readme_dest.write_text(rtext, encoding="utf-8")

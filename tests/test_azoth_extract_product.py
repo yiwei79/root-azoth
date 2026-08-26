@@ -12,11 +12,10 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 SCRIPT = REPO / "scripts" / "azoth_extract_product.py"
-PUBLIC_TEST_PATHS = tuple(
-    yaml.safe_load((REPO / "sync-config.yaml").read_text(encoding="utf-8"))["product_extraction"][
-        "public_test_paths"
-    ]
-)
+SYNC_CONFIG = yaml.safe_load((REPO / "sync-config.yaml").read_text(encoding="utf-8"))
+PRODUCT_EXTRACTION = SYNC_CONFIG["product_extraction"]
+PUBLIC_VERSION = PRODUCT_EXTRACTION["public_version"]
+PUBLIC_TEST_PATHS = tuple(PRODUCT_EXTRACTION["public_test_paths"])
 
 
 def _write_public_test_fixtures(source: Path) -> None:
@@ -240,7 +239,7 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
 
     az = yaml.safe_load((out / "azoth.yaml").read_text(encoding="utf-8"))
     assert az["name"] == "azoth"
-    assert az["version"] == "0.3.0-rc.1"
+    assert az["version"] == PUBLIC_VERSION
     assert az["release_channel"] == "preview"
     assert az["scope"]["mode"] == "product"
     assert az["scope"]["is_development_workshop"] is False
@@ -253,6 +252,12 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
 
     assert ".github/workflows/ci.yml" in rels
     assert "README.md" in rels
+    readme = (out / "README.md").read_text(encoding="utf-8")
+    assert f"`v{PUBLIC_VERSION}`" in readme
+    assert "{{PUBLIC_VERSION}}" not in readme
+    validator = (out / "scripts" / "validate_public_product.py").read_text(encoding="utf-8")
+    assert f'EXPECTED_VERSION = "{PUBLIC_VERSION}"' in validator
+    assert 'Path(f"release-notes/v{EXPECTED_VERSION}.md")' in validator
 
 
 def test_extract_removes_pre_existing_out_directory(tmp_path: Path) -> None:

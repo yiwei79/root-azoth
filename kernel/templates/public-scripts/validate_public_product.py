@@ -23,7 +23,7 @@ REQUIRED_PATHS = (
     "docs/PERSONAL_HARNESS_OS.md",
     "docs/case-studies/narrow-success-broad-failure.md",
     "examples/personal-harness/rehearsal-cases.yaml",
-    "release-notes/v0.3.0-rc.1.md",
+    f"release-notes/v{EXPECTED_VERSION}.md",
     "kernel/templates/release-profiles/deployment-mode-matrix.yaml",
     "scripts/harness_profile.py",
     "scripts/context_view.py",
@@ -83,7 +83,7 @@ TOKEN_ASSIGNMENT = re.compile(
 )
 PLACEHOLDER_MARKERS = ("example", "placeholder", "redacted", "your_", "${", "{{", "<")
 REDACTION_SENTINEL = "{{" + "REDACTED}}"
-RELEASE_EVIDENCE_PATH = Path("release-notes/v0.3.0-rc.1.md")
+RELEASE_EVIDENCE_PATH = Path(f"release-notes/v{EXPECTED_VERSION}.md")
 ANGLE_BRACKET_EVIDENCE_PLACEHOLDER = re.compile(r"<[^<>\r\n]+>")
 
 
