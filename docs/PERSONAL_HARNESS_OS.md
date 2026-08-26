@@ -1,6 +1,6 @@
 # Personal Harness OS
 
-> Status: implemented and tested public preview candidate for `v0.3.0-rc.1`.
+> Status: implemented and tested public preview candidate for `v0.3.0-rc.2`.
 > It ships selected routing, context, and no-write rehearsal contracts; the wider
 > operating profile remains under development, and no external adoption is
 > claimed. Exact source provenance is recorded in the extracted manifest and
@@ -26,6 +26,50 @@ contract executable instead of treating one universal workflow as the default.
 
 For the longer engineering argument, see
 [*Narrow Success, Broad Failure*](case-studies/narrow-success-broad-failure.md).
+
+## Operator experience and delivery boundary
+
+The problem is easiest to understand from the operator's side. A useful agent
+thread often encounters something the initial plan did not contain: a missing
+definition, an architectural contradiction, an unverified dependency, or a
+new risk. Investigating it is correct. Allowing that investigation to silently
+replace the original outcome is not.
+
+Personal Harness OS treats the outcome as the continuity boundary and a thread
+as one bounded pulse of work. The intended full-weight journey is:
+
+1. Establish the outcome, current context, constraints, success criteria, and
+   protected decisions.
+2. Decompose uncertainty into explicit questions and candidate actions.
+3. Research or inspect until the evidence required for the next decision is
+   sufficiently grounded.
+4. Turn grounded decisions into a specification and give implementation a clean,
+   bounded context.
+5. Return artifacts, evaluation results, new questions, and changed state to the
+   durable outcome rather than relying on the thread transcript as memory.
+6. Recompute the next safe action from that evidence: continue, correct, stop,
+   recover, or ask for authority.
+
+This makes detours composable. A discovery can become a new node of work while
+the goal, dependency, and return condition remain explicit. Multiple threads can
+contribute research, critique, implementation, or evaluation without pretending
+that more agents are automatically better.
+
+The complete journey is a project direction, not the claim boundary of this
+candidate:
+
+| Capability | Candidate status | Evidence |
+|---|---|---|
+| Effect- and risk-aware routing | Implemented and covered by focused tests | `HarnessRequest`, `HarnessDecision`, `RouteCapsule` |
+| Compact context with source pointers and missing-source warnings | Implemented and covered by focused tests | `build_context_view`, `build_personal_harness_context` |
+| Read-only route rehearsal with repository mutation detection | Implemented and covered by focused tests | rehearsal runner, four-case fixture, no-write check |
+| Research sufficiency and knowledge-richness assessment | Inspectable supporting machinery; not validated here as one end-to-end product journey | `research_sufficiency.py`, `proposal_knowledge_richness.py` |
+| Stage-aware handoffs and delivery pipeline | Present in the wider project lineage; not part of the selected executable candidate contract | pipeline and session-lifecycle documents |
+| Durable outcome graph spanning many threads | Architectural direction; not claimed as fully implemented in this candidate | [case-study design argument](case-studies/narrow-success-broad-failure.md#from-conversation-centred-to-outcome-centred-work) |
+
+That distinction matters: the candidate demonstrates the portable contracts at
+the base of the experience. It does not use the desired experience as evidence
+that every layer already exists.
 
 ## Design goals
 
@@ -168,7 +212,7 @@ the preferred recovery mechanisms for file-backed work.
 
 The public preview candidate contains the portable routing and context contracts,
 generic no-write rehearsal runner and fixture, focused tests, and this design
-document. These selected interfaces define the `v0.3.0-rc.1` preview boundary;
+document. These selected interfaces define the `v0.3.0-rc.2` preview boundary;
 they are not a general backward-compatibility promise for later previews.
 
 It intentionally excludes:

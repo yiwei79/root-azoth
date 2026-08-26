@@ -42,6 +42,70 @@ GloBuddy and SupplyOps appear later as design examples, not as Azoth
 deployments. This release candidate claims the implementation and tests it
 ships, not external adoption or a finished universal harness.
 
+## From conversation-centred to outcome-centred work
+
+One failure mode connects the production systems, the framework, and the newer
+Personal Harness direction. An agent thread starts with an apparently complete
+plan. During execution it discovers that a definition is missing, a dependency
+behaves differently than expected, or the plan itself was under-reasoned. The
+agent should investigate. But the investigation creates a new local objective;
+after several successful steps, the thread may preserve the detour better than
+the original intent, dependencies, and return condition.
+
+This is **local success with overall task failure**. Better prompting inside the
+same thread does not fully solve it because the conversation remains both the
+working memory and the implicit system of record.
+
+Azoth's broader response is to make the outcome—not the conversation—the unit
+of continuity. A thread becomes a bounded pulse that consumes a selected view
+of durable state and returns evidence to it. The durable state can be understood
+as an evolving outcome graph rather than a transcript:
+
+- outcomes retain purpose, constraints, success criteria, and ownership;
+- questions identify what must be learned before a decision is grounded;
+- evidence retains provenance, freshness, and the claim it supports;
+- decisions record what changed and why;
+- tasks and specifications carry explicit dependencies and readiness;
+- artifacts and evaluations show what was built and whether it satisfies the
+  success envelope; and
+- authority records which transitions remain protected.
+
+Under that model, a discovery does not have to compete with the main plan for
+attention. It becomes a related node with a reason for existing and a return
+condition. A research pulse can gather evidence, an architecture pulse can
+compare alternatives, an implementation pulse can start from a clean
+specification, and an evaluation pulse can inspect the result independently.
+Their value comes from the boundaries and evidence between them—not from the
+number or personas of the agents involved.
+
+The target experience is therefore a continuously updated path from intent and
+context to explicit boundaries and evaluation:
+
+```text
+Outcome
+  -> questions and risks
+  -> evidence threshold
+  -> decision and specification readiness
+  -> bounded implementation
+  -> independent evaluation
+  -> evidence returned to the outcome
+  -> continue, correct, stop, or recover
+```
+
+The evidence threshold is contextual, not a universal score. It asks whether
+the required questions have current, traceable, sufficiently diverse support;
+whether important alternatives and failure modes were considered; and whether
+the next stage has testable acceptance criteria. The point is not to turn
+reasoning into bureaucracy. It is to stop an attractive specification from
+hardening assumptions that the system has not yet earned.
+
+Azoth's wider workshop contains research-sufficiency, knowledge-richness,
+stage-aware handoff, run-ledger, and session-continuity machinery shaped by this
+direction. The public candidate validates only the smaller routing, context,
+authority, and no-write rehearsal contracts. The complete outcome graph and
+research-to-delivery experience remain an architectural direction, not a claim
+of a finished public product.
+
 ## 1. The narrow success envelope and broad failure surface
 
 For a real workflow, “the model produced a good-looking response” is rarely the
@@ -247,6 +311,43 @@ release controls, live truth, and human authorisation. The principle was to keep
 the control that earned its operating cost and remove machinery whose state
 burden had become a new source of noise.
 
+### Model evolution makes architecture a recurring experiment
+
+There is a natural urge to add orchestrators, specialised agents, instructions,
+boundaries, memory layers, and review ceremonies up front. Visible structure can
+feel like reliability, and reasoning about a difficult problem can make a large
+architecture appear internally coherent before the system has generated much
+evidence.
+
+The danger is counterfactual blindness. Once work runs inside that harness, its
+results do not reveal what the same model, tools, and context might have achieved
+with fewer transitions or less instruction competition. A component that once
+compensated for a model limitation can remain in place after newer models have
+made it unnecessary. The system may still look successful while paying an
+invisible cost in reasoning freedom, context, latency, or solution quality.
+
+For that reason, Azoth treats architecture as a set of falsifiable hypotheses:
+
+1. Start with the smallest path that exposes the known success, evidence,
+   authority, stopping, and recovery requirements.
+2. Run the real workflow and collect failures, near misses, operator friction,
+   evaluation results, and recovery evidence.
+3. Add a component only when it addresses a named failure mode and introduces
+   an observable success criterion.
+4. Re-test the component as models, tools, and native platform primitives
+   improve.
+5. Treat simplification, bypass, or removal as first-class experiments whenever
+   the same control can be preserved with less interference.
+
+This does not imply that careful reasoning before implementation is unhelpful.
+It means reasoning should define hypotheses, boundaries, and evaluation—not
+pretend to reveal the one optimal orchestration before the system has run. The
+best shape is project- and purpose-specific because the ambiguity, evidence,
+tools, authority, cost, and failure surface are different in each environment.
+Azoth therefore does not chase a magical universal harness; it preserves a thin
+operating contract within which the useful architecture can emerge and be
+revised from evidence.
+
 This conclusion has useful external calibration. OpenAI describes replacing a
 large instruction manual with a short map into repository-owned knowledge
 ([OpenAI, *Harness engineering*](https://openai.com/index/harness-engineering/)).
@@ -378,7 +479,7 @@ The boundaries matter as much as the thesis:
 - The Agentic Framework records an evidence-led evolution, including complexity
   that was later reduced; it was not minimal from the beginning.
 - The selected Personal Harness routing, context, and rehearsal contracts are
-  implemented and tested in the `v0.3.0-rc.1` executable candidate. The wider
+  implemented and tested in the `v0.3.0-rc.2` executable candidate. The wider
   operating profile remains under development; it is not a finished universal
   harness.
 - Role-based agents, RAG, memory, and multi-agent graphs remain valid when their
