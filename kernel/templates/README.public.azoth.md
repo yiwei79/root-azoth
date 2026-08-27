@@ -3,131 +3,123 @@
 **A personal agent-engineering project about keeping complex AI-assisted work
 coherent after the conversation stops being simple.**
 
-I began Azoth after seeing the same problem from several directions: an agent
-can solve the issue immediately in front of it while the wider task quietly
-loses its intent, evidence, or definition of success. This happens most often
-when useful discovery breaks the original plan. The detour succeeds; the
-outcome does not.
+An agent can solve the issue immediately in front of it while the wider task
+quietly loses its intent, evidence, business meaning, authority, or definition
+of success. The detour succeeds; the outcome does not.
 
-```mermaid
-flowchart TB
-    subgraph T["Conversation-centred work"]
-        T1["Plan"] --> T2["Unexpected discovery"]
-        T2 --> T3["Useful detour"]
-        T3 --> T4["Local success"]
-        T4 -.->|original intent fades| T5["Broad failure"]
-    end
-
-    subgraph O["Outcome-centred work"]
-        O1["Outcome + success criteria"] --> O2["Bounded work pulse"]
-        O2 --> O3["Evidence + changed state"]
-        O3 --> O4["Continue, correct, stop, or recover"]
-        O4 --> O1
-        O2 -.->|new question| O5["Grounded detour"]
-        O5 -.->|returns evidence| O3
-    end
-
-    T5 ~~~ O1
-```
-
-Azoth explores a different unit of continuity:
+Azoth explores a different continuity boundary:
 
 > **The outcome—not the conversation—is the system of record. A thread is one
 > bounded pulse of work that reads from and contributes back to it.**
 
-That idea grew through production conversational AI, an operational-data
-foundation, a comprehensive internal agentic-delivery framework, and the later
-contraction of that framework when some of its structure stopped earning its
-cost. Azoth is the independent project where I make those lessons explicit,
-testable, and transferable.
+The idea grew through production conversational AI, an operational-data
+foundation, a reusable internal agentic-delivery framework, and the later
+contraction of that framework when parts of it stopped earning their cost.
+Azoth is the independent project where I make those lessons explicit, testable,
+and transferable.
 
-The current public candidate, `v{{PUBLIC_VERSION}}`, is intentionally narrow. It
-contains a tested probe of effect-aware routing, compact context, authority and
-stopping state, plus no-write behavioural rehearsal. It does **not** claim to
-ship the complete outcome-centred system described here.
+## Choose your path
 
-## Choose your depth
-
-| Time | Start here | What it shows |
+| Reader intent | Start here | What you will find |
 |---|---|---|
-| 3 minutes | [*Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md) | The production origin, architectural evolution, and core engineering judgment |
-| 8 minutes | [Executable proof: routing, context, and authority](docs/PERSONAL_HARNESS_OS.md) | One small, tested implementation slice and its exact claim boundary |
-| Inspect the source | [routing](scripts/harness_profile.py), [context assembly](scripts/personal_harness_context.py), [rehearsal](scripts/personal_harness_practice_rehearsal.py), and [tests](tests/test_personal_harness_practice_rehearsal.py) | The code and behavioural evidence behind the public claims |
+| **Experience and evidence** | [*Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md) | The production origin, BigQuery and Local Requests Data lineage, framework evolution, contraction, and derived findings |
+| **Working thesis** | [*Intent-to-Outcome Engineering*](docs/INTENT_TO_OUTCOME_ENGINEERING.md) | The evolving model: intent anchors, project ontology, composition, feedback, human authority, counterarguments, and research questions |
+| **Executable proof** | [Routing, Context, and Authority](docs/PERSONAL_HARNESS_OS.md) | One narrow tested slice, its interfaces, behavioural rehearsal, and exact claim boundary |
+| **Source and architecture history** | [Architecture overview](docs/AZOTH_ARCHITECTURE.md), [decision index](docs/DECISIONS_INDEX.md), and [source paths](#inspect-the-current-proof) | The broader design history and the code behind the candidate |
 
-## The system I am exploring
+## The 60-second read
 
-The target is not one perfect thread or one universal orchestration graph. It
-is a durable outcome model that allows different kinds of work to happen in
-clean contexts without losing why they exist or what must return.
+| | |
+|---|---|
+| **Failure** | A locally correct model trajectory can still produce broad system failure. |
+| **Observed lineage** | Production systems made meaning, state, authority, evaluation, and recovery part of correctness. Reusing those disciplines across projects exposed the difference between generic coordination and project-local ontology. |
+| **Working thesis** | Durable agentic systems should connect model-and-tool work to a persistent intent anchor: purpose, success boundary, project meaning, authority, evidence, and observed outcomes. |
+| **Architectural rule** | Every role, handoff, instruction layer, retriever, memory surface, and gate is a hypothesis. Add, test, revise, or remove it according to representative work. |
+| **Current proof** | The `v{{PUBLIC_VERSION}}` candidate contains a tested probe of effect-aware routing, bounded context, explicit authority and stopping state, plus no-write rehearsal. |
+| **Not claimed** | The full intent-to-outcome system, external Azoth adoption, production deployment, installer completeness, or cross-host parity. |
+
+GloBuddy and SupplyOps are production systems that shaped the method. The
+internal Agentic Framework records a separate employer-work lineage. Azoth is
+an independent project. None is presented as a deployment of another.
+
+## From local success to outcome continuity
 
 ```mermaid
 flowchart TB
-    OUT["Outcome<br/>purpose · constraints · ownership"]
-    Q["Questions + risks"]
-    EV["Evidence<br/>provenance · freshness · sufficiency"]
-    DEC["Decision + specification readiness"]
-    WORK["Bounded pulse<br/>research · implementation · critique"]
-    EVAL["Evaluation<br/>behaviour · artifact · real outcome"]
-    NEXT{"Next safe transition"}
+    subgraph L["Conversation-centred work"]
+        L1["Plan"] --> L2["Unexpected discovery"]
+        L2 --> L3["Useful detour"]
+        L3 --> L4["Local success"]
+        L4 -.->|intent or dependency fades| L5["Broad failure"]
+    end
 
-    OUT --> Q --> EV --> DEC --> WORK --> EVAL --> NEXT
-    NEXT -->|new pulse or completion| OUT
+    subgraph D["Intent-to-outcome work"]
+        D1["Purpose + success boundary"] --> D2["Bounded work pulse"]
+        D2 --> D3["Evidence + artifact + observed state"]
+        D3 --> D4{"Continue · correct<br/>stop · recover · redefine"}
+        D4 --> D1
+        D2 -.->|new question| D5["Grounded detour"]
+        D5 -.->|returns evidence| D3
+    end
 
-    HUMAN["Protected human authority"] -.-> DEC
-    HUMAN -.-> WORK
-    HUMAN -.-> NEXT
-    STATE["Durable state + artifacts"] -->|selected context| WORK
-    EVAL -.->|writes evidence| STATE
-    OUT -.->|anchors| STATE
+    L5 ~~~ D1
 ```
 
-In that experience:
+A conversation can be excellent working memory for one pulse. It should not
+also have to be the sole plan, evidence store, authority record, semantic model,
+and durable history.
 
-- the goal remains visible when a useful detour appears;
-- unknowns become explicit questions rather than hidden assumptions;
-- evidence is judged against the next decision, not accumulated without limit;
-- implementation can begin in a clean context with an inspectable handoff;
-- evaluation checks the artifact and operational outcome, not only the
-  transcript; and
-- every pulse returns evidence, decisions, and changed state before another
-  pulse begins.
+The larger engineering object is:
 
-The broader Azoth workshop contains earlier research-sufficiency, staged
-handoff, run-ledger, and session-continuity machinery related to this model.
-Those surfaces are architectural lineage, not one fully validated public
-product path.
+`purpose + success boundary -> project meaning -> task-specific composition -> bounded effect -> observed outcome -> evaluation -> next safe transition`
+
+Protected human authority spans consequential effects, promotion of durable
+policy, and release decisions.
 
 ## How the architecture earned its shape
 
+The project did not begin with one universal orchestration design.
+
 ```mermaid
 flowchart TB
-    A["Production AI<br/>GloBuddy"] --> C["Shared lesson<br/>reliability lives beyond the model"]
-    B["Operational data<br/>SupplyOps"] --> C
-    C --> D["Comprehensive Agentic Framework<br/>governance · memory · routing · delivery"]
-    D --> E["Observed operating cost<br/>duplicated state · ceremony · context competition"]
-    E --> F["Architectural contraction<br/>keep controls that earn their cost"]
-    F --> G["Azoth<br/>outcome-centred method"]
-    G --> H["Current executable probe<br/>routing · context · authority · rehearsal"]
+    A["Production conversational AI<br/>meaning · action · outcome"]
+    B["Operational data migration<br/>semantics · evidence · release gates"]
+    A --> C["Shared reliability problem"]
+    B --> C
+    C --> D["Reusable bootloader + project-local context"]
+    D --> E["Promotion loop<br/>local experience → reviewed shared patterns"]
+    E --> F["Typed roles, handoffs, and adaptive pipelines"]
+    F --> G["Framework overgrowth<br/>duplicated state · ceremony · context competition"]
+    G --> H["Architectural contraction<br/>retain controls that protect real failures"]
+    H --> I["Azoth inquiry<br/>intent-to-outcome engineering"]
+    I --> J["Current executable proof<br/>routing · context · authority · rehearsal"]
 ```
 
-This history is why Azoth does not begin by prescribing a large harness. Every
-agent, instruction layer, memory system, retrieval path, boundary, and ceremony
-encodes an assumption about what the model and environment cannot do unaided.
-Those assumptions can be wrong, project-specific, or made obsolete by better
-models and native platform capabilities.
+The BigQuery migration made semantic reconstruction, traceable evidence,
+project state, acceptance gates, and human-authorized publication operational.
+Local Requests Data reused the bootloader discipline while preserving different
+domain meaning and sources of truth. That combination led to an explicit
+project-to-shared promotion loop: experience stayed local until repeated
+evidence justified a reusable contract.
 
-The architecture is therefore treated as a set of falsifiable hypotheses:
+The framework later added specialised roles, typed handoffs, model tiers,
+memory layers, and multi-stage pipelines. Some structures protected real
+boundaries. Others duplicated live state or consumed more context than the
+problem. A project-local contraction retained domain validation, authority, and
+recovery while removing generic machinery.
+
+The resulting rule is not “simple good, complex bad”:
 
 1. Name the failure and the acceptable outcome.
 2. Start with the smallest observable path that respects real authority.
-3. Run representative work and retain trajectories, outcomes, and operator
-   friction as evidence.
-4. Add structure only when it addresses a demonstrated failure.
-5. Re-test, simplify, or remove it as the model and environment change.
+3. Run representative work and retain trajectories, artifacts, outcomes, and
+   operator friction as evidence.
+4. Add structure only for a demonstrated failure or boundary.
+5. Re-test, simplify, or remove it as models and environments change.
 
-This is not minimalism as taste. It is an attempt to avoid invisible performance
-damage from architecture whose counterfactual—the result without it—was never
-tested.
+The [case study](docs/case-studies/narrow-success-broad-failure.md) holds the
+historical evidence. The [working thesis](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
+develops the broader model and makes its open questions falsifiable.
 
 ## What is implemented in this candidate
 
@@ -136,14 +128,13 @@ definition of Azoth:
 
 | Contract | What it makes observable |
 |---|---|
-| `HarnessRequest` -> `HarnessDecision` | Whether the requested effects belong in `guide`, `assisted`, `managed`, or `governed_autonomy` |
+| `HarnessRequest` -> `HarnessDecision` | Whether intended effects belong in `guide`, `assisted`, `managed`, or `governed_autonomy` |
 | `RouteCapsule` | Side-effect class, route state, required authority and inputs, next safe action, and stop reason |
 | Context-view packet | A bounded set of approved summaries and source pointers, with raw memory filtered out |
 
-A generic rehearsal runner executes four representative cases through the same
-public routing and context code. It checks expected authority and stopping
-behaviour and fingerprints the target repository before and after to detect
-mutation.
+A generic rehearsal runs four representative cases through the same public
+routing and context code. It checks expected authority and stopping behaviour
+and fingerprints the target repository before and after to detect mutation.
 
 **Candidate evidence:** 30 portable public tests cover routing, authority stops,
 context selection, optional-source behaviour, personal-knowledge recall/review,
@@ -157,30 +148,32 @@ manifest, privacy, credential, reference, and release-evidence validation.
 | Effect-aware routing and typed route state | Implemented and tested in the candidate | [`scripts/harness_profile.py`](scripts/harness_profile.py) |
 | Compact, provenance-preserving context assembly | Implemented and tested in the candidate | [`scripts/context_view.py`](scripts/context_view.py), [`scripts/personal_harness_context.py`](scripts/personal_harness_context.py) |
 | Read-only behavioural rehearsal | Implemented and tested in the candidate | [runner](scripts/personal_harness_practice_rehearsal.py), [cases](examples/personal-harness/rehearsal-cases.yaml), [tests](tests/test_personal_harness_practice_rehearsal.py) |
-| Outcome-centred continuity across many threads | Design direction with supporting project lineage; not fully shipped in this candidate | [case study](docs/case-studies/narrow-success-broad-failure.md#the-outcome-not-the-thread-is-the-continuity-boundary) |
+| Intent-to-outcome engineering | Working thesis derived from project observations and external comparison; not fully implemented | [thesis](docs/INTENT_TO_OUTCOME_ENGINEERING.md) |
+| Historical production and framework lineage | Experience and repository evidence; not Azoth deployment evidence | [case study](docs/case-studies/narrow-success-broad-failure.md) |
 | Research sufficiency and staged delivery machinery | Inspectable in the wider repository; not validated here as one product journey | [`scripts/research_sufficiency.py`](scripts/research_sufficiency.py), [`scripts/proposal_knowledge_richness.py`](scripts/proposal_knowledge_richness.py), [pipeline overview](docs/playbook/01-pipeline-overview.md) |
 | External adoption or production deployment of Azoth | Not claimed | [preview boundary](docs/PERSONAL_HARNESS_OS.md#public-preview-boundary) |
 
-GloBuddy and SupplyOps are production systems that shaped the method. They are
-not represented as Azoth deployments.
+## Inspect the current proof
 
-## Explore the repository
-
-- [*Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md)
-  — the principal case study and engineering argument.
-- [Executable proof: routing, context, and authority](docs/PERSONAL_HARNESS_OS.md)
-  — exact interfaces, behavioural rehearsal, and preview boundary.
+- [Routing](scripts/harness_profile.py) — deterministic effect and authority
+  classification.
+- [Context assembly](scripts/personal_harness_context.py) — compact,
+  source-referenced packets.
+- [No-write rehearsal](scripts/personal_harness_practice_rehearsal.py) — shared
+  code exercised against representative cases.
+- [Portable tests](tests/test_personal_harness_practice_rehearsal.py) —
+  behavioural and mutation-detection evidence.
 - [Trust Contract](kernel/TRUST_CONTRACT.md) — protected authority and action
   boundaries.
 - [Architecture decisions](docs/DECISIONS_INDEX.md) — decision records and
   implementation status.
-- [Broader architecture history](docs/AZOTH_ARCHITECTURE.md) — the larger design
-  space from which the current path emerged.
 
-Installer surfaces, cross-host parity, package distribution, and production
-adoption are outside the `v{{PUBLIC_VERSION}}` validation boundary. Existing
-tags remain immutable. Publication requires review of the exact extracted tree
-and explicit human approval for its public commit, tag, push, and release.
+The working thesis relies on Git for revision history; it does not add a second
+changelog. Installer surfaces, cross-host parity, package distribution, and
+production adoption are outside the `v{{PUBLIC_VERSION}}` validation boundary.
+Existing tags remain immutable. Publication requires review of the exact
+extracted tree and explicit human approval for its public commit, tag, push,
+and release.
 
 ## License
 

@@ -20,6 +20,7 @@ REQUIRED_PATHS = (
     "README.md",
     "azoth.yaml",
     "public-test-paths.txt",
+    "docs/INTENT_TO_OUTCOME_ENGINEERING.md",
     "docs/PERSONAL_HARNESS_OS.md",
     "docs/case-studies/narrow-success-broad-failure.md",
     "examples/personal-harness/rehearsal-cases.yaml",

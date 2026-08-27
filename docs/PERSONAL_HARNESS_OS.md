@@ -19,8 +19,10 @@ The candidate includes:
 - a generic no-write rehearsal runner with four representative cases; and
 - 30 portable public tests across the selected contracts.
 
-For the engineering argument and the longer project lineage, start with
-[*Narrow Success, Broad Failure*](case-studies/narrow-success-broad-failure.md).
+For the historical evidence and architectural lineage, start with [*Narrow
+Success, Broad Failure*](case-studies/narrow-success-broad-failure.md). For the
+evolving model this proof is intended to test, read [*Intent-to-Outcome
+Engineering*](INTENT_TO_OUTCOME_ENGINEERING.md).
 
 ## What problem this slice tests
 
@@ -63,7 +65,7 @@ not mutate the repository. Each concern remains small enough to inspect.
 | Read-only route rehearsal with mutation detection | Implemented and tested | rehearsal runner, four-case fixture, no-write check |
 | Research sufficiency and knowledge-richness assessment | Related machinery is inspectable; not validated here as one product journey | [`research_sufficiency.py`](../scripts/research_sufficiency.py), [`proposal_knowledge_richness.py`](../scripts/proposal_knowledge_richness.py) |
 | Stage-aware handoffs and delivery pipeline | Part of the wider Azoth lineage; outside this proof slice | [pipeline overview](playbook/01-pipeline-overview.md), [session lifecycle](playbook/03-session-lifecycle.md) |
-| Durable outcome graph spanning many threads | Design direction; not claimed as fully implemented | [case-study argument](case-studies/narrow-success-broad-failure.md#the-outcome-not-the-thread-is-the-continuity-boundary) |
+| Durable intent-to-outcome system spanning many work pulses | Working thesis; not claimed as fully implemented | [working thesis](INTENT_TO_OUTCOME_ENGINEERING.md) |
 
 The distinction is deliberate. A desired operating experience is not evidence
 that every layer exists. This page documents only the small surface a reviewer
@@ -253,3 +255,8 @@ The value of this slice is therefore modest but concrete: it makes a few
 important transition properties executable and inspectable. Its deeper role in
 Azoth is as evidence—one experiment in a longer inquiry about preserving intent,
 context, authority, and feedback across complex agent-assisted work.
+
+Return to the [case-study evidence](case-studies/narrow-success-broad-failure.md)
+or continue with the [working thesis](INTENT_TO_OUTCOME_ENGINEERING.md). These
+documents provide lineage and interpretation; they do not expand this proof's
+implementation claim.

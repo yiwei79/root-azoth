@@ -83,6 +83,7 @@ REQUIRED_PRODUCT_PATHS = (
     "scripts/personal_harness_practice_rehearsal.py",
     "scripts/personal_knowledge_recall.py",
     "scripts/personal_knowledge_review.py",
+    "docs/INTENT_TO_OUTCOME_ENGINEERING.md",
     "docs/PERSONAL_HARNESS_OS.md",
     "docs/case-studies/narrow-success-broad-failure.md",
     "examples/personal-harness/rehearsal-cases.yaml",
