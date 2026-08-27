@@ -86,7 +86,7 @@ REQUIRED_PRODUCT_PATHS = (
     "docs/PERSONAL_HARNESS_OS.md",
     "docs/case-studies/narrow-success-broad-failure.md",
     "examples/personal-harness/rehearsal-cases.yaml",
-    "release-notes/v0.3.0-rc.1.md",
+    "release-notes/v0.3.0-rc.2.md",
     "kernel/templates/CLAUDE.md.template",
     "kernel/templates/bootloader-state.md.template",
     "kernel/templates/release-profiles/full-consumer.yaml",
