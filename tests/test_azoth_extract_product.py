@@ -255,7 +255,8 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert f"`v{PUBLIC_VERSION}`" in readme
     assert "{{PUBLIC_VERSION}}" not in readme
-    assert "The outcome—not the conversation—is the unit of continuity" in readme
+    assert "The outcome—not the conversation—is the system of record" in readme
+    assert "tested probe of effect-aware routing" in readme
     assert "docs/case-studies/narrow-success-broad-failure.md" in readme
     validator = (out / "scripts" / "validate_public_product.py").read_text(encoding="utf-8")
     assert f'EXPECTED_VERSION = "{PUBLIC_VERSION}"' in validator

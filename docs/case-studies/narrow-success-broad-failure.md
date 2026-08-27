@@ -1,493 +1,378 @@
-# Narrow Success, Broad Failure: A Control-Systems Lens for Agentic Engineering
+# Narrow Success, Broad Failure
 
-## From Orchestration to the Minimum-Sufficient Harness
+## What production systems taught me about context, control, and long-running agent work
 
-AI agents are easy to demonstrate and difficult to make dependable. A model can
-produce a plausible answer through many paths, while an operational workflow may
-accept only a narrow range of outcomes: the right action, on the right object, at
-the right time, under the right authority, with enough evidence to explain and
-recover it.
+An AI agent can complete every visible step and still fail the task that
+matters. It may solve a local problem, produce a plausible artifact, and report
+success while the wider workflow has lost the original intent, used the wrong
+business meaning, crossed an authority boundary, or optimized a proxy instead
+of the outcome.
 
-This case study presents the engineering model that emerged from building
-production conversational AI, reconstructing an operational data foundation,
-developing an internal agentic-delivery framework, and then distilling those
-lessons into Azoth's Personal Harness OS. It is a practical design argument—not
-a claim that software agents are literally electrical circuits, that their
-behaviour has been reduced to formal control theory, or that one harness is
-optimal for every environment.
+This case study explains the engineering philosophy behind Azoth. It grew from
+building production conversational AI, reconstructing an operational-data
+foundation, using a comprehensive internal agentic-delivery framework, and then
+removing parts of that framework when their operating cost became clearer than
+their value.
 
-The central idea is simpler: treat agents as programmable probabilistic
-components inside an engineered system. Define success outside the model, make
-state and authority legible, observe real outcomes, and design the feedback path
-that makes useful trajectories more likely.
+### The 30-second read
 
-The portable implementation is documented in
-[Personal Harness OS](../PERSONAL_HARNESS_OS.md).
+| | |
+|---|---|
+| **Problem** | Agent trajectories have a broad failure surface even when each individual model response looks capable. |
+| **Thesis** | The outcome—not the conversation—should be the continuity boundary. Threads are bounded pulses that read and update durable state. |
+| **Engineering model** | Combine probabilistic reasoning, deterministic tools, explicit authority, semantic context, evaluation, and recovery around a defined success envelope. |
+| **Architectural judgment** | Every agent, memory layer, instruction, boundary, and ceremony is a hypothesis. It must earn and re-earn its place through representative work and observable outcomes. |
+| **Current proof** | Azoth's public candidate implements and tests one narrow slice: effect-aware routing, compact context, typed authority/stopping state, and no-write rehearsal. |
 
-## Project lineage
+This is a practical design argument, not a claim that agents are literally
+control circuits or that one universal harness can be optimal across projects.
 
-The work progressed through three connected stages:
+## The failure that made the problem intuitive
 
-- Production AI and operational-data systems exposed how failures enter through
-  business meaning, context, tools, state, authority, and feedback—not only
-  through model behaviour.
-- A comprehensive internal Agentic Framework tested richer governance, memory,
-  routing, and delivery patterns, including machinery whose state and ceremony
-  later proved too costly.
-- Azoth distils those lessons into an independent public preview centred on
-  minimum-sufficient routing, context, authority, evaluation, and rehearsal
-  contracts.
+Imagine an agent thread with a reasonable plan. During implementation it finds
+an undefined term, an architectural contradiction, or a dependency that behaves
+differently from the documentation. The agent should investigate. But the
+investigation creates a new local objective, and the conversation now preserves
+the detour more strongly than the outcome that gave the detour meaning.
 
-GloBuddy and SupplyOps appear later as design examples, not as Azoth
-deployments. This release candidate claims the implementation and tests it
-ships, not external adoption or a finished universal harness.
+The failure is not that the model became distracted in a superficial sense. It
+is that one transcript is being asked to serve simultaneously as working memory,
+plan, evidence store, authority record, and system of record.
 
-## From conversation-centred to outcome-centred work
+```mermaid
+flowchart TB
+    P["Original plan"] --> D["Unexpected discovery"]
+    D --> I["Investigation"]
+    I --> L["Locally correct result"]
+    L --> Q{"Did the result return to<br/>the original outcome?"}
+    Q -->|no| F["Broad failure<br/>intent or dependency lost"]
+    Q -->|yes, with evidence| S["System-level progress"]
 
-One failure mode connects the production systems, the framework, and the newer
-Personal Harness direction. An agent thread starts with an apparently complete
-plan. During execution it discovers that a definition is missing, a dependency
-behaves differently than expected, or the plan itself was under-reasoned. The
-agent should investigate. But the investigation creates a new local objective;
-after several successful steps, the thread may preserve the detour better than
-the original intent, dependencies, and return condition.
-
-This is **local success with overall task failure**. Better prompting inside the
-same thread does not fully solve it because the conversation remains both the
-working memory and the implicit system of record.
-
-Azoth's broader response is to make the outcome—not the conversation—the unit
-of continuity. A thread becomes a bounded pulse that consumes a selected view
-of durable state and returns evidence to it. The durable state can be understood
-as an evolving outcome graph rather than a transcript:
-
-- outcomes retain purpose, constraints, success criteria, and ownership;
-- questions identify what must be learned before a decision is grounded;
-- evidence retains provenance, freshness, and the claim it supports;
-- decisions record what changed and why;
-- tasks and specifications carry explicit dependencies and readiness;
-- artifacts and evaluations show what was built and whether it satisfies the
-  success envelope; and
-- authority records which transitions remain protected.
-
-Under that model, a discovery does not have to compete with the main plan for
-attention. It becomes a related node with a reason for existing and a return
-condition. A research pulse can gather evidence, an architecture pulse can
-compare alternatives, an implementation pulse can start from a clean
-specification, and an evaluation pulse can inspect the result independently.
-Their value comes from the boundaries and evidence between them—not from the
-number or personas of the agents involved.
-
-The target experience is therefore a continuously updated path from intent and
-context to explicit boundaries and evaluation:
-
-```text
-Outcome
-  -> questions and risks
-  -> evidence threshold
-  -> decision and specification readiness
-  -> bounded implementation
-  -> independent evaluation
-  -> evidence returned to the outcome
-  -> continue, correct, stop, or recover
+    O["Durable outcome<br/>purpose · dependencies · return condition"] -.->|anchors| D
+    I -.->|returns evidence| O
 ```
 
-The evidence threshold is contextual, not a universal score. It asks whether
-the required questions have current, traceable, sufficiently diverse support;
-whether important alternatives and failure modes were considered; and whether
-the next stage has testable acceptance criteria. The point is not to turn
-reasoning into bureaucracy. It is to stop an attractive specification from
-hardening assumptions that the system has not yet earned.
+I call this **narrow success with broad failure**. It appears in coding, research,
+operations, and data work because plausible progress is easier to observe than
+end-to-end correctness.
 
-Azoth's wider workshop contains research-sufficiency, knowledge-richness,
-stage-aware handoff, run-ledger, and session-continuity machinery shaped by this
-direction. The public candidate validates only the smaller routing, context,
-authority, and no-write rehearsal contracts. The complete outcome graph and
-research-to-delivery experience remain an architectural direction, not a claim
-of a finished public product.
+## The outcome, not the thread, is the continuity boundary
 
-## 1. The narrow success envelope and broad failure surface
+Azoth's central shift is to treat a thread as one bounded pulse, not as the
+whole system. The persistent object is an evolving outcome model:
 
-For a real workflow, “the model produced a good-looking response” is rarely the
-success condition. Success is usually a conjunction:
+- **outcomes** retain purpose, constraints, ownership, and success criteria;
+- **questions** expose what must be learned before a decision is grounded;
+- **evidence** retains provenance, freshness, and the claim it supports;
+- **decisions** record what changed and why;
+- **specifications and tasks** carry dependencies and readiness;
+- **artifacts and evaluations** show what was built and whether it works; and
+- **authority** identifies transitions that remain protected.
 
-- the request was interpreted against the correct business meaning;
-- the agent received relevant, current, authorised context;
-- tools acted on the intended scope and no wider;
-- outputs satisfied deterministic policy and data contracts;
-- uncertain or consequential cases reached the correct human decision;
-- the outcome was measured against the operational purpose; and
-- the system could stop, explain itself, or recover when any condition failed.
+```mermaid
+flowchart TB
+    OUT["Outcome<br/>why this work exists"]
+    Q["Question or risk<br/>what is still unknown"]
+    E["Evidence<br/>what is grounded enough"]
+    D["Decision / specification<br/>what may proceed"]
 
-Each additional condition narrows the acceptable success envelope. Failure,
-meanwhile, remains broad: stale context, semantically wrong data, ambiguous
-authority, a locally sensible but globally harmful action, silent tool failure,
-an unobserved outcome, or a feedback loop that rewards the wrong proxy.
+    subgraph PULSES["Bounded work pulses"]
+        R["Research"]
+        B["Build"]
+        C["Critique"]
+        V["Evaluate"]
+    end
 
-The useful engineering objective is therefore to:
+    A["Artifact + observed state"]
+    N{"Continue · correct<br/>stop · recover"}
 
-`increase estimated P(trajectory ∈ S | architecture, context)`
+    OUT --> Q --> E --> D
+    D --> R
+    D --> B
+    D --> C
+    R --> A
+    B --> A
+    C --> A
+    A --> V --> N
+    N --> OUT
 
-`subject to cost, latency, safety, and authority constraints.`
-
-Here, `S` is the explicitly defined set of acceptable trajectories. This is a
-design heuristic, not a calibrated probability model. Its purpose is to force a
-better question: which architectural choices make the whole path to an
-acceptable outcome more likely, and which merely make one model call look more
-capable?
-
-## 2. Agents as programmable probabilistic transitions
-
-Conventional software components are usually expected to map an input to an
-output according to code we can inspect directly. An agent component is
-different: its next action is conditioned on instructions, tools, context,
-model behaviour, and the state accumulated along the way. It is programmable,
-but its transition is probabilistic.
-
-That makes the surrounding system—not the prompt alone—the primary engineering
-object:
-
-```text
-Business intent + success envelope → context/state → probabilistic component + deterministic tools → bounded action → observed outcome → evaluation/evidence → correction, stop, or recovery
+    H["Human authority"] -.->|protects| D
+    H -.->|protects| B
+    H -.->|decides| N
 ```
 
-Protected human authority spans consequential transitions and release decisions.
+A useful detour can now become a related question with its own evidence target
+and return condition. Research, architecture, implementation, and evaluation
+can happen in separate contexts without pretending that more threads or agents
+are automatically better. Their value comes from clean boundaries and the
+evidence passed between them.
 
-The agent can reason over ambiguity; deterministic code can enforce invariants;
-an evaluator can compare behaviour with explicit criteria; and a human can own
-the decisions whose consequences should not be delegated. None of these is the
-system alone. Reliability comes from their composition.
+The evidence threshold is contextual rather than a universal score. It asks:
+are the questions that matter to the next decision supported by current,
+traceable evidence; were important alternatives and failure modes considered;
+and does the next stage have testable acceptance criteria? The objective is not
+to bureaucratize reasoning. It is to prevent a polished specification from
+hardening assumptions the system has not earned.
 
-This lens also changes what “programming an agent” means. The work includes:
+## Where this thinking was earned
 
-- choosing the state the component may see;
-- exposing tools whose effects are bounded and inspectable;
-- defining what evidence a transition must produce;
-- deciding which failures can retry and which must stop;
-- separating execution from independent evaluation; and
-- connecting technical behaviour to the business outcome it exists to improve.
+Two production systems at Glovo exposed the same reliability problem from
+opposite directions.
 
-## 3. Control flow versus employee-role simulation
+### GloBuddy: conversational AI as an operational system
 
-One common starting point is to personify agents: researcher, developer,
-reviewer, manager. Role-based agents can be useful when a role creates a real
-boundary—for example, isolated context, different tools, independent
-evaluation, or distinct authority. But copying an organisation chart is not a
-reliability architecture by itself.
+GloBuddy is a production conversational-AI Rider CRM system for daily operations
+around rider onboarding and the funnel lifecycle. The difficult part was not
+making a model converse. It was translating operational intent into a dependable
+path from policy and context to interaction, bounded action, follow-up state,
+measurement, and human improvement.
 
-The stronger default is to decompose around control flow:
+The system joined governed agent definitions, scoped tools, routing, contextual
+knowledge, cloud services, operational state, observability, and a release path
+with verification, human gates, rollback, and recovery. Conversation outcomes
+were reconciled into structured state and operational measures rather than left
+as isolated transcripts.
 
-- What information is required for this transition?
-- Which component may act, and through which tools?
-- What must be true before the action begins?
-- What evidence proves that it completed?
-- Who or what evaluates the result independently?
-- Which state is authoritative when two surfaces disagree?
-- What happens on uncertainty, contradiction, timeout, or partial failure?
+That changed the engineering question from “did the agent respond?” to “did the
+workflow behave acceptably, and did it support the operational result it exists
+to improve?”
 
-Under this model, a “reviewer agent” is valuable because it receives a fresh
-evaluation context and cannot silently become the executor—not because it has a
-reviewer persona. A multi-agent graph is valuable when it gives the system
-parallelism, isolation, critique, or authority separation that a simpler loop
-cannot provide.
+### SupplyOps: semantic reconstruction before automation
 
-This is not an argument against roles. It is an argument that roles should be a
-consequence of system boundaries, rather than the boundaries being inferred
-from human job titles.
+SupplyOps began with fragmented, undocumented reporting logic whose meaning
+could not survive a mechanical data-platform migration. The work required
+semantic reconstruction: trace sources and lineage, test competing hypotheses,
+establish accepted definitions, encode deterministic metric contracts, and
+build a bounded operational ontology around them.
 
-## 4. Signal, noise, semantic integrity, and trustworthy context
+That semantic layer supported a governed BigQuery pipeline and decision
+dashboard with quality gates, staged publication, rollback, and independent
+readback. The result was not merely converted SQL; it was a maintainable data
+backbone connecting business meaning, implementation, publication, and use.
 
-The signal-processing analogy is useful if it remains disciplined. “Signal” is
-evidence that helps move the system toward the defined success envelope:
-accepted business definitions, relevant context, validated state changes,
-observed user outcomes, or an evaluator's actionable finding. “Noise” is
-anything that consumes attention or changes behaviour without reliably
-improving that trajectory: stale instructions, duplicated state, conflicting
-sources of truth, raw logs without selection, ambiguous metrics, and elaborate
-memory that cannot establish freshness or authority.
+Together, GloBuddy and SupplyOps showed that dependable AI behaviour cannot be
+created at the model layer alone. It depends on the meaning and authority of the
+context below the agent and on the outcome and feedback loop above it.
 
-The objective is not to eliminate uncertainty. Probabilistic components are
-valuable precisely because they can work through ambiguity. The objective is to
-prevent avoidable ambiguity from propagating through the system while
-preserving evidence about the uncertainty that remains.
+They shaped Azoth's method. They are not Azoth deployments.
 
-Business semantics are part of that signal path. An agent can retrieve a
-perfectly current row and still make the wrong decision if the row's meaning,
-grain, ownership, or exception rules are unclear. Data integrity therefore
-includes semantic integrity—not only completeness and schema validity.
+## From a comprehensive framework to an engineering inquiry
 
-This is why context engineering and ontology work are closely connected in
-production AI. The agent needs a compact view of what the business means, which
-state is current, what good looks like, and where authority sits. OpenAI's
-description of Frontier similarly emphasises shared business context, outcomes,
-permissions, evaluation, and an enterprise semantic layer; the product framing
-differs, but the operational prerequisites are recognisable
-([OpenAI, *Introducing OpenAI Frontier*](https://openai.com/index/introducing-openai-frontier/)).
+The internal Agentic Framework grew from repeated delivery work, not from a plan
+to build a universal platform. It introduced project-local bootloaders, reusable
+instructions, promotion rules, append-only evidence, deterministic
+classification, retrieval rules, architectural review, typed handoffs, and
+bounded continuation.
 
-## 5. GloBuddy and SupplyOps as production manifestations
+It also accumulated richer orchestration: specialised roles, model tiers,
+compatibility surfaces, memory layers, and multi-stage delivery paths. These
+were reasonable hypotheses about where more structure could improve control.
 
-Two systems at Glovo made this philosophy concrete from opposite directions.
+Using the framework exposed the other side of the trade-off. Some controls
+proved load-bearing. Others duplicated live repository state, forced decisions
+through multiple representations, or made the agent spend context reconstructing
+the harness instead of solving the task.
 
-**GloBuddy** is a production conversational-AI Rider CRM system for daily
-operations around rider onboarding and the funnel lifecycle. The difficult part
-was not making a model converse. It was turning operational intent into a
-dependable path from policy and context to interaction, bounded outcomes,
-follow-up state, measurement, and human improvement.
+```mermaid
+flowchart TB
+    P1["Production systems<br/>meaning + outcomes + controls"] --> P2["Comprehensive framework<br/>encode recurring practices"]
+    P2 --> P3["Real operating evidence<br/>what helps and what interferes"]
+    P3 --> P4["Scoped contraction<br/>retain earned control"]
+    P4 --> P5["Azoth<br/>make the method explicit"]
+    P5 --> P6["Small executable probes<br/>test one hypothesis at a time"]
 
-The implementation joined a governed agent runtime with versioned agent-as-code
-definitions, scoped tools, routing, contextual knowledge, a cloud backend,
-operational state, observability, and a release path with verification, human
-gates, rollback, and recovery. Conversation outcomes were reconciled into
-structured state and connected to operational measures rather than treated as
-isolated transcripts. This let the system answer a harder question than “did
-the agent respond?”: did the workflow behave acceptably, and did it support the
-operational result it was built for?
-
-**SupplyOps** began with a different failure surface. Leadership reporting
-depended on fragmented, undocumented logic whose meaning could not be preserved
-through a mechanical data-platform translation. The necessary work was semantic
-reconstruction: trace sources and lineage, test competing hypotheses, establish
-accepted definitions, encode them as deterministic metric contracts, and build
-a bounded operational ontology around them.
-
-That semantic layer then supported a governed BigQuery pipeline and
-business-facing decision dashboard with quality gates, staged publication,
-rollback, and independent readback. The result was not merely converted SQL. It
-was a maintainable operational-intelligence foundation connecting business
-meaning, data, publication, and consumption.
-
-Together, the systems exposed a recurring adoption problem. AI behaviour cannot
-be made dependable only at the model layer. It depends on the meaning and
-authority of the context below it, and on the outcome and feedback loop above
-it.
-
-## 6. The original comprehensive Agentic Framework
-
-The internal Agentic Framework grew from repeated operational work rather than
-from an abstract desire to build a universal platform. Its early versions
-established project-local bootloaders, reusable instructions, role overlays,
-promotion rules, and workspace-aware context. Later iterations added
-append-only episodic evidence, deterministic classification, explicit retrieval
-rules, separate architectural review, typed project-to-master signals, and
-human-controlled promotion into durable policy.
-
-Several decisions were deliberately conservative:
-
-- experience was appended as evidence rather than allowed to rewrite policy;
-- reflection and architectural diagnosis were separated from the executing
-  session;
-- one source owned each concern instead of several surfaces competing to be
-  current;
-- project-local context could emerge while a thin shared contract preserved
-  trust and handoff semantics; and
-- autonomous continuation remained bounded by scope, evidence, and protected
-  human decisions.
-
-The framework also included richer orchestration: specialised roles, routing,
-model tiers, duplicated compatibility surfaces, and multi-stage delivery paths.
-Those mechanisms were not mistakes simply because they were complex. They were
-hypotheses about where additional structure would improve control.
-
-## 7. What production use revealed about duplicated state and orchestration cost
-
-Using the framework across real work made its failure modes observable. Some
-layers improved safety or continuity. Others duplicated information already
-available in live repositories, forced the same decision through multiple
-representations, or made an agent spend more context reconstructing the harness
-than solving the task.
-
-The cost was not only code volume. Duplicated state creates semantic questions:
-which copy is authoritative, which is stale, and which update path is allowed?
-More orchestration creates more transitions that can lose intent, omit evidence,
-or stop for the wrong reason. More instructions can reduce guidance when every
-rule competes for attention.
+    P6 -.->|new evidence| P3
+```
 
 The response was architectural contraction, not indiscriminate deletion. In one
 scoped operational-data redesign, 88 files changed, with 464 insertions and
-4,835 deletions (net -4,371). The diff size is evidence of a substantial
-contraction, not a claim that every deleted line was redundant or that line
-count alone proves quality. The redesign preserved domain-specific validation,
-release controls, live truth, and human authorisation. The principle was to keep
-the control that earned its operating cost and remove machinery whose state
-burden had become a new source of noise.
+4,835 deletions (net -4,371). That diff shows the size of one contraction; it
+does not claim every deleted line was useless or that fewer lines automatically
+mean better engineering. The redesign retained domain-specific validation,
+release controls, live truth, and human authorization.
 
-### Model evolution makes architecture a recurring experiment
+This lineage is important to the public framing. Azoth is not best understood
+as “Personal Harness OS.” That label came later, during a compact implementation
+experiment. The deeper project is the continuing investigation: which controls
+preserve outcome coherence, and which become new sources of context loss,
+duplicated state, or false confidence?
 
-There is a natural urge to add orchestrators, specialised agents, instructions,
-boundaries, memory layers, and review ceremonies up front. Visible structure can
-feel like reliability, and reasoning about a difficult problem can make a large
-architecture appear internally coherent before the system has generated much
-evidence.
+## Architecture has a counterfactual problem
 
-The danger is counterfactual blindness. Once work runs inside that harness, its
-results do not reveal what the same model, tools, and context might have achieved
-with fewer transitions or less instruction competition. A component that once
-compensated for a model limitation can remain in place after newer models have
-made it unnecessary. The system may still look successful while paying an
-invisible cost in reasoning freedom, context, latency, or solution quality.
+There is a natural urge to design a large orchestration graph up front. More
+agents, instructions, boundaries, memory, and review ceremonies make control
+visible, which can feel like reliability. Careful reasoning can also make that
+architecture appear coherent before representative work has generated evidence.
 
-For that reason, Azoth treats architecture as a set of falsifiable hypotheses:
+But once all work runs inside the harness, success does not reveal what the same
+model, tools, and context could have achieved with fewer transitions. A component
+that once compensated for a model limitation can remain after newer models make
+it unnecessary. The system still appears to work while paying an invisible cost
+in context, reasoning freedom, latency, maintainability, or solution quality.
 
-1. Start with the smallest path that exposes the known success, evidence,
-   authority, stopping, and recovery requirements.
-2. Run the real workflow and collect failures, near misses, operator friction,
-   evaluation results, and recovery evidence.
-3. Add a component only when it addresses a named failure mode and introduces
-   an observable success criterion.
-4. Re-test the component as models, tools, and native platform primitives
-   improve.
-5. Treat simplification, bypass, or removal as first-class experiments whenever
-   the same control can be preserved with less interference.
+Current frontier practice reinforces this concern. Anthropic describes each
+harness component as an assumption about what a model cannot do and recommends
+stress-testing those assumptions as models improve
+([*Harness design for long-running application development*](https://www.anthropic.com/engineering/harness-design-long-running-apps)).
+Its context-engineering guidance similarly recommends starting with the
+smallest high-signal context and adding structure from observed failure
+([*Effective context engineering for AI agents*](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)).
+OpenAI describes replacing a large instruction manual with a short map into
+repository-owned knowledge while using feedback loops and architecture tests as
+part of the engineering system
+([*Harness engineering*](https://openai.com/index/harness-engineering/)).
 
-This does not imply that careful reasoning before implementation is unhelpful.
-It means reasoning should define hypotheses, boundaries, and evaluation—not
-pretend to reveal the one optimal orchestration before the system has run. The
-best shape is project- and purpose-specific because the ambiguity, evidence,
-tools, authority, cost, and failure surface are different in each environment.
-Azoth therefore does not chase a magical universal harness; it preserves a thin
-operating contract within which the useful architecture can emerge and be
-revised from evidence.
+These sources do not prove Azoth's design. They show that the same tension is
+now visible at the frontier: harness engineering matters, and its assumptions
+must remain revisable.
 
-This conclusion has useful external calibration. OpenAI describes replacing a
-large instruction manual with a short map into repository-owned knowledge
-([OpenAI, *Harness engineering*](https://openai.com/index/harness-engineering/)).
-Anthropic describes context as finite and recommends progressive disclosure,
-allowing agents to discover relevant information while retaining only what is
-needed in working memory
-([Anthropic, *Effective context engineering for AI agents*](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)).
-These sources do not prove that the earlier implementation was uniquely correct;
-they provide current external calibration for the same class of trade-off.
+```mermaid
+flowchart TB
+    F["Observed failure or constraint"] --> H["Smallest architectural hypothesis"]
+    H --> R["Representative runs"]
+    R --> G["Grade trajectory + artifact + outcome"]
+    G --> J{"Did it improve the success envelope?"}
+    J -->|yes| K["Keep, document, monitor"]
+    J -->|unclear| M["Change the eval or collect better evidence"]
+    J -->|no| X["Remove or simplify"]
+    K --> Z["Model, tool, or environment changes"]
+    M --> R
+    X --> R
+    Z --> R
+```
 
-## 8. Personal Harness OS and the minimum-sufficient governed path
+Agent evaluations make this loop practical. A trajectory records what the agent
+did; an outcome records the resulting state. Both matter. Anthropic's eval
+guidance explicitly separates transcripts from end-state outcomes and combines
+deterministic, model-based, and human grading
+([*Demystifying evals for AI agents*](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)).
 
-Personal Harness OS distilled the contraction into a small executable API and
-packet contract:
+My resulting rule is:
 
-- **HarnessRequest** captures the goal, intended actions, planned paths, and
-  the signals needed to reason about effects and traceability.
-- **classify_harness_request** returns a **HarnessDecision**. Its selected
-  `profile` field places the request on the mode ladder without inventing a
-  separate profile object.
-- **RouteCapsule** states the route, required authority, required inputs, next
-  safe action, and stop reason in a compact typed packet.
-- **build_context_view** creates a compact context-view packet from approved
-  summaries and pointers, filters raw memory, and keeps advisory context
-  separate from governing instruction.
-- **build_personal_harness_context** provides the read-only integration path
-  across routing, bounded recall, optional approved context, and project
-  readback.
+> **Use reasoning to define the failure, boundary, and evaluation—not to assume
+> that it can reveal the final orchestration before the system has run.**
 
-The mode ladder is explicit:
+The optimal agent system is usually project- and purpose-specific because its
+ambiguity, tools, evidence, authority, cost, and failure surface are specific.
+Azoth does not chase a magical universal harness. It explores the thin contracts
+that allow the useful architecture to emerge, be evaluated, and change.
 
-| Mode | Promise | Boundary |
+## Agents as programmable probabilistic transitions
+
+The control-systems analogy helps when kept precise. A conventional software
+component is expected to map inputs to outputs according to code we can inspect.
+An agent's next action is conditioned on instructions, tools, selected context,
+model behaviour, and accumulated state. It is programmable, but its transition
+is probabilistic.
+
+The engineering object is therefore the whole path:
+
+`intent + success envelope -> context/state -> probabilistic reasoning + deterministic tools -> bounded effect -> observed outcome -> evaluation/evidence -> continue, correct, stop, or recover`
+
+Protected human authority spans consequential effects and release decisions.
+
+For a real workflow, success is usually a conjunction:
+
+- the request was interpreted against the correct business meaning;
+- context was relevant, current, and authorized;
+- tools acted on the intended scope and no wider;
+- outputs satisfied known policy and data contracts;
+- uncertain or consequential cases reached the correct human decision;
+- the operational outcome—not merely the answer—was observed; and
+- the system could stop, explain, or recover when a condition failed.
+
+The acceptable success envelope is narrow. Failure remains broad: stale
+context, semantically wrong data, ambiguous authority, silent tool failure,
+locally sensible but globally harmful action, or feedback that rewards the
+wrong proxy.
+
+This is why business semantics belong inside the reliability boundary. An agent
+can retrieve a current row and still make the wrong decision if the row's grain,
+meaning, ownership, or exception rules are unclear. Data integrity includes
+semantic integrity, not only schema validity.
+
+It is also why role names are not architecture. A “reviewer agent” is useful
+when it receives an independent evaluation context or holds different authority,
+not because a persona label simulates an organization chart. Multi-agent
+coordination earns its cost through parallelism, isolation, independent
+critique, or real authority separation.
+
+## The current executable proof
+
+The June 2026 implementation developed under the internal name “Personal
+Harness OS” is one narrow probe of the broader method. It makes three areas
+inspectable:
+
+- `HarnessRequest` and `HarnessDecision` classify intended effects without
+  executing them;
+- `RouteCapsule` exposes route, authority, required inputs, next safe action,
+  and stop reason; and
+- the context builders assemble compact, source-referenced packets while
+  filtering raw memory and preserving missing-source warnings.
+
+A portable rehearsal runs four representative cases through the same public
+code, checks route and authority expectations, and verifies that the target
+repository did not change. Thirty focused public tests cover the selected
+routing, context, rehearsal, and personal-knowledge contracts.
+
+That is meaningful implementation evidence, but it is not the culmination of
+Azoth. It does not implement the complete outcome graph, validate a full
+research-to-delivery journey, establish external adoption, or prove that the
+mode names are permanent. The exact interfaces and boundary are documented in
+[Executable Proof: Routing, Context, and Authority](../PERSONAL_HARNESS_OS.md).
+
+## When a component earns its cost
+
+The practical selection rule is not “simple good, complex bad.” It is “match
+structure to a demonstrated failure and make its value observable.”
+
+| Component | It begins to earn its cost when… | Evidence to demand |
 |---|---|---|
-| Guide | Orientation and decision support | No project mutation or autonomy claim |
-| Assisted | Skills, tools, and focused checks | No hidden project-management ownership |
-| Managed | Project-local operating state | Fresh local authority required |
-| Governed autonomy | Campaign-bounded continuation | Budget, ledger, write authority, stop conditions, and protected decisions required |
+| More instructions | a recurring behavioural failure cannot be corrected by clearer local context or tools | representative before/after trajectories and regression checks |
+| Retrieval | the relevant corpus cannot be navigated reliably with ordinary files/tools and ranking, freshness, and permissions can be measured | retrieval quality on real questions, provenance, and failure analysis |
+| Durable memory | information must survive contexts, recomputation is costly, and freshness/authority can be represented | usefulness, staleness rate, promotion review, and recovery behaviour |
+| Multiple agents | parallelism, isolation, independent critique, or authority separation exceeds handoff/reconciliation cost | outcome quality, latency/cost, and handoff-loss comparison |
+| Deterministic boundary | an invariant is known and the consequence of violation justifies constraining the model | prevented failures, false stops, and recovery evidence |
+| Human gate | the decision is consequential, ambiguous, or legitimately owned by a person | clear decision surface, preserved context, and no silent bypass |
 
-The portable rehearsal surface keeps those promises testable without turning
-examples into a second operating system. A generic runner consumes
-`examples/personal-harness/rehearsal-cases.yaml`, evaluates representative
-routes without writing to the target repository, and reports profile, route,
-authority, warning, and stop-condition results. A command-line wrapper may be
-added around that runner, but its final name is not part of this contract.
+Better models do not remove permissions, evaluation, semantic integrity, or
+recovery. Native compaction does not make durable state irrelevant. The boundary
+between native capability and custom infrastructure simply moves, so the
+architecture must be able to move with it.
 
-The June 2026 implementation began with pure, deterministic routing contracts
-and focused tests before integration into wider control surfaces. It later
-assembled route-aware context from compact memory results, optional personal
-knowledge, and project receipts, while treating missing or stale sources as
-warnings instead of inventing current truth.
+## Transferable principles and boundaries
 
-“Minimum sufficient” does not mean no harness. It means the lightest path that
-still makes the relevant context, evidence, authority, stop conditions, and
-recovery visible. Ordinary work should not pay the ceremony cost of governed
-autonomy. Consequential work should not be disguised as an ordinary task to
-avoid that ceremony.
+The method I would carry into another system is:
 
-Recent platform direction reinforces the viability of simple primitives. The
-OpenAI Responses API exposes shell execution, files as working context, bounded
-tool output, native compaction, and progressively discovered skills
-([OpenAI, *From model to agent*](https://openai.com/index/equip-responses-api-computer-environment/)).
-That does not remove the need for application memory or retrieval; it raises the
-bar for custom infrastructure by making a capable minimum path available.
+1. Define success in operational terms outside the model.
+2. Treat the outcome, not the transcript, as the continuity boundary.
+3. Model agents as probabilistic transitions inside an explicit control flow.
+4. Give each transition the minimum context, tools, and authority it needs.
+5. Keep business meaning and provenance inside the reliability boundary.
+6. Observe end-state outcomes and retain trajectories as diagnostic evidence.
+7. Separate capture of experience from promotion into durable policy.
+8. Add orchestration only for a named failure or boundary.
+9. Re-evaluate architecture when models, tools, and environments change.
+10. Remove machinery when its interference exceeds the control it provides.
 
-## 9. When RAG, memory, and multi-agent coordination earn their cost
-
-The correct conclusion is not “RAG, memory, and multi-agent systems are bad.”
-It is that each should answer a demonstrated failure mode.
-
-**Retrieval earns its cost when:**
-
-- the relevant corpus cannot fit or be navigated reliably through ordinary
-  files and tools;
-- the query pattern and freshness requirements are understood;
-- provenance, permissions, and ranking can be preserved; and
-- retrieval quality can be evaluated against representative tasks.
-
-**Memory earns its cost when:**
-
-- information must survive beyond the current working context;
-- recomputing it is expensive or would lose important evidence;
-- freshness and authority can be represented;
-- experience is append-only by default; and
-- promotion into durable behaviour is reviewed separately from capture.
-
-**Multi-agent coordination earns its cost when:**
-
-- separable work can run in parallel;
-- context or tool isolation materially reduces interference;
-- an evaluator must remain independent of the executor;
-- different authority boundaries are real; or
-- the quality or latency gain exceeds the handoff and reconciliation overhead.
-
-Otherwise, shell commands, files, a bounded loop, deterministic tools, and one
-well-instrumented probabilistic component may be the more capable architecture
-because fewer transitions can lose intent.
-
-Native compaction does not make durable memory disappear. Progressive file
-discovery does not make retrieval obsolete. Better models do not remove
-permissions, evaluation, or semantic integrity. These advances change the
-build-versus-buy and simple-versus-custom boundary; they do not abolish the
-underlying requirements.
-
-## 10. Transferable principles and explicit boundaries
-
-The transferable method is:
-
-1. Define the success envelope in operational terms outside the model.
-2. Model agents as probabilistic transitions inside an explicit control flow.
-3. Give each transition the minimum context, tools, and authority it needs.
-4. Keep business meaning and data provenance inside the reliability boundary.
-5. Make consequential effects bounded, observable, and recoverable.
-6. Evaluate outcomes independently and connect behaviour to the purpose of the
-   workflow.
-7. Preserve evidence by addition; promote durable policy through a separate
-   decision.
-8. Let project-specific harnesses emerge while keeping the shared contract thin.
-9. Add retrieval, memory, or coordination when evidence identifies the failure
-   they solve.
-10. Remove machinery when its state and maintenance cost exceed the control it
-    provides.
-
-The boundaries matter as much as the thesis:
+The claim boundaries matter:
 
 - This is an engineering lens, not a formal control-theory result.
-- The probability expression is a decision heuristic, not a measured model.
-- GloBuddy and SupplyOps show where the lens was shaped in production; they do
-  not prove that every business has the same adoption problem.
-- The Agentic Framework records an evidence-led evolution, including complexity
-  that was later reduced; it was not minimal from the beginning.
-- The selected Personal Harness routing, context, and rehearsal contracts are
-  implemented and tested in the `v0.3.0-rc.2` executable candidate. The wider
-  operating profile remains under development; it is not a finished universal
-  harness.
-- Role-based agents, RAG, memory, and multi-agent graphs remain valid when their
+- The success-envelope expression is a decision heuristic, not a calibrated
+  probability model.
+- GloBuddy and SupplyOps show where the method was shaped in production; they
+  do not prove that every organization has the same adoption problem.
+- The internal Agentic Framework was not minimal from the beginning. Its
+  complexity produced evidence, including evidence for contraction.
+- The public candidate implements selected routing, context, authority, and
+  rehearsal contracts—not the complete outcome-centred architecture.
+- Retrieval, memory, roles, and multi-agent graphs remain valid when their
   boundaries and value are demonstrated.
-- No claim is made here of external Azoth adoption, causal business lift, or
-  having invented the broader industry concepts used to explain the work.
+- No claim is made of external Azoth adoption, causal business lift, or having
+  invented the broader concepts used to explain the project.
 
-The practical contribution is therefore not a claim to possess a universal
-recipe. It is a way of engineering under uncertainty: make success explicit,
-keep the signal path trustworthy, expose authority and feedback, and let the
-smallest system that satisfies those conditions emerge from evidence.
+Azoth's practical contribution is not a universal recipe. It is a way of
+engineering under uncertainty: keep the purpose and success boundary explicit,
+make context and authority trustworthy, learn from trajectories and outcomes,
+and let the smallest architecture that satisfies those conditions emerge from
+evidence.
