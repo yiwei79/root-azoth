@@ -41,18 +41,14 @@ an LLM with instructions and tools, a runtime-controlled loop, a dynamically
 directed workflow, or a complete product and operating system.
 
 ```mermaid
-flowchart LR
-    M["Model invocation<br/>one inference event"]
-    P["Bounded work pulse<br/>one task-oriented episode"]
-    D["Durable intent-to-outcome whole<br/>persistent meaning · state · authority · evidence"]
+flowchart TB
+    M["Model invocation<br/>often called an agent<br/>one inference event"]
+    P["Bounded work pulse<br/>often called an agent, run, or thread<br/>one task-oriented episode"]
+    D["Durable intent-to-outcome whole<br/>sometimes called system, workflow, harness, platform, or product<br/>persistent meaning · state · authority · evidence"]
+    U["Name intentionally unresolved"] -.-> D
 
     M -->|may participate in| P
     P -->|reads from and contributes to| D
-
-    Q1["Often called an agent"] -.-> M
-    Q2["Often called an agent or run"] -.-> P
-    Q3["Sometimes called agentic system,<br/>workflow, harness, platform, or product"] -.-> D
-    U["Name intentionally unresolved"] -.-> D
 ```
 
 This thesis uses three distinctions:
@@ -60,7 +56,7 @@ This thesis uses three distinctions:
 | Unit | Working definition | Durability |
 |---|---|---|
 | **Model invocation** | One inference event with supplied context, instructions, and available tools | Ephemeral |
-| **Work pulse** | A bounded episode organized around a task, question, transition, or evaluation; it may contain many model and tool calls | Temporally bounded |
+| **Work pulse** | A bounded episode organized around a task, question, transition, or evaluation; it may contain many model and tool calls | Finite by scope, effect, and return condition; leaves durable outputs |
 | **Durable whole** | The persistent system that carries purpose, project meaning, evidence, authority, recovery, and outcome state across many pulses | Cross-session and cross-component |
 
 **Work pulse** is the stable term here. **Node** remains provisional shorthand
@@ -125,12 +121,19 @@ native compaction alone.
 ## 3. Alignment signal is translated through intermediate states
 
 **Working hypothesis.** What propagates through a durable system is an
-alignment signal: the current interpretation of intent becoming progressively
-more concrete through questions, models, plans, artifacts, effects, and
-observations.
+**alignment signal**: the maintained relationship between the current intent
+anchor and each intermediate state produced on the way to an outcome.
+
+The signal is not a payload passed unchanged between components. Each
+transition translates intent into another form: a question, project meaning, a
+plan, an action, an artifact, evidence, or an observed effect. A work pulse is
+an instrument for making one or more of those translations; it does not own the
+continuity of the whole outcome.
 
 The term is deliberately metaphorical. It is not assumed to be a scalar, and
-this thesis does not claim a calibrated signal-to-noise measure.
+this thesis does not claim a calibrated signal-to-noise measure. The
+relationship may become clearer, degrade through drift or proxy success, or
+reveal that the intent anchor itself needs explicit revision.
 
 ```mermaid
 flowchart TB

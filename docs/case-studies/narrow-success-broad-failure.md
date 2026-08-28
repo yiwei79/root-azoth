@@ -1,6 +1,7 @@
 # Narrow Success, Broad Failure
 
-## A braided chronology of operational meaning, reusable coordination, and architectural contraction
+*A braided chronology of operational meaning, reusable coordination, and
+architectural contraction.*
 
 An AI-assisted task can succeed at every visible step and still fail the work
 that matters. A query runs, an artifact looks plausible, a handoff completes,
@@ -22,12 +23,12 @@ the emerging philosophy.
 
 ```mermaid
 flowchart TB
-    W1["Operational reporting migration<br/>recover meaning before moving data"]
-    W2["Local data-request workflow<br/>reuse process without flattening semantics"]
-    W3["Internal Agentic Framework<br/>roles · handoffs · reviewed promotion"]
-    W4["Framework contraction<br/>retain controls · remove ceremony"]
-    W5["Later agent-operations system<br/>versioned behavior · gates · continuity"]
-    W6["Independent Azoth inquiry<br/>make the recurring system question explicit"]
+    W1["Operational reporting migration<br/>50-unit reconstruction → governed reporting backbone"]
+    W2["Local data-request workflow<br/>faster trusted answers → local meaning retained"]
+    W3["Internal Agentic Framework<br/>composable work → reviewed learning"]
+    W4["Framework contraction<br/>load-bearing controls retained → ceremony removed"]
+    W5["Later agent-operations system<br/>versioned behavior → governed continuity"]
+    W6["Independent Azoth inquiry<br/>recurring evidence → explicit system question"]
 
     F1["Meaning is part of correctness"]
     F2["Generic coordination ≠ project ontology"]
@@ -118,10 +119,11 @@ the write.
 
 ### The value
 
-The migration produced more than converted SQL. It established a maintainable
-reporting backbone in which business meaning, implementation, publication,
-weekly operation, and recovery could be inspected as one path. A write response
-was no longer confused with verified delivery.
+The migration produced more than converted SQL. It established a recurring
+operations and leadership reporting backbone spanning 22 countries, with
+business meaning, implementation, publication, weekly operation, and recovery
+inspectable as one path. A write response was no longer confused with verified
+delivery.
 
 **Observation.** A technically correct local transformation can create a broad
 failure when its meaning or publication state is wrong.
@@ -220,13 +222,22 @@ a project could not silently rewrite shared governance.
 ### The implementation
 
 ```mermaid
-flowchart LR
-    I["Project intent + local ontology"] --> C{"Compose the next function"}
-    C --> A["Architect"]
-    C --> R["Researcher"]
-    C --> B["Builder"]
-    C --> V["Reviewer / evaluator"]
-    A --> H["Typed handoff"]
+flowchart TB
+    I["Project intent + local ontology"] --> C{"Compose only the functions this task needs"}
+
+    subgraph FUNCTIONS["Task-specific work pulses"]
+        direction LR
+        A["Architecture"]
+        R["Research"]
+        B["Implementation"]
+        V["Review / evaluation"]
+    end
+
+    C --> A
+    C --> R
+    C --> B
+    C --> V
+    A --> H["Typed return contract"]
     R --> H
     B --> H
     V --> H
@@ -275,15 +286,10 @@ broad-failure pattern at the architecture level.
 ### The contraction
 
 ```mermaid
-flowchart LR
-    subgraph X["Framework expansion"]
-        X1["More roles"] --> X2["More handoffs"]
-        X2 --> X3["More state mirrors"]
-        X3 --> X4["More startup and closeout ceremony"]
-        X4 --> X5["Context competition + stale truth"]
-    end
-
-    X5 --> Q{"Which structures protect an observed failure?"}
+flowchart TB
+    X["Framework expansion<br/>roles · handoffs · tiers · state mirrors · ceremony"]
+    X --> B["Accumulated burden<br/>context competition · duplicated truth · slower work"]
+    B --> Q{"Which structures protect an observed failure?"}
 
     Q -->|earned| R["Retain<br/>tracker · evidence mapping · per-effect authority<br/>live readback · rollback"]
     Q -->|not earned| M["Remove or collapse<br/>generic roles · tiers · duplicated status<br/>automatic closeout ceremony"]
@@ -310,14 +316,15 @@ competes with the task for context, authority, or source-of-truth status.
 gate is a hypothesis. It should be retained, revised, or removed according to
 representative work and observed failure—not architectural prestige.
 
-## 5. A later agent-operations system: GloBuddy as its own case
+## 5. GloBuddy: a later agent-operations system in its own right
 
 ### The problem
 
-GloBuddy is the broader operational system around conversational-agent work.
-Within it, the GloBuddy ME project needed to translate an activation-to-first-
-order journey into versioned, testable behavior without allowing a prompt,
-provider configuration, or transcript to become the sole source of truth.
+GloBuddy is the broader agent-operations system as a whole. This section focuses
+on GloBuddy ME’s governed behavior-and-release path: translating an
+activation-to-first-order journey into versioned, testable behavior without
+allowing a prompt, provider configuration, or transcript to become the sole
+source of truth.
 
 The difficult path crossed business intent, lifecycle state, policy,
 conversation behavior, provider mechanics, channel effects, continuity,
@@ -327,29 +334,21 @@ measurement, and human release decisions.
 
 ```mermaid
 flowchart TB
-    subgraph M["1 · Make business meaning canonical"]
-        direction LR
-        A["Content-team intent"] --> B["Guided alignment"]
-        B --> C["Canonical Journey<br/>knowledge · policy · tests"]
-        C --> D{"Deterministic Gate A"}
-    end
+    M["Canonical business meaning<br/>Journey · knowledge · policy · tests"]
+    C["Reviewable candidate<br/>provider projection · behavior suite · immutable manifest"]
+    E["Governed channel effect<br/>approved scope · synthetic interaction · STOP handling"]
+    R["Reconciled outcome state<br/>observed evidence · continuity · next lifecycle decision"]
+    N["Next governed lifecycle state"]
+    H["Human authority<br/>business meaning · release · consequential change"]
 
-    subgraph CANDIDATE["2 · Build a reviewable candidate"]
-        direction LR
-        E["Provider branch projection"] --> F["Native behavior suite"]
-        F --> G["Immutable candidate manifest"]
-    end
-
-    subgraph EFFECT["3 · Govern the external effect"]
-        direction LR
-        H{"Approved channel gate"} --> I["Synthetic interaction<br/>reply · STOP · terminal state"]
-        I --> J["Reconciliation + reviewed evidence"]
-    end
-
-    D --> E
-    G --> H
-    J -->|repair| C
-    J -->|accepted| K["Next governed lifecycle state"]
+    M -->|deterministic Gate A| C
+    C -->|approved channel gate| E
+    E --> R
+    R -->|repair| M
+    R -->|accepted| N
+    H -.-> M
+    H -.-> E
+    H -.-> R
 ```
 
 The project separated business meaning, deterministic policy, conversational
@@ -360,10 +359,12 @@ authoritative state injection plus bounded prior context, not implicit
 model-owned memory. Passing offline tests produced a candidate; it did not
 grant channel or release authority.
 
-The wider GloBuddy operating loop also includes data and operational surfaces,
-human feedback, and reconciliation. They are relevant parts of the conceptual
-whole, but this account does not claim that every component is represented as
-one perfectly integrated visible-source path.
+The wider GloBuddy system also includes routing and contextual tools, cloud
+operations, data and measurement pipelines, an operator dashboard,
+observability, and human improvement workflows. Those components connect
+conversation behavior to rider-lifecycle outcomes. This case focuses on the ME
+behavior-and-release path and does not claim that every component is represented
+as one perfectly integrated visible-source path.
 
 ### The value
 
@@ -386,11 +387,12 @@ Azoth is independent work. It asks what should carry intent when a project
 spans discovery, research, planning, implementation, evaluation, correction,
 release decisions, and future sessions.
 
-In the wider root workshop, raw intent can become a discovery-only seed;
-research sufficiency can block premature hydration; initiatives, roadmap tasks,
-and backlog items can be formed explicitly; a campaign can route bounded work
-pulses through role-specific stages; a run ledger can require real stage
-evidence; and an evaluator can trigger bounded repair or an honest stop.
+In the wider root workshop, separate capabilities let raw intent become a
+discovery-only seed; research sufficiency can block premature hydration;
+initiatives, roadmap tasks, and backlog items can be formed explicitly; a
+campaign can route bounded work pulses through role-specific stages; a run
+ledger can require real stage evidence; and an evaluator can trigger bounded
+repair or an honest stop.
 
 Observed campaigns provide three useful kinds of evidence:
 

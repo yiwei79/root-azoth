@@ -11,41 +11,43 @@ decisions, authority, recovery, and observed outcomes as persistent system
 state. A thread can then do focused work without also pretending to be the
 plan, memory, policy, and history of the whole effort.
 
+The intended experience is to state an outcome once, then let the system expose
+missing knowledge, form and route bounded work, return evidence, and stop at the
+decisions that still require human meaning or authority. The evidence bands
+below separate what is portable today from what has been observed only in the
+root workshop and what remains a working direction.
+
 > **A thread is a bounded work pulse. It reads from a durable intent anchor,
 > changes or investigates a limited part of the work, and returns evidence for
 > the next safe transition.**
 
-The whole system may look more like what people mean by an “agent” than any one
-model invocation or thread. Azoth uses that analogy to open the question; it
-does not claim that the durable whole already has a settled name.
+This raises a deliberately open question: if continuity and useful intelligence
+are distributed across intent, state, people, tools, evidence, and work pulses,
+is any one thread really the agent? Azoth uses “the system as agent” only as an
+analogy. The durable whole does not yet have a settled name here.
 
 ## Azoth in one view
 
 ```mermaid
-flowchart LR
-    I["Persistent intent anchor<br/>purpose · success · constraints"]
-    S["Durable system state<br/>meaning · decisions · authority · evidence"]
+flowchart TB
+    D["Durable continuity<br/>persistent intent anchor<br/>+ meaning · decisions · authority · evidence · outcome state"]
     P["Bounded work pulse<br/>model · tools · human collaboration"]
-    O["Observed effect<br/>artifact · result · changed state"]
-    E{"Evaluate the transition"}
-    N["Next safe state<br/>continue · correct · recover · stop · redefine"]
+    E["Observed effect + evaluation<br/>artifact · changed state · next safe transition"]
     H["Human authority<br/>meaning · risk · consequential action"]
 
-    I --> S
-    S --> P
-    P --> O
-    O --> E
-    E --> N
-    N --> S
-    H -.-> I
+    D -->|scope + context| P
+    P -->|artifact + evidence| E
+    E -->|continue · correct · recover · stop · redefine| D
+    H -.-> D
     H -.-> E
-    H -.-> N
 ```
 
-What propagates through this loop is not merely text or code. It is an
-alignment signal: an increasingly concrete translation of intent through
-intermediate representations, actions, evidence, and outcomes. “Alignment
-signal” is a working engineering metaphor here, not a formal measurement.
+What propagates through this loop is not merely text or code. **Alignment
+signal** is shorthand for the traceable relationship between current intent and
+each intermediate representation, action, item of evidence, and observed
+outcome. That relationship can strengthen, degrade, or reveal that the intent
+anchor itself needs revision. It is a working engineering metaphor, not a
+formal measurement.
 
 ## Explore the project
 
@@ -58,17 +60,19 @@ signal” is a working engineering metaphor here, not a formal measurement.
 
 ## From intent to governed work
 
-The wider Azoth workshop already supports a practical sequence like this:
+Across the wider Azoth workshop, an operator can assemble a sequence like this
+from separate capabilities:
 
 `intent intake → discovery seed → research sufficiency → initiative / roadmap /
 task formation → routed work pulse → evidence ledger → independent evaluation
 → bounded replay or next safe transition → closeout`
 
-This is not one opaque autonomous pipeline. Each transition can expose its
-inputs, evidence, authority, and stopping reason. Research can be required
-before a task is hydrated. An evaluator can reject incomplete stage evidence.
-A repair can replay within a declared budget. Protected actions remain closed
-until a human authorizes the specific effect.
+This is neither one opaque autonomous pipeline nor one fully integrated public
+product. Each transition can expose its inputs, evidence, authority, and
+stopping reason. Research can be required before a task is hydrated. An
+evaluator can reject incomplete stage evidence. A repair can replay within a
+declared budget. Protected actions remain closed until a human authorizes the
+specific effect.
 
 The public story therefore has three evidence bands:
 

@@ -7,69 +7,50 @@
 
 This implementation was developed under the working name **Personal Harness
 OS**. The name remains in file and API paths for provenance. The public claim is
-more precise: this page shows what it feels like to work with the wider Azoth
-workshop, what has been observed in real root campaigns, and which small slice
-is independently extractable and tested.
+more precise: this page shows the composite operator journey being assembled
+across the wider Azoth workshop, what has been observed in real root campaigns,
+and which small slice is independently extractable and tested.
 
 For the project history, read [*Narrow Success, Broad
 Failure*](case-studies/narrow-success-broad-failure.md). For the evolving model
 behind the work, read [*Intent-to-Outcome Engineering*](INTENT_TO_OUTCOME_ENGINEERING.md).
 
-## The intended operator experience
+## The operator journey being assembled
 
-The useful experience is not “chat with an agent and hope the conversation
-remains coherent.” It is closer to giving a durable system an outcome and
-letting it progressively form, route, verify, and revise the work while keeping
-important transitions visible.
+The design target is not “chat with an agent and hope the conversation remains
+coherent.” It is to give a durable system an outcome and let it progressively
+form, route, verify, and revise the work while keeping important transitions
+visible. The diagram composes capabilities that currently exist at different
+evidence levels; it is not a claim that one public command executes the whole
+journey.
 
 ```mermaid
 flowchart TB
-    subgraph FORM["1 · Form grounded work"]
-        direction LR
-        I["State intent<br/>purpose · success · constraints"]
-        D["Seed discovery<br/>questions · uncertainty · protected boundaries"]
-        R{"Research sufficient?"}
-        K["Research / refresh knowledge"]
-        F["Form initiative, roadmap,<br/>backlog, and task state"]
-        I --> D --> R
-        R -->|no| K --> R
-        R -->|yes| F
-    end
+    F["Form grounded work<br/>intent → discovery → research sufficiency → explicit planning state"]
+    P["Route one work pulse<br/>select function → bounded execution → artifact + evidence"]
+    V{"Evaluate the transition"}
+    B["Bounded replay<br/>repair only the failed transition"]
+    H{"Protected effect or meaning decision?"}
+    A["Fresh human authority"]
+    C["Next safe state<br/>continue · correct · recover · stop · close"]
 
-    subgraph RUN["2 · Route and evaluate a work pulse"]
-        direction LR
-        T{"Select next route<br/>research · refine · build · evaluate"}
-        P["Run bounded work pulse"]
-        E["Record artifact, evidence,<br/>stage state, and residual risk"]
-        V{"Independent evaluation"}
-        T --> P --> E --> V
-    end
-
-    subgraph GOVERN["3 · Repair, authorize, or close"]
-        direction LR
-        B["Bounded repair / replay"]
-        H{"Protected effect?"}
-        A["Fresh human authority"]
-        C["Close out or choose<br/>the next safe transition"]
-        H -->|yes| A --> C
-        H -->|no| C
-    end
-
-    F --> T
+    F --> P --> V
     V -->|repairable within budget| B --> P
     V -->|acceptable| H
-    C -.->|new work remains| T
+    H -->|yes| A --> C
+    H -->|no| C
+    C -.->|new work remains| F
 ```
 
-In the fuller direction, this can function as product-management support as
-well as execution control. The system can compare initiative and proposal
-lanes, distinguish discovery from hydration and delivery, require research
-before opening work, preserve rejected alternatives, form a decision capsule,
-and keep roadmap or release authority separate from a recommendation.
+Across the root workshop, separate capabilities can support product-management
+decisions as well as execution control. They can compare initiative and
+proposal lanes, distinguish discovery from hydration and delivery, require
+research before opening work, preserve rejected alternatives, form a decision
+capsule, and keep roadmap or release authority separate from a recommendation.
 
-The “magic” is not hidden autonomy. It is the ability to carry intent through
-many intermediate states without making a person manually reconstruct the
-whole path at every thread boundary.
+The practical leverage is not hidden autonomy. It is the ability to carry
+intent through many intermediate states without making a person manually
+reconstruct the whole path at every thread boundary.
 
 ## Three evidence bands
 
