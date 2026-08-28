@@ -463,7 +463,7 @@ theory.
 | Internal Agentic Framework | Employer-work lineage distinct from independent Azoth |
 | Alignment signal and residual entropy | Qualified engineering metaphors, not formal or empirically calibrated quantities |
 | Azoth root workshop | Inspectable capabilities and campaign evidence; not one validated extracted product journey |
-| `v0.3.0-rc.2` executable proof | Only routing, bounded context, explicit authority/stopping state, and no-write rehearsal are claimed as portable implemented proof |
+| `v0.3.0-rc.3` executable proof | Only routing, bounded context, explicit authority/stopping state, and no-write rehearsal are claimed as portable implemented proof |
 | External adoption or production deployment of Azoth | Not claimed |
 
 Continue with the [working thesis](../INTENT_TO_OUTCOME_ENGINEERING.md), inspect

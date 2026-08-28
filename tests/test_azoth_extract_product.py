@@ -255,6 +255,11 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert f"`v{PUBLIC_VERSION}`" in readme
     assert "{{PUBLIC_VERSION}}" not in readme
+    assert "The conversation" in readme
+    assert "progressed; the work did not." in readme
+    assert "Conversation-centred continuity" in readme
+    assert "Outcome-centred continuity" in readme
+    assert "Conversation remains useful as an interaction surface" in readme
     assert "A thread is a bounded work pulse" in readme
     assert "durable whole" in readme
     assert "Experience and evidence" in readme
@@ -267,6 +272,9 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     assert "docs/case-studies/narrow-success-broad-failure.md" in readme
     assert "docs/INTENT_TO_OUTCOME_ENGINEERING.md" in readme
     assert "docs/PERSONAL_HARNESS_OS.md" in readme
+    assert "## Azoth in one view" in readme
+    assert "Durable continuity" in readme
+    assert "Observed effect + evaluation" in readme
     assert "60-second read" not in readme
     assert "30-second read" not in readme
 
@@ -290,6 +298,9 @@ def test_public_narrative_reciprocal_links_and_timed_read_removal() -> None:
     assert "../PERSONAL_HARNESS_OS.md" in case_study
     assert "case-studies/narrow-success-broad-failure.md" in thesis
     assert "PERSONAL_HARNESS_OS.md" in thesis
+    assert "Failure: local success, broad drift" in thesis
+    assert "Intent + success boundary" in thesis
+    assert "Proposed engineering response" in thesis
     assert "case-studies/narrow-success-broad-failure.md" in proof
     assert "INTENT_TO_OUTCOME_ENGINEERING.md" in proof
 

@@ -15,6 +15,32 @@ A migration produces valid SQL for the wrong business meaning. A multi-stage
 campaign completes every assigned artifact while its evidence, authority, or
 definition of success has drifted.
 
+```mermaid
+flowchart TB
+    subgraph F["Failure: local success, broad drift"]
+        direction LR
+        F1["Intent + success boundary<br/>held locally"] --> F2["Capable local work"]
+        F2 --> F3["Plausible artifact"]
+        F3 -.-> F4["Meaning · evidence · authority<br/>fragment across boundaries"]
+    end
+
+    subgraph R["Proposed engineering response"]
+        direction LR
+        R1["Persistent intent anchor"] --> R2["Bounded work pulse"]
+        R2 --> R3["Artifact · evidence<br/>· observed effect"]
+        R3 --> R4["Evaluate + update<br/>durable state"]
+    end
+
+    F ~~~ R
+```
+
+Conversation is a useful interface for coordinating a bounded episode of work.
+The structural problem begins when the transcript is also expected to be the
+plan, project memory, evidence ledger, authority boundary, and outcome state.
+Larger context windows and better prompts can postpone some drift; they do not
+by themselves make transitions across threads, tools, repositories, people,
+providers, and time inspectable or recoverable.
+
 These failures are not explained by model capability alone. They appear when
 work crosses contexts, tools, people, repositories, providers, and time. The
 system has to preserve and repeatedly reinterpret:

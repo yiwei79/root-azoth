@@ -1,6 +1,6 @@
 # Executable Proof: Routing, Context, and Authority
 
-> **Status:** implemented and tested proof slice for `v0.3.0-rc.2`.
+> **Status:** implemented and tested proof slice for `v0.3.0-rc.3`.
 > The extracted candidate contains selected routing, context, and no-write
 > rehearsal contracts. The wider root workshop contains additional working
 > capabilities, but they are not claimed here as one finished public product.
@@ -14,6 +14,9 @@ and which small slice is independently extractable and tested.
 For the project history, read [*Narrow Success, Broad
 Failure*](case-studies/narrow-success-broad-failure.md). For the evolving model
 behind the work, read [*Intent-to-Outcome Engineering*](INTENT_TO_OUTCOME_ENGINEERING.md).
+The [README](../README.md) owns the public contrast between conversation-centred
+and outcome-centred continuity; this document begins at the operator experience
+and evidence boundary.
 
 ## The operator journey being assembled
 
@@ -379,7 +382,7 @@ This proof intentionally excludes:
 - any claim that Azoth is a finished universal harness or externally adopted
   product.
 
-The selected interfaces define the `v0.3.0-rc.2` preview boundary. They are not
+The selected interfaces define the `v0.3.0-rc.3` preview boundary. They are not
 a general backward-compatibility promise for later previews.
 
 ## Open questions

@@ -60,7 +60,7 @@ scan_extensions:
 product_extraction:
   target_repo: azoth
   mode: scaffold-to-product
-  public_version: 0.3.0-rc.2
+  public_version: 0.3.0-rc.3
   release_channel: preview
 
   extraction_pipeline:
@@ -88,7 +88,7 @@ product_extraction:
     - "examples/"
     - "kernel/"
     - "pipelines/"
-    - "release-notes/v0.3.0-rc.2.md"
+    - "release-notes/v0.3.0-rc.3.md"
     - "scripts/architecture_proposal_validate.py"
     - "scripts/autonomous_campaign_audit.py"
     - "scripts/autonomous_campaign_presets.py"

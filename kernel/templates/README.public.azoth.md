@@ -1,30 +1,56 @@
 # Azoth
 
-**A personal agent-engineering project about carrying intent through complex,
-AI-assisted work.**
+**A personal agent-engineering project about keeping intent connected to
+outcomes across complex AI-assisted work.**
 
-If a model call or coding thread is only a bounded episode of work, where does
-the durable intelligence of the larger effort live?
+Agent-assisted work can look successful until the larger outcome is checked. A
+thread starts with a sound plan, discovers something important, follows the
+detour, and produces a useful artifact—while the original intent, acceptance
+boundary, evidence, or stopping condition quietly fades. The conversation
+progressed; the work did not.
 
-Azoth explores that question by treating purpose, project meaning, evidence,
-decisions, authority, recovery, and observed outcomes as persistent system
-state. A thread can then do focused work without also pretending to be the
-plan, memory, policy, and history of the whole effort.
+Longer prompts, larger context windows, and stronger models can improve an
+individual thread. They do not by themselves make a transcript a durable plan,
+evidence ledger, authority boundary, or outcome state.
 
-The intended experience is to state an outcome once, then let the system expose
-missing knowledge, form and route bounded work, return evidence, and stop at the
-decisions that still require human meaning or authority. The evidence bands
-below separate what is portable today from what has been observed only in the
-root workshop and what remains a working direction.
+```mermaid
+flowchart TB
+    subgraph C["Conversation-centred continuity"]
+        direction LR
+        C1["Intent lives mainly<br/>in one thread"] --> C2["Useful discovery<br/>changes the local plan"]
+        C2 --> C3["Locally successful artifact"]
+        C3 -.->|continuity was conversational| C4["Intent · evidence · authority<br/>must be reconstructed"]
+    end
+
+    subgraph O["Outcome-centred continuity"]
+        direction LR
+        O1["Durable intent anchor"] --> O2["Bounded work pulse"]
+        O2 --> O3["Artifact · evidence<br/>· observed effect"]
+        O3 -->|evaluate and update| O4["Durable outcome state<br/>next safe transition is explicit"]
+    end
+
+    C ~~~ O
+```
+
+Conversation remains useful as an interaction surface. The failure is asking a
+bounded thread to also be the plan, memory, policy, evidence ledger, and history
+of the whole effort.
 
 > **A thread is a bounded work pulse. It reads from a durable intent anchor,
 > changes or investigates a limited part of the work, and returns evidence for
 > the next safe transition.**
 
-This raises a deliberately open question: if continuity and useful intelligence
-are distributed across intent, state, people, tools, evidence, and work pulses,
-is any one thread really the agent? Azoth uses “the system as agent” only as an
-analogy. The durable whole does not yet have a settled name here.
+Once that distinction is made, a harder question follows: if continuity and
+useful intelligence are distributed across intent, state, people, tools,
+evidence, and work pulses, where does the durable intelligence of the larger
+effort live—and is any one thread really the agent?
+
+Azoth explores that question by treating purpose, project meaning, evidence,
+decisions, authority, recovery, and observed outcomes as persistent system
+state. The intended experience is to state an outcome once, then let the system
+expose missing knowledge, form and route bounded work, return evidence, and stop
+at the decisions that still require human meaning or authority. “The system as
+agent” is a useful analogy here, not a settled name for the durable whole.
 
 ## Azoth in one view
 
