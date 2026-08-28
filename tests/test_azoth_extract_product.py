@@ -255,18 +255,43 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     readme = (out / "README.md").read_text(encoding="utf-8")
     assert f"`v{PUBLIC_VERSION}`" in readme
     assert "{{PUBLIC_VERSION}}" not in readme
-    assert "The outcome—not the conversation—is the system of record" in readme
-    assert "tested probe of effect-aware routing" in readme
+    assert "A thread is a bounded work pulse" in readme
+    assert "durable whole" in readme
     assert "Experience and evidence" in readme
     assert "Working thesis" in readme
     assert "Executable proof" in readme
     assert "Source and architecture history" in readme
+    assert "Portable proof" in readme
+    assert "Root workshop evidence" in readme
+    assert "Working direction" in readme
     assert "docs/case-studies/narrow-success-broad-failure.md" in readme
     assert "docs/INTENT_TO_OUTCOME_ENGINEERING.md" in readme
+    assert "docs/PERSONAL_HARNESS_OS.md" in readme
+    assert "60-second read" not in readme
+    assert "30-second read" not in readme
+
     validator = (out / "scripts" / "validate_public_product.py").read_text(encoding="utf-8")
     assert f'EXPECTED_VERSION = "{PUBLIC_VERSION}"' in validator
     assert 'Path(f"release-notes/v{EXPECTED_VERSION}.md")' in validator
     assert '"docs/INTENT_TO_OUTCOME_ENGINEERING.md"' in validator
+
+
+def test_public_narrative_reciprocal_links_and_timed_read_removal() -> None:
+    case_study = (
+        REPO / "docs" / "case-studies" / "narrow-success-broad-failure.md"
+    ).read_text(encoding="utf-8")
+    thesis = (REPO / "docs" / "INTENT_TO_OUTCOME_ENGINEERING.md").read_text(
+        encoding="utf-8"
+    )
+    proof = (REPO / "docs" / "PERSONAL_HARNESS_OS.md").read_text(encoding="utf-8")
+
+    assert "30-second read" not in case_study
+    assert "../INTENT_TO_OUTCOME_ENGINEERING.md" in case_study
+    assert "../PERSONAL_HARNESS_OS.md" in case_study
+    assert "case-studies/narrow-success-broad-failure.md" in thesis
+    assert "PERSONAL_HARNESS_OS.md" in thesis
+    assert "case-studies/narrow-success-broad-failure.md" in proof
+    assert "INTENT_TO_OUTCOME_ENGINEERING.md" in proof
 
 
 def test_extract_removes_pre_existing_out_directory(tmp_path: Path) -> None:

@@ -1,323 +1,447 @@
 # Intent-to-Outcome Engineering: A Working Thesis on Durable Agentic Systems
 
-> **Status:** working thesis for the unreleased `v0.3.0-rc.2` candidate.
-> This document develops an engineering model from project observations and
-> external comparison. It is not a formal control-theory result, a claim of
-> invention, or a description of everything implemented in Azoth.
+> **Status:** working thesis. This document separates project observations,
+> engineering inferences, working hypotheses, and research horizons. It is not
+> a claim of a finished Azoth system, a new scientific theory, or a formal
+> control-theory model.
 
 ## The engineering failure comes first
 
-An agent can complete the visible work and still fail the outcome. It can find
-the right file, make a plausible change, pass a local check, and report success
-while the larger system has lost the original purpose, used the wrong business
-meaning, crossed an authority boundary, or optimized a proxy.
+AI-assisted work can be locally excellent and broadly wrong.
 
-I call this **narrow success with broad failure**. The failure becomes more
-likely as work crosses research, planning, implementation, evaluation, tools,
-people, and separate context windows. A conversation is useful working state,
-but it is a fragile place to preserve the reason the work exists.
+A model finds the bug but forgets the release boundary. A research thread
+discovers an important dependency but never returns it to the parent outcome.
+A migration produces valid SQL for the wrong business meaning. A multi-stage
+campaign completes every assigned artifact while its evidence, authority, or
+definition of success has drifted.
 
-**Observation.** In production conversational AI, reliable behaviour depended
-on much more than a capable model response: governed definitions, scoped tools,
-operational state, measurement, human gates, and recovery all affected whether
-the workflow served its purpose.
+These failures are not explained by model capability alone. They appear when
+work crosses contexts, tools, people, repositories, providers, and time. The
+system has to preserve and repeatedly reinterpret:
 
-**Observation.** In operational data work, technically valid queries were not
-enough. Grain, lineage, ownership, exception rules, publication state, and the
-decision the metric supported were part of correctness.
+- what outcome is being pursued;
+- what success and failure mean;
+- which project semantics govern the work;
+- what is known, inferred, disputed, or stale;
+- which effect is currently authorized;
+- what actually happened; and
+- whether to continue, correct, recover, stop, or redefine the outcome.
 
-**Engineering inference.** The useful unit of design is therefore wider than a
-prompt, model call, agent persona, or transcript. It is the coupled path that
-turns a purpose into an observed outcome while preserving meaning and
-authority.
+**Observation.** A successful local trajectory is not sufficient evidence of
+a successful system transition.
 
-## Three different units are often called an agent
+**Engineering inference.** The primary engineering object should be the path
+from intent to observed outcome, not the apparent capability of one model
+interaction.
 
-The word *agent* hides distinctions that matter in architecture reviews.
+## 1. “Agent” currently names several different things
 
-| Unit | Working definition | What may persist |
+**Observation.** Public definitions use “agent” for units at different scales:
+an LLM with instructions and tools, a runtime-controlled loop, a dynamically
+directed workflow, or a complete product and operating system.
+
+```mermaid
+flowchart LR
+    M["Model invocation<br/>one inference event"]
+    P["Bounded work pulse<br/>one task-oriented episode"]
+    D["Durable intent-to-outcome whole<br/>persistent meaning · state · authority · evidence"]
+
+    M -->|may participate in| P
+    P -->|reads from and contributes to| D
+
+    Q1["Often called an agent"] -.-> M
+    Q2["Often called an agent or run"] -.-> P
+    Q3["Sometimes called agentic system,<br/>workflow, harness, platform, or product"] -.-> D
+    U["Name intentionally unresolved"] -.-> D
+```
+
+This thesis uses three distinctions:
+
+| Unit | Working definition | Durability |
 |---|---|---|
-| **Model invocation** | One probabilistic inference over instructions and selected context, optionally producing tool calls | Nothing beyond the returned result unless another component records it |
-| **Bounded work pulse** | A finite episode of research, building, critique, or evaluation with an explicit input, effect boundary, and return condition | Evidence, artifacts, decisions, and proposed state changes |
-| **Durable agentic system** | A coupled human-and-technical system that coordinates pulses around persistent purpose, success criteria, state, authority, feedback, and recovery | The governed outcome model and its inspectable history |
+| **Model invocation** | One inference event with supplied context, instructions, and available tools | Ephemeral |
+| **Work pulse** | A bounded episode organized around a task, question, transition, or evaluation; it may contain many model and tool calls | Temporally bounded |
+| **Durable whole** | The persistent system that carries purpose, project meaning, evidence, authority, recovery, and outcome state across many pulses | Cross-session and cross-component |
 
-[OpenAI's Agents SDK](https://openai.github.io/openai-agents-python/agents/)
-defines an agent close to the first two units: an LLM configured with
-instructions, tools, and optional runtime behaviour such as handoffs,
-guardrails, and structured outputs. [Anthropic's engineering
-guide](https://www.anthropic.com/engineering/building-effective-agents)
-distinguishes predefined workflows from agents whose LLM dynamically directs
-its process and tool use. Both are useful implementation definitions. This
-thesis asks a different systems question: what has to surround those runs for
-intent to survive and outcomes to remain governable over time?
+**Work pulse** is the stable term here. **Node** remains provisional shorthand
+for a functional locus—a human, model, repository, validator, tool, memory
+surface, or external system. It is descriptive language, not a fixed ontology.
 
-## The persistent anchor is purpose plus success boundary
+Calling the durable whole “the agent” can be a useful analogy: it directs
+attention away from the thread and toward the system that actually maintains
+continuity. But the analogy is not a naming decision. If “agent” already names
+the model, run, thread, workflow, and product, the missing name may itself be an
+important design question.
 
-The anchor is not a frozen task list. Plans should change when the system learns
-something important. Even the stated goal may need explicit refinement.
+**Working hypothesis.** Durable intelligence in agentic work is distributed
+across models, people, representations, tools, evidence, control boundaries,
+and recovery mechanisms. It should not be attributed to the model alone.
 
-The durable anchor is:
+## 2. Purpose and success form the persistent intent anchor
 
-- **purpose** — why the work exists and for whom;
-- **success boundary** — what acceptable completion, failure, and non-goals
-  mean;
-- **constraints and authority** — what the system may decide or change, and
-  what remains human-owned; and
-- **revision lineage** — what changed in the interpretation of the goal, on
-  what evidence, and with whose authority.
+**Engineering inference.** A durable system needs a small, inspectable anchor
+that survives changes in thread, plan, and local strategy.
 
-**Working hypothesis.** If purpose and the success boundary are represented as
-first-class, reviewable state, useful detours can change the plan without
-silently replacing the outcome.
+The anchor is not a frozen prompt. At minimum it contains:
+
+- **purpose:** why the work exists;
+- **success boundary:** what observable condition would count as acceptable;
+- **constraints and exclusions:** what may not be optimized away;
+- **authority:** who may approve which consequential transition; and
+- **revision state:** what has been learned that legitimately changes the
+  interpretation of the outcome.
 
 ```mermaid
 flowchart TB
-    I["Intent anchor<br/>purpose · success boundary · authority"]
-    O["Project ontology<br/>entities · meanings · relationships · state"]
-    C["Task-specific composition<br/>roles · tools · context · checks"]
-    P["Bounded work pulse"]
-    E["Evidence + artifact + observed outcome"]
-    J{"Continue · correct<br/>stop · recover · redefine"}
-    H["Human authority"]
+    A["Intent anchor<br/>purpose · success · constraints · authority"]
+    S["Durable project state<br/>ontology · decisions · evidence · open uncertainty"]
+    P1["Work pulse A<br/>research"]
+    P2["Work pulse B<br/>implementation"]
+    P3["Work pulse C<br/>evaluation"]
+    O["Observed outcome state"]
+    N{"Next safe transition"}
 
-    I --> O --> C --> P --> E --> J
-    J -->|next bounded transition| I
-    H -.->|protects consequential change| I
-    H -.-> C
-    H -.-> J
-    E -.->|updates governed state| O
+    A --> S
+    S --> P1
+    S --> P2
+    S --> P3
+    P1 --> O
+    P2 --> O
+    P3 --> O
+    O --> N
+    N -->|continue or correct| S
+    N -->|new evidence changes interpretation| A
+    N -->|stop or recover| S
 ```
 
-## Ontology is project-local operational meaning
+The anchor can change, but it should change explicitly. A useful discovery may
+redefine success; it should not silently replace the original purpose because
+it was interesting or locally tractable.
 
-Here, *ontology* means the explicit working model a system uses to distinguish
-the things that matter: outcomes, questions, evidence, decisions, tasks,
-artifacts, owners, states, dependencies, and permitted transitions. It also
-includes domain meaning such as metric grain, policy scope, exception rules, or
-the difference between a draft and a released artifact.
+**Working hypothesis.** A compact intent anchor plus evidence-backed state will
+preserve outcome continuity better than relying on conversation history or
+native compaction alone.
 
-**Observation.** Reusing generic bootloader and verification practices across
-an operational-data migration and a local data-request project was valuable,
-but each project still required its own vocabulary, sources of truth, and
-success rules.
+## 3. Alignment signal is translated through intermediate states
 
-**Engineering inference.** A reusable harness should carry thin coordination
-contracts, not flatten project meaning into a universal schema. Project-local
-ontology should remain near the work. A pattern should move across projects
-only after evidence shows what is genuinely reusable and what must stay local.
+**Working hypothesis.** What propagates through a durable system is an
+alignment signal: the current interpretation of intent becoming progressively
+more concrete through questions, models, plans, artifacts, effects, and
+observations.
 
-This is deliberately weaker than claiming that one formal ontology can encode
-all organizational work. The model is useful only when its representations
-improve decisions, handoffs, evaluation, or recovery.
+The term is deliberately metaphorical. It is not assumed to be a scalar, and
+this thesis does not claim a calibrated signal-to-noise measure.
 
-## Composition should follow the task
+```mermaid
+flowchart TB
+    subgraph INTERPRET["1 · Interpret intent"]
+        direction LR
+        I["Human intent"] --> Q["Refined questions<br/>success + constraints"]
+        Q --> M["Project meaning<br/>entities + source authority"]
+        X4["Useful uncertainty"] -.-> Q
+    end
 
-Stable org-chart simulations are a poor default architecture for agent work.
-The useful processing functions depend on the current uncertainty and effect
-boundary.
+    subgraph ACT["2 · Choose and perform a bounded transition"]
+        direction LR
+        P["Plan / task / route"] --> A["Bounded action"]
+        X1["Noise: stale state"] -.-> P
+        X3["Noise: hidden authority gap"] -.-> A
+    end
 
-A task may need:
+    subgraph OBSERVE["3 · Observe and evaluate"]
+        direction LR
+        E["Artifact + evidence"] --> O["Observed outcome"]
+        O --> V{"Evaluate against intent"}
+        X2["Noise: proxy success"] -.-> E
+    end
 
-- one model invocation with a deterministic tool;
-- separate research and implementation contexts;
-- independent critique with a different evidence view;
-- parallel exploration whose results are reconciled;
-- a human decision before a consequential transition; or
-- no agentic loop at all because a deterministic program is sufficient.
+    M --> P
+    A --> E
+    V -->|aligned enough| N["Next state"]
+    V -->|drift or contradiction| C["Correct · recover · redefine"]
+    C --> Q
+```
 
-**Engineering inference.** Roles are temporary processing functions, not
-people. A *researcher*, *architect*, *builder*, or *reviewer* earns its place
-through isolation, different context, different authority, parallelism, or an
-independent evaluation—not through the label itself.
+Good work does not minimize uncertainty at any cost. It may reveal ambiguity
+that the system had been hiding. Making that uncertainty visible can strengthen
+alignment even though the immediate state looks less certain.
 
-Typed handoffs are useful when they preserve the receiving function's real
-input contract: purpose, current evidence, unresolved questions, accepted
-decisions, authority, expected artifact, and return condition. They are harmful
-when they become ceremony that paraphrases the same state through multiple
-files and prompts.
+The engineering goal is therefore not “low entropy” in the abstract. It is to
+preserve enough signal about purpose, meaning, evidence, and authority that the
+system can identify drift and choose a legitimate next transition.
 
-**Working hypothesis.** Task-specific composition will outperform a fixed
-multi-agent graph when task shapes vary, provided the system can make handoff
-loss, latency, cost, and outcome quality observable.
+## 4. Project ontology and task-specific composition
 
-## Feedback is nested, not singular
+**Observation.** Generic coordination patterns transferred across operational
+data projects; entity meanings, source precedence, acceptance rules, and
+exceptions did not.
 
-A durable system needs more than a final answer score. Feedback occurs at
-several timescales:
+**Engineering inference.** The durable system needs a project-local ontology:
+an operational account of the entities, relationships, sources of truth,
+constraints, and success conditions that matter for the current outcome.
 
-1. **Within a model invocation:** tool results and local checks condition the
-   next action.
-2. **Within a bounded pulse:** the artifact and trajectory are checked against
-   the pulse's contract.
-3. **Across an outcome:** evidence, decisions, and observed state determine the
-   next safe transition.
-4. **Across repeated work:** recurring failures may justify a change to
-   instructions, tools, schemas, tests, or architecture.
-5. **Across model and environment change:** previously useful machinery may
-   become redundant or harmful.
+This does not require a universal knowledge graph. It may be implemented with
+ordinary files, typed records, schemas, tests, queries, state machines, or
+provider artifacts. The important properties are inspectability, authority,
+and fitness for the decisions being made.
 
-**Observation.** Trajectories explain how a result was reached, while end-state
-readback shows what actually changed. Either can look healthy while the other
-reveals failure.
+Composition should also be task-specific. Research, architecture,
+implementation, evaluation, and recovery are processing functions, not
+permanent characters that every task must invoke. A work pulse should use the
+smallest combination of nodes and controls that respects the task’s semantic
+and authority boundaries.
 
-**Engineering inference.** Evaluation should join behaviour, artifact quality,
-real outcome, operator friction, and recovery. No one metric should silently
-stand in for the success boundary.
+**Working hypothesis.** Dynamic composition will outperform one universal
+pipeline when the selection rule is itself observable and evaluated against
+representative work.
 
-## Learning should be externalized and governed
+**Counter-risk.** Composition can create handoff loss, coordination cost, and
+false specialization. A strong continuous context may outperform multiple
+roles when the work does not need independent evidence or authority separation.
 
-This thesis does not use *learning* to imply online weight updates or
-unreviewed self-modification. The practical learning surface is external:
+## 5. Feedback loops exist at several scales
 
-- repository documentation and source-of-truth maps;
-- schemas, typed state, and handoff contracts;
-- tools and deterministic invariants;
-- examples, tests, graders, and representative cases;
-- retained trajectories and outcome receipts; and
-- reviewed promotion or removal of recurring patterns.
+**Engineering inference.** “The loop” is not one repeated agent call. Durable
+work contains nested feedback cycles with different evidence and stopping
+conditions.
 
-**Observation.** OpenAI's [harness-engineering
-account](https://openai.com/index/harness-engineering/) treats repository
-knowledge as the system of record, uses a short map into deeper sources, and
-encodes stable feedback into documentation and tooling. The
-[Meta-Harness paper](https://arxiv.org/abs/2603.28052) tests an outer loop that
-searches harness code using source, scores, and prior execution traces exposed
-through a filesystem.
+```mermaid
+flowchart TB
+    subgraph L1["Invocation loop"]
+        A1["Context"] --> A2["Model / tool"] --> A3["Immediate result"] --> A1
+    end
 
-**Engineering inference.** Durable improvement can be represented as governed
-changes to the environment around model calls. Capturing an episode is not the
-same as accepting a policy; promotion requires provenance, repeated evidence,
-and the appropriate human decision.
+    subgraph L2["Work-pulse loop"]
+        B1["Task + route"] --> B2["Bounded work"] --> B3["Artifact + evidence"] --> B4["Evaluate / replay"] --> B1
+    end
 
-**Research horizon.** Automated harness evolution may make some architecture
-self-tuning, but it raises a second-order alignment problem: which outcome,
-cost, and authority constraints govern the optimizer itself?
+    subgraph L3["Outcome loop"]
+        C1["Intent anchor"] --> C2["Many work pulses"] --> C3["Observed outcome"] --> C4["Continue · correct · stop · redefine"] --> C1
+    end
 
-## Human authority is part of the architecture
+    subgraph L4["Learning loop"]
+        D1["Repeated trajectories"] --> D2["Candidate pattern"] --> D3["Human-reviewed promotion or subtraction"] --> D4["Changed harness"] --> D1
+    end
 
-Human-in-the-loop cannot mean “ask a person whenever the system is nervous.”
-The human role should correspond to legitimate ownership or consequence.
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
+```
 
-Examples include:
+The loops should not collapse into one self-authorizing cycle. A pulse can
+evaluate its artifact without gaining release authority. A project can capture
+a lesson without promoting it into shared policy. A harness can propose an
+improvement without approving its own governance change.
 
-- defining or changing purpose and success criteria;
-- resolving ambiguous business meaning;
-- authorizing external, irreversible, sensitive, or high-impact effects;
-- accepting trade-offs that cannot be reduced to a technical metric;
-- promoting experience into durable policy; and
-- deciding whether a public or production release should exist.
+**Working hypothesis.** Larger automation loops can carry more work end to end,
+but only if their semantic grounding, observability, recovery, and authority
+grow with their consequence.
 
-**Engineering inference.** A useful human gate presents a decision surface with
-the evidence, alternatives, uncertainty, and exact effect. A gate that merely
-adds approval latency without changing authority or judgment is ceremony, not
-control.
+## 6. Learning must be externalized without becoming self-authorizing policy
 
-## Architectural subtraction is a first-class move
+**Observation.** Useful lessons disappear when they live only in a transcript.
+But automatically converting every lesson into global instruction creates
+conflicting rules, context saturation, and governance drift.
 
-Every instruction layer, memory mechanism, retriever, role, router, state file,
-and gate is a hypothesis about a failure the model and environment cannot
-handle unaided. Those hypotheses can be correct, project-specific, or made
-obsolete.
+**Engineering inference.** Capture and promotion should be separate:
 
-**Observation.** The internal framework accumulated typed roles, multi-stage
-pipelines, duplicated continuity surfaces, model tiers, memory layers, and
-promotion machinery. Some controls protected real boundaries. Others competed
-for context, restated volatile truth, or made the system reconstruct its own
-harness before addressing the task. A later project-local contraction retained
-domain validation and human authority while removing broad generic machinery.
+1. a work pulse leaves an artifact, trajectory, outcome, and local lesson;
+2. raw evidence stays near its authoritative project source;
+3. a candidate pattern carries provenance and known limitations;
+4. review compares it with other projects and representative failures;
+5. a human-controlled boundary decides whether to keep it local, defer it,
+   promote it, revise it, or remove an older rule; and
+6. the changed harness is evaluated again rather than treated as permanent.
 
-**Engineering inference.** Complexity should carry a burden of proof. A
-component earns its cost when representative work shows an improvement in the
-success boundary that exceeds its context, latency, maintenance, handoff, and
-failure costs.
+This makes learning durable without allowing the system to silently rewrite
+the values and boundaries under which it operates.
 
-This is not minimalism as an aesthetic rule. Removing a useful invariant can be
-as damaging as adding a redundant agent. The missing discipline is the
-counterfactual: compare the system with and without the component when that can
-be done safely.
+**Working hypothesis.** Promotion quality should be judged by held-out work,
+not the confidence or frequency with which a pattern was proposed.
 
-## Counterarguments that could change the model
+## 7. Residual entropy, recovery, and human authority
 
-| Counterargument | Why it matters | What evidence would change the thesis |
-|---|---|---|
-| Strong models plus long context make durable outcome state unnecessary | Custom state may create more drift than it prevents | Representative long-running work where transcript-native continuity matches or exceeds explicit outcome state on correctness, recovery, and operator effort |
-| A standard ontology improves interoperability more than project-local models | Local meaning can become expensive fragmentation | Cross-domain deployments where a shared schema preserves semantics without large exception layers or lower decision quality |
-| Fixed role pipelines are easier to govern than adaptive composition | Predictability can outweigh flexibility in regulated or repetitive work | Stable tasks where fixed graphs consistently reduce failure and total cost without hiding handoff loss |
-| Externalized learning becomes bureaucracy | Promotion systems can accumulate stale rules and review queues | Evidence that direct model/tool improvement resolves recurring failures faster and more safely than governed repository change |
-| Human gates are a scalability bottleneck | Poorly placed approval can erase the value of automation | Cases where authority can be delegated structurally with equivalent accountability, reversibility, and outcome quality |
-| Architectural subtraction merely shifts complexity into prompts or people | A smaller repository is not necessarily a simpler system | Whole-system measurements showing that removed machinery lowered visible code but raised operator burden, latent risk, or recovery time |
+**Working hypothesis.** “Residual entropy” is useful shorthand for unresolved
+ambiguity, contradiction, drift, provenance gaps, and governance uncertainty
+that remain after a bounded pulse. It is not a formal thermodynamic quantity or
+an empirically calibrated score.
+
+Evidence, deterministic checks, observed outcomes, rollback, and human judgment
+can all reduce or restructure that uncertainty. Humans are not generic cleanup
+workers at the edge of the loop. They retain authority over meaning, value,
+risk trade-offs, protected effects, policy promotion, and release.
+
+```mermaid
+flowchart TB
+    R["Residual uncertainty<br/>ambiguity · contradiction · drift · authority gap"]
+    E["Source evidence"]
+    T["Deterministic checks"]
+    O["Observed outcome"]
+    B["Rollback / recovery"]
+    H["Human judgment and authority"]
+    C["More legible next state"]
+
+    R --> E --> C
+    R --> T --> C
+    R --> O --> C
+    R --> B --> C
+    R --> H --> C
+
+    C --> G{"Expand the automation loop?"}
+    G -->|semantics + observability + recovery + authority scale| L["Larger governed loop"]
+    G -->|one is missing| S["Keep the loop bounded or stop"]
+    L -.-> R
+```
+
+Some uncertainty should remain visible. Forcing every question into a confident
+answer creates noise by hiding the very state a later decision needs.
+
+**Engineering inference.** The point where human authority enters is not a
+single terminal drain. Human judgment can shape the intent anchor, resolve
+meaning, approve a transition, redefine success, review learning, or stop the
+system at several levels.
+
+## 8. Architectural subtraction is a first-class operation
+
+**Observation.** A framework built to prevent real failures later created
+duplicated state, context competition, and ceremony that obscured project work.
+
+**Engineering inference.** Harness components are falsifiable hypotheses. A
+role, handoff, memory layer, retriever, gate, or status mirror should exist only
+while it protects an observed boundary better than the simpler alternative.
+
+Subtraction is not anti-governance. The goal is to preserve load-bearing
+controls—semantic validation, source authority, evidence, consequential-action
+gates, independent readback, and recovery—while removing structures that have
+become redundant or performative.
+
+**Working hypothesis.** As models and native runtimes improve, some explicit
+harness structure should disappear. Durable intent, project meaning, authority,
+evidence, and outcome evaluation are more likely to remain than any particular
+role taxonomy or orchestration topology.
+
+## The thesis in one statement
+
+**Working hypothesis.** Agentic engineering should be organized around a
+durable intent-to-outcome system. Model invocations occur inside bounded work
+pulses. Those pulses read project meaning and authority from persistent state,
+perform or investigate a limited transition, and return artifacts and evidence
+to nested feedback loops. Humans retain authority over meaning, value, risk,
+policy, and consequential effects. The harness learns externally to any one
+context and subtracts machinery when evidence no longer justifies it.
+
+This is intentionally a description rather than a coined name for the durable
+whole.
+
+## Counterarguments
+
+### “This is just workflow orchestration”
+
+Possibly. The stronger claim is not that orchestration is new, but that current
+agent discourse often places identity and continuity at the model or thread
+level. The thesis is useful only if shifting the unit of analysis improves
+outcome continuity, recovery, and governance in practice.
+
+### “A sufficiently capable model can hold the whole outcome in context”
+
+For some tasks, yes. External state adds cost and can become stale. The thesis
+predicts value mainly when work spans long time horizons, distinct authorities,
+multiple evidence surfaces, irreversible effects, or contexts that cannot
+reliably remain together.
+
+### “Typed handoffs and roles lose more context than they protect”
+
+Often true. Independent contexts should be used when they provide evidence,
+specialization, or authority separation worth the handoff loss—not because a
+multi-agent diagram looks sophisticated.
+
+### “Alignment signal and entropy are vague metaphors”
+
+They are. They should remain qualified until operational definitions predict
+better decisions. If the metaphors do not improve system design or evaluation,
+they should be replaced.
+
+### “Human gates prevent meaningful autonomy”
+
+The objective is not maximum step count without a person. It is the largest
+legitimate loop whose semantics, evidence, recovery, and authority can be
+trusted. Human attention should move toward meaning and consequence while
+mechanical verification and routine work become increasingly automated.
 
 ## Falsifiable questions
 
-The thesis should become narrower or change if evidence answers these poorly:
-
-1. Does an explicit intent anchor reduce broad failure on multi-stage tasks
-   compared with ordinary conversation history and native compaction?
-2. Which fields in an outcome model predict better decisions, and which only
-   create maintenance cost?
-3. Can a useful detour be detected and returned to the parent outcome without
-   a brittle universal graph?
-4. When do typed handoffs improve independent reasoning, and when do they lose
-   information that one continuous context would preserve?
-5. Can task-specific role composition beat a strong single-agent baseline on
-   quality, latency, cost, and recoverability?
-6. What evidence is sufficient to promote a project-local pattern, and how
-   often should promoted patterns be removed?
-7. How should automated harness search respect human authority and avoid
-   optimizing a proxy success envelope?
-8. Which system properties remain necessary as models, tool APIs, context
-   windows, and native runtimes improve?
+1. Does an explicit intent anchor reduce broad failure on long-running tasks
+   compared with transcript history and native compaction?
+2. Which outcome-state fields improve decisions, and which merely increase
+   maintenance cost?
+3. Can work pulses return useful detours to a parent outcome without a brittle
+   universal graph?
+4. When do typed handoffs outperform one strong continuous context on quality,
+   cost, latency, and recoverability?
+5. Can task-specific composition beat a fixed pipeline on representative work?
+6. Which observable conditions justify increasing an automation loop’s scope?
+7. Can project-local patterns be promoted without reducing held-out project
+   quality or erasing local meaning?
+8. Does architectural subtraction improve outcome quality and operator effort,
+   or only reduce visible complexity?
+9. Can alignment signal or residual entropy be operationalized without
+   rewarding hidden uncertainty and proxy success?
+10. Which system properties remain necessary as models, tools, context windows,
+    and native runtimes improve?
 
 ## Research agenda
 
-**Research horizon.** The next useful work is empirical rather than more
-taxonomy:
+**Research horizon.** The next useful work is empirical:
 
 - create benchmark tasks with plausible narrow-success/broad-failure paths;
-- compare transcript-only, compact-intent-anchor, and richer outcome-state
-  conditions;
-- measure handoff loss and context competition in single- and multi-agent
-  variants;
+- compare transcript-only, intent-anchor, and richer outcome-state conditions;
 - record outcome quality, trajectory quality, cost, latency, human effort, and
   recovery time together;
-- test promotion and subtraction decisions against held-out tasks; and
-- examine how authority contracts behave under partial failure and model
-  change.
-
-The current [executable proof](PERSONAL_HARNESS_OS.md) is intentionally smaller:
-it implements effect-aware routing, bounded context, explicit authority and
-stopping state, plus no-write rehearsal. The historical evidence and
-architectural evolution are recorded separately in [*Narrow Success, Broad
-Failure*](case-studies/narrow-success-broad-failure.md).
+- measure handoff loss in single-context and composed work-pulse variants;
+- test promotion and subtraction decisions against held-out projects;
+- study loop expansion under different observability, recovery, and authority
+  conditions; and
+- replace the signal and entropy metaphors if more precise concepts explain the
+  evidence better.
 
 ## Source and comparison lineage
 
-These sources calibrate the thesis; none establishes Yiwei's project experience
-or proves Azoth's design.
+These sources situate the question. They neither establish Yiwei’s project
+experience nor prove Azoth’s design.
 
-| Source | What it contributes here | What it does not establish |
+| Source | What it contributes | What it does not establish |
 |---|---|---|
-| [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/agents/) | A prevailing implementation definition built around an LLM, instructions, tools, runtime behaviour, handoffs, and guardrails | That an agent instance is the correct durable unit of an outcome |
-| [Anthropic, *Building Effective Agents*](https://www.anthropic.com/engineering/building-effective-agents) | The workflow/agent distinction and an engineering preference for the simplest sufficient composition | Azoth's intent anchor or project ontology |
-| [OpenAI, *Harness engineering*](https://openai.com/index/harness-engineering/) | Repository knowledge as system of record, short maps into deeper truth, architectural invariants, and feedback loops | A universal repository layout or proof that Azoth's contracts are optimal |
+| [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/agents/) | A prevailing implementation definition centered on an LLM, instructions, tools, handoffs, guardrails, and runtime behavior | That one agent instance is the correct durable unit of an outcome |
+| [Anthropic, *Building Effective Agents*](https://www.anthropic.com/engineering/building-effective-agents) | An explicit acknowledgement that “agent” has several definitions, plus a workflow/agent distinction | The terminology or system boundary proposed here |
+| [OpenAI, *Harness engineering*](https://openai.com/index/harness-engineering/) | Repository knowledge as system of record, short maps into deeper truth, feedback loops, and architectural enforcement | A universal repository layout or proof that Azoth’s contracts are optimal |
 | [Meta-Harness](https://arxiv.org/abs/2603.28052) | Evidence that harness code can be optimized using source, scores, and prior execution traces | Safe autonomous policy promotion or general outcome alignment |
-| [Distributed cognition](https://escholarship.org/uc/item/8sb9s5rm) | A systems lens for cognition distributed across people, representations, and artifacts | That software-agent architecture is literally a cognitive theory |
-| [Clark and Chalmers, *The Extended Mind*](https://web.ics.purdue.edu/~drkelly/ClarkChalmersTheExtendedMind1998.pdf) | A lens for treating tightly coupled external state as causally important to a process | A direct engineering specification for durable agentic systems |
-| [Facility](https://github.com/theam/Facility) | An external comparison with explicit roles, human plan approval, repository/CI checks, receipts, and outcome monitoring | Yiwei's project experience, Azoth lineage, or validation of Facility's own product claims |
+| [Distributed cognition](https://escholarship.org/uc/item/8sb9s5rm) | A lens for cognition distributed across people, representations, and artifacts | That agentic software is literally a cognitive theory |
+| [Clark and Chalmers, *The Extended Mind*](https://web.ics.purdue.edu/~drkelly/ClarkChalmersTheExtendedMind1998.pdf) | A lens for treating tightly coupled external state as causally important | A direct engineering specification for durable agentic systems |
+| [Facility](https://github.com/theam/Facility) | An external comparison using explicit roles, human plan approval, repository checks, receipts, and outcome monitoring | Yiwei’s project experience, Azoth lineage, or independent validation of Facility’s claims |
 
-Facility is included only as a current external comparison. I have not worked on
-the project, and its public design is not presented as evidence for the internal
-Agentic Framework or Azoth.
+Facility is a contemporary external comparison. I have not worked on it, and
+its public design is not evidence for the internal Agentic Framework or Azoth.
+
+## Evidence and implementation boundary
+
+The historical evidence and braided chronology live in [*Narrow Success, Broad
+Failure*](case-studies/narrow-success-broad-failure.md). The [executable
+proof](PERSONAL_HARNESS_OS.md) implements only a selected transition slice:
+effect-aware routing, bounded context, explicit authority and stopping state,
+and no-write rehearsal.
+
+The wider root workshop contains additional intake, research, planning,
+ledger, campaign, evaluation, and replay capabilities. They are evidence for
+the direction of travel, not proof that the durable whole described here is
+complete.
 
 ## Working conclusion
 
-**Working hypothesis.** A durable agentic system is best treated as an
-intent-to-outcome engineering system: model invocations and tools perform
-bounded work inside a larger, inspectable loop of purpose, project meaning,
-authority, evidence, evaluation, and revision.
+The ambition is not to wrap every model call in a larger framework. It is to
+recognize that durable intelligence may live in the evolving relationship
+among intent, project meaning, work pulses, evidence, authority, feedback,
+recovery, and people.
 
-The idea should survive only if it improves real work. Its strongest form is
-not a grand ontology or a large harness. It is the discipline to keep intent
-and success explicit, compose the smallest sufficient system for the task,
-externalize learning without surrendering human authority, and subtract
-machinery when evidence no longer justifies it.
+If that framing improves real outcomes, it deserves refinement. If a simpler
+model explains and supports the work better, this thesis should contract with
+the architecture it recommends.
