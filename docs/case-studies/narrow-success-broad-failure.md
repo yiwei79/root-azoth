@@ -1,7 +1,7 @@
 # Narrow Success, Broad Failure
 
-*A braided chronology of operational meaning, reusable coordination, and
-architectural contraction.*
+*A braided chronology of operational meaning, transferable execution,
+reusable coordination, and architectural contraction.*
 
 An AI-assisted task can succeed at every visible step and still fail the work
 that matters. A query runs, an artifact looks plausible, a handoff completes,
@@ -23,28 +23,16 @@ the emerging philosophy.
 
 ```mermaid
 flowchart TB
-    W1["Operational reporting migration<br/>50-unit reconstruction → governed reporting backbone"]
-    W2["Local data-request workflow<br/>faster trusted answers → local meaning retained"]
-    W3["Internal Agentic Framework<br/>composable work → reviewed learning"]
-    W4["Framework contraction<br/>load-bearing controls retained → ceremony removed"]
-    W5["Later agent-operations system<br/>versioned behavior → governed continuity"]
-    W6["Independent Azoth inquiry<br/>recurring evidence → explicit system question"]
+    A["Ambiguous operational need"] --> M["Make meaning and success explicit"]
+    M --> B["Bound execution and authority"]
+    B --> V["Verify the real-world effect"]
+    V --> L["Promote only earned learning"]
 
-    F1["Meaning is part of correctness"]
-    F2["Generic coordination ≠ project ontology"]
-    F3["Learning needs provenance and authority"]
-    F4["Architecture must re-earn its cost"]
-    F5["A model interaction is only one system event"]
-    F6["What carries intent across work pulses?"]
-
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6
-    F1 --> F2 --> F3 --> F4 --> F5 --> F6
-    W1 -.-> F1
-    W2 -.-> F2
-    W3 -.-> F3
-    W4 -.-> F4
-    W5 -.-> F5
-    W6 -.-> F6
+    S["SupplyOps"] -.->|semantic contracts| M
+    P["3PL administration"] -.->|operating model and ownership| B
+    G["GloBuddy"] -.->|AI and effect boundaries| B
+    F["Framework contraction"] -.->|subtractive learning| L
+    Z["Azoth"] -.->|independent synthesis| L
 ```
 
 The broader model is developed in [*Intent-to-Outcome Engineering: A Working
@@ -80,7 +68,31 @@ I treated semantic reconstruction as an engineering phase:
 - keep each implementation tied to its migration unit and evidence; and
 - separate discovery, implementation, publication, and live verification.
 
-### The implementation
+### Decision view
+
+The semantic phase did not assume that every discrepancy had the same meaning.
+Each unit received an explicit acceptance contract, including deliberate
+non-implementation when preserving a legacy output would have reproduced a
+known-invalid decision.
+
+```mermaid
+flowchart TB
+    A["Ambiguous report behavior"] --> B["Recover lineage, grain and source precedence"]
+    B --> C["Form competing meaning hypotheses"]
+    C --> D{"Choose an explicit acceptance contract"}
+
+    D --> P["Legacy parity"]
+    D --> R["Owner-accepted replacement"]
+    D --> U["BigQuery-only / cannot validate"]
+    D --> X["Deliberate drop"]
+
+    P --> I["Registry and BigQuery implementation"]
+    R --> I
+    U --> I
+    X --> N["Recorded non-implementation"]
+```
+
+### Implementation view
 
 ```mermaid
 flowchart TB
@@ -117,6 +129,23 @@ candidate sheets were swapped atomically, prior sheets were retained as
 rollback backups, and an independent read path checked the real workbook after
 the write.
 
+The migration ledger remained distinct from the dashboard's presentation
+structure. A visible block was not treated as one migration unit, and an
+apparently complete dashboard was not allowed to hide missing or unaccepted
+meaning.
+
+### Technical judgment recap
+
+- Reconstruct meaning before translating syntax.
+- Choose the acceptance contract explicitly instead of calling every
+  difference a parity defect.
+- Preserve missingness and deliberate drops rather than manufacturing visual
+  completeness.
+- Fingerprint the exact publication plan so authorization applies to the
+  intended effect, not merely to a command.
+- Treat atomic promotion, independent readback, and verified rollback as one
+  release boundary.
+
 ### The value
 
 The migration produced more than converted SQL. It established a recurring
@@ -132,7 +161,102 @@ failure when its meaning or publication state is wrong.
 readback belong inside the reliability boundary—not in a separate explanatory
 layer around the code.
 
-## 2. Local operational-data requests: reuse without semantic flattening
+## 2. 3PL administration: operational knowledge had to become executable
+
+### The problem
+
+Recurring 3PL administration crossed legal approval, company and contract
+state, identity and access, applicant routing, reporting, local mappings, and
+live operational tools. The real rules, naming conventions, system
+dependencies, and country or company exceptions were distributed across
+working knowledge and separate execution surfaces.
+
+I initially owned and performed the live work end to end. Completing each
+request solved the immediate case, but it did not make the operating model
+safe, repeatable, or transferable. The broader problem was to remove dependence
+on one operator without flattening the exceptions that made the work correct.
+
+### The approach
+
+I used direct execution as a discovery instrument:
+
+- observe where written guidance and live system behavior diverged;
+- recover the invariants, prerequisites, identities, dependencies, and
+  escalation conditions;
+- reorganize the work around one `create → update → terminate` lifecycle;
+- separate privacy-safe data and code preparation from standard manual tool
+  execution;
+- define each step through its trigger, owner, input, action, output,
+  verification, and escalation path; and
+- deploy the new ownership model through access readiness, live shadowing,
+  co-piloting, and independent execution.
+
+### Operating-system view
+
+```mermaid
+flowchart TB
+    A["Fragmented recurring execution"] --> B["Execute real cases and observe failures"]
+    B --> C["Recover invariants, dependencies and exceptions"]
+    C --> D["Model the lifecycle<br/>create · update · terminate"]
+
+    D --> E{"Define the execution boundary"}
+    E --> F["Data Operations<br/>query · script · sanitize · investigate"]
+    E --> G["RTO<br/>standard UI execution"]
+
+    F --> H["Validated files, prerequisites and handover contract"]
+    H --> G
+    G --> I["Verify live system state"]
+
+    I -->|standard success| J["Independent RTO ownership"]
+    I -->|edge case or failure| F
+
+    K["Access readiness"] --> L["Live shadowing"]
+    L --> M["Co-piloting"]
+    M --> J
+```
+
+The general operating Bible preserved the cross-system lifecycle and the
+technical/manual boundary. The receiving-team edition then acted as a distinct
+operational interface: modular procedures, explicit prerequisites, repeated
+double-checklists, an access and dependency map, troubleshooting paths, and a
+staged rollout. It was not merely a shorter copy of the source material.
+
+One termination episode exposed the difference between artifact correctness
+and operational truth. An initial extraction missed a target because a supplied
+label did not match the live company value. After the cohort and file encoding
+were repaired, a later readback still found that one generated city file had
+not changed the active contract state. The process therefore had to verify the
+real system effect rather than equate a generated file or accepted tool action
+with completion.
+
+### Technical judgment recap
+
+- Model the domain as a lifecycle rather than a queue of unrelated requests.
+- Expose the dependency graph across approval, identity, permissions, routing,
+  reporting, and contract state.
+- Divide responsibility at an executable interface: Data Operations owns
+  technical preparation and deep investigation; RTO owns standard execution.
+- Encode exact naming, least-privilege access, privacy-minimal outputs,
+  checklists, and escalation paths as controls rather than reminders.
+- Treat adoption as a release path and live-state verification as the
+  completion signal.
+
+### The value
+
+The result was a self-service operating model spanning onboarding, information
+management, and termination. End-to-end live execution moved to Real-Time
+Operations, while Data Operations remained the technical escalation boundary.
+The transfer removed the need to backfill the dedicated Growth workload rather
+than merely moving a document to another folder.
+
+**Observation.** Documentation can be complete while the receiving team still
+cannot execute safely or prove that the intended state changed.
+
+**Engineering inference.** Operational knowledge should be engineered as an
+interface with explicit state, authority, verification, and recovery. Ownership
+transfer is a governed system release, not a writing deliverable.
+
+## 3. Local operational-data requests: reuse without semantic flattening
 
 ### The problem
 
@@ -195,7 +319,7 @@ did not.
 **Engineering inference.** A reusable harness should route work into a
 project-local ontology, not attempt to replace it with a universal one.
 
-## 3. The internal Agentic Framework: composing work and externalizing learning
+## 4. The internal Agentic Framework: composing work and externalizing learning
 
 ### The problem
 
@@ -270,7 +394,7 @@ decision.
 context, but promotion into shared behavior needs provenance, evaluation, and
 human authority.
 
-## 4. Overgrowth and contraction: the framework became part of the problem
+## 5. Overgrowth and contraction: the framework became part of the problem
 
 ### The problem
 
@@ -316,7 +440,7 @@ competes with the task for context, authority, or source-of-truth status.
 gate is a hypothesis. It should be retained, revised, or removed according to
 representative work and observed failure—not architectural prestige.
 
-## 5. GloBuddy: a later agent-operations system in its own right
+## 6. GloBuddy: a later agent-operations system in its own right
 
 ### The problem
 
@@ -330,41 +454,100 @@ The difficult path crossed business intent, lifecycle state, policy,
 conversation behavior, provider mechanics, channel effects, continuity,
 measurement, and human release decisions.
 
-### The approach and implementation
+### System view
 
 ```mermaid
 flowchart TB
-    M["Canonical business meaning<br/>Journey · knowledge · policy · tests"]
-    C["Reviewable candidate<br/>provider projection · behavior suite · immutable manifest"]
-    E["Governed channel effect<br/>approved scope · synthetic interaction · STOP handling"]
-    R["Reconciled outcome state<br/>observed evidence · continuity · next lifecycle decision"]
-    N["Next governed lifecycle state"]
-    H["Human authority<br/>business meaning · release · consequential change"]
+    subgraph RELEASE["Isolated behavior-and-release slice"]
+        direction LR
+        V["Versioned behavior, knowledge and tests"] --> G1["Deterministic verification"]
+        G1 --> P["Isolated provider projection"]
+        P --> G2["Behavior evidence"]
+        G2 --> I["Immutable candidate manifest"]
+        I --> H["Human release authority"]
+    end
 
-    M -->|deterministic Gate A| C
-    C -->|approved channel gate| E
-    E --> R
-    R -->|repair| M
-    R -->|accepted| N
-    H -.-> M
-    H -.-> E
-    H -.-> R
+    subgraph PRODUCT["Production product and outcome loop"]
+        direction LR
+        J["Journey and business policy"] --> A["Conversational behavior"]
+        A --> E["Deterministic effect boundary"]
+        E --> C["Channel and provider effect"]
+        C --> O["Observed lifecycle outcome"]
+        O --> M["Measurement and operator feedback"]
+        M --> J
+    end
+
+    T["Trusted lifecycle and suppression state"] --> A
+    T --> E
+    H -.-> A
+```
+
+This view keeps the broader production system distinct from one governed
+behavior-and-release slice. The slice creates reviewable release evidence; the
+production loop connects released behavior to channel effects, lifecycle
+outcomes, measurement, and operator learning.
+
+### Implementation and effect-control view
+
+```mermaid
+flowchart TB
+    subgraph CONTEXT["Authoritative runtime context"]
+        I["Stable pseudonymous identity"] --> S["Lifecycle + suppression state"]
+        P["Bounded prior context"] --> A["Agent behavior + contextual tools"]
+        S --> A
+    end
+
+    subgraph EFFECT["Deterministic outbound boundary"]
+        S --> E{"Eligible and not suppressed?"}
+        E -->|no| X["Fail closed"]
+        E -->|yes| R["One-attempt reservation + deduplication"]
+        R --> D["Provider dispatch"]
+    end
+
+    subgraph RECONCILE["Outcome reconciliation"]
+        D --> O{"Provider outcome"}
+        O -->|accepted| N["Accepted is not delivery proof"]
+        O -->|rejected| F["Terminal failure"]
+        O -->|unknown| U["Terminal ambiguity<br/>no automatic retry"]
+        N --> B["Delivery · reply · STOP evidence"]
+        B --> L["Lifecycle + measurement state"]
+        L --> S
+    end
 ```
 
 The project separated business meaning, deterministic policy, conversational
 behavior, provider mechanics, and channel side effects so each could change
-without silently redefining the others. Trusted lifecycle state outranked a
-user statement or prior summary. Cross-session continuity came from
-authoritative state injection plus bounded prior context, not implicit
-model-owned memory. Passing offline tests produced a candidate; it did not
-grant channel or release authority.
+without silently redefining the others. Journey, knowledge, behavior, tools,
+procedures, and tests were versioned as agent-as-code. Deterministic checks and
+an isolated provider projection produced a candidate manifest; they did not
+grant release authority.
+
+At runtime, a stable pseudonymous identity joined trusted lifecycle and
+suppression state with bounded prior context. Rider or model input could not
+overwrite that authoritative state. Outbound eligibility failed closed, and a
+transactional one-attempt reservation prevented duplicate effects. Provider
+acceptance was recorded as distinct from delivery proof; rejected or unknown
+outcomes were terminal rather than automatically retried after ambiguity.
 
 The wider GloBuddy system also includes routing and contextual tools, cloud
 operations, data and measurement pipelines, an operator dashboard,
 observability, and human improvement workflows. Those components connect
-conversation behavior to rider-lifecycle outcomes. This case focuses on the ME
-behavior-and-release path and does not claim that every component is represented
-as one perfectly integrated visible-source path.
+conversation behavior to rider-lifecycle outcomes. This case uses the ME
+behavior-and-release path as an inspectable slice and does not claim that every
+component is represented as one perfectly integrated visible-source path.
+
+### Technical judgment recap
+
+- Treat the AI conversation as one component inside an operational control
+  system.
+- Keep trusted lifecycle state outside the model and inject only bounded
+  context into each interaction.
+- Put deterministic eligibility, suppression, reservation, and deduplication
+  around probabilistic behavior.
+- Distinguish provider acceptance from delivery and stop automatic retry when
+  the external effect is ambiguous.
+- Separate candidate evidence from human release authority, then connect
+  observed outcomes back to product learning.
 
 ### The value
 
@@ -381,7 +564,7 @@ meaning, bounded effects, externalized state, evaluation, and reconciliation.
 It benefited from the evolving engineering principles; it is not presented as
 their origin or complete realization.
 
-## 6. Independent Azoth synthesis: making the system question explicit
+## 7. Independent Azoth synthesis: making the system question explicit
 
 Azoth is independent work. It asks what should carry intent when a project
 spans discovery, research, planning, implementation, evaluation, correction,
@@ -422,19 +605,25 @@ durable intelligence—even though its correct name remains open.
 
 1. **Meaning is operational state.** Semantic reconstruction is part of
    implementation, not documentation added afterward.
-2. **Work needs a durable intent anchor.** Purpose and success cannot depend on
+2. **Operational knowledge needs an executable interface.** A process becomes
+   transferable when state, dependencies, authority, verification, and
+   escalation are explicit—not when instructions merely exist.
+3. **Adoption is part of the release boundary.** Access readiness, shadowing,
+   co-piloting, independent execution, and verified live effects determine
+   whether an operating model has actually moved.
+4. **Work needs a durable intent anchor.** Purpose and success cannot depend on
    one context window surviving unchanged.
-3. **Reuse the coordination contract, not the ontology.** Generic machinery
+5. **Reuse the coordination contract, not the ontology.** Generic machinery
    should route into local sources and meaning.
-4. **Learning needs a promotion boundary.** Evidence can be captured locally;
+6. **Learning needs a promotion boundary.** Evidence can be captured locally;
    shared policy needs review and authority.
-5. **A thread is a work pulse, not the durable whole.** It should return
+7. **A thread is a work pulse, not the durable whole.** It should return
    evidence and state rather than impersonate system continuity.
-6. **Evaluation must inspect transitions and outcomes.** Local artifact quality
+8. **Evaluation must inspect transitions and outcomes.** Local artifact quality
    alone is insufficient.
-7. **Human authority is structural.** People own meaning, risk trade-offs, and
+9. **Human authority is structural.** People own meaning, risk trade-offs, and
    consequential effects—not every mechanical step.
-8. **Subtraction is part of harness engineering.** Architecture must re-earn
+10. **Subtraction is part of harness engineering.** Architecture must re-earn
    its place as models, tools, and projects change.
 
 These findings are developed—and challenged—in the [working
@@ -457,13 +646,14 @@ theory.
 
 | Claim family | Status |
 |---|---|
-| Operational reporting migration, local data-request workflow, internal framework, and GloBuddy | Historical project experience and repository-grounded evidence; not Azoth deployments |
+| Operational reporting migration, 3PL administration redesign, local data-request workflow, internal framework, and GloBuddy | Historical project experience and repository-grounded evidence; not Azoth deployments |
+| 3PL administration | User-confirmed end-to-end ownership and completed RTO transition, supported by private operating artifacts; private screenshots, links, account details, and credential examples are not public evidence |
 | Causal lineage | Observed projects contributed signals to a later synthesis; no earlier project is retroactively claimed to implement the thesis |
-| GloBuddy | A distinct agent-operations case that benefited from accumulated learning; not the ideal Intent-to-Outcome system |
+| GloBuddy | A unified production agent-operations product; the ME behavior-and-release path is an inspectable slice, not the whole product or the ideal Intent-to-Outcome system |
 | Internal Agentic Framework | Employer-work lineage distinct from independent Azoth |
 | Alignment signal and residual entropy | Qualified engineering metaphors, not formal or empirically calibrated quantities |
 | Azoth root workshop | Inspectable capabilities and campaign evidence; not one validated extracted product journey |
-| `v0.3.0-rc.3` executable proof | Only routing, bounded context, explicit authority/stopping state, and no-write rehearsal are claimed as portable implemented proof |
+| `v0.3.0-rc.4` executable proof | Only routing, bounded context, explicit authority/stopping state, and no-write rehearsal are claimed as portable implemented proof |
 | External adoption or production deployment of Azoth | Not claimed |
 
 Continue with the [working thesis](../INTENT_TO_OUTCOME_ENGINEERING.md), inspect
