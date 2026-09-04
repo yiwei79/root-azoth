@@ -5,6 +5,23 @@
 > a claim of a finished Azoth system, a new scientific theory, or a formal
 > control-theory model.
 
+## The thesis at three resolutions
+
+- **Plain language:** build the AI system around the real outcome, not the
+  model call.
+- **Engineering view:** place probabilistic intelligence inside explicit
+  meaning, trustworthy evidence, deterministic effect boundaries, evaluation,
+  accountable human authority, and recovery.
+- **Research view:** treat the relationship between evolving human intent and
+  observed system effects as partially identifiable. Use bounded, reversible
+  work to improve that relationship without claiming a complete objective,
+  guaranteed convergence, or zero uncertainty.
+
+Agent systems are the practical origin and strongest evidence for this thesis.
+The broader claim is more modest: the same discipline may help engineer other
+systems whose requirements, environment, or measures of success remain
+uncertain while the work is underway.
+
 ## The engineering failure comes first
 
 AI-assisted work can be locally excellent and broadly wrong.
@@ -144,6 +161,26 @@ it was interesting or locally tractable.
 preserve outcome continuity better than relying on conversation history or
 native compaction alone.
 
+### Intent is represented, not directly observed
+
+The source of an intended outcome is a **subject**: one person or a collective
+whose purposes and values give the work its direction. Because that direction
+can change, an intent anchor is a versioned representation—not a permanent
+substitute for the subject.
+
+For a collective, disagreement is part of the state. Preserve whose view is
+represented, who has authority for the present decision, what is contested,
+and which revision supersedes an earlier one. Evidence can narrow plausible
+interpretations and increase agreement about acceptable action without
+revealing one uniquely measurable objective.
+
+**Working hypothesis.** Explicit versions, sources, disagreement, and authority
+will make revisions more recoverable than treating the latest prompt, metric,
+or stakeholder statement as the whole objective.
+
+If better evidence does not narrow consequential disagreement or improve
+outcome prediction, longer iteration is not evidence of better alignment.
+
 ## 3. Alignment signal is translated through intermediate states
 
 **Working hypothesis.** What propagates through a durable system is an
@@ -198,6 +235,18 @@ alignment even though the immediate state looks less certain.
 The engineering goal is therefore not “low entropy” in the abstract. It is to
 preserve enough signal about purpose, meaning, evidence, and authority that the
 system can identify drift and choose a legitimate next transition.
+
+An alignment signal is credible only to the extent that its provenance,
+interpretation, and relationship to the intended outcome can be challenged.
+More feedback is not automatically better: repeated proxy measurements can
+amplify the wrong target, and a moving target can become an unfalsifiable excuse
+for failure. The system should stop, refuse, or return to the subject when:
+
+- authoritative perspectives conflict beyond the current decision boundary;
+- the next effect is irreversible or high-impact and evidence is insufficient;
+- feedback is not reducing a material disagreement or improving prediction;
+- the available measure can be satisfied while the real outcome worsens; or
+- continuing would spend more attention or risk than the decision warrants.
 
 ## 4. Project ontology and task-specific composition
 
@@ -330,6 +379,25 @@ single terminal drain. Human judgment can shape the intent anchor, resolve
 meaning, approve a transition, redefine success, review learning, or stop the
 system at several levels.
 
+### Search broadly, act narrowly
+
+Human judgment does not reveal a hidden objective. It decides how much
+uncertainty the next consequence can safely carry. While uncertainty is high,
+the system can use competing hypotheses, critiques, simulations, and reversible
+probes. Before a consequential effect, it contracts to the simplest action
+that:
+
+1. remains acceptable across the still-plausible interpretations of intent;
+2. has downside proportionate to the available evidence;
+3. preserves observation, recovery, and accountable authority; and
+4. exposes a clear condition for continuing, correcting, or stopping.
+
+The threshold is consequence-relative. A reversible probe may proceed under
+substantial uncertainty; an irreversible or high-impact action requires
+stronger agreement, independent evidence, and explicit human authority. The
+threshold means the action is robust and recoverable enough—not that
+uncertainty has disappeared.
+
 ## 8. Architectural subtraction is a first-class operation
 
 **Observation.** A framework built to prevent real failures later created
@@ -353,11 +421,14 @@ role taxonomy or orchestration topology.
 
 **Working hypothesis.** Agentic engineering should be organized around a
 durable intent-to-outcome system. Model invocations occur inside bounded work
-pulses. Those pulses read project meaning and authority from persistent state,
+pulses. The system maintains a versioned, revisable representation of the
+subject's intent rather than treating any prompt or metric as the objective
+itself. Pulses read project meaning and authority from persistent state,
 perform or investigate a limited transition, and return artifacts and evidence
-to nested feedback loops. Humans retain authority over meaning, value, risk,
-policy, and consequential effects. The harness learns externally to any one
-context and subtracts machinery when evidence no longer justifies it.
+to nested feedback loops. Humans retain authority over meaning, value,
+disagreement, risk, policy, and consequential effects. The harness learns
+externally to any one context and subtracts machinery when evidence no longer
+justifies it.
 
 This is intentionally a description rather than a coined name for the durable
 whole.
@@ -390,6 +461,13 @@ They are. They should remain qualified until operational definitions predict
 better decisions. If the metaphors do not improve system design or evaluation,
 they should be replaced.
 
+### “Evolving intent makes every failure explainable after the fact”
+
+It would, unless revisions are explicit. A changed target should record who
+changed it, which evidence justified the change, what earlier interpretation it
+supersedes, and which predictions or acceptance decisions should now differ.
+Iteration without improving those material predictions is not convergence.
+
 ### “Human gates prevent meaningful autonomy”
 
 The objective is not maximum step count without a person. It is the largest
@@ -417,6 +495,12 @@ mechanical verification and routine work become increasingly automated.
    rewarding hidden uncertainty and proxy success?
 10. Which system properties remain necessary as models, tools, context windows,
     and native runtimes improve?
+11. Do versioned intent representations improve recovery when a subject or
+    collective changes direction?
+12. Which evidence narrows consequential disagreement, and which merely
+    reinforces a proxy that the system already knows how to satisfy?
+13. Can consequence-relative thresholds reduce irreversible mistakes without
+    turning human approval into routine ceremony?
 
 ## Research agenda
 
@@ -427,6 +511,10 @@ mechanical verification and routine work become increasingly automated.
 - record outcome quality, trajectory quality, cost, latency, human effort, and
   recovery time together;
 - measure handoff loss in single-context and composed work-pulse variants;
+- compare unversioned requirements with intent records that preserve source,
+  disagreement, authority, and explicit revision;
+- test whether new evidence narrows material predictions and acceptable-action
+  sets rather than merely increasing agreement with a proxy;
 - test promotion and subtraction decisions against held-out projects;
 - study loop expansion under different observability, recovery, and authority
   conditions; and
