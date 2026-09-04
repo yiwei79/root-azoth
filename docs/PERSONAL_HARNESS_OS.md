@@ -68,14 +68,14 @@ flowchart TB
 
     P1["Extractable and independently testable"] -.-> P
     R1["Source-inspectable and exercised in root-only campaigns"] -.-> R
-    W1["Qualified thesis; not claimed complete"] -.-> W
+    W1["Qualified framework; not claimed complete"] -.-> W
 ```
 
 | Evidence band | What exists | Claim limit |
 |---|---|---|
 | **Portable proof** | Deterministic effect-aware routing, typed stopping state, bounded source-referenced context, and four-case no-write rehearsal | Implemented and tested in the extracted RC2 candidate |
 | **Root workshop evidence** | Raw initiative intake, research sufficiency, knowledge assessment, initiative and roadmap scaffolding, run ledgers, campaign routing, stage evidence, evaluation, and bounded replay | Separate capabilities exercised in root-only work; not exported as one validated product journey |
-| **Working direction** | A durable system that can carry an outcome across discovery, research, planning, delivery, evaluation, correction, and later sessions | Thesis and target experience; not a completion or deployment claim |
+| **Working direction** | A durable system that can carry an outcome across discovery, research, planning, delivery, evaluation, correction, and later sessions | Framework and target experience; not a completion or deployment claim |
 
 This distinction prevents an attractive user journey from becoming evidence
 that every transition is already integrated, portable, and production-ready.
@@ -214,7 +214,7 @@ not mutate the repository. Each concern remains small enough to inspect.
 | Research sufficiency and knowledge-richness assessment | Root workshop evidence; not validated here as one extracted journey | [`research_sufficiency.py`](../scripts/research_sufficiency.py), [`proposal_knowledge_richness.py`](../scripts/proposal_knowledge_richness.py) |
 | Initiative, roadmap, and backlog formation | Root workshop evidence; separate explicit helpers | [`initiative_scaffold.py`](../scripts/initiative_scaffold.py), [`roadmap_scaffold.py`](../scripts/roadmap_scaffold.py) |
 | Campaign routing, run ledgers, evaluation, and bounded replay | Root workshop evidence; root-only campaigns are excluded from the public slice | [`autonomous_loop.py`](../scripts/autonomous_loop.py), [`run_ledger.py`](../scripts/run_ledger.py) |
-| Durable intent-to-outcome system spanning many work pulses | Working direction; not claimed as fully implemented | [working thesis](INTENT_TO_OUTCOME_ENGINEERING.md) |
+| Durable intent-to-outcome system spanning many work pulses | Working direction; not claimed as fully implemented | [engineering framework](INTENT_TO_OUTCOME_ENGINEERING.md) |
 
 ## Public interfaces
 
@@ -405,5 +405,5 @@ those properties matter and how much more of the intent-to-outcome path can be
 made explicit without pretending the full system is already complete.
 
 Return to the [case-study evidence](case-studies/narrow-success-broad-failure.md),
-continue with the [working thesis](INTENT_TO_OUTCOME_ENGINEERING.md), or return
+continue with the [engineering framework](INTENT_TO_OUTCOME_ENGINEERING.md), or return
 to the [project README](../README.md).

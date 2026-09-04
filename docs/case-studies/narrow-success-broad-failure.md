@@ -3,6 +3,18 @@
 *A braided chronology of operational meaning, transferable execution,
 reusable coordination, and architectural contraction.*
 
+## Choose a case
+
+For a quick view of my work, start with the problem closest to yours:
+
+- [Production AI and product ownership](#6-globuddy-a-later-agent-operations-system-in-its-own-right): GloBuddy, a rider CRM I own from discovery through production operation. The platform has handled 41,000+ conversations; this case focuses on how agent behavior is tested and released safely.
+- [Data engineering and operational reporting](#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first): SupplyOps, where I reconstructed fragmented business definitions and delivered a reporting platform used across 22 countries.
+- [Process redesign and adoption](#2-3pl-administration-operational-knowledge-had-to-become-executable): 3PL administration, where I redesigned the operating model and transferred the live workflow to another operations team.
+
+Read in order to follow how these projects shaped my engineering approach.
+For a technical walkthrough of Azoth, my independent project, see
+[Routing, Context, and Authority](../PERSONAL_HARNESS_OS.md).
+
 An AI-assisted task can succeed at every visible step and still fail the work
 that matters. A query runs, an artifact looks plausible, a handoff completes,
 or a model gives a fluent answer—while the wider effort has lost the accepted
@@ -35,8 +47,8 @@ flowchart TB
     Z["Azoth"] -.->|independent synthesis| L
 ```
 
-The broader model is developed in [*Intent-to-Outcome Engineering: A Working
-Thesis on Durable Agentic Systems*](../INTENT_TO_OUTCOME_ENGINEERING.md). The
+The broader model is developed in [*Intent-to-Outcome Engineering: Principles
+for Durable Agentic Systems*](../INTENT_TO_OUTCOME_ENGINEERING.md). The
 piece that can be run in the public candidate is documented in [Executable
 Proof: Routing, Context, and Authority](../PERSONAL_HARNESS_OS.md).
 
@@ -626,8 +638,8 @@ durable intelligence—even though its correct name remains open.
 10. **Subtraction is part of harness engineering.** Architecture must re-earn
    its place as models, tools, and projects change.
 
-These findings are developed—and challenged—in the [working
-thesis](../INTENT_TO_OUTCOME_ENGINEERING.md), not repeated here as settled
+These findings are developed—and challenged—in the [engineering
+framework](../INTENT_TO_OUTCOME_ENGINEERING.md), not repeated here as settled
 theory.
 
 ## Unresolved questions
@@ -648,7 +660,7 @@ theory.
 |---|---|
 | Operational reporting migration, 3PL administration redesign, local data-request workflow, internal framework, and GloBuddy | Historical project experience and repository-grounded evidence; not Azoth deployments |
 | 3PL administration | User-confirmed end-to-end ownership and completed RTO transition, supported by private operating artifacts; private screenshots, links, account details, and credential examples are not public evidence |
-| Causal lineage | Observed projects contributed signals to a later synthesis; no earlier project is retroactively claimed to implement the thesis |
+| Causal lineage | Observed projects contributed signals to a later synthesis; no earlier project is retroactively claimed to implement the framework |
 | GloBuddy | A unified production agent-operations product; the ME behavior-and-release path is an inspectable slice, not the whole product or the ideal Intent-to-Outcome system |
 | Internal Agentic Framework | Employer-work lineage distinct from independent Azoth |
 | Alignment signal and residual entropy | Qualified engineering metaphors, not formal or empirically calibrated quantities |
@@ -656,6 +668,6 @@ theory.
 | `v0.3.0-rc.4` executable proof | Only routing, bounded context, explicit authority/stopping state, and no-write rehearsal are claimed as portable implemented proof |
 | External adoption or production deployment of Azoth | Not claimed |
 
-Continue with the [working thesis](../INTENT_TO_OUTCOME_ENGINEERING.md), inspect
+Continue with the [engineering principles](../INTENT_TO_OUTCOME_ENGINEERING.md), inspect
 the [executable proof](../PERSONAL_HARNESS_OS.md), or return to the [project
 README](../../README.md).

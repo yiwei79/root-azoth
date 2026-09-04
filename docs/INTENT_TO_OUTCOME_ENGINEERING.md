@@ -1,11 +1,11 @@
-# Intent-to-Outcome Engineering: A Working Thesis on Durable Agentic Systems
+# Intent-to-Outcome Engineering: Principles for Durable Agentic Systems
 
-> **Status:** working thesis. This document separates project observations,
+> **Status:** evolving engineering framework. This document separates project observations,
 > engineering inferences, working hypotheses, and research horizons. It is not
 > a claim of a finished Azoth system, a new scientific theory, or a formal
 > control-theory model.
 
-## The thesis at three resolutions
+## The framework at three resolutions
 
 - **Plain language:** build the AI system around the real outcome, not the
   model call.
@@ -17,7 +17,7 @@
   work to improve that relationship without claiming a complete objective,
   guaranteed convergence, or zero uncertainty.
 
-Agent systems are the practical origin and strongest evidence for this thesis.
+Agent systems are the practical origin and strongest evidence for this framework.
 The broader claim is more modest: the same discipline may help engineer other
 systems whose requirements, environment, or measures of success remain
 uncertain while the work is underway.
@@ -94,7 +94,7 @@ flowchart TB
     P -->|reads from and contributes to| D
 ```
 
-This thesis uses three distinctions:
+This framework uses three distinctions:
 
 | Unit | Working definition | Durability |
 |---|---|---|
@@ -194,7 +194,7 @@ an instrument for making one or more of those translations; it does not own the
 continuity of the whole outcome.
 
 The term is deliberately metaphorical. It is not assumed to be a scalar, and
-this thesis does not claim a calibrated signal-to-noise measure. The
+this document does not claim a calibrated signal-to-noise measure. The
 relationship may become clearer, degrade through drift or proxy success, or
 reveal that the intent anchor itself needs explicit revision.
 
@@ -417,7 +417,7 @@ harness structure should disappear. Durable intent, project meaning, authority,
 evidence, and outcome evaluation are more likely to remain than any particular
 role taxonomy or orchestration topology.
 
-## The thesis in one statement
+## The framework in one statement
 
 **Working hypothesis.** Agentic engineering should be organized around a
 durable intent-to-outcome system. Model invocations occur inside bounded work
@@ -439,12 +439,12 @@ whole.
 
 Possibly. The stronger claim is not that orchestration is new, but that current
 agent discourse often places identity and continuity at the model or thread
-level. The thesis is useful only if shifting the unit of analysis improves
+level. The argument is useful only if shifting the unit of analysis improves
 outcome continuity, recovery, and governance in practice.
 
 ### “A sufficiently capable model can hold the whole outcome in context”
 
-For some tasks, yes. External state adds cost and can become stale. The thesis
+For some tasks, yes. External state adds cost and can become stale. The framework
 predicts value mainly when work spans long time horizons, distinct authorities,
 multiple evidence surfaces, irreversible effects, or contexts that cannot
 reliably remain together.
@@ -560,5 +560,5 @@ among intent, project meaning, work pulses, evidence, authority, feedback,
 recovery, and people.
 
 If that framing improves real outcomes, it deserves refinement. If a simpler
-model explains and supports the work better, this thesis should contract with
+model explains and supports the work better, this framework should contract with
 the architecture it recommends.

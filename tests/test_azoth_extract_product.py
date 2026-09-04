@@ -263,7 +263,7 @@ def test_extract_minimal_tree(tmp_path: Path) -> None:
     assert "A thread is a bounded work pulse" in readme
     assert "durable whole" in readme
     assert "Experience and evidence" in readme
-    assert "Working thesis" in readme
+    assert "Engineering framework" in readme
     assert "Executable proof" in readme
     assert "Source and architecture history" in readme
     assert "Portable proof" in readme

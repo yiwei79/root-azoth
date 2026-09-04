@@ -3,6 +3,21 @@
 **A personal agent-engineering project about keeping intent connected to
 outcomes across complex AI-assisted work.**
 
+## Start with the work
+
+I build software, data products and AI systems for operational teams. These
+cases show the practical work that shaped Azoth:
+
+| Work | What I delivered | Read the case |
+|---|---|---|
+| Production AI | Own a rider CRM from discovery and architecture through implementation and production operation; the platform has handled 41,000+ conversations. | [GloBuddy: engineering the system around the conversation](docs/case-studies/narrow-success-broad-failure.md#6-globuddy-a-later-agent-operations-system-in-its-own-right) |
+| Operational data | Rebuilt fragmented reporting definitions into a BigQuery pipeline and decision dashboard used across 22 countries. | [SupplyOps: preserving meaning through delivery](docs/case-studies/narrow-success-broad-failure.md#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first) |
+| Process and adoption | Redesigned logistics-partner administration and transferred the live workflow to another operations team. | [3PL: making an operating model transferable](docs/case-studies/narrow-success-broad-failure.md#2-3pl-administration-operational-knowledge-had-to-become-executable) |
+
+Azoth is my independent engineering project. The systems above were delivered
+at Glovo and helped shape its principles. For a technical walkthrough of
+Azoth and its tested capabilities, see [Routing, Context, and Authority](docs/PERSONAL_HARNESS_OS.md).
+
 Agent-assisted work can look successful until the larger outcome is checked. A
 thread starts with a sound plan, discovers something important, follows the
 detour, and produces a useful artifact—while the original intent, acceptance
@@ -80,7 +95,7 @@ formal measurement.
 | If you want to understand… | Continue with… |
 |---|---|
 | **Experience and evidence** | [*Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md), a braided account of the projects, engineering value, framework growth, and contraction that exposed the problem |
-| **Working thesis** | [*Intent-to-Outcome Engineering*](docs/INTENT_TO_OUTCOME_ENGINEERING.md), the evolving argument about work pulses, durable system intelligence, feedback, authority, and open research questions |
+| **Engineering framework** | [*Intent-to-Outcome Engineering*](docs/INTENT_TO_OUTCOME_ENGINEERING.md), the evolving argument about work pulses, durable system intelligence, feedback, authority, and open research questions |
 | **Executable proof** | [Routing, Context, and Authority](docs/PERSONAL_HARNESS_OS.md), the current operator experience and the exact boundary of the tested public slice |
 | **Source and architecture history** | [Architecture overview](docs/AZOTH_ARCHITECTURE.md), [decision index](docs/DECISIONS_INDEX.md), and [current proof paths](#inspect-the-current-proof) |
 
@@ -129,7 +144,7 @@ pulses: refine intent, discover missing knowledge, form and re-form work,
 select the smallest sufficient composition, evaluate what happened, learn
 externally to any one model context, and stop honestly at human authority.
 
-That direction is a working thesis, not a completion claim.
+That direction is an evolving framework, not a completion claim.
 
 ## How this inquiry emerged
 
@@ -154,7 +169,7 @@ or ideal realization of Azoth.
 
 Azoth is the independent project where these recurring engineering questions
 became an explicit inquiry. The [case study](docs/case-studies/narrow-success-broad-failure.md)
-holds the grounded chronology; the [thesis](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
+holds the grounded chronology; the [framework](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
 develops the broader model.
 
 ## Claim boundary
@@ -165,7 +180,7 @@ develops the broader model.
 | Compact, provenance-preserving context assembly | **Portable proof:** implemented and tested in the candidate | [`scripts/context_view.py`](scripts/context_view.py), [`scripts/personal_harness_context.py`](scripts/personal_harness_context.py) |
 | Read-only behavioral rehearsal | **Portable proof:** implemented and tested in the candidate | [runner](scripts/personal_harness_practice_rehearsal.py), [cases](examples/personal-harness/rehearsal-cases.yaml), [tests](tests/test_personal_harness_practice_rehearsal.py) |
 | Initiative discovery, research sufficiency, roadmap formation, ledgers, and campaign control | **Root workshop evidence:** separate capabilities and observed campaigns; not one extracted product journey | [`scripts/initiative_intake.py`](scripts/initiative_intake.py), [`scripts/research_sufficiency.py`](scripts/research_sufficiency.py), [`scripts/roadmap_scaffold.py`](scripts/roadmap_scaffold.py), [`scripts/run_ledger.py`](scripts/run_ledger.py), [`scripts/autonomous_loop.py`](scripts/autonomous_loop.py) |
-| Intent-to-outcome engineering | **Working direction:** qualified thesis, not fully implemented | [thesis](docs/INTENT_TO_OUTCOME_ENGINEERING.md) |
+| Intent-to-outcome engineering | **Working direction:** qualified framework, not fully implemented | [framework](docs/INTENT_TO_OUTCOME_ENGINEERING.md) |
 | Historical employer projects and internal framework | Experience and repository-grounded evidence; not Azoth deployment evidence | [case study](docs/case-studies/narrow-success-broad-failure.md) |
 | External adoption or production deployment of Azoth | Not claimed | [preview boundary](docs/PERSONAL_HARNESS_OS.md#public-preview-boundary) |
 
@@ -187,7 +202,7 @@ develops the broader model.
 - [Architecture decisions](docs/DECISIONS_INDEX.md) — decision records and
   implementation status.
 
-The thesis relies on Git for revision history rather than adding another
+The framework relies on Git for revision history rather than adding another
 changelog. Installer completeness, cross-host parity, package distribution,
 and production adoption remain outside the `v{{PUBLIC_VERSION}}` validation
 boundary. Existing tags remain immutable. Publication requires review of the
