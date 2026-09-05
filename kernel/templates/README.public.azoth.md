@@ -10,8 +10,8 @@ cases show the practical work that shaped Azoth:
 
 | Work | What I delivered | Read the case |
 |---|---|---|
-| Production AI | Own a rider CRM from discovery and architecture through implementation and production operation; the platform has handled 41,000+ conversations. | [GloBuddy: engineering the system around the conversation](docs/case-studies/narrow-success-broad-failure.md#6-globuddy-a-later-agent-operations-system-in-its-own-right) |
-| Operational data | Rebuilt fragmented reporting definitions into a BigQuery pipeline and decision dashboard used across 22 countries. | [SupplyOps: preserving meaning through delivery](docs/case-studies/narrow-success-broad-failure.md#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first) |
+| Production AI | Lead the AI Rider CRM Platform from definition and planning through architecture and implementation with collaborators, establishing its operating model. | [AI Rider CRM Platform: onboarding, follow-up and reliable delivery](docs/case-studies/narrow-success-broad-failure.md#6-ai-rider-crm-platform-from-onboarding-need-to-production-delivery) |
+| Operational data | Delivered the Supply Operations Reporting Data Platform, the data backbone for reporting and decisions across 22 countries, by recovering business definitions and rebuilding the reporting layer. | [Supply Operations Reporting Data Platform: preserving meaning through delivery](docs/case-studies/narrow-success-broad-failure.md#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first) |
 | Process and adoption | Redesigned logistics-partner administration and transferred the live workflow to another operations team. | [3PL: making an operating model transferable](docs/case-studies/narrow-success-broad-failure.md#2-3pl-administration-operational-knowledge-had-to-become-executable) |
 
 Azoth is my independent engineering project. The systems above were delivered

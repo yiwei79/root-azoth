@@ -7,8 +7,8 @@ reusable coordination, and architectural contraction.*
 
 For a quick view of my work, start with the problem closest to yours:
 
-- [Production AI and product ownership](#6-globuddy-a-later-agent-operations-system-in-its-own-right): GloBuddy, a rider CRM I own from discovery through production operation. The platform has handled 41,000+ conversations; this case focuses on how agent behavior is tested and released safely.
-- [Data engineering and operational reporting](#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first): SupplyOps, where I reconstructed fragmented business definitions and delivered a reporting platform used across 22 countries.
+- [Production AI and product delivery](#6-ai-rider-crm-platform-from-onboarding-need-to-production-delivery): AI Rider CRM Platform, a production onboarding and follow-up system I lead from definition and planning through architecture and implementation. This case examines one governed behavior-and-release path.
+- [Data engineering and operational reporting](#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first): Supply Operations Reporting Data Platform, the data backbone I delivered for reporting and decisions across 22 countries by recovering business definitions and rebuilding the reporting layer.
 - [Process redesign and adoption](#2-3pl-administration-operational-knowledge-had-to-become-executable): 3PL administration, where I redesigned the operating model and transferred the live workflow to another operations team.
 
 Read in order to follow how these projects shaped my engineering approach.
@@ -40,9 +40,9 @@ flowchart TB
     B --> V["Verify the real-world effect"]
     V --> L["Promote only earned learning"]
 
-    S["SupplyOps"] -.->|semantic contracts| M
+    S["Reporting Data Platform"] -.->|semantic contracts| M
     P["3PL administration"] -.->|operating model and ownership| B
-    G["GloBuddy"] -.->|AI and effect boundaries| B
+    G["AI Rider CRM Platform"] -.->|AI and effect boundaries| B
     F["Framework contraction"] -.->|subtractive learning| L
     Z["Azoth"] -.->|independent synthesis| L
 ```
@@ -452,15 +452,32 @@ competes with the task for context, authority, or source-of-truth status.
 gate is a hypothesis. It should be retained, revised, or removed according to
 representative work and observed failure—not architectural prestige.
 
-## 6. GloBuddy: a later agent-operations system in its own right
+<a name="6-globuddy-a-later-agent-operations-system-in-its-own-right"></a>
+
+## 6. AI Rider CRM Platform: from onboarding need to production delivery
 
 ### The problem
 
-GloBuddy is the broader agent-operations system as a whole. This section focuses
-on GloBuddy ME’s governed behavior-and-release path: translating an
-activation-to-first-order journey into versioned, testable behavior without
-allowing a prompt, provider configuration, or transcript to become the sole
-source of truth.
+The AI Rider CRM Platform is a production system for rider onboarding and
+follow-up. Riders interact with a conversational agent; operations teams use an
+interface, conversation outcomes and rider-lifecycle data to review activity
+and improve the service. I lead the platform from definition and planning
+through architecture and implementation, working with collaborators and
+business stakeholders. As its early-stage lead and architect, I established
+the operating model that supports its use and continued development.
+
+An illustrative journey is helping an activated rider progress toward a first
+order. Approved context helps the agent guide the rider, while software checks
+eligibility and contact policy before outbound actions. Conversation outcomes
+feed reporting and operator review. In the Montenegro control path examined
+here, an ambiguous provider response stops automatic retries to avoid duplicate
+contact.
+
+The wider product includes cloud services, an operations interface, reporting,
+monitoring and improvement workflows. This section examines the Montenegro
+behavior-and-release path in detail: turning an activation-to-first-order
+journey into versioned, testable behavior without allowing a prompt, provider
+configuration or transcript to become the sole source of truth.
 
 The difficult path crossed business intent, lifecycle state, policy,
 conversation behavior, provider mechanics, channel effects, continuity,
@@ -541,10 +558,10 @@ transactional one-attempt reservation prevented duplicate effects. Provider
 acceptance was recorded as distinct from delivery proof; rejected or unknown
 outcomes were terminal rather than automatically retried after ambiguity.
 
-The wider GloBuddy system also includes routing and contextual tools, cloud
+The wider AI Rider CRM Platform also includes routing and contextual tools, cloud
 operations, data and measurement pipelines, an operator dashboard,
 observability, and human improvement workflows. Those components connect
-conversation behavior to rider-lifecycle outcomes. This case uses the ME
+conversation behavior to rider-lifecycle outcomes. This case uses the Montenegro
 behavior-and-release path as an inspectable slice and does not claim that every
 component is represented as one perfectly integrated visible-source path.
 
@@ -658,10 +675,10 @@ theory.
 
 | Claim family | Status |
 |---|---|
-| Operational reporting migration, 3PL administration redesign, local data-request workflow, internal framework, and GloBuddy | Historical project experience and repository-grounded evidence; not Azoth deployments |
+| Operational reporting migration, 3PL administration redesign, local data-request workflow, internal framework, and the AI Rider CRM Platform | Historical project experience and repository-grounded evidence; not Azoth deployments |
 | 3PL administration | User-confirmed end-to-end ownership and completed RTO transition, supported by private operating artifacts; private screenshots, links, account details, and credential examples are not public evidence |
 | Causal lineage | Observed projects contributed signals to a later synthesis; no earlier project is retroactively claimed to implement the framework |
-| GloBuddy | A unified production agent-operations product; the ME behavior-and-release path is an inspectable slice, not the whole product or the ideal Intent-to-Outcome system |
+| AI Rider CRM Platform | A production onboarding and follow-up platform led through definition, planning, architecture and implementation with collaborators; the Montenegro behavior-and-release path is an inspectable slice, not the whole product or the ideal Intent-to-Outcome system |
 | Internal Agentic Framework | Employer-work lineage distinct from independent Azoth |
 | Alignment signal and residual entropy | Qualified engineering metaphors, not formal or empirically calibrated quantities |
 | Azoth root workshop | Inspectable capabilities and campaign evidence; not one validated extracted product journey |
