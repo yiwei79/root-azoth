@@ -64,10 +64,18 @@ M1: PROCEDURAL ─ `kernel/` + skills/ + agents/ in scaffold; `.azoth/kernel/` i
 
 ## Development Instructions
 
+For documentation-only wording and navigation changes, use
+[Documentation-only publication](README.md#documentation-only-publication).
+This includes the public README template when it changes no operational rules.
+Do not require a version bump, new release or full delivery pipeline for that
+scope; retain exact-diff review, scoped publication authority, public-content
+validation and live readback. Behavioral instruction changes are not covered
+by this shortcut.
+
 ### Core Rules
 
 1. **Quality > speed**. Every output passes evaluation before delivery. No AI slop.
-2. **Kernel immutability**. Files in `kernel/` change ONLY via human-approved promotion.
+2. **Kernel immutability**. Kernel behavior and governance change only via human-approved promotion. Presentation-only edits to `kernel/templates/README.public.azoth.md` use the documentation-only publication path above, with human approval of the content/publication scope; they do not promote procedural behavior.
 3. **Cross-platform**. All scripts in Python (not PowerShell). Paths via `pathlib`.
 4. **macOS primary, Windows validated**. Test on macOS first, verify Windows compat.
 5. **Claude Code primary**. `.claude/` is the development surface. Other platforms via adapters.

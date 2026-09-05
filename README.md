@@ -27,7 +27,42 @@ Full design: `[docs/AZOTH_ARCHITECTURE.md](docs/AZOTH_ARCHITECTURE.md)` (decisio
 | Audience | You, maintainers, contributors                             | Anyone who clones the released artifact             |
 
 
-Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture **§18** three-tier model). The latest approved/installable public release is **azoth v0.2.0**; current root-azoth HEAD may include workshop repairs that are advisory until the next public sync gate publishes them.
+Mechanical extraction uses `sync-config.yaml` and product profiles (see architecture
+**§18** three-tier model). Public documentation may advance on `main` between
+versioned releases. Consult the public repository's tags and releases for the
+versioned installable artifacts; a newer documentation commit is not a new release.
+
+### Documentation-only publication
+
+Use this path for prose, README navigation and case explanations, including
+`kernel/templates/README.public.azoth.md`, when executable behavior, agent
+instructions, governance, schemas, dependencies and install contracts are unchanged.
+A documentation template's directory does not turn a wording edit into a new
+product release or procedural-knowledge promotion.
+
+1. Review the exact content diff for accuracy, private information, links and
+   consistency with the implemented capability boundary. Reuse approval already
+   given for this content and destination; obtain scoped publication authority
+   when it has not been given.
+2. Commit the source documents. Extract from that committed source with
+   `python3 scripts/azoth_extract_product.py --out <temporary-directory>`.
+3. Inspect the exact export delta before copying it to the public checkout.
+   It must contain only the reviewed documents and generated source-revision
+   provenance. Stop and investigate unexpected code, configuration or deletions.
+4. Run relevant link/content checks and the existing public sanitizer/validator.
+   Do not repeat installation, runtime or full release smoke tests unless the
+   diff affects those behaviors or a check exposes a relevant problem.
+5. Commit and push the approved source/public changes, then verify the live
+   content and commit identities. Preserve version numbers, tags, release notes
+   and GitHub releases. CI may still perform its configured checks.
+
+No version increment, new release, repeated design gate or full delivery pipeline
+is required solely to publish documentation. Changes that alter actual behavior
+or operating rules use their applicable review and tests, even when written in
+Markdown. This distinction is based on the effect of the change, not its extension.
+Existing host permissions and kernel-file human approval still apply; reuse the
+scoped approval rather than starting a new promotion cycle. This maintainer path
+does not remove a host denial of edits under `kernel/`.
 
 ---
 

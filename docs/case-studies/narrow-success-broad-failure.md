@@ -595,6 +595,11 @@ their origin or complete realization.
 
 ## 7. Independent Azoth synthesis: making the system question explicit
 
+The recurring task behind Azoth was setting up new workspaces for agents.
+Work inside the internal Agentic Framework made me want to capture the reusable
+essence of that setup while letting each workspace establish and evolve its
+own operating model.
+
 Azoth is independent work. It asks what should carry intent when a project
 spans discovery, research, planning, implementation, evaluation, correction,
 release decisions, and future sessions.

@@ -1,22 +1,30 @@
 # Azoth
 
-**A personal agent-engineering project about keeping intent connected to
-outcomes across complex AI-assisted work.**
+**An evolving engineering framework and experimental toolkit for keeping
+AI-assisted work aligned with intent as the work itself changes.**
 
-## Start with the work
+Azoth began with a recurring task: setting up workspaces for AI agents. Each
+new workspace brought familiar questions—what context the agent needs, how to
+organize the work, what it can decide, and how to know whether it has helped.
 
-I build software, data products and AI systems for operational teams. These
-cases show the practical work that shaped Azoth:
+I wanted to capture the reusable essence of that work, so each workspace could
+start from accumulated understanding and adapt to its own purpose. That became
+an exploration of how to establish an operating model for agents and keep
+improving it as the work reveals new needs.
 
-| Work | What I delivered | Read the case |
-|---|---|---|
-| Production AI | Lead the AI Rider CRM Platform from definition and planning through architecture and implementation with collaborators, establishing its operating model. | [AI Rider CRM Platform: onboarding, follow-up and reliable delivery](docs/case-studies/narrow-success-broad-failure.md#6-ai-rider-crm-platform-from-onboarding-need-to-production-delivery) |
-| Operational data | Delivered the Supply Operations Reporting Data Platform, the data backbone for reporting and decisions across 22 countries, by recovering business definitions and rebuilding the reporting layer. | [Supply Operations Reporting Data Platform: preserving meaning through delivery](docs/case-studies/narrow-success-broad-failure.md#1-operational-reporting-and-bigquery-migration-meaning-had-to-move-first) |
-| Process and adoption | Redesigned logistics-partner administration and transferred the live workflow to another operations team. | [3PL: making an operating model transferable](docs/case-studies/narrow-success-broad-failure.md#2-3pl-administration-operational-knowledge-had-to-become-executable) |
+Here, an operating model means how people, agents, tools and knowledge work
+together: how work is framed, context is maintained, decisions are made,
+actions are checked, and experience informs what happens next.
 
-Azoth is my independent engineering project. The systems above were delivered
-at Glovo and helped shape its principles. For a technical walkthrough of
-Azoth and its tested capabilities, see [Routing, Context, and Authority](docs/PERSONAL_HARNESS_OS.md).
+Azoth develops this approach through an evolving engineering framework and
+experimental tooling. This repository presents its principles, a bounded
+executable reference, and the experiences that continue to shape it.
+
+- [Explore the engineering framework](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
+- [Inspect the implemented capabilities](docs/PERSONAL_HARNESS_OS.md)
+- [Read the experiences that shaped the approach](docs/case-studies/narrow-success-broad-failure.md)
+
+## When useful work loses its direction
 
 Agent-assisted work can look successful until the larger outcome is checked. A
 thread starts with a sound plan, discovers something important, follows the
@@ -148,29 +156,22 @@ That direction is an evolving framework, not a completion claim.
 
 ## How this inquiry emerged
 
-The starting point was operational-data work: fragmented reporting semantics
-could not survive a mechanical platform migration. Recovering business meaning
-required traceable evidence, explicit acceptance contracts, staged
-publication, independent readback, and recovery.
+The recurring experience was setting up new workspaces for agents inside an
+internal Agentic Framework. Repeating that work raised a practical question:
+which parts of establishing a useful workspace could be captured and reused,
+and which needed to remain specific to the people, purpose and project?
 
-Reusing that discipline for local data requests showed that the coordination
-pattern could transfer while project meaning could not. A shared internal
-framework then explored project-local learning, reviewed promotion,
-specialized roles, typed handoffs, and adaptive pipelines. When the framework
-began duplicating state and consuming more attention than some tasks required,
-architectural contraction revealed which controls had actually earned their
-place.
+Azoth became the independent place to explore that question. Its approach is
+informed by the wider experience of building data products, operational
+workflows and AI systems: preserving meaning, making decisions inspectable,
+learning from use, and simplifying controls when they cost more than they help.
+These experiences continue to shape how a workspace's operating model can be
+established and evolved.
 
-A later conversational-agent operations system applied related lessons to a
-different problem: versioned business meaning, deterministic policy,
-behavioral tests, provider projection, authority gates, continuity, and
-reconciliation. It is an individual production-system case, not a deployment
-or ideal realization of Azoth.
-
-Azoth is the independent project where these recurring engineering questions
-became an explicit inquiry. The [case study](docs/case-studies/narrow-success-broad-failure.md)
-holds the grounded chronology; the [framework](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
-develops the broader model.
+The [case study](docs/case-studies/narrow-success-broad-failure.md) holds that
+experience and its chronology; the [framework](docs/INTENT_TO_OUTCOME_ENGINEERING.md)
+develops the broader model. The employer systems are supporting cases, not
+deployments or complete realizations of Azoth.
 
 ## Claim boundary
 
