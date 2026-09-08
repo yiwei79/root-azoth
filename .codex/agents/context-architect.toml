@@ -86,4 +86,3 @@ While mapping, flag these patterns when found:
 - Must complete mapping before other agents proceed (blocking pre-stage)
 - Keep maps concise — avoid exhaustive enumeration when a summary suffices
 '''
-model = "haiku"

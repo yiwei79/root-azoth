@@ -386,8 +386,10 @@ def transform_agent_codex(agent: dict[str, Any]) -> str:
         f'description = "{_toml_escape_basic(_description(meta))}"',
         "developer_instructions = " + _toml_multiline_literal(agent["body"]),
     ]
-    if "model" in meta:
-        lines.append(f'model = "{_toml_escape_basic(str(meta["model"]))}"')
+    # Shared archetypes may carry Claude tier aliases, not concrete Codex model IDs.
+    model = str(meta.get("model") or "").strip()
+    if model and model not in {"haiku", "sonnet", "opus", "inherit"}:
+        lines.append(f'model = "{_toml_escape_basic(model)}"')
     return "\n".join(lines) + "\n"
 
 

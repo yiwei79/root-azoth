@@ -328,6 +328,16 @@ def test_codex_agent_model_optional() -> None:
     assert data_with_model["model"] == "gpt-5.4"
 
 
+@pytest.mark.parametrize("model", ("haiku", "sonnet", "opus", "inherit"))
+def test_codex_omits_claude_tier_aliases_without_changing_claude(model: str) -> None:
+    agent = {**_ARCHITECT, "meta": {**_ARCHITECT["meta"], "model": model}}
+    codex = tomllib.loads(transform_agent_codex(agent))
+    claude_meta, _ = parse_frontmatter(transform_agent_claude(agent))
+    assert "model" not in codex
+    assert claude_meta["model"] == model
+    assert codex["developer_instructions"] == agent["body"]
+
+
 def test_builder_posture_projects_to_agent_transforms() -> None:
     builder = _canonical_builder()
     outputs = {
