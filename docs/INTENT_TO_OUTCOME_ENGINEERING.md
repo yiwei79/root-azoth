@@ -179,6 +179,8 @@ important design question.
 across models, people, representations, tools, evidence, control boundaries,
 and recovery mechanisms. It should not be attributed to the model alone.
 
+<a id="2-purpose-and-success-form-the-persistent-intent-anchor"></a>
+
 ## 2. Purpose and success must remain recoverable
 
 **Engineering aim.** People and agents should be able to recover the current
@@ -409,6 +411,8 @@ but expansion is useful only when it improves outcomes or human effort enough
 to justify the added cost and risk. Their semantic grounding, observability,
 recovery and authority must support the consequences they carry. Loop size is
 not a measure of success.
+
+<a id="6-learning-must-be-externalized-without-becoming-self-authorizing-policy"></a>
 
 ## 6. Learning should remain useful without becoming self-authorizing policy
 
