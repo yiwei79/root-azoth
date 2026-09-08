@@ -207,13 +207,13 @@ slice, change the pipeline shape, or escalate to the human for a pipeline decisi
 
 ## Model Tiering
 
-Set `model_tier` on every BL-011 spawn contract. On Codex, resolve that tier before every `spawn_agent` call with `python3 scripts/codex_model_selector.py resolve`, pass the returned `model` and `reasoning_effort` into the actual spawn call, and record those selector fields in stage-spawn evidence. Do not rely on parent-session model inheritance.
+Set `model_tier` on every BL-011 spawn contract. On Codex, follow the host-compatible model contract in `skills/subagent-router/SKILL.md`: respect explicit task-level choices, use supported overrides when justified, and otherwise allow host defaults or inheritance. Record the requested or inherited selection in stage-spawn evidence without claiming an unobserved effective model. Tier intent never invents host capabilities.
 
-When calling the selector, include the latest classification signals whenever known:
+When the local selector is explicitly selected and its dated policy has been
+verified against the active host, include the latest classification signals:
 `--risk`, `--complexity`, `--knowledge`, `--stage-kind`, `--target-layer`, and one
-`--trigger` per routing or escalation trigger. These signals are part of the
-selection evidence, not extra prompt prose. Keep `xhigh` explicit-override only
-unless a future policy update adds a measured bounded default.
+`--trigger` per known trigger. The local-policy route retains its override checks;
+other host-supported model routes do not require a selector trace.
 
 | Tier | When | Spawn field |
 |------|------|-------------|

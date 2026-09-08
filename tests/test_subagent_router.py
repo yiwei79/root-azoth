@@ -115,12 +115,14 @@ def test_codex_resolver_contract_present() -> None:
     assert ".azoth/codex-model-selector-traces.local.jsonl" in _CONTENT
 
 
-def test_codex_spawn_fields_are_explicit() -> None:
-    """T-025: spawned Codex subagents must receive explicit model and effort fields."""
-    assert "model: <resolved-model>" in _CONTENT
-    assert "reasoning_effort: <low|medium|high|xhigh>" in _CONTENT
-    assert "Do not omit `model` or `reasoning_effort`" in _CONTENT
-    assert "Parent `xhigh` reasoning must not leak" in _CONTENT
+def test_codex_spawn_selection_is_host_compatible() -> None:
+    """Selection flexibility preserves explicit choices and independent stages."""
+    assert "host defaults or inheritance" in _CONTENT
+    assert "Never invent spawn arguments" in _CONTENT
+    assert "Respect explicit task-level model and effort choices" in _CONTENT
+    assert "Inheritance never authorizes an inline substitute" in _CONTENT
+    assert "The local selector remains available" in _CONTENT
+    assert "Do not omit `model` or `reasoning_effort`" not in _CONTENT
 
 
 # ── Integration: file-scoped collateral guard ─────────────────────────────────

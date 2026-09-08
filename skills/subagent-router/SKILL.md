@@ -148,29 +148,35 @@ it defaults to `standard`.
 
 ## Codex Model Selector Contract (T-025)
 
-For Codex-hosted spawns, `model_tier` is portable intent, not the final runtime
-payload. Before spawning a Codex subagent, the orchestrator must resolve the tier
-through `python3 scripts/codex_model_selector.py resolve`, using
-`.azoth/codex-model-selector-policy.yaml` as policy input and appending selector evidence to
-`.azoth/codex-model-selector-traces.local.jsonl`.
+For Codex-hosted spawns, `model_tier` expresses portable intent. The active
+host's tool schema and available model/effort combinations own runtime choices.
+Respect explicit task-level model and effort choices. Otherwise, use supported
+overrides when task evidence justifies them, or omit optional selection fields
+to use host defaults or inheritance. Check custom-agent settings too: they may
+supply a model or effort. Never invent spawn arguments or silently replace an
+explicitly requested model with a policy alias.
 
-The resolved spawn payload must include explicit runtime fields:
+Before delegating, verify that the available route can provide mandatory tools
+and required context isolation. Unsupported optional overrides do not by
+themselves mean delegation is unavailable. If a required model, tool, independent
+stage, or authority is unavailable, report that specific limit and preserve the
+pipeline stop rule. Inheritance never authorizes an inline substitute for a
+required independent stage.
 
-```yaml
-model_tier: premium | standard | fast
-model: <resolved-model>
-reasoning_effort: <low|medium|high|xhigh>
-selector_signals:
-  risk: <classification.risk>
-  complexity: <classification.complexity>
-  knowledge: <classification.knowledge>
-  stage_kind: <planning|implementation|review|audit|research|...>
-  target_layer: <M0|M1|M2|M3|...>
-  triggers: [<review-independence|context-isolation|bounded-replay|...>]
-```
+Record requested model/effort overrides, or `host-default/inherited`, in existing
+stage-spawn evidence. Record effective settings only when the host exposes them;
+omission alone does not prove the child's model or effort. Keep typed stage
+summaries, execution budgets, and all scope/pipeline/write-claim checks.
 
-Do not omit `model` or `reasoning_effort` on Codex subagent spawns. Parent `xhigh` reasoning must not leak into leaf workers by omission; `xhigh` is allowed only when
-there is an explicit selector override with an override reference and reason.
+The local selector remains available for an explicitly selected local-policy
+route: run `python3 scripts/codex_model_selector.py resolve` with stage, tier,
+mandatory tools and known selector signals. Verify
+`.azoth/codex-model-selector-policy.yaml` against the active host first; its
+`source_observed_on` and `availability_state` are a saved observation, not a live
+capability probe. That route keeps its override checks and appends evidence to
+`.azoth/codex-model-selector-traces.local.jsonl` under normal write authority.
+Pass returned `model` and `reasoning_effort` only if the host supports those fields
+and values. Other routes do not require running the selector or creating a trace.
 
 **`execution_budget` resolution**: if omitted, the spawned agent is leaf-only. Only
 `orchestrator`, `research-orchestrator`, and `architect` may receive a non-leaf budget.
