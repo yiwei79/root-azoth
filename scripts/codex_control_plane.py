@@ -401,6 +401,20 @@ def _profile_action_hints(parsed: ParsedPrompt, goal: str) -> tuple[str, ...]:
     lowered = f"{parsed.source_command} {parsed.effective_pipeline_command} {goal}".lower()
     actions: list[str] = []
 
+    # A read prefix does not make an explicit follow-up mutation read-only.
+    if parsed.is_freeform and any(
+        _starts_with_action(goal.lower(), term) for term in _PROFILE_READ_ONLY_TERMS
+    ):
+        for term in (*_PROFILE_LOCAL_EDIT_TERMS, *_PROFILE_EXTERNAL_TERMS):
+            if re.search(
+                r"(?:\b(?:then|and|also)\s+|[;\n]\s*)(?:then\s+)?(?:please\s+)?"
+                + re.escape(term)
+                + r"\b",
+                goal,
+                re.IGNORECASE,
+            ):
+                actions.append(term.replace(" ", "_"))
+
     if parsed.effective_route_name == "session-closeout":
         actions.append("closeout")
     if parsed.source_command in _PROFILE_GOVERNED_COMMANDS:
@@ -620,6 +634,24 @@ def directive_for_prompt(root: Path, prompt: str) -> PromptDirective | None:
         return None
 
     if parsed.is_freeform:
+        # A direct read should not create or replace a continuity session.
+        profile = _profile_decision(parsed)
+        if (
+            any(
+                _starts_with_action(parsed.raw_prompt.lower(), term)
+                for term in _PROFILE_READ_ONLY_TERMS
+            )
+            and profile.side_effect_class == "read_only"
+            and not profile.escalate
+        ):
+            return PromptDirective(
+                additional_context=(
+                    "Answer this read-only request directly from task-relevant sources. "
+                    "Do not open or replace a session merely to answer it. "
+                    "This advisory grants no write, external-action, or delivery authority. "
+                    + _profile_advisory(parsed, decision=profile)
+                )
+            )
         command_name, prompt_goal = _freeform_transition_inputs(parsed.raw_prompt)
         decision = resolve_transition(
             root,

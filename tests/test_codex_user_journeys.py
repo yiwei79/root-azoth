@@ -139,7 +139,7 @@ def test_freeform_exploratory_goal_opens_session_gate_and_routes_through_start(
     assert scope_gate == {}
 
 
-def test_profile_advisory_surfaces_read_only_without_changing_start_route(
+def test_read_only_question_keeps_prompt_and_does_not_open_session(
     tmp_path: Path,
 ) -> None:
     router = copy_codex_router_fixture(tmp_path, with_agents=True)
@@ -147,13 +147,65 @@ def test_profile_advisory_surfaces_read_only_without_changing_start_route(
     hook = payload["hookSpecificOutput"]
     ctx = hook["additionalContext"]
 
-    assert hook["updatedInput"] == "$azoth-start explain current repo status"
+    assert "updatedInput" not in hook
+    assert not (tmp_path / ".azoth" / "session-gate.json").exists()
     assert "profile_suggestion: stock-lite" in ctx or "profile_suggestion: azoth-lite" in ctx
     assert "harness_profile: guide" in ctx
     assert "route_state: answer" in ctx
     assert "authority_plane: operator" in ctx
     assert "side_effect_class: read_only" in ctx
     assert "stop_state: done" in ctx
+
+
+@pytest.mark.parametrize("state", ("active", "expired"))
+def test_direct_read_preserves_existing_session_and_scope(tmp_path: Path, state: str) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    azoth = tmp_path / ".azoth"
+    azoth.mkdir(exist_ok=True)
+    (azoth / "session-gate.json").write_text(
+        json.dumps({"session_id": "other-work", "status": state, "goal": "Other work"})
+    )
+    (azoth / "scope-gate.json").write_text(
+        json.dumps({"approved": False, "session_id": "other-work", "expires_at": "2000-01-01"})
+    )
+    before = {str(p.relative_to(azoth)): p.read_bytes() for p in azoth.rglob("*") if p.is_file()}
+    payload = run_router(router, "explain current repo status", cwd=tmp_path)
+    hook = payload["hookSpecificOutput"]
+    assert "updatedInput" not in hook
+    assert "grants no write, external-action, or delivery authority" in hook["additionalContext"]
+    after = {str(p.relative_to(azoth)): p.read_bytes() for p in azoth.rglob("*") if p.is_file()}
+    assert after == before
+
+
+@pytest.mark.parametrize(
+    ("prompt", "side_effect", "escalates"),
+    (
+        ("explain status then fix X", "local_edit", False),
+        ("explain status and update X", "local_edit", False),
+        ("explain status; delete X", "external_or_destructive", True),
+        ("explain status then please deploy X", "external_or_destructive", True),
+    ),
+)
+def test_read_prefix_preserves_action_suffix_routing(
+    tmp_path: Path, prompt: str, side_effect: str, escalates: bool
+) -> None:
+    router = copy_codex_router_fixture(tmp_path, with_agents=True)
+    hook = run_router(router, prompt, cwd=tmp_path)["hookSpecificOutput"]
+    assert hook["updatedInput"].startswith("$azoth-start ")
+    assert "Answer this read-only request directly" not in hook["additionalContext"]
+    assert f"side_effect_class: {side_effect}" in hook["additionalContext"]
+    assert ("pipeline_command=auto" in hook["updatedInput"]) == escalates
+    scope = tmp_path / ".azoth/scope-gate.json"
+    assert not scope.exists() or json.loads(scope.read_text()) == {}
+
+
+@pytest.mark.parametrize("prompt", ("/unknown-workflow", "unrecognized freeform request"))
+def test_unknown_requests_are_not_rewritten_or_given_read_authority(
+    tmp_path: Path, prompt: str
+) -> None:
+    copy_codex_router_fixture(tmp_path, with_agents=True)
+    assert directive_for_prompt(tmp_path, prompt) is None
+    assert not (tmp_path / ".azoth/session-gate.json").exists()
 
 
 def test_profile_advisory_surfaces_focused_verification_without_changing_start_route(

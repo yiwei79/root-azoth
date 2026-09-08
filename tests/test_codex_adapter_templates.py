@@ -467,11 +467,15 @@ def test_codex_config_declares_bounded_swarm_budget_defaults() -> None:
     assert "`research-orchestrator`, and `architect` may spend depth > 1" in text
 
 
-def test_codex_config_requires_runtime_model_selector_for_spawns() -> None:
-    text = (CODEX_DIR / "config.toml.template").read_text(encoding="utf-8")
-    assert "python3 scripts/codex_model_selector.py resolve" in text
-    assert "pass the returned `model` and `reasoning_effort`" in text
-    assert "Do not rely on parent-session model inheritance" in text
+def test_codex_config_supports_host_selection_and_opt_in_local_policy() -> None:
+    for name in ("config.toml.template", "config.seamless.toml.template"):
+        text = (CODEX_DIR / name).read_text(encoding="utf-8")
+        assert "python3 scripts/codex_model_selector.py resolve" in text
+        assert "only for an explicitly selected local-policy route" in text
+        assert "allow host defaults or inheritance" in text
+        assert "use only fields and values supported by the active host" in text
+        assert "Model selection does not waive mandatory tools" in text
+        assert "Do not rely on parent-session model inheritance" not in text
 
 
 def test_codex_config_template_and_deployed_output_include_codex_only_style_rubric() -> None:
