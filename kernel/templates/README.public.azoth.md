@@ -32,20 +32,21 @@ detour, and produces a useful artifact—while the original intent, acceptance
 boundary, evidence, or stopping condition quietly fades. The conversation
 progressed; the work did not.
 
-Longer prompts, larger context windows, and stronger models can improve an
-individual thread. They do not by themselves make a transcript a durable plan,
-evidence ledger, authority boundary, or outcome state.
+Conversation and native context can carry enough for some work. When relevant
+meaning, evidence or authority becomes difficult to recover across transitions,
+additional support may help. Its value depends on better decisions, outcomes
+and recovery relative to its cost.
 
 ```mermaid
 flowchart TB
-    subgraph C["Conversation-centred continuity"]
+    subgraph C["Failure: useful local work loses the larger outcome"]
         direction LR
         C1["Intent lives mainly<br/>in one thread"] --> C2["Useful discovery<br/>changes the local plan"]
         C2 --> C3["Locally successful artifact"]
-        C3 -.->|continuity was conversational| C4["Intent · evidence · authority<br/>must be reconstructed"]
+        C3 -.->|relevant connections are lost| C4["Intent · evidence · authority<br/>must be reconstructed"]
     end
 
-    subgraph O["Outcome-centred continuity"]
+    subgraph O["One candidate arrangement to evaluate"]
         direction LR
         O1["Durable intent anchor"] --> O2["Bounded work pulse"]
         O2 --> O3["Artifact · evidence<br/>· observed effect"]
@@ -55,27 +56,33 @@ flowchart TB
     C ~~~ O
 ```
 
-Conversation remains useful as an interaction surface. The failure is asking a
-bounded thread to also be the plan, memory, policy, evidence ledger, and history
-of the whole effort.
+The central concern is the relationship between evolving intent, goals,
+assumptions, decisions, work, evidence and effects. A corrected interpretation
+or changed requirement should reach the decisions that depend on it while
+preserving work that remains useful. A passing test may still be valid while
+no longer establishing enough for the current goal.
 
-> **A thread is a bounded work pulse. It reads from a durable intent anchor,
-> changes or investigates a limited part of the work, and returns evidence for
-> the next safe transition.**
+> **Keep the reasons for decisions, the meaning of evidence and the authority
+> for action recoverable as the work changes. Use explicit records where they
+> improve that continuity enough to earn their cost.**
 
-Once that distinction is made, a harder question follows: if continuity and
+This raises a broader question: if continuity and
 useful intelligence are distributed across intent, state, people, tools,
 evidence, and work pulses, where does the durable intelligence of the larger
 effort live—and is any one thread really the agent?
 
-Azoth explores that question by treating purpose, project meaning, evidence,
-decisions, authority, recovery, and observed outcomes as persistent system
-state. The intended experience is to state an outcome once, then let the system
-expose missing knowledge, form and route bounded work, return evidence, and stop
-at the decisions that still require human meaning or authority. “The system as
-agent” is a useful analogy here, not a settled name for the durable whole.
+Azoth explores persistent state, intent anchors and bounded work pulses as
+candidate ways to support that continuity. The intended experience is to state
+an aim naturally, refine it as understanding changes, and have useful work
+continue without repeatedly reconstructing its purpose. The system should
+expose uncertainty, preserve human authority and recognize sufficiently checked
+completion. “The system as agent” is a useful analogy, not a settled name for
+the durable whole or a claim that the whole experience is implemented.
 
 ## Azoth in one view
+
+This is one implementation hypothesis within the broader philosophy. Native
+context and ordinary project artifacts may already provide enough support.
 
 ```mermaid
 flowchart TB
@@ -91,19 +98,23 @@ flowchart TB
     H -.-> E
 ```
 
-What propagates through this loop is not merely text or code. **Alignment
-signal** is shorthand for the traceable relationship between current intent and
-each intermediate representation, action, item of evidence, and observed
-outcome. That relationship can strengthen, degrade, or reveal that the intent
-anchor itself needs revision. It is a working engineering metaphor, not a
-formal measurement.
+**Alignment signal** is shorthand for the maintained relationship between our
+current interpretation of intent and each intermediate representation, action,
+item of evidence and observed outcome. Those connections may become clearer,
+drift, or reveal a mistaken interpretation. People can also change what they
+want. The term is a working engineering metaphor, not a formal measurement.
+
+How reliably can a system recognize which relationships a change affects,
+especially when they are implicit or its current account is wrong? That remains
+an [open research question](docs/INTENT_TO_OUTCOME_ENGINEERING.md#falsifiable-questions).
+Making every relationship explicit is not the proposed answer.
 
 ## Explore the project
 
 | If you want to understand… | Continue with… |
 |---|---|
 | **Experience and evidence** | [*Narrow Success, Broad Failure*](docs/case-studies/narrow-success-broad-failure.md), a braided account of the projects, engineering value, framework growth, and contraction that exposed the problem |
-| **Engineering framework** | [*Intent-to-Outcome Engineering*](docs/INTENT_TO_OUTCOME_ENGINEERING.md), the evolving argument about work pulses, durable system intelligence, feedback, authority, and open research questions |
+| **Engineering framework** | [*Intent-to-Outcome Engineering*](docs/INTENT_TO_OUTCOME_ENGINEERING.md), the evolving argument about intent, relationships, selective revision, evidence, authority and open research questions |
 | **Executable proof** | [Routing, Context, and Authority](docs/PERSONAL_HARNESS_OS.md), the current operator experience and the exact boundary of the tested public slice |
 | **Source and architecture history** | [Architecture overview](docs/AZOTH_ARCHITECTURE.md), [decision index](docs/DECISIONS_INDEX.md), and [current proof paths](#inspect-the-current-proof) |
 
@@ -148,9 +159,9 @@ difference visible.
 ### Working direction
 
 Azoth is moving toward a system that can carry an outcome across many work
-pulses: refine intent, discover missing knowledge, form and re-form work,
-select the smallest sufficient composition, evaluate what happened, learn
-externally to any one model context, and stop honestly at human authority.
+pulses: reconsider goals and interpretations, discover missing knowledge, revise
+affected work, select sufficient support, evaluate what happened, retain useful
+learning and stop at completion or the boundary of current authority.
 
 That direction is an evolving framework, not a completion claim.
 

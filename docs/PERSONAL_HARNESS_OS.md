@@ -14,9 +14,8 @@ and which small slice is independently extractable and tested.
 For the project history, read [*Narrow Success, Broad
 Failure*](case-studies/narrow-success-broad-failure.md). For the evolving model
 behind the work, read [*Intent-to-Outcome Engineering*](INTENT_TO_OUTCOME_ENGINEERING.md).
-The [README](../README.md) owns the public contrast between conversation-centred
-and outcome-centred continuity; this document begins at the operator experience
-and evidence boundary.
+The [README](../README.md) introduces the continuity problem and candidate
+designs; this document begins at the operator experience and evidence boundary.
 
 ## The operator journey being assembled
 
